@@ -65,9 +65,10 @@ function windowTitle()
     <h1 class="title">Package ${packageDoc.nameWithDots()}</h1>
 </div>
 
-<div class="header">
-    <h2 title="${packageDoc.description()}" class="title">${packageDoc.description()}</h2>
-</div>
+<% if (!packageDoc.description().trim().isEmpty()) { %>
+<h2 title="Package ${packageDoc.nameWithDots()} Description" class="title">Package ${packageDoc.nameWithDots()} Description</h2>
+<div class="header">${packageDoc.description()}</div>
+<% } %>
 
 <div class="contentContainer">
 <%

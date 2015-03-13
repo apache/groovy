@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,8 @@ public class GroovyRootDocBuilder {
 
     private void processFile(String filename, File srcFile, boolean isAbsolute) throws IOException {
         String src = ResourceGroovyMethods.getText(srcFile);
-        String packagePath = isAbsolute ? "DefaultPackage" : tool.getPath(filename).replace('\\', FS);
+        String relPackage = tool.getPath(filename).replace('\\', FS);
+        String packagePath = isAbsolute ? "DefaultPackage" : relPackage;
         String file = tool.getFile(filename);
         SimpleGroovyPackageDoc packageDoc = null;
         if (!isAbsolute) {
@@ -198,7 +199,8 @@ public class GroovyRootDocBuilder {
         // todo: this might not work correctly for absolute paths
         if (filename.endsWith("package.html") || filename.endsWith("package-info.java") || filename.endsWith("package-info.groovy")) {
             if (packageDoc == null) {
-                packageDoc = new SimpleGroovyPackageDoc(packagePath);
+                packageDoc = new SimpleGroovyPackageDoc(relPackage);
+                packagePath = relPackage;
             }
             processPackageInfo(src, filename, packageDoc);
             rootDoc.put(packagePath, packageDoc);
