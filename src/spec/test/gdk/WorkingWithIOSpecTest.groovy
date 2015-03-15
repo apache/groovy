@@ -297,6 +297,8 @@ Fin.''')
                 def process = "dir".execute()
                 println "${process.text}"
                 // end::dir_windows[]
+                // we do not check that the expected exception is really thrown,
+                // because the command succeeds if PATH contains cygwin
             } catch (e) {
                 // tag::dir_windows_fixed[]
                 def process = "cmd /c dir".execute()
