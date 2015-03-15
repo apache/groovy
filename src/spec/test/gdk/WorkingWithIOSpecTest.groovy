@@ -297,7 +297,6 @@ Fin.''')
                 def process = "dir".execute()
                 println "${process.text}"
                 // end::dir_windows[]
-                assert false
             } catch (e) {
                 // tag::dir_windows_fixed[]
                 def process = "cmd /c dir".execute()
