@@ -161,6 +161,7 @@ public class JsonFastParser extends JsonParserCharArray {
         int index = __index;
         char currentChar;
         boolean doubleFloat = false;
+        boolean foundDot = false;
 
         if (minus && index + 1 < array.length) {
             index++;
@@ -174,6 +175,12 @@ public class JsonFastParser extends JsonParserCharArray {
                 break;
             } else if (isDelimiter(currentChar)) {
                 break;
+            } else if (currentChar == '.') {
+                if (foundDot) {
+                    complain("unexpected character " + currentChar);
+                }
+                foundDot = true;
+                doubleFloat = true;
             } else if (isDecimalChar(currentChar)) {
                 doubleFloat = true;
             }
