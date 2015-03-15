@@ -24,9 +24,9 @@ include::{projectdir}/src/spec/doc/tools-groovyc.adoc[leveloffset=+2]
 
 include::{projectdir}/subprojects/groovy-groovysh/{specfolder}/groovysh.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[leveloffset=+2]
+include::{projectdir}/subprojects/groovy-console/{specfolder}/groovy-console.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovydoc.adoc[leveloffset=+2]
+include::{projectdir}/subprojects/groovy-groovydoc/{specfolder}/groovydoc.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/tools-ide.adoc[leveloffset=+2]
 

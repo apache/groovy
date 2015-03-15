@@ -50,6 +50,10 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
             }
             return inferredType;
         }
+        if (target instanceof VariableExpression && ((VariableExpression) target).isThisExpression()) {
+            // AsmClassGenerator may create "this" expressions that the type checker knows nothing about
+            return current;
+        }
         return super.resolveType(exp, current);
     }
 
