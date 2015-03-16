@@ -27,6 +27,8 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -86,25 +88,19 @@ public class ClassHelper {
         void_WRAPPER_TYPE = makeCached(Void.class),   METACLASS_TYPE = makeCached(MetaClass.class),
         Iterator_TYPE = makeCached(Iterator.class),
 
+        Enum_Type = makeWithoutCaching(Enum.class),
+        Annotation_TYPE = makeCached(Annotation.class),
+        ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
+
         // uncached constants.
         CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),        
         GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
         GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
         GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
-        GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
-        
-        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
-        Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
-        ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type)
+        GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class)
         ;
-        
-        
-    static {
-        Enum_Type.isPrimaryNode = false;
-        Annotation_TYPE.isPrimaryNode = false;
-    }
     
-    private static ClassNode[] types = new ClassNode[] {
+    private static final ClassNode[] types = new ClassNode[] {
         OBJECT_TYPE,
         boolean_TYPE, char_TYPE, byte_TYPE, short_TYPE,
         int_TYPE, long_TYPE, double_TYPE, float_TYPE,
