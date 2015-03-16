@@ -1,6 +1,7 @@
 dependencies {
     compile rootProject
     compile project(':groovy-xml')
+    testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile project(':groovy-test')
     testCompile("org.spockframework:spock-core:0.7-groovy-2.0") {
         exclude module: 'groovy-all'
