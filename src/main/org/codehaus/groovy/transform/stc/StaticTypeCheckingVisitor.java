@@ -3438,6 +3438,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
                 return boolean_TYPE;
             }
+        } else if (char_TYPE.equals(leftRedirect) && char_TYPE.equals(rightRedirect)) {
+            if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
+                return boolean_TYPE;
+            }
         }
 
 
