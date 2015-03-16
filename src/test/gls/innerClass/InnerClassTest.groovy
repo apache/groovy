@@ -6,19 +6,19 @@ class InnerClassTest extends CompilableTestSupport {
 
     void testTimerAIC() {
         assertScript """
-            boolean called = false
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
+
+            CountDownLatch called = new CountDownLatch(1)
 
             Timer timer = new Timer()
             timer.schedule(new TimerTask() {
                 void run() {
-                    called = true
+                    called.countDown()
                 }
             }, 0)
-            for(int i = 0; !called && i < 20; i++) {
-                sleep 50
-            }
 
-            assert called
+            assert called.await(10, TimeUnit.SECONDS)
         """
     }
 

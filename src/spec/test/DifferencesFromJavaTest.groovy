@@ -102,17 +102,19 @@ new A.B()
 '''
         assertScript '''
 // tag::innerclass_2[]
-boolean called = false
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
+CountDownLatch called = new CountDownLatch(1)
 
 Timer timer = new Timer()
 timer.schedule(new TimerTask() {
     void run() {
-        called = true
+        called.countDown()
     }
 }, 0)
-sleep 100
 
-assert called
+assert called.await(10, TimeUnit.SECONDS)
 // end::innerclass_2[]
 '''
         assertScript '''

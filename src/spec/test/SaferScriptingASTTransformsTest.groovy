@@ -97,7 +97,7 @@ assert binding.i > 0
 if (t.alive) {
     t.interrupt()
 }
-Thread.sleep(100)
+Thread.sleep(500)
 assert binding.i == -1'''
 // end::threadinterrupt_thrown[]
    }
@@ -138,7 +138,7 @@ def fib(int n) {
 def t = Thread.start {
     shell.evaluate(userCode)
 }
-t.join(2000)
+t.join(5000)
 assert !t.alive
 // end::timedinterrupt_control[]
 assert binding.result == 0'''
@@ -158,7 +158,7 @@ def result
 def t = Thread.start {
     result = new Slow().fib(500)
 }
-t.join(1000)
+t.join(5000)
 assert result == null
 assert !t.alive
 // end::timedinterrupt_duration[]
@@ -186,7 +186,7 @@ def t = Thread.start {
         result = -1
     }
 }
-t.join(2000)
+t.join(5000)
 assert result == -1
 // end::timedinterrupt_thrown[]
 '''
@@ -221,7 +221,7 @@ assert Quotas.quotas['user'] == 10
 def t = Thread.start {
     new UserCode().doSomething()
 }
-t.join(1000)
+t.join(5000)
 assert !t.alive
 assert Quotas.quotas['user'] < 0
 // end::conditionalinterrupt_assert[]
@@ -273,7 +273,7 @@ assert Quotas.quotas['user'] == 10
 def t = Thread.start {
     shell.evaluate(userCode)
 }
-t.join(1000)
+t.join(5000)
 assert !t.alive
 assert Quotas.quotas['user'] < 0
 // end::conditionalinterrupt_injected[]
@@ -330,7 +330,7 @@ def t = Thread.start {
         Quotas.quotas['user'] = 'Quota exceeded'
     }
 }
-t.join(1000)
+t.join(5000)
 assert !t.alive
 assert Quotas.quotas['user'] == 'Quota exceeded'
 // end::conditionalinterrupt_thrown[]
