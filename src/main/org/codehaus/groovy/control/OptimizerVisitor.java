@@ -59,7 +59,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
 
     private void setConstField(ConstantExpression constantExpression) {
         final Object n = constantExpression.getValue();
-        if (!(n instanceof Number || n instanceof Character)) return;
+        if (!(n instanceof Number)) return;
         if (n instanceof Integer || n instanceof Double) return;
         if (n instanceof Long && (0L== (Long) n || 1L==(Long) n )) return; // LCONST_0, LCONST_1
 

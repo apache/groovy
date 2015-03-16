@@ -71,6 +71,12 @@ public class BinaryExpressionTransformer {
     }
 
     Expression transformBinaryExpression(final BinaryExpression bin) {
+        if (bin instanceof DeclarationExpression) {
+            Expression optimized = transformDeclarationExpression(bin);
+            if (optimized!=null) {
+                return optimized;
+            }
+        }
         Object[] list = bin.getNodeMetaData(BINARY_EXP_TARGET);
         Token operation = bin.getOperation();
         int operationType = operation.getType();
@@ -229,6 +235,29 @@ public class BinaryExpressionTransformer {
             return staticCompilationTransformer.transform(cle);
         }
         return staticCompilationTransformer.superTransform(bin);
+    }
+
+    private Expression transformDeclarationExpression(final BinaryExpression bin) {
+        Expression leftExpression = bin.getLeftExpression();
+        if (leftExpression instanceof VariableExpression) {
+            if (ClassHelper.char_TYPE.equals(((VariableExpression) leftExpression).getOriginType())) {
+                Expression rightExpression = bin.getRightExpression();
+                if (rightExpression instanceof ConstantExpression && ClassHelper.STRING_TYPE.equals(rightExpression.getType())) {
+                    String text = (String) ((ConstantExpression) rightExpression).getValue();
+                    if (text.length() == 1) {
+                        // optimize char initialization
+                        ConstantExpression ce = new ConstantExpression(
+                                text.charAt(0),
+                                true
+                        );
+                        ce.setSourcePosition(rightExpression);
+                        bin.setRightExpression(ce);
+                        return bin;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private Expression convertInOperatorToTernary(final BinaryExpression bin, final Expression rightExpression, final Expression leftExpression) {
