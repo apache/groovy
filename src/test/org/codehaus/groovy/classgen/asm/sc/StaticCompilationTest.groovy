@@ -465,4 +465,39 @@ assert o.blah() == 'outer'
                 'ISTORE'
         ])
     }
+
+    void testShouldOptimizeCharComparison() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            char c1 = 'x'
+            char c2 = 'x'
+            boolean b = c1==c2
+        }
+        ''').hasSequence([
+                'LINENUMBER 4',
+                'BIPUSH 120',
+                'ISTORE',
+                'BIPUSH 120',
+                'ISTORE',
+                'ILOAD',
+                'ILOAD',
+                'IF_ICMPNE',
+        ])
+
+        // make sure the code passes
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void m() {
+                char c1 = 'x'
+                char c2 = 'x'
+                boolean b = c1==c2
+                assert b
+                char c3 = 'z'
+                b = c1==c3
+                assert !b
+            }
+            m()
+        '''
+    }
 }
