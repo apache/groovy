@@ -29,19 +29,18 @@ class Groovy4386_Bug extends GroovyTestCase {
             static final TWOPI = 6.28
         }
     """
-    File dir = null
-    File file = null
+    File tmpDir
 
     @Override protected void setUp() {
-        dir = new File("foo")
+        tmpDir = File.createTempDir()
+        File dir = new File(tmpDir, 'foo')
         dir.mkdir()
-        file = new File(dir, "Constants.groovy")
+        File file = new File(dir, "Constants.groovy")
         DefaultGroovyMethods.setText(file, scriptSource);
     }
 
     @Override protected void tearDown() {
-        file.delete()
-        dir.delete()
+        tmpDir.deleteDir()
     }
 
     void testAccessPublicStaticField() {
@@ -81,7 +80,7 @@ class Groovy4386_Bug extends GroovyTestCase {
     }
 
     void assertScript(String script) {
-        GroovyShell shell = new GroovyShell(new CompilerConfiguration(classpath:'.'))
+        GroovyShell shell = new GroovyShell(new CompilerConfiguration(classpath: tmpDir.path))
         shell.evaluate(script, getTestClassName())
     }
 }
