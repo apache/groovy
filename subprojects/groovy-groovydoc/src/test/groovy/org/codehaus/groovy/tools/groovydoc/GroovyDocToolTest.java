@@ -30,10 +30,6 @@ import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
-/**
- * @author Jeremy Rayner
- * @author Andre Steingress
- */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
     private static final String TEMPLATES_DIR = "main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
@@ -48,8 +44,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new String[] {"src/main/java", "../../src/main", // source file dirs
-                        "src/test/groovy"},
+                new String[] {"src/main/java", "../../src/main", "src/test/groovy"}, // source file dirs
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
@@ -59,7 +54,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
+                new String[] {"src/test/groovy", "src/test/resources", "../../src/test"}, // source file dirs
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
@@ -286,6 +281,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String doc = output.getText(MOCK_DIR + "/DefaultPackage/DefaultPackageClassSupport.html");
         assertTrue(doc.indexOf("<extends>GroovyTestCase</extends>") > 0);
+    }
+
+    public void testJavaClassMultiCatch() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/MultiCatchExample";
+        srcList.add(base + ".java");
+        xmlToolForTests.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
+        String doc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/MultiCatchExample.html");
+        assertNotNull("No GroovyDoc found for " + base, doc);
+        assertTrue(doc, doc.indexOf("foo has a multi-catch exception inside") > 0);
     }
 
     public void testStaticModifier() throws Exception {

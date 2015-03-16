@@ -1196,10 +1196,25 @@ finallyClause
 	:	"finally"^ compoundStatement
 	;
 
-// an exception handler
-handler
-	:	"catch"^ LPAREN! parameterDeclaration RPAREN! compoundStatement
-	;
+// an exception handler borrowed from groovy.g to handle Java7+ multi-catch
+handler {Token first = LT(1);}
+    :   "catch"! LPAREN! pd:multicatch! RPAREN! handlerCs:compoundStatement!
+        {#handler = #(create(LITERAL_catch,"catch",first,LT(1)),pd,handlerCs);}
+    ;
+
+multicatch_types
+{Token first = LT(1);}
+    :
+        classOrInterfaceType[false]
+        (
+            BOR! classOrInterfaceType[false]
+        )*
+    ;
+
+multicatch
+{Token first = LT(1);}
+    :   (FINAL)? (m:multicatch_types) id:IDENT!
+    ;
 
 
 // expressions
