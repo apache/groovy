@@ -508,8 +508,9 @@ public class OperandStack {
         boolean isInt = ClassHelper.int_TYPE.equals(type);
         boolean isShort = ClassHelper.short_TYPE.equals(type);
         boolean isByte = ClassHelper.byte_TYPE.equals(type);
-        if (isInt || isShort || isByte) {
-            int val = isInt?(Integer)value:isShort?(Short)value:(Byte)value;
+        boolean isChar = ClassHelper.char_TYPE.equals(type);
+        if (isInt || isShort || isByte || isChar) {
+            int val = isInt?(Integer)value:isShort?(Short)value:isChar?(Character)value:(Byte)value;
             switch (val) {
                 case 0:
                     mv.visitInsn(ICONST_0);

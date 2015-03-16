@@ -452,4 +452,17 @@ assert o.blah() == 'outer'
             new ClassCastOhNoes().foo(100)
         '''
     }
+
+    void testShouldOptimizeCharInit() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            char c = 'x'
+        }
+        ''').hasStrictSequence([
+                'LINENUMBER 4',
+                'BIPUSH 120',
+                'ISTORE'
+        ])
+    }
 }
