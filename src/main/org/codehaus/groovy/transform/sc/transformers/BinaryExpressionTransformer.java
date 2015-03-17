@@ -47,7 +47,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
@@ -164,6 +167,11 @@ public class BinaryExpressionTransformer {
             String name = (String) list[1];
             Expression left = staticCompilationTransformer.transform(leftExpression);
             Expression right = staticCompilationTransformer.transform(rightExpression);
+            BinaryExpression optimized = tryOptimizeCharComparison(left, right, bin);
+            if (optimized!=null) {
+                optimized.removeNodeMetaData(BINARY_EXP_TARGET);
+                return transformBinaryExpression(optimized);
+            }
             call = new MethodCallExpression(
                     left,
                     name,
@@ -235,6 +243,37 @@ public class BinaryExpressionTransformer {
             return staticCompilationTransformer.transform(cle);
         }
         return staticCompilationTransformer.superTransform(bin);
+    }
+
+    private BinaryExpression tryOptimizeCharComparison(final Expression left, final Expression right, final BinaryExpression bin) {
+        int op = bin.getOperation().getType();
+        if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
+            Character cLeft = tryCharConstant(left);
+            Character cRight = tryCharConstant(right);
+            if (cLeft != null || cRight != null) {
+                Expression oLeft = cLeft == null ? left : new ConstantExpression(cLeft, true);
+                oLeft.setSourcePosition(left);
+                Expression oRight = cRight == null ? right : new ConstantExpression(cRight, true);
+                oRight.setSourcePosition(right);
+                bin.setLeftExpression(oLeft);
+                bin.setRightExpression(oRight);
+                return bin;
+            }
+        }
+        return null;
+    }
+
+    private Character tryCharConstant(final Expression expr) {
+        if (expr instanceof ConstantExpression) {
+            ConstantExpression ce = (ConstantExpression) expr;
+            if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
+                String val = (String) ce.getValue();
+                if (val!=null && val.length()==1) {
+                    return val.charAt(0);
+                }
+            }
+        }
+        return null;
     }
 
     private Expression transformDeclarationExpression(final BinaryExpression bin) {

@@ -380,7 +380,7 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    static boolean isCompareToBoolean(int op) {
+    public static boolean isCompareToBoolean(int op) {
         return op == COMPARE_GREATER_THAN ||
                 op == COMPARE_GREATER_THAN_EQUAL ||
                 op == COMPARE_LESS_THAN ||
