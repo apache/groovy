@@ -55,7 +55,7 @@ class CustomizersTest extends GroovyTestCase {
         // "aliases" import
         icz.addImport('CHM', 'java.util.concurrent.ConcurrentHashMap')
         // "static" import
-        icz.addStaticImport('java.lang.Math', 'PI') // import static java.lang.Math.Pi
+        icz.addStaticImport('java.lang.Math', 'PI') // import static java.lang.Math.PI
         // "aliased static" import
         icz.addStaticImport('pi', 'java.lang.Math', 'PI') // import static java.lang.Math.PI as pi
         // "star" import
