@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
@@ -62,15 +63,133 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabels());
 
-        // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
-
         // Identify type of collection
         TypeChooser typeChooser = controller.getTypeChooser();
         Expression collectionExpression = loop.getCollectionExpression();
         ClassNode collectionType = typeChooser.resolveType(collectionExpression, controller.getClassNode());
+        Parameter loopVariable = loop.getVariable();
+        int size = operandStack.getStackLength();
+        if (collectionType.isArray() && loopVariable.getOriginType().equals(collectionType.getComponentType())) {
+            writeOptimizedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+        } else {
+            writeIteratorBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+        }
+        operandStack.popDownTo(size);
+        compileStack.pop();
+    }
 
-        if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(collectionType,ITERABLE_CLASSNODE)) {
+    private void writeOptimizedForEachLoop(
+            CompileStack compileStack,
+            OperandStack operandStack,
+            MethodVisitor mv,
+            ForStatement loop,
+            Expression collectionExpression,
+            ClassNode collectionType,
+            Parameter loopVariable) {
+        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+
+        AsmClassGenerator acg = controller.getAcg();
+
+        // load array on stack
+        collectionExpression.visit(acg);
+        mv.visitInsn(DUP);
+        int array = compileStack.defineTemporaryVariable("$arr", collectionType, true);
+
+        // $len = array.length
+        mv.visitInsn(ARRAYLENGTH);
+        operandStack.push(ClassHelper.int_TYPE);
+        int arrayLen = compileStack.defineTemporaryVariable("$len", ClassHelper.int_TYPE, true);
+
+        // $idx = 0
+        mv.visitInsn(ICONST_0);
+        operandStack.push(ClassHelper.int_TYPE);
+        int loopIdx = compileStack.defineTemporaryVariable("$idx", ClassHelper.int_TYPE, true);
+
+        mv.visitLabel(continueLabel);
+        // $idx<$len?
+        mv.visitVarInsn(ILOAD, loopIdx);
+        mv.visitVarInsn(ILOAD, arrayLen);
+        mv.visitJumpInsn(IF_ICMPGE, breakLabel);
+
+        // get array element
+        loadFromArray(mv, variable, array, loopIdx);
+
+        // loop body
+        loop.getLoopBlock().visit(acg);
+
+        // $idx++
+        mv.visitIincInsn(loopIdx, 1);
+        mv.visitJumpInsn(GOTO, continueLabel);
+
+        mv.visitLabel(breakLabel);
+        compileStack.removeVar(loopIdx);
+        compileStack.removeVar(arrayLen);
+        compileStack.removeVar(array);
+
+    }
+
+    private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
+        mv.visitVarInsn(ALOAD, array);
+        mv.visitVarInsn(ILOAD, iteratorIdx);
+
+        ClassNode varType = variable.getType();
+        boolean primitiveType = ClassHelper.isPrimitiveType(varType);
+        boolean isByte = ClassHelper.byte_TYPE.equals(varType);
+        boolean isShort = ClassHelper.short_TYPE.equals(varType);
+        boolean isInt = ClassHelper.int_TYPE.equals(varType);
+        boolean isLong = ClassHelper.long_TYPE.equals(varType);
+        boolean isFloat = ClassHelper.float_TYPE.equals(varType);
+        boolean isDouble = ClassHelper.double_TYPE.equals(varType);
+        boolean isChar = ClassHelper.char_TYPE.equals(varType);
+        boolean isBoolean = ClassHelper.boolean_TYPE.equals(varType);
+
+        int index = variable.getIndex();
+        if (primitiveType) {
+            if (isByte) {
+                mv.visitInsn(BALOAD);
+                mv.visitVarInsn(ISTORE, index);
+            }
+            if (isShort) {
+                mv.visitInsn(SALOAD);
+                mv.visitVarInsn(ISTORE, index);
+            }
+            if (isInt || isChar || isBoolean) {
+                mv.visitInsn(isChar?CALOAD:isBoolean?BALOAD:IALOAD);
+                mv.visitVarInsn(ISTORE, index);
+            }
+            if (isLong) {
+                mv.visitInsn(LALOAD);
+                mv.visitVarInsn(LSTORE, index);
+            }
+            if (isFloat) {
+                mv.visitInsn(FALOAD);
+                mv.visitVarInsn(FSTORE, index);
+            }
+            if (isDouble) {
+                mv.visitInsn(DALOAD);
+                mv.visitVarInsn(DSTORE, index);
+            }
+        } else {
+            mv.visitInsn(AALOAD);
+            mv.visitVarInsn(ASTORE, index);
+        }
+    }
+
+    private void writeIteratorBasedForEachLoop(
+            CompileStack compileStack,
+            OperandStack operandStack,
+            MethodVisitor mv,
+            ForStatement loop,
+            Expression collectionExpression,
+            ClassNode collectionType,
+            Parameter loopVariable) {
+        // Declare the loop counter.
+        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+
+        if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_CLASSNODE)) {
             MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
             iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
             iterator.setImplicitThis(false);
@@ -83,7 +202,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         // Then get the iterator and generate the loop control
 
-        final int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
+        int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
 
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
@@ -104,7 +223,8 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
+        compileStack.removeVar(iteratorIdx);
 
-        compileStack.pop();
     }
+
 }
