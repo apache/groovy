@@ -653,4 +653,19 @@ assert o.blah() == 'outer'
         assert compile([method:'m'],code).hasSequence(['ILOAD','BIPUSH','IF_ICMPNE'])
         assertScript(code)
     }
+
+    void testShouldRemoveUnnecessaryCast() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            char c = (char) 'x'
+        }
+        ''').hasStrictSequence([
+                'LINENUMBER 4',
+                'BIPUSH 120',
+                // No checkcast, but the idea is to check that further optimization was done
+                // because the RHS is no longer a CastExpression but a ConstantExpression
+                'ISTORE'
+        ])
+    }
 }

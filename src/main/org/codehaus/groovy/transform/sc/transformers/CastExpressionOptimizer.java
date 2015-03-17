@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -46,6 +47,19 @@ public class CastExpressionOptimizer {
                 trn.setSourcePosition(cast);
                 trn.copyNodeMetaData(cast);
                 return trn;
+            }
+        } else if (ClassHelper.char_TYPE.equals(cast.getType())) {
+            Expression expression = cast.getExpression();
+            if (expression instanceof ConstantExpression) {
+                ConstantExpression ce = (ConstantExpression) expression;
+                if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
+                    String val = (String) ce.getValue();
+                    if (val!=null && val.length()==1) {
+                        ConstantExpression result = new ConstantExpression(val.charAt(0),true);
+                        result.setSourcePosition(cast);
+                        return result;
+                    }
+                }
             }
         }
         return transformer.superTransform(cast);
