@@ -506,4 +506,133 @@ assert o.blah() == 'outer'
             m()
         '''
     }
+
+    void testForEachLoopOptimization() {
+        def loop_init = [
+                'ALOAD', // load array (might be more complex than just ALOAD in general case)
+                'DUP',
+                'ASTORE', // store array to local var
+                'ARRAYLENGTH', // get array len
+                'ISTORE', // store it to local var
+                'ICONST_0',
+                'ISTORE', // initialize loop index
+                'ILOAD', // load loop index
+                'ILOAD', // load array length
+                'IF_ICMPGE' // if greater or equal, end of loop
+        ]
+
+        // int[]
+        def intExample = '''
+        @groovy.transform.CompileStatic
+        void m(int[] arr) {
+            for (int i: arr) {
+               println(i)
+            }
+        }
+        m([1,2] as int[])
+        '''
+        assert compile([method:'m'], intExample).hasSequence([*loop_init,'IALOAD','ISTORE'])
+
+        // short[]
+        def shortExample = '''
+        @groovy.transform.CompileStatic
+        void m(short[] arr) {
+            for (short i: arr) {
+               println(i)
+            }
+        }
+        m([1,2] as short[])
+        '''
+        assert compile([method:'m'], shortExample).hasSequence([*loop_init,'SALOAD','ISTORE'])
+
+        // byte[]
+        def byteExample = '''
+        @groovy.transform.CompileStatic
+        void m(byte[] arr) {
+            for (byte i: arr) {
+               println(i)
+            }
+        }
+        m([1,2] as byte[])
+        '''
+        assert compile([method:'m'], byteExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
+
+        // long[]
+        def longExample = '''
+        @groovy.transform.CompileStatic
+        void m(long[] arr) {
+            for (long i: arr) {
+               println(i)
+            }
+        }
+        m([1,2] as long[])
+        '''
+        assert compile([method:'m'], longExample).hasSequence([*loop_init,'LALOAD','LSTORE'])
+
+       // char[]
+        def charExample = '''
+        @groovy.transform.CompileStatic
+        void m(char[] arr) {
+            for (char i: arr) {
+               println(i)
+            }
+        }
+        m('foo'.toCharArray())
+        '''
+        assert compile([method:'m'], charExample).hasSequence([*loop_init,'CALOAD','ISTORE'])
+
+       // boolean[]
+        def boolExample = '''
+        @groovy.transform.CompileStatic
+        void m(boolean[] arr) {
+            for (boolean i: arr) {
+               println(i)
+            }
+        }
+        m([true,false] as boolean[])
+        '''
+        assert compile([method:'m'], boolExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
+
+        // float[]
+        def floatExample = '''
+        @groovy.transform.CompileStatic
+        void m(float[] arr) {
+            for (float i: arr) {
+               println(i)
+            }
+        }
+        m([1.5f,2.0f] as float[])
+        '''
+        assert compile([method:'m'], floatExample).hasSequence([*loop_init,'FALOAD','FSTORE'])
+
+        // double[]
+        def doubleExample = '''
+        @groovy.transform.CompileStatic
+        void m(double[] arr) {
+            for (double i: arr) {
+               println(i)
+            }
+        }
+        m([1.1,2.2] as double[])
+        '''
+        assert compile([method:'m'], doubleExample).hasSequence([*loop_init,'DALOAD','DSTORE'])
+
+        // Any[]
+        def anyExample = '''
+        @groovy.transform.CompileStatic
+        void m(String[] arr) {
+            for (String i: arr) {
+               println(i)
+            }
+        }
+        m(['a','b'] as String[])
+        '''
+        assert compile([method:'m'], anyExample).hasSequence([*loop_init,'AALOAD','ASTORE'])
+
+        // now check that everything runs fine
+        [byteExample,shortExample, intExample, charExample, boolExample,
+         longExample, floatExample, doubleExample, anyExample].each { script ->
+            assertScript(script)
+        }
+    }
 }
