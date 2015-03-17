@@ -635,4 +635,28 @@ assert o.blah() == 'outer'
             assertScript(script)
         }
     }
+
+    void testCompareWithCharOptimization() {
+        String code = '''
+        @groovy.transform.CompileStatic
+        boolean m(char[] arr) {
+            char c = arr[0]
+            ' '==c
+        }
+        assert m(' abc '.toCharArray()) == true
+        '''
+        assert compile([method:'m'],code).hasSequence(['BIPUSH','ILOAD','IF_ICMPNE'])
+        assertScript(code)
+
+        code = '''
+        @groovy.transform.CompileStatic
+        boolean m(char[] arr) {
+            char c = arr[0]
+            c==' '
+        }
+        assert m(' abc '.toCharArray()) == true
+        '''
+        assert compile([method:'m'],code).hasSequence(['ILOAD','BIPUSH','IF_ICMPNE'])
+        assertScript(code)
+    }
 }
