@@ -14,6 +14,8 @@ if (!bintrayUser) {
     }
 }
 
+logger.lifecycle "Bintray user: $bintrayUser"
+
 allprojects {
     apply plugin: 'artifactory'
 
