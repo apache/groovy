@@ -249,6 +249,10 @@ public class ClassNodeResolver {
         if (resource != null) {
             try {
                 asmClass = new DecompiledClassNode(AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
+                if (!asmClass.getName().equals(name)) {
+                    // this may happen under Windows because getResource is case insensitive under that OS!
+                    asmClass = null;
+                }
             } catch (IOException e) {
                 // fall through and attempt other search strategies
             }
