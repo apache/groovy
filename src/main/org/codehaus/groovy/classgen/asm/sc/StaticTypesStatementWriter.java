@@ -129,6 +129,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
     }
 
     private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
+        OperandStack os = controller.getOperandStack();
         mv.visitVarInsn(ALOAD, array);
         mv.visitVarInsn(ILOAD, iteratorIdx);
 
@@ -143,36 +144,30 @@ public class StaticTypesStatementWriter extends StatementWriter {
         boolean isChar = ClassHelper.char_TYPE.equals(varType);
         boolean isBoolean = ClassHelper.boolean_TYPE.equals(varType);
 
-        int index = variable.getIndex();
         if (primitiveType) {
             if (isByte) {
                 mv.visitInsn(BALOAD);
-                mv.visitVarInsn(ISTORE, index);
             }
             if (isShort) {
                 mv.visitInsn(SALOAD);
-                mv.visitVarInsn(ISTORE, index);
             }
             if (isInt || isChar || isBoolean) {
                 mv.visitInsn(isChar?CALOAD:isBoolean?BALOAD:IALOAD);
-                mv.visitVarInsn(ISTORE, index);
             }
             if (isLong) {
                 mv.visitInsn(LALOAD);
-                mv.visitVarInsn(LSTORE, index);
             }
             if (isFloat) {
                 mv.visitInsn(FALOAD);
-                mv.visitVarInsn(FSTORE, index);
             }
             if (isDouble) {
                 mv.visitInsn(DALOAD);
-                mv.visitVarInsn(DSTORE, index);
             }
         } else {
             mv.visitInsn(AALOAD);
-            mv.visitVarInsn(ASTORE, index);
         }
+        os.push(varType);
+        os.storeVar(variable);
     }
 
     private void writeIteratorBasedForEachLoop(
