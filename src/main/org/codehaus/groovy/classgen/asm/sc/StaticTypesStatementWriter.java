@@ -131,16 +131,6 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
     }
 
-    private int foo(String[] arr) {
-        int counter=0;
-        for (String s : arr) {
-            //if(counter++ > 100) break;
-                    System.out.println(s);
-            continue;
-        }
-        return counter;
-    }
-
     private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
         OperandStack os = controller.getOperandStack();
         mv.visitVarInsn(ALOAD, array);
