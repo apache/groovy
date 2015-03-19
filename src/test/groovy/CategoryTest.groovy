@@ -193,6 +193,24 @@ class CategoryTest extends GroovyTestCase {
         assert foo(x) == 1
     }
 
+    //GROOVY-6263
+    void testCallToPrivateMethod() {
+        assertScript '''
+            class A {
+                private foo(a) { 1 }
+                def baz() { foo() }
+            }
+
+            class B extends A {}
+
+            class C {}
+
+            use(C) {
+                assert new B().baz() == 1
+            }
+        '''
+    }
+
 }
 
 class X{ def bar(){1}}

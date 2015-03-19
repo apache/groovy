@@ -124,6 +124,21 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
     }
 
     /**
+     * Call invokeMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
+     * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
+     * The method call is suppressed if Interceptor.doInvoke() returns false.
+     * See Interceptor for details.
+     */
+    @Override
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
+        return doCall(object, methodName, arguments, interceptor, new Callable() {
+            public Object call() {
+                return adaptee.invokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
+            }
+        });
+    }
+
+    /**
      * Call invokeStaticMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
      * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
      * The method call is suppressed if Interceptor.doInvoke() returns false.

@@ -63,7 +63,7 @@ public class PogoMetaClassSite extends MetaClassSite {
         if (checkCall(receiver)) {
             try {
                 try {
-                    return metaClass.invokeMethod(receiver, name, args);
+                    return metaClass.invokeMethod(array.owner, receiver, name, args, false, true);
                 } catch (MissingMethodException e) {
                     if (e instanceof MissingMethodExecutionFailed) {
                         throw (MissingMethodException)e.getCause();
