@@ -125,9 +125,6 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitJumpInsn(GOTO, continueLabel);
 
         mv.visitLabel(breakLabel);
-        compileStack.removeVar(loopIdx);
-        compileStack.removeVar(arrayLen);
-        compileStack.removeVar(array);
 
     }
 
@@ -223,7 +220,6 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
-        compileStack.removeVar(iteratorIdx);
 
     }
 
