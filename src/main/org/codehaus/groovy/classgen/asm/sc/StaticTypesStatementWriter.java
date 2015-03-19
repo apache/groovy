@@ -97,8 +97,10 @@ public class StaticTypesStatementWriter extends StatementWriter {
         collectionExpression.visit(acg);
         mv.visitInsn(DUP);
         int array = compileStack.defineTemporaryVariable("$arr", collectionType, true);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         // $len = array.length
+        mv.visitVarInsn(ALOAD, array);
         mv.visitInsn(ARRAYLENGTH);
         operandStack.push(ClassHelper.int_TYPE);
         int arrayLen = compileStack.defineTemporaryVariable("$len", ClassHelper.int_TYPE, true);
@@ -152,7 +154,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
                 mv.visitInsn(SALOAD);
             }
             if (isInt || isChar || isBoolean) {
-                mv.visitInsn(isChar?CALOAD:isBoolean?BALOAD:IALOAD);
+                mv.visitInsn(isChar ? CALOAD : isBoolean ? BALOAD : IALOAD);
             }
             if (isLong) {
                 mv.visitInsn(LALOAD);
