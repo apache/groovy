@@ -119,15 +119,26 @@ public class StaticTypesStatementWriter extends StatementWriter {
         // get array element
         loadFromArray(mv, variable, array, loopIdx);
 
+        // $idx++
+        mv.visitIincInsn(loopIdx, 1);
+
         // loop body
         loop.getLoopBlock().visit(acg);
 
-        // $idx++
-        mv.visitIincInsn(loopIdx, 1);
         mv.visitJumpInsn(GOTO, continueLabel);
 
         mv.visitLabel(breakLabel);
 
+    }
+
+    private int foo(String[] arr) {
+        int counter=0;
+        for (String s : arr) {
+            //if(counter++ > 100) break;
+                    System.out.println(s);
+            continue;
+        }
+        return counter;
     }
 
     private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
