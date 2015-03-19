@@ -10,9 +10,9 @@ The Groovy language is supported by lots of IDEs and text editors.
 |http://www.jetbrains.com/idea/features/groovy.html[IntelliJ IDEA]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
 |https://netbeans.org/features/groovy/[Netbeans]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
 |http://grails.org/products/ggts[Groovy and Grails Toolsuite]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
-|http://groovy.codehaus.org/Emacs+Groovy+Mode[Emacs Groovy Mode]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Brackets|No
-|https://github.com/textmate/groovy.tmbundle[TextMate]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Snippets|No
+|http://groovy.codehaus.org/Emacs+Groovy+Mode[Emacs Groovy Mode]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|No|No
+|https://github.com/textmate/groovy.tmbundle[TextMate]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|No|No
 |http://www.vim.org/[vim]|[icon-star]_{empty}_|Yes|No|No
-|http://www.ultraedit.com/[UltraEdit]|[icon-star]_{empty}_|Yes|Text based|No
+|http://www.ultraedit.com/[UltraEdit]|[icon-star]_{empty}_|Yes|No|No
 |=======================================================================
 
