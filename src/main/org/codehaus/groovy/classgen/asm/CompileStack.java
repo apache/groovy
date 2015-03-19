@@ -19,6 +19,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
@@ -216,7 +217,12 @@ public class CompileStack implements Opcodes {
         final BytecodeVariable head = (BytecodeVariable) temporaryVariables.removeFirst();
         if (head.getIndex() != tempIndex) {
             temporaryVariables.addFirst(head);
+            MethodNode methodNode = controller.getMethodNode();
+            if (methodNode==null) {
+                methodNode = controller.getConstructorNode();
+            }
             throw new GroovyBugError(
+                    "In method "+ (methodNode!=null?methodNode.getText():"<unknown>") + ", " +
                     "CompileStack#removeVar: tried to remove a temporary " +
                     "variable with index "+ tempIndex + " in wrong order. " +
                     "Current temporary variables=" + temporaryVariables);
