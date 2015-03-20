@@ -635,6 +635,15 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
+        if (left.isGenericsPlaceHolder()) {
+            // GROOVY-7307
+            GenericsType[] genericsTypes = left.getGenericsTypes();
+            if (genericsTypes!=null && genericsTypes.length==1) {
+                // should always be the case, but safe guard is better
+                return genericsTypes[0].isCompatibleWith(right);
+            }
+        }
+
         return false;
     }
 
