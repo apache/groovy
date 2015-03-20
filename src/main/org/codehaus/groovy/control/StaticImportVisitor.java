@@ -284,6 +284,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());
         result.setMethodTarget(mce.getMethodTarget());
+        // GROOVY-6757
+        result.setGenericsTypes(mce.getGenericsTypes());
         setSourcePosition(result, mce);
         return result;
     }
