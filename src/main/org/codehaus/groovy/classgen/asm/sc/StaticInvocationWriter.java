@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -277,9 +278,10 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
                 if (!implicitThis && !isThisOrSuper
                         && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node,target.getDeclaringClass())) {
+                    ASTNode src = receiver==null?args:receiver;
                     controller.getSourceUnit().addError(
                             new SyntaxException("Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),
-                                    receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+                                    src.getLineNumber(), src.getColumnNumber(), src.getLastLineNumber(), src.getLastColumnNumber()));
                 }
             }
             if (receiver != null) {
