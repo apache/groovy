@@ -73,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -143,6 +144,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = make(LinkedHashMap.class);
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = make(ClosureParams.class);
+    protected static final ClassNode MAP_ENTRY_TYPE = make(Map.Entry.class);
+    protected static final ClassNode ENUMERATION_TYPE = make(Enumeration.class);
 
     public static final Statement GENERATED_EMPTY_STATEMENT = new EmptyStatement();
 
@@ -1592,8 +1595,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode intf = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
                 GenericsType[] genericsTypes = intf.getGenericsTypes();
                 componentType = genericsTypes[0].getType();
-            } else if (collectionType == ClassHelper.STRING_TYPE) {
+            } else if (implementsInterfaceOrIsSubclassOf(collectionType, MAP_TYPE)) {
+                // GROOVY-6240
+                ClassNode intf = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
+                componentType.setGenericsTypes(genericsTypes);
+            } else if (STRING_TYPE.equals(collectionType)) {
                 componentType = ClassHelper.Character_TYPE;
+            } else if (ENUMERATION_TYPE.equals(collectionType)) {
+                // GROOVY-6123
+                ClassNode intf = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = genericsTypes[0].getType();
             } else {
                 componentType = ClassHelper.OBJECT_TYPE;
             }

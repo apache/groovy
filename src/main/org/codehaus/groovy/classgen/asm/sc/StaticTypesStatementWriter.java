@@ -29,6 +29,9 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Enumeration;
+import java.util.Iterator;
+
 import static org.objectweb.asm.Opcodes.*;
 
 /**
@@ -38,6 +41,10 @@ import static org.objectweb.asm.Opcodes.*;
 public class StaticTypesStatementWriter extends StatementWriter {
 
     private static final ClassNode ITERABLE_CLASSNODE = ClassHelper.make(Iterable.class);
+    private static final ClassNode ENUMERATION_CLASSNODE = ClassHelper.make(Enumeration.class);
+    private static final MethodCaller ENUMERATION_NEXT_METHOD = MethodCaller.newInterface(Enumeration.class, "nextElement");
+    private static final MethodCaller ENUMERATION_HASMORE_METHOD = MethodCaller.newInterface(Enumeration.class, "hasMoreElements");
+
     private StaticTypesWriterController controller;
 
     public StaticTypesStatementWriter(StaticTypesWriterController controller) {
@@ -71,6 +78,8 @@ public class StaticTypesStatementWriter extends StatementWriter {
         int size = operandStack.getStackLength();
         if (collectionType.isArray() && loopVariable.getOriginType().equals(collectionType.getComponentType())) {
             writeOptimizedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+        } else if (ENUMERATION_CLASSNODE.equals(collectionType)) {
+            writeEnumerationBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
         } else {
             writeIteratorBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
         }
@@ -210,6 +219,45 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitVarInsn(ALOAD, iteratorIdx);
         writeIteratorNext(mv);
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        operandStack.storeVar(variable);
+
+        // Generate the loop body
+        loop.getLoopBlock().visit(controller.getAcg());
+
+        mv.visitJumpInsn(GOTO, continueLabel);
+        mv.visitLabel(breakLabel);
+
+    }
+
+    private void writeEnumerationBasedForEachLoop(
+            CompileStack compileStack,
+            OperandStack operandStack,
+            MethodVisitor mv,
+            ForStatement loop,
+            Expression collectionExpression,
+            ClassNode collectionType,
+            Parameter loopVariable) {
+        // Declare the loop counter.
+        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+
+        collectionExpression.visit(controller.getAcg());
+
+        // Then get the iterator and generate the loop control
+
+        int enumIdx = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
+
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+
+        mv.visitLabel(continueLabel);
+        mv.visitVarInsn(ALOAD, enumIdx);
+        ENUMERATION_HASMORE_METHOD.call(mv);
+        // note: ifeq tests for ==0, a boolean is 0 if it is false
+        mv.visitJumpInsn(IFEQ, breakLabel);
+
+        mv.visitVarInsn(ALOAD, enumIdx);
+        ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
