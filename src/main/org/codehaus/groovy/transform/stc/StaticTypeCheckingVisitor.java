@@ -2887,7 +2887,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
-                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
+                            ClassNode irtg = inferReturnTypeGenerics(
+                                    chosenReceiver.getType(),
+                                    directMethodCallCandidate,
+                                    callArguments,
+                                    call.getGenericsTypes());
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
                         }
@@ -4117,7 +4121,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param arguments the method call arguments
      * @return parameterized, infered, class node
      */
-    protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
+    protected ClassNode inferReturnTypeGenerics(ClassNode receiver, MethodNode method, Expression arguments) {
+        return inferReturnTypeGenerics(receiver, method, arguments, null);
+    }
+
+    /**
+     * If a method call returns a parameterized type, then we can perform additional inference on the
+     * return type, so that the type gets actual type parameters. For example, the method
+     * Arrays.asList(T...) is generified with type T which can be deduced from actual type
+     * arguments.
+     *
+     * @param method    the method node
+     * @param arguments the method call arguments
+     * @param explicitTypeHints explicit type hints as found for example in Collections.&lt;String&gt;emptyList()
+     * @return parameterized, infered, class node
+     */
+    protected ClassNode inferReturnTypeGenerics(
+            ClassNode receiver,
+            MethodNode method,
+            Expression arguments,
+            GenericsType[] explicitTypeHints) {
         ClassNode returnType = method.getReturnType();
         if (method instanceof ExtensionMethodNode
                 && (isUsingGenericsOrIsArrayUsingGenerics(returnType))) {
@@ -4143,6 +4166,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (getGenericsWithoutArray(returnType)==null) return returnType;
         Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
         GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         Map<String, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyGenericsConnections(placeholdersFromContext,resolvedPlaceholders);
@@ -4186,6 +4210,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return applyGenericsContext(resolvedPlaceholders, returnType);
+    }
+
+    private void resolvePlaceholdersFromExplicitTypeHints(final MethodNode method, final GenericsType[] explicitTypeHints, final Map<String, GenericsType> resolvedPlaceholders) {
+        if (explicitTypeHints!=null) {
+            GenericsType[] methodGenericTypes = method.getGenericsTypes();
+            if (methodGenericTypes!=null && methodGenericTypes.length==explicitTypeHints.length) {
+                for (int i = 0; i < explicitTypeHints.length; i++) {
+                    GenericsType methodGenericType = methodGenericTypes[i];
+                    GenericsType explicitTypeHint = explicitTypeHints[i];
+                    resolvedPlaceholders.put(methodGenericType.getName(), explicitTypeHint);
+                }
+                for (GenericsType typeHint : explicitTypeHints) {
+                    System.err.println("Type hint = " + typeHint);
+                }
+            }
+        }
     }
 
     private void extractGenericsConnectionsForSuperClassAndInterfaces(final Map<String, GenericsType> resolvedPlaceholders, final Map<String, GenericsType> connections) {
