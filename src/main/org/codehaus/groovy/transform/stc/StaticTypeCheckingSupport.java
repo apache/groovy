@@ -644,7 +644,9 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
 
-        return false;
+        // GROOVY-7316 : it is an apparently legal thing to allow this. It's not type safe,
+        // but it is allowed...
+        return right.isGenericsPlaceHolder();
     }
 
     private static boolean isGroovyConstructorCompatible(final Expression rightExpression) {
