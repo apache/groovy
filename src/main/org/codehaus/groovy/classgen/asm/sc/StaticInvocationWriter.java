@@ -270,7 +270,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (target.isPrivate()) {
                 if (tryPrivateMethod(target, implicitThis, receiver, args, classNode)) return true;
             } else if (target.isProtected()) {
-                ClassNode node = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                ClassNode node = receiver==null?ClassHelper.OBJECT_TYPE:controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
                 boolean isThisOrSuper = false;
                 if (receiver instanceof VariableExpression) {
                     isThisOrSuper = ((VariableExpression) receiver).isThisExpression() || ((VariableExpression) receiver).isSuperExpression();
