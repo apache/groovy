@@ -331,6 +331,7 @@ Fin.''')
                 // tag::consumeoutput[]
                 def p = "rm -f foo.tmp".execute([], tmpDir)
                 p.consumeProcessOutput()
+                p.waitFor()
                 // end::consumeoutput[]
                 assert !file.exists()
             }
