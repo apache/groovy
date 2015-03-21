@@ -1,3 +1,4 @@
+#!/bin/env groovy
 /*
  * Copyright 2003-2015 the original author or authors.
  *
@@ -13,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#!/bin/env groovy
-// 
+//
 // convert an ant build file into a format suitable for http://sf.net/projects/freemind
 //
 // by Jeremy Rayner - 2 Dec 2004
