@@ -1,3 +1,4 @@
+#!/bin/env groovy
 /*
  * Copyright 2003-2015 the original author or authors.
  *
@@ -13,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#!/bin/env groovy
-// 
+//
 // output tests in a junit xml report that took greater than specified time
 //
 // by Jeremy Rayner - 15 Dec 2004
