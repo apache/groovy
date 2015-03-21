@@ -18,8 +18,25 @@ import groovy.text.markup.TemplateConfiguration
  */
 
 allprojects {
+    apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
+
+    license {
+        header rootProject.file('gradle/LICENSE.txt')
+        include "**/*.groovy"
+        include "**/*.java"
+        include "**/*.properties"
+        include "**/*.js"
+        include "**/*.css"
+        include "**/*.html"
+        exclude "org/codehaus/groovy/antlr/**"
+        exclude 'reloading/**' // test resources for documentation of reloading
+        dryRun = true
+        ignoreFailures = true
+        skipExistingHeaders = true
+        ext.year = Calendar.instance.get(Calendar.YEAR)
+    }
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
