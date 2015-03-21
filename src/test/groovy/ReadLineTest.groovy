@@ -1,4 +1,19 @@
 // Do not remove this line: it is used in test below
+/*
+ * Copyright 2003-2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /**
@@ -20,9 +35,9 @@ class ReadLineTest extends GroovyTestCase {
         assert line == "// Do not remove this line: it is used in test below"
     }
     
-    static testString = " ä\n ö\n\n ü\r\n 5\r\r 7\n\r 9"
-    static expectedLines = [ " ä", " ö", "", " ü", " 5", "", " 7", "", " 9" ]
-    static String[] expectedLinesSlow = [ " ä", " ö", " ü", " 5", " 7" ]
+    static testString = " ï¿½\n ï¿½\n\n ï¿½\r\n 5\r\r 7\n\r 9"
+    static expectedLines = [ " ï¿½", " ï¿½", "", " ï¿½", " 5", "", " 7", "", " 9" ]
+    static String[] expectedLinesSlow = [ " ï¿½", " ï¿½", " ï¿½", " 5", " 7" ]
     static int[] expectedChars = [' ', '9', -1];
 
     void readFromReader(Reader reader) throws IOException {
