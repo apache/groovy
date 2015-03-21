@@ -32,6 +32,7 @@ allprojects {
         include "**/*.html"
         exclude "org/codehaus/groovy/antlr/**"
         exclude 'reloading/**' // test resources for documentation of reloading
+        exclude 'includes/**'
         dryRun = true
         ignoreFailures = true
         skipExistingHeaders = true
