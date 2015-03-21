@@ -377,6 +377,13 @@ task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
     }
 }
 
+allprojects {
+    tasks.withType(Test) { task ->
+        jarAll.mustRunAfter(task)
+        jarAllWithIndy.mustRunAfter(task)
+    }
+}
+
 task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sourceJar }) {
     with sourceJar.rootSpec
     modules()*.sourceJar.each {

@@ -36,7 +36,7 @@ check.dependsOn(checkBinaryCompatibility)
 if (JavaVersion.current().isJava7Compatible()) {
     apply plugin: 'me.champeau.gradle.japicmp'
 
-    def referenceMinorVersion = '2.3.6'
+    def referenceMinorVersion = '2.4.2'
 
     def reportGenerator = { model ->
         outputProcessor {
@@ -161,5 +161,6 @@ if (JavaVersion.current().isJava7Compatible()) {
         tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
             checkBinaryCompatibility.dependsOn(task)
         }
+
     }
 }
