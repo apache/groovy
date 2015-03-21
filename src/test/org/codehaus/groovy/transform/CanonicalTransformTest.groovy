@@ -535,7 +535,7 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             def t = new Tree(4)
             t.left = t
             t.right = t
-            assert t.hashCode() == 3941
+            assert t.hashCode() == 7497
             // not smart enough to handle mutual-recursion yet
             // don't use this annotation in such a scenario
             //

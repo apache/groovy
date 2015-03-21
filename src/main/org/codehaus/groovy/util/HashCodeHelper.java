@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import java.util.Arrays;
  */
 public class HashCodeHelper {
     private static final int SEED = 127;
-    private static final int MULT = 31;
+    private static final int MULT = 59;
 
     public static int initHash() {
         return SEED;
     }
 
     public static int updateHash(int current, boolean var) {
-        return shift(current) + (var ? 1 : 0);
+        return shift(current) + (var ? 79 : 97);
     }
 
     public static int updateHash(int current, char var) {
