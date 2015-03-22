@@ -295,6 +295,10 @@ task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     outputs.files(allprojects.jar.archivePath)
 }
 
+allprojects {
+    rootProject.replaceJarWithJarJar.mustRunAfter(test)
+}
+
 task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
 
     inputs.files(allprojects.jar.archivePath)
