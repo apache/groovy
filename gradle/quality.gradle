@@ -124,4 +124,5 @@ allprojects {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
-apply from: 'gradle/binarycompatibility.gradle'
+// temporarily disable japicmp plugin because it conflicts with artifactory required Guava version
+// apply from: 'gradle/binarycompatibility.gradle'
