@@ -13,13 +13,9 @@ The Groovy development team
 
 [.left.text-left]
 image::http://groovy.codehaus.org/images/groovy-logo.png[]
-{groovy-www}[Groovy] is an agile and dynamic language for the Java Virtual Machine. It builds upon the strengths of Java, but has additional power features inspired by languages like Python, Ruby and Smalltalk.
+{groovy-www}[Groovy] Groovy is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers’ productivity thanks to a concise, familiar and easy to learn syntax.
 
-Groovy makes modern programming features available to Java developers with almost-zero learning curve as well as supports Domain-Specific Languages and other compact syntax so your code becomes easy to read and maintain.
-
-Groovy makes writing shell and build scripts easy with its powerful processing primitives, OO abilities and an Ant DSL.
-
-It also increases developer productivity by reducing scaffolding code when developing web, GUI, database or console applications. Groovy simplifies testing by supporting unit testing and mocking out-of-the-box. Groovy also seamlessly integrates with all existing Java classes and libraries and compiles straight to Java bytecode so you can use it anywhere you can use Java.
+It integrates smoothly with any Java program, and immediately delivers to your application powerful features, including scripting capabilities, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming. 
 
 == Downloading
 
@@ -63,7 +59,7 @@ To build from Eclipse
 
     ./gradlew jarAll eclipse
 
-Then open the generated project and the generated subprojects in Eclipse. But be aware that Eclipse tends to be more limited in its ability to reproduce a gradle build structure. The generated project files may contain a circular dependency which may or may not prevent Eclipse from using them. It depends on the Eclipse version, if this is an issue or not.
+Then open the generated project and the generated subprojects in Eclipse. But be aware that Eclipse tends to be more limited in its ability to reproduce a Gradle build structure. The generated project files may contain a circular dependency which may or may not prevent Eclipse from using them. It depends on the Eclipse version, if this is an issue or not.
 
 To build the documentation (Groovy Language Documentation)
 
@@ -73,8 +69,7 @@ All code samples of the documentation guide are pulled from actual test cases.  
 
     ./gradlew testSinglePowerAssertTest
 
-(note the omission of package name : class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`).
-
+(Note the omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.).
 
 == InvokeDynamic support
 
