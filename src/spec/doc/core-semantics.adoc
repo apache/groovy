@@ -416,12 +416,9 @@ include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_xml
 
 == Promotion and coercion
 
-(TBD)
-
-
 === Number promotion
 
-(TBD)
+The rules of number promotion are specified in the section on <<_math_operations,math operations>>.
 
 
 [[closure-coercion]]
