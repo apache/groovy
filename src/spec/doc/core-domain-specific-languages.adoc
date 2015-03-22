@@ -1023,53 +1023,11 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-Groovys `MarkupBuilder` can be used to create any kind of markup, e.g. XML. For example to create this xml string:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string,indent=0]
-----
-
-you can use a `MarkupBuilder` like this:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder,indent=0]
-----
-
-We use http://www.xmlunit.org[XMLUnit] to check that the builder produced the expected result:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert,indent=0]
-----
-
-`MarkupBuilder` can also handle namespaces and namespace prefixes. To create this xml string:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string_namespaces,indent=0]
-----
-
-you use it like this:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder_namespaces,indent=0]
-----
-<1> declare and use rec namespace prefix
-<2> change the default namespace to http://www.acme.com/cars
-
-Again we use http://www.xmlunit.org[XMLUnit] to check that the builder output matches the expected result:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert_namespaces,indent=0]
-----
+See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-(TBD)
+See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 ==== SaxBuilder
 
