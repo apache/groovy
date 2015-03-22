@@ -69,7 +69,7 @@ All code samples of the documentation guide are pulled from actual test cases.  
 
     ./gradlew testSinglePowerAssertTest
 
-(Note the omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.).
+(Note the omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.)
 
 == InvokeDynamic support
 
