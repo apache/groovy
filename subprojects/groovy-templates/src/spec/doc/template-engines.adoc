@@ -2,7 +2,7 @@
 
 == Introduction
 
-Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` if you are using Java 5, and <<_markupbuilder, MarkupBuilder>> just to name a few. In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
+Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` and <<_markupbuilder, MarkupBuilder>> just to name a few. In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
 
 == Template framework
 
@@ -11,6 +11,7 @@ The template framework in Groovy consists of a `TemplateEngine` abstract base cl
 Included with Groovy are several template engines:
 
 - `SimpleTemplateEngine` - for basic templates
+- `StreamingTemplateEngine` - functionally equivalent to `SimpleTemplateEngine`, but can handle strings larger than 64k
 - `GStringTemplateEngine` - stores the template as writeable closures (useful for streaming scenarios)
 - `XmlTemplateEngine` - works well when the template and output are valid XML
 - `MarkupTemplateEngine` - a very complete, optimized, template engine
@@ -83,6 +84,19 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEng
 ----
 
 in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have this extra slash may go away in a future version of Groovy if we can find an easy way to support such a change.)
+
+== StreamingTemplateEngine
+
+The `StreamingTemplateEngine` engine is functionally equivalent to the `SimpleTemplateEngine`, but creates the template using writeable closures making it more scalable for large templates. Specifically this template engine can handle strings larger than 64k.
+
+It uses JSP style <% %> script and <%= %> expression syntax or GString style expressions. The variable 'out' is bound to the writer that the template is being written to.
+
+Frequently, the template source will be a file but here we show a simple example providing the template as a string:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=streaming_template_engine,indent=0]
+----
 
 == GStringTemplateEngine
 
