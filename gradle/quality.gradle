@@ -124,4 +124,5 @@ allprojects {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
-apply from: 'gradle/binarycompatibility.gradle'
+// Temporarily disabled because of conflict
+//apply from: 'gradle/binarycompatibility.gradle'
