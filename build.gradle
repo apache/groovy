@@ -15,7 +15,7 @@ buildscript {
 }
 
 plugins {
-    id "com.github.hierynomus.license" version "0.11.0"
+    //id "com.github.hierynomus.license" version "0.11.0"
 }
 
 apply from: 'gradle/filter.gradle'
