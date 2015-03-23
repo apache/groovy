@@ -10,12 +10,12 @@ buildscript {
     dependencies {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.2'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
-        //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
+        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
     }
 }
 
 plugins {
-    id "com.github.hierynomus.license" version "0.11.0"
+    //id "com.github.hierynomus.license" version "0.11.0"
 }
 
 apply from: 'gradle/filter.gradle'
