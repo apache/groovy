@@ -3715,6 +3715,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             method.getExceptions(),
                             GENERATED_EMPTY_STATEMENT
                     );
+                    stubbed.setGenericsTypes(method.getGenericsTypes());
                 }
                 stubbed.setDeclaringClass(receiver);
                 result.add(stubbed);
