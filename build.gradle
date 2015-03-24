@@ -119,7 +119,6 @@ ext {
     luceneVersion = '4.7.2'
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
-    simianVersion = '2.2.4'
     slf4jVersion = '1.7.10'
     xmlunitVersion = '1.5'
     xstreamVersion = '1.4.7'
@@ -164,7 +163,7 @@ dependencies {
     tools("checkstyle:checkstyle:$checkstyleVersion") {
         exclude(module: 'junit')
     }
-    tools "redhill:simian:$simianVersion"
+
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
         exclude(module: 'asm')
@@ -430,7 +429,6 @@ apply from: 'gradle/assemble.gradle'
 apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-apply from: 'gradle/codehaus.gradle'
 apply from: 'gradle/quality.gradle'
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
