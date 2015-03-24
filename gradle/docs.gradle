@@ -14,7 +14,7 @@ if (JavaVersion.current().java7Compatible) {
         into "$buildDir/asciidoc"
     }
 
-    task asciidocAll(dependsOn: 'asciidoctor')
+    task asciidocAll(dependsOn: {allprojects.asciidoctor})
 }
 
 def javadocSpec = {

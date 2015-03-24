@@ -17,7 +17,7 @@ if (!bintrayUser) {
 logger.lifecycle "Bintray user: $bintrayUser"
 
 allprojects {
-    apply plugin: 'artifactory'
+    apply plugin: 'com.jfrog.artifactory-upload'
 
     artifactory {
         contextUrl = 'https://oss.jfrog.org'
