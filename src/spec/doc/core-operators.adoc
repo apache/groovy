@@ -251,14 +251,15 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ter
 === Elvis operator
 
 The "Elvis operator" is a shortening of the ternary operator. One instance of where this is handy is for returning
-a 'sensible default' value if an expression resolves to `false` or `null`. A simple example might look like this:
+a 'sensible default' value if an expression resolves to `false`-ish (as in
+<<Groovy-Truth,Groovy truth>>). A simple example might look like this:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_elvis,indent=0]
 ----
 <1> with the ternary operator, you have to repeat the value you want to assign
-<2> with the Elvis operator, the value which is tested is used if it is not `false` or `null`
+<2> with the Elvis operator, the value, which is tested, is used if it is not `false`-ish
 
 Usage of the Elvis operator reduces the verbosity of your code and reduces the risks of errors in case of refactorings,
 by removing the need to duplicate the expression which is tested in both the condition and the positive return value.
