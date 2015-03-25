@@ -15,10 +15,11 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs.support;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Groovy7365Support<A, B> {
     public Set<String> getStrings() {
-        return null;
+        return new LinkedHashSet<String>();
     }
 }

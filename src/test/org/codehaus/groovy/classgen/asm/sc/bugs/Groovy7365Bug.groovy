@@ -20,14 +20,19 @@ import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7365Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
     void testGenericParamIsGeneric() {
-        assertScript '''
+        assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7365Support
             class A {
-                public <T extends org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7365Support> T m(T value) {
-                    value.strings << \'\'
+                public <T extends Groovy7365Support> T m(T value) {
+                    value.strings << 'a'
                     value
                 }
             }
-            A
+            def a = new A()
+            def m = new Groovy7365Support<String,Integer>()
+            def v = a.m(m)
+            v.strings.each {
+                println it.toUpperCase()
+            }
         '''
     }
 }
