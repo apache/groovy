@@ -921,6 +921,14 @@ public class JavaStubGenerator {
 
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
+        for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticImports().entrySet()) {
+            imports.add("static "+entry.getValue().getType().getName()+"."+entry.getKey());
+        }
+
+        for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticStarImports().entrySet()) {
+            imports.add("static "+entry.getValue().getType().getName()+".");
+        }
+
         for (String imp : imports) {
             String s = new StringBuilder()
                     .append("import ")
