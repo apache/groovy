@@ -5,28 +5,85 @@ The first one allows altering the class model and the behavior of a program at r
 at compile-time. Both have pros and cons, that we will detail in this section.
 
 == Runtime metaprogramming
+With runtime metaprogramming we can postpone to runtime the decision to intercept, inject and even synthesize methods of classes and interfaces. For deep understanding of Groovy MOP we need to understand Groovy objects and Groovy's methods handling.
+In groovy we work with three kinds of objects: POJO(any java objects), POGO and Groovy interceptors. Groovy allows metaprogramming for all types of objects but in different manner.
 
-(TBD)
+- POJO - is regular java object, which class can be created by Java or other language for the JVM.
+- POGO - is object, which class is written on Groovy, it extends `java.lang.Object` and implements `groovy.lang.GroovyObject` interface. 
+- Groovy interceptor - is Groovy object that implement `GroovyInterceptable` interface and have method-interception capability, which we'll discuss in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> topic.
 
+For every method's call Groovy checks whether the objects is POJO or POGO. For POJO, Groovy fetches its `MetaClass` from `MetaClassRegistry` and delegates method invocation to it. For POGO, Groovy makes more steps, as illustrated in the following figure.
+
+.Groovy interception mechanism
+image::assets/img/GroovyInterceptions.png[align="center"]
 
 === GroovyObject interface (MaksymStavytskyi)
+
+The `GroovyObject` is main interface in Groovy as `Object` class in java. `GroovyObject` has default implementation `GroovyObjectSupport` class and it is responsible to transfer invocation to `MetaClass` object. `GroovyObject` source looks like:
+
+[source, groovy]
+----
+package groovy.lang;
+
+public interface GroovyObject {
+
+    Object invokeMethod(String name, Object args);
+
+    Object getProperty(String propertyName);
+
+    void setProperty(String propertyName, Object newValue);
+
+    MetaClass getMetaClass();
+
+    void setMetaClass(MetaClass metaClass);
+}
+----
+
 ==== invokeMethod
 
-(TBD)
+Regarding to schema in the <<core-metaprogramming.adoc#_runtime_metaprogramming,Runtime Metaprogramming>> this method is called when the method which you called isn't presented on Groovy object.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_invoke_method,indent=0]
+----
 
 ==== get/setProperty
 
-(TBD)
+All methods will be intercepted by property interception mechanism. So all requests to field values will be intercepted by `getProperty()` method of current object.
+//TODO Prepare property interception mechanism schema.
+[source, groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_get_property,indent=0]
+----
+<1> This string is responsible to run right getter to another fields except `field3`.  
+
+In the same way you can intercept setting fields.
 
 ==== get/setMetaClass
 
-(TBD)
+You can get access to object's `metaClass` or set own `MetaClass` implementation for changing default interception mechanism. As example you can write own implementation of `MetaClass` interface and assign to own objects and accordingly change groovy interception mechanism.
 
+[source,groovy]
+----
+// getMetaclass
+someObject.metaClass
+
+// setMetaClass
+someObject.metaClass = new OwnMetaClassImplementation()
+----
+
+[NOTE]
+You can find additional exemple in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> topic.
 
 === get/setAttribute
 
-(TBD)
+This functionality related to `MetaClass` implementation. In default implementation you can receive field's value without invocation its getter and setters. Example below shows this approach.
 
+[source, groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_get_attribute,indent=0]
+----
 
 === methodMissing
 
@@ -93,10 +150,7 @@ performance.
 `methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
 the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
 
-=== GroovyInterceptable
-
-(TBD)
-
+=== GroovyInterceptable (TBD)
 
 [[categories]]
 === Categories
