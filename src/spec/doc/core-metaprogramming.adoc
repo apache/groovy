@@ -150,7 +150,45 @@ performance.
 `methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
 the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
 
-=== GroovyInterceptable (TBD)
+=== GroovyInterceptable
+`GroovyInterceptable` interface is marker interface that extends `GroovyObject` and is used to notify groovy runtime that all methods should be intercepted through the method dispatcher mechanism of groovy runtime.
+
+[source, groovy]
+----
+package groovy.lang;
+
+public interface GroovyInterceptable extends GroovyObject {
+  
+}
+----
+When groovy object implements the `GroovyInterceptable` interface, then its `invokeMethod()` is called for any method's calls. Below you can see a simple example of object of this type.
+
+//TODO Add information about println method. Default groovy object we cannot use with `GroovyInterceptable` interface becaues calling these methods will be intercepted too and we will have `StackOverflowError`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/InterceptableTest.groovy[tags=groovy_interceptable_object_example,indent=0]
+----
+
+Next piece of code is test which shows that both calls of existed and nonexisted methods will return the same value.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/InterceptableTest.groovy[tags=groovy_interceptable_test,indent=0]
+----
+
+[NOTE]
+We cannot use default groovy methods like as `println` because this methods are injected to all groovy objects so they will be intercepted too.
+
+If we want to intercept all methods call but don't want to implement `GroovyInterceptable` interface we can implement `invokeMethod()` on an object's `MetaClass`. This approach works for both types POGO and POJO. 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/InterceptionThroughMetaClassTest.groovy[tags=meta_class_interception,indent=0]
+----
+
+[NOTE]
+Additional information about `MetaClass` you can find in the <<core-metaprogramming.adoc#_metaclasses_tbd,MetaClasses>> topic.
 
 [[categories]]
 === Categories
