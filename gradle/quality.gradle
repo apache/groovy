@@ -22,6 +22,13 @@ allprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
     apply plugin: 'findbugs'
+    configurations.codenarc {
+        // because we will rely on the version we build
+        // because version ranges are evil
+        // and because it causes bnd to be brought transitively
+        // I am unsure why; says it is required by groovy-ant but its pom.xml does not declare so
+        exclude group:'org.codehaus.groovy'
+    }
 
 //    license {
 //        header rootProject.file('gradle/LICENSE.txt')
