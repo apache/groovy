@@ -425,6 +425,7 @@ allprojects {
 
 compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+    options.compilerArgs << "-proc:none"
 }
 
 apply from: 'gradle/test.gradle'
