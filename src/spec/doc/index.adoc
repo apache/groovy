@@ -46,10 +46,7 @@ include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
-=== Interacting with a SQL database
-
-(TBD)
-
+include::{projectdir}/subprojects/groovy-sql/{specfolder}/sql-userguide.adoc[leveloffset=+2]
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[leveloffset=+2]
 

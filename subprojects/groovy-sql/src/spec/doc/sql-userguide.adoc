@@ -1,0 +1,102 @@
+= Interacting with a SQL database
+
+Groovy's `groovy-sql` module provides a higher-level abstraction over Java's JDBC technology. JDBC itself provides
+a lower-level but fairly comprehensive API which provides uniform access to a whole variety of supported relational database systems.
+We'll use HSQLDB in our examples here but you can alternatively use Oracle, SQL Server, MySQL and a host of others.
+The most frequently used class within the `groovy-sql` module is the `groovy.sql.Sql` class which raises the JDBC
+abstractions up one level. We'll cover that first.
+
+== Connecting to the database
+
+Connecting to a database with Groovy's `Sql` class requires four pieces of information:
+
+* The database uniform resource locator (URL)
+* Username
+* Password
+* The driver class name (which can be derived automatically in some situations)
+
+For our HSQLDB database, the values will be something like that shown in the following table:
+
+[cols="1,1" options="header"]
+|====
+| Property
+| Value
+
+| url
+| `jdbc:hsqldb:mem:yourdb`
+
+| user
+| sa (or your _username_)
+
+| password
+| _yourPassword_
+
+| driver
+| `org.hsqldb.jdbcDriver`
+|====
+
+The `Sql` class has a `newInstance` factory method which takes these parameters. You would typically use it as follows:
+
+[source,groovy]
+.Connecting to HSQLDB
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_close,indent=0]
+----
+
+=== Connecting with a DataSource
+
+It is often preferred to use a DataSource. You may have one available to you from a connection pool.
+Here we'll use the one provided as part of the HSQLDB driver jar as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB with a DataSource
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_datasource,indent=0]
+----
+
+=== Connecting using @Grab
+
+The previous examples assume that the necessary database driver jar is already on your classpath.
+For a self-contained script you can add `@Grab` statements to the top of the script to automatically download the necessary jar as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB using @Grab
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_grab,indent=0]
+----
+
+The `@GrabConfig` statement is necessary to make sure the system classloader is used. This ensures that the driver classes and
+system classes like `java.sql.DriverManager` are in the same classloader.
+
+== Executing SQL
+
+(TBD)
+
+=== Creating tables
+
+(TBD)
+
+== Basic CRUD operations
+
+(TBD)
+
+=== Creating/Inserting data
+
+(TBD)
+
+=== Reading rows
+
+(TBD)
+
+=== Updating rows
+
+(TBD)
+
+=== Deleting rows
+
+(TBD)
+
+== Advanced SQL operations
+
+(TBD)
