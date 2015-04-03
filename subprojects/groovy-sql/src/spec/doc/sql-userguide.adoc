@@ -44,6 +44,15 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_close,indent=0]
 ----
 
+If you don't want to have to handle resource handling yourself (i.e. call `close()` manually) then you can use the `withInstance` variation as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB (`withInstance` variation)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_withInstance_p1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_withInstance_p2,indent=0]
+----
+
 === Connecting with a DataSource
 
 It is often preferred to use a DataSource. You may have one available to you from a connection pool.
@@ -53,6 +62,14 @@ Here we'll use the one provided as part of the HSQLDB driver jar as shown here:
 .Connecting to HSQLDB with a DataSource
 ----
 include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_datasource,indent=0]
+----
+
+If you have your own connection pooling, the details will be different, e.g. for Apache Commons DBCP:
+
+[source,groovy]
+.Connecting to HSQLDB with a DataSource using Apache Commons DBCP
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_datasource_dbcp,indent=0]
 ----
 
 === Connecting using @Grab
@@ -71,19 +88,56 @@ system classes like `java.sql.DriverManager` are in the same classloader.
 
 == Executing SQL
 
-(TBD)
+You can execute arbitrary SQL commands using the `execute()` method. Let's have a look at using it to create a table.
 
 === Creating tables
 
-(TBD)
+The simplest way to execute SQL is to call the `execute()` method passing the SQL you wish to execute as a String as shown here:
+
+[source,groovy]
+.Creating a table
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_creating_table,indent=0]
+----
+
+There is a variant of this method which takes a GString and another with a list of parameters. There are also other variants with similar names: `executeInsert` and `executeUpdate`.
+We'll see examples of these variants in other examples in this section.
 
 == Basic CRUD operations
 
-(TBD)
+The basic operations on a database are Create, Read, Update and Delete (the so-called CRUD operations). We'll examine each of these in turn.
 
 === Creating/Inserting data
 
-(TBD)
+You can use the same `execute()` statement we saw earlier but to insert a row by using a SQL insert statement as follows:
+
+[source,groovy]
+.Inserting a row
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row,indent=0]
+----
+
+You can use a special `executeInsert` method instead of `execute`. This will return a list of all keys generated.
+Both the `execute` and `executeInsert` methods allow you to place '?' placeholders into your SQL string and supply a list of parameters.
+In this case a PreparedStatement is used which avoids any risk of SQL injection. The following example illustrates `executeInsert` using placeholders and parameters:
+
+[source,groovy]
+.Inserting a row using executeInsert with placeholders and parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row_executeInsert,indent=0]
+----
+
+In addition, both the `execute` and `executeInsert` methods allow you to use GStrings. Any '$' placeholders within the SQL are assumed
+to be placeholders. An escaping mechanism exists if you want to supply part of the GString with a variable in a
+position which isn't where normal placeholders go within SQL. See the GroovyDoc for more details.
+Also, `executeInsert` allows you to supply a list of key column names, when multiple keys are returned and you are only interested in some of them.
+ Here is a fragment illustrating key name specification and GStrings:
+
+[source,groovy]
+.Inserting a row using executeInsert with a GString and specifying key names
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row_executeInsert_keys,indent=0]
+----
 
 === Reading rows
 
