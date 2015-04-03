@@ -21,7 +21,7 @@ import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
 allprojects {
-    apply plugin: "com.github.hierynomus.license"
+    //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
     apply plugin: 'findbugs'
