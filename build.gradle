@@ -445,14 +445,14 @@ if (!JavaVersion.current().java7Compatible) {
 }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
-/*task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
-    source = fileTree(dir:"src").include ("***/*//*.java",'***/*//*.groovy','**.html','**.css','**.xml','**.properties','***/*//*.properties')
-}
-
-task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
-    source = files(fileTree(dir:projectDir).include('***/*//*.gradle'),fileTree('buildSrc').include('***/*//*.groovy'))
-}
-
-licenseFormat.dependsOn licenseFormatCustom
-licenseFormat.dependsOn licenseFormatGradle*/
-
+//task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
+//    source = fileTree(dir:"src").include ("***/*//*.java",'***/*//*.groovy','**.html','**.css','**.xml','**.properties','***/*//*.properties')
+//}
+//
+//task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
+//    source = files(fileTree(dir:projectDir).include('***/*//*.gradle'),fileTree('buildSrc').include('***/*//*.groovy'))
+//}
+//
+//licenseFormat.dependsOn licenseFormatCustom
+//licenseFormat.dependsOn licenseFormatGradle
+//
