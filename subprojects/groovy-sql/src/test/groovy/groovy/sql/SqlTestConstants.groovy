@@ -32,7 +32,7 @@ class SqlTestConstants {
 //    public static final String DB_PASSWORD = ''
 //    public static final String DB_DS_KEY = 'database'
 
-    //// new HSQLDB: group:"org.hsqldb", name:"hsqldb", version:"2.2.9", classifier:"jdk5"
+    //// new HSQLDB: group:"org.hsqldb", name:"hsqldb", version:"2.3.2", classifier:"jdk5"
     //// currently causing JVM crash under JDK15 on Bamboo CI server
     public static final String DB_URL_PREFIX = 'jdbc:hsqldb:mem:testDB'
     public static final String DB_URL_SUFFIX = ''
