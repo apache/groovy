@@ -190,12 +190,60 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Updating rows
 
-(TBD)
+Updating rows can again be done using the `execute()` method. Just use a SQL update statement as the argument to the method.
+You can insert an author with just a lastname and then update the row to also have a firstname as follows:
+
+[source,groovy]
+.Updating a row
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_updating_execute,indent=0]
+----
+
+There is also a special `executeUpdate` variant which returns the number of rows updated as a result of executing the SQL.
+For example, you can change the lastname of an author as follows:
+
+[source,groovy]
+.Using executeUpdate
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_updating_execute_update,indent=0]
+----
 
 === Deleting rows
 
-(TBD)
+The `execute` method is also used for deleting rows as this example shows:
+
+[source,groovy]
+.Deleting rows
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_deleting_data,indent=0]
+----
 
 == Advanced SQL operations
+
+=== Working with transactions
+
+(TBD)
+
+=== Using batches
+
+(TBD)
+
+=== Performing pagination
+
+(TBD)
+
+=== Fetching metadata
+
+(TBD)
+
+=== Named and named-ordinal parameters
+
+(TBD)
+
+=== Stored procedures
+
+(TBD)
+
+== Using DataSets
 
 (TBD)
