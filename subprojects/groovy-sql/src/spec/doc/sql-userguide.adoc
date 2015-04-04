@@ -141,7 +141,52 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Reading rows
 
-(TBD)
+Reading rows of data from the database is accomplished using one of several available methods: `query`, `eachRow`, `firstRow` and `rows`.
+
+Use the `query` method if you want to iterate through the `ResultSet` returned by the underlying JDBC API as shown here:
+
+[source,groovy]
+.Reading data using `query`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_query,indent=0]
+----
+
+Use the `eachRow` method if you want if you want a slightly higher-level abstraction which provides a Groovy friendly map-like abstraction for the `ResultSet` as shown here:
+
+[source,groovy]
+.Reading data using `eachRow`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_eachrow,indent=0]
+----
+
+Note that you can use Groovy list-style and map-style notations when accessing the row of data.
+
+Use the `firstRow` method if you for similar functionality as `eachRow` but returning only one row of data as shown here:
+
+[source,groovy]
+.Reading data using `firstRow`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_firstrow,indent=0]
+----
+
+Use the `rows` method if you want to process a list of map-like data structures as shown here:
+
+[source,groovy]
+.Reading data using `rows`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_rows,indent=0]
+----
+
+Note that the map-like abstraction has case-insensitive keys (hence we can use 'FIRSTNAME' or 'firstname' as the key) and
+also that -ve indices (a standard Groovy feature) works when using an index value (to count column numbers from the right).
+
+You can also use any of the above methods to return scalar values, though typically `firstRow` is all that is required in such cases. An example returning the count of rows is shown here:
+
+[source,groovy]
+.Reading scalar values
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_scalar,indent=0]
+----
 
 === Updating rows
 
