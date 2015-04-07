@@ -56,7 +56,8 @@ public class CompilerConfiguration {
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = JDK4;
 
-    private static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
+    /** An array of the valid targetBytecode values **/
+    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
 
     // Just call getVMVersion() once.
     public static final String currentJVMVersion = getVMVersion();
