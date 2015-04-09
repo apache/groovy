@@ -43,25 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 /**
  * Handles generation of code for the @ToString annotation.
@@ -178,7 +160,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            Expression getter = callX(INVOKER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
+            Expression getter = getterX(cNode, pNode);
+
             appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
         }
 
@@ -213,7 +196,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
         thenBlock.addStatement(ifElseS(
-                sameX(value, VariableExpression.THIS_EXPRESSION),
+                sameX(value, new VariableExpression("this")),
                 appendS(result, constX("(this)")),
                 appendS(result, callX(INVOKER_TYPE, "toString", value))));
         body.addStatement(appendValue);

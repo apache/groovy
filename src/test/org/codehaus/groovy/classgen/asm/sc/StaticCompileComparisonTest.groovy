@@ -94,7 +94,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
             assert m(new Object())
         ''')
         assert bytecode.hasStrictSequence(
-                ['ALOAD','ALOAD', 'INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.is (Ljava/lang/Object;Ljava/lang/Object;)Z']
+                ['ALOAD','ALOAD', 'IF_ACMPNE']
         )
         clazz.newInstance().main()
     }

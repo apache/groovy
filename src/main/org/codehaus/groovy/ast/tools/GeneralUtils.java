@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
@@ -612,5 +613,25 @@ public class GeneralUtils {
 
     public static VariableExpression varX(String name, ClassNode type) {
         return new VariableExpression(name, type);
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterX(ClassNode annotatedNode, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType())) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callX(new VariableExpression("this"), getterName, ArgumentListExpression.EMPTY_ARGUMENTS);
+        }
+        return propX(new VariableExpression("this"), pNode.getName());
     }
 }
