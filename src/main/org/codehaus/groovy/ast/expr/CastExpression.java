@@ -32,6 +32,7 @@ public class CastExpression extends Expression {
     private final Expression expression;
     private boolean ignoreAutoboxing=false;
     private boolean coerce = false;
+    private boolean strict = false;
 
     public static CastExpression asExpression(ClassNode type, Expression expression) {
         CastExpression answer = new CastExpression(type, expression);
@@ -61,6 +62,24 @@ public class CastExpression extends Expression {
         this.coerce = coerce;
     }
 
+    /**
+     * If strict mode is true, then when the compiler generates a cast, it will disable
+     * Groovy casts and rely on a strict cast (CHECKCAST)
+     * @return true if strict mode is enable
+     */
+    public boolean isStrict() {
+        return strict;
+    }
+
+    /**
+     * If strict mode is true, then when the compiler generates a cast, it will disable
+     * Groovy casts and rely on a strict cast (CHECKCAST)
+     * @param strict strict mode
+     */
+    public void setStrict(final boolean strict) {
+        this.strict = strict;
+    }
+
     public String toString() {
         return super.toString() +"[(" + getType().getName() + ") " + expression + "]";
     }
@@ -73,6 +92,7 @@ public class CastExpression extends Expression {
         CastExpression ret =  new CastExpression(getType(), transformer.transform(expression));
         ret.setSourcePosition(this);
         ret.setCoerce(this.isCoerce());
+        ret.setStrict(this.isStrict());
         ret.copyNodeMetaData(this);
         return ret;
     }

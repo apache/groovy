@@ -734,7 +734,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 controller.getOperandStack().replace(type);
             } else {
                 ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
-                if (!ClassHelper.isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type)) {
+                if (castExpression.isStrict() ||
+                        (!ClassHelper.isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type))) {
                     BytecodeHelper.doCast(controller.getMethodVisitor(), type);
                     controller.getOperandStack().replace(type);
                 } else {

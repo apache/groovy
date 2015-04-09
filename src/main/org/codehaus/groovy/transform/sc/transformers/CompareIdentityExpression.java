@@ -64,12 +64,11 @@ public class CompareIdentityExpression extends BinaryExpression implements Opcod
             WriterController controller = acg.getController();
             ClassNode leftType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
             ClassNode rightType = controller.getTypeChooser().resolveType(rightExpression, controller.getClassNode());
-            if (ClassHelper.isPrimitiveType(leftType) || ClassHelper.isPrimitiveType(rightType)) {
-                throw new IllegalArgumentException("Both operands of a CompareIdentityExpression must be objects");
-            }
             MethodVisitor mv = controller.getMethodVisitor();
             leftExpression.visit(acg);
+            controller.getOperandStack().box();
             rightExpression.visit(acg);
+            controller.getOperandStack().box();
             Label l1 = new Label();
             mv.visitJumpInsn(IF_ACMPNE, l1);
             mv.visitInsn(ICONST_1);
