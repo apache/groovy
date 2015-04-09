@@ -35,6 +35,8 @@ For our HSQLDB database, the values will be something like that shown in the fol
 | `org.hsqldb.jdbcDriver`
 |====
 
+Consult the documentation for the JDBC driver that you plan to use to determine the correct values for your situation.
+
 The `Sql` class has a `newInstance` factory method which takes these parameters. You would typically use it as follows:
 
 [source,groovy]
