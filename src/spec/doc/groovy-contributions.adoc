@@ -69,59 +69,6 @@ For small things, you can change the relevant document on-line, within the *GitH
 
 For larger contributions, it's more likely you'll need to copy [blue]#Groovy# into your own work environment, then link:#_take_the_long_way_home[Take The Long Way Home.]
 
-'''
-
-
-++++
-<div id="accordion3">
-<h3>Q &amp; A - The Future of Groovy Documentation</h3>
-<div>
-  <h4>1. Am assuming that future contributions to groovy-core will be done using asciidoctor markup. Correct ?</h4>
-  <div>GLA: Yes, going forward, all documentation is Asciidoctor based.
-(on the future website there are also Groovy templates actually, but otherwise, the reference documentation is indeed all Asciidoctor)
-</div>
-
-  <h4>2. Do we need to declare any asciidoctor attributes within the doc heading  ?</h4>
-<div><h4>Would i need any of these ?</h4>
-<p>
-<pre>
-:toc:
-:toc-title: Contributions to Groovy Documentation  
-:icons: font
-:linkattrs:
-:sectlinks:
-:compat-mode:
-</pre>
-<br />
-or just plain, without attributes ?</p>
-<hr />
-<p>GLA: Look at the existing adoc files we have.<br />
-No particular attributes, as that's the build which gives some defaults there (for CSS, TOC, etc).
-</p>
-<p>See here for the ones automatically added:<a href="https://github.com/glaforge/groovy-core/blob/master/gradle/asciidoctor.gradle#L24-24" target="_blank">https://github.com/glaforge/groovy-core/blob/master/gradle/asciidoctor.gradle#L24-24</a>
-</p>
-</div>
- 
-<h4>3. Should we try to influence the look-and-feel of the result using stylesheets or just let the doc generation process provide whatever look-and-feel is in play at that time ?
-</h4>
-<div><p>GLA: The look and feel is already customized, as shown on the new Groovy website:<a href="http://beta.groovy-lang.org/syntax.html" target="_blank">
-http://beta.groovy-lang.org/syntax.html</a></p>
-<p>It embeds in an iframe the following asciidoctor-generated html file:<a href="http://docs.groovy-lang.org/docs/next/html/documentation/core-syntax.html" target="_blank">
-http://docs.groovy-lang.org/docs/next/html/documentation/core-syntax.html</a></p></div>
- 
-<h4>4. The syntax (and LAF) of asciidoctor 1.5.0 differs from 1.4.0 in several ways, do we need to rejig existing *.adoc files to use the revised syntax ?</h4>
-<div><p>GLA: We need to go through all that's written so far to check for incompatibilities, indeed.</p></div>
- 
-<h4>5. What groovy-core folder should hold the image assets relating to a particular .adoc file ? ( Like screen pix, or tiny icons )</h4>
-<div><p>It looks like groovy-core/src/spec/assets/img/ is a good candidate.</p> 
-<hr />
-<p>GLA: Yeah under that and respectively for submodules which also have their src/spec folders too.</p></div>
-</div>
-</div>
-++++
-
-<<<
-
 == Quick Fixes To Groovy
 
 Sometimes, you may spot a tiny flaw in our otherwise perfect product. It's bugging you, so you want to fix it quickly without all the trouble of porting [blue]#Groovy# to your own system. Can it be done ?
@@ -287,7 +234,7 @@ To prove that [blue]#Groovy# modules work as expected, we often construct test c
 .Groovy Core Test Folder on *Github* icon:github[link="https://github.com/groovy/groovy-core/tree/master/src/spec/test", window="_blank"]
 image::assets/img/github6.png[Groovy Testcase Folder, 505, 303, link="https://github.com/groovy/groovy-core/tree/master/src/spec/test",align="center"] 
 
-If you would like to know more about writing effective test cases, please http://groovy.codehaus.org/Testing+Guide[review this link] or to test web applications http://groovy.codehaus.org/Testing+Web+Applications[review this link].
+If you would like to know more about writing effective test cases, please http://groovy-lang.org/testing.html[review this link].
  
  
 ==== Wrap Up
