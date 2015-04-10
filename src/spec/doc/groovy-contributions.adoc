@@ -49,13 +49,6 @@ Whether you are a user, developer, or enthusiast, we have a choice of mailing li
 
 You can find live icon:twitter[] https://twitter.com/hashtag/groovylang[#groovylang] feeds for up-to-the-minute news.
 
-.Mailing Lists
- * dev@groovy.codehaus.org - for details about [blue]#Groovy# development
- * user@groovy.codehaus.org - lots of questions and answers about [blue]#Groovy#
- * announce@groovy.codehaus.org  - for new releases and news
- * eclipse-plugin-user@groovy.codehaus.org - all about the [blue]#Groovy# plugin for Eclipse
- * scm@groovy.codehaus.org - see those commits !
-
 '''
 
 
@@ -1207,19 +1200,6 @@ This needed some icon:ambulance[] work on the part of the submitter to remedy th
 === Declare Victory 
 
 When your request is merged into [blue]#Groovy# let everyone know icon:exclamation[]
-
-Please join any of our mailing lists at http://groovy-lang.org/mailing-lists.html[http://groovy-lang.org/mailing-lists.html]. 
-
-Whether you are a user, developer, or just plain interested, we have a choice of mailing lists you may find appealing. 
-
-You can find a live icon:twitter[] https://twitter.com/hashtag/groovylang[#groovylang] feed for up-to-the-minute news.
-
-.Mailing Lists
- * dev@groovy.codehaus.org - for details about [blue]#Groovy# development
- * user@groovy.codehaus.org - lots of questions and answers about [blue]#Groovy#
- * announce@groovy.codehaus.org  - for new releases and news
- * eclipse-plugin-user@groovy.codehaus.org - all about the [blue]#Groovy# plugin for Eclipse
- * scm@groovy.codehaus.org - see those commits !
 
 '''
 
