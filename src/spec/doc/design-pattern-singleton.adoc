@@ -22,7 +22,7 @@ Some points of interest about this code:
 - it has a private constructor, so no `VoteCollector` objects can be created in our system (except for the `INSTANCE` we create)
 - the `INSTANCE` is also private, so it can't be changed once set
 - we haven't made the updating of votes thread-safe at this point (it doesn't add to this example)
-- the vote collector instance is not lazyily created (if we never reference the class, the instance won't be created; however, as soon as we reference the class, the instance will be created even if not needed initially)
+- the vote collector instance is not lazily created (if we never reference the class, the instance won't be created; however, as soon as we reference the class, the instance will be created even if not needed initially)
 
 We can use this singleton class in some script code as follows:
 
