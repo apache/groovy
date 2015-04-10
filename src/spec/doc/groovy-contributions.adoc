@@ -33,7 +33,7 @@ The [blue]#Groovy# core team is a very small team, compared to the huge team a c
  - [ ] Be familiar with http://asciidoctor.org/docs/user-manual/[Asciidoctor markup] and the  http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[syntax reference guide] ( more notes are listed below ).
  - [ ] Optionally - have the http://asciidoctor.org/docs/install-toolchain/[*asciidoctor* toolchain] installed on your local system
  - [ ] Be familiar with unit testing of individual programs; it may be necessary to write some new test cases for groovy modules. ( _Optional_ )
- - [ ] Enthusiam and nice writing style  
+ - [ ] Enthusiasm and nice writing style  
 
 '''
 
