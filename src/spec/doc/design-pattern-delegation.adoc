@@ -6,7 +6,7 @@ Groovy allows the traditional style of applying the delegation pattern, e.g. see
 
 == Implement Delegation Pattern using ExpandoMetaClass
 
-The http://groovy.codehaus.org/ExpandoMetaClass[ExpandoMetaClass] allows usage of this pattern to be encapsulated in a library. This allows Groovy to emulate similar libraries available for the Ruby language.
+The gapi:groovy.lang.ExpandoMetaClass[] allows usage of this pattern to be encapsulated in a library. This allows Groovy to emulate similar libraries available for the Ruby language.
 
 Consider the following library class:
 
