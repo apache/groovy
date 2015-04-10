@@ -54,6 +54,8 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[lev
 
 Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<_antbuilder,AntBuilder>>.
 
+include::{projectdir}/subprojects/groovy-ant/{specfolder}/groovy-ant-task.adoc[leveloffset=+2]
+
 include::{projectdir}/subprojects/groovy-templates/{specfolder}/template-engines.adoc[leveloffset=+2]
 
 include::{projectdir}/subprojects/groovy-servlet/{specfolder}/servlet-userguide.adoc[leveloffset=+2]
