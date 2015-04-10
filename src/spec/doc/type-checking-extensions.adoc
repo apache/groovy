@@ -75,7 +75,7 @@ checks for your users.
 
 The `@TypeChecked` annotation supports an attribute
 named `extensions`. This parameter takes an array of strings
-corresponding to a list of _type checking extensions scripts. Those
+corresponding to a list of _type checking extensions scripts_. Those
 scripts are found at *compile time* on classpath. For example, you would
 write:
 
