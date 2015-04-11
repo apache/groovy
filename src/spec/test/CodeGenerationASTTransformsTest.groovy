@@ -205,6 +205,7 @@ assert p.toString() == 'acme.Person(Jack, Nicholson)'
         assertScript '''
 // tag::equalshashcode[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode
 class Person {
     String firstName
@@ -223,6 +224,7 @@ assert p1.hashCode() == p2.hashCode()
         assertScript '''
 // tag::equalshashcode_example_excludes[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode(excludes=['firstName'])
 class Person {
     String firstName
@@ -241,6 +243,7 @@ assert p1.hashCode() == p2.hashCode()
         assertScript '''
 // tag::equalshashcode_example_includes[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode(includes=['lastName'])
 class Person {
     String firstName
