@@ -211,9 +211,6 @@ import groovy.grape.Grape
 Grape.grab(group:'com.jidesoft', module:'jide-oss', version:'[2.2.0,)')
 Grape.grab([group:'org.apache.ivy', module:'ivy', version:'2.0.0-beta1', conf:['default', 'optional']],
      [group:'org.apache.ant', module:'ant', version:'1.7.0'])
-
-// endorsed Groovy Module
-// FUTURE grab('Scriptom')
 -------------------------------------------------------------------------------------------------------
 
 * Multiple calls to grab in the same context with the same parameters
@@ -348,7 +345,7 @@ Using Apache Commons Collections:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-// create and use a primitive array
+// create and use a primitive array list
 import org.apache.commons.collections.primitives.ArrayIntList
 
 @Grab(group='commons-primitives', module='commons-primitives', version='1.0')
@@ -377,9 +374,6 @@ Using Google Collections:
 
 [source,groovy]
 -------------------------------------------------------------------------------------------------------
-// Google Collections example
-
-
 import com.google.common.collect.HashBiMap
 @Grab(group='com.google.code.google-collections', module='google-collect', version='snapshot-20080530')
 def getFruit() { [grape:'purple', lemon:'yellow', orange:'orange'] as HashBiMap }
