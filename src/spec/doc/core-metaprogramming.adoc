@@ -956,7 +956,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 The `Ruby` version can be disabled by setting the `auto` flag to `false`.
 
 [[xform-Sortable]]
-===== @groovy.lang.Sortable
+===== @groovy.transform.Sortable
 
 The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted by
 numerous properties. It is easy to use as shown in the following example where we annotate the `Person` class:
