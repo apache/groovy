@@ -1,6 +1,7 @@
 = The <groovy> Ant Task
 
-Executes a series of Groovy statements. Statements can either be read in from a text file using the `src` attribute or from between the enclosing Groovy tags.
+Executes a series of Groovy statements from http://ant.apache.org/[Apache Ant].
+Statements can either be read in from a text file using the `src` attribute or from between the enclosing Groovy tags.
 
 == Required taskdef
 
