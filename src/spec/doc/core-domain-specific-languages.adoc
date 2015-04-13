@@ -1033,9 +1033,7 @@ See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 (TBD)
 
-==== StaxBuilder
-
-(TBD)
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leveloffset=+3]
 
 ==== DomBuilder
 
