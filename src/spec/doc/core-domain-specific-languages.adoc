@@ -1145,3 +1145,7 @@ referenced bean.
 ==== JmxBuilder
 
 See <<jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
+
+==== FileTreeBuilder
+
+(TBD)
