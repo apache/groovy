@@ -30,7 +30,7 @@ package groovy.xml
  *     elem2('hello2')
  *     elem3(x:7)
  * }
- * assert writer.toString() == """<root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>"""
+ * assert writer.toString() == '<?xml version="1.0" ?><root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>'
  * </pre>
  * Or an external library such as Jettison can be used as follows:
  * <pre>
