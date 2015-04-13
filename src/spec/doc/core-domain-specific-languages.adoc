@@ -1029,9 +1029,7 @@ See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
-==== SaxBuilder
-
-(TBD)
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leveloffset=+3]
 
