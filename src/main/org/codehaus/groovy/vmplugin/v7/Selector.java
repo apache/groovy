@@ -550,11 +550,11 @@ public abstract class Selector {
             Object[] newArgs = removeRealReceiver(args);
             if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
-                method = mci.retrieveStaticMethod(name, newArgs);
+                if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
             } else {
                 String changedName = name;
                 if (receiver instanceof GeneratedClosure && changedName.equals("call")) {changedName = "doCall";}
-                method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
+                if (!mci.hasCustomInvokeMethod()) method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+method);
         }

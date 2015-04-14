@@ -3787,6 +3787,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
+     * indicates is the meta class method invocation for non-static methods is done
+     * through a custom invoker object.
+     *
+     * @return true - if the method invocation is not done by the meta class itself
+     */
+    public boolean hasCustomInvokeMethod() {return invokeMethodMethod!=null; }
+
+    /**
+     * indicates is the meta class method invocation for static methods is done
+     * through a custom invoker object.
+     *
+     * @return true - if the method invocation is not done by the meta class itself
+     */
+    public boolean hasCustomStaticInvokeMethod() {return false; }
+
+    /**
      * remove all method call cache entries. This should be done if a
      * method is added during runtime, but not by using a category.
      */

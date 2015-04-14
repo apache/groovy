@@ -1307,6 +1307,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createStaticSite(site, args);
     }
 
+    public boolean hasCustomStaticInvokeMethod() {return invokeStaticMethodMethod!=null; }
+
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
