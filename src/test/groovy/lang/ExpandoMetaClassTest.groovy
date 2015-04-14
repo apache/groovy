@@ -821,6 +821,35 @@ class ExpandoMetaClassTest extends GroovyTestCase {
           }
         """
     }
+
+    static class X {
+        def foo() {2}
+    }
+
+    void testPOJOMetaClassInterception() {
+        String invoking = 'ha'
+        try {
+            invoking.metaClass.invokeMethod = { String name, Object args ->
+                'invoked'
+            }
+            assert invoking.length() == 'invoked'
+            assert invoking.someMethod() == 'invoked'
+        } finally {
+            invoking.metaClass = null
+        }
+    }
+    void testPOGOMetaClassInterception() {
+        X entity = new X()
+        try {
+            entity.metaClass.invokeMethod = { String name, Object args ->
+                'invoked'
+            }
+            assert entity.foo() == 'invoked'
+            assert entity.someMethod() == 'invoked'
+        } finally {
+            entity.metaClass = null
+        }
+    }
 }
 
 interface EMCT_InterfaceWithFormat {
