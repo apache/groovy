@@ -336,7 +336,7 @@ class SqlTest extends GroovyTestCase {
               def md = sql.connection.metaData
               assert md.driverName == 'HSQL Database Engine Driver'
               assert md.databaseProductVersion == '2.3.2'
-              assert ['JDBCMajorVersion', 'JDBCMinorVersion'].collect{ md[it] } == [3, 0]
+              assert ['JDBCMajorVersion', 'JDBCMinorVersion'].collect{ md[it] } == [4, 0]
               assert md.stringFunctions.tokenize(',').contains('CONCAT')
               def rs = md.getTables(null, null, 'AUTH%', null)
               assert rs.next()
