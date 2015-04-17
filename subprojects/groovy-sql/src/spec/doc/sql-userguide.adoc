@@ -236,6 +236,16 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Fetching metadata
 
+JDBC metadata can be retrieved in numerous ways. Perhaps the most basic approach is to extract the metadata from any row as shown here:
+
+[source,groovy]
+.Using row metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_metadata,indent=0]
+----
+
+Advanced options for metadata handling using closures are also possible.
+
 (TBD)
 
 === Named and named-ordinal parameters
