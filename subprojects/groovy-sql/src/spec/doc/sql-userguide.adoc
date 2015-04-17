@@ -236,17 +236,44 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Fetching metadata
 
-JDBC metadata can be retrieved in numerous ways. Perhaps the most basic approach is to extract the metadata from any row as shown here:
+JDBC metadata can be retrieved in numerous ways. Perhaps the most basic approach is to extract the
+metadata from any row as shown in the following example which examines the tablename, column names and column type names:
 
 [source,groovy]
 .Using row metadata
 ----
-include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_metadata,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata,indent=0]
 ----
 
-Advanced options for metadata handling using closures are also possible.
+And another slight variant to the previous example, this time also looking at the column label:
 
-(TBD)
+[source,groovy]
+.Also using row metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata2,indent=0]
+----
+
+Accessing metadata is quite common, so Groovy also provides variants to many of its methods that let you
+supply a closure that will be called once with the row metadata in addition to the normal row closure
+which is called for each row. The following example illustrates the two closure variant for `eachRow`:
+
+[source,groovy]
+.Using row and metadata closures
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata3,indent=0]
+----
+
+Note that our SQL query will only return one row, so we could have equally used `firstRow` for the previous example.
+
+Finally, JDBC also provides metadata per connection (not just for rows). You can also access such metadata from Groovy as shown in this example:
+
+[source,groovy]
+.Using connection metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_table_metadata,indent=0]
+----
+
+Consult the JavaDoc for your driver to find out what metadata information is available for you to access.
 
 === Named and named-ordinal parameters
 
