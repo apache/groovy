@@ -330,8 +330,6 @@ class SqlTest extends GroovyTestCase {
               def rowClosure = { row -> assert row.FIRSTNAME == 'Dierk' }
               sql.eachRow("SELECT firstname FROM Author WHERE firstname = 'Dierk'", metaClosure, rowClosure)
               // end::sql_basic_rs_metadata3[]
-              // build currently uses the jdk5 classifier version of hsqldb.jar which is JDBC 3
-              // TODO remove this classifier since we now require jdk6+
               // tag::sql_basic_table_metadata[]
               def md = sql.connection.metaData
               assert md.driverName == 'HSQL Database Engine Driver'
