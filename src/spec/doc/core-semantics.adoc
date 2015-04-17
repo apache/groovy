@@ -13,7 +13,7 @@ Variables can be defined using either their type (like `String`) or by using the
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
 ----
 
-`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to the make variable definitions detectable for the Groovy parser.
+`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to make variable definitions detectable for the Groovy parser.
 
 You can think of `def` as an alias of `Object` and you will understand it in an instant.
 
