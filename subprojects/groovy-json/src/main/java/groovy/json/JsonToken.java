@@ -35,10 +35,6 @@ public class JsonToken {
     private static final BigInteger MIN_LONG    = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger MAX_INTEGER = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger MIN_INTEGER = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigDecimal MAX_DOUBLE  = new BigDecimal(String.valueOf(Double.MAX_VALUE));
-    private static final BigDecimal MIN_DOUBLE  = MAX_DOUBLE.negate();
-    private static final BigDecimal MAX_FLOAT   = new BigDecimal(String.valueOf(Float.MAX_VALUE));
-    private static final BigDecimal MIN_FLOAT   = MAX_FLOAT.negate();
 
     /** Start line position */
     private long startLine;
@@ -57,8 +53,8 @@ public class JsonToken {
 
     /**
      * Return the value represented by this token (ie. a number, a string, a boolean or null).
-     * For numbers, the most appropriate type is returned (Float, Double, BigDecimal for decimal numbers,
-     * and Integer, Long and BigInteger for integral numbers).
+     * For numbers, BigDecimal is returned for decimals and Integer, Long or BigInteger for 
+     * integral numbers.
      *
      * @return the represented value
      */
