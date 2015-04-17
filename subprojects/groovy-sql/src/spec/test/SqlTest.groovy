@@ -310,14 +310,38 @@ class SqlTest extends GroovyTestCase {
               """
               sql.execute "INSERT INTO Author (firstname, lastname) VALUES ('Dierk', 'Koenig')"
 
-              // tag::sql_basic_metadata[]
-              sql.eachRow("SELECT * FROM Author where firstname = 'Dierk'") { row ->
+              // tag::sql_basic_rs_metadata[]
+              sql.eachRow("SELECT * FROM Author WHERE firstname = 'Dierk'") { row ->
                 def md = row.getMetaData()
-                assert md.getTableName(1).toLowerCase() == 'author'
-                assert (1..md.columnCount).collect{ md.getColumnTypeName(it).toLowerCase() } == ['integer', 'varchar', 'varchar']
-                assert (1..md.columnCount).collect{ md.getColumnLabel(it).toLowerCase() } == ['id', 'firstname', 'lastname']
+                assert md.getTableName(1) == 'AUTHOR'
+                assert (1..md.columnCount).collect{ md.getColumnName(it) } == ['ID', 'FIRSTNAME', 'LASTNAME']
+                assert (1..md.columnCount).collect{ md.getColumnTypeName(it) } == ['INTEGER', 'VARCHAR', 'VARCHAR']
               }
-              // end::sql_basic_metadata[]
+              // end::sql_basic_rs_metadata[]
+              // tag::sql_basic_rs_metadata2[]
+              sql.eachRow("SELECT firstname AS first FROM Author WHERE firstname = 'Dierk'") { row ->
+                def md = row.getMetaData()
+                assert md.getColumnName(1) == 'FIRSTNAME'
+                assert md.getColumnLabel(1) == 'FIRST'
+              }
+              // end::sql_basic_rs_metadata2[]
+              // tag::sql_basic_rs_metadata3[]
+              def metaClosure = { meta -> assert meta.getColumnName(1) == 'FIRSTNAME' }
+              def rowClosure = { row -> assert row.FIRSTNAME == 'Dierk' }
+              sql.eachRow("SELECT firstname FROM Author WHERE firstname = 'Dierk'", metaClosure, rowClosure)
+              // end::sql_basic_rs_metadata3[]
+              // build currently uses the jdk5 classifier version of hsqldb.jar which is JDBC 3
+              // TODO remove this classifier since we now require jdk6+
+              // tag::sql_basic_table_metadata[]
+              def md = sql.connection.metaData
+              assert md.driverName == 'HSQL Database Engine Driver'
+              assert md.databaseProductVersion == '2.3.2'
+              assert ['JDBCMajorVersion', 'JDBCMinorVersion'].collect{ md[it] } == [3, 0]
+              assert md.stringFunctions.tokenize(',').contains('CONCAT')
+              def rs = md.getTables(null, null, 'AUTH%', null)
+              assert rs.next()
+              assert rs.getString('TABLE_NAME') == 'AUTHOR'
+              // end::sql_basic_table_metadata[]
             }
         '''
     }
