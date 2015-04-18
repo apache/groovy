@@ -277,7 +277,40 @@ Consult the JavaDoc for your driver to find out what metadata information is ava
 
 === Named and named-ordinal parameters
 
-(TBD)
+Groovy supports some additional alternative placeholder syntax variants. The GString variants
+are typically preferred over these alternatives but the alternatives are useful for Java integration
+purposes and sometimes in templating scenarios where GStrings might already be in heavy use as part
+of a template. The named parameter variants are much like the String plus list of parameter variants but
+instead of having a list of `?` placeholders followed by a list of parameters, you have one or more
+placeholders having the form `:propName` or `?.propName` and a single map, named arguments or a
+domain object as the parameter. The map or domain object should have a property named `propName`
+corresponding to each supplied placeholder.
+
+Here is an example using the colon form:
+
+[source,groovy]
+.Named parameters (colon form)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named,indent=0]
+----
+
+And another example using the question mark form:
+
+[source,groovy]
+.Named parameters (question mark form)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named2,indent=0]
+----
+
+If the information you need to supply is spread across multiple maps or domain objects you can
+use the question mark form with an additional ordinal index as shown here:
+
+[source,groovy]
+.Named-ordinal parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named_ordinal1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named_ordinal2,indent=0]
+----
 
 === Stored procedures
 
