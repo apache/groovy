@@ -55,7 +55,7 @@ As a second example, consider how you might write a DSL for simplifying
 one of your existing APIs. Maybe you need to put this code in front of
 customers, business analysts or testers who might be not hard-core Java
 developers. We’ll use the `Splitter` from the Google
-http://code.google.com/p/guava-libraries/[Guava libraries] project as it
+https://github.com/google/guava[Guava libraries] project as it
 already has a nice Fluent API. Here is how we might use it out of the
 box:
 
