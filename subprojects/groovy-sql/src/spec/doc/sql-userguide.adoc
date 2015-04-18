@@ -224,7 +224,28 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Working with transactions
 
-(TBD)
+The easiest way to perform database operations within a transaction is to include the database operation within a `withTransaction` closure as shown in the following example:
+
+[source,groovy]
+.A successful transaction
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_transaction_pass,indent=0]
+----
+
+Here the database starts empty and has two rows after successful completion of the operation. Outside the scope of the
+transaction, the database is never seen as having just one row.
+
+If something goes wrong, any earlier operations within the `withTransaction` block are rolled back.
+We can see that in operation in the following example where we use database metadata (more details coming up shortly) to find the
+maximum allowable size of the `firstname` column and then attempt to enter a firstname one larger than that maximum value as shown here:
+
+[source,groovy]
+.A failed transaction will cause a rollback
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_transaction_fail,indent=0]
+----
+
+Even though the first sql execute succeeds initially, it will be rolled back and the number of rows will remain the same.
 
 === Using batches
 
