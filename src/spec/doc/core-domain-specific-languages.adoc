@@ -1148,4 +1148,42 @@ See <<jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
 
 ==== FileTreeBuilder
 
-(TBD)
+gapi:groovy.util.FileTreeBuilder[FileTreeBuilder] is a builder for generating a file directory structure from a specification. For example, to create the following tree:
+
+---------
+ src/
+  |--- main
+  |     |--- groovy
+  |            |--- Foo.groovy
+  |--- test
+        |--- groovy
+               |--- FooTest.groovy
+---------
+ 
+You can use a `FileTreeBuilder` like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example,indent=0]
+----
+
+To check that everything worked as expected we use the following `assert`s:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example_assert,indent=0]
+----
+
+`FileTreeBuilder` also supports a shorthand syntax:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax,indent=0]
+----
+
+This produces the same directory structure as above, as shown by these `assert`s:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert,indent=0]
+----
