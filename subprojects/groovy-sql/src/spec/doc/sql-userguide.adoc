@@ -249,7 +249,7 @@ Even though the first sql execute succeeds initially, it will be rolled back and
 
 === Using batches
 
-When dealing with large volumes of data, it can be more efficient to chunk the data into batches. This is done
+When dealing with large volumes of data, particularly when inserting such data, it can be more efficient to chunk the data into batches. This is done
 using the `withBatch` statement as shown in the following example:
 
 [source,groovy]
@@ -297,7 +297,16 @@ to the one table.
 
 === Performing pagination
 
-(TBD)
+When presenting large tables of data to a user, it is often convenient to present information a page at
+a time. Many of Groovy's SQL retrieval methods have extra parameters which can be used to select a particular
+page of interest. The starting position and page size are specified as integers as shown in the following example
+using `rows`:
+
+[source,groovy]
+.Retrieving pages of data
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_pagination,indent=0]
+----
 
 === Fetching metadata
 
