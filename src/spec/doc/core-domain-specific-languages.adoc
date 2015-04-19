@@ -1039,8 +1039,20 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leve
 
 ==== NodeBuilder
 
-(TBD)
+`NodeBuilder` is used for creating nested trees of gapi:groovy.util.Node[Node] objects for handling arbitrary data. 
+To create a simple user list you use a `NodeBuilder` like this:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_example,indent=0]
+----
+
+Now you can process the data further, e.g. by using <<gpath_expressions,GPath expressions>>: 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,indent=0]
+----
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
 
