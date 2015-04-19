@@ -249,7 +249,51 @@ Even though the first sql execute succeeds initially, it will be rolled back and
 
 === Using batches
 
-(TBD)
+When dealing with large volumes of data, it can be more efficient to chunk the data into batches. This is done
+using the `withBatch` statement as shown in the following example:
+
+[source,groovy]
+.Batching SQL statements
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_statements,indent=0]
+----
+
+After executing these statements, there will be 7 new rows in the database. In fact, they will have been added in batches
+even though you can't easily tell that after that fact. If you want to confirm what is going on under the covers, you can
+add a little bit of extra logging into your program. Add the following lines before the `withBatch` statement:
+
+[source,groovy]
+.Logging additional SQL information
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_import_for_logging,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_logging,indent=0]
+----
+
+With this extra logging turned on, and the changes made as per the above comment for the logging.properties file, you should see
+output such as:
+
+[source]
+.SQL logging output with batching enable
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_results,indent=0]
+----
+
+We should also note, that any combination of SQL statements can be added to the batch. They don't all have to be
+inserting a new row to the same table.
+
+We noted earlier that to avoid SQL injection, we encourage you to use prepared statements, this is achieved using the
+variants of methods which take GStrings or a list of extra parameters. Prepared statements can be used in combination
+with batches as shown in the following example:
+
+[source,groovy]
+.Batching prepared statements
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_prepared_statements,indent=0]
+----
+
+This provides a much safer option if the data could come from a user such as via a script or a web form. Of course, given
+that a prepared statement is being used, you are limited to a batch of the same SQL operation (insert in our example)
+to the one table.
 
 === Performing pagination
 
