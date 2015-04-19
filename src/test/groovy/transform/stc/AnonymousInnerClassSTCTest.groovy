@@ -170,4 +170,15 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             assert a.foo() == "pm"
         '''
     }
+
+    void testAICWithGenerics() {
+        assertScript '''
+            Comparator<Integer> comp = new Comparator<Integer>(){
+                @Override
+                int compare(Integer o1, Integer o2) {
+                    return 0
+                }
+            }
+        '''
+    }
 }

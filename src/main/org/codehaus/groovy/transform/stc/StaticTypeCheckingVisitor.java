@@ -771,7 +771,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // check if constructor call expression makes use of the diamond operator
         ClassNode node = cce.getType();
         if (node.isUsingGenerics() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
-            node = node.getUnresolvedSuperClass(false);
+            ClassNode[] interfaces = node.getInterfaces();
+            node = interfaces != null && interfaces.length == 1 ? interfaces[0] : node.getUnresolvedSuperClass(false);
             if ((node.getGenericsTypes() == null || node.getGenericsTypes().length == 0) && lType.isUsingGenerics()) {
                 // InterfaceA<Foo> obj = new InterfaceA<>() { ... }
                 // InterfaceA<Foo> obj = new ClassA<>() { ... }
