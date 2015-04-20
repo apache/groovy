@@ -863,7 +863,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 <2> it makes it possible to use the method with `String`
 <3> but also with `int` since the `plus` method is defined
 
-TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
+TIP: Using the `def` keyword here is recommended to describe the intent of a method which is supposed to work on any
 type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
 equivalent to using `Object`.
 
@@ -1345,7 +1345,7 @@ When code is annotated with `@TypeChecked`, the compiler performs type inference
 techniques to infer the types of variables, return types, literals, ... so that the code remains as clean as possible even if you activate the
 type checker.
 
-The simplest example is infering the type of a variable:
+The simplest example is inferring the type of a variable:
 
 [source,groovy]
 ----
