@@ -29,9 +29,6 @@ import static groovy.transform.AutoCloneStyle.*
 import groovy.transform.ToString
 import groovy.transform.Canonical
 
-/**
- * @author Paul King
- */
 class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 
     void testTupleConstructorWithEnum() {
@@ -374,9 +371,9 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             def p = new Person(21)
             // $first setter is an implementation detail
             p.$first = 'Mary'
-            "$p.first $p.last ${p.toString()}"
+            p.toString()
         ''')
-        assert result == 'Mary Smith Person(21)'
+        assert result == 'Person(21, Mary, Smith)'
     }
 
     // GROOVY-5901
