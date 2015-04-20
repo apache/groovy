@@ -388,7 +388,57 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 
 === Stored procedures
 
-(TBD)
+The exact syntax for creating a stored procedure or function varies slightly between different databases.
+For the HSQLDB database we are using, we can create a stored function which returns the initials of all authors in a table
+as follows:
+
+[source,groovy]
+.Creating a stored function
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc,indent=0]
+----
+
+We can use a SQL `CALL` statement to invoke the function using Groovy's normal SQL retrieval methods.
+Here is an example using `eachRow`.
+
+[source,groovy]
+.Creating a stored procedure or function
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc,indent=0]
+----
+
+Here is the code for creating another stored function, this one taking the lastname as a parameter:
+
+[source,groovy]
+.Creating a stored function with a parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc_param,indent=0]
+----
+
+We can use the placeholder syntax to specify where the parameter belongs and note the special placeholder position to indicate the result:
+
+[source,groovy]
+.Using a stored function with a parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc_param,indent=0]
+----
+
+Finally, here is a stored procedure with input and output parameters:
+
+[source,groovy]
+.Creating a stored procedure with input and output parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc_inout,indent=0]
+----
+
+To use the `CONCAT_NAME` stored procedure parameter, we make use of a special `call` method. Any input parameters are simply provided
+as parameters to the method call. For output parameters, the resulting type must be specified as shown here:
+
+[source,groovy]
+.Using a stored procedure with input and output parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc_inout,indent=0]
+----
 
 == Using DataSets
 
