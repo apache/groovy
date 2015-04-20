@@ -345,6 +345,63 @@ public class GroovyDocToolTest extends GroovyTestCase {
         testVisibility(props, true, true, true, true);
     }
 
+
+    public void testSinglePropertiesFromGetterSetter() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","str properties should be there","<a href=\"#str\">str</a>",true);
+    }
+
+    public void testReOrderPropertiesFromGetterSetter() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","str1 properties should be there","<a href=\"#str1\">str1</a>",true);
+    }
+
+    public void testCheckOtherTypesPropertiesFromGetterSetter() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","int properties should be there","<a href=\"#int\">int</a>",true);
+    }
+
+    public void testPropertiesShouldNotBePresentForGetterAlone() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","shouldNotBePresent properties shouldnt be there","<a href=\"#shouldNotBePresent\">shouldNotBePresent</a>",false);
+    }
+
+    public void testPropertiesPublicGetPrivateSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_public_get_private_set shouldnt be present"
+                    , "<a href=\"#_public_get_private_set\">_public_get_private_set</a>", false);
+    }
+
+    public void testPropertiesPrivateGetPublicSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_private_get_public_set shouldnt be present",
+                "<a href=\"#_private_get_public_set\">_private_get_public_set</a>", false);
+    }
+
+    public void testPropertiesPrivateGetPrivateSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_private_get_private_set shouldnt be present",
+                "<a href=\"#_private_get_private_set\">_private_get_private_set</a>", false);
+    }
+
+
+    public void testPropertiesShouldBePresentForSetIsBooleanType() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","testBoolean properties should be there","<a href=\"#testBoolean\">testBoolean</a>",true);
+    }
+
+    public void testPropertiesShouldBePresentForIsSetBooleanType() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","testBoolean2 properties should be there","<a href=\"#testBoolean2\">testBoolean2</a>",true);
+    }
+
+    private void testPropertiesFromGetterSetter(String fileName,String assertMessage,String expected,boolean isTrue) throws Exception
+    {
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), new Properties());
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/";
+        srcList.add(base + fileName + ".groovy");
+        htmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String exampleClass = output.getText(MOCK_DIR + "/" + base + fileName + ".html");
+        if(isTrue)
+            assertTrue(assertMessage, exampleClass.contains(expected));
+        else
+            assertFalse(assertMessage,exampleClass.contains(expected));
+    }
+
     private void testVisibility(Properties props, boolean a, boolean b, boolean c, boolean d) throws Exception {
         htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
         List<String> srcList = new ArrayList<String>();
