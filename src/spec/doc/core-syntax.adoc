@@ -406,7 +406,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_2,
 <1> We define a `number` variable containing `1` that we then interpolate within two GStrings,
 as an expression in `eagerGString` and as a closure in `lazyGString`.
 <2> We expect the resulting string to contain the same string value of 1 for `eagerGString`.
-<3> Similarily for `lazyGString`
+<3> Similarly for `lazyGString`
 <4> Then we change the value of the variable to a new number
 <5> With a plain interpolated expression, the value was actually bound at the time of creation of the GString.
 <6> But with a closure expression, the closure is called upon each coercion of the GString into String,
@@ -416,7 +416,7 @@ resulting in an updated string containing the new number value.
 An embedded closure expression taking more than one parameter will generate an exception at runtime.
 Only closures with zero or one parameters are allowed.
 
-==== Inteoperability with Java
+==== Interoperability with Java
 
 When a method (whether implemented in Java or Groovy) expects a `java.lang.String`,
 but we pass a `groovy.lang.GString` instance,
@@ -868,7 +868,7 @@ if either operand is a `float` or `double`, and a `BigDecimal` result otherwise
 `BigInteger` or `BigDecimal`).
 
 `BigDecimal` division is performed with the `divide()` method if the division is exact
-(ie. yielding a result that can be represented within the bounds of the same precision and scale),
+(i.e. yielding a result that can be represented within the bounds of the same precision and scale),
 or using a `MathContext` with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision]
 of the maximum of the two operands' precision plus an extra precision of 10,
 and a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#scale()[scale] 
@@ -1031,7 +1031,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=map_def_access,indent
 <1> We define a map of string color names, associated with their hexadecimal-coded html colors
 <2> We use the subscript notation to check the content associated with the `red` key
 <3> We can also use the property notation to assert the color green's hexadecimal representation
-<4> Similarily, we can use the subscript notation to add a new key/value pair
+<4> Similarly, we can use the subscript notation to add a new key/value pair
 <5> Or the property notation, to add the `yellow` color
 
 [NOTE]
@@ -1082,6 +1082,3 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent
 <1> This time, we surround the `key` variable with parentheses, to instruct the parser we are passing a variable rather than defining a string key
 <2> The map does contain the `name` key
 <3> But the map doesn't contain the `key` key as before
-
-
-
