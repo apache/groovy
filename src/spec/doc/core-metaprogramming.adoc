@@ -690,6 +690,11 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
 ----
+|allPropeties|True|Include all JavaBean properties in toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_allProperties,indent=0]
+----
 |cache|False|Cache the toString string. Should only be set to true if the class is immutable.|
 [source,groovy]
 ----

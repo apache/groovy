@@ -172,6 +172,18 @@ public @interface ToString {
     boolean includePackage() default true;
 
     /**
+     * Whether to include all properties (as per the JavaBean spec) in the generated toString.
+     * Groovy recognizes any field-like definitions with no explicit visibility as property definitions
+     * and always includes them in the {@code @ToString} generated toString (as well as auto-generating the
+     * appropriate getters and setters). Groovy also treats any explicitly created getXxx() or isYyy()
+     * methods as property getters as per the JavaBean specification. Old versions of Groovy did not.
+     * So set this flag to false for the old behavior or if you want to explicitly exclude such properties.
+     *
+     * @since 2.5
+     */
+    boolean allProperties() default true;
+
+    /**
      * Whether to cache toString() calculations. You should only set this to true if
      * you know the object is immutable (or technically mutable but never changed).
      * @since 2.1.0

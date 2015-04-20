@@ -198,6 +198,22 @@ assert p.toString() == 'acme.Person(Jack, Nicholson)'
 
 '''
 
+        assertScript '''package acme
+import groovy.transform.ToString
+
+// tag::tostring_example_allProperties[]
+@ToString(includeNames=true)
+class Person {
+    String firstName
+    String getLastName() { 'Nicholson' }
+}
+
+def p = new Person(firstName: 'Jack')
+assert p.toString() == 'acme.Person(firstName:Jack, lastName:Nicholson)'
+// end::tostring_example_allProperties[]
+
+'''
+
     }
 
 

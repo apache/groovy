@@ -245,6 +245,61 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
+    void testPseudoProperties()  {
+        def toString = evaluate('''
+            import groovy.transform.*
+
+            class Person {
+                boolean isAdult() { false }
+                boolean golfer = true
+                boolean isSenior() { false }
+                private getAge() { 40 }
+                protected getBorn() { 1975 }
+            }
+
+            @ToString(excludes='last', includeNames=true, includeSuperProperties=true)
+            class SportsPerson extends Person {
+                private String _first
+                String last, title
+                boolean golfer = false
+                boolean adult = true
+                Boolean cyclist = true
+                Boolean isMale() { true }
+                void setFirst(String first) { this._first = first }
+                String getFull() { "$_first $last" }
+            }
+            new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
+        ''')
+        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true, full:John Smith, senior:false, born:1975)"
+        // same again but with allProperties=false and with @CompileStatic for test coverage purposes
+        toString = evaluate('''
+            import groovy.transform.*
+
+            class Person {
+                boolean isAdult() { false }
+                boolean golfer = true
+                boolean isSenior() { false }
+                private getAge() { 40 }
+                protected getBorn() { 1975 }
+            }
+
+            @CompileStatic
+            @ToString(excludes='last', includeNames=true, includeSuperProperties=true, allProperties=false)
+            class SportsPerson extends Person {
+                private String _first
+                String last, title
+                boolean golfer = false
+                boolean adult = true
+                Boolean cyclist = true
+                Boolean isMale() { true }
+                void setFirst(String first) { this._first = first }
+                String getFull() { "$_first $last" }
+            }
+            new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
+        ''')
+        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true)"
+    }
+
     void testSelfReference()  {
 
         def toString = evaluate("""
