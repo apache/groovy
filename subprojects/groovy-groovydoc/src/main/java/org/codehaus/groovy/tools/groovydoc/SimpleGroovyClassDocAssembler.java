@@ -266,6 +266,43 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    //Fix for GROOVY-7259
+    private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc)
+    {
+        String methodName = currentMethodDoc.name();
+        SimpleGroovyClassDoc classDoc = getCurrentClassDoc();
+        GroovyMethodDoc methods[] = classDoc.methods();
+
+        String setOrGet = methodName.substring(0, Math.min(methodName.length(), 3));
+        if(setOrGet.equals("set") || setOrGet.equals("get")) {
+            String expectedMethod = setOrGet.equals("set") ? "get" + methodName.substring(3) : "set" + methodName.substring(3);
+
+            for (GroovyMethodDoc methodDoc : methods) {
+                if (methodDoc.name().equals(expectedMethod)) {
+                    //now extract the field name
+                    String fieldName = methodName.substring(3);
+                    fieldName = fieldName.substring(0,1).toLowerCase() + fieldName.substring(1);
+                    SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, classDoc);
+                    //Now find the type of the field
+                    //If its setter, need to get the type from params
+                    if(expectedMethod.contains("set") && methodDoc.parameters().length >= 1)
+                    {
+                        String typeName = methodDoc.parameters()[0].typeName();
+                        currentFieldDoc.setType(new SimpleGroovyType(typeName));
+                    }
+                    else {
+                        //If not setter, get the type info from return type of get* method.
+                        currentFieldDoc.setType(methodDoc.returnType());
+                    }
+
+                    classDoc.addProperty(currentFieldDoc);
+                    break;
+                }
+            }
+        }
+    }
+
+
     private SimpleGroovyMethodDoc createMethod(GroovySourceAST t, SimpleGroovyClassDoc currentClassDoc) {
         String methodName = getIdentFor(t);
         SimpleGroovyMethodDoc currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
@@ -274,6 +311,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         currentMethodDoc.setReturnType(new SimpleGroovyType(getTypeOrDefault(t)));
         addParametersTo(t, currentMethodDoc);
         processAnnotations(t, currentMethodDoc);
+        processPropertiesFromGetterSetter(currentMethodDoc);
         return currentMethodDoc;
     }
 
