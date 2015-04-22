@@ -2755,7 +2755,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case NUM_BIG_INT:
             case NUM_INT:
             case NUM_LONG:
-                ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger("-" + text));
+                ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger(unaryMinusExpr,"-" + text));
                 configureAST(constantLongExpression, unaryMinusExpr);
                 return constantLongExpression;
 
@@ -2795,7 +2795,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected ConstantExpression integerExpression(AST node) {
         String text = node.getText();
-        Object number = Numbers.parseInteger(text);
+        Object number = Numbers.parseInteger(node, text);
         boolean keepPrimitive = number instanceof Integer || number instanceof Long;
         ConstantExpression constantExpression = new ConstantExpression(number, keepPrimitive);
         configureAST(constantExpression, node);
