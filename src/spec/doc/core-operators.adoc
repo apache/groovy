@@ -110,7 +110,7 @@ The following operators are available:
 | `<`
 | less than
 
-| `<=`
+| `\<=`
 | less than or equal
 
 | `>`
