@@ -491,7 +491,7 @@ algorithm:
 - computing `fib(15)` requires the result of `fib(14)` and `fib(13)`
 - computing `fib(14)` requires the result of `fib(13)` and `fib(12)`
 
-Since calls are recursive, you call already see that we will compute the same values again and again, although they could
+Since calls are recursive, you can already see that we will compute the same values again and again, although they could
 be cached. This naive implementation can be "fixed" by caching the result of calls using `memoize`:
 
 [source,groovy]
