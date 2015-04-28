@@ -461,7 +461,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Call to enable global use of global use of ExpandoMetaClass within the registry. This has the advantage that
+     * Call to enable global use of ExpandoMetaClass within the registry. This has the advantage that
      * inheritance will function correctly, but has a higher memory usage on the JVM than normal Groovy
      */
     public static void enableGlobally() {
