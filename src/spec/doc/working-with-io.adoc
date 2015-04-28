@@ -155,7 +155,7 @@ indicating what to do with the traversal:
 ----
 include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=traverse,indent=0]
 ----
-<1> if the current file is a directory and its name is `dir`, stop the traversal
+<1> if the current file is a directory and its name is `bin`, stop the traversal
 <2> otherwise print the file name and continue
 
 == Data and objects
