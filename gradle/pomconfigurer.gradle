@@ -26,13 +26,13 @@ project.ext.provided = { project.ext.providedDeps << it }
 
 project.ext.pomConfigureClosureWithoutTweaks = {
     project {
-        name 'Groovy'
+        name 'Apache Groovy'
         description 'Groovy: A powerful, dynamic language for the JVM'
-        url 'http://groovy.codehaus.org/'
+        url 'http://groovy-lang.org'
         inceptionYear '2003'
         organization {
-            name 'The Codehaus'
-            url 'http://codehaus.org'
+            name 'Apache Software Foundation'
+            url 'http://groovy-lang.org'
         }
         developers {
             developer {
@@ -489,10 +489,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
         }
         mailingLists {
             mailingList {
-                name 'Groovy JSR Discussion List'
-                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.jsr'
-            }
-            mailingList {
                 name 'Groovy Developer List'
                 archive 'http://dir.gmane.org/gmane.comp.lang.groovy.devel'
             }
@@ -508,10 +504,14 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 distribution 'repo'
             }
         }
+        issueManagement {
+            system 'jira'
+            url 'http://issues.apache.org/jira/browse/GROOVY'
+        }
         scm {
-            connection 'scm:git:git@github.com:groovy/groovy-core.git'
-            developerConnection 'scm:git:git@github.com:groovy/groovy-core.git'
-            url 'git@github.com:groovy/groovy-core.git'
+            connection 'scm:git:https://github.com/apache/incubator-groovy.git'
+            developerConnection 'scm:git:https://github.com/apache/incubator-groovy.git'
+            url 'https://github.com/apache/incubator-groovy.git'
         }
     }
 }
