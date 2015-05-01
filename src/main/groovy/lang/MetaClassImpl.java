@@ -3119,10 +3119,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return method;
             }
         }
-        //log.warning("Creating reflection based dispatcher for: " + aMethod);
-        synchronized (aMethod.cachedClass) {
-            return aMethod;
-        }
+        return aMethod;
     }
 
 
