@@ -180,7 +180,8 @@ allprojects {
                                 file.name.startsWith(it)
                             } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
-                            zipfileset(src: jarjarFile)
+                            // GROOVY-7386 : excludes needed below to stop copy of incorrect maven meta info
+                            zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*')
                         }
 
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
