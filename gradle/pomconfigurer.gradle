@@ -491,11 +491,11 @@ project.ext.pomConfigureClosureWithoutTweaks = {
         mailingLists {
             mailingList {
                 name 'Groovy Developer List'
-                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.devel'
+                archive 'http://mail-archives.apache.org/mod_mbox/groovy-dev/'
             }
             mailingList {
                 name 'Groovy User List'
-                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.user'
+                archive 'http://mail-archives.apache.org/mod_mbox/groovy-users/'
             }
         }
         licenses {
