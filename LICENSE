@@ -200,3 +200,22 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+   APPENDIX: Third-party dependency license terms.
+
+   Apache Groovy includes some subcomponents and dependencies with separate
+   copyright notices and license terms. Your use of the source code for
+   these dependencies is subject to the terms and conditions of the
+   following licenses.
+
+   For the following files in the groovy-jsr223 component:
+       src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
+       src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
+       src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+   See JSR223-LICENSE.txt
+
+   For ANTLR, see ANTLR-LICENSE.txt
+
+   For ASM, see ASM-LICENSE.txt
+
+   For Apache Commons CLI, see CLI-LICENSE.txt
