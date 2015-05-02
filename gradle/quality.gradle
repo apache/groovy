@@ -62,6 +62,7 @@ allprojects {
         configProperties = ['rootProject.projectDir': rootProject.projectDir]
         def reportFile = file("${buildDir}/reports/checkstyle/${name}.xml")
         reports {
+            // TODO exclude generated-sources
             include ( '**/*.java')
             xml {
                 destination reportFile
