@@ -31,7 +31,37 @@ Maven, Gradle and Ivy dependency declaration snippets are available on specific 
 
 image:{bintray-watch-image}[Get automatic notifications about new "groovy" versions link={bintray-watch-link}]
 
-== Building
+== Obtaining the Source
+
+You don't need the source code to use Groovy but if you wish to explore its inner workings or build it for yourself there are two ways to obtain the source files.
+
+=== Checking out from Version Control
+
+Apache Groovy uses Git. The official Git repository is at:
+
+    http://git-wip-us.apache.org/repos/asf/incubator-groovy.git
+
+And a mirror is hosted on Github:
+
+    https://github.com/apache/incubator-groovy
+
+The Github mirror is read-only and provides convenience to users and developers to explore the code and for the community to accept contributions via Github pull requests.
+
+Simply `git clone` the repo (or the repo you forked via the github website) and you will have the complete source.
+
+=== Unpacking the src distribution
+
+Alternatively, you can download the source distribution and unpack it.
+
+If obtaining the source from this distribution and you intend to build from source,
+you also need to https://gradle.org/downloads/[download] and install http://gradle.org/[Gradle] and execute one bootstrap step.
+At the top directory of your unpacked source, you need to run the command:
+
+    gradle
+
+This sets up the Gradle wrapper and from then on you just need the `gradlew` command instead of `gradle`.
+
+== Building from Source
 
 Build is image:{build-icon}[build status, link={groovy-ci}].
 
@@ -39,39 +69,41 @@ To build you will need:
 
 * {jdk}[JDK 1.7+]
 
-To build everything using Gradle (the command below will download Gradle automatically, you do not need to download it first).
+To build everything using Gradle:
 
-    ./gradlew clean dist
+    gradlew clean dist
+
+Note: The gradlew command automatically downloads the correct Gradle version if needed, you do not need to download it first.
 
 This will generate a distribution similar to the zip you can download on the Groovy download page.
 
-To build everything and launch unit tests, use
+To build everything and launch unit tests, use:
 
-    ./gradlew test
+    gradlew test
 
 If you want to launch one unit test, use this. <TestClassName> is like `groovy.GroovyMethodsTest`.
 
-    ./gradlew :test --tests <TestClassName>
+    gradlew :test --tests <TestClassName>
 
-To build from IntelliJ IDEA
+To build from IntelliJ IDEA:
 
-    ./gradlew jarAll idea
+    gradlew jarAll idea
 
 Then open the generated project in IDEA.
 
-To build from Eclipse
+To build from Eclipse:
 
-    ./gradlew jarAll eclipse
+    gradlew jarAll eclipse
 
 Then open the generated project and the generated subprojects in Eclipse. But be aware that Eclipse tends to be more limited in its ability to reproduce a gradle build structure. The generated project files may contain a circular dependency which may or may not prevent Eclipse from using them. It depends on the Eclipse version, if this is an issue or not.
 
-To build the documentation (Groovy Language Documentation)
+To build the documentation (Groovy Language Documentation):
 
-    ./gradlew assembleAsciidoc
+    gradlew assembleAsciidoc
 
 All code samples of the documentation guide are pulled from actual test cases.  To run a single documentation test case, take for example `src/spec/test/semantics/PowerAssertTest.groovy`
 
-    ./gradlew testSinglePowerAssertTest
+    gradlew testSinglePowerAssertTest
 
 (note the omission of package name : class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`).
 
@@ -80,7 +112,7 @@ All code samples of the documentation guide are pulled from actual test cases.  
 
 The Groovy build supports the new Java 7 JVM instruction `invokedynamic`. If you want to build Groovy with invokedynamic, you can use the project property `indy`:
 
-    ./gradlew -Pindy=true clean test
+    gradlew -Pindy=true clean test
 
 Please note that the following Gradle tasks generate both indy and non indy variants of the jars, so you don't need to use the system property:
 
