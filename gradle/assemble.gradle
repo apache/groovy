@@ -551,3 +551,23 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
         throw new GradleException("Incoherent versions. Found groovyVersion=$version and groovyBundleVersion=$groovyBundleVersion")
     }
 }
+
+task updateLicense {
+    description = 'Updates the top-level LICENSE file'
+
+    ext.licensesDir = "${projectDir}/licenses"
+    ext.licenseFile = "${projectDir}/LICENSE"
+    inputs.files(licensesDir)
+    outputs.file(licenseFile)
+
+    doLast {
+        def files = [file("$licensesDir/LICENSE-BASE")]
+        file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
+        file(licenseFile).withWriter('utf-8') { writer ->
+            files.each {
+                writer << "${it.text}\n"
+                writer << '---------------------------------------------------------------------\n'
+            }
+        }
+    }
+}

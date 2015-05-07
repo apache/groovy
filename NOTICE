@@ -1,6 +1,36 @@
-   Apache Groovy
-   Copyright 2003-2015 The Apache Software Foundation
+=========================================================================
+==  NOTICE file corresponding to the section 4 d of                    ==
+==  the Apache License, Version 2.0,                                   ==
+==  in this case for the Groovy Language distribution.                 ==
+=========================================================================
 
-   This product includes software developed at
-   The Apache Software Foundation (http://www.apache.org/).
+Apache Groovy
+Copyright 2003-2015 The Apache Software Foundation
 
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+It includes the following other software:
+
+Antlr 2 (http://www.antlr2.org/)
+ASM (http://asm.ow2.org/)
+GPars (http://www.gpars.org/)
+Hamcrest (https://github.com/hamcrest/JavaHamcrest)
+JCommander (http://jcommander.org/)
+Openbeans (https://code.google.com/p/openbeans/)
+QDox (http://qdox.codehaus.org/)
+TestNG (http://qdox.codehaus.org/)
+XMLPull (http://www.xmlpull.org/)
+XStream (http://xstream.codehaus.org/)
+
+For the following files in the groovy-jsr223 component:
+       src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
+       src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
+       src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+
+Use the JSR223 License listed in the LICENSE file.
+
+For licenses see the LICENSE file.
+
+If any software distributed with Apache Groovy does not have an Apache 2 License, its license is explicitly listed in the
+LICENSE file.
