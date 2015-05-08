@@ -564,7 +564,7 @@ task updateLicense {
         def files = [file("$licensesDir/LICENSE-BASE")]
         file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
         file(licenseFile).withWriter('utf-8') { writer ->
-            files.each {
+            files.sort{ it.name }.each {
                 writer << "${it.text}\n"
                 writer << '---------------------------------------------------------------------\n'
             }
