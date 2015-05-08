@@ -124,7 +124,7 @@ ext {
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.10'
     xmlunitVersion = '1.5'
-    xstreamVersion = '1.4.7'
+    xstreamVersion = '1.4.8'
     spockVersion = '1.0-groovy-2.4'
 }
 
@@ -142,6 +142,7 @@ dependencies {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
+        exclude(group: 'xmlpull', module: 'xmlpull')
     }
     compile "com.googlecode:openbeans:$openbeansVersion"
     compile "org.fusesource.jansi:jansi:$jansiVersion"

@@ -23,6 +23,7 @@ import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -229,7 +230,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private void saveAsXML(String name, AST ast) {
-        XStream xstream = new XStream();
+        XStream xstream = new XStream(new StaxDriver());
         try {
             xstream.toXML(ast, new FileWriter(name + ".antlr.xml"));
             System.out.println("Written AST to " + name + ".antlr.xml");
