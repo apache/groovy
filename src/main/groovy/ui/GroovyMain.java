@@ -29,7 +29,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GroovyInternalPosixParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -170,95 +170,90 @@ public class GroovyMain {
     }
 
     /**
-     * Build the options parser.  Has to be synchronized because of the way Options are constructed.
+     * Build the options parser.
      *
      * @return an options parser.
      */
     @SuppressWarnings("static-access")
-    private static synchronized Options buildOptions() {
+    private static Options buildOptions() {
         Options options = new Options();
-        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
-        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
+        options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
+        options.addOption(Option.builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build());
+
+        options.addOption(Option.builder("D").longOpt("define").desc("define a system property").hasArg().argName("name=value").build());
+        options.addOption(
+            Option.builder().longOpt("disableopt")
+            .desc("disables one or all optimization elements. " +
+                  "optlist can be a comma separated list with the elements: " +
+                  "all (disables all optimizations), " +
+                  "int (disable any int based optimizations)")
+            .hasArg()
+            .argName("optlist")
+            .build());
 
         options.addOption(
-            OptionBuilder.withLongOpt("define").
-            withDescription("define a system property").
-            hasArg(true).
-            withArgName("name=value").
-            create('D'));
+            Option.builder("h").hasArg(false)
+            .desc("usage information")
+            .longOpt("help")
+            .build());
         options.addOption(
-            OptionBuilder.withLongOpt("disableopt").
-            withDescription("disables one or all optimization elements. " +
-                            "optlist can be a comma separated list with the elements: " +
-                            "all (disables all optimizations), " +
-                            "int (disable any int based optimizations)").
-            hasArg(true).
-            withArgName("optlist").
-            create());
+            Option.builder("d").hasArg(false)
+            .desc("debug mode will print out full stack traces")
+            .longOpt("debug")
+            .build());
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("usage information")
-            .withLongOpt("help")
-            .create('h'));
+            Option.builder("v").hasArg(false)
+            .desc("display the Groovy and JVM versions")
+            .longOpt("version")
+            .build());
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("debug mode will print out full stack traces")
-            .withLongOpt("debug")
-            .create('d'));
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("display the Groovy and JVM versions")
-            .withLongOpt("version")
-            .create('v'));
-        options.addOption(
-            OptionBuilder.withArgName("charset")
+            Option.builder("c").argName("charset")
             .hasArg()
-            .withDescription("specify the encoding of the files")
-            .withLongOpt("encoding")
-            .create('c'));
+            .desc("specify the encoding of the files")
+            .longOpt("encoding")
+            .build());
         options.addOption(
-            OptionBuilder.withArgName("script")
+            Option.builder("e").argName("script")
             .hasArg()
-            .withDescription("specify a command line script")
-            .create('e'));
+            .desc("specify a command line script")
+            .build());
         options.addOption(
-            OptionBuilder.withArgName("extension")
-            .hasOptionalArg()
-            .withDescription("modify files in place; create backup if extension is given (e.g. \'.bak\')")
-            .create('i'));
+            Option.builder("i").argName("extension")
+            .optionalArg(true)
+            .desc("modify files in place; create backup if extension is given (e.g. \'.bak\')")
+            .build());
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line using implicit 'line' variable")
-            .create('n'));
+            Option.builder("n").hasArg(false)
+            .desc("process files line by line using implicit 'line' variable")
+            .build());
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line and print result (see also -n)")
-            .create('p'));
+            Option.builder("p").hasArg(false)
+            .desc("process files line by line and print result (see also -n)")
+            .build());
         options.addOption(
-            OptionBuilder.withArgName("port")
-            .hasOptionalArg()
-            .withDescription("listen on a port and process inbound lines (default: 1960)")
-            .create('l'));
+            Option.builder("l").argName("port")
+            .optionalArg(true)
+            .desc("listen on a port and process inbound lines (default: 1960)")
+            .build());
         options.addOption(
-            OptionBuilder.withArgName("splitPattern")
-            .hasOptionalArg()
-            .withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable")
-            .withLongOpt("autosplit")
-            .create('a'));
+            Option.builder("a").argName("splitPattern")
+            .optionalArg(true)
+            .desc("split lines using splitPattern (default '\\s') using implicit 'split' variable")
+            .longOpt("autosplit")
+            .build());
         options.addOption(
-            OptionBuilder.withLongOpt("indy")
-            .withDescription("enables compilation using invokedynamic")
-            .create());
+            Option.builder().longOpt("indy")
+            .desc("enables compilation using invokedynamic")
+            .build());
         options.addOption(
-            OptionBuilder.withLongOpt("configscript")
-            .hasArg().withDescription("A script for tweaking the configuration options")
-            .create());
+            Option.builder().longOpt("configscript")
+            .hasArg().desc("A script for tweaking the configuration options")
+            .build());
         options.addOption(
-                OptionBuilder.withLongOpt("basescript")
-                .hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)")
-                .create('b'));
+            Option.builder("b").longOpt("basescript")
+            .hasArg().argName("class").desc("Base class name for scripts (must derive from Script)")
+            .build());
         return options;
-
     }
 
     private static void setSystemPropertyFrom(final String nameValue) {
