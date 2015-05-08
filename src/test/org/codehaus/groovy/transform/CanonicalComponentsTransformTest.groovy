@@ -610,6 +610,68 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             assert new Foo2('cat', 'dog').toString() == 'Foo2(cat, dog)'
         """
     }
+
+    void testEqualsHashCodeToStringConsistencyWithExplicitBooleanGetters_GROOVY7417() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString
+            @EqualsAndHashCode
+            class A {
+                boolean x
+            }
+
+            def a1 = new A(x: true)
+            def a2 = new A(x: true)
+            def a3 = new A(x: false)
+            assert a1.toString() == a2.toString()
+            assert a1.hashCode() == a2.hashCode()
+            assert a1 == a2
+            assert a1.toString() != a3.toString()
+            assert a1.hashCode() != a3.hashCode()
+            assert a1 != a3
+
+            @ToString
+            @EqualsAndHashCode
+            class B {
+                boolean x
+                boolean isX() { false }
+            }
+
+            def b1 = new B(x: true)
+            def b2 = new B(x: false)
+            assert b1.toString() == b2.toString()
+            assert b1.hashCode() == b2.hashCode()
+            assert b1 == b2
+
+            @ToString
+            @EqualsAndHashCode
+            class C {
+                boolean x
+                boolean getX() { false }
+            }
+
+            def c1 = new C(x: true)
+            def c2 = new C(x: false)
+            assert c1.toString() == c2.toString()
+            assert c1.hashCode() == c2.hashCode()
+            assert c1 == c2
+
+            @ToString
+            @EqualsAndHashCode
+            class D {
+                boolean x
+                boolean isX() { false }
+                boolean getX() { false }
+            }
+
+            def d1 = new D(x: true)
+            def d2 = new D(x: false)
+            assert d1.toString() == d2.toString()
+            assert d1.hashCode() == d2.hashCode()
+            assert d1 == d2
+        """
+    }
 }
 
 @TupleConstructor

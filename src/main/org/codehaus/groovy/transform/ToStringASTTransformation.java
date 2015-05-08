@@ -152,7 +152,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, includeSuperProperties, false, allProperties);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            Expression getter = getterX(cNode, pNode);
+            Expression getter = getterThisX(cNode, pNode);
             appendValue(cNode, body, result, first, getter, pNode.getOriginType(), pNode.getName(), includeNames, ignoreNulls);
         }
 

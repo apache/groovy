@@ -126,7 +126,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = getterX(cNode, pNode);
+            Expression getter = getterThisX(cNode, pNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
             body.addStatement(ifS(
                     notX(sameX(getter, varX("this"))),
@@ -208,14 +208,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                     pNode.getOriginType(), cNode
             );
             if (!canBeSelf) {
-                body.addStatement(ifS(notX(hasEqualPropertyX(pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))));
+                body.addStatement(ifS(notX(hasEqualPropertyX(otherTyped.getOriginType(), pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))));
             } else {
                 body.addStatement(
                         ifS(notX(hasSamePropertyX(pNode, otherTyped)),
                                 ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
                                         returnS(constX(Boolean.FALSE, true)),
                                         ifS(notX(bothSelfRecursivePropertyX(pNode, otherTyped)),
-                                                ifS(notX(hasEqualPropertyX(pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))))
+                                                ifS(notX(hasEqualPropertyX(otherTyped.getOriginType(), pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))))
                                 )
                         )
                 );
