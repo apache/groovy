@@ -124,8 +124,8 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * import org.apache.commons.cli.*
  * ... as before ...
  * cli << new Option('q', false, 'If used as the first parameter disables .curlrc')
- * cli << OptionBuilder.withLongOpt('url').hasArg().withArgName('URL').
- *                      withDescription('Set URL to work with').create()
+ * cli << Option.builder().longOpt('url').hasArg().argName('URL').
+ *                      desc('Set URL to work with').build()
  * ...
  * </pre>
  *
@@ -286,7 +286,7 @@ class CliBuilder {
     Option option(shortname, Map details, info) {
         Option option
         if (shortname == '_') {
-            option = OptionBuilder.withDescription(info).withLongOpt(details.longOpt).create()
+            option = Option.builder().desc(info).longOpt(details.longOpt).build()
             details.remove('longOpt')
         } else {
             option = new Option(shortname, info)

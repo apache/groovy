@@ -21,7 +21,6 @@ package groovy.util
 import org.codehaus.groovy.cli.GroovyPosixParser
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.Option
-import org.apache.commons.cli.OptionBuilder
 import org.apache.commons.cli.PosixParser
 import org.apache.commons.cli.BasicParser
 
@@ -188,7 +187,7 @@ usage: groovy
     }
 
     private void checkLongOptsOnly_nonOptionShouldStopArgProcessing(CliBuilder cli) {
-        def anOption = OptionBuilder.withLongOpt('anOption').hasArg().withDescription('An option.').create()
+        def anOption = Option.builder().longOpt('anOption').hasArg().desc('An option.').build()
         cli.options.addOption(anOption)
         def options = cli.parse(['-v', '--anOption', 'something'])
         // no options should be found
@@ -216,7 +215,7 @@ usage: groovy
 
     private void checkLongAndShortOpts_allOptionsValid(parser) {
         def cli = new CliBuilder(parser: parser)
-        def anOption = OptionBuilder.withLongOpt('anOption').hasArg().withDescription('An option.').create()
+        def anOption = Option.builder().longOpt('anOption').hasArg().desc('An option.').build()
         cli.options.addOption(anOption)
         cli.v(longOpt: 'verbose', 'verbose mode')
         def options = cli.parse(['-v', '--anOption', 'something'])
