@@ -316,33 +316,33 @@ public class FileSystemCompiler {
 
         Options options = new Options();
 
-        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
-        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
-        options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("path").withDescription("Specify where to find the source files").create());
-        options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").withDescription("Specify temporary directory").create());
-        options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").withDescription("Specify the encoding of the user class files").create());
-        options.addOption(OptionBuilder.hasArg().withDescription("Specify where to place generated class files").create('d'));
-//            options.addOption(OptionBuilder.withLongOpt("strict").withDescription("Turn on strict type safety.").create('s'));
-        options.addOption(OptionBuilder.withLongOpt("help").withDescription("Print a synopsis of standard options").create('h'));
-        options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version").create('v'));
-        options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error").create('e'));
-        options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files").create('j'));
-        options.addOption(OptionBuilder.withLongOpt("basescript").hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)").create('b'));
+        options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
+        options.addOption(Option.builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build());
+        options.addOption(Option.builder().longOpt("sourcepath").hasArg().argName("path").desc("Specify where to find the source files").build());
+        options.addOption(Option.builder().longOpt("temp").hasArg().argName("temp").desc("Specify temporary directory").build());
+        options.addOption(Option.builder().longOpt("encoding").hasArg().argName("encoding").desc("Specify the encoding of the user class files").build());
+        options.addOption(Option.builder("d").hasArg().desc("Specify where to place generated class files").build());
+//            options.addOption(Option.builder("s").longOpt("strict").desc("Turn on strict type safety.").build());
+        options.addOption(Option.builder("h").longOpt("help").desc("Print a synopsis of standard options").build());
+        options.addOption(Option.builder("v").longOpt("version").desc("Print the version").build());
+        options.addOption(Option.builder("e").longOpt("exception").desc("Print stack trace on error").build());
+        options.addOption(Option.builder("j").longOpt("jointCompilation").desc("Attach javac compiler to compile .java files").build());
+        options.addOption(Option.builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
 
         options.addOption(
-                OptionBuilder.withArgName("property=value")
-                        .withValueSeparator()
-                        .hasArgs(2)
-                        .withDescription("name-value pairs to pass to javac")
-                        .create("J"));
+                Option.builder("J").argName("property=value")
+                        .valueSeparator()
+                        .numberOfArgs(2)
+                        .desc("name-value pairs to pass to javac")
+                        .build());
         options.addOption(
-                OptionBuilder.withArgName("flag")
+                Option.builder("F").argName("flag")
                         .hasArg()
-                        .withDescription("passed to javac for joint compilation")
-                        .create("F"));
+                        .desc("passed to javac for joint compilation")
+                        .build());
 
-        options.addOption(OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
-        options.addOption(OptionBuilder.withLongOpt("configscript").hasArg().withDescription("A script for tweaking the configuration options").create());
+        options.addOption(Option.builder().longOpt("indy").desc("enables compilation using invokedynamic").build());
+        options.addOption(Option.builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build());
         return options;
     }
 
