@@ -584,4 +584,56 @@ class CanonicalTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testToStringIncludingSuper() {
+        assert 'Bar(20, Foo(10))' == evaluate("""
+            import groovy.transform.*
+            @Canonical
+            class Foo {
+                int a
+            }
+            @Canonical(includeSuper = true)
+            class Bar extends Foo {
+                int b
+            }
+            new Bar(a:10, b:20).toString()
+        """)
+    }
+
+    void testEqualsAndHashCodeIncludingSuper() {
+        def objects = evaluate("""
+            import groovy.transform.*
+            @Canonical
+            class Foo {
+                int a
+            }
+            @Canonical(includeSuper = true)
+            class Bar extends Foo {
+                int b
+            }
+            [new Bar(a:10, b:20),
+            new Bar(a:20, b:20)]
+        """)
+
+        assert objects[0] != objects[1]
+        assert objects[0].hashCode() != objects[1].hashCode()
+    }
+
+    void testConstructorIncludingSuper() {
+        assertScript """
+            import groovy.transform.*
+            @Canonical
+            class Foo {
+                int a
+            }
+            @Canonical(includeSuper = true)
+            class Bar extends Foo {
+                int b
+            }
+
+            def bar = new Bar(10, 20)
+
+            assert bar.a == 10
+            assert bar.b == 20
+        """
+    }
 }
