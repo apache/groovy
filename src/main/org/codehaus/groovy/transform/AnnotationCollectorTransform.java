@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -57,7 +56,7 @@ public class AnnotationCollectorTransform {
     }
 
     /**
-     * Class used by {@link CompilationUnit} to transform the alias class
+     * Class used by {@link org.codehaus.groovy.control.CompilationUnit} to transform the alias class
      * into what is needed by the compiler. This means removing invalid
      * modifiers, interfaces and superclasses, as well as adding a static
      * value method returning our serialized version of the data for processing

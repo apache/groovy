@@ -24,7 +24,6 @@ import org.codehaus.groovy.vmplugin.v6.Java6;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -37,7 +36,7 @@ import java.security.PrivilegedAction;
  * @author Jochen Theodorou
  */
 public class Java7 extends Java6 {
-    private final static Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+    private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
     static {
         Constructor<MethodHandles.Lookup> con = null;
         try {

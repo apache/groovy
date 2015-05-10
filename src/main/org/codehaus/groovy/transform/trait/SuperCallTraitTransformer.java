@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.List;
 

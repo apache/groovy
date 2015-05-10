@@ -24,7 +24,6 @@ import java.lang.invoke.MethodType;
 import java.util.HashMap;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 
 /**
  * Class for handling array access through invokedynamic using static callsite information

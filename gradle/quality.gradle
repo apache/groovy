@@ -68,8 +68,11 @@ allprojects {
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
         configProperties = ['rootProject.projectDir': rootProject.projectDir]
         def reportFile = file("${buildDir}/reports/checkstyle/${name}.xml")
+        source = sourceSets.main.allJava.matching {
+            // TODO why doesn't this exclusion work?
+            exclude '**/generated-sources/**/*'
+        }
         reports {
-            // TODO exclude generated-sources
             include ( '**/*.java')
             xml {
                 destination reportFile
@@ -94,7 +97,8 @@ allprojects {
                     def xml = new XmlSlurper().parse(reportFile.newReader('utf-8'))
                     def files = []
                     xml.file.each { f ->
-                        if (f.error.size()) {
+                        // TODO remove generated-sources check once exclude above works
+                        if (f.error.size() && !f.@name.toString().contains('generated-sources')) {
                             files << [
                                     name: f.@name.toString(),
                                     errors: f.error.collect { e ->

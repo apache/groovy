@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -55,7 +54,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private Set<VariableExpression> declaredFinalVariables = null;
     private boolean inAssignment = false;
 
-    private static enum VariableState {
+    private enum VariableState {
         is_uninitialized(false),
         is_final(true),
         is_var(false);
@@ -94,7 +93,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     private Map<Variable, VariableState> pushState() {
-        HashMap<Variable, VariableState> state = new StateMap();
+        Map<Variable, VariableState> state = new StateMap();
         assignmentTracker.add(state);
         return state;
     }

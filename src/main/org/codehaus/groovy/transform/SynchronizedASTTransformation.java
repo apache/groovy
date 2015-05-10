@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
