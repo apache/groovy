@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.transform.stc.Receiver;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

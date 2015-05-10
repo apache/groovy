@@ -58,7 +58,6 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
-import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
