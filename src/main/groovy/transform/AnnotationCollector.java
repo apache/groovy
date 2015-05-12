@@ -87,6 +87,15 @@ public @interface AnnotationCollector {
      * Custom processors need to extend that class. 
      */
     String processor() default "org.codehaus.groovy.transform.AnnotationCollectorTransform";
+
+    /**
+     * When the collector annotation is replaced, whether to check for duplicates between
+     * the replacement annotations and existing explicit annotations.
+     * If you use a custom processor, it is up to that processor whether it honors or ignores
+     * this parameter. The default processor honors the parameter.
+     */
+    AnnotationCollectorMode mode() default AnnotationCollectorMode.DUPLICATE;
+
     /**
      * List of aliased annotations.
      */
