@@ -90,7 +90,7 @@ groovy.grape.Grape.grab(group:'org.springframework', module:'spring', version:'2
 
 If you are behind a firewall and/or need to use Groovy/Grape through a
 proxy server, you can specify those settings on the command like via the
-http.proxyHost and http.proxyPort system properties:
+`http.proxyHost` and `http.proxyPort` system properties:
 
 -------------------------------------------------------------------------
 groovy -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080 yourscript.groovy
@@ -107,8 +107,8 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 === Logging
 
 If you want to see what Grape is doing set the system property
-``groovy.grape.report.downloads'' to ``true'' (e.g. add
-``-Dgroovy.grape.report.downloads=true'' to JAVA_OPTS) and Grape will
+`groovy.grape.report.downloads` to `true` (e.g. add
+`-Dgroovy.grape.report.downloads=true` to JAVA_OPTS) and Grape will
 print the following infos to System.error:
 
 * Starting resolve of a dependency
