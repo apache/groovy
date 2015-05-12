@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.antlr;
 
@@ -20,6 +23,7 @@ import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -226,7 +230,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private void saveAsXML(String name, AST ast) {
-        XStream xstream = new XStream();
+        XStream xstream = new XStream(new StaxDriver());
         try {
             xstream.toXML(ast, new FileWriter(name + ".antlr.xml"));
             System.out.println("Written AST to " + name + ".antlr.xml");
@@ -2752,7 +2756,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case NUM_BIG_INT:
             case NUM_INT:
             case NUM_LONG:
-                ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger("-" + text));
+                ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger(unaryMinusExpr,"-" + text));
                 configureAST(constantLongExpression, unaryMinusExpr);
                 return constantLongExpression;
 
@@ -2792,7 +2796,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected ConstantExpression integerExpression(AST node) {
         String text = node.getText();
-        Object number = Numbers.parseInteger(text);
+        Object number = Numbers.parseInteger(node, text);
         boolean keepPrimitive = number instanceof Integer || number instanceof Long;
         ConstantExpression constantExpression = new ConstantExpression(number, keepPrimitive);
         configureAST(constantExpression, node);

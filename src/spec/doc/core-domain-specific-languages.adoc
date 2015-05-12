@@ -55,7 +55,7 @@ As a second example, consider how you might write a DSL for simplifying
 one of your existing APIs. Maybe you need to put this code in front of
 customers, business analysts or testers who might be not hard-core Java
 developers. We’ll use the `Splitter` from the Google
-http://code.google.com/p/guava-libraries/[Guava libraries] project as it
+https://github.com/google/guava[Guava libraries] project as it
 already has a nice Fluent API. Here is how we might use it out of the
 box:
 
@@ -1023,61 +1023,15 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-Groovys `MarkupBuilder` can be used to create any kind of markup, e.g. XML. For example to create this xml string:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string,indent=0]
-----
-
-you can use a `MarkupBuilder` like this:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder,indent=0]
-----
-
-We use http://www.xmlunit.org[XMLUnit] to check that the builder produced the expected result:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert,indent=0]
-----
-
-`MarkupBuilder` can also handle namespaces and namespace prefixes. To create this xml string:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string_namespaces,indent=0]
-----
-
-you use it like this:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder_namespaces,indent=0]
-----
-<1> declare and use rec namespace prefix
-<2> change the default namespace to http://www.acme.com/cars
-
-Again we use http://www.xmlunit.org[XMLUnit] to check that the builder output matches the expected result:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert_namespaces,indent=0]
-----
+See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-(TBD)
+See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
-==== SaxBuilder
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
 
-(TBD)
-
-==== StaxBuilder
-
-(TBD)
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leveloffset=+3]
 
 ==== DomBuilder
 
@@ -1085,8 +1039,20 @@ include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_as
 
 ==== NodeBuilder
 
-(TBD)
+`NodeBuilder` is used for creating nested trees of gapi:groovy.util.Node[Node] objects for handling arbitrary data. 
+To create a simple user list you use a `NodeBuilder` like this:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_example,indent=0]
+----
+
+Now you can process the data further, e.g. by using <<gpath_expressions,GPath expressions>>: 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,indent=0]
+----
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
 
@@ -1191,3 +1157,45 @@ referenced bean.
 ==== JmxBuilder
 
 See <<jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
+
+==== FileTreeBuilder
+
+gapi:groovy.util.FileTreeBuilder[FileTreeBuilder] is a builder for generating a file directory structure from a specification. For example, to create the following tree:
+
+---------
+ src/
+  |--- main
+  |     |--- groovy
+  |            |--- Foo.groovy
+  |--- test
+        |--- groovy
+               |--- FooTest.groovy
+---------
+ 
+You can use a `FileTreeBuilder` like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example,indent=0]
+----
+
+To check that everything worked as expected we use the following `assert`s:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example_assert,indent=0]
+----
+
+`FileTreeBuilder` also supports a shorthand syntax:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax,indent=0]
+----
+
+This produces the same directory structure as above, as shown by these `assert`s:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert,indent=0]
+----

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.inspect.swingui
 
@@ -550,7 +553,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         // we had problems with the ast transform passing a VariableExpression as StaticMethodCallExpression arguments
-        assert result.contains("_result.append(org.codehaus.groovy.runtime.InvokerHelper.toStringorg.codehaus.groovy.runtime.InvokerHelper.getProperty(this, 'when'))")
+        assert result.contains("_result.append(org.codehaus.groovy.runtime.InvokerHelper.toString(this.getWhen())")
     }
 
     void testAtImmutableClassWithProperties() {
@@ -570,9 +573,9 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
         // assert hashCode
         assert result.contains('public int hashCode()')
         assert result.contains('java.lang.Object _result = org.codehaus.groovy.util.HashCodeHelper.initHash()')
-        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, org.codehaus.groovy.runtime.InvokerHelper.getProperty(this, 'title'))")
-        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, org.codehaus.groovy.runtime.InvokerHelper.getProperty(this, 'when'))")
-        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, org.codehaus.groovy.runtime.InvokerHelper.getProperty(this, 'color'))")
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getTitle())")
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getWhen())")
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
 
         // assert clones
         assert result.contains("((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][])) as java.util.Date)")

@@ -1,21 +1,26 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
+
+import java.lang.reflect.Modifier
 
 buildscript {
     // this block should not be necessary, but for some reason it fails without!
@@ -24,7 +29,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
+        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
     }
 }
 
@@ -34,14 +39,21 @@ task checkBinaryCompatibility {
 check.dependsOn(checkBinaryCompatibility)
 
 if (JavaVersion.current().isJava7Compatible()) {
-    apply plugin: 'me.champeau.gradle.japicmp'
+    allprojects {
+        apply plugin: 'me.champeau.gradle.japicmp'
+    }
 
-    def referenceMinorVersion = '2.3.6'
+    def referenceMinorVersion = '2.4.2'
+
+    def prettyPrint = { classOrMethod ->
+        "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
+    }
 
     def reportGenerator = { model ->
         outputProcessor {
 
             def skipClass = { c ->
+                c.fullyQualifiedName =~ /\$[0-9]+$/ || // skip AIC
                 c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
                         c.fullyQualifiedName.contains('_closure')
             }
@@ -50,6 +62,12 @@ if (JavaVersion.current().isJava7Compatible()) {
                 // key = class name
                 // value = map of violations
                 [:].withDefault { [] }
+            }
+            removedConstructor { c, m ->
+                if (!skipMethod(c, m)) {
+                    def level = Modifier.isPrivate(m.oldConstructor.get()?.modifiers) ? 'info' : 'error'
+                    violations[c.fullyQualifiedName][level] << "Constructor ${prettyPrint(m.oldConstructor)} has been removed"
+                }
             }
             removedMethod { c, m ->
                 if (!skipMethod(c, m)) {
@@ -66,7 +84,22 @@ if (JavaVersion.current().isJava7Compatible()) {
             modifiedMethod { c, m ->
                 if (!skipMethod(c, m)) {
                     violations[c.fullyQualifiedName].warning << """<p>Method ${m.name} has been modified</p>
-<p>From <pre>${m.oldMethod.get()?.longName}</pre> to <pre>${m.newMethod.get()?.longName}</pre></p>"""
+<p>From <pre>${prettyPrint(m.oldMethod)}</pre> to <pre>${prettyPrint(m.newMethod)}</pre></p>"""
+                }
+            }
+
+            modifiedConstructor { c, m ->
+                if (!skipMethod(c, m)) {
+                    violations[c.fullyQualifiedName].warning << """<p>Constructor ${m.name} has been modified</p>
+<p>From <pre>${prettyPrint(m.oldConstructor)}</pre> to <pre>${prettyPrint(m.newConstructor)}</pre></p>"""
+                }
+            }
+
+            modifiedClass { c ->
+                if (!skipClass(c)) {
+                    def level = c.binaryCompatible?'info':'error'
+                    def message = "Class ${c.fullyQualifiedName} has been modified"
+                    violations[c.fullyQualifiedName][level] << message
                 }
             }
 
@@ -78,9 +111,10 @@ if (JavaVersion.current().isJava7Compatible()) {
             newMethod { c, m ->
                 if (!skipMethod(c, m)) {
                     violations[c.fullyQualifiedName].info << """<p>Method ${m.name} has been added</p>
-<p>Signature: <pre>${m.newMethod.get()?.longName}</pre></p>"""
+<p>Signature: <pre>${prettyPrint(m.newMethod)}</pre></p>"""
                 }
             }
+
             after {
                 model.violations = violations
             }
@@ -97,13 +131,47 @@ if (JavaVersion.current().isJava7Compatible()) {
     }
     def engine = new MarkupTemplateEngine(this.class.classLoader, configDir, templateConfiguration)
 
+    task japicmpAll(type: me.champeau.gradle.ArtifactJapicmpTask) {
+        dependsOn jarAll
+        baseline = "org.codehaus.groovy:groovy-all:${referenceMinorVersion}@jar"
+        to = jarAll.archivePath
+        accessModifier = 'protected'
+        onlyModified = true
+        failOnModification = false
+        txtOutputFile = file("$buildDir/reports/japi.txt")
+
+        doFirst {
+            classpath = allprojects.configurations.japicmp.files.flatten()
+        }
+
+        def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
+        inputs.file file("$configDir/$templateFile")
+        inputs.file templateFile
+        outputs.file htmlReportFile
+
+        def model = [title   : "Binary compatibility report for ${project.name}",
+                     project : project,
+                     baseline: baseline,
+                     archive : to.name]
+        outputProcessor(reportGenerator.curry(model))
+
+        doLast {
+            htmlReportFile.withWriter('utf-8') { wrt ->
+                engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
+            }
+        }
+    }
 
     allprojects {
 
+        dependencies  {
+            japicmp files(rootProject.jar.archivePath)
+        }
+
         task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
-            dependsOn jarjar
+            dependsOn replaceJarWithJarJar
             baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
-            to = jarjar.archivePath
+            to = jar.archivePath
             accessModifier = 'protected'
             onlyModified = true
             failOnModification = false
@@ -129,37 +197,11 @@ if (JavaVersion.current().isJava7Compatible()) {
         }
     }
 
-    task japicmpAll(type: me.champeau.gradle.ArtifactJapicmpTask) {
-        dependsOn jarAll
-        baseline = "org.codehaus.groovy:groovy-all:${referenceMinorVersion}@jar"
-        to = jarAll.archivePath
-        accessModifier = 'protected'
-        onlyModified = true
-        failOnModification = false
-        txtOutputFile = file("$buildDir/reports/japi.txt")
-
-        def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
-        inputs.file file("$configDir/$templateFile")
-        inputs.file templateFile
-        outputs.file htmlReportFile
-
-        def model = [title   : "Binary compatibility report for ${project.name}",
-                     project : project,
-                     baseline: baseline,
-                     archive : to.name]
-        outputProcessor(reportGenerator.curry(model))
-
-        doLast {
-            htmlReportFile.withWriter('utf-8') { wrt ->
-                engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-            }
-        }
-    }
-
 
     allprojects {
         tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
             checkBinaryCompatibility.dependsOn(task)
         }
+
     }
 }

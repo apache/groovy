@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -31,40 +34,20 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 /**
  * Handles generation of code for the @ToString annotation.
- *
- * @author Paul King
- * @author Andre Steingress
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ToStringASTTransformation extends AbstractASTTransformation {
@@ -96,6 +79,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             List<String> includes = getMemberList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
             boolean includePackage = !memberHasValue(anno, "includePackage", false);
+            boolean allProperties = !memberHasValue(anno, "allProperties", false);
 
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
                 AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
@@ -103,7 +87,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties);
         }
     }
 
@@ -124,6 +108,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, true);
+    }
+
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -135,11 +123,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             final Expression savedToString = varX(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
-                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, body))
+                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body))
             ));
             tempToString = savedToString;
         } else {
-            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, body);
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body);
         }
         body.addStatement(returnS(tempToString));
 
@@ -147,7 +135,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, BlockStatement body) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body) {
         // def _result = new StringBuilder()
         final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
@@ -161,22 +149,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(appendS(result, constX(className + "(")));
 
         // append properties
-        List<PropertyNode> pList;
-        if (includeSuperProperties) {
-            pList = getAllProperties(cNode);
-            Iterator<PropertyNode> pIterator = pList.iterator();
-            while (pIterator.hasNext()) {
-                if (pIterator.next().isStatic()) {
-                    pIterator.remove();
-                }
-            }
-        } else {
-            pList = getInstanceProperties(cNode);
-        }
+        List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, includeSuperProperties, false, allProperties);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            Expression getter = callX(INVOKER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
-            appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
+            Expression getter = getterThisX(cNode, pNode);
+            appendValue(cNode, body, result, first, getter, pNode.getOriginType(), pNode.getName(), includeNames, ignoreNulls);
         }
 
         // append fields if needed
@@ -185,7 +162,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             fList.addAll(getInstanceNonPropertyFields(cNode));
             for (FieldNode fNode : fList) {
                 if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-                appendValue(body, result, first, varX(fNode), fNode.getName(), includeNames, ignoreNulls);
+                appendValue(cNode, body, result, first, varX(fNode), fNode.getType(), fNode.getName(), includeNames, ignoreNulls);
             }
         }
 
@@ -204,15 +181,21 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         return toString;
     }
 
-    private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls) {
+    private static void appendValue(ClassNode cNode, BlockStatement body, Expression result, VariableExpression first, Expression value, ClassNode valueType, String name, boolean includeNames, boolean ignoreNulls) {
         final BlockStatement thenBlock = new BlockStatement();
         final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
-        thenBlock.addStatement(ifElseS(
-                sameX(value, VariableExpression.THIS_EXPRESSION),
-                appendS(result, constX("(this)")),
-                appendS(result, callX(INVOKER_TYPE, "toString", value))));
+        boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(valueType, cNode);
+        if (canBeSelf) {
+            thenBlock.addStatement(ifElseS(
+                    sameX(value, new VariableExpression("this")),
+                    appendS(result, constX("(this)")),
+                    appendS(result, callX(INVOKER_TYPE, "toString", value))));
+        } else {
+            thenBlock.addStatement(appendS(result, callX(INVOKER_TYPE, "toString", value)));
+
+        }
         body.addStatement(appendValue);
     }
 

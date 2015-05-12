@@ -1,7 +1,3 @@
-apply from: 'gradle/filter.gradle'
-apply from: 'gradle/indy.gradle'
-apply from: 'gradle/bintray.gradle'
-
 buildscript {
     repositories {
         jcenter()
@@ -12,11 +8,17 @@ buildscript {
     }
 
     dependencies {
+        // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.2'
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
+        //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
+        //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
     }
 }
+
+apply from: 'gradle/filter.gradle'
+apply from: 'gradle/indy.gradle'
+apply from: 'gradle/bintray.gradle'
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -36,6 +38,7 @@ allprojects {
     version = groovyVersion
     repositories {
         jcenter()
+        maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
     apply plugin: 'groovy'
@@ -102,10 +105,11 @@ ext {
     bndVersion = '0.0.401'
     checkstyleVersion = '4.4'
     coberturaVersion = '1.9.4.1'
-    commonsCliVersion = '1.2'
+    commonsCliVersion = '1.3'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
+    gradleVersion = '2.4'
     ivyVersion = '2.4.0'
     jansiVersion = '1.11'
     jarjarVersion = '1.3'
@@ -115,12 +119,12 @@ ext {
     log4jVersion = '1.2.17'
     log4j2Version = '2.1'
     luceneVersion = '4.7.2'
+    openbeansVersion = '1.0'
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
-    simianVersion = '2.2.4'
     slf4jVersion = '1.7.10'
     xmlunitVersion = '1.5'
-    xstreamVersion = '1.4.7'
+    xstreamVersion = '1.4.8'
     spockVersion = '1.0-groovy-2.4'
 }
 
@@ -138,8 +142,9 @@ dependencies {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
+        exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    compile files("lib/openbeans-1.0.jar")
+    compile "com.googlecode:openbeans:$openbeansVersion"
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
@@ -162,7 +167,7 @@ dependencies {
     tools("checkstyle:checkstyle:$checkstyleVersion") {
         exclude(module: 'junit')
     }
-    tools "redhill:simian:$simianVersion"
+
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
         exclude(module: 'asm')
@@ -325,6 +330,7 @@ task ensureGrammars {
 }
 
 apply from: 'gradle/utils.gradle'
+apply from: 'gradle/wrapper.gradle'
 
 ext.modules = {
     subprojects
@@ -419,6 +425,7 @@ allprojects {
 
 compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+    options.compilerArgs << "-proc:none"
 }
 
 apply from: 'gradle/test.gradle'
@@ -428,7 +435,6 @@ apply from: 'gradle/assemble.gradle'
 apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-apply from: 'gradle/codehaus.gradle'
 apply from: 'gradle/quality.gradle'
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
@@ -443,3 +449,16 @@ if (!JavaVersion.current().java7Compatible) {
     ***********************************************************************************************
 '''
 }
+
+// UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
+//task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
+//    source = fileTree(dir:"src").include ("**/*.java",'**/*.groovy','**/*.html','**/*.css','**/*.xml','**/*.properties','**/*.properties')
+//}
+//
+//task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
+//    source = files(fileTree(dir:projectDir).include('**/*.gradle'),fileTree('buildSrc').include('**/*.groovy'))
+//}
+//
+//licenseFormat.dependsOn licenseFormatCustom
+//licenseFormat.dependsOn licenseFormatGradle
+//

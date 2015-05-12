@@ -58,5 +58,3 @@ include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[leveloffset=+2]
 . Brad Appleton (1999). http://www.bradapp.com/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
  * _One of the most frequently used patterns by many software engineers!_
 . _Design Patterns in Dynamic Languages_ by Neil Ford. Houston Java User’s Group. Examples in Groovy and Ruby. http://www.hjug.org/present/Neal_Ford-Design_Patterns_in_Dynamic_Languages-slides.pdf
-
-See also: <<_refactoring_bwith_groovy,Refactoring with Groovy>>.

@@ -126,7 +126,7 @@ module system for Groovy. This allows a developer to write a script with
 an essentially arbitrary library requirement, and ship just the script.
 Grape will, at runtime, download as needed and link the named libraries
 and all dependencies forming a transitive closure when the script is run
-from existing repositories such as JCenter, Ibiblio, Codehaus, and java.net.
+from existing repositories such as JCenter, Ibiblio and java.net.
 
 Grape follows the Ivy conventions for module version identification,
 with naming change.
@@ -211,9 +211,6 @@ import groovy.grape.Grape
 Grape.grab(group:'com.jidesoft', module:'jide-oss', version:'[2.2.0,)')
 Grape.grab([group:'org.apache.ivy', module:'ivy', version:'2.0.0-beta1', conf:['default', 'optional']],
      [group:'org.apache.ant', module:'ant', version:'1.7.0'])
-
-// endorsed Groovy Module
-// FUTURE grab('Scriptom')
 -------------------------------------------------------------------------------------------------------
 
 * Multiple calls to grab in the same context with the same parameters
@@ -332,70 +329,14 @@ groovy -Dgrape.root=/repo/grape yourscript.groovy
 [[Grape-CustomizeIvysettings]]
 ==== Customize Ivy settings
 
-//TODO expand on discussion of grapeConfig.xml
-
 You can customize the ivy settings that Grape uses by creating a
 ~/.groovy/grapeConfig.xml file. If no such file exists,
-http://svn.codehaus.org/groovy/tags/GROOVY_1_6_0/src/main/groovy/grape/defaultGrapeConfig.xml[here]
-are the default settings used by Grape:
-
-[source,xml]
----------------------------------------------------------------------------------------------------------------------
-<ivysettings>
-  <settings defaultResolver="downloadGrapes"/>
-  <resolvers>
-    <chain name="downloadGrapes">
-      <filesystem name="cachedGrapes">
-        <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
-      </filesystem>
-      <!-- todo add 'endorsed groovy extensions' resolver here -->
-      <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
-      <ibiblio name="ibiblio" m2compatible="true"/>
-      <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
-    </chain>
-  </resolvers>
-</ivysettings>
----------------------------------------------------------------------------------------------------------------------
+https://github.com/apache/incubator-groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
+are the default settings used by Grape.
 
 For more information on how to customize these settings, please refer to
-the http://ant.apache.org/ivy/history/latest-release/settings.html[Ivy
+the https://ant.apache.org/ivy/history/latest-milestone/index.html[Ivy
 documentation].
-
-[[Grape-AddyourlocalMaven2repository]]
-==== Add your local Maven2 repository
-
-If you find yourself wanting to reuse artifacts that you already have
-locally in your Maven2 repository, then you can add this line to your
-~/.groovy/grapeConfig.xml:
-
-[source,xml]
-------------------------------------------------------------------------------------
-<ibiblio name="local" root="file:${user.home}/.m2/repository/" m2compatible="true"/>
-------------------------------------------------------------------------------------
-
-And further customize your Grape configuration:
-
-[source,xml]
------------------------------------------------------------------------------------------------------------------------------
-<?xml version="1.0"?>
-<ivysettings>
-    <settings defaultResolver="downloadGrapes"/>
-    <resolvers>
-        <chain name="downloadGrapes">
-            <!-- todo add 'endorsed groovy extensions' resolver here -->
-            <ibiblio name="local" root="file:${user.home}/.m2/repository/" m2compatible="true"/>
-            <filesystem name="cachedGrapes">
-                <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-                <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
-            </filesystem>
-            <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
-            <ibiblio name="ibiblio" m2compatible="true"/>
-            <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
-        </chain>
-    </resolvers>
-</ivysettings>
------------------------------------------------------------------------------------------------------------------------------
 
 [[Grape-MoreExamples]]
 === More Examples
@@ -404,7 +345,7 @@ Using Apache Commons Collections:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-// create and use a primitive array
+// create and use a primitive array list
 import org.apache.commons.collections.primitives.ArrayIntList
 
 @Grab(group='commons-primitives', module='commons-primitives', version='1.0')
@@ -420,11 +361,11 @@ Using TagSoup:
 
 [source,groovy]
 ------------------------------------------------------------------------
-// find the PDF links in the Java 1.5.0 documentation
-@Grab(group='org.ccil.cowan.tagsoup', module='tagsoup', version='0.9.7')
+// find the PDF links of the Java specifications
+@Grab(group='org.ccil.cowan.tagsoup', module='tagsoup', version='1.2.1')
 def getHtml() {
     def parser = new XmlParser(new org.ccil.cowan.tagsoup.Parser())
-    parser.parse("http://java.sun.com/j2se/1.5.0/download-pdf.html")
+    parser.parse("https://docs.oracle.com/javase/specs/")
 }
 html.body.'**'.a.@href.grep(~/.*\.pdf/).each{ println it }
 ------------------------------------------------------------------------
@@ -433,9 +374,6 @@ Using Google Collections:
 
 [source,groovy]
 -------------------------------------------------------------------------------------------------------
-// Google Collections example
-
-
 import com.google.common.collect.HashBiMap
 @Grab(group='com.google.code.google-collections', module='google-collect', version='snapshot-20080530')
 def getFruit() { [grape:'purple', lemon:'yellow', orange:'orange'] as HashBiMap }

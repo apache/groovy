@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform
 
@@ -240,6 +243,61 @@ class ToStringTransformTest extends GroovyShellTestCase {
         """)
 
         assertEquals("Person()", toString)
+    }
+
+    void testPseudoProperties()  {
+        def toString = evaluate('''
+            import groovy.transform.*
+
+            class Person {
+                boolean isAdult() { false }
+                boolean golfer = true
+                boolean isSenior() { false }
+                private getAge() { 40 }
+                protected getBorn() { 1975 }
+            }
+
+            @ToString(excludes='last', includeNames=true, includeSuperProperties=true)
+            class SportsPerson extends Person {
+                private String _first
+                String last, title
+                boolean golfer = false
+                boolean adult = true
+                Boolean cyclist = true
+                Boolean isMale() { true }
+                void setFirst(String first) { this._first = first }
+                String getFull() { "$_first $last" }
+            }
+            new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
+        ''')
+        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true, full:John Smith, senior:false, born:1975)"
+        // same again but with allProperties=false and with @CompileStatic for test coverage purposes
+        toString = evaluate('''
+            import groovy.transform.*
+
+            class Person {
+                boolean isAdult() { false }
+                boolean golfer = true
+                boolean isSenior() { false }
+                private getAge() { 40 }
+                protected getBorn() { 1975 }
+            }
+
+            @CompileStatic
+            @ToString(excludes='last', includeNames=true, includeSuperProperties=true, allProperties=false)
+            class SportsPerson extends Person {
+                private String _first
+                String last, title
+                boolean golfer = false
+                boolean adult = true
+                Boolean cyclist = true
+                Boolean isMale() { true }
+                void setFirst(String first) { this._first = first }
+                String getFull() { "$_first $last" }
+            }
+            new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
+        ''')
+        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true)"
     }
 
     void testSelfReference()  {

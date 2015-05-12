@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 import org.apache.tools.ant.filters.ReplaceTokens
 
 apply plugin: 'osgi'
@@ -27,6 +45,9 @@ ext.srcSpec = copySpec {
                 'cruise/**',
                 '.clover/*',
                 'local.build.properties',
+                'gradle/wrapper',
+                'gradlew',
+                'gradlew.bat',
                 'cobertura.ser',
                 'junitvmwatcher*.properties',
                 'out',
@@ -69,15 +90,15 @@ ext.allManifest = manifest {
             'Extension-Name': 'groovy',
             'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
             'Specification-Version': groovyBundleVersion,
-            'Specification-Vendor': 'The Codehaus',
+            'Specification-Vendor': 'The Apache Software Foundation',
             'Implementation-Title': 'Groovy: a powerful, dynamic language for the JVM',
             'Implementation-Version': groovyBundleVersion,
-            'Implementation-Vendor': 'The Codehaus',
+            'Implementation-Vendor': 'The Apache Software Foundation',
             'Bundle-ManifestVersion': '2',
             'Bundle-Name': 'Groovy Runtime',
             'Bundle-Description': 'Groovy Runtime',
             'Bundle-Version': groovyBundleVersion,
-            'Bundle-Vendor': 'The Codehaus',
+            'Bundle-Vendor': 'The Apache Software Foundation',
             'Bundle-ClassPath': '.',
             'Eclipse-BuddyPolicy': 'dependent',
             'DynamicImport-Package': '*',
@@ -117,7 +138,8 @@ ext.subprojectOsgiManifest = {
 jar {
     dependsOn('dgmConverter')
     metaInf {
-        from 'LICENSE.txt'
+        from 'LICENSE'
+        from 'NOTICE'
         from('src/main/META-INF/groovy-release-info.properties') {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
@@ -162,7 +184,8 @@ allprojects {
                                 file.name.startsWith(it)
                             } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
-                            zipfileset(src: jarjarFile)
+                            // GROOVY-7386 : excludes needed below to stop copy of incorrect maven meta info
+                            zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*')
                         }
 
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
@@ -239,7 +262,8 @@ allprojects {
 subprojects {
     jar {
         metaInf {
-            from "${rootProject.projectDir}/LICENSE.txt"
+            from "${rootProject.projectDir}/LICENSE"
+            from "${rootProject.projectDir}/NOTICE"
             from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
@@ -293,6 +317,10 @@ task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     }
     inputs.files(allprojects.jarjar.archivePath)
     outputs.files(allprojects.jar.archivePath)
+}
+
+allprojects {
+    rootProject.replaceJarWithJarJar.mustRunAfter(test)
 }
 
 task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
@@ -374,6 +402,13 @@ task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
             logger.lifecycle('InvokeDynamic support was activated but needs to be off for this pass. Disabling.')
             ext.useIndy = false
         }
+    }
+}
+
+allprojects {
+    tasks.withType(Test) { task ->
+        jarAll.mustRunAfter(task)
+        jarAllWithIndy.mustRunAfter(task)
     }
 }
 
@@ -514,5 +549,25 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     if ((version.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
         || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
         throw new GradleException("Incoherent versions. Found groovyVersion=$version and groovyBundleVersion=$groovyBundleVersion")
+    }
+}
+
+task updateLicense {
+    description = 'Updates the top-level LICENSE file'
+
+    ext.licensesDir = "${projectDir}/licenses"
+    ext.licenseFile = "${projectDir}/LICENSE"
+    inputs.files(licensesDir)
+    outputs.file(licenseFile)
+
+    doLast {
+        def files = [file("$licensesDir/LICENSE-BASE")]
+        file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
+        file(licenseFile).withWriter('utf-8') { writer ->
+            files.sort{ it.name }.each {
+                writer << "${it.text}\n"
+                writer << '---------------------------------------------------------------------\n'
+            }
+        }
     }
 }

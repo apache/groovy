@@ -1,38 +1,77 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
-/*
- * Copyright 2003-2015 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 allprojects {
+    //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
     apply plugin: 'findbugs'
+    configurations.codenarc {
+        // because we will rely on the version we build
+        // because version ranges are evil
+        // and because it causes bnd to be brought transitively
+        // I am unsure why; says it is required by groovy-ant but its pom.xml does not declare so
+        exclude group:'org.codehaus.groovy'
+    }
+
+//    license {
+//        header rootProject.file('gradle/LICENSE.txt')
+//        include "**/*.groovy"
+//        include "**/*.java"
+//        include "**/*.properties"
+//        include "**/*.js"
+//        include "**/*.css"
+//        include "**/*.html"
+//        include "**/*.xml"
+//        exclude "org/codehaus/groovy/antlr/**"
+//        exclude 'reloading/**' // test resources for documentation of reloading
+//        exclude 'includes/**' // documentation resources included as snippets of code
+//        //dryRun = true
+//        ignoreFailures = true
+//        //skipExistingHeaders = true
+//        //ext.year = Calendar.instance.get(Calendar.YEAR)
+//    }
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
+        codenarcClasspath = rootProject.sourceSets.main.output +
+                project(':groovy-templates').sourceSets.main.output +
+                project(':groovy-xml').sourceSets.main.output +
+                configurations.compile +
+                files(configurations.codenarc.findAll { !(it.name =~ /groovy|junit/)})
     }
+
     tasks.withType(Checkstyle) {
         showViolations = false
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
         configProperties = ['rootProject.projectDir': rootProject.projectDir]
         def reportFile = file("${buildDir}/reports/checkstyle/${name}.xml")
+        source = sourceSets.main.allJava.matching {
+            // TODO why doesn't this exclusion work?
+            exclude '**/generated-sources/**/*'
+        }
         reports {
             include ( '**/*.java')
             xml {
@@ -58,7 +97,8 @@ allprojects {
                     def xml = new XmlSlurper().parse(reportFile.newReader('utf-8'))
                     def files = []
                     xml.file.each { f ->
-                        if (f.error.size()) {
+                        // TODO remove generated-sources check once exclude above works
+                        if (f.error.size() && !f.@name.toString().contains('generated-sources')) {
                             files << [
                                     name: f.@name.toString(),
                                     errors: f.error.collect { e ->
@@ -100,4 +140,4 @@ allprojects {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
-apply from: 'gradle/binarycompatibility.gradle'
+//apply from: 'gradle/binarycompatibility.gradle'

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
@@ -24,10 +27,17 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
+import org.codehaus.groovy.classgen.asm.CompileStack;
+import org.codehaus.groovy.classgen.asm.MethodCaller;
+import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.StatementWriter;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.Enumeration;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -38,6 +48,10 @@ import static org.objectweb.asm.Opcodes.*;
 public class StaticTypesStatementWriter extends StatementWriter {
 
     private static final ClassNode ITERABLE_CLASSNODE = ClassHelper.make(Iterable.class);
+    private static final ClassNode ENUMERATION_CLASSNODE = ClassHelper.make(Enumeration.class);
+    private static final MethodCaller ENUMERATION_NEXT_METHOD = MethodCaller.newInterface(Enumeration.class, "nextElement");
+    private static final MethodCaller ENUMERATION_HASMORE_METHOD = MethodCaller.newInterface(Enumeration.class, "hasMoreElements");
+
     private StaticTypesWriterController controller;
 
     public StaticTypesStatementWriter(StaticTypesWriterController controller) {
@@ -71,6 +85,8 @@ public class StaticTypesStatementWriter extends StatementWriter {
         int size = operandStack.getStackLength();
         if (collectionType.isArray() && loopVariable.getOriginType().equals(collectionType.getComponentType())) {
             writeOptimizedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+        } else if (ENUMERATION_CLASSNODE.equals(collectionType)) {
+            writeEnumerationBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
         } else {
             writeIteratorBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
         }
@@ -97,8 +113,10 @@ public class StaticTypesStatementWriter extends StatementWriter {
         collectionExpression.visit(acg);
         mv.visitInsn(DUP);
         int array = compileStack.defineTemporaryVariable("$arr", collectionType, true);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         // $len = array.length
+        mv.visitVarInsn(ALOAD, array);
         mv.visitInsn(ARRAYLENGTH);
         operandStack.push(ClassHelper.int_TYPE);
         int arrayLen = compileStack.defineTemporaryVariable("$len", ClassHelper.int_TYPE, true);
@@ -117,21 +135,20 @@ public class StaticTypesStatementWriter extends StatementWriter {
         // get array element
         loadFromArray(mv, variable, array, loopIdx);
 
+        // $idx++
+        mv.visitIincInsn(loopIdx, 1);
+
         // loop body
         loop.getLoopBlock().visit(acg);
 
-        // $idx++
-        mv.visitIincInsn(loopIdx, 1);
         mv.visitJumpInsn(GOTO, continueLabel);
 
         mv.visitLabel(breakLabel);
-        compileStack.removeVar(loopIdx);
-        compileStack.removeVar(arrayLen);
-        compileStack.removeVar(array);
 
     }
 
     private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
+        OperandStack os = controller.getOperandStack();
         mv.visitVarInsn(ALOAD, array);
         mv.visitVarInsn(ILOAD, iteratorIdx);
 
@@ -146,36 +163,30 @@ public class StaticTypesStatementWriter extends StatementWriter {
         boolean isChar = ClassHelper.char_TYPE.equals(varType);
         boolean isBoolean = ClassHelper.boolean_TYPE.equals(varType);
 
-        int index = variable.getIndex();
         if (primitiveType) {
             if (isByte) {
                 mv.visitInsn(BALOAD);
-                mv.visitVarInsn(ISTORE, index);
             }
             if (isShort) {
                 mv.visitInsn(SALOAD);
-                mv.visitVarInsn(ISTORE, index);
             }
             if (isInt || isChar || isBoolean) {
-                mv.visitInsn(isChar?CALOAD:isBoolean?BALOAD:IALOAD);
-                mv.visitVarInsn(ISTORE, index);
+                mv.visitInsn(isChar ? CALOAD : isBoolean ? BALOAD : IALOAD);
             }
             if (isLong) {
                 mv.visitInsn(LALOAD);
-                mv.visitVarInsn(LSTORE, index);
             }
             if (isFloat) {
                 mv.visitInsn(FALOAD);
-                mv.visitVarInsn(FSTORE, index);
             }
             if (isDouble) {
                 mv.visitInsn(DALOAD);
-                mv.visitVarInsn(DSTORE, index);
             }
         } else {
             mv.visitInsn(AALOAD);
-            mv.visitVarInsn(ASTORE, index);
         }
+        os.push(varType);
+        os.storeVar(variable);
     }
 
     private void writeIteratorBasedForEachLoop(
@@ -223,7 +234,45 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
-        compileStack.removeVar(iteratorIdx);
+
+    }
+
+    private void writeEnumerationBasedForEachLoop(
+            CompileStack compileStack,
+            OperandStack operandStack,
+            MethodVisitor mv,
+            ForStatement loop,
+            Expression collectionExpression,
+            ClassNode collectionType,
+            Parameter loopVariable) {
+        // Declare the loop counter.
+        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+
+        collectionExpression.visit(controller.getAcg());
+
+        // Then get the iterator and generate the loop control
+
+        int enumIdx = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
+
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+
+        mv.visitLabel(continueLabel);
+        mv.visitVarInsn(ALOAD, enumIdx);
+        ENUMERATION_HASMORE_METHOD.call(mv);
+        // note: ifeq tests for ==0, a boolean is 0 if it is false
+        mv.visitJumpInsn(IFEQ, breakLabel);
+
+        mv.visitVarInsn(ALOAD, enumIdx);
+        ENUMERATION_NEXT_METHOD.call(mv);
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        operandStack.storeVar(variable);
+
+        // Generate the loop body
+        loop.getLoopBlock().visit(controller.getAcg());
+
+        mv.visitJumpInsn(GOTO, continueLabel);
+        mv.visitLabel(breakLabel);
 
     }
 

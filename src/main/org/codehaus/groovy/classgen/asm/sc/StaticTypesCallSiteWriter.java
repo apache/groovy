@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
@@ -50,9 +53,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
     private static final MethodNode INVOKERHELPER_GETPROPERTY_METHOD = INVOKERHELPER_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(OBJECT_TYPE, "object"), new Parameter(STRING_TYPE, "propertyName")});
     private static final MethodNode INVOKERHELPER_GETPROPERTYSAFE_METHOD = INVOKERHELPER_TYPE.getMethod("getPropertySafe", new Parameter[]{new Parameter(OBJECT_TYPE, "object"), new Parameter(STRING_TYPE, "propertyName")});
+    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", new Parameter[0]);
     private static final ClassNode COLLECTION_TYPE = make(Collection.class);
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[] { new Parameter(OBJECT_TYPE, "key")});
+
 
     private StaticTypesWriterController controller;
 
@@ -352,11 +357,25 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         FieldNode field = receiverType.getField(fieldName);
         ClassNode outerClass = receiverType.getOuterClass();
         if (field==null && implicitThis && outerClass !=null && !receiverType.isStaticClass()) {
-            PropertyExpression pexp = new PropertyExpression(
-                    new ClassExpression(outerClass),
-                    "this"
-            );
-            pexp.setImplicitThis(true);
+            Expression pexp;
+            if (controller.isInClosure()) {
+                MethodCallExpression mce = new MethodCallExpression(
+                        new VariableExpression("this"),
+                        "getThisObject",
+                        ArgumentListExpression.EMPTY_ARGUMENTS
+                );
+                mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
+                mce.setImplicitThis(true);
+                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                pexp = new CastExpression(controller.getOutermostClass(),mce);
+            } else {
+                pexp = new PropertyExpression(
+                        new ClassExpression(outerClass),
+                        "this"
+                );
+                ((PropertyExpression)pexp).setImplicitThis(true);
+            }
+            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
             pexp.setSourcePosition(receiver);
             return makeGetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, safe, true);
         }
@@ -417,7 +436,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
 
         if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, true)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, property, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
 
         MethodCallExpression call = new MethodCallExpression(

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
@@ -52,6 +54,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
@@ -662,7 +665,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (isInnerClass()) {
             visitFieldExpression(new FieldExpression(controller.getClassNode().getDeclaredField("owner")));
         } else {
-            loadThis();
+            loadThis(null);
         }
     }
 
@@ -723,13 +726,21 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = castExpression.getType();
         Expression subExpression = castExpression.getExpression();
         subExpression.visit(this);
+        if (ClassHelper.OBJECT_TYPE.equals(type)) return;
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
             if (isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
                 controller.getOperandStack().replace(type);
             } else {
-                controller.getOperandStack().doGroovyCast(type);
+                ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
+                if (castExpression.isStrict() ||
+                        (!ClassHelper.isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type))) {
+                    BytecodeHelper.doCast(controller.getMethodVisitor(), type);
+                    controller.getOperandStack().replace(type);
+                } else {
+                    controller.getOperandStack().doGroovyCast(type);
+                }
             }
         }
     }
@@ -1170,7 +1181,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (controller.isInClosure()) classNode = controller.getOutermostClass();
                 visitClassExpression(new ClassExpression(classNode));
             } else {
-                loadThis();
+                loadThis(expression);
             }
             return;
         }
@@ -1180,7 +1191,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (controller.isStaticMethod()) {
                 visitClassExpression(new ClassExpression(classNode.getSuperClass()));
             } else {
-                loadThis();
+                loadThis(expression);
             }
             return;
         }
@@ -1194,13 +1205,18 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!controller.getCompileStack().isLHS()) controller.getAssertionWriter().record(expression);
     }
 
-    private void loadThis() {
+    private void loadThis(VariableExpression thisExpression) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInClosure() && !controller.getCompileStack().isImplicitThis()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
-            controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
-//            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
+            ClassNode expectedType = thisExpression!=null?controller.getTypeChooser().resolveType(thisExpression, controller.getOutermostClass()):null;
+            if (!ClassHelper.OBJECT_TYPE.equals(expectedType) && !ClassHelper.isPrimitiveType(expectedType)) {
+                BytecodeHelper.doCast(mv, expectedType);
+                controller.getOperandStack().push(expectedType);
+            } else {
+                controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+            }
         } else {
             controller.getOperandStack().push(controller.getClassNode());
         }

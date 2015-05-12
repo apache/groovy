@@ -22,7 +22,7 @@ Some points of interest about this code:
 - it has a private constructor, so no `VoteCollector` objects can be created in our system (except for the `INSTANCE` we create)
 - the `INSTANCE` is also private, so it can't be changed once set
 - we haven't made the updating of votes thread-safe at this point (it doesn't add to this example)
-- the vote collector instance is not lazyily created (if we never reference the class, the instance won't be created; however, as soon as we reference the class, the instance will be created even if not needed initially)
+- the vote collector instance is not lazily created (if we never reference the class, the instance won't be created; however, as soon as we reference the class, the instance will be created even if not needed initially)
 
 We can use this singleton class in some script code as follows:
 
@@ -82,7 +82,7 @@ Client: 31436753, Calc: 24230857, Total Calculations: 2
 
 == Guice Example
 
-We can also implement the Singleton Pattern using http://code.google.com/p/google-guice/[Guice]. This example relies on annotations. Annotations are a Groovy 1.1 feature and will need to be run on a Java 5 or above JVM.
+We can also implement the Singleton Pattern using https://github.com/google/guice[Guice].
 
 Consider the Calculator example again.
 

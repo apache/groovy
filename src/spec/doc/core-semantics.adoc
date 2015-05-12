@@ -13,7 +13,7 @@ Variables can be defined using either their type (like `String`) or by using the
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
 ----
 
-`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to the make variable definitions detectable for the Groovy parser.
+`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to make variable definitions detectable for the Groovy parser.
 
 You can think of `def` as an alias of `Object` and you will understand it in an instant.
 
@@ -416,12 +416,9 @@ include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_xml
 
 == Promotion and coercion
 
-(TBD)
-
-
 === Number promotion
 
-(TBD)
+The rules of number promotion are specified in the section on <<_math_operations,math operations>>.
 
 
 [[closure-coercion]]
@@ -866,7 +863,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 <2> it makes it possible to use the method with `String`
 <3> but also with `int` since the `plus` method is defined
 
-TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
+TIP: Using the `def` keyword here is recommended to describe the intent of a method which is supposed to work on any
 type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
 equivalent to using `Object`.
 
@@ -1348,7 +1345,7 @@ When code is annotated with `@TypeChecked`, the compiler performs type inference
 techniques to infer the types of variables, return types, literals, ... so that the code remains as clean as possible even if you activate the
 type checker.
 
-The simplest example is infering the type of a variable:
+The simplest example is inferring the type of a variable:
 
 [source,groovy]
 ----

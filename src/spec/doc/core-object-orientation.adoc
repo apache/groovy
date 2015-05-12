@@ -39,7 +39,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,inden
 
 ==== Normal class
 
-Normal classes refer to classes which are top level and concrete. This means they can be instantiated without restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keyword, as in the following snippet.
+Normal classes refer to classes which are top level and concrete. This means they can be instantiated without restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be suppressed). Classes are instantiated by calling their constructors, using the `new` keyword, as in the following snippet.
 
 [source,groovy]
 ----
@@ -378,7 +378,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=property_access,indent
 <3> write access to the property is done outside of the `Person` class so it will implicitly call `setName`
 <4> read access to the property is done outside of the `Person` class so it will implicitly call `getName`
 <5> this will call the `name` method on `Person` which performs a direct access to the field
-<6> this will call the `wonder` method on `Person` which perfoms a direct read access to the field
+<6> this will call the `wonder` method on `Person` which performs a direct read access to the field
 
 It is worth noting that this behavior of accessing the backing field directly is done in order to prevent a stack
 overflow when using the property access syntax within a class that defines the property.

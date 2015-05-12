@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.ast.tools;
 
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -52,6 +54,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
@@ -459,6 +462,11 @@ public class GeneralUtils {
         return eqX(varX(fNode), propX(other, fNode.getName()));
     }
 
+    public static BinaryExpression hasEqualPropertyX(ClassNode annotatedNode, PropertyNode pNode, VariableExpression other) {
+        return eqX(getterThisX(annotatedNode, pNode), getterX(other.getOriginType(), other, pNode));
+    }
+
+    @Deprecated
     public static BinaryExpression hasEqualPropertyX(PropertyNode pNode, Expression other) {
         String getterName = getGetterName(pNode);
         return eqX(callThisX(getterName), callX(other, getterName));
@@ -610,5 +618,48 @@ public class GeneralUtils {
 
     public static VariableExpression varX(String name, ClassNode type) {
         return new VariableExpression(name, type);
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterThisX(ClassNode annotatedNode, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callThisX(getterName);
+        }
+        return propX(new VariableExpression("this"), pNode.getName());
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param receiver the object having the property
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterX(ClassNode annotatedNode, Expression receiver, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callX(receiver, getterName);
+        }
+        return propX(receiver, pNode.getName());
     }
 }

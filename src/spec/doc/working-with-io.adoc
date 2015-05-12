@@ -155,13 +155,13 @@ indicating what to do with the traversal:
 ----
 include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=traverse,indent=0]
 ----
-<1> if the current file is a directory and its name is `dir`, stop the traversal
+<1> if the current file is a directory and its name is `bin`, stop the traversal
 <2> otherwise print the file name and continue
 
 == Data and objects
 
-It is not uncommon to serialize data, in Java, using the `java.io.DataOutputStream` and
-`java.io.DataOutputStream` classes. Groovy will make it even easier to deal with them. For example, you could
+In Java it is not uncommon to serialize and deserialize data using the `java.io.DataOutputStream` and
+`java.io.DataInputStream` classes respectively. Groovy will make it even easier to deal with them. For example, you could
 serialize data into a file and deserialize it using this code:
 
 [source,groovy]

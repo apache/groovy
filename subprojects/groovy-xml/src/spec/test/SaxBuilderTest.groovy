@@ -1,79 +1,51 @@
 /*
- * Copyright 2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-package groovy.xml
-import groovy.util.GroovyTestCase
-import org.junit.Test
-import groovy.xml.SAXBuilder
 
-/**
-* Tests for SaxBuilder. The tests directly in this file are specific
-* to SaxBuilder. Functionality in common with other Builders
-* is tested in the parent class.
-*
-* @author Groovy Documentation Community
-*/
-class SaxBuilderTest  extends GroovyTestCase {
+class SaxBuilderTest extends GroovyTestCase {
 
-    void testObjectNotDefined() {
-// tag::saxbuilder_nullobject1[]
-    SAXBuilder saxBuilder;
-    
-    // SAXBuilder should be null when not initialized
-    assert saxBuilder == null;
-// end::SAXBuilder_nullobject1[]
-    } // end of method
+    // tag::sax_builder_handler[]
+    class LogHandler extends org.xml.sax.helpers.DefaultHandler {
+        
+        String log = ''
+        
+        void startElement(String uri, String localName, String qName, org.xml.sax.Attributes attributes) {
+            log += "Start Element: $localName, "
+        }
+        
+        void endElement(String uri, String localName, String qName) {
+            log += "End Element: $localName, "
+        }
+    }
+    // end::sax_builder_handler[]
 
-
-    void testObjectDefinedNull() {
-// tag::SAXBuilder_nullobject2[]
-    SAXBuilder saxBuilder = null;
-    
-    // SAXBuilder should be null when initialized to null
-    assert saxBuilder == null;
-// end::SAXBuilder_nullobject2[]
-    } // end of method
-
-
-    void testObjectDefinedDefaultConstructor() {
-// tag::SAXBuilder_object_exists1[]
-    SAXBuilder saxBuilder = new SAXBuilder();
-    
-    // SAXBuilder should not be null after construction
-    assert saxBuilder != null;
-// end::SAXBuilder_object_exists1[]
-    } // end of method
-
-
-    void testObjectDefinedAsInstanceOf() {
-// tag::SAXBuilder_object_exists2[]
-    SAXBuilder saxBuilder = new SAXBuilder();
-    
-    // SAXBuilder should be an instance of correct SAXBuilder class
-    assert saxBuilder instanceof SAXBuilder, 'default SAXBuilder constructor did not build a version of SAXBuilder'
-// end::SAXBuilder_object_exists2[]
-    } // end of method
-
-
-    void testObjectDefinedConstructorNullParm() {
-// tag::SAXBuilder_object_exists3[]
-        SAXBuilder saxBuilder = new SAXBuilder(null);
-        // SAXBuilder should not be null after construction
-        assert saxBuilder != null;
-    
-// end::SAXBuilder_object_exists3[]
-    } // end of method
-
-} // end of SAXBuilder class
+    void testSaxBuilder() {
+        // tag::sax_builder[]
+        def handler = new LogHandler()
+        def builder = new groovy.xml.SAXBuilder(handler)
+        
+        builder.root() {
+            helloWorld()
+        }
+        // end::sax_builder[]
+        
+        // tag::sax_builder_assert[]
+        assert handler.log == 'Start Element: root, Start Element: helloWorld, End Element: helloWorld, End Element: root, '
+        // end::sax_builder_assert[]
+    }
+}

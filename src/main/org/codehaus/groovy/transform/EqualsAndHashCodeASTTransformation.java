@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -34,7 +37,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.util.HashCodeHelper;
 
 import java.util.ArrayList;
@@ -50,7 +53,6 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode HASHUTIL_TYPE = make(HashCodeHelper.class);
-    private static final ClassNode INVOKERHELPER_TYPE = make(InvokerHelper.class);
     private static final ClassNode OBJECT_TYPE = makeClassSafe(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -124,7 +126,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = callX(INVOKERHELPER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
+            Expression getter = getterThisX(cNode, pNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
             body.addStatement(ifS(
                     notX(sameX(getter, varX("this"))),
@@ -181,34 +183,43 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         VariableExpression other = varX("other");
 
         // some short circuit cases for efficiency
-        body.addStatement(ifS(equalsNullX(other), returnS(constX(Boolean.FALSE))));
-        body.addStatement(ifS(sameX(varX("this"), other), returnS(constX(Boolean.TRUE))));
+        body.addStatement(ifS(equalsNullX(other), returnS(constX(Boolean.FALSE, true))));
+        body.addStatement(ifS(sameX(varX("this"), other), returnS(constX(Boolean.TRUE, true))));
 
         if (useCanEqual) {
-            body.addStatement(ifS(notX(isInstanceOfX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(isInstanceOfX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE,true))));
         } else {
-            body.addStatement(ifS(notX(hasClassX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(hasClassX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE,true))));
         }
 
         VariableExpression otherTyped = varX("otherTyped", GenericsUtils.nonGeneric(cNode));
-        body.addStatement(declS(otherTyped, new CastExpression(GenericsUtils.nonGeneric(cNode), other)));
+        CastExpression castExpression = new CastExpression(GenericsUtils.nonGeneric(cNode), other);
+        castExpression.setStrict(true);
+        body.addStatement(declS(otherTyped, castExpression));
 
         if (useCanEqual) {
-            body.addStatement(ifS(notX(callX(otherTyped, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(callX(otherTyped, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE,true))));
         }
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            body.addStatement(
-                    ifS(notX(hasSamePropertyX(pNode, otherTyped)),
-                            ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
-                                    returnS(constX(Boolean.FALSE)),
-                                    ifS(notX(bothSelfRecursivePropertyX(pNode, otherTyped)),
-                                            ifS(notX(hasEqualPropertyX(pNode, otherTyped)), returnS(constX(Boolean.FALSE))))
-                            )
-                    )
+            boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(
+                    pNode.getOriginType(), cNode
             );
+            if (!canBeSelf) {
+                body.addStatement(ifS(notX(hasEqualPropertyX(otherTyped.getOriginType(), pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))));
+            } else {
+                body.addStatement(
+                        ifS(notX(hasSamePropertyX(pNode, otherTyped)),
+                                ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
+                                        returnS(constX(Boolean.FALSE, true)),
+                                        ifS(notX(bothSelfRecursivePropertyX(pNode, otherTyped)),
+                                                ifS(notX(hasEqualPropertyX(otherTyped.getOriginType(), pNode, otherTyped)), returnS(constX(Boolean.FALSE, true))))
+                                )
+                        )
+                );
+            }
         }
         List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -219,20 +230,20 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(
                     ifS(notX(hasSameFieldX(fNode, otherTyped)),
                             ifElseS(differentSelfRecursiveFieldX(fNode, otherTyped),
-                                    returnS(constX(Boolean.FALSE)),
+                                    returnS(constX(Boolean.FALSE,true)),
                                     ifS(notX(bothSelfRecursiveFieldX(fNode, otherTyped)),
-                                            ifS(notX(hasEqualFieldX(fNode, otherTyped)), returnS(constX(Boolean.FALSE)))))
+                                            ifS(notX(hasEqualFieldX(fNode, otherTyped)), returnS(constX(Boolean.FALSE,true)))))
                     ));
         }
         if (callSuper) {
             body.addStatement(ifS(
                     notX(isTrueX(callSuperX("equals", other))),
-                    returnS(constX(Boolean.FALSE))
+                    returnS(constX(Boolean.FALSE,true))
             ));
         }
 
         // default
-        body.addStatement(returnS(constX(Boolean.TRUE)));
+        body.addStatement(returnS(constX(Boolean.TRUE,true)));
 
         cNode.addMethod(new MethodNode(
                 hasExistingEquals ? "_equals" : "equals",

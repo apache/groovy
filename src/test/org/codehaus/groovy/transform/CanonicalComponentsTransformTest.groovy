@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform
 
@@ -26,9 +29,6 @@ import static groovy.transform.AutoCloneStyle.*
 import groovy.transform.ToString
 import groovy.transform.Canonical
 
-/**
- * @author Paul King
- */
 class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 
     void testTupleConstructorWithEnum() {
@@ -54,7 +54,7 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
                 }
 
                 static main(args) {
-                    assert new Demo().hashCode() == 5174
+                    assert new Demo().hashCode() == 8730
                     assert new Demo(myBooleanProperty: true).toString() == 'Demo(false)'
                 }
             }
@@ -371,9 +371,9 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             def p = new Person(21)
             // $first setter is an implementation detail
             p.$first = 'Mary'
-            "$p.first $p.last ${p.toString()}"
+            p.toString()
         ''')
-        assert result == 'Mary Smith Person(21)'
+        assert result == 'Person(21, Mary, Smith)'
     }
 
     // GROOVY-5901
@@ -608,6 +608,68 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 
             assert new Foo2(bar: 'cat', baz: 'dog').toString() == 'Foo2(CAT, dog)'
             assert new Foo2('cat', 'dog').toString() == 'Foo2(cat, dog)'
+        """
+    }
+
+    void testEqualsHashCodeToStringConsistencyWithExplicitBooleanGetters_GROOVY7417() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString
+            @EqualsAndHashCode
+            class A {
+                boolean x
+            }
+
+            def a1 = new A(x: true)
+            def a2 = new A(x: true)
+            def a3 = new A(x: false)
+            assert a1.toString() == a2.toString()
+            assert a1.hashCode() == a2.hashCode()
+            assert a1 == a2
+            assert a1.toString() != a3.toString()
+            assert a1.hashCode() != a3.hashCode()
+            assert a1 != a3
+
+            @ToString
+            @EqualsAndHashCode
+            class B {
+                boolean x
+                boolean isX() { false }
+            }
+
+            def b1 = new B(x: true)
+            def b2 = new B(x: false)
+            assert b1.toString() == b2.toString()
+            assert b1.hashCode() == b2.hashCode()
+            assert b1 == b2
+
+            @ToString
+            @EqualsAndHashCode
+            class C {
+                boolean x
+                boolean getX() { false }
+            }
+
+            def c1 = new C(x: true)
+            def c2 = new C(x: false)
+            assert c1.toString() == c2.toString()
+            assert c1.hashCode() == c2.hashCode()
+            assert c1 == c2
+
+            @ToString
+            @EqualsAndHashCode
+            class D {
+                boolean x
+                boolean isX() { false }
+                boolean getX() { false }
+            }
+
+            def d1 = new D(x: true)
+            def d2 = new D(x: false)
+            assert d1.toString() == d2.toString()
+            assert d1.hashCode() == d2.hashCode()
+            assert d1 == d2
         """
     }
 }

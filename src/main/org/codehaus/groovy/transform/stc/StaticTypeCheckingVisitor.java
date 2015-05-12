@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform.stc;
 
@@ -19,7 +22,6 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
-import groovy.transform.SelfType;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
@@ -73,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -143,6 +146,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = make(LinkedHashMap.class);
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = make(ClosureParams.class);
+    protected static final ClassNode MAP_ENTRY_TYPE = make(Map.Entry.class);
+    protected static final ClassNode ENUMERATION_TYPE = make(Enumeration.class);
 
     public static final Statement GENERATED_EMPTY_STATEMENT = new EmptyStatement();
 
@@ -765,7 +770,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // check if constructor call expression makes use of the diamond operator
         ClassNode node = cce.getType();
         if (node.isUsingGenerics() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
-            node = node.getUnresolvedSuperClass(false);
+            ClassNode[] interfaces = node.getInterfaces();
+            node = interfaces != null && interfaces.length == 1 ? interfaces[0] : node.getUnresolvedSuperClass(false);
             if ((node.getGenericsTypes() == null || node.getGenericsTypes().length == 0) && lType.isUsingGenerics()) {
                 // InterfaceA<Foo> obj = new InterfaceA<>() { ... }
                 // InterfaceA<Foo> obj = new ClassA<>() { ... }
@@ -1592,8 +1598,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode intf = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
                 GenericsType[] genericsTypes = intf.getGenericsTypes();
                 componentType = genericsTypes[0].getType();
-            } else if (collectionType == ClassHelper.STRING_TYPE) {
+            } else if (implementsInterfaceOrIsSubclassOf(collectionType, MAP_TYPE)) {
+                // GROOVY-6240
+                ClassNode intf = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
+                componentType.setGenericsTypes(genericsTypes);
+            } else if (STRING_TYPE.equals(collectionType)) {
                 componentType = ClassHelper.Character_TYPE;
+            } else if (ENUMERATION_TYPE.equals(collectionType)) {
+                // GROOVY-6123
+                ClassNode intf = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = genericsTypes[0].getType();
             } else {
                 componentType = ClassHelper.OBJECT_TYPE;
             }
@@ -2887,7 +2904,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
-                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
+                            ClassNode irtg = inferReturnTypeGenerics(
+                                    chosenReceiver.getType(),
+                                    directMethodCallCandidate,
+                                    callArguments,
+                                    call.getGenericsTypes());
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
                         }
@@ -3697,6 +3718,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             method.getExceptions(),
                             GENERATED_EMPTY_STATEMENT
                     );
+                    stubbed.setGenericsTypes(method.getGenericsTypes());
                 }
                 stubbed.setDeclaringClass(receiver);
                 result.add(stubbed);
@@ -4117,7 +4139,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param arguments the method call arguments
      * @return parameterized, infered, class node
      */
-    protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
+    protected ClassNode inferReturnTypeGenerics(ClassNode receiver, MethodNode method, Expression arguments) {
+        return inferReturnTypeGenerics(receiver, method, arguments, null);
+    }
+
+    /**
+     * If a method call returns a parameterized type, then we can perform additional inference on the
+     * return type, so that the type gets actual type parameters. For example, the method
+     * Arrays.asList(T...) is generified with type T which can be deduced from actual type
+     * arguments.
+     *
+     * @param method    the method node
+     * @param arguments the method call arguments
+     * @param explicitTypeHints explicit type hints as found for example in Collections.&lt;String&gt;emptyList()
+     * @return parameterized, infered, class node
+     */
+    protected ClassNode inferReturnTypeGenerics(
+            ClassNode receiver,
+            MethodNode method,
+            Expression arguments,
+            GenericsType[] explicitTypeHints) {
         ClassNode returnType = method.getReturnType();
         if (method instanceof ExtensionMethodNode
                 && (isUsingGenericsOrIsArrayUsingGenerics(returnType))) {
@@ -4142,7 +4183,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         if (getGenericsWithoutArray(returnType)==null) return returnType;
         Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
-        GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        if (!receiver.isGenericsPlaceHolder()) {
+            GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        }
+        resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         Map<String, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyGenericsConnections(placeholdersFromContext,resolvedPlaceholders);
@@ -4186,6 +4230,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return applyGenericsContext(resolvedPlaceholders, returnType);
+    }
+
+    private void resolvePlaceholdersFromExplicitTypeHints(final MethodNode method, final GenericsType[] explicitTypeHints, final Map<String, GenericsType> resolvedPlaceholders) {
+        if (explicitTypeHints!=null) {
+            GenericsType[] methodGenericTypes = method.getGenericsTypes();
+            if (methodGenericTypes!=null && methodGenericTypes.length==explicitTypeHints.length) {
+                for (int i = 0; i < explicitTypeHints.length; i++) {
+                    GenericsType methodGenericType = methodGenericTypes[i];
+                    GenericsType explicitTypeHint = explicitTypeHints[i];
+                    resolvedPlaceholders.put(methodGenericType.getName(), explicitTypeHint);
+                }
+                for (GenericsType typeHint : explicitTypeHints) {
+                    System.err.println("Type hint = " + typeHint);
+                }
+            }
+        }
     }
 
     private void extractGenericsConnectionsForSuperClassAndInterfaces(final Map<String, GenericsType> resolvedPlaceholders, final Map<String, GenericsType> connections) {

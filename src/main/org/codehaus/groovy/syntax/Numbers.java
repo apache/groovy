@@ -1,20 +1,25 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.syntax;
+
+import antlr.collections.AST;
+import org.codehaus.groovy.antlr.ASTRuntimeException;
 
 import java.math.BigInteger;
 import java.math.BigDecimal;
@@ -126,19 +131,33 @@ public class Numbers
     private static final BigDecimal MIN_FLOAT   = MAX_FLOAT.negate();
 
 
+    /**
+     *  Builds a Number from the given integer descriptor.  Creates the narrowest
+     *  type possible, or a specific type, if specified.
+     *
+     *  @param  text literal text to parse
+     *  @return instantiated Number object
+     *  @throws NumberFormatException if the number does not fit within the type
+     *          requested by the type specifier suffix (invalid numbers don't make
+     *          it here)
+     */
+    @Deprecated
+    public static Number parseInteger(String text ) {
+        return parseInteger(null, text);
+    }
 
    /**
     *  Builds a Number from the given integer descriptor.  Creates the narrowest
     *  type possible, or a specific type, if specified.
     *
+    *  @param  reportNode at node for error reporting in the parser
     *  @param  text literal text to parse
     *  @return instantiated Number object
     *  @throws NumberFormatException if the number does not fit within the type
     *          requested by the type specifier suffix (invalid numbers don't make
     *          it here)
     */
-
-    public static Number parseInteger( String text )
+    public static Number parseInteger(AST reportNode, String text )
     {
         // remove place holder underscore before starting
         text = text.replace("_", "");
@@ -211,9 +230,17 @@ public class Numbers
         switch (type)
         {
             case 'i':
-                return Integer.valueOf( value.intValue() );
+                if (radix==10 && reportNode != null && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0) ) {
+                    throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of int, but int was enforced.");
+                } else {
+                    return Integer.valueOf(value.intValue());
+                }
             case 'l':
-                return new Long( value.longValue() );
+                if (radix==10 && reportNode != null && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0) ) {
+                    throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of long, but long was enforced.");
+                } else {
+                    return new Long( value.longValue() );
+                }
             case 'g':
                 return value ;
             default:
@@ -243,7 +270,6 @@ public class Numbers
     *          requested by the type specifier suffix (invalid numbers don't make
     *          it here)
     */
-
     public static Number parseDecimal( String text )
     {
         text = text.replace("_", "");

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 class CodeGenerationASTTransformsTest extends GroovyTestCase {
 
     // specification tests for the @ToString AST transformation
@@ -196,6 +198,22 @@ assert p.toString() == 'acme.Person(Jack, Nicholson)'
 
 '''
 
+        assertScript '''package acme
+import groovy.transform.ToString
+
+// tag::tostring_example_allProperties[]
+@ToString(includeNames=true)
+class Person {
+    String firstName
+    String getLastName() { 'Nicholson' }
+}
+
+def p = new Person(firstName: 'Jack')
+assert p.toString() == 'acme.Person(firstName:Jack, lastName:Nicholson)'
+// end::tostring_example_allProperties[]
+
+'''
+
     }
 
 
@@ -203,6 +221,7 @@ assert p.toString() == 'acme.Person(Jack, Nicholson)'
         assertScript '''
 // tag::equalshashcode[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode
 class Person {
     String firstName
@@ -221,6 +240,7 @@ assert p1.hashCode() == p2.hashCode()
         assertScript '''
 // tag::equalshashcode_example_excludes[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode(excludes=['firstName'])
 class Person {
     String firstName
@@ -239,6 +259,7 @@ assert p1.hashCode() == p2.hashCode()
         assertScript '''
 // tag::equalshashcode_example_includes[]
 import groovy.transform.EqualsAndHashCode
+
 @EqualsAndHashCode(includes=['lastName'])
 class Person {
     String firstName
