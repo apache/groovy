@@ -274,29 +274,53 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         GroovyMethodDoc methods[] = classDoc.methods();
 
         String setOrGet = methodName.substring(0, Math.min(methodName.length(), 3));
-        if(setOrGet.equals("set") || setOrGet.equals("get")) {
-            String expectedMethod = setOrGet.equals("set") ? "get" + methodName.substring(3) : "set" + methodName.substring(3);
+        if(setOrGet.equals("set") || setOrGet.equals("get") || setOrGet.contains("is")) {
+
+            //find the expectedMethod name
+            String expectedMethod = null ;
+            if(setOrGet.equals("set") && (currentMethodDoc.parameters().length >= 1 &&
+                            !currentMethodDoc.parameters()[0].typeName().equals("boolean")))
+                expectedMethod = "get" + methodName.substring(3);
+            else if(setOrGet.equals("get") && !currentMethodDoc.returnType().typeName().equals("boolean"))
+                expectedMethod = "set" + methodName.substring(3);
+            else if(setOrGet.contains("is"))
+                expectedMethod = "set" + methodName.substring(2);
+            else
+                expectedMethod = "is" + methodName.substring(3);
 
             for (GroovyMethodDoc methodDoc : methods) {
                 if (methodDoc.name().equals(expectedMethod)) {
+
                     //now extract the field name
-                    String fieldName = methodName.substring(3);
+                    String fieldName = null;
+                    if(expectedMethod.contains("set") && methodName.substring(0,2).equals("is"))
+                        fieldName = methodName.substring(2); //when we are finding for boolean types
+                    else
+                        fieldName = methodName.substring(3);
+
                     fieldName = fieldName.substring(0,1).toLowerCase() + fieldName.substring(1);
                     SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, classDoc);
+
                     //Now find the type of the field
                     //If its setter, need to get the type from params
-                    if(expectedMethod.contains("set") && methodDoc.parameters().length >= 1)
+                    if(expectedMethod.contains("set") && methodDoc.parameters().length >= 1 && methodDoc.returnType().typeName().equals("void")
+                                                      && currentMethodDoc.parameters().length == 0)
                     {
                         String typeName = methodDoc.parameters()[0].typeName();
                         currentFieldDoc.setType(new SimpleGroovyType(typeName));
                     }
-                    else {
+                    else if(methodDoc.parameters().length == 0 && currentMethodDoc.returnType().typeName().equals("void")) {
                         //If not setter, get the type info from return type of get* method.
                         currentFieldDoc.setType(methodDoc.returnType());
                     }
 
-                    classDoc.addProperty(currentFieldDoc);
-                    break;
+                    //interested only in public methods and make sure fields type is already added
+                    if(methodDoc.isPublic() && currentMethodDoc.isPublic() && currentFieldDoc.type() != null) {
+                        classDoc.addProperty(currentFieldDoc);
+                        break;
+                    }
+                    else
+                        continue;
                 }
             }
         }

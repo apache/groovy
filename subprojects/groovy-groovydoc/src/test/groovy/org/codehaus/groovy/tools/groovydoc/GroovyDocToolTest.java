@@ -351,15 +351,47 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testReOrderPropertiesFromGetterSetter() throws Exception {
-        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","Str1 properties should be there","<a href=\"#str1\">str1</a>",true);
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","str1 properties should be there","<a href=\"#str1\">str1</a>",true);
     }
 
     public void testCheckOtherTypesPropertiesFromGetterSetter() throws Exception {
-        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","Int properties should be there","<a href=\"#int\">int</a>",true);
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","int properties should be there","<a href=\"#int\">int</a>",true);
     }
 
     public void testPropertiesShouldNotBePresentForGetterAlone() throws Exception {
-        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","ShouldNotBePresent properties shouldnt be there","<a href=\"#shouldNotBePresent\">shouldNotBePresent</a>",false);
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","shouldNotBePresent properties shouldnt be there","<a href=\"#shouldNotBePresent\">shouldNotBePresent</a>",false);
+    }
+
+    public void testPropertiesPublicGetPrivateSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_public_get_private_set shouldnt be present"
+                    , "<a href=\"#_public_get_private_set\">_public_get_private_set</a>", false);
+    }
+
+    public void testPropertiesPrivateGetPublicSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_private_get_public_set shouldnt be present",
+                "<a href=\"#_private_get_public_set\">_private_get_public_set</a>", false);
+    }
+
+    public void testPropertiesPrivateGetPrivateSet() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "_private_get_private_set shouldnt be present",
+                "<a href=\"#_private_get_private_set\">_private_get_private_set</a>", false);
+    }
+
+
+    public void testPropertiesShouldBePresentForSetIsBooleanType() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","testBoolean properties should be there","<a href=\"#testBoolean\">testBoolean</a>",true);
+    }
+
+    public void testPropertiesShouldBePresentForIsSetBooleanType() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","testBoolean2 properties should be there","<a href=\"#testBoolean2\">testBoolean2</a>",true);
+    }
+
+    public void testPropertiesShouldNtBePresentIfSetHasReturnType() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","returnTypeForSetters properties shouldnt be there","<a href=\"#returnTypeForSetters\">returnTypeForSetters</a>",false);
+    }
+
+    public void testPropertiesShouldNtBePresentIfGetHasParam() throws Exception {
+        testPropertiesFromGetterSetter("GeneratePropertyFromGetSet","paramForGetter properties shouldnt be there","<a href=\"#paramForGetter\">paramForGetter</a>",false);
     }
 
     private void testPropertiesFromGetterSetter(String fileName,String assertMessage,String expected,boolean isTrue) throws Exception
