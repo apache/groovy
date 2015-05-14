@@ -20,6 +20,17 @@ If you plan on using invokedynamic support, link:invokedynamic-support.html[read
 
 For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
 
+=== Prerequisites
+
+Groovy {groovy-short-version} requires Java 6+ with full support up to Java 8.
+There are currently some known issues for some aspects when using Java 9 snapshots.
+The `groovy-nio` module requires Java 7+.
+Using Groovy's invokeDynamic features require Java 7+ but we recommend Java 8.
+
+The Groovy CI server is also useful to look at to confirm supported Java versions for different Groovy releases.
+The test suite (getting close to 10000 tests) runs for the currently supported streams of Groovy across
+all the main versions of Java each stream supports.
+
 == Maven Repository
 
 If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the https://oss.jfrog.org/oss-release-local/org/codehaus/groovy[JCenter maven repository].
