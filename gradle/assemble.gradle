@@ -140,6 +140,7 @@ jar {
     metaInf {
         from 'LICENSE'
         from 'NOTICE'
+        from 'DISCLAIMER'
         from('src/main/META-INF/groovy-release-info.properties') {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
@@ -264,6 +265,7 @@ subprojects {
         metaInf {
             from "${rootProject.projectDir}/LICENSE"
             from "${rootProject.projectDir}/NOTICE"
+            from "${rootProject.projectDir}/DISCLAIMER"
             from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
