@@ -49,7 +49,11 @@ class GrabResolverTest extends GroovyTestCase {
         Grape.@instance = null // isolate our test from other tests
     }
 
-    public void testChecksumsCanBeDisabled() {
+    public void manualTestChecksumsCanBeDisabled() {
+        // TODO someone has cleaned up the checksum info in the public repos that this test
+        // was relying on and so this test no longer fails unless you have the corrupt SHA1
+        // value cached in your local grapes repo, change test to not rely on that fact and
+        // then reinstate (use a local file repo?)
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shouldFail(RuntimeException) {
             shell.evaluate """
