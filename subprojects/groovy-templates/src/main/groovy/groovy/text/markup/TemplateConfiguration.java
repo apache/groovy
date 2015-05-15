@@ -180,7 +180,7 @@ public class TemplateConfiguration {
     }
 
     /**
-     * If cache is enabled, then templates are compiled once for each source (URL or File). It is recommanded to keep
+     * If cache is enabled, then templates are compiled once for each source (URL or File). It is recommended to keep
      * this flag to true unless you are in development mode and want automatic reloading of templates.
      * @param cacheTemplates should templates be cached
      */

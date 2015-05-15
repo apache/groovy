@@ -35,11 +35,11 @@ import java.util.*;
  * want to allow arithmetic operations in a groovy shell, you can configure this customizer to restrict package imports,
  * method calls and so on.
  * <p>
- * Most of the securization options found in this class work with either blacklist or whitelist. This means that, for a
+ * Most of the security customization options found in this class work with either blacklist or whitelist. This means that, for a
  * single option, you can set a whitelist OR a blacklist, but not both. You can mix whitelist/blacklist strategies for
  * different options. For example, you can have import whitelist and tokens blacklist.
  * <p>
- * The recommanded way of securing shells is to use whitelists because it is guaranteed that future features of the
+ * The recommended way of securing shells is to use whitelists because it is guaranteed that future features of the
  * Groovy language won't be allowed by defaut. Using blacklists, you can limit the features of the languages by opting
  * out, but new language features would require you to update your configuration.
  * <p>
