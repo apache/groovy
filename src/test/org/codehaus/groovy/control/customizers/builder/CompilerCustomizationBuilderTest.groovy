@@ -91,7 +91,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.imports[0].classNode.name == 'java.util.concurrent.atomic.AtomicInteger'
         assert cz.imports[1].classNode.name == 'java.util.concurrent.atomic.AtomicLong'
 
-        // regular imports using classes (not recommanded for classloading, but people like it)
+        // regular imports using classes (not recommended for classloading, but people like it)
         cz = builder.imports(AtomicInteger)
         assert cz instanceof ImportCustomizer
         assert cz.imports.size() == 1

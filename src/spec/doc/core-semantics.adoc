@@ -1614,7 +1614,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_m
 <2> we call the `compute` method with `o`
 <3> and print the result
 
-In Java, this code will output `0`, because method selection is done at compile time and based on the *declared* types.
+In Java, this code will output `Nope`, because method selection is done at compile time and based on the *declared* types.
 So even if `o` is a `String` at runtime, it is still the `Object` version which is called, because `o` has been declared
 as an `Object`. To be short, in Java, declared types are most important, be it variable types, parameter types or return
 types.

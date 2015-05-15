@@ -137,7 +137,7 @@ An interface can extend another interface:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_implements,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=extended_interface,indent=0]
 ----
 <1> the `ExtendedGreeter` interface extends the `Greeter` interface using the `extends` keyword
 
