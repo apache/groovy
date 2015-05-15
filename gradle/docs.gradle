@@ -21,7 +21,7 @@ task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
     if (JavaVersion.current().java7Compatible) {
         dependsOn 'asciidocAll', 'assembleAsciidoc'
     }
-    ext.footer = 'Copyright &amp;copy; 2003-2014 The Codehaus. All rights reserved.'
+    ext.footer = 'Copyright &copy; 2003-2015 The Apache Software Foundation. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
@@ -143,7 +143,7 @@ task docGDK {
                     arg(value: '-title')
                     arg(value: 'Groovy JDK enhancements')
                     arg(value: '-link')
-                    arg(value: 'groovy,org.codehaus.groovy=http://groovy.codehaus.org/gapi/')
+                    arg(value: 'groovy,org.codehaus.groovy=http://docs.groovy-lang.org/latest/html/gapi/')
                     arg(value: '-link')
                     arg(value: 'java,org.xml,javax,org.w3c=http://docs.oracle.com/javase/7/docs/api/')
                     // either package name if in core or fully qualified path otherwise
