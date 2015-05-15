@@ -101,7 +101,6 @@ subprojects {
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'http://www.aQute.biz/repo' } // tools
     maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
 }
 
@@ -119,7 +118,6 @@ ext {
     antVersion = '1.9.4'
     asmVersion = '5.0.3'
     antlrVersion = '2.7.7'
-    bndVersion = '0.0.401'
     checkstyleVersion = '4.4'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.2'
@@ -191,7 +189,6 @@ dependencies {
     }
     tools "org.ow2.asm:asm-all:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
-    tools "biz.aQute:bnd:$bndVersion"
 
     examplesCompile project(':groovy-test')
     examplesCompile project(':groovy-swing')
@@ -273,18 +270,10 @@ sourceSets {
         resources {
             srcDirs = ['src/test-resources']
         }
-        output.classesDir = "$buildDir/test-classes" as File
     }
     tools {
-        groovy {
-            srcDirs = ['src/tools']
-        }
-        resources {
-            srcDirs = ['src/tools']
-        }
         compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
         runtimeClasspath = output + compileClasspath
-        output.classesDir = "$buildDir/tools-classes" as File
     }
     examples {
         groovy {
@@ -294,7 +283,6 @@ sourceSets {
             srcDirs = ['src/examples']
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
-        output.classesDir = "$buildDir/examples-classes" as File
     }
 }
 
