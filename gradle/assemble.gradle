@@ -516,6 +516,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
 
 task distSrc(type: Zip) {
     appendix = 'src'
+    classifier = 'incubating'
     into("groovy-$version")
     with srcSpec
 }
