@@ -709,7 +709,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param parameters connection parameters
      * @return the byte[] from that URL
      * @throws IOException if an IOException occurs.
-     * @since 2.4.1
+     * @since 2.4.4
      */
     public static byte[] getBytes(URL url, Map parameters) throws IOException {
         return IOGroovyMethods.getBytes(configuredInputStream(parameters, url));
