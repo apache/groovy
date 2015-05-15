@@ -43,7 +43,7 @@ grant codeBase "file:${user.dir}/target/instrumented-classes/-" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "file:${user.dir}/target/test-classes/-" {
+grant codeBase "file:${user.dir}/target/classes/test/-" {
     permission java.security.AllPermission;
 };
 
@@ -216,12 +216,12 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForAndSqlBug.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
+    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForLoopBug.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
-    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
+    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
+    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/Groovy303_Bug.groovy" {
@@ -239,11 +239,11 @@ grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/PersonTest.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteTest.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/-" {
@@ -257,7 +257,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteWithoutDataSourc
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlTest.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/util/AntTest.groovy" {
@@ -265,6 +265,5 @@ grant codeBase "file:${user.dir}/src/test/groovy/util/AntTest.groovy" {
 };
 
 grant codeBase "file:${user.dir}/src/test/org/codehaus/groovy/classgen/MetaClassTest.groovy" {
-    permission java.io.FilePermission "target${/}test-classes${/}-", "read";
+    permission java.io.FilePermission "target${/}classes${/}test${/}-", "read";
 };
-
