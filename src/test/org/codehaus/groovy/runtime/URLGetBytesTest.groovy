@@ -21,10 +21,10 @@ package org.codehaus.groovy.runtime
  */
 class URLGetBytesTest extends GroovyTestCase {
     void testGetBytesFromURLWithParameters() {
-        def url = new URL('http','groovy.codehaus.org',80, '/', new URLStreamHandler() {
+        def url = new URL('http','groovy-lang.org',80, '/', new URLStreamHandler() {
             @Override
             protected URLConnection openConnection(URL u) {
-                new DummyURLConnection(new URL('http://groovy.codehaus.org'))
+                new DummyURLConnection(new URL('http://groovy-lang.org'))
             }
 
         })
@@ -48,8 +48,6 @@ class URLGetBytesTest extends GroovyTestCase {
         assert url.getBytes(requestProperties:[a:'b']) == 'Groovy a:b'.bytes
 
         assert url.getBytes(useCaches:true, requestProperties:[a:'b']) == 'Groovy cached a:b'.bytes
-
-        assert url.getBytes() == url.getBytes()
 
         assert url.getBytes() == url.getBytes((Map)null)
     }
