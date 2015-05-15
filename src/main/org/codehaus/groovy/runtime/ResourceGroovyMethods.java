@@ -691,6 +691,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Read the content of this URL and returns it as a byte[].
+     * The default connection parameters can be modified by adding keys to the
+     * <i>parameters map</i>:
+     * <ul>
+     * <li>connectTimeout : the connection timeout</li>
+     * <li>readTimeout : the read timeout</li>
+     * <li>useCaches : set the use cache property for the URL connection</li>
+     * <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     * <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
+     *
+     * @param url        URL to read content from
+     * @param parameters connection parameters
+     * @return the byte[] from that URL
+     * @throws IOException if an IOException occurs.
+     * @since 2.4.1
+     */
+    public static byte[] getBytes(URL url, Map parameters) throws IOException {
+        return IOGroovyMethods.getBytes(configuredInputStream(parameters, url));
+    }
+
+
+    /**
      * Write the bytes from the byte array to the File.
      *
      * @param file  the file to write to
