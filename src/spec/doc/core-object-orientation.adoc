@@ -605,15 +605,16 @@ meta-annotations. This means that your meta-annotation _may_ be
 precompiled, or you can have it in the same source tree as the one you
 are currently compiling.
 
-INFO: Meta-annotations are a Groovy feature only. There is
+INFO: Meta-annotations are a Groovy-only feature. There is
 no chance for you to annotate a Java class with a meta-annotation and
 hope it will do the same as in Groovy. Likewise, you cannot write a
 meta-annotation in Java: both the meta-annotation definition *and* usage
-have to be Groovy code.
+have to be Groovy code. But you can happily collect Java annotations
+abd Groovy annotations within your meta-annotation.
 
 When the Groovy compiler encounters a class annotated with a
-meta-annotation, it *replaces* it with the collected annotations. That
-is, in our previous example, that it will
+meta-annotation, it *replaces* it with the collected annotations. So,
+in our previous example, it will
 replace `@TransactionalService` with `@Transactional` and `@Service`:
 
 [source,groovy]
@@ -630,15 +631,15 @@ processing them, including arguments.
 [[meta-ann-members]]
 ===== Meta-annotation parameters
 
-Meta-annotations can collect annotations which have parameters. To illustrate this, we will imagine two annotations,
-each of them accepting one argument:
+Meta-annotations can collect annotations which have parameters. To illustrate this,
+we will imagine two annotations, each of them accepting one argument:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
 ----
 
-And that you want create a meta-annotation named `@Explosive`:
+And suppose that you want create a meta-annotation named `@Explosive`:
 
 [source,groovy]
 ----
@@ -647,8 +648,8 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_explosiv
 ----
 
 By default, when the annotations are replaced, they will get the
-values *as they were defined in the alias*. More interesting, the meta-annotation
-supports overriding specific values:
+annotation parameter values *as they were defined in the alias*. More interesting,
+the meta-annotation supports overriding specific values:
 
 [source,groovy]
 ----
@@ -656,9 +657,8 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=example_bomb,indent=0]
 ----
 <1> the `after` value provided as a parameter to `@Explosive` overrides the one defined in the `@Timeout` annotation
 
-If two annotations define the same parameter name, the
-default processor will copy the annotation value to all annotations that
-accept this parameter:
+If two annotations define the same parameter name, the default processor
+will copy the annotation value to all annotations that accept this parameter:
 
 [source,groovy]
 ----
@@ -682,7 +682,39 @@ with incompatible types. For example if on the previous example `@Foo` defined a
 type `String` but `@Bar` defined a value of type `int`.
 
 It is however possible to customize the behavior of meta-annotations and describe how collected
-annotations are expanded.
+annotations are expanded. We'll look at how to do that shortly but first there is an advanced
+processing option to cover.
+
+[[handling_duplicate_annotations]]
+===== Handling duplicate annotations
+
+The `@AnnotationCollector` annotation supports a `mode` parameter which can be used to
+alter how the default processor handles annotation replacement in the presence of
+duplicate annotations.
+
+INFO: Custom processors (discussed next) may or may not support this parameter.
+
+As an example, suppose you create a meta-annotation containing the `@ToString` annotation
+and then place your meta-annotation on a class that already has an explicit `@ToString`
+annotation. Should this be an error? Should both annotations be applied? Does one take
+priority over the other? There is no correct answer. In some scenarios it might be
+quite appropriate for any of these answers to be correct. So, rather than trying to
+preempt one correct way to handle the duplicate annotation issue, Groovy let's you
+write your own custom meta-annotation processors (covered next) and let's you write
+whatever checking logic you like within AST transforms - which are a frequent target for
+aggregating. Having said that, by simply setting the `mode`, a number of commonly
+expected scenarios are handled automatically for you within any extra coding.
+The behavior of the `mode` parameter is determined by the `AnnotationCollectorMode`
+enum value chosen and is summarized in the following table.
+
+|================================
+| Mode | Description
+| DUPLICATE | Annotations from the annotation collection will always be inserted. After all transforms have been run, it will be an error if multiple annotations (excluding those with SOURCE retention) exist.
+| PREFER_COLLECTOR | Annotations from the collector will be added and any existing annotations with the same name will be removed.
+| PREFER_COLLECTOR_MERGED | Annotations from the collector will be added and any existing annotations with the same name will be removed but any new parameters found within existing annotations will be merged into the added annotation.
+| PREFER_EXPLICIT | Annotations from the collector will be ignored if any existing annotations with the same name are found.
+| PREFER_EXPLICIT_MERGED | Annotations from the collector will be ignored if any existing annotations with the same name are found but any new parameters on the collector annotation will be added to existing annotations.
+|================================
 
 [[meta-ann-processor]]
 ===== Custom annotation processors

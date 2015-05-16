@@ -2095,7 +2095,7 @@ for testing purposes, or when integrating with third-party libraries which requi
 [[xform-AnnotationCollector]]
 ===== @groovy.transform.AnnotationCollector
 
-`@AnnotationCollector` allows the creation of meta-annotation, which are described in a <<meta-annotations,dedicated section>>.
+`@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<meta-annotations,dedicated section>>.
 
 [[xform-TypeChecked]]
 ===== @groovy.transform.TypeChecked
