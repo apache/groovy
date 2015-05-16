@@ -262,7 +262,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
         if (!isAttribute) {
             String setter = "set" + MetaClassHelper.capitalize(property);
-            MethodNode setterMethod = receiverType.getSetterMethod(setter);
+            MethodNode setterMethod = receiverType.getSetterMethod(setter, false);
             ClassNode declaringClass = setterMethod!=null?setterMethod.getDeclaringClass():null;
             if (isThisExpression && declaringClass!=null && declaringClass.equals(controller.getClassNode())) {
                 // this.x = ... shouldn't use a setter if in the same class

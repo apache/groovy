@@ -1370,5 +1370,28 @@ println someInt
             assert astTrees['Test$_foo_closure1'][1].contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6924Support.setFoo (Ljava/lang/String;)V')
         }
     }
+
+    // GROOVY-7381
+    void testNonVoidSetterCalls(){
+        assertScript '''
+            class Foo {
+                int num
+                String name
+
+                Foo setNum(int num){
+                    this.num = num
+                    this
+                }
+
+                Foo setName(String name){
+                    this.name = name
+                    this
+                }
+            }
+            Foo foo = new Foo().setNum(1).setName('fluent')
+            assert foo.num == 1
+            assert foo.name == 'fluent'
+        '''
+    }
 }
 
