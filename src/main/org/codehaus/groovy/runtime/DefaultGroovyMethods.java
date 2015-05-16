@@ -4024,7 +4024,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector          the Collection to which the transformed values are added
      * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
      * @return the collector with all non-null transformed values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static <T,U> Collection<T> findResults(Iterable<U> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> filteringTransform) {
         for (U value : self) {
@@ -4076,7 +4076,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector          the Collection to which the transformed values are added
      * @param filteringTransform a 1 or 2 arg Closure that should return either a non-null transformed value or null for items which should be discarded
      * @return the collector with all non-null transformed values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static <T,K,V> Collection<T> findResults(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> filteringTransform) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
@@ -4204,7 +4204,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Collection to which the matching values are added
      * @param closure   a closure condition
      * @return the collector with all matching values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static <T, U extends T> Collection<T> findAll(Collection<U> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         Iterator<U> iter = self.iterator();
@@ -4239,7 +4239,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Collection to which the matching values are added
      * @param condition a closure condition
      * @return the collector with all matching values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static <T, U extends T> Collection<T> findAll(U[] self, Collection<T> collector, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return findAll(condition, collector, new ArrayIterator<U>(self));
@@ -4312,7 +4312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a Collection
      * @param collector the Collection to which the matching values are added
      * @return the collector with all matching values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      * @see Closure#IDENTITY
      */
     public static <T> Collection<T> findAll(Collection<? extends T> self, Collection<T> collector) {
@@ -4351,7 +4351,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Collection to which the matching values are added
      * @return the collector with all matching values added to it
      * @see Closure#IDENTITY
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static <T, U extends T> Collection<T> findAll(U[] self, Collection<T> collector) {
         return findAll(self, collector, Closure.IDENTITY);
@@ -4378,7 +4378,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Collection to which the matching values are added
      * @param closure   a closure condition
      * @return the collector with all matching values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      */
     public static Collection findAll(Object self, Collection collector, Closure closure) {
         Iterator iter = InvokerHelper.asIterator(self);
@@ -4416,7 +4416,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an Object with an Iterator returning its values
      * @param collector the Collection to which the matching values are added
      * @return the collector with all matching values added to it
-     * @since 2.4.2
+     * @since 2.4.4
      * @see Closure#IDENTITY
      */
     public static Collection findAll(Object self, Collection collector) {
