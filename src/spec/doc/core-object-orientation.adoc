@@ -610,7 +610,7 @@ no chance for you to annotate a Java class with a meta-annotation and
 hope it will do the same as in Groovy. Likewise, you cannot write a
 meta-annotation in Java: both the meta-annotation definition *and* usage
 have to be Groovy code. But you can happily collect Java annotations
-abd Groovy annotations within your meta-annotation.
+and Groovy annotations within your meta-annotation.
 
 When the Groovy compiler encounters a class annotated with a
 meta-annotation, it *replaces* it with the collected annotations. So,
