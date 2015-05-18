@@ -2342,7 +2342,7 @@ commandArgument
 //         nextHigherPrecedenceExpression
 //                 (OPERATOR nextHigherPrecedenceExpression)*
 // which is a standard recursive definition for a parsing an expression.
-// The operators in java have the following precedences:
+// The operators have the following precedences:
 //      lowest  ( 15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |=
 //              ( 14)  ?: (conditional expression and elvis)
 //              ( 13)  ||
@@ -2358,11 +2358,11 @@ commandArgument
 //              (  4)  * / %
 //              (  3)  **(power)
 //              (  2)  ++(pre) --(pre) +(unary) -(unary)
-//              (  1)  ~  ! $ (type) ++(post) --(post)
-//                     . ?. *. (dot -- identifier qualification)
-//                     []   () (method call)  {} (closableBlock)  [] (list/map)
-//                     new  () (explicit parenthesis)
-//                     $x (scope escape)
+//              (  1)  ~  ! (type) ++(post) --(post)
+//                     . (member access) .& (method closure) .@ (field/attribute access)
+//                     ?. (safe dereference) * *. *: (spread ops)
+//                     [] (index)  () (method call)  {} (closableBlock)  [] (list/map)
+//                     new (object creation) () (explicit parenthesis)
 //
 // the last two are not usually on a precedence chart; I put them in
 // to point out that new has a higher precedence than '.', so you
@@ -2833,24 +2833,12 @@ additiveExpression[int lc_stmt]
 
 // multiplication/division/modulo (level 4)
 multiplicativeExpression[int lc_stmt]
-    :    ( INC^ nls!  powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( DEC^ nls!  powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    (  powerExpressionNotPlusMinus[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    :    powerExpression[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])*
     ;
 
 // math power operator (**) (level 3)
 powerExpression[int lc_stmt]
     :   unaryExpression[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
-    ;
-
-// math power operator (**) (level 3)
-// (without ++(prefix)/--(prefix)/+(unary)/-(unary))
-// The different rules are needed to avoid ambiguous selection
-// of alternatives.
-powerExpressionNotPlusMinus[int lc_stmt]
-    :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
     ;
 
 // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 2)
@@ -2864,9 +2852,7 @@ unaryExpression[int lc_stmt]
 
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus[int lc_stmt]
-    :   //BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
-    //|
-        BNOT^ nls! unaryExpression[0]
+    :   BNOT^ nls! unaryExpression[0]
     |   LNOT^ nls! unaryExpression[0]
     |   (   // subrule allows option to shut off warnings
             options {
@@ -2894,7 +2880,7 @@ unaryExpressionNotPlusMinus[int lc_stmt]
         )
     ;
 
-// qualified names, array expressions, method invocation, post inc/dec
+// qualified names, array expressions, method invocation, post inc/dec (level 1)
 postfixExpression[int lc_stmt]
     :
         pathExpression[lc_stmt]
