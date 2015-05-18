@@ -20,9 +20,6 @@ package groovy.operator
 
 /** 
  * Test Math Power Operation in Classic/New Groovy
- * 
- * @author Pilho Kim
- * @version $Revision: 4996 $
  */
 class PowerOperatorsTest extends GroovyTestCase {
 
@@ -30,11 +27,11 @@ class PowerOperatorsTest extends GroovyTestCase {
         assert 2**5 == 32
         assert -2**5 == -32
         assert 3**4 == 81
-        assert -3**4 == -81
+        assert -3**4 == 81
         assert 3**-4 == 3.power(-4)
-        assert -3**-4 == -3.power(-4)
+        assert -3**-4 != -3.power(-4)
         assert 7**2 - 7*3 + 2 == 30         //  49 - 21 + 2 = 30
-        assert -7**2 - 7*3 + 2 == -68       // -49 - 21 + 2 = -68
+        assert -7**2 - 7*3 + 2 == 30       // 49 - 21 + 2 = -68
         assert -(7**2) - 7*3 + 2 == -68     // -49 - 21 + 2 = -68
         assert (-7)**2 - 7*3 + 2 == 30     //  49 - 21 + 2 = 30
     }
@@ -75,8 +72,7 @@ class PowerOperatorsTest extends GroovyTestCase {
         x **= 2
         assert x == 25
         assert x**2 == 625
-        assert -x**2 != 625
-        assert -x**2 == -625
+        assert -x**2 == 625
     }
 
     void testPowerAssignmentOperation() {
