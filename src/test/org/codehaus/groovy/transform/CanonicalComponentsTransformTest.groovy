@@ -547,6 +547,22 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testTupleConstructorNoDefaultParameterValues_GROOVY7427() {
+        new GroovyShell().evaluate """
+            // checks special Map behavior isn't added if defaults=false
+            import groovy.transform.*
+
+            @ToString
+            @TupleConstructor(defaults=false)
+            class Person {
+              def name
+            }
+
+            assert new Person('John Smith').toString() == 'Person(John Smith)'
+            assert Person.constructors.size() == 1
+        """
+    }
+
     void testNullCloneableField_GROOVY7091() {
         new GroovyShell().evaluate """
             import groovy.transform.AutoClone

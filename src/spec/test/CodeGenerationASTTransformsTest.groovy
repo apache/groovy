@@ -550,6 +550,35 @@ assert new Foo('cat').toString() == 'Foo(CAT)'
 assert new Foo(bar: 'cat').toString() == 'Foo(CAT)'
 // end::tupleconstructor_example_useSetters[]
 '''
+
+        assertScript '''
+// default/control
+import groovy.transform.*
+
+@ToString
+@TupleConstructor
+class Athlete {
+  String name
+  String sport
+  int age
+}
+
+assert new Athlete('Roger', 'Tennis', 33).toString() == 'Athlete(Roger, Tennis, 33)'
+assert Athlete.constructors.size() == 4
+
+// tag::tupleconstructor_example_defaults_false[]
+@ToString
+@TupleConstructor(defaults=false)
+class Musician {
+  String name
+  String instrument
+  int born
+}
+
+assert new Musician('Jimi', 'Guitar', 1942).toString() == 'Musician(Jimi, Guitar, 1942)'
+assert Musician.constructors.size() == 1
+// end::tupleconstructor_example_defaults_false[]
+'''
     }
 
     void testCanonical() {

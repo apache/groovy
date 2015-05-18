@@ -67,8 +67,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @TupleConstructor annotation.
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class TupleConstructorASTTransformation extends AbstractASTTransformation {
@@ -110,6 +108,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean callSuper = memberHasValue(anno, "callSuper", true);
             boolean force = memberHasValue(anno, "force", true);
+            boolean defaults = !memberHasValue(anno, "defaults", false);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
@@ -121,11 +120,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
-            createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters);
+            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults);
         }
     }
 
     public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters) {
+        createConstructor(null, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, true);
+    }
+
+    public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults) {
         // no processing if existing constructors found
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         if (constructors.size() > 1 && !force) return;
@@ -156,7 +159,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
-            params.add(createParam(fNode, name));
+            params.add(createParam(fNode, name, defaults, xform));
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
                 superParams.add(varX(name));
@@ -174,7 +177,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         for (FieldNode fNode : list) {
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
-            Parameter nextParam = createParam(fNode, name);
+            Parameter nextParam = createParam(fNode, name, defaults, xform);
             params.add(nextParam);
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (useSetters && hasSetter) {
@@ -186,16 +189,17 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
-        if (params.size() > 0) {
+        if (params.size() > 0 && defaults) {
             ClassNode firstParam = params.get(0).getType();
             if (params.size() > 1 || firstParam.equals(ClassHelper.OBJECT_TYPE)) {
+                String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
                 if (firstParam.equals(ClassHelper.MAP_TYPE)) {
-                    addMapConstructors(cNode, true, "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.");
+                    addMapConstructors(cNode, true, message);
                 } else {
                     ClassNode candidate = HMAP_TYPE;
                     while (candidate != null) {
                         if (candidate.equals(firstParam)) {
-                            addMapConstructors(cNode, true, "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.");
+                            addMapConstructors(cNode, true, message);
                             break;
                         }
                         candidate = candidate.getSuperClass();
@@ -209,9 +213,16 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return "set" + Verifier.capitalize(name);
     }
 
-    private static Parameter createParam(FieldNode fNode, String name) {
+    private static Parameter createParam(FieldNode fNode, String name, boolean defaults, AbstractASTTransformation xform) {
         Parameter param = new Parameter(fNode.getType(), name);
-        param.setInitialExpression(providedOrDefaultInitialValue(fNode));
+        if (defaults){
+            param.setInitialExpression(providedOrDefaultInitialValue(fNode));
+        } else {
+            if (fNode.getInitialExpression() != null) {
+                xform.addError("Error during " + MY_TYPE_NAME + " processing, default value processing disabled but default value found for '" + fNode.getName() + "'", fNode);
+            }
+
+        }
         return param;
     }
 
