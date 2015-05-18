@@ -648,20 +648,20 @@ The table below lists all groovy operators in order of precedence.
 [options="header"]
 |======================
 |Level | Operator(s) | Name(s)
-| 1 | `new` `()` | object creation, explicit parentheses
-|   | `()` `{}` `[]` | method call, closure, literal list/map
-|   | `.` `.&` `.@` | member access, method closure, field/attribute access
-|   | `?.` `*` `*.` `*:` | safe dereferencing, spread, spread-dot, spread-map
-|   | `~` `!` `(type)` | bitwise negate/pattern, not, typecast
-|   | [] ++ -- | list/map/array index, post inc/decrement
+| 1 | `new` &#160; `()` | object creation, explicit parentheses
+|   | `()` &#160; `{}` &#160; `[]` | method call, closure, literal list/map
+|   | `.` &#160; `.&` &#160; `.@` | member access, method closure, field/attribute access
+|   | `?.` &#160; `\*` &#160; `*.` &#160; `*:` | safe dereferencing, spread, spread-dot, spread-map
+|   | `~` &#160; `!` &#160; `(type)` | bitwise negate/pattern, not, typecast
+|   | `[]` &#160; `++` &#160; `--` | list/map/array index, post inc/decrement
 | 2 | `**` | power
-| 3 | `++` `--` `+` `-` | pre inc/decrement, unary plus, unary minus
-| 4 | `*` `/` `%` | multiply, div, modulo
-| 5 | `+` `-` | addition, subtraction
-| 6 | `<<` `>>` `>>>` `..` `..<` | left/right (unsigned) shift, inclusive/exclusive range
-| 7 | `<` `\<=` `>` `>=` `in` `instanceof` `as` | less/greater than/or equal, in, instanceof, type coercion
-| 8 | `==` `!=` `pass:[<=>]` | equals, not equals, compare to
-|   | `=~` `==~` | regex find, regex match
+| 3 | `++` &#160; `--` &#160; `+` &#160; `-` | pre inc/decrement, unary plus, unary minus
+| 4 | `*` &#160; `/` &#160; `%` | multiply, div, modulo
+| 5 | `+` &#160; `-` | addition, subtraction
+| 6 | `<<` &#160; `>>` &#160; `>>>` &#160; `..` &#160; `..<` | left/right (unsigned) shift, inclusive/exclusive range
+| 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `instanceof` &#160; `as` | less/greater than/or equal, in, instanceof, type coercion
+| 8 | `==` &#160; `!=` &#160; `pass:[<=>]` | equals, not equals, compare to
+|   | `=~` &#160; `==~` | regex find, regex match
 | 9 | `&` | binary/bitwise and
 | 10 | `^` | binary/bitwise xor
 | 11 | `\|` | binary/bitwise or
@@ -669,7 +669,7 @@ The table below lists all groovy operators in order of precedence.
 | 13 | `\|\|` | logical or
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
-| 15 | `=` `\**=` `*=` `/=` `%=` `+=` `-=` `pass:[<<=]` `>>=` `>>>=` `&=` `^=` `\|=` | various assignments
+| 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; `pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` | various assignments
 |======================
 
 [[Operator-Overloading]]
