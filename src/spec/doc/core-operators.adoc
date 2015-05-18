@@ -669,7 +669,8 @@ The table below lists all groovy operators in order of precedence.
 | 13 | `\|\|` | logical or
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
-| 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; `pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` | various assignments
+| 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; +
+`pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` | various assignments
 |======================
 
 [[Operator-Overloading]]
