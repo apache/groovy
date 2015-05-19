@@ -2047,9 +2047,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             if (parameters.containsKey("requestProperties")) {
                 @SuppressWarnings("unchecked")
-                Map<String, String> properties = (Map<String, String>) parameters.get("requestProperties");
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                Map<String, CharSequence> properties = (Map<String, CharSequence>) parameters.get("requestProperties");
+                for (Map.Entry<String, CharSequence> entry : properties.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue().toString());
                 }
             }
 
