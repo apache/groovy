@@ -29,7 +29,6 @@ class URLGetBytesTest extends GroovyTestCase {
             protected URLConnection openConnection(URL u) {
                 new DummyURLConnection(new URL('http://groovy-lang.org'))
             }
-
         })
 
         assert url.bytes == 'Groovy'.bytes
@@ -62,7 +61,6 @@ class URLGetBytesTest extends GroovyTestCase {
         boolean useCache = false
         boolean allowUserInteraction = false
         def properties = [:]
-
 
         DummyURLConnection(final URL url) {
             super(url)
@@ -105,7 +103,6 @@ class URLGetBytesTest extends GroovyTestCase {
         void setRequestProperty(String key, String value) {
             properties[key] = value
         }
-
 
         @Override
         void connect() {
