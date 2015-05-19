@@ -128,7 +128,7 @@ task docGDK {
     }
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
-    inputs.files sourceSets.tools.runtimeClasspath
+    inputs.files sourceSets.main.runtimeClasspath + configurations.tools
     outputs.dir destinationDir
     doLast { task ->
         try {
@@ -136,7 +136,7 @@ task docGDK {
                 java(classname: 'org.codehaus.groovy.tools.DocGenerator',
                      fork: 'true',
                      failonerror: 'true',
-                     classpath: (configurations.tools + groovydocAll.groovyClasspath).asPath,
+                     classpath: (sourceSets.main.runtimeClasspath + configurations.tools + groovydocAll.groovyClasspath).asPath,
                      errorproperty: 'edr',
                      outputproperty: 'odr') {
                     arg(value: '-title')

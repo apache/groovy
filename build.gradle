@@ -272,7 +272,7 @@ sourceSets {
         }
     }
     tools {
-        compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
+        compileClasspath = sourceSets.main.runtimeClasspath + configurations.tools
         runtimeClasspath = output + compileClasspath
     }
     examples {
