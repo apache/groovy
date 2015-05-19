@@ -116,26 +116,10 @@ import org.apache.commons.cli.*
 
 @Field resolve = {arg, cmd ->
     Options options = new Options();
-    options.addOption(
-        OptionBuilder.hasArg(false)
-            .withLongOpt("ant")
-            .create('a')
-    );
-    options.addOption(
-        OptionBuilder.hasArg(false)
-            .withLongOpt("dos")
-            .create('d')
-    );
-    options.addOption(
-        OptionBuilder.hasArg(false)
-            .withLongOpt("shell")
-            .create('s')
-    );
-    options.addOption(
-            OptionBuilder.hasArg(false)
-                .withLongOpt("ivy")
-                .create('i')
-        );
+    options.addOption(Option.builder("a").hasArg(false).longOpt("ant").build());
+    options.addOption(Option.builder("d").hasArg(false).longOpt("dos").build());
+    options.addOption(Option.builder("s").hasArg(false).longOpt("shell").build());
+    options.addOption(Option.builder("i").hasArg(false).longOpt("ivy").build());
     CommandLine cmd2 = new GroovyInternalPosixParser().parse(options, arg[1..-1] as String[], true);
     arg = cmd2.args
 
@@ -273,65 +257,21 @@ import org.apache.commons.cli.*
 // command line parsing
 @Field Options options = new Options();
 
-options.addOption(
-    OptionBuilder.withLongOpt("define")
-        .withDescription("define a system property")
-        .hasArg(true)
-        .withArgName("name=value")
-        .create('D')
-);
-options.addOption(
-    OptionBuilder.withLongOpt("resolver")
-        .withDescription("define a grab resolver (for install)")
-        .hasArg(true)
-        .withArgName("url")
-        .create('r')
-);
-options.addOption(
-    OptionBuilder.hasArg(false)
-        .withDescription("usage information")
-        .withLongOpt("help")
-        .create('h')
-);
+options.addOption(Option.builder("D").longOpt("define").desc("define a system property").hasArg(true).argName("name=value").build());
+options.addOption(Option.builder("r").longOpt("resolver").desc("define a grab resolver (for install)").hasArg(true).argName("url").build());
+options.addOption(Option.builder("h").hasArg(false).desc("usage information").longOpt("help").build());
 
 // Logging Level Options
 options.addOptionGroup(
-    new OptionGroup().addOption(
-        OptionBuilder.hasArg(false)
-        .withDescription("Log level 0 - only errors")
-        .withLongOpt("quiet")
-        .create('q'))
-    .addOption(
-        OptionBuilder.hasArg(false)
-        .withDescription("Log level 1 - errors and warnings")
-        .withLongOpt("warn")
-        .create('w'))
-    .addOption(
-        OptionBuilder.hasArg(false)
-        .withDescription("Log level 2 - info")
-        .withLongOpt("info")
-        .create('i'))
-    .addOption(
-        OptionBuilder.hasArg(false)
-        .withDescription("Log level 3 - verbose")
-        .withLongOpt("verbose")
-
-        .create('V'))
-    .addOption(
-        OptionBuilder.hasArg(false)
-        .withDescription("Log level 4 - debug")
-        .withLongOpt("debug")
-        .create('d'))
+    new OptionGroup()
+    .addOption(Option.builder("q").hasArg(false).desc("Log level 0 - only errors").longOpt("quiet").build())
+    .addOption(Option.builder("w").hasArg(false).desc("Log level 1 - errors and warnings").longOpt("warn").build())
+    .addOption(Option.builder("i").hasArg(false).desc("Log level 2 - info").longOpt("info").build())
+    .addOption(Option.builder("V").hasArg(false).desc("Log level 3 - verbose").longOpt("verbose").build())
+    .addOption(Option.builder("d").hasArg(false).desc("Log level 4 - debug").longOpt("debug").build())
 )
 
-
-options.addOption(
-    OptionBuilder.hasArg(false)
-        .withDescription("display the Groovy and JVM versions")
-        .withLongOpt("version")
-        .create('v')
-);
-
+options.addOption(Option.builder("v").hasArg(false).desc("display the Groovy and JVM versions").longOpt("version").build());
 
 @Field CommandLine cmd
 
