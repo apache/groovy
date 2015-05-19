@@ -60,7 +60,9 @@ class URLGetTextTest extends GroovyTestCase {
         assert url.getText() == url.getText()
 
         assert url.getText() == url.getText((Map)null)
-        
+
+        def val = 'b'
+        assert url.getText(requestProperties: [a:"$val"]) == "Groovy a:b"
     }
 
     private static class DummyURLConnection extends URLConnection {
