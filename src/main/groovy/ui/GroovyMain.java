@@ -57,7 +57,6 @@ import java.util.regex.Pattern;
  * @author Jeremy Rayner
  * @author Yuri Schimke
  * @author Roshan Dawrani
- * @version $Revision$
  */
 public class GroovyMain {
 
@@ -174,7 +173,6 @@ public class GroovyMain {
      *
      * @return an options parser.
      */
-    @SuppressWarnings("static-access")
     private static Options buildOptions() {
         Options options = new Options();
         options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
