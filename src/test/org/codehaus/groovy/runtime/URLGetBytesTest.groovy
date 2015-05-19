@@ -52,6 +52,11 @@ class URLGetBytesTest extends GroovyTestCase {
         assert url.getBytes(useCaches:true, requestProperties:[a:'b']) == 'Groovy cached a:b'.bytes
 
         assert url.getBytes() == url.getBytes((Map)null)
+
+        assert url.getBytes(requestProperties: [a:"b"]) == "Groovy a:b".bytes
+
+        def val = 'b'
+        assert url.getBytes(requestProperties: [a:"$val"]) == "Groovy a:b".bytes
     }
 
     private static class DummyURLConnection extends URLConnection {
