@@ -948,7 +948,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 [[xform-Canonical]]
 ===== @groovy.transform.Canonical
 
-The `@Canonical` AST transformation combines the effects of the <<xform-ToString,@ToString>>,
+The `@Canonical` meta-annotation combines the <<xform-ToString,@ToString>>,
 <<xform-EqualsAndHashCode,@EqualsAndHashCode>> and <<xform-TupleConstructor,@TupleConstructor>>
 annotations:
 
@@ -958,22 +958,24 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 A similar immutable class can be generated using the <<xform-Immutable,@Immutable>> AST transformation instead.
-The `@Canonical` AST transformation supports several configuration options:
+The `@Canonical` meta-annotation supports the configuration options found in the annotations
+it aggregates. See those annotations for more details.
 
-[cols="1,1,2,3a",options="header"]
-|=======================================================================
-|Attribute|Default value|Description|Example
-|excludes|Empty list|List of properties to exclude from tuple constructor generation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
 ----
-|includes|Empty list|List of fields to include in tuple constructor generation|
+
+The `@Canonical` meta-annotation can be used in conjunction with an explicit use one or more of its
+component annotations, like this:
+
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=canonical_example_includes,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
 ----
-|=======================================================================
+
+Any applicable annotation attributes from `@Caonical` are passed along to the explicit annotation but
+attributes already existing in the explicit annotation take precedence.
 
 [[xform-InheritConstructors]]
 ===== @groovy.transform.InheritConstructors
