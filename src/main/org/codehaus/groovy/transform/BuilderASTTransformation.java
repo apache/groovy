@@ -43,9 +43,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFiel
 
 /**
  * Handles generation of code for the {@link Builder} annotation.
- *
- * @author Marcin Grzejszczak
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
@@ -137,15 +134,15 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             List<String> directIncludes = transform.getMemberList(anno, "includes");
             if (directIncludes != null) includes.addAll(directIncludes);
             if (includes.isEmpty() && excludes.isEmpty()) {
-                if (transform.hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
-                    AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
+                if (transform.hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
+                    AnnotationNode tupleConstructor = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
                     if (excludes.isEmpty()) {
-                        List<String>  canonicalExcludes = transform.getMemberList(canonical, "excludes");
-                        if (canonicalExcludes != null) excludes.addAll(canonicalExcludes);
+                        List<String>  tupleExcludes = transform.getMemberList(tupleConstructor, "excludes");
+                        if (tupleExcludes != null) excludes.addAll(tupleExcludes);
                     }
                     if (includes.isEmpty()) {
-                        List<String>  canonicalIncludes = transform.getMemberList(canonical, "includes");
-                        if (canonicalIncludes != null) includes.addAll(canonicalIncludes);
+                        List<String>  tupleIncludes = transform.getMemberList(tupleConstructor, "includes");
+                        if (tupleIncludes != null) includes.addAll(tupleIncludes);
                     }
                 }
             }

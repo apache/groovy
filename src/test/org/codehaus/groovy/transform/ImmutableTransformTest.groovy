@@ -127,20 +127,6 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert cls == 'Dolly'
     }
 
-    void testImmutableCantAlsoBeMutable() {
-        def msg = shouldFail(RuntimeException) {
-            assertScript """
-                import groovy.transform.*
-                @Immutable
-                @Canonical
-                class Foo {
-                    String bar
-                }
-            """
-        }
-        assert msg.contains("@Canonical class 'Foo' can't also be @Immutable")
-    }
-
     void testImmutableListProp() {
         def objects = evaluate("""
             import groovy.transform.Immutable

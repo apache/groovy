@@ -73,11 +73,6 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
-            if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
-                AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
-                if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
-                if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
-            }
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);

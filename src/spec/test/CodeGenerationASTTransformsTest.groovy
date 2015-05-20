@@ -612,34 +612,37 @@ class Person {
     String lastName
 }
 def p1 = new Person(firstName: 'Jack', lastName: 'Nicholson')
-assert p1.toString() == 'Person(Jack)' // Effect of @ToString
+assert p1.toString() == 'Person(Jack)' // Effect of @ToString(excludes=['lastName'])
 
-def p2 = new Person('Jack') // Effect of @TupleConstructor
+def p2 = new Person('Jack') // Effect of @TupleConstructor(excludes=['lastName'])
 assert p2.toString() == 'Person(Jack)'
 
-assert p1==p2 // Effect of @EqualsAndHashCode
-assert p1.hashCode()==p2.hashCode() // Effect of @EqualsAndHashCode
+assert p1==p2 // Effect of @EqualsAndHashCode(excludes=['lastName'])
+assert p1.hashCode()==p2.hashCode() // Effect of @EqualsAndHashCode(excludes=['lastName'])
 // end::canonical_example_excludes[]
 '''
 
         assertScript '''
-// tag::canonical_example_includes[]
-import groovy.transform.Canonical
+// tag::canonical_explicit_tostring[]
+import groovy.transform.*
 
-@Canonical(includes=['firstName'])
+@Canonical(excludes=['lastName'], ignoreNulls=true)
+@ToString(excludes=['firstName'])
 class Person {
     String firstName
     String lastName
 }
 def p1 = new Person(firstName: 'Jack', lastName: 'Nicholson')
-assert p1.toString() == 'Person(Jack)' // Effect of @ToString
+assert p1.toString() == 'Person(Nicholson)'  // Effect of @ToString(excludes=['firstName'], ignoreNulls=true)
 
-def p2 = new Person('Jack') // Effect of @TupleConstructor
-assert p2.toString() == 'Person(Jack)'
+def p2 = new Person('Jack')  // Effect of @TupleConstructor(excludes=['lastName'])
+assert p2.firstName == 'Jack'
+assert p2.lastName == null
+assert p2.toString() == 'Person()'  // Effect of @ToString(excludes=['firstName'], ignoreNulls=true)
 
-assert p1==p2 // Effect of @EqualsAndHashCode
-assert p1.hashCode()==p2.hashCode() // Effect of @EqualsAndHashCode
-// end::canonical_example_includes[]
+assert p1 == p2  // Effect of @EqualsAndHashCode(excludes=['lastName'])
+assert p1.hashCode() == p2.hashCode()  // Effect of @EqualsAndHashCode(excludes=['lastName'])
+// end::canonical_explicit_tostring[]
 '''
     }
 

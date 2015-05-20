@@ -81,11 +81,6 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             boolean includePackage = !memberHasValue(anno, "includePackage", false);
             boolean allProperties = !memberHasValue(anno, "allProperties", false);
 
-            if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
-                AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
-                if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
-                if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
-            }
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties);
         }
