@@ -129,4 +129,15 @@ public @interface Canonical {
      * the value of this attribute can be overridden within the more specific annotation.
      */
     String[] includes() default {};
+
+    /**
+     * Whether to include super in all transformations.
+     * Acts as if {@code EqualsAndHashCode.callSuper}, {@code ToString.includeSuper} and
+     * {@code TupleConstructor.includeSuperProperties} were all set to true.
+     *
+     * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
+     * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
+     * the value of this attribute can be overridden within the more specific annotation.
+     */
+    boolean includeSuper() default false;
 }
