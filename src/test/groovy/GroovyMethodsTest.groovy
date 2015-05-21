@@ -36,6 +36,18 @@ import org.codehaus.groovy.util.StringUtil
  * @author Yu Kobayashi
  */
 class GroovyMethodsTest extends GroovyTestCase {
+    
+    void testAbs() {
+        def absoluteNumberOne = 1
+        def negativeDouble = -1d
+        def negativeFloat = -1f
+        def negativeLong = -1l
+        
+        assert absoluteNumberOne == negativeDouble.abs()   
+        assert absoluteNumberOne == negativeFloat.abs()   
+        assert absoluteNumberOne == negativeLong.abs()   
+    }
+    
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
