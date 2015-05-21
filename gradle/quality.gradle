@@ -26,7 +26,7 @@ allprojects {
     apply plugin: 'codenarc'
 
 //    license {
-//        header rootProject.file('gradle/HEADER.txt')
+//        header rootProject.file('config/licensing/HEADER.txt')
 //        include "**/*.groovy"
 //        include "**/*.java"
 //        include "**/*.properties"
@@ -118,6 +118,23 @@ allprojects {
         finalizedBy "${name}Report"
     }
 
+}
+
+configurations {
+    rat
+}
+
+dependencies {
+    rat 'org.apache.rat:apache-rat-tasks:0.11'
+}
+
+// Standalone rat task - suitable for manually checking license info
+// TODO replace with rat gradle plugin to allow per subproject checking and better exclusion/license specification
+task rat(type: JavaExec) {
+    println "Runs Apache RAT. Exclusions are defined in config/licensing/rat-excludes.txt file"
+    main = 'org.apache.rat.Report'
+    classpath = files(configurations.rat)
+    args = ['-E', 'config/licensing/rat-excludes.txt', '--dir', '.']
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
