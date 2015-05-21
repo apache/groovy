@@ -19,7 +19,7 @@ Hamcrest (https://github.com/hamcrest/JavaHamcrest)
 JCommander (http://jcommander.org/)
 Openbeans (https://code.google.com/p/openbeans/)
 QDox (http://qdox.codehaus.org/)
-TestNG (http://qdox.codehaus.org/)
+TestNG (http://testng.org/)
 XStream (http://xstream.codehaus.org/)
 
 For the following files in the groovy-jsr223 component:

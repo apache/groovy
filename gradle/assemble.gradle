@@ -38,6 +38,7 @@ ext.licenseSpec = copySpec {
 ext.srcSpec = copySpec {
     from(projectDir) {
         exclude 'target',
+                'benchmark',
                 'subprojects/*/target',
                 'buildSrc/target',
                 buildDir.path,
