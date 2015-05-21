@@ -34,7 +34,7 @@ allprojects {
     }
 
 //    license {
-//        header rootProject.file('gradle/LICENSE.txt')
+//        header rootProject.file('gradle/HEADER.txt')
 //        include "**/*.groovy"
 //        include "**/*.java"
 //        include "**/*.properties"
