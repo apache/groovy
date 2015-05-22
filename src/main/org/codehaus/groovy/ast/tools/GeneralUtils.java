@@ -383,7 +383,7 @@ public class GeneralUtils {
     }
 
     public static List<String> getInstancePropertyNames(ClassNode cNode) {
-        List<PropertyNode> pList = getInstanceProperties(cNode);
+        List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, false, false, true);
         List<String> result = new ArrayList<String>(pList.size());
         for (PropertyNode pNode : pList) {
             result.add(pNode.getName());
