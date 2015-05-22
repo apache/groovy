@@ -423,4 +423,17 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assert message.contains("Error during @ToString processing: 'excludes' property 'sirName' does not exist.")
     }
 
+    void testExcludesWithPseudoPropertyName() {
+        evaluate '''
+            import groovy.transform.*
+
+            @ToString(excludes='full')
+            class Person {
+                String first, last
+                String getFull() { "$first $last" }
+            }
+            assert new Person(first: 'John', last: 'Smith').toString() == 'Person(John, Smith)'
+        '''
+    }
+
 }
