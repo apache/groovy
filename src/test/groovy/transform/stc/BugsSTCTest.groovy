@@ -650,4 +650,42 @@ Printer
             List tmp = (List) m.get("some_key_here")     // <---  actually groovy crashes here!!
         '''
     }
+
+    // GROOVY-7416
+    void testMethodsFromInterfacesOfSuperClassesShouldBeVisible() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            interface SomeInterface {
+                void someInterfaceMethod()
+            }
+
+            abstract class AbstractSuperClass implements SomeInterface {}
+
+            @CompileStatic
+            abstract class AbstractSubClass extends AbstractSuperClass {
+                void someMethod() {
+                    someInterfaceMethod()
+                }
+            }
+
+            assert AbstractSubClass.name == 'AbstractSubClass'
+        '''
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            interface SomeInterface { void foo() }
+            interface SomeOtherInterface { void bar() }
+            interface AnotherInterface extends SomeInterface, SomeOtherInterface {}
+
+            abstract class Parent implements AnotherInterface {}
+
+            @CompileStatic
+            abstract class Child extends Parent {
+                void baz() { foo(); bar() }
+            }
+
+            assert Child.name == 'Child'
+        '''
+    }
 }

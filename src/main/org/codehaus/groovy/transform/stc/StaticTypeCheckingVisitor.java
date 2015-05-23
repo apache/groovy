@@ -3870,13 +3870,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void collectAllInterfaceMethodsByName(final ClassNode receiver, final String name, final List<MethodNode> methods) {
-        ClassNode[] interfaces = receiver.getInterfaces();
-        if (interfaces != null && interfaces.length > 0) {
-            for (ClassNode node : interfaces) {
-                List<MethodNode> intfMethods = node.getMethods(name);
-                methods.addAll(intfMethods);
-                collectAllInterfaceMethodsByName(node, name, methods);
+        ClassNode cNode = receiver;
+        while (cNode != null) {
+            ClassNode[] interfaces = cNode.getInterfaces();
+            if (interfaces != null && interfaces.length > 0) {
+                for (ClassNode node : interfaces) {
+                    List<MethodNode> intfMethods = node.getMethods(name);
+                    methods.addAll(intfMethods);
+                    collectAllInterfaceMethodsByName(node, name, methods);
+                }
             }
+            cNode = cNode.getSuperClass();
         }
     }
 
