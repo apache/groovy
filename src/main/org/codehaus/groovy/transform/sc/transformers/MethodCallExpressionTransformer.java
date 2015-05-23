@@ -42,7 +42,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 public class MethodCallExpressionTransformer {
-    private final static ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
+    private static final ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
 
     private final StaticCompilationTransformer staticCompilationTransformer;
 

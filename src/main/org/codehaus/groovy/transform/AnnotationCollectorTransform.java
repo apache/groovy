@@ -168,7 +168,7 @@ public class AnnotationCollectorTransform {
         ListExpression memberListExp = (ListExpression) memberValue;
         List<Expression> memberList = memberListExp.getExpressions();
         if (memberList.size()==0) return Collections.EMPTY_LIST;
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>();
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>();
         for (Expression e : memberList) {
             AnnotationNode toAdd = new AnnotationNode(e.getType());
             toAdd.setSourcePosition(aliasAnnotationUsage);
@@ -199,7 +199,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> annotations = alias.getAnnotations();
         if (annotations.size() < 2) return Collections.EMPTY_LIST;
         
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
             if (type.getName().equals(AnnotationCollector.class.getName())) continue;
@@ -225,7 +225,7 @@ public class AnnotationCollectorTransform {
     private static List<AnnotationNode> makeListOfAnnotations(Object[][] data) {
         if (data.length==0) return Collections.EMPTY_LIST;
 
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
         for (Object[] inner : data) {
             Class anno = (Class) inner[0];
             AnnotationNode toAdd = new AnnotationNode(ClassHelper.make(anno));
@@ -278,7 +278,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> targetList = getTargetListFromValue(collector, aliasAnnotationUsage, source);
         int size = targetList.size()+stored.size();
         if (size==0) return Collections.EMPTY_LIST;
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(size);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(size);
         ret.addAll(stored);
         ret.addAll(targetList);
 

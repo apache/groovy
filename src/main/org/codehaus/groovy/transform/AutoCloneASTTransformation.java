@@ -97,11 +97,11 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
                 case SERIALIZATION:
                     createCloneSerialization(cNode);
                     break;
-                case CLONE:
-                    createClone(cNode, list, excludes);
-                    break;
                 case SIMPLE:
                     createSimpleClone(cNode, list, excludes);
+                    break;
+                default:
+                    createClone(cNode, list, excludes);
                     break;
             }
         }

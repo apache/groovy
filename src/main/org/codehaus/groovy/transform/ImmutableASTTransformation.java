@@ -230,7 +230,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private List<String> getKnownImmutableClasses(AnnotationNode node) {
-        final ArrayList<String> immutableClasses = new ArrayList<String>();
+        final List<String> immutableClasses = new ArrayList<String>();
 
         final Expression expression = node.getMember(MEMBER_KNOWN_IMMUTABLE_CLASSES);
         if (expression == null) return immutableClasses;
@@ -251,7 +251,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private List<String> getKnownImmutables(AnnotationNode node) {
-        final ArrayList<String> immutables = new ArrayList<String>();
+        final List<String> immutables = new ArrayList<String>();
 
         final Expression expression = node.getMember(MEMBER_KNOWN_IMMUTABLES);
         if (expression == null) return immutables;
@@ -756,7 +756,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 if (inImmutableList(fieldType.getName()) || knownImmutableClasses.contains(fieldType)) {
                     return field;
                 }
-            } catch (NoSuchFieldException ignore) { }
+            } catch (NoSuchFieldException ignore) {
+                // ignore
+            }
         }
         final String typeName = field.getClass().getName();
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));

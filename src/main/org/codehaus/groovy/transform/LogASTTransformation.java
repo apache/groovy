@@ -244,7 +244,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
     }
 
-    public static abstract class AbstractLoggingStrategy implements LoggingStrategy {
+    public abstract static class AbstractLoggingStrategy implements LoggingStrategy {
         protected final GroovyClassLoader loader;
 
         protected AbstractLoggingStrategy(final GroovyClassLoader loader) {
