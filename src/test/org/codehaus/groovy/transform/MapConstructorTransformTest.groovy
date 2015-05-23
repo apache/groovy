@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-class MapConstructorTransformTest extends GroovyTestCase {
+class MapConstructorTransformTest extends GroovyShellTestCase {
     void testMapConstructorWithFinalFields() {
         assertScript '''
             import groovy.transform.*
@@ -135,5 +135,55 @@ class MapConstructorTransformTest extends GroovyTestCase {
             assert new Author(first: 'Dierk', last: 'Koenig', bookName: 'ReGinA').toString() == 'Author(ReGinA, DIERK, Koenig)'
             assert new Author().toString() == 'Author(null, null, null)'
         '''
+    }
+
+    void testIncludesAndExcludesTogetherResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.MapConstructor
+
+                @MapConstructor(includes='surName', excludes='surName')
+                class Person {
+                    String surName
+                }
+
+                new Person()
+            """
+        }
+        assert message.contains("Error during @MapConstructor processing: Only one of 'includes' and 'excludes' should be supplied not both.")
+    }
+
+    void testIncludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.MapConstructor
+
+                @MapConstructor(includes='sirName')
+                class Person {
+                    String firstName
+                    String surName
+                }
+
+                new Person(surname: "Doe")
+            """
+        }
+        assert message.contains("Error during @MapConstructor processing: 'includes' property 'sirName' does not exist.")
+    }
+
+    void testExcludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.MapConstructor
+
+                @MapConstructor(excludes='sirName')
+                class Person {
+                    String firstName
+                    String surName
+                }
+
+                new Person(surname: "Doe")
+            """
+        }
+        assert message.contains("Error during @MapConstructor processing: 'excludes' property 'sirName' does not exist.")
     }
 }
