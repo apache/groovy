@@ -1834,7 +1834,7 @@ is `groovy.transform.stc.FirstParam` which indicated to the type checker that th
 whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
 so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
 
-The second argument is optional and named _options_. It's semantics depends on the _type hint_ class. Groovy comes with
+A second optional argument is named _options_. It's semantics depend on the _type hint_ class. Groovy comes with
 various bundled type hints, illustrated in the table below:
 
 [cols="1a,1,4a"]
@@ -1909,6 +1909,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typ
 If there are multiple signatures like in the example above, the type checker will *only* be able to infer the types of
 the arguments if the arity of each method is different. In the example above, `firstSignature` takes 2 arguments and
 `secondSignature` takes 1 argument, so the type checker can infer the argument types based on the number of arguments.
+But see the optional resolver class attribute discussed next.
 
 |`FromString`
 |Yes
@@ -1949,6 +1950,14 @@ only means that the *type* of the parameter of the closure will be the *same* as
 In short, the lack of the `@ClosureParams` annotation on a method accepting a `Closure` will *not* fail compilation. If
  present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
  and can perform additional type inference. This makes this feature particularly interesting for framework developers.
+
+A third optional argument is named _conflictResolutionStrategy_. It can reference a class (extending from
+`ClosureSignatureConflictResolver`) that can perform additional resolution of parameter types if more than
+one are found after initial inference calculations are complete. Groovy comes with the a default type resolver
+which does nothing, and another which selects the first signature if multiple are found. The resolver is
+only invoked if more than one signature is found and is by design a post processor. Any statements which need
+injected typing information must pass one of the parameter signatures determined through type hints. The
+resolver then picks among the returned candidate signatures.
 
 ===== `@DelegatesTo`
 
