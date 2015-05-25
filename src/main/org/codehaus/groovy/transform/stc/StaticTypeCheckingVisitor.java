@@ -25,6 +25,7 @@ import groovy.lang.Range;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -2308,8 +2309,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (AnnotationNode annotation : annotations) {
                 Expression hintClass = annotation.getMember("value");
                 Expression options = annotation.getMember("options");
+                Expression resolverClass = annotation.getMember("conflictResolutionStrategy");
                 if (hintClass instanceof ClassExpression) {
-                    doInferClosureParameterTypes(receiver, arguments, expression, selectedMethod, hintClass, options);
+                    doInferClosureParameterTypes(receiver, arguments, expression, selectedMethod, hintClass, resolverClass, options);
                 }
             }
         } else if (isSAMType(param.getOriginType())) {
@@ -2404,12 +2406,37 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return closureSignatures;
     }
 
+    private List<ClassNode[]> resolveWithResolver(List<ClassNode[]> candidates, ClassNode receiver, Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression resolverClass, final Expression options) {
+        // initialize resolver
+        try {
+            ClassLoader transformLoader = getTransformLoader();
+            @SuppressWarnings("unchecked")
+            Class<? extends ClosureSignatureConflictResolver> resolver = (Class<? extends ClosureSignatureConflictResolver>) transformLoader.loadClass(resolverClass.getText());
+            ClosureSignatureConflictResolver resolverInstance = resolver.newInstance();
+            return resolverInstance.resolve(
+                    candidates,
+                    receiver,
+                    arguments,
+                    expression,
+                    selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod,
+                    typeCheckingContext.source,
+                    typeCheckingContext.compilationUnit,
+                    convertToStringArray(options));
+        } catch (ClassNotFoundException e) {
+            throw new GroovyBugError(e);
+        } catch (InstantiationException e) {
+            throw new GroovyBugError(e);
+        } catch (IllegalAccessException e) {
+            throw new GroovyBugError(e);
+        }
+    }
+
     private ClassLoader getTransformLoader() {
         CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
         return compilationUnit!=null?compilationUnit.getTransformLoader():getSourceUnit().getClassLoader();
     }
 
-    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
+    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, Expression resolverClass, final Expression options) {
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(expression, selectedMethod, hintClass, options);
         List<ClassNode[]> candidates = new LinkedList<ClassNode[]>();
         Parameter[] closureParams = expression.getParameters();
@@ -2451,6 +2478,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         candIt.remove();
                     }
                 }
+            }
+            if (candidates.size() > 1 && resolverClass instanceof ClassExpression) {
+                candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
             }
             if (candidates.size()>1) {
                 addError("Ambiguous prototypes for closure. More than one target method matches. Please use explicit argument types.", expression);
