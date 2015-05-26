@@ -28,7 +28,6 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedWriter;
