@@ -450,11 +450,8 @@ public class DefaultTypeTransformation {
             method.call(adapter);
             return adapter.asList();
         }
-        else if (value instanceof String) {
-            return StringGroovyMethods.toList((String) value);
-        }
-        else if (value instanceof GString) {
-            return StringGroovyMethods.toList(value.toString());
+        else if (value instanceof String || value instanceof GString) {
+            return StringGroovyMethods.toList((CharSequence) value);
         }
         else if (value instanceof File) {
             try {

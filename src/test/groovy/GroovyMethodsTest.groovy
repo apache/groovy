@@ -1508,10 +1508,9 @@ class GroovyMethodsTest extends GroovyTestCase {
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
-            // Need toString() as CharBuffer.subSequence returns a java.nio.StringCharBuffer
-            assert it.takeWhile{ it == '' }.toString() == ''
-            assert it.takeWhile{ it != 'v' }.toString() == 'groo'
-            assert it.takeWhile{ it }.toString() == 'groovy'
+            assert it.takeWhile{ it == '' } == ''
+            assert it.takeWhile{ it != 'v' } == 'groo'
+            assert it.takeWhile{ it } == 'groovy'
         }
     }
 

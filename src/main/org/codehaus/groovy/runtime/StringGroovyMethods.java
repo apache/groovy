@@ -26,6 +26,7 @@ import groovy.lang.Range;
 
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -51,6 +52,7 @@ import java.util.regex.Pattern;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLine;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
 
 /**
  * This class defines new groovy methods which appear on String-related JDK
@@ -501,7 +503,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self the original CharSequence
-     * @param num the number of characters to drop from this iterator
+     * @param num the number of characters to drop from this String
      * @return a CharSequence consisting of all characters except the first <code>num</code> ones,
      *         or else an empty String, if this CharSequence has less than <code>num</code> characters.
      * @since 1.8.1
@@ -520,7 +522,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * A GString variant of the equivalent CharSequence method.
      *
      * @param self the original GString
-     * @param num the number of characters to drop from this iterator
+     * @param num the number of characters to drop from this GString
      * @return a String consisting of all characters except the first <code>num</code> ones,
      *         or else an empty String, if the toString() of this GString has less than <code>num</code> characters.
      * @see #drop(CharSequence, int)
@@ -550,18 +552,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the CharSequence
      * @since 2.0.0
      */
-    public static CharSequence dropWhile(CharSequence self, @ClosureParams(value=SimpleType.class, options="char") Closure condition) {
-        int num = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (num < self.length()) {
-            char value = self.charAt(num);
-            if (bcw.call(value)) {
-                num += 1;
-            } else {
-                break;
-            }
-        }
-        return drop(self, num);
+    @SuppressWarnings("unchecked")
+    public static String dropWhile(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        Iterator selfIter = hasCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
+        return join(DefaultGroovyMethods.dropWhile(selfIter, condition), "");
     }
 
     /**
@@ -575,8 +569,54 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #dropWhile(CharSequence, groovy.lang.Closure)
      * @since 2.3.7
      */
-    public static String dropWhile(GString self, @ClosureParams(value=SimpleType.class, options="char") Closure condition) {
-        return dropWhile(self.toString(), condition).toString();
+    public static String dropWhile(GString self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        return dropWhile(self.toString(), condition);
+    }
+
+    private static final class CharacterIterator implements Iterator<Character> {
+        private final CharSequence delegate;
+        private int length;
+        private int index;
+
+        public CharacterIterator(CharSequence delegate) {
+            this.delegate = delegate;
+            length = delegate.length();
+        }
+
+        public boolean hasNext() {
+            return index < length;
+        }
+
+        public Character next() {
+            return delegate.charAt(index++);
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
+        }
+    }
+
+    private static final class StringIterator implements Iterator<String> {
+        private final CharSequence delegate;
+        private int length;
+        private int index;
+
+        public StringIterator(CharSequence delegate) {
+            this.delegate = delegate;
+            length = delegate.length();
+        }
+
+        public boolean hasNext() {
+            return index < length;
+        }
+
+        public String next() {
+            return Character.toString(delegate.charAt(index++));
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
+        }
     }
 
     /**
@@ -592,7 +632,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static <T> T eachLine(CharSequence self, @ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure) throws IOException {
-        return eachLine(self.toString(), 0, closure);
+        return eachLine((CharSequence)self.toString(), 0, closure);
     }
 
     /**
@@ -611,7 +651,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> T eachLine(CharSequence self, int firstLine, @ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         int count = firstLine;
         T result = null;
-        for (String line : readLines(self.toString())) {
+        for (String line : readLines((CharSequence)self.toString())) {
             result = callClosureForLine(closure, line, count);
             count++;
         }
@@ -644,6 +684,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * <pre class="groovyTestCase">
      * assert "Groovy".collectReplacements{ it == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "Groovy".collectReplacements{ it.equalsIgnoreCase('O') ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "Groovy".collectReplacements{ char c -> c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "Groovy".collectReplacements{ Character c -> c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
      * assert "B&W".collectReplacements{ it == '&' ? '&amp;' : null } == 'B&amp;W'
      * </pre>
      *
@@ -652,13 +695,13 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *         have been replaced with the corresponding replacements
      *         as determined by the {@code transform} Closure.
      */
-    public static String collectReplacements(String orig, @ClosureParams(value=SimpleType.class, options="char") Closure<String> transform) {
+    public static String collectReplacements(String orig, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure<String> transform) {
         if (orig == null) return orig;
 
         StringBuilder sb = null; // lazy create for edge-case efficiency
         for (int i = 0, len = orig.length(); i < len; i++) {
             final char ch = orig.charAt(i);
-            final String replacement = transform.call(ch);
+            final String replacement = transform.call(hasCharacterArg(transform) ? ch : Character.toString(ch));
 
             if (replacement != null) {
                 // output differs from input; we write to our local buffer
@@ -674,6 +717,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return sb == null ? orig : sb.toString();
+    }
+
+    private static boolean hasCharacterArg(Closure c) {
+        if (c.getMaximumNumberOfParameters() != 1) return false;
+        String typeName = c.getParameterTypes()[0].getName();
+        return typeName.equals("char") || typeName.equals("java.lang.Character");
     }
 
     /**
@@ -3180,18 +3229,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *         element passed to the given closure evaluates to true
      * @since 2.0.0
      */
-    public static CharSequence takeWhile(CharSequence self, @ClosureParams(value=SimpleType.class, options="char") Closure condition) {
-        int num = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (num < self.length()) {
-            char value = self.charAt(num);
-            if (bcw.call(value)) {
-                num += 1;
-            } else {
-                break;
-            }
-        }
-        return take(self, num);
+    @SuppressWarnings("unchecked")
+    public static String takeWhile(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        Iterator selfIter = hasCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
+        return join(DefaultGroovyMethods.takeWhile(selfIter, condition), "");
     }
 
     /**
@@ -3203,8 +3244,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *         element passed to the given closure evaluates to true
      * @since 2.3.7
      */
-    public static String takeWhile(GString self, @ClosureParams(value=SimpleType.class, options="char") Closure condition) {
-        return (String) takeWhile(self.toString(), condition);
+    public static String takeWhile(GString self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        return takeWhile(self.toString(), condition);
     }
 
     /**

@@ -28,16 +28,18 @@ import groovy.transform.NotYetImplemented
 class StringGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testCollectReplacements() {
         assertScript '''
-            assert "Groovy".collectReplacements { c -> String.valueOf(c.toUpperCase()) } == 'GROOVY'
+            assert "Groovy".collectReplacements { s -> s.equalsIgnoreCase('O') ? s.toUpperCase() : s } == 'GrOOvy'
         '''
     }
 
     void testDropWhile() {
         assertScript '''
             def text = "Groovy"
-            assert text.dropWhile{ it < (char)'Z' } == 'roovy\'
-            assert text.dropWhile{ it != (char)'v' } == 'vy\'
-'''
+            assert text.dropWhile{ it.charAt(0) < (char)'Z' } == 'roovy'
+            assert text.dropWhile{ !it.equalsIgnoreCase('V') } == 'vy'
+            assert text.dropWhile{ char it -> it < (char)'Z' } == 'roovy'
+            assert text.dropWhile{ Character it -> it != (char)'v' } == 'vy'
+        '''
     }
 
     void testEachLine() {
@@ -179,8 +181,8 @@ text.splitEachLine('([,:])') { a -> println a[0].toUpperCase() }
 
     void testTakeWhileOnCharSeq() {
         assertScript '''
-            String foo(CharSequence cs) { cs.takeWhile { it < (char) 'j' }}
+            String foo(CharSequence cs) { cs.takeWhile { it.charAt(0) < (char) 'j' }}
             assert foo("abcdefghijklmnopqrstuvwxyz") == 'abcdefghi'
-'''
+        '''
     }
 }
