@@ -83,13 +83,13 @@ If you want to launch one unit test, use this. <TestClassName> is like `groovy.G
 
 To build from IntelliJ IDEA:
 
-    gradlew jarAll idea
+    gradlew jar idea
 
 Then open the generated project in IDEA.
 
 To build from Eclipse:
 
-    gradlew jarAll eclipse
+    gradlew jar eclipse
 
 Then open the generated project and the generated subprojects in Eclipse. But be aware that Eclipse tends to be more limited in its ability to reproduce a Gradle build structure. The generated project files may contain a circular dependency which may or may not prevent Eclipse from using them. It depends on the Eclipse version, if this is an issue or not.
 
