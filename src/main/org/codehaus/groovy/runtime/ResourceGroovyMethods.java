@@ -375,7 +375,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(File self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
     }
 
@@ -394,7 +394,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -416,7 +416,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -436,7 +436,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -457,7 +457,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
     }
 
@@ -476,7 +476,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -498,7 +498,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -518,7 +518,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="List<String>") Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
     }
 
