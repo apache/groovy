@@ -18,13 +18,11 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.io.ReaderSource;
 /**
- * Handy methods when working with the Closure expressions.
- *
- * @author Hamlet D'Arcy
- * @author Sergei Egorov
+ * Handy methods when working with Closure AST data structures.
  */
 
 public class ClosureUtils {
@@ -67,4 +65,27 @@ public class ClosureUtils {
 
         return source;
     }
+
+    /**
+     * Does the Closure have a single char-like (char or Character) argument.
+     * @param c a Closure
+     * @return true if it has exactly one argument and the type is char or Character
+     */
+    public static boolean hasSingleCharacterArg(Closure c) {
+        if (c.getMaximumNumberOfParameters() != 1) return false;
+        String typeName = c.getParameterTypes()[0].getName();
+        return typeName.equals("char") || typeName.equals("java.lang.Character");
+    }
+
+    /**
+     * Does the Closure have a single String argument.
+     * @param c a Closure
+     * @return true if it has exactly one argument and the type is String
+     */
+    public static boolean hasSingleStringArg(Closure c) {
+        if (c.getMaximumNumberOfParameters() != 1) return false;
+        String typeName = c.getParameterTypes()[0].getName();
+        return typeName.equals("java.lang.String");
+    }
+
 }

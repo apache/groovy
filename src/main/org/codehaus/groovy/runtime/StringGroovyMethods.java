@@ -49,6 +49,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasSingleCharacterArg;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLine;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
@@ -553,7 +554,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static String dropWhile(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
-        Iterator selfIter = hasCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
+        Iterator selfIter = hasSingleCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
         return join(DefaultGroovyMethods.dropWhile(selfIter, condition), "");
     }
 
@@ -570,6 +571,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String dropWhile(GString self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
         return dropWhile(self.toString(), condition);
+    }
+
+    private static final class CharacterIterable implements Iterable<Character> {
+        private final CharSequence delegate;
+
+        public CharacterIterable(CharSequence delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Iterator<Character> iterator() {
+            return new CharacterIterator(delegate);
+        }
     }
 
     private static final class CharacterIterator implements Iterator<Character> {
@@ -592,6 +606,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         public void remove() {
             throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
+        }
+    }
+
+    private static final class StringIterable implements Iterable<String> {
+        private final CharSequence delegate;
+
+        public StringIterable(CharSequence delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            return new StringIterator(delegate);
         }
     }
 
@@ -700,7 +727,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         StringBuilder sb = null; // lazy create for edge-case efficiency
         for (int i = 0, len = orig.length(); i < len; i++) {
             final char ch = orig.charAt(i);
-            final String replacement = transform.call(hasCharacterArg(transform) ? ch : Character.toString(ch));
+            final String replacement = transform.call(hasSingleCharacterArg(transform) ? ch : Character.toString(ch));
 
             if (replacement != null) {
                 // output differs from input; we write to our local buffer
@@ -716,12 +743,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return sb == null ? orig : sb.toString();
-    }
-
-    private static boolean hasCharacterArg(Closure c) {
-        if (c.getMaximumNumberOfParameters() != 1) return false;
-        String typeName = c.getParameterTypes()[0].getName();
-        return typeName.equals("char") || typeName.equals("java.lang.Character");
     }
 
     /**
@@ -3230,7 +3251,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static String takeWhile(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
-        Iterator selfIter = hasCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
+        Iterator selfIter = hasSingleCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
         return join(DefaultGroovyMethods.takeWhile(selfIter, condition), "");
     }
 

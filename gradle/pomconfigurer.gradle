@@ -97,6 +97,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 }
             }
             developer {
+                id 'alextkachman'
+                name 'Alex Tkachman'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
                 id 'spullara'
                 name 'Sam Pullara'
                 email 'sam@sampullara.com'
@@ -272,6 +279,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 }
             }
             developer {
+                id 'timyates'
+                name 'Tim Yates'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
                 id 'aalmiray'
                 name 'Andres Almiray'
                 email 'aalmiray@users.sourceforge.net'
@@ -300,6 +314,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'pniederw'
                 name 'Peter Niederwieser'
                 email 'pniederw@gmail.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'andresteingress'
+                name 'Andre Steingress'
                 roles {
                     role 'Developer'
                 }
@@ -425,6 +446,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Jim Jagielski'
             }
             contributor {
+                name 'Rodolfo Velasco'
+            }
+            contributor {
                 name 'John Hurst'
             }
             contributor {
@@ -486,6 +510,21 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'David Lee'
+            }
+            contributor {
+                name 'Sergei Egorov'
+            }
+            contributor {
+                name 'Hein Meling'
+            }
+            contributor {
+                name 'Michael Baehr'
+            }
+            contributor {
+                name 'Craig Andrews'
+            }
+            contributor {
+                name 'Peter Ledbrook'
             }
         }
         mailingLists {
