@@ -71,33 +71,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLin
  * at the Java method call level. I.e. future versions of Groovy may
  * remove or move a method call in this file but would normally
  * aim to keep the method available from within Groovy.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jeremy Rayner
- * @author Sam Pullara
- * @author Rod Cope
- * @author Guillaume Laforge
- * @author John Wilson
- * @author Hein Meling
- * @author Dierk Koenig
- * @author Pilho Kim
- * @author Marc Guillemot
- * @author Russel Winder
- * @author bing ran
- * @author Jochen Theodorou
- * @author Paul King
- * @author Michael Baehr
- * @author Joachim Baumann
- * @author Alex Tkachman
- * @author Ted Naleid
- * @author Brad Long
- * @author Jim Jagielski
- * @author Rodolfo Velasco
- * @author jeremi Joslin
- * @author Hamlet D'Arcy
- * @author Cedric Champeau
- * @author Tim Yates
- * @author Dinko Srkoc
  */
 public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
