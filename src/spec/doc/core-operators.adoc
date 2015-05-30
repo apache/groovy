@@ -81,6 +81,7 @@ From the binary arithmetic operators we have seen above, certain of them are als
 * `*=`
 * `/=`
 * `%=`
+* `**=`
 
 Let's see them in action:
 
