@@ -209,10 +209,6 @@ d,e,f""".bytes).newReader()
         '''
         assertScript '''def is = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { String[] it -> assert it.size() == 3 }
-        '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
-d,e,f""".bytes).newReader()
             is.splitEachLine(',') { String it -> assert it instanceof String && it.size() == 1 }
         '''
         assertScript '''def is = new ByteArrayInputStream("""a,b,c
