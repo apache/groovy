@@ -160,7 +160,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=keywords_valid_id_aft
 === Quoted identifiers
 
 Quoted identifiers appear after the dot of a dotted expression.
-For instance, the `name` part of the `person.name` expression can be quoted with `person."name"` or `person.\'name'`.
+For instance, the `name` part of the `person.name` expression can be quoted with `person."name"` or `person.'name'`.
 This is particularly interesting when certain identifiers contain illegal characters that are forbidden by the Java Language Specification,
 but which are allowed by Groovy when quoted. For example, characters like a dash, a space, an exclamation mark, etc.
 
