@@ -240,7 +240,7 @@ class SyntaxTest extends CompilableTestSupport {
                  * Creates a greeting method for a certain person.
                  *
                  * @param otherPerson the person to greet
-                 * @return ag reeting message
+                 * @return a greeting message
                  */
                 String greet(String otherPerson) {
                    "Hello ${otherPerson}"
