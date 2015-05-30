@@ -35,7 +35,4 @@ gradlew\.bat
 .*\.text
 META-INF
 WEB-INF
-package\.html
-overview\.html
-overviewj\.html
 config

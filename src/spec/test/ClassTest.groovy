@@ -180,7 +180,7 @@ class ClassTest extends GroovyTestCase {
             greeter.greet('Laura')
 
             // tag::extended_interface[]
-            interface ExtendedGreeter extends Greeter {                 // <4>
+            interface ExtendedGreeter extends Greeter {                 // <1>
                 void sayBye(String name)
             }
             // end::extended_interface[]

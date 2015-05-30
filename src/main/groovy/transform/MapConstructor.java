@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  *     String first, last
  * }
  *
- * {@code @CompileStatic // optional
+ * {@code @CompileStatic} // optional
  * {@code @ToString(includeSuperProperties=true)}
  * {@code @MapConstructor}(pre={ super(args?.first, args?.last); args = args ?: [:] }, post = { first = first?.toUpperCase() })
  * class Author extends Person {
