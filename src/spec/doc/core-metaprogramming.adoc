@@ -64,7 +64,7 @@ You can intercept write access to properties by overriding the `setProperty()` m
 
 [source, groovy]
 ----
-include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_gset_property,indent=0]
+include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_set_property,indent=0]
 ----
 
 ==== get/setMetaClass

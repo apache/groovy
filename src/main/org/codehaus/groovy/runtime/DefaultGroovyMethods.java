@@ -3734,7 +3734,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an array
      * @param collector the Map into which the transformed entries are put
      * @return the collector with all transformed values added to it
-     * @see #collectEntries(E[], Map, Closure)
+     * @see #collectEntries(Object[], Map, Closure)
      * @since 1.8.5
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector) {
@@ -3772,7 +3772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an array
      * @return the collector with all transformed values added to it
-     * @see #collectEntries(E[], Closure)
+     * @see #collectEntries(Object[], Closure)
      * @since 1.8.5
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self) {
