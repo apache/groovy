@@ -89,6 +89,11 @@ class OperatorsTest extends CompilableTestSupport {
         e %= 3
 
         assert e == 1
+
+        def f = 3
+        f **= 2
+
+        assert f == 9
         // end::binary_assign_operators[]
     }
 
