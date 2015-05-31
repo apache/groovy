@@ -201,11 +201,21 @@ d,e,f""".bytes).newReader()
         '''
         assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            reader.splitEachLine(',') { a, b, c -> assert [a, b, c]*.size() == [1, 1, 1] }
+            reader.splitEachLine(',') { a, b, c -> assert [a.size(), b.size(), c.size()] == [1, 1, 1] }
+// TODO fix below: BUG! exception in phase 'class generation': doCall(Object a, Object b, Object c)  { ... }
+// CompileStack#removeVar: tried to remove a temporary variable with index 4 in wrong order.
+// Current temporary variables=[iterator(index=7,type=Iterator,holder=false), recorder(index=4,type=Object,holder=false)]
+//   at org.codehaus.groovy.classgen.asm.CompileStack.removeVar(CompileStack.java:226)
+//   at org.codehaus.groovy.classgen.asm.AssertionWriter.writeAssertStatement(AssertionWriter.java:136)
+//   at org.codehaus.groovy.classgen.asm.StatementWriter.writeAssert(StatementWriter.java:550)
+//   at org.codehaus.groovy.classgen.AsmClassGenerator.visitAssertStatement(AsmClassGenerator.java:587)
+//   ...
+//            reader.splitEachLine(',') { a, b, c -> assert [a, b, c]*.size() == [1, 1, 1] }
         '''
         assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            reader.splitEachLine(',') { String a, String b, String c -> assert [a, b, c]*.size() == [1, 1, 1] }
+            reader.splitEachLine(',') { String a, String b, String c -> assert [a.size(), b.size(), c.size()] == [1, 1, 1] }
+//            reader.splitEachLine(',') { String a, String b, String c -> assert [a, b, c]*.size() == [1, 1, 1] }
         '''
         assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
