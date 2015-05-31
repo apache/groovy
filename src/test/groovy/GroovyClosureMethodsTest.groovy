@@ -185,6 +185,19 @@ E F G H
         assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
     }
 
+    void testSplitEachLineVarArgClosure() {
+        String s = """A B C D
+E F G H
+1 2 3 4
+"""
+        Reader reader = new StringReader(s)
+        def all_lines = []
+        reader.splitEachLine(" ") { a, b, c, d ->
+            all_lines << [a, b, c, d]
+        }
+        assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
+    }
+
     void testSplitEachLinePattern() {
         String s = """A B C D
 E F G H

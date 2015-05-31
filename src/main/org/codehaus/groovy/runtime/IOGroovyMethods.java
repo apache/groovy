@@ -25,6 +25,7 @@ import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 
@@ -55,6 +56,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasSingleStringArg;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLine;
 
 /**
@@ -497,7 +499,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(Reader self, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex), closure);
     }
 
@@ -527,7 +529,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(Reader self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         BufferedReader br;
         T result = null;
 
@@ -543,7 +545,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                     break;
                 } else {
                     List vals = Arrays.asList(pattern.split(line));
-                    result = closure.call(vals);
+                    result = closure.call(hasSingleStringArg(closure) ? vals.get(0) : vals);
                 }
             }
             Reader temp = self;
@@ -573,7 +575,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
     }
 
@@ -592,7 +594,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
     }
 
@@ -611,7 +613,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
     }
 
@@ -628,7 +630,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
     }
 
