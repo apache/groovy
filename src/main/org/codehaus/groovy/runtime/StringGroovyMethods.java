@@ -2951,7 +2951,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static <T> T splitEachLine(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex.toString()), closure);
     }
 
@@ -2967,7 +2967,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an error occurs
      * @since 1.8.2
      */
-    public static <T> T splitEachLine(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         final List<String> list = readLines(self);
         T result = null;
         for (String line : list) {
@@ -2982,7 +2982,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static <T> T splitEachLine(String self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(String self, Pattern pattern, Closure<T> closure) throws IOException {
         return splitEachLine((CharSequence) self, pattern, closure);
     }
 
@@ -2991,7 +2991,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static <T> T splitEachLine(String self, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(String self, String regex, Closure<T> closure) throws IOException {
         return splitEachLine((CharSequence) self, (CharSequence) regex, closure);
     }
 

@@ -193,6 +193,30 @@ d,e,f""".bytes).newReader()
         '''
         assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
+            reader.splitEachLine(',') { List it -> assert it.size() == 3 }
+        '''
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
+d,e,f""".bytes).newReader()
+            reader.splitEachLine(',') { List<String> it -> assert it.size() == 3 }
+        '''
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
+d,e,f""".bytes).newReader()
+            reader.splitEachLine(',') { a, b, c -> assert [a.size(), b.size(), c.size()] == [1, 1, 1] }
+// TODO replace above with below once GROOVY-7442 is fixed
+//            reader.splitEachLine(',') { a, b, c -> assert [a, b, c]*.size() == [1, 1, 1] }
+        '''
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
+d,e,f""".bytes).newReader()
+            reader.splitEachLine(',') { String a, String b, String c -> assert [a.size(), b.size(), c.size()] == [1, 1, 1] }
+// TODO replace above with below once GROOVY-7442 is fixed
+//            reader.splitEachLine(',') { String a, String b, String c -> assert [a, b, c]*.size() == [1, 1, 1] }
+        '''
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
+d,e,f""".bytes).newReader()
+            reader.splitEachLine(',') { String it -> assert it instanceof String && it.size() == 1 }
+        '''
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
+d,e,f""".bytes).newReader()
             reader.splitEachLine(~',') { assert it.size() == 3 }
         '''
     }
