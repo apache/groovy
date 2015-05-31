@@ -51,7 +51,7 @@ import java.math.BigDecimal
 
 === Simple import
 
-A simple import is an import statement where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is a simple import which directly refers to the a class inside a package.
+A simple import is an import statement where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is a simple import which directly refers to a class inside a package.
 
 [source,groovy]
 ----
