@@ -104,6 +104,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 }
             }
             developer {
+                id 'roshandawrani'
+                name 'Roshan Dawrani'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
                 id 'spullara'
                 name 'Sam Pullara'
                 email 'sam@sampullara.com'
@@ -342,6 +349,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                     role 'Despot'
                 }
             }
+            developer {
+                id 'pascalschumacher'
+                name 'Pascal Schumacher'
+                roles {
+                    role 'Developer'
+                }
+            }
         }
         contributors {
             contributor {
@@ -525,6 +539,27 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Peter Ledbrook'
+            }
+            contributor {
+                name 'Thibault Kruse'
+            }
+            contributor {
+                name 'Paolo Di Tommaso'
+            }
+            contributor {
+                name 'Rene Scheibe'
+            }
+            contributor {
+                name 'Matias Bjarland'
+            }
+            contributor {
+                name 'Richard Hightower'
+            }
+            contributor {
+                name 'Andrey Bloschetsov'
+            }
+            contributor {
+                name 'Yu Kobayashi'
             }
         }
         mailingLists {
