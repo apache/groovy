@@ -17,18 +17,16 @@
  *  under the License.
  */
 
-
-
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
+import groovy.transform.stc.StringGMClosureParamTypeInferenceSTCTest
 
 /**
- * Unit tests for static compilation: closure parameter type inference: IOGroovyMethods.
+ * Unit tests for static compilation: closure parameter type inference: StringGroovyMethods.
  *
  * @author Cedric Champeau
  */
-class IOGMClosureParamTypeInferrenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
+class StringGMClosureParamTypeInferenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 
