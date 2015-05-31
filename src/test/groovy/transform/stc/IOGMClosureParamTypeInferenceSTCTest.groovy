@@ -187,33 +187,33 @@ d,e,f""".bytes)
     }
 
     void testSplitEachLineOnReader() {
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { assert it.size() == 3 }
+            reader.splitEachLine(',') { assert it.size() == 3 }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { List it -> assert it.size() == 3 }
+            reader.splitEachLine(',') { List it -> assert it.size() == 3 }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { List<String> it -> assert it.size() == 3 }
+            reader.splitEachLine(',') { List<String> it -> assert it.size() == 3 }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { a, b, c -> assert [a, b, c]*.size() == [1, 1, 1] }
+            reader.splitEachLine(',') { a, b, c -> assert [a, b, c]*.size() == [1, 1, 1] }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { String a, String b, String c -> assert [a, b, c]*.size() == [1, 1, 1] }
+            reader.splitEachLine(',') { String a, String b, String c -> assert [a, b, c]*.size() == [1, 1, 1] }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { String it -> assert it instanceof String && it.size() == 1 }
+            reader.splitEachLine(',') { String it -> assert it instanceof String && it.size() == 1 }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(~',') { assert it.size() == 3 }
+            reader.splitEachLine(~',') { assert it.size() == 3 }
         '''
     }
 

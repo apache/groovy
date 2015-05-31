@@ -16,16 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.stc.ResourceGMClosureParamTypeInferenceSTCTest
+import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
 
 /**
- * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.ResourceGroovyMethods}.
+ * Unit tests for static compilation: closure parameter type inference: IOGroovyMethods.
  *
  * @author Cedric Champeau
  */
-class ResourceGMClosureParamTypeInferrenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
+class IOGMClosureParamTypeInferenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 
