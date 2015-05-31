@@ -187,13 +187,13 @@ d,e,f""".bytes)
     }
 
     void testSplitEachLineOnReader() {
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(',') { assert it.size() == 3 }
+            reader.splitEachLine(',') { assert it.size() == 3 }
         '''
-        assertScript '''def is = new ByteArrayInputStream("""a,b,c
+        assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
-            is.splitEachLine(~',') { assert it.size() == 3 }
+            reader.splitEachLine(~',') { assert it.size() == 3 }
         '''
     }
 
