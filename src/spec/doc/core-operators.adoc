@@ -74,7 +74,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=plusplus_minusminu
 
 === Assignment arithmetic operators
 
-From the binary arithmetic operators we have seen above, certain of them are also available in an assignment form:
+The binary arithmetic operators we have seen above are also available in an assignment form:
 
 * `+=`
 * `-=`
