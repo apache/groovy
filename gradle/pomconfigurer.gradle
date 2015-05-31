@@ -182,7 +182,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'jeremy.rayner@gmail.com'
                 organization 'javanicus'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -253,7 +253,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Guillaume Alleon'
                 email 'guillaume.alleon@gmail.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -261,21 +261,21 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Jason Dillon'
                 email 'jason@planet57.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
                 id 'shemnon'
                 name 'Danno Ferrin'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
                 id 'jwill'
                 name 'James Williams'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -298,7 +298,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Marc Guillemot'
                 email 'mguillemot@yahoo.fr'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -315,7 +315,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Peter Niederwieser'
                 email 'pniederw@gmail.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -330,7 +330,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Hamlet D\'Arcy'
                 email 'hamletdrc@gmail.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
