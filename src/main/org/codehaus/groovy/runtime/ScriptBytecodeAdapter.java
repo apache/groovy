@@ -788,7 +788,11 @@ public class ScriptBytecodeAdapter {
             } else if (value.getClass().isArray()) {
                 ret.addAll(DefaultTypeTransformation.primitiveArrayToList(value));
             } else {
-                throw new IllegalArgumentException("cannot spread the type " + value.getClass().getName() + " with value " + value);
+                String error = "cannot spread the type " + value.getClass().getName() + " with value " + value;
+                if (value instanceof Map) {
+                    error += ", did you mean to use the spread-map operator instead?";
+                }
+                throw new IllegalArgumentException(error);
             }
             spreadPos++;
         }

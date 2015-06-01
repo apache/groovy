@@ -91,6 +91,20 @@ class SpreadListOperatorTest extends GroovyTestCase {
         items = orig.toList()
         items[*1..2, 4] = 'X'
         assert items == ['a', 'X', 'X', 'd', 'X', 'f']
+
+        def message = shouldFail IllegalArgumentException, '''
+            def items = [1, 2, 3, 4]
+            items[*new Date()]
+        '''
+        assert message.contains('cannot spread the type java.util.Date')
+
+        message = shouldFail IllegalArgumentException, '''
+            def items = [1, 2, 3, 4]
+            def map = [a: 1]
+            items[*map]
+        '''
+        assert message.contains('cannot spread the type java.util.LinkedHashMap')
+        assert message.contains('did you mean to use the spread-map operator instead?')
     }
 
     def sum(a, b, c, d) {
