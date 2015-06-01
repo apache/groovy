@@ -19,8 +19,6 @@
 package groovy.operator
 
 /**
- * @version $Revision: 4996 $
- *
  * <code>[2, 3].toSpreadList() equals to *[2, 3]</code> <br><br>
  *
  * For an example, <pre>
@@ -66,6 +64,33 @@ class SpreadListOperatorTest extends GroovyTestCase {
         def x = ["foo", "Bar-"]
 
         assert sum(*x, *x) == "fooBar-fooBar-"
+    }
+
+    void testSliceWithSpread() {
+        def result = (1..5)[1..3]
+        assert result == [2, 3, 4]
+        result = (1..5)[*1..3]
+        assert result == [2, 3, 4]
+        result = (1..5)[1..3, 0]
+        assert result == [2, 3, 4, 1]
+        result = (1..5)[*1..3, 0]
+        assert result == [2, 3, 4, 1]
+    }
+
+    void testSettingViaSpreadWithinIndex() {
+        def orig = 'a'..'f'
+
+        def items = orig.toList()
+        items[1..2] = 'X'
+        assert items == ['a', 'X', 'd', 'e', 'f']
+
+        items = orig.toList()
+        items[*1..2] = 'X'
+        assert items == ['a', 'X', 'X', 'd', 'e', 'f']
+
+        items = orig.toList()
+        items[*1..2, 4] = 'X'
+        assert items == ['a', 'X', 'X', 'd', 'X', 'f']
     }
 
     def sum(a, b, c, d) {
