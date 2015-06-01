@@ -25,7 +25,6 @@ import java.util.concurrent.Callable
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
 class ClosureAsParamTest extends GroovyTestCase {
 

@@ -27,7 +27,6 @@ import java.io.Writer;
  * So we replicate the behaviour of StringWriter here but allow a StringBuffer to be passed in.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class StringBufferWriter extends Writer {
 

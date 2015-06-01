@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * it such as "hello there ${user} how are you" which is expanded lazily
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class GStringExpression extends Expression {
 

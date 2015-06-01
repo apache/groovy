@@ -31,7 +31,6 @@ import org.codehaus.groovy.syntax.Token;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class IfElseTest extends TestSupport {
 

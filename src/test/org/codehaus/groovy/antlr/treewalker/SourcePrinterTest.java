@@ -24,7 +24,6 @@ import groovy.util.GroovyTestCase;
  * Testcases for the antlr AST visitor that prints groovy source code.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class SourcePrinterTest extends GroovyTestCase {
 

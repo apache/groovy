@@ -20,7 +20,6 @@ package groovy.bugs;
 
 /**
  * @author
- * @version $Revision$
  */
 public class SimpleModel {
     public String s;

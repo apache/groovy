@@ -27,7 +27,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * call visitDefault.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public class VisitorAdapter implements Visitor {

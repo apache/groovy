@@ -26,7 +26,6 @@ import org.codehaus.groovy.syntax.Token;
  * Represents a prefix expression like ++foo or --bar
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class PrefixExpression extends Expression {
 

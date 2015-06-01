@@ -74,7 +74,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
  * bytecode generation occurs.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
 

@@ -22,7 +22,6 @@ package groovy
  * Tests Closures in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ClosureReturnTest extends GroovyTestCase {
 

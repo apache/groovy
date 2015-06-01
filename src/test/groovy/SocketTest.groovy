@@ -22,7 +22,6 @@ package groovy
  * check that groovy Socket methods do their job.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 class SocketTest extends GroovyTestCase {
     def mySocket

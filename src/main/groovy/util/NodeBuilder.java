@@ -26,7 +26,6 @@ import java.util.Map;
  * handling arbitrary data
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class NodeBuilder extends BuilderSupport {
 

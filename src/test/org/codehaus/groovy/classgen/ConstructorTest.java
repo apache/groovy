@@ -22,7 +22,6 @@ import groovy.lang.GroovyObject;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ConstructorTest extends TestSupport {
 

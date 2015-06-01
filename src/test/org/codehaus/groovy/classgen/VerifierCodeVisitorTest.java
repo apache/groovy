@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 
 /**
- * @version $Revision$
  */
 public class VerifierCodeVisitorTest extends TestCase {
     public void testValidNames() {

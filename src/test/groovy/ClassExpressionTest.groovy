@@ -22,7 +22,6 @@ package groovy
  * Tests the use of classes as variable expressions
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ClassExpressionTest extends GroovyTestCase {
 

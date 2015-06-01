@@ -26,7 +26,6 @@ import java.util.ArrayList;
  * held within itself.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class SourceBuffer {
     private final List lines;

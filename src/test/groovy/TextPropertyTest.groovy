@@ -28,7 +28,6 @@ package groovy
  * myProcess.text
  * 
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 class TextPropertyTest extends GroovyTestCase {

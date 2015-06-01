@@ -31,7 +31,6 @@ import antlr.collections.AST;
  * Helper Class for Antlr AST traversal and visitation.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public abstract class TraversalHelper implements AntlrASTProcessor {
     protected List<GroovySourceAST> unvisitedNodes;

@@ -27,7 +27,6 @@ package groovy.bugs
  * is no difference between correct uses so this is not a problem just an anti-regression test.
  *
  * @author Russel Winder
- * @version $Revision$
  */
 class Groovy662 extends GroovyTestCase {
     private String expected = "Hello"

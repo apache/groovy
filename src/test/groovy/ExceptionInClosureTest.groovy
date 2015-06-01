@@ -22,7 +22,6 @@ package groovy
  * Tests exception handling inside of a closure
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ExceptionInClosureTest extends GroovyTestCase {
 

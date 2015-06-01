@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.VariableScope;
  * A list of statements and a scope. 
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class BlockStatement extends Statement {
 

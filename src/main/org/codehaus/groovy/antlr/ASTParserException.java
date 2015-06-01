@@ -24,7 +24,6 @@ import org.codehaus.groovy.syntax.ParserException;
 /**
  * Thrown when trying to parse the AST
  *
- * @version $Revision$
  */
 public class ASTParserException extends ParserException {
     private final AST ast;

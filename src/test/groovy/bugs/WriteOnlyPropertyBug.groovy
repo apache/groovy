@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /**
- * @version $Revision$
  */
 class WriteOnlyPropertyBug extends GroovyTestCase {
     void testSettingWriteOnlyProperty() {

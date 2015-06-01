@@ -35,7 +35,6 @@ import org.codehaus.groovy.syntax.Types;
 
 /**
  * @author James Strachan
- * @version $Revision$
  */
 public class SqlWhereVisitor extends CodeVisitorSupport {
 

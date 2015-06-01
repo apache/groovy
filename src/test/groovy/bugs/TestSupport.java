@@ -27,7 +27,6 @@ import java.util.Iterator;
  * Base class for test cases
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class TestSupport extends GroovyTestCase {
 

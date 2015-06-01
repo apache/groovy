@@ -22,7 +22,6 @@ import org.codehaus.groovy.classgen.TestSupport
 
 /**
  * @author John Wilson
- * @version $Revision$
  */
 class ClosureParameterPassingBug extends TestSupport {
     

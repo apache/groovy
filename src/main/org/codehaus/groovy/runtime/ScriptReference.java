@@ -25,7 +25,6 @@ import groovy.lang.Script;
  * Represents a reference to a variable in a script
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ScriptReference extends Reference {
 

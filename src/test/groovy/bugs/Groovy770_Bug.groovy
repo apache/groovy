@@ -17,7 +17,6 @@
  *  under the License.
  */
 /**
- * @version $Revision$
  */
 
 package groovy.bugs

@@ -41,7 +41,6 @@ import org.xml.sax.SAXException;
  * A helper class for creating a W3C DOM tree
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DOMBuilder extends BuilderSupport {
 

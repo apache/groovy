@@ -27,7 +27,6 @@ package groovy
  * @author Graham Miller
  * @author Paul King
  * @author Ted Naleid
- * @version $Revision$
  */
 
 import java.util.regex.Matcher

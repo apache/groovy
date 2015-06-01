@@ -29,7 +29,6 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Pilho Kim
- * @version $Revision$
  */
 public class ForTest extends TestSupport {
 

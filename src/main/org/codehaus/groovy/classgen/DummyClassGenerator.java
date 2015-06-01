@@ -34,7 +34,6 @@ import java.util.Iterator;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
- * @version $Revision$
  */
 public class DummyClassGenerator extends ClassGenerator {
 

@@ -20,7 +20,6 @@ package groovy.bugs
 
 /** 
  * @author Robert Kuzelj
- * @version $Revision$
  */
 class StaticClosurePropertyBug extends GroovyTestCase {
 

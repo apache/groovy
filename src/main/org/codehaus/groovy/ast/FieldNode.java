@@ -27,7 +27,6 @@ import org.objectweb.asm.Opcodes;
  * Represents a field (member variable)
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 

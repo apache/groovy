@@ -22,7 +22,6 @@ package groovy.lang;
  * A hand crafted example GString
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DummyGString extends DummyGStringBase {
 

@@ -22,7 +22,6 @@ package groovy
  * Tests for ClosureComparator
  *
  * @author Alexey Verkhovsky
- * @version $Revision$
  */
 class ClosureComparatorTest extends GroovyTestCase {
 

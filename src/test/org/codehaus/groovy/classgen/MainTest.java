@@ -24,7 +24,6 @@ import java.io.File;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MainTest extends TestSupport {
 

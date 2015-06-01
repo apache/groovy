@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author John Wilson
- * @version $Revision$
  */
 class VariblePrecedence extends GroovyTestCase {
     

@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author Morgan Hankins
- * @version $Revision$
  */
 class MorgansBug extends GroovyTestCase {
 

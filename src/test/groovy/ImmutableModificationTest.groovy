@@ -23,7 +23,6 @@ package groovy
  * as specified in GROOVY-623
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 class ImmutableModificationTest extends GroovyTestCase {

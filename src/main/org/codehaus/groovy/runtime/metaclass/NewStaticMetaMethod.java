@@ -30,7 +30,6 @@ import java.lang.reflect.Modifier;
  * static methods with the first parameter being the class on which the method is added.
  *
  * @author Guillaume Laforge
- * @version $Revision$
  */
 public class NewStaticMetaMethod extends NewMetaMethod {
 

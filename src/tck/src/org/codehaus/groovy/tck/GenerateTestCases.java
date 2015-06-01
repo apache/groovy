@@ -45,7 +45,6 @@ import org.apache.tools.ant.util.*;
  * Based heavily on the Javac implementation in Ant
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class GenerateTestCases extends MatchingTask {
 

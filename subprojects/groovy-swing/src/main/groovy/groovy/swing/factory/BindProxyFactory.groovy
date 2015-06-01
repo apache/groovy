@@ -22,7 +22,6 @@ import org.codehaus.groovy.binding.BindingProxy
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
  * @since Groovy 1.1
  */
 public class BindProxyFactory extends AbstractFactory {

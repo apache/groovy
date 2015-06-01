@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * Represents a switch (object) { case value: ... case [1, 2, 3]: ...  default: ... } statement in Groovy.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class SwitchStatement extends Statement {
 

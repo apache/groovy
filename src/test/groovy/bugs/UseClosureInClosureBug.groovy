@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /**
- * @version $Revision$
  */
 class UseClosureInClosureBug extends GroovyTestCase {
     void testBugWithPrintln() {

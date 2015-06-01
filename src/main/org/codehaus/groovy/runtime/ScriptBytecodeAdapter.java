@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
  * A static helper class to interface bytecode and runtime
  *
  * @author Jochen Theodorou
- * @version $Revision$
  */
 public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {};

@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a type cast expression
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class CastExpression extends Expression {
     

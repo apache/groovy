@@ -22,7 +22,6 @@ import groovy.util.GroovyTestCase;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class CapitalizeTest extends GroovyTestCase {
 

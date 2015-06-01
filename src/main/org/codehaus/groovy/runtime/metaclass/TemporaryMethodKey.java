@@ -27,7 +27,6 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  * for a method using a set of arguments to a method
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class TemporaryMethodKey extends MethodKey {
 

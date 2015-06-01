@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author John Wilson
- * @version $Revision$
  */
 class Groovy278_Bug extends GroovyTestCase {
     

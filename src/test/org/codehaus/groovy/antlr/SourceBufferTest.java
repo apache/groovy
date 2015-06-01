@@ -25,7 +25,6 @@ import java.io.StringReader;
 
 /**
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class SourceBufferTest extends GroovyTestCase {
 

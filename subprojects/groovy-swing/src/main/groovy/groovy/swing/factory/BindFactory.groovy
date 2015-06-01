@@ -34,7 +34,6 @@ import groovy.swing.binding.JSpinnerProperties
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
  * @since Groovy 1.1
  */
 public class BindFactory extends AbstractFactory {

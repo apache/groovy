@@ -26,7 +26,6 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
  * An implementation of the visitor pattern for working with ASTNodes
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 
 public interface GroovyCodeVisitor {

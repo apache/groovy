@@ -26,7 +26,6 @@ import org.codehaus.groovy.reflection.CachedMethod;
  * stuff is output for normal Java code
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DummyReflector extends Reflector {
 

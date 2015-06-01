@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a list expression [1, 2, 3] which creates a mutable List
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ListExpression extends Expression {
     private List<Expression> expressions;

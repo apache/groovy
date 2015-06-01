@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class NewStaticMetaMethodTest extends TestCase {
 

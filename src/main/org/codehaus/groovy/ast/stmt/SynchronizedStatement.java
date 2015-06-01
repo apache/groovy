@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * Represents a synchronized statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class SynchronizedStatement extends Statement {
 

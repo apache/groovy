@@ -24,7 +24,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * An interface for visiting a GroovySourceAST node.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public interface Visitor {

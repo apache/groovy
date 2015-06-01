@@ -28,7 +28,6 @@ import java.util.Map;
  * <p> Binding instances are not supposed to be used in a multi-threaded context.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Binding extends GroovyObjectSupport {
     private Map variables;

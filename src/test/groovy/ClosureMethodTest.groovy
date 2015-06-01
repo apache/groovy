@@ -24,7 +24,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
  * Tests the various Closure methods in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ClosureMethodTest extends GroovyTestCase {
 

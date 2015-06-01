@@ -18,7 +18,6 @@
  */
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
  * @since Groovy 1.1
  *
  * The real interesting part of this example are in the three properties of button:

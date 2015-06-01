@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- * @version $Revision$
  */
 class DoubleSizeParametersBug extends TestSupport {
 

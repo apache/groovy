@@ -23,7 +23,6 @@ package groovy.lang;
  * Tests {@link ObjectRange}s of {@link Short}s.
  *
  * @author $Author$
- * @version $Revision$
  */
 public class ShortRangeTest extends NumberRangeTest {
 

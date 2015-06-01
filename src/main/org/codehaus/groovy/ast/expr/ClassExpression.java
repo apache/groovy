@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * as when invoking a static method or accessing a static type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ClassExpression extends Expression {
 

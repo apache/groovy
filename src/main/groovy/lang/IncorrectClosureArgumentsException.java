@@ -25,7 +25,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * types of arguments
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
 

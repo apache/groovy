@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author James Strachan
- * @version $Revision$
  */
 public class RangeTest extends TestCase {
 

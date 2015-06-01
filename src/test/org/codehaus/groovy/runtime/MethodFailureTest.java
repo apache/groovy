@@ -27,7 +27,6 @@ import groovy.util.GroovyTestCase;
  * Tests failing method invocations to ensure correct exceptions
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MethodFailureTest extends GroovyTestCase {
 

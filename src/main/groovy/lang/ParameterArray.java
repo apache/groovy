@@ -22,7 +22,6 @@ package groovy.lang;
  * Distinguish a parameter array from Object[].
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 public class ParameterArray {
 

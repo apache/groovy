@@ -27,7 +27,6 @@ import javax.swing.table.AbstractTableModel;
  * A sample table model
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MyTableModel extends AbstractTableModel {
 

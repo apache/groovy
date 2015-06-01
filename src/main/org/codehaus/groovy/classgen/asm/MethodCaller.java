@@ -29,7 +29,6 @@ import org.objectweb.asm.Type;
  * A helper class to invoke methods more easily in ASM
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MethodCaller implements Opcodes {
 

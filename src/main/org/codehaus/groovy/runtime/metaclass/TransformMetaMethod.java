@@ -25,7 +25,6 @@ import org.codehaus.groovy.reflection.CachedClass;
  * A MetaMethod implementation useful for implementing coercion based invocations
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 
 public class TransformMetaMethod extends MetaMethod {

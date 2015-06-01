@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * in the map expression [1, *:m, 2, "c":100]
  * or in the method invoke expression func(1, *:m, 2, "c":100).
  *
- * @version $Revision$
  */
 public class SpreadMapExpression extends Expression {
 

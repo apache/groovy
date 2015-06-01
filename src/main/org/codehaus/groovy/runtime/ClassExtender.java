@@ -28,7 +28,6 @@ import java.util.Map;
  * A helper class used by the runtime to allow Groovy classes to be extended at runtime
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ClassExtender {
     private Map variables;

@@ -46,7 +46,6 @@ import java.security.PrivilegedAction;
  * Base class for test cases
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class TestSupport extends GroovyTestCase implements Opcodes {
 

@@ -23,7 +23,6 @@ package groovy.lang;
  * Represents the length property of an array
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MetaArrayLengthProperty extends MetaProperty {
 

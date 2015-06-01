@@ -26,7 +26,6 @@ import groovy.lang.GroovyObject;
  * classes etc.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class RunBugsTest extends TestSupport {
 

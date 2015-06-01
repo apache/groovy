@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a try { ... } catch () finally {} statement in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class TryCatchStatement extends Statement {
 

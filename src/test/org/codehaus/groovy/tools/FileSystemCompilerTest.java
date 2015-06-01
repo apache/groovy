@@ -31,7 +31,6 @@ import java.util.ArrayList;
  * Tests the compiling & running of GroovyTestCases
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class FileSystemCompilerTest extends GroovyTestCase {
 

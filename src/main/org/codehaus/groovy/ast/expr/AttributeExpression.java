@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents an attribute access (accessing the field of a class) such as the expression "foo.@bar".
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class AttributeExpression extends PropertyExpression {
 

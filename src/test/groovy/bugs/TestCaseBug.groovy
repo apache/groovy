@@ -21,7 +21,6 @@ package groovy.bugs
 import junit.framework.TestCase
 
 /**
- * @version $Revision$
  */
 class TestCaseBug extends TestCase {
 

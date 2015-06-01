@@ -27,7 +27,6 @@ import java.util.List;
  * Tests the use of the structured Attribute type
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class SequenceTest extends GroovyTestCase {
 

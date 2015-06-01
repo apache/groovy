@@ -29,7 +29,6 @@ import java.util.List;
  * value is reached.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public interface Range<T extends Comparable> extends List<T> {
     /**

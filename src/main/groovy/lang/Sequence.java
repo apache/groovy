@@ -32,7 +32,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * object can be added.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Sequence extends ArrayList implements GroovyObject {
 

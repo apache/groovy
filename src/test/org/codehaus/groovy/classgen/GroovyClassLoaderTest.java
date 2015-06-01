@@ -28,7 +28,6 @@ import java.io.File;
  * Tests dynamically compiling a new class
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class GroovyClassLoaderTest extends TestSupport {
 

@@ -23,7 +23,6 @@ package groovy.operator
  * Test to check whether a given function is even/odd on a given domain.
  * 
  * @author Pilho Kim
- * @version $Revision$
  */
 class NegateListsTest extends GroovyTestCase {
 

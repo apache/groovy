@@ -26,7 +26,6 @@ import java.util.List;
  * object can be added.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class NonEmptySequence extends Sequence {
 

@@ -18,7 +18,6 @@
  */
 /**
  * @author Pilho Kim
- * @version $Revision$
  */
 
 package groovy.bugs

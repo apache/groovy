@@ -26,7 +26,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * A simple antlr AST visitor that outputs the tokenName of each node in a pseudo xml style.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public class NodePrinter extends VisitorAdapter {

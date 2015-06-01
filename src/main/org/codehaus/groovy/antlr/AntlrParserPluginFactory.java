@@ -22,7 +22,6 @@ import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
 
 /**
- * @version $Revision$
  */
 public class AntlrParserPluginFactory extends ParserPluginFactory {
 

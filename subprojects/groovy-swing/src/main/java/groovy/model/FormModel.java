@@ -26,7 +26,6 @@ import java.util.Map;
  * PropertyModel, TableModel, TreeModel or nested FormModel instances
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class FormModel {
     private Map fieldModels;

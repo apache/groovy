@@ -31,7 +31,6 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:ivan_ganza@yahoo.com">Ivan Ganza</a>
  * @author Chris Stevenson
- * @version $Revision$
  */
 public interface GroovyResultSet extends GroovyObject, ResultSet {
     /**
