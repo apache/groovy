@@ -1002,6 +1002,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         return ce;
                     }
                 }
+            } else if (be.getRightExpression() instanceof SpreadMapExpression) {
+                // we have C[*:map] -> should become (C) map
+                SpreadMapExpression mapExpression = (SpreadMapExpression) be.getRightExpression();
+                Expression right = transform(mapExpression.getExpression());
+                Expression ce = new CastExpression(left.getType(), right);
+                ce.setSourcePosition(be);
+                return ce;
             }
 
             if (be.getRightExpression() instanceof MapEntryExpression) {
