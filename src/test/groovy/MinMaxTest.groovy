@@ -22,7 +22,6 @@ package groovy
  * Tests the min() and max() functions
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class MinMaxTest extends GroovyTestCase {
 

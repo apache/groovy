@@ -30,7 +30,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.sort;
  * the normal properties API (to simulate normal Groovy property access)
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MBeanTest extends GroovyTestCase {
 

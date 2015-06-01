@@ -30,7 +30,6 @@ import java.util.LinkedList;
  *
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @author Russel Winder
- * @version $Revision$
  */
 public abstract class ClassGenerator extends ClassCodeVisitorSupport implements Opcodes {
     // inner classes created while generating bytecode

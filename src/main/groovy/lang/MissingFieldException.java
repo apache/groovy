@@ -26,7 +26,6 @@ package groovy.lang;
  * to avoid conflicts with JDK exceptions of the same name.
  * 
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- * @version $Revision$
  */
 public class MissingFieldException extends GroovyRuntimeException {
 

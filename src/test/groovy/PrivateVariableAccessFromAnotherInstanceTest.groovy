@@ -23,7 +23,6 @@ package groovy
  * other instance variables of the same class
  * 
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implements Cloneable { 

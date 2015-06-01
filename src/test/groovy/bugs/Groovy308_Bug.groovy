@@ -21,7 +21,6 @@ package groovy.bugs
 import java.io.*
 
 /**
- * @version $Revision$
  */
 class Groovy308_Bug extends GroovyTestCase {
     

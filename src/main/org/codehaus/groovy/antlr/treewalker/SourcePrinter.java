@@ -30,7 +30,6 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  * to the supplied PrintStream.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public class SourcePrinter extends VisitorAdapter {

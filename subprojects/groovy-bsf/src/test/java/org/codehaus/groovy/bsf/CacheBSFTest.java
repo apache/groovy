@@ -30,7 +30,6 @@ import java.util.Vector;
  * Tests the Caching BSF integration
  *
  * @author James Birchfield
- * @version $Revision$
  */
 public class CacheBSFTest extends TestCase {
 

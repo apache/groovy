@@ -24,7 +24,6 @@ package groovy.bugs
  *      ClassName.fieldName or ClassName.@fieldName.
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 
 class Groovy1018_Bug extends GroovyTestCase { 

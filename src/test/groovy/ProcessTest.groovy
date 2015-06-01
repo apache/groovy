@@ -22,7 +22,6 @@ package groovy
  * check that groovy Process methods do their job.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 class ProcessTest extends GroovyTestCase {

@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * or an initializer expression
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ArrayExpression extends Expression {
     private List<Expression> expressions;

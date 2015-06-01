@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a break statement in a switch or loop statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class BreakStatement extends Statement {
 

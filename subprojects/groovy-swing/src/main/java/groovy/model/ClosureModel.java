@@ -26,7 +26,6 @@ import groovy.lang.Closure;
  * for updating the value.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ClosureModel implements ValueModel, NestedValueModel {
 

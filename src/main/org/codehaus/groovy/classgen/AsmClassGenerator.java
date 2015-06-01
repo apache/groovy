@@ -92,7 +92,6 @@ import java.util.Map;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  * @author Alex Tkachman
- * @version $Revision$
  */
 public class AsmClassGenerator extends ClassGenerator {
 

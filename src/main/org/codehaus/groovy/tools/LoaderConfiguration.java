@@ -73,7 +73,6 @@ import java.util.regex.Pattern;
  * command does not exist, the path will be ignored.
  *
  * @author Jochen Theodorou
- * @version $Revision$
  * @see RootLoader
  */
 public class LoaderConfiguration {

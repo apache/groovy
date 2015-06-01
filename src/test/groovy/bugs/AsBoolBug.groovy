@@ -23,7 +23,6 @@ package groovy.bugs
  * Test of "string as Boolean" against the issue GROOVY-812.
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 
 public class AsBoolBug extends GroovyTestCase {

@@ -27,7 +27,6 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class BytecodeHelperTest extends GroovyTestCase {
 

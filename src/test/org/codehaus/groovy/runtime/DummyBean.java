@@ -29,7 +29,6 @@ import java.util.Map;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
  */
 public class DummyBean {
     private String name = "James";

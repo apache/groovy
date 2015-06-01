@@ -24,7 +24,6 @@ package groovy.lang;
  * Especially handy for using Groovy objects when in the Java world.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public interface GroovyObject {
 

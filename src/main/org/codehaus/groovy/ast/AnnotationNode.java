@@ -30,7 +30,6 @@ import org.codehaus.groovy.GroovyBugError;
  * 
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
- * @version $Revision$
  */
 public class AnnotationNode extends ASTNode {
     public static final int CONSTRUCTOR_TARGET = 1 << 1;

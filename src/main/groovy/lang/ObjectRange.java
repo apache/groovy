@@ -38,7 +38,6 @@ import java.util.List;
  * class, you might consider making parallel changes to {@link IntRange}.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ObjectRange extends AbstractList implements Range {
 

@@ -23,7 +23,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 
 /**
  * @author Sean Timm
- * @version $Revision$
  */
 public class SeansBug extends TestSupport {
 

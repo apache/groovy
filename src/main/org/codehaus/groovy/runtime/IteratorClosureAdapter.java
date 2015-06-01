@@ -29,7 +29,6 @@ import java.util.List;
  * can be iterated over in a 'yield' style way
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class IteratorClosureAdapter<T> extends Closure {
 

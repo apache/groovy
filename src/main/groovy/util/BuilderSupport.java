@@ -31,7 +31,6 @@ import java.util.Map;
  * or events
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class BuilderSupport extends GroovyObjectSupport {
 

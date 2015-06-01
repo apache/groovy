@@ -22,7 +22,6 @@ package groovy
  * Tests the use of returns in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ReturnTest extends GroovyTestCase {
     void testIntegerReturnValues() {

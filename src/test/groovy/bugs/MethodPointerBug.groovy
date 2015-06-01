@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author Pilho Kim
- * @version $Revision$
  */
 class MethodPointerBug extends GroovyTestCase {
 

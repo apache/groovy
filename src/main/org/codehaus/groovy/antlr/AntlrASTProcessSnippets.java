@@ -23,7 +23,6 @@ package org.codehaus.groovy.antlr;
  * possible the snippet of source from the start/end line/col for each node.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 import antlr.collections.AST;

@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.Parameter;
  * Represents one or more arguments being passed into a method
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ArgumentListExpression extends TupleExpression {
 

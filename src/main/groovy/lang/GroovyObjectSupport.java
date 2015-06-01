@@ -24,7 +24,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * A useful base class for Java objects wishing to be Groovy objects
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class GroovyObjectSupport implements GroovyObject {
 

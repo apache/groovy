@@ -27,7 +27,6 @@ import org.objectweb.asm.Label;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class BytecodeVariable {
     

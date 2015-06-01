@@ -22,7 +22,6 @@ package groovy.bugs
  * Test to fix the issue GROOVY-843.
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 
 public class PropertyNameBug extends GroovyTestCase {

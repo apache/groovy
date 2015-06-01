@@ -22,7 +22,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 
 
 /**
- * @version $Revision$
  */
 public class MarkupInScriptBug extends TestSupport {
 

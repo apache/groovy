@@ -28,7 +28,6 @@ import javax.swing.AbstractAction;
  * A default action implementation
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DefaultAction extends AbstractAction {
 

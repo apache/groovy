@@ -26,7 +26,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * A Map.Entry implementation.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MapEntry implements Map.Entry {
 

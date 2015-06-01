@@ -21,7 +21,6 @@ package groovy
 import javax.swing.JButton
 
 /**
- * @version $Revision$
  */
 class ClosureSwingListenerTest extends GroovySwingTestCase {
 

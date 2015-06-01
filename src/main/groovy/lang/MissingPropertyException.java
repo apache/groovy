@@ -28,7 +28,6 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  * to avoid conflicts with JDK exceptions of the same name.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MissingPropertyException extends GroovyRuntimeException {
 

@@ -44,7 +44,6 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Paul King
- * @version $Revision$
  */
 public class GroovyShell extends GroovyObjectSupport {
 

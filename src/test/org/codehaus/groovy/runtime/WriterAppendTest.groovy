@@ -22,7 +22,6 @@ package org.codehaus.groovy.runtime
  * Test Writer append and leftShift DGM methods
  *
  * @author Joachim Baumann</a>
- * @version $Revision$
  */
 class WriterAppendTest extends GroovyTestCase {
     /**

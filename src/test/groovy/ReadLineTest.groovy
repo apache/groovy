@@ -24,7 +24,6 @@ package groovy
  * 
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @author Joachim Baumann
- * @version $Revision$
  */
 
 class ReadLineTest extends GroovyTestCase {

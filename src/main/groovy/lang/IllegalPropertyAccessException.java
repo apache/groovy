@@ -26,7 +26,6 @@ import java.lang.reflect.Modifier;
  * field not accessible.
  * 
  * @author <a href="mailto:blackdrag@uni.de">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class IllegalPropertyAccessException extends MissingPropertyException {
     

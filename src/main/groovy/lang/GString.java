@@ -42,7 +42,6 @@ import java.util.regex.Pattern;
  * couldn't resist :)
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 

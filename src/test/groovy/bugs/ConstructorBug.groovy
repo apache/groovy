@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  * @author Jason Thomas
- * @version $Revision$
  */
 class ConstructorBug extends GroovyTestCase {
     

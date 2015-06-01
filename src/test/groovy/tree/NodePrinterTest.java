@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class NodePrinterTest extends TestSupport {
 

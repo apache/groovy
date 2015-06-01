@@ -37,7 +37,6 @@ import java.util.ArrayList;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling
  * @author Pilho Kim
- * @version $Revision$
  */
 public class Expando extends GroovyObjectSupport {
 

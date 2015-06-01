@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /**
- * @version $Revision$
  */
 class BooleanBug extends GroovyTestCase {
     

@@ -30,7 +30,6 @@ import java.util.Properties;
  * A J2EE console
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class J2eeConsole {
 

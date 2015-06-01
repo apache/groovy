@@ -59,7 +59,6 @@ import java.util.regex.Pattern;
  * @author Bing Ran
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class GroovyClassLoader extends URLClassLoader {
 

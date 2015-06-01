@@ -32,7 +32,6 @@ import java.lang.reflect.Modifier;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Alex Tkachman
- * @version $Revision$
  */
 public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     private String signature;

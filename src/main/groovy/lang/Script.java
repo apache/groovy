@@ -31,7 +31,6 @@ import java.io.IOException;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
- * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
     private Binding binding;

@@ -22,7 +22,6 @@ package groovy
  * A test case for switch statement with different types
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class SwitchWithDifferentTypesTest extends GroovyTestCase {
 

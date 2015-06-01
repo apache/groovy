@@ -26,7 +26,6 @@ package org.codehaus.groovy.runtime;
  * problems
  *
  * @author Joachim Baumann</a>
- * @version $Revision$
  */
 
 class WithResourceStreamClosedTest extends GroovyTestCase {

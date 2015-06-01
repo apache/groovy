@@ -26,7 +26,6 @@ import java.lang.reflect.InvocationTargetException;
  * An exception thrown if a method is called and an exception occurred
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class InvokerInvocationException extends GroovyRuntimeException {
 

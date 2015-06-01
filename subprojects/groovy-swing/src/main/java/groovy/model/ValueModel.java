@@ -22,7 +22,6 @@ package groovy.model;
  * Represents a model of a value
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public interface ValueModel {
     Object getValue();

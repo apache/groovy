@@ -37,7 +37,6 @@ import java.util.Map;
  * class definition is different). 
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class ReflectorLoader extends ClassLoader {
     private boolean inDefine = false;

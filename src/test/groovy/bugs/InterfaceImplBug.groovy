@@ -23,7 +23,6 @@ import org.codehaus.groovy.dummy.FooHandler
 
 /**
  * @author Robert Fuller
- * @version $Revision$
  */
 class InterfaceImplBug extends GroovyTestCase implements FooHandler {
 

@@ -25,7 +25,6 @@ import javax.swing.*
 /**
  * @author Bing Ran
  * @author Andy Dwelly
- * @version $Revision$
  */
 class Groovy303_Bug extends GroovySwingTestCase {
     void testBug() {

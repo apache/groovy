@@ -30,7 +30,6 @@ import java.security.PrivilegedAction;
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Demo extends GroovyTestCase {
     ClassLoader parentLoader = getClass().getClassLoader();

@@ -26,7 +26,6 @@ import org.codehaus.groovy.syntax.Token;
  * Represents a postfix expression like foo++ or bar++
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class PostfixExpression extends Expression {
 

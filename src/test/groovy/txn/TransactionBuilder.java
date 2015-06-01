@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 
 /**
  * @author James Strachan
- * @version $Revision$
  */
 public class TransactionBuilder {
     public void transaction(Closure closure) {

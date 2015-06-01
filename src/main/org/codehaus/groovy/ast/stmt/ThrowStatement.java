@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * Represents a throw statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ThrowStatement extends Statement {
 

@@ -37,7 +37,6 @@ import org.objectweb.asm.Opcodes;
  * would otherwise lead to invalid code.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
 

@@ -26,7 +26,6 @@ package org.codehaus.groovy.ast;
  * @see org.codehaus.groovy.ast.ClassCodeVisitorSupport
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public interface GroovyClassVisitor {
 

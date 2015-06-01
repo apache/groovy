@@ -24,7 +24,6 @@ import javax.swing.table.TableColumn;
  * Represents a column using a ValueModel to extract the value.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
- * @version $Revision$
  */
 public class DefaultTableColumn extends TableColumn {
 

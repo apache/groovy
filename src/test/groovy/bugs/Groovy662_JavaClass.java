@@ -26,7 +26,6 @@ import java.util.HashMap;
  * between correct uses so this is not a problem just an anti-regression test.
  *
  * @author Russel Winder
- * @version $Revision$
  */
 public class Groovy662_JavaClass extends HashMap {
     String myProperty = "Hello";

@@ -31,7 +31,6 @@ import java.util.NoSuchElementException;
  * number of files from a collection of FileSet instances.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
- * @version $Revision$
  */
 public class FileIterator implements Iterator {
 

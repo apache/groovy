@@ -32,7 +32,6 @@ import org.apache.tools.ant.types.FileSet;
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
  * @author Marc Guillemot
- * @version $Revision$
  */
 public class FileScanner extends Task {
 

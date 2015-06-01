@@ -22,7 +22,6 @@ package groovy
  * Tests the use of properties in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class PropertyTest extends GroovyTestCase {
 

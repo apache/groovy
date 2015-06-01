@@ -47,7 +47,6 @@ import java.util.*;
  * @author Graeme Rocher
  * @author Alex Tkachman
  *
- * @version $Revision$
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
     /**

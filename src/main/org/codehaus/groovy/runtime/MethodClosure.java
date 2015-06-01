@@ -29,7 +29,6 @@ import java.util.List;
  * at any time
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MethodClosure extends Closure {
 

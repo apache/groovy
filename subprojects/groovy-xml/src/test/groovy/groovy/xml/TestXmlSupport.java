@@ -29,7 +29,6 @@ import java.io.IOException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class TestXmlSupport extends TestSupport {
 

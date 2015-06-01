@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 /**
  * Represents a spread expression *x in the list expression [1, *x, 2].
  *
- * @version $Revision$
  */
 public class SpreadExpression extends Expression {
 

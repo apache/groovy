@@ -27,7 +27,6 @@ import java.io.Reader;
 /**
  * A simple extension point to allow us to switch between the classic Groovy parser and the new Antlr based parser
  * 
- * @version $Revision$
  */
 public interface ParserPlugin {
 

@@ -21,7 +21,6 @@ package groovy.xml;
 /**
  * A simple helper class which acts as a factory of {@link QName} instances.
  * 
- * @version $Revision$
  */
 public class Namespace {
 

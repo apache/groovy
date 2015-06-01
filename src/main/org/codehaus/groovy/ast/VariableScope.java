@@ -29,7 +29,6 @@ import java.util.Map;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jochen Theodorou
- * @version $Revision$
  */
 public class VariableScope  {
     private Map<String, Variable> declaredVariables = Collections.emptyMap();

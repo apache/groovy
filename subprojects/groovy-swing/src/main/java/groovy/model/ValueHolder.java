@@ -26,7 +26,6 @@ import java.beans.PropertyChangeSupport;
  * Used to share local variables with closures
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ValueHolder implements ValueModel {
     private Object value;

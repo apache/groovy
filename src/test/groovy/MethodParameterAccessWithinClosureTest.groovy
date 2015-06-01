@@ -22,7 +22,6 @@ package groovy
  * To test access to method scoped variable within closure
  * 
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 

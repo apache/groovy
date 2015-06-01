@@ -28,7 +28,6 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  * A visitor that prints a html tags of each node to the supplied PrintStream
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public class NodeAsHTMLPrinter extends VisitorAdapter {

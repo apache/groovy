@@ -19,7 +19,6 @@
 package groovy
 
 /**
- * @version $Revision$
  */
 class CompareTypesTest extends GroovyTestCase { 
     void testCompareByteToInt() { 

@@ -22,7 +22,6 @@ import antlr.collections.AST;
 
 /**
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- * @version $Revision$
  */
 public class ASTRuntimeException extends RuntimeException {
     private final AST ast;

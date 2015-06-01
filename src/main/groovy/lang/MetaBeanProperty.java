@@ -29,7 +29,6 @@ import java.lang.reflect.Modifier;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Pilho Kim
- * @version $Revision$
  */
 public class MetaBeanProperty extends MetaProperty {
 

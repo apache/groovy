@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * A static method call on a class
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class StaticMethodCallExpression extends Expression implements MethodCall {
 

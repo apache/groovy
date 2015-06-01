@@ -22,7 +22,6 @@ package groovy
  * test to ensure that overriding getter doesn't throw a NPE on access
  * 
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 class OverridePropertyGetterTest extends GroovyTestCase { 

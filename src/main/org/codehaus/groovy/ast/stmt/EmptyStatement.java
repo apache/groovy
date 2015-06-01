@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents an empty statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class EmptyStatement extends Statement {
 

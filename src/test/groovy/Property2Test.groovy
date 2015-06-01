@@ -23,7 +23,6 @@ package groovy
  *
  * @author john stump
  * @author dierk koenig
- * @version $Revision$
  */
 class Property2Test extends GroovyTestCase {
 

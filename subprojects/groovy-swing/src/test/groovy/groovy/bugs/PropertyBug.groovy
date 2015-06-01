@@ -22,7 +22,6 @@ import javax.swing.JButton
 import javax.swing.JPanel
 
 /**
- * @version $Revision$
  */
 class PropertyBug extends GroovySwingTestCase {
 

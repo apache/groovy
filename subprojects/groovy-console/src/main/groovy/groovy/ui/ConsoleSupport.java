@@ -32,7 +32,6 @@ import javax.swing.text.StyledDocument;
  * Base class for console
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class ConsoleSupport {
 

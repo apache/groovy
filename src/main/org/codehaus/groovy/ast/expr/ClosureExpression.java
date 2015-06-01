@@ -28,7 +28,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hamlet D'Arcy
- * @version $Revision$
  */
 public class ClosureExpression extends Expression {
     

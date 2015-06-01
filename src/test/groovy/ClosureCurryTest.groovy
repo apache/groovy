@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  * @author Hallvard Tr�tteberg
- * @version $Revision$
  */
 class ClosureCurryTest extends GroovyTestCase {
 

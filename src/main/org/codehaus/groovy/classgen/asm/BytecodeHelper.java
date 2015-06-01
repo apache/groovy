@@ -34,7 +34,6 @@ import java.lang.reflect.Modifier;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class BytecodeHelper implements Opcodes {
     

@@ -28,7 +28,6 @@ package groovy
  * @author Dierk Koenig
  * @author Pilho Kim
  * @author Hein Meling
- * @version $Revision$
  */
 
 class VarargsMethodTest extends GroovyTestCase {  

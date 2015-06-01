@@ -22,7 +22,6 @@ import groovy.xml.MarkupBuilder
 
 /**
  * @author Merrick Schincariol 
- * @version $Revision$
  */
 class Groovy249_Bug extends GroovyTestCase {
 

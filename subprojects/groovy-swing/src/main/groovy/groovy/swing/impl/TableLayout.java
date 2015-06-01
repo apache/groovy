@@ -28,7 +28,6 @@ import javax.swing.JPanel;
  * Represents a HTML style table layout
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class TableLayout extends JPanel {
 

@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
  * @since Groovy 1.1
  */
 public abstract class AbstractFullBinding  implements FullBinding {

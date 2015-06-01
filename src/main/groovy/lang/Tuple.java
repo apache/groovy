@@ -27,7 +27,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * Represents a list of Objects.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Tuple extends AbstractList {
     private final Object[] contents;

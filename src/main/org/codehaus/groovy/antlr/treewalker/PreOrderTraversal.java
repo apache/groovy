@@ -24,7 +24,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * A simple preorder traversal over the supplied antlr AST.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class PreOrderTraversal extends TraversalHelper {
     

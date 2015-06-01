@@ -39,7 +39,6 @@ import java.io.StringWriter;
  * This will log all bytecode being loaded
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
 

@@ -24,7 +24,6 @@ import java.util.List;
 
 /**
  * @author James Strachan
- * @version $Revision$
  */
 public class TupleTest extends TestCase {
 

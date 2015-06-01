@@ -28,7 +28,6 @@ import java.util.List;
  * name and parameter types
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class MethodKey {
 

@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a tuple expression {1, 2, 3} which creates an immutable List
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class TupleExpression extends Expression implements Iterable<Expression> {
     private List<Expression> expressions;

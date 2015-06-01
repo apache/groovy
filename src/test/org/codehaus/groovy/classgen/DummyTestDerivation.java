@@ -24,7 +24,6 @@ import groovy.util.GroovyTestCase;
  * A dummy test case
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DummyTestDerivation extends GroovyTestCase {
     public DummyTestDerivation() {

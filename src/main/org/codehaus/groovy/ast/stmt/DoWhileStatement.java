@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
  * Represents a do { ... } while (condition) loop in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DoWhileStatement extends Statement implements LoopingStatement {
 

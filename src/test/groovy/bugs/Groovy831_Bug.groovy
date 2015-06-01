@@ -22,7 +22,6 @@ package groovy.bugs
  * Test for fixing the Jira issue GROOVY-831
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 class Groovy831_Bug extends GroovyTestCase {
     

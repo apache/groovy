@@ -22,7 +22,6 @@ package groovy
  * Demonstrates the use of the default named parameter in a closure
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ClosureWithDefaultParamTest extends GroovyTestCase {
 

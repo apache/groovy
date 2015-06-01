@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /**
- * @version $Revision$
  */
 class NestedClosureBug extends GroovyTestCase {
      

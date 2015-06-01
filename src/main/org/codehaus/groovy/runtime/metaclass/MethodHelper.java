@@ -25,7 +25,6 @@ import java.lang.reflect.Modifier;
  * Some reflection helper methods
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MethodHelper {
  

@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /**
- * @version $Revision$
  *
  * Fix Bug GROOVY-683
  * @author Pilho Kim

@@ -23,7 +23,6 @@ package groovy.model;
  * or a ClosureModel
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public interface NestedValueModel {
     ValueModel getSourceModel();

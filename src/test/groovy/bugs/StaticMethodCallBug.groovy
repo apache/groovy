@@ -19,7 +19,6 @@
 package groovy.bugs
 
 /** 
- * @version $Revision$
  */
 class StaticMethodCallBug extends GroovyTestCase {
 

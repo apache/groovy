@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @author Andres Almiray
- * @version $Revision$
  * @since Groovy 1.1
  */
 public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {

@@ -33,7 +33,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * call on the closing visit - c.visitDefault() then b.visitDefault() then a.visitDefault()
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 
 public class CompositeVisitor implements Visitor{

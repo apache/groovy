@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents an entry inside a map expression such as 1 : 2.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MapEntryExpression extends Expression {
     private Expression keyExpression;

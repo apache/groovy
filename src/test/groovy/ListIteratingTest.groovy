@@ -22,7 +22,6 @@ package groovy
  * Tests iterating using Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class ListIteratingTest extends GroovyTestCase {
 

@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * @author Zohar Melamed
- * @version $Revision$
  */
 class ZoharsBug extends GroovyTestCase {
     

@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.*;
  * optional - it defaults to java.lang.Object if unknown.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Parameter extends AnnotatedNode implements Variable {
 
