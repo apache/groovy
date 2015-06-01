@@ -2299,6 +2299,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AST rightNode = leftNode.getNextSibling();
         Expression rightExpression = expression(rightNode);
+        // easier to massage here than in the grammar
+        if (rightExpression instanceof SpreadExpression) {
+            ListExpression wrapped = new ListExpression();
+            wrapped.addExpression(rightExpression);
+            rightExpression = wrapped;
+        }
 
         BinaryExpression binaryExpression = new BinaryExpression(leftExpression, makeToken(Types.LEFT_SQUARE_BRACKET, bracket), rightExpression);
         configureAST(binaryExpression, indexNode);
