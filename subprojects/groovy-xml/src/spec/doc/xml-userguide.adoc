@@ -52,7 +52,7 @@ When to use one or the another?
 
 NOTE: There is a discussion at
 http://stackoverflow.com/questions/7558019/groovy-xmlslurper-vs-xmlparser[StackOverflow]. The
-conclusions written here are based partially in this entry.
+conclusions written here are based partially on this entry.
 
 * *If you want to transform an existing document to another* then
 `XmlSlurper` will be the choice
@@ -198,15 +198,15 @@ the
 
 Both of them are equally valid.
 
-=== Speed things up with breadthFirst and depthfirst
+=== Speed things up with breadthFirst and depthFirst
 
 If you ever have used XPath you may have used expressions like
 
 * `//` : Look everywhere
 * `/following-sibling::othernode` : Look for a node "othernode" in the same level
 
-More or less we have their counterparts in `Gpath` with the methods
-`breadthFirst()` and `depthfirst()`.
+More or less we have their counterparts in `GPath` with the methods
+`breadthFirst()` and `depthFirst()`.
 
 The first example shows a simple use of `breadthFirst()`. The creators of
 this methods created a shorter syntax for it using the symbol `*`.
@@ -214,7 +214,7 @@ this methods created a shorter syntax for it using the symbol `*`.
 [source,groovy]
 .breadthFirst()
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testBreadFirst1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testBreadthFirst1,indent=0]
 ----
 
 This test searches for any node at the same level of the "books" node
@@ -236,7 +236,7 @@ we going to be able to find that book? `depthFirst()` is the solution:
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
 ----
 
-`depthfirst()` is the same as looking something *everywhere in the
+`depthFirst()` is the same as looking something *everywhere in the
 tree from this point down*. In this case we've used the method
 `find(Closure cl)` to find just the first occurrence.
 
@@ -249,7 +249,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 ----
 
 It is worth mentioning again that there are some useful methods
-converting a node's value to an integer,float...etc. Those methods
+converting a node's value to an integer, float... etc. Those methods
 could be convenient when doing comparisons like this:
 
 [source,groovy]
@@ -259,7 +259,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 ----
 
 In this case the number 2 has been hardcoded but imagine that value
-could have come from any other source (database...etc).
+could have come from any other source (database... etc.).
 
 == Creating XML
 
@@ -548,7 +548,7 @@ node itself (for instance to add this node to another XML).
 
 For that you can use `groovy.xml.XmlUtil` class. It has several static
 methods to serialize the xml fragment from several type of sources
-(Node,GPathResult,String...)
+(Node, GPathResult, String...)
 
 [source,groovy]
 .Getting a node as a string

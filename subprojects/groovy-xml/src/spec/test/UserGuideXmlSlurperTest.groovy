@@ -94,8 +94,8 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         // end::testGettingAnAttributeText[]
     }
 
-    void testBreadFirst1() {
-        // tag::testBreadFirst1[]
+    void testBreadthFirst1() {
+        // tag::testBreadthFirst1[]
         def response = new XmlSlurper().parseText(books)
 
         def catcherInTheRye = response.value.books.'*'.find { node->
@@ -104,7 +104,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         }
 
         assert catcherInTheRye.title.text() == 'Catcher in the Rye'
-        // end::testBreadFirst1[]
+        // end::testBreadthFirst1[]
     }
 
     void testDepthFirst1() {
