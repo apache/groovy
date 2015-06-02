@@ -1,4 +1,4 @@
-/**
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 group = 'org.codehaus.groovy'
 
 project.ext.optionalDeps = []
@@ -91,6 +92,20 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'mattf'
                 name 'Matt Foemmel'
                 organization 'ThoughtWorks'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'alextkachman'
+                name 'Alex Tkachman'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'roshandawrani'
+                name 'Roshan Dawrani'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -174,7 +189,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'jeremy.rayner@gmail.com'
                 organization 'javanicus'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -245,7 +260,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Guillaume Alleon'
                 email 'guillaume.alleon@gmail.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -253,19 +268,26 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Jason Dillon'
                 email 'jason@planet57.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
                 id 'shemnon'
                 name 'Danno Ferrin'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
                 id 'jwill'
                 name 'James Williams'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'timyates'
+                name 'Tim Yates'
                 roles {
                     role 'Developer'
                 }
@@ -283,7 +305,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Marc Guillemot'
                 email 'mguillemot@yahoo.fr'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -300,6 +322,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Peter Niederwieser'
                 email 'pniederw@gmail.com'
                 roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'andresteingress'
+                name 'Andre Steingress'
+                roles {
                     role 'Developer'
                 }
             }
@@ -308,7 +337,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Hamlet D\'Arcy'
                 email 'hamletdrc@gmail.com'
                 roles {
-                    role 'Developer'
+                    role 'Developer Emeritus'
                 }
             }
             developer {
@@ -318,6 +347,13 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 roles {
                     role 'Developer'
                     role 'Despot'
+                }
+            }
+            developer {
+                id 'pascalschumacher'
+                name 'Pascal Schumacher'
+                roles {
+                    role 'Developer'
                 }
             }
         }
@@ -424,6 +460,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Jim Jagielski'
             }
             contributor {
+                name 'Rodolfo Velasco'
+            }
+            contributor {
                 name 'John Hurst'
             }
             contributor {
@@ -485,6 +524,42 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'David Lee'
+            }
+            contributor {
+                name 'Sergei Egorov'
+            }
+            contributor {
+                name 'Hein Meling'
+            }
+            contributor {
+                name 'Michael Baehr'
+            }
+            contributor {
+                name 'Craig Andrews'
+            }
+            contributor {
+                name 'Peter Ledbrook'
+            }
+            contributor {
+                name 'Thibault Kruse'
+            }
+            contributor {
+                name 'Paolo Di Tommaso'
+            }
+            contributor {
+                name 'Rene Scheibe'
+            }
+            contributor {
+                name 'Matias Bjarland'
+            }
+            contributor {
+                name 'Richard Hightower'
+            }
+            contributor {
+                name 'Andrey Bloschetsov'
+            }
+            contributor {
+                name 'Yu Kobayashi'
             }
         }
         mailingLists {
