@@ -1033,9 +1033,7 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[level
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leveloffset=+3]
 
-==== DomBuilder
-
-(TBD)
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/dom-builder.adoc[leveloffset=+3]
 
 ==== NodeBuilder
 
