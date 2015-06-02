@@ -18,7 +18,7 @@
  */
 class DOMBuilderTest extends GroovyTestCase {
 
-    void testDOMBuilderParseText() {
+    void testParse() {
         // tag::xml_string[]
         String recordsXML = '''
             <records>
