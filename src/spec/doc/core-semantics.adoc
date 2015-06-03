@@ -1308,7 +1308,7 @@ not in such a case, `@TypeChecked` comes handy:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_type_checked,indent=0]
 ----
 <1> `printLine` is this time a compile-time error
 
