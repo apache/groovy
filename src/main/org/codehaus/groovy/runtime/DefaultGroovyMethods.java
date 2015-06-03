@@ -1676,7 +1676,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert( list2 == list && list == [a, b, c] )
      * </pre>
      *
-     * @param self       an List
+     * @param self       a List
      * @param comparator a Comparator used to determine unique (equal) items
      *        If {@code null}, the Comparable natural ordering of the elements will be used.
      * @return the List of non-duplicate items
@@ -1714,7 +1714,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert letters.toUnique() == expected
      * </pre>
      *
-     * @param self       an List
+     * @param self       a List
      * @return the List of non-duplicate items
      * @since 2.4.0
      */
@@ -1963,11 +1963,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an List,
+     * Iterates through a List,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
-     * @param self    an List
+     * @param self    a List
      * @param closure a Closure to operate on each item
      * @return the self List
      * @since 2.4.0
@@ -2045,7 +2045,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an List, passing each item to the given closure.
+     * Iterates through a List, passing each item to the given closure.
      *
      * @param self    the List over which we iterate
      * @param closure the closure applied on each element found
@@ -9036,7 +9036,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert list == [3, 4, 2]
      * </pre>
      *
-     * @param self an List
+     * @param self a List
      * @return a List without its first element
      * @throws NoSuchElementException if the List is empty and you try to access the tail()
      * @since 1.5.6
@@ -9161,7 +9161,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert list == [3, 4, 2]
      * </pre>
      *
-     * @param self an List
+     * @param self a List
      * @return a List without its last element
      * @throws NoSuchElementException if the List is empty and you try to access init()
      * @since 2.4.0
@@ -11245,7 +11245,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
      * method will effectively return a Collection with a single copy of the Iterable's items.
      *
-     * @param self   an List
+     * @param self   a List
      * @param factor the number of times to append
      * @return the multiplied List
      * @since 2.4.0
