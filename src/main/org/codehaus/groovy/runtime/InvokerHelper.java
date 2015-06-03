@@ -274,7 +274,7 @@ public class InvokerHelper {
             return Byte.valueOf((byte) -number.byteValue());
         }
         if (value instanceof ArrayList) {
-            // value is an list.
+            // value is a list.
             List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
@@ -849,7 +849,7 @@ public class InvokerHelper {
             return StringGroovyMethods.bitwiseNegate(value.toString());
         }
         if (value instanceof ArrayList) {
-            // value is an list.
+            // value is a list.
             List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
