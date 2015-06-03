@@ -22,7 +22,7 @@ import javax.management.InstanceNotFoundException
 import javax.management.NotificationFilterSupport
 
 /**
- * This factory class is used to create an listener() node for JmxBuilder.  Listener nodes are used
+ * This factory class is used to create a listener() node for JmxBuilder.  Listener nodes are used
  * to create a generic event listener (that is automatically registered with the MBean) that can handle
  * any event broadcasted on the MBeanServer's event bus.
  * <p>
