@@ -44,8 +44,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({   ElementType.METHOD,         ElementType.TYPE,
-            ElementType.CONSTRUCTOR,    ElementType.FIELD,
-            ElementType.LOCAL_VARIABLE, ElementType.PACKAGE
+            ElementType.CONSTRUCTOR
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
 public @interface CompileStatic {
