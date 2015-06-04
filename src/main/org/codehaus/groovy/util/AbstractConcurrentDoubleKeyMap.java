@@ -111,10 +111,7 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
         Entry<K1,K2,V> put(K1 key1, K2 key2, int hash) {
             lock();
             try {
-                int c = count;
-                if (c++ > threshold) {
-                    rehash();
-                }
+                rehashIfThresholdExceeded();
 
                 Object[] tab = table;
                 final int index = hash & (tab.length - 1);
@@ -130,7 +127,7 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
                         arr [0] = res;
                         arr [1] = e;
                         tab[index] = arr;
-                        count = c; // write-volatile
+                        count++; // write-volatile
                         return res;
                     }
                     else {
@@ -146,14 +143,14 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
                         arr [0] = res;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
                         tab[index] = arr;
-                        count = c; // write-volatile
+                        count++; // write-volatile
                         return res;
                     }
                 }
 
                 final Entry<K1,K2,V> res = createEntry(key1, key2, hash);
                 tab[index] = res;
-                count = c; // write-volatile
+                count++; // write-volatile
                 return res;
 
             } finally {

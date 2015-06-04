@@ -103,10 +103,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         public final Entry put(K key, int hash, V value) {
             lock();
             try {
-                int c = count;
-                if (c++ > threshold) {
-                    rehash();
-                }
+                rehashIfThresholdExceeded();
 
                 Object[] tab = table;
                 int index = hash & (tab.length - 1);
@@ -124,7 +121,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                             arr [0] = ee;
                             arr [1] = e;
                             tab[index] = arr;
-                            count = c;
+                            count++;
                             return ee;
                         }
                     }
@@ -143,7 +140,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                             Entry e = (Entry) arr[i];
                             if (e == null) {
                                 arr [i] = ee;
-                                count = c;
+                                count++;
                                 return ee;
                             }
                         }
@@ -152,14 +149,14 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                         newArr [0] = ee;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
                         tab [index] = newArr;
-                        count = c;
+                        count++;
                         return ee;
                     }
                 }
 
                 Entry e = createEntry(key, hash, value);
                 tab[index] = e;
-                count = c; // write-volatile
+                count++; // write-volatile
                 return e;
             } finally {
                 unlock();

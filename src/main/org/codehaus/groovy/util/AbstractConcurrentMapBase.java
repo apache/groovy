@@ -213,6 +213,12 @@ public abstract class AbstractConcurrentMapBase {
             }
         }
 
+        void rehashIfThresholdExceeded() {
+            if(count > threshold) {
+                rehash();
+            }
+        }
+
         void rehash() {
             Object[] oldTable = table;
             int oldCapacity = oldTable.length;
