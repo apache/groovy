@@ -51,6 +51,7 @@ public class GroovyTest extends GroovyTestCase {
         suite.addTest(new GroovyTest("testGroovyCodeWithinTag"));
         suite.addTest(new GroovyTest("testGroovyCodeExternalFile"));
         suite.addTest(new GroovyTest("testGroovyCodeInExternalFileWithOtherClass"));
+        suite.addTest(new GroovyTest("testPropertiesWithoutFork"));
         suite.addTest(new GroovyTest("testClasspath_missing"));
         suite.addTest(new GroovyTest("testClasspath_classpathAttribute"));
         suite.addTest(new GroovyTest("testClasspath_classpathrefAttribute"));
@@ -82,6 +83,12 @@ public class GroovyTest extends GroovyTestCase {
         assertNull(FLAG);
         project.executeTarget("groovyCodeInExternalFile");
         assertEquals("from groovy file called from ant", FLAG);
+    }
+
+    public void testPropertiesWithoutFork() {
+        assertNull(FLAG);
+        project.executeTarget("groovyAntPropertyWithoutFork");
+        assertEquals("someProp was someValue", FLAG);
     }
 
     public void testGroovyCodeInExternalFileWithOtherClass() {

@@ -28,6 +28,13 @@
         </groovy>
     </target>
 
+    <target name="groovyAntPropertyWithoutFork" depends="defineTask">
+        <property name="someProp" value="someValue"/>
+        <groovy>
+            org.codehaus.groovy.ant.GroovyTest.FLAG = "someProp was " + project.properties.someProp
+        </groovy>
+    </target>
+
     <target name="groovyCodeInExternalFile" depends="defineTask">
         <groovy src="GroovyTest1.groovy"/>
     </target>
