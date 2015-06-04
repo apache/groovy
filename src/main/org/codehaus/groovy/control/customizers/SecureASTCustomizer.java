@@ -556,7 +556,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             if (clNode!=classNode) {
                 checkMethodDefinitionAllowed(clNode);
                 for (MethodNode methodNode : clNode.getMethods()) {
-                    if (!methodNode.isSynthetic()) {
+                    if (!methodNode.isSynthetic() && methodNode.getCode() != null) {
                         methodNode.getCode().visit(visitor);
                     }
                 }
@@ -566,7 +566,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         List<MethodNode> methods = filterMethods(classNode);
         if (isMethodDefinitionAllowed) {
             for (MethodNode method : methods) {
-                if (method.getDeclaringClass()==classNode) method.getCode().visit(visitor);
+                if (method.getDeclaringClass()==classNode && method.getCode() != null) method.getCode().visit(visitor);
             }
         }
     }

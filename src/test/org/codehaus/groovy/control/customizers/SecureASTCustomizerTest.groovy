@@ -410,6 +410,16 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         assert hasSecurityException {shell.evaluate('def x() { System.println(1) }')}
     }
 
+    // GROOVY-7424
+    void testClassWithInterfaceVisitable() {
+        def shell = new GroovyShell(configuration)
+        shell.evaluate '''
+            interface Foo { def baz() }
+            class Bar implements Foo { def baz() { 42 }}
+            assert new Bar().baz() == 42
+        '''
+    }
+
     // GROOVY-6153
     void testDeterministicWhitelistBehaviour() {
         def shell = new GroovyShell(configuration)
