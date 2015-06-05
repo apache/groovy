@@ -2696,6 +2696,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private static boolean isTraitHelper(ClassNode node) {
+        return node instanceof InnerClassNode && Traits.isTrait(node.getOuterClass());
+    }
+
     protected void addReceivers(final List<Receiver<String>> receivers,
                               final Collection<Receiver<String>> owners,
                               final boolean implicitThis) {
@@ -2710,16 +2714,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             int strategy = dmd.getStrategy();
             ClassNode delegate = dmd.getType();
             dmd = dmd.getParent();
-
             switch (strategy) {
                 case Closure.OWNER_FIRST:
                     receivers.addAll(owners);
                     path.append("delegate");
-                    receivers.add(new Receiver<String>(delegate, path.toString()));
+                    doAddDelegateReceiver(receivers, path, delegate);
                     break;
                 case Closure.DELEGATE_FIRST:
                     path.append("delegate");
-                    receivers.add(new Receiver<String>(delegate, path.toString()));
+                    doAddDelegateReceiver(receivers, path, delegate);
                     receivers.addAll(owners);
                     break;
                 case Closure.OWNER_ONLY:
@@ -2728,11 +2731,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     break;
                 case Closure.DELEGATE_ONLY:
                     path.append("delegate");
-                    receivers.add(new Receiver<String>(delegate, path.toString()));
+                    doAddDelegateReceiver(receivers, path, delegate);
                     dmd = null;
                     break;
             }
             path.append('.');
+        }
+    }
+
+    private void doAddDelegateReceiver(final List<Receiver<String>> receivers, final StringBuilder path, final ClassNode delegate) {
+        receivers.add(new Receiver<String>(delegate, path.toString()));
+        if (isTraitHelper(delegate)) {
+            receivers.add(new Receiver<String>(delegate.getOuterClass(), path.toString()));
         }
     }
 
@@ -3920,10 +3930,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return node;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
-            if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
-            if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             ClassNode selfTrait = isTraitSelf(vexp);
             if (selfTrait!=null) return makeSelf(selfTrait);
+            if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
+            if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 checkOrMarkPrivateAccess(vexp, (FieldNode) variable);
