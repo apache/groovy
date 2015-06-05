@@ -80,4 +80,22 @@ class Groovy7242Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             assert a.x == 1
         '''
     }
+
+    void testCallPrivateMethodOfTraitInsideClosure() {
+        assertScript '''
+            trait MyTrait {
+                def f() {
+                    ['a'].collect {String it -> f2(it)}
+                }
+
+                private f2(String s) {
+                    s.toUpperCase()
+                }
+            }
+
+            class A implements MyTrait {}
+            def a = new A()
+            assert a.f() == ['A']
+        '''
+    }
 }
