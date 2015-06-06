@@ -72,7 +72,7 @@ artifactoryPublish {
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "pom", "pom", null,
                         curDate, file("$projectDir/target/poms/pom-all.xml")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "zip", "zip", null,
-                        curDate, file("$projectDir/target/distributions/groovy-binary-${version}.zip")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip"),
+                        curDate, distBin.archivePath), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "pom", "pom", null,
                         curDate, file("$projectDir/target/poms/pom-binary.xml")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
 
