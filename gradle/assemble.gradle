@@ -488,6 +488,7 @@ ext.distSpec = copySpec {
 }
 
 task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
+    baseName = 'apache-groovy'
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
@@ -496,6 +497,7 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
 }
 
 task distDoc(type: Zip, dependsOn: doc) {
+    baseName = 'apache-groovy'
     appendix = 'docs'
     into("groovy-$version")
     with docSpec
@@ -516,6 +518,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
 }
 
 task distSrc(type: Zip) {
+    baseName = 'apache-groovy'
     appendix = 'src'
     classifier = 'incubating'
     into("groovy-$version")
@@ -539,6 +542,7 @@ task installGroovy(type: Sync, dependsOn: distBin) {
 
 task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
+    baseName = 'apache-groovy'
     appendix 'sdk'
     into "groovy-$version"
     with distSpec
