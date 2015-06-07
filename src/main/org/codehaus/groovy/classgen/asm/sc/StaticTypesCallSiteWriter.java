@@ -632,7 +632,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
                 "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
                 "This method should not have been called. Please try to create a simple example reproducing this error and file" +
-                "a bug report at http://jira.codehaus.org/browse/GROOVY");
+                "a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
     private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType) {

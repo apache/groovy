@@ -43,7 +43,7 @@ class IOTest extends GroovyTestCase {
     }
 
     /**
-     * See https://jira.codehaus.org/browse/GROOVY-7132
+     * See https://issues.apache.org/jira/browse/GROOVY-7132
      */
     void testReadBumpy() {
         IO io = new IO()

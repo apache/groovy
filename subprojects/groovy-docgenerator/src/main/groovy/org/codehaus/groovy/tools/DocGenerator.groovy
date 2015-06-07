@@ -461,7 +461,7 @@ class DocGenerator {
 
         private static String linkify(String text, String packageName) {
             text.replaceAll(/\{@link\s+([^}]*)\s*\}/) { String all, String destination ->
-                // A class name cannot be omitted: https://jira.codehaus.org/browse/GROOVY-6740 TODO: remove DocUtil once fixed?
+                // A class name cannot be omitted: https://issues.apache.org/jira/browse/GROOVY-6740 TODO: remove DocUtil once fixed?
                 DocUtil.getLinkAnchor(destination, packageName)
             }
         }

@@ -128,7 +128,7 @@ class BaseScriptTransformTest extends CompilableTestSupport {
     }
 
     void testBaseScriptAbstractMethod() {
-        // http://jira.codehaus.org/browse/GROOVY-6585
+        // https://issues.apache.org/jira/browse/GROOVY-6585
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
         GroovyShell shell = new GroovyShell(config)

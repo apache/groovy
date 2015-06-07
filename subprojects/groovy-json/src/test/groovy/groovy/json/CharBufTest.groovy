@@ -64,8 +64,8 @@ class CharBufTest extends GroovyTestCase {
     }
 
     /**
-     * http://jira.codehaus.org/browse/GROOVY-6937
-     * http://jira.codehaus.org/browse/GROOVY-6852
+     * https://issues.apache.org/jira/browse/GROOVY-6937
+     * https://issues.apache.org/jira/browse/GROOVY-6852
      */
     void testGroovy6937and6852() {
         // using raw CharBuf directly

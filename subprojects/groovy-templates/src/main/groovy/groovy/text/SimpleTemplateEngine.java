@@ -320,7 +320,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
                     }
                 }
                 /* Don't eat EOL chars in sections - as they are valid instruction separators.
-                 * See http://jira.codehaus.org/browse/GROOVY-980
+                 * See https://issues.apache.org/jira/browse/GROOVY-980
                  */
                 // if (c != '\n' && c != '\r') {
                 sw.write(c);
