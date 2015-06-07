@@ -102,8 +102,7 @@ all files in `src/main/groovy` will be found. If, however,
 `src/main/java` is empty, then `src/main/groovy` will be ignored. You
 can get around this by placing an empty file in `src/main/java` just so
 that `src/main/groovy` will be recognized. The same is true for
-`src/test/java` and `src/test/groovy`. This is actually a workaround for
-http://jira.codehaus.org/browse/GRECLIPSE-1221[GRECLIPSE-1221].
+`src/test/java` and `src/test/groovy`.
 
 [[Groovy-EclipsecompilerpluginforMaven-Usethegroovy-eclipse-compilermojoforconfiguringsourcefolders]]
 === Use the `groovy-eclipse-compiler` mojo for configuring source folders
@@ -270,36 +269,12 @@ sites (e.g., nightly, milestone, or release). Just go to your Eclipse
 update manager and add the Groovy-Eclipse update sites (if you haven’t
 done so already). Select the _Groovy-Eclipse M2E integration_.
 
-[[Groovy-EclipsecompilerpluginforMaven-ReleaseBuilds]]
-== Release Builds
-
-[cols="25,75" options="header"]
-|=================================================================
-|Eclipse level |Release update site
-|4.4 |http://dist.springsource.org/release/GRECLIPSE/e4.4
-|4.3 |http://dist.springsource.org/release/GRECLIPSE/e4.3
-|4.3-j8 |http://dist.springsource.org/release/GRECLIPSE/e4.3-j8 (Includes the Java 8 Patch for Eclipse 4.3)
-|4.2 |http://dist.springsource.org/release/GRECLIPSE/e4.2
-|3.7 |http://dist.springsource.org/release/GRECLIPSE/e3.7 (untested, provided 'as is')
-|=================================================================
-
-[[Groovy-EclipsecompilerpluginforMaven-DevelopmentBuilds]]
-== Development Builds
-
-[cols="25,75" options="header"]
-|==================================================================
-|Eclipse level |Development update site
-|4.4 |http://dist.springsource.org/snapshot/GRECLIPSE/e4.4
-|4.3 |http://dist.springsource.org/snapshot/GRECLIPSE/e4.3
-|==================================================================
-
 The Groovy-Eclipse configurator for m2eclipse is not compatible with
 AspectJ or Scala. So you cannot use a joint AspectJ/Scala/Groovy
 project in Eclipse. These languages must be separated into separate
 sub-projects.
 
-[[Groovy-EclipsecompilerpluginforMaven-Wheretofindmoreinformationandaskquestions]]
-== Where to find more information and ask questions
+== Where to find more information and report issues
 
-Please ask all questions on the http://groovy.codehaus.org/Mailing+Lists[Groovy-Eclipse mailing list]. Any bugs or
-feature enhancements should go to the https://jira.codehaus.org/browse/GRECLIPSE[Groovy-Eclipse’s jira].
+More information is available in the https://github.com/groovy/groovy-eclipse/wiki[Groovy-Eclipse Wiki]. Any bugs or
+feature enhancements should be reported as https://github.com/groovy/groovy-eclipse/issues[Groovy-Eclipse Github Issues].
