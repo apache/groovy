@@ -118,7 +118,7 @@ Please note that the following Gradle tasks generate both indy and non indy vari
 
 == Continuous Integration Server
 
-The official CI server runs {groovy-ci}[here] (login as user guest and leave the password blank) and is sponsored by http://www.jetbrains.com[JetBrains].
+The official CI server runs {groovy-ci}[here] and is sponsored by http://www.jetbrains.com[JetBrains].
 
 == License
 
