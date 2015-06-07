@@ -41,7 +41,7 @@ import java.lang.annotation.ElementType;
  * to resolve artifacts in the order specified in the chain of resolvers.
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
- * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
+ * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
  *
  * @author Merlyn Albery-Speyer
  */

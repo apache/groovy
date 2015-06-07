@@ -40,8 +40,9 @@ import java.util.regex.Pattern;
  * <p>
  * Typically this is used from the groovy command line agent but it can be 
  * invoked programatically. To run this program from the command line please
- * refer to the command line documentation at <a href="http://groovy.codehaus.org/Groovy+CLI">
- * Groovy CLI</a>.
+ * refer to the command line documentation at
+ * <a href="http://docs.groovy-lang.org/docs/latest/html/documentation/#_running_groovy_from_the_commandline">
+ * Running Groovy from the commandline</a>.
  * <p>
  * Here is an example of how to use this class to open a listening socket on the server, 
  * listen for incoming data, and then echo the data back to the client in reverse order: 

@@ -30,7 +30,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.util.Vector;
 
 /**
- * A BSF Engine for the <a href="http://groovy.codehaus.org/">Groovy</a>
+ * A BSF Engine for the <a href="http://groovy-lang.org/">Groovy</a>
  * scripting language.
  * <p>
  * It's derived from the Jython / JPython engine
