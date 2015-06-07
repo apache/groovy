@@ -120,7 +120,7 @@ ext {
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.10'
-    xmlunitVersion = '1.5'
+    xmlunitVersion = '1.6'
     xstreamVersion = '1.4.8'
     spockVersion = '1.0-groovy-2.4'
 }
