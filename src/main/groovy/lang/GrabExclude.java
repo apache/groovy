@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  * {@code @GrabExclude('mysql:mysql-connector-java') // compact form}<br>
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
- * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
+ * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
