@@ -534,7 +534,7 @@ Note that the command class must be found on classpath: you cannot define a new 
 [[GroovyShell-Troubleshooting]]
 === Troubleshooting
 
-Please http://jira.codehaus.org/browse/GROOVY[report] any problems you
+Please https://issues.apache.org/jira/browse/GROOVY[report] any problems you
 run into. Please be sure to mark the JIRA issue with the `Groovysh`
 component.
 

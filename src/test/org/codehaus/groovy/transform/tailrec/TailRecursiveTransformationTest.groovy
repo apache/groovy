@@ -341,7 +341,7 @@ class TailRecursiveTransformationTest extends GroovyShellTestCase {
     }
 
     /**
-     * https://jira.codehaus.org/browse/GROOVY-6573
+     * https://issues.apache.org/jira/browse/GROOVY-6573
      */
     void testParameterIsUsedInRecursiveArgPositionedEarlier() {
         def target = evaluate('''

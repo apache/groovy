@@ -65,7 +65,7 @@ import javax.servlet.http.HttpServletRequest;
  * <p>
  * In order to support class-loading-troubles-debugging with Tomcat 4 or
  * higher, you can log the class loader responsible for loading some classes.
- * See <a href="http://jira.codehaus.org/browse/GROOVY-861">GROOVY-861</a> for details.
+ * See <a href="https://issues.apache.org/jira/browse/GROOVY-861">GROOVY-861</a> for details.
  * The servlet init parameter name is:
  * <pre>
  * log.GROOVY861 = false(default) | true
@@ -244,7 +244,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      */
     protected String getScriptUri(HttpServletRequest request) {
         /*
-         * Log some debug information for http://jira.codehaus.org/browse/GROOVY-861
+         * Log some debug information for https://issues.apache.org/jira/browse/GROOVY-861
          */
         if (logGROOVY861) {
             log("Logging request class and its class loader:");

@@ -691,7 +691,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression subExpression = expression.getExpression();
         // to not record the underlying MapExpression twice,
         // we disable the assertion tracker
-        // see http://jira.codehaus.org/browse/GROOVY-3421
+        // see https://issues.apache.org/jira/browse/GROOVY-3421
         controller.getAssertionWriter().disableTracker();
         subExpression.visit(this);
         controller.getOperandStack().box();
