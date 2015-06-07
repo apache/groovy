@@ -18,7 +18,7 @@ GPars (http://www.gpars.org/)
 Hamcrest (https://github.com/hamcrest/JavaHamcrest)
 JCommander (http://jcommander.org/)
 Openbeans (https://code.google.com/p/openbeans/)
-QDox (http://qdox.codehaus.org/)
+QDox (https://github.com/paul-hammant/qdox)
 TestNG (http://testng.org/)
 XStream (https://x-stream.github.io/)
 
@@ -31,5 +31,5 @@ Use the JSR223 License listed in the LICENSE file.
 
 For licenses see the LICENSE file.
 
-If any software distributed with Apache Groovy does not have an Apache 2 License, its license is explicitly listed in the
-LICENSE file.
+If any software distributed with Apache Groovy does not have an Apache 2
+License, its license is explicitly listed in the LICENSE file.
