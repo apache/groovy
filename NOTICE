@@ -20,7 +20,7 @@ JCommander (http://jcommander.org/)
 Openbeans (https://code.google.com/p/openbeans/)
 QDox (http://qdox.codehaus.org/)
 TestNG (http://testng.org/)
-XStream (http://xstream.codehaus.org/)
+XStream (https://x-stream.github.io/)
 
 For the following files in the groovy-jsr223 component:
        src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
