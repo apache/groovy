@@ -28,15 +28,16 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * DO NOT USE. Hacked version until Commons CLI 1.3 is released.
- * NOTE: this is a mirror copy of org.apache.commons.cli.GroovyInternalPosixParser
- * DON'T MAKE CHANGES without keeping the other file in sync!
- * The class GroovyPosixParser provides an implementation of the
- * {@link org.apache.commons.cli.Parser#flatten(org.apache.commons.cli.Options,String[],boolean) flatten} method.
+ * This is a hacked version of Commons CLI 1.2 PosixParser with some bug fixes added.
+ * We aren't aware of any use cases where it isn't now preferable to use the
+ * Commons CLI 1.3 DefaultParser but this class is retained for the time being for
+ * backwards compatibility if someone is relying on this class's exact functionality.
  *
  * @author John Keyes (john at integralsource.com)
  * @author Paul King (Groovy hacks/fixes)
+ * @deprecated use the DefaultParser from Commons CLI
  */
+@Deprecated
 public class GroovyPosixParser extends Parser
 {
     /** holder for flattened tokens */

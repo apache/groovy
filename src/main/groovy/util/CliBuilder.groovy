@@ -18,8 +18,14 @@
  */
 package groovy.util
 
-import org.apache.commons.cli.*
-import org.codehaus.groovy.cli.GroovyPosixParser
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.CommandLineParser
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.GnuParser
+import org.apache.commons.cli.HelpFormatter
+import org.apache.commons.cli.Option
+import org.apache.commons.cli.Options
+import org.apache.commons.cli.ParseException
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
@@ -48,9 +54,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * option exists with value 'alt' and provided that none of 'a', 'l' or 't'
  * takes an argument (in fact the last one is allowed to take an argument).
  * The bursting behavior can be turned off by using an
- * alternate underlying parser. The simplest way to achieve this is by setting
- * the posix property on the CliBuilder to false, i.e. include
- * <code>posix: false</code> in the constructor call.
+ * alternate underlying parser. The simplest way to achieve this is by using
+ * the deprecated GnuParser from Commons CLI with the parser property on the CliBuilder,
+ * i.e. include <code>parser: new GnuParser()</code> in the constructor call.
  * <p>
  * Another example (partial emulation of arg processing for 'ant' command line):
  * <pre>
@@ -224,7 +230,7 @@ class CliBuilder {
     /**
      * Allows customisation of the usage message width.
      */
-    int width = formatter.defaultWidth
+    int width = HelpFormatter.DEFAULT_WIDTH
 
     /**
      * Not normally accessed directly but full access to underlying options if needed.
@@ -259,7 +265,7 @@ class CliBuilder {
     OptionAccessor parse(args) {
         if (expandArgumentFiles) args = expandArgumentFiles(args)
         if (!parser) {
-            parser = posix == null ? new GroovyPosixParser() : posix == true ? new PosixParser() : new GnuParser()
+            parser = posix != null && posix == false ? new GnuParser() : new DefaultParser()
         }
         try {
             return new OptionAccessor(parser.parse(options, args as String[], stopAtNonOption))
@@ -274,7 +280,7 @@ class CliBuilder {
      * Print the usage message with writer (default: System.out) and formatter (default: HelpFormatter)
      */
     void usage() {
-        formatter.printHelp(writer, width, usage, header, options, formatter.defaultLeftPad, formatter.defaultDescPad, footer)
+        formatter.printHelp(writer, width, usage, header, options, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, footer)
         writer.flush()
     }
 
