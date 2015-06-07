@@ -103,32 +103,23 @@ expected or when an exception is thrown
 == Embedding the Console
 
 To embed a Swing console in your application, simply create the Console
-object, +
- load some variables, and then launch it. The console can be embedded in
-either Java or Groovy code. +
- The Java code for this is:
+object, load some variables, and then launch it. The console can be embedded in
+either Java or Groovy code. The Java code for this is:
 
 [source,java]
 --------------------------------------------------
 import groovy.ui.Console;
 
     ...
-
     Console console = new Console();
     console.setVariable("var1", getValueOfVar1());
     console.setVariable("var2", getValueOfVar2());
     console.run();
-
     ...
 --------------------------------------------------
 
 Once the console is launched, you can use the variable values in Groovy
 code.
-
-An example of how to embed either the GroovyConsole or GroovyShell in a
-Spring Web application can be found at
-http://groovy.codehaus.org/Embedding+a+Groovy+Console+in+a+Java+Server+Application[Embedding
-a Groovy Console in a Java Server Application]
 
 [[GroovyConsole-Visualizingscriptoutputresults]]
 == Visualizing script output results
