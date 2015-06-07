@@ -20,9 +20,14 @@ package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
 import groovy.transform.Field
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.HelpFormatter
+import org.apache.commons.cli.Option
+import org.apache.commons.cli.OptionGroup
+import org.apache.commons.cli.Options
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.apache.commons.cli.*
 
 //commands
 
@@ -120,7 +125,7 @@ import org.apache.commons.cli.*
     options.addOption(Option.builder("d").hasArg(false).longOpt("dos").build());
     options.addOption(Option.builder("s").hasArg(false).longOpt("shell").build());
     options.addOption(Option.builder("i").hasArg(false).longOpt("ivy").build());
-    CommandLine cmd2 = new GroovyInternalPosixParser().parse(options, arg[1..-1] as String[], true);
+    CommandLine cmd2 = new DefaultParser().parse(options, arg[1..-1] as String[], true);
     arg = cmd2.args
 
     // set the instance so we can re-set the logger
@@ -274,7 +279,7 @@ options.addOption(Option.builder("v").hasArg(false).desc("display the Groovy and
 
 @Field CommandLine cmd
 
-cmd = new GroovyInternalPosixParser().parse(options, args, true);
+cmd = new DefaultParser().parse(options, args, true);
 
 if (cmd.hasOption('h')) {
     grapeHelp()

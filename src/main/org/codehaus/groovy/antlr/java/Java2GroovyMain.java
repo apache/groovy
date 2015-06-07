@@ -20,7 +20,7 @@ package org.codehaus.groovy.antlr.java;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyInternalPosixParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import java.util.Arrays;
 
@@ -29,7 +29,7 @@ public class Java2GroovyMain {
     public static void main(String[] args) {
         try {
             Options options = new Options();
-            CommandLineParser cliParser = new GroovyInternalPosixParser();
+            CommandLineParser cliParser = new DefaultParser();
             CommandLine cli = cliParser.parse(options, args);
             String[] filenames = cli.getArgs();
             if (filenames.length == 0) {

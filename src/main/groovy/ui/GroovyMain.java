@@ -27,7 +27,7 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyInternalPosixParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -164,7 +164,7 @@ public class GroovyMain {
      * @throws ParseException if there was a problem.
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
-        CommandLineParser parser = new GroovyInternalPosixParser();
+        CommandLineParser parser = new DefaultParser();
         return parser.parse(options, args, true);
     }
 
@@ -177,7 +177,6 @@ public class GroovyMain {
         Options options = new Options();
         options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
         options.addOption(Option.builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build());
-
         options.addOption(Option.builder("D").longOpt("define").desc("define a system property").hasArg().argName("name=value").build());
         options.addOption(
             Option.builder().longOpt("disableopt")
@@ -185,72 +184,20 @@ public class GroovyMain {
                   "optlist can be a comma separated list with the elements: " +
                   "all (disables all optimizations), " +
                   "int (disable any int based optimizations)")
-            .hasArg()
-            .argName("optlist")
-            .build());
-
-        options.addOption(
-            Option.builder("h").hasArg(false)
-            .desc("usage information")
-            .longOpt("help")
-            .build());
-        options.addOption(
-            Option.builder("d").hasArg(false)
-            .desc("debug mode will print out full stack traces")
-            .longOpt("debug")
-            .build());
-        options.addOption(
-            Option.builder("v").hasArg(false)
-            .desc("display the Groovy and JVM versions")
-            .longOpt("version")
-            .build());
-        options.addOption(
-            Option.builder("c").argName("charset")
-            .hasArg()
-            .desc("specify the encoding of the files")
-            .longOpt("encoding")
-            .build());
-        options.addOption(
-            Option.builder("e").argName("script")
-            .hasArg()
-            .desc("specify a command line script")
-            .build());
-        options.addOption(
-            Option.builder("i").argName("extension")
-            .optionalArg(true)
-            .desc("modify files in place; create backup if extension is given (e.g. \'.bak\')")
-            .build());
-        options.addOption(
-            Option.builder("n").hasArg(false)
-            .desc("process files line by line using implicit 'line' variable")
-            .build());
-        options.addOption(
-            Option.builder("p").hasArg(false)
-            .desc("process files line by line and print result (see also -n)")
-            .build());
-        options.addOption(
-            Option.builder("l").argName("port")
-            .optionalArg(true)
-            .desc("listen on a port and process inbound lines (default: 1960)")
-            .build());
-        options.addOption(
-            Option.builder("a").argName("splitPattern")
-            .optionalArg(true)
-            .desc("split lines using splitPattern (default '\\s') using implicit 'split' variable")
-            .longOpt("autosplit")
-            .build());
-        options.addOption(
-            Option.builder().longOpt("indy")
-            .desc("enables compilation using invokedynamic")
-            .build());
-        options.addOption(
-            Option.builder().longOpt("configscript")
-            .hasArg().desc("A script for tweaking the configuration options")
-            .build());
-        options.addOption(
-            Option.builder("b").longOpt("basescript")
-            .hasArg().argName("class").desc("Base class name for scripts (must derive from Script)")
-            .build());
+            .hasArg().argName("optlist").build());
+        options.addOption(Option.builder("h").hasArg(false).desc("usage information").longOpt("help").build());
+        options.addOption(Option.builder("d").hasArg(false).desc("debug mode will print out full stack traces").longOpt("debug").build());
+        options.addOption(Option.builder("v").hasArg(false).desc("display the Groovy and JVM versions").longOpt("version").build());
+        options.addOption(Option.builder("c").argName("charset").hasArg().desc("specify the encoding of the files").longOpt("encoding").build());
+        options.addOption(Option.builder("e").argName("script").hasArg().desc("specify a command line script").build());
+        options.addOption(Option.builder("i").argName("extension").optionalArg(true).desc("modify files in place; create backup if extension is given (e.g. \'.bak\')").build());
+        options.addOption(Option.builder("n").hasArg(false).desc("process files line by line using implicit 'line' variable").build());
+        options.addOption(Option.builder("p").hasArg(false).desc("process files line by line and print result (see also -n)").build());
+        options.addOption(Option.builder("l").argName("port").optionalArg(true).desc("listen on a port and process inbound lines (default: 1960)").build());
+        options.addOption(Option.builder("a").argName("splitPattern").optionalArg(true).desc("split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build());
+        options.addOption(Option.builder().longOpt("indy").desc("enables compilation using invokedynamic").build());
+        options.addOption(Option.builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build());
+        options.addOption(Option.builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
         return options;
     }
 
