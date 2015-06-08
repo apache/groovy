@@ -22,7 +22,6 @@ assets
 resources
 test-resources
 gradlew\.bat
-.*\.adoc
 .*\.gradle
 .*\.properties
 .*\.policy
