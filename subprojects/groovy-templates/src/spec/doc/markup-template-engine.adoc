@@ -258,7 +258,7 @@ with a _layout_. First of all, you need to create a layout template:
 [source,groovy]
 .layout-main.tpl
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test-resources/layout-main.tpl[indent=0]
+include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test-resources/layout-main.tpl[tags=layout_main,indent=0]
 ----
 <1> the `title` variable (inside the title tag) is a layout variable
 <2> the `bodyContents` call will render the body
