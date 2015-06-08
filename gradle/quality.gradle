@@ -149,12 +149,14 @@ dependencies {
 
 // Standalone rat task - suitable for manually checking license info
 // TODO replace with rat gradle plugin to allow per subproject checking and better exclusion/license specification
+String ratExcludesFilePath = 'config/licensing/rat-excludes.txt'
 task rat(type: JavaExec) {
     main = 'org.apache.rat.Report'
     classpath = files(configurations.rat)
-    args = ['-E', 'config/licensing/rat-excludes.txt', '--dir', '.']
+    args = ['-E', ratExcludesFilePath, '--dir', '.']
     doFirst {
-        println "Runs Apache RAT. Exclusions are defined in config/licensing/rat-excludes.txt file"
+        println "Runing Apache RAT. Exclusions are defined in: $ratExcludesFilePath"
+        println "Using the following exclusions:\n${new File(ratExcludesFilePath).text}"
     }
 }
 
