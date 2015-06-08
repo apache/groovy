@@ -145,8 +145,8 @@ public class GroovyMain {
         formatter.printHelp(
             pw,
             80,
-            "groovy [options] [args]",
-            "options:",
+            "groovy [options] [filename] [args]",
+            "The Groovy command line processor.\nOptions:",
             options,
             2,
             4,
