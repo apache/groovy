@@ -182,24 +182,9 @@ task docGDK {
     }
 }
 
-// this will apply the javadoc fix tool to all generated javadocs
-// we use it to make sure that the javadocs are not vulnerable independently of the JDK used to build
+// apply javadoc fix tool to generated javadocs - ensures no vulnerability even on old JDK versions
 allprojects {
-    tasks.withType(Javadoc).all {
-        doLast {
-            logger.lifecycle("Fixing Javadoc (see http://www.kb.cert.org/vuls/id/225657) for $destinationDir".toString())
-            def fixtext = org.apache.tools.ant.taskdefs.Javadoc.getResourceAsStream('javadoc-frame-injections-fix.txt').text.trim()
-            ant {
-                replace(encoding: 'UTF-8', summary: true) {
-                    fileset(dir: destinationDir, casesensitive: false, includes: '**/index.html,**/index.htm,**/toc.html,**/toc.htm') {
-                        not { contains(text: 'function validURL(url) {', casesensitive: true) }
-                    }
-                    replaceToken('function loadFrames() {')
-                    replaceValue(expandProperties: false, fixtext)
-                }
-            }
-        }
-    }
+    apply plugin: 'javadocHotfix'
 }
 
 if (JavaVersion.current().isJava7Compatible()) {
