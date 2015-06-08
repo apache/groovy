@@ -23,12 +23,17 @@ buildscript {
             name 'Bintray Asciidoctor repo'
             url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
         }
+        maven{
+            name 'Bintray Javadoc Hotfix repo'
+            url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
+        }
     }
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.2'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
+        classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
     }
@@ -37,6 +42,7 @@ buildscript {
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/bintray.gradle'
+apply plugin: 'javadocHotfix'
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
