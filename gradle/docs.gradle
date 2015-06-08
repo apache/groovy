@@ -188,11 +188,17 @@ task docGDK {
 allprojects {
     tasks.withType(Javadoc).all {
         doLast {
-            logger.lifecycle("Applying Javadoc fix tool (see http://www.kb.cert.org/vuls/id/225657) into $destinationDir".toString())
-            def javadocFix = new JavadocFixTool()
-            javadocFix.recursive = true
-            javadocFix.doPatch = true
-            javadocFix.searchAndPatch(destinationDir)
+            logger.lifecycle("Fixing Javadoc (see http://www.kb.cert.org/vuls/id/225657) for $destinationDir".toString())
+            def fixtext = org.apache.tools.ant.taskdefs.Javadoc.getResourceAsStream('javadoc-frame-injections-fix.txt').text.trim()
+            ant {
+                replace(encoding: 'UTF-8', summary: true) {
+                    fileset(dir: destinationDir, casesensitive: false, includes: '**/index.html,**/index.htm,**/toc.html,**/toc.htm') {
+                        not { contains(text: 'function validURL(url) {', casesensitive: true) }
+                    }
+                    replaceToken('function loadFrames() {')
+                    replaceValue(expandProperties: false, fixtext)
+                }
+            }
         }
     }
 }
