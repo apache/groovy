@@ -23,7 +23,6 @@ resources
 test-resources
 gradlew\.bat
 .*\.adoc
-.*\.properties
 .*\.policy
 .*\.txt
 .*\.gif
