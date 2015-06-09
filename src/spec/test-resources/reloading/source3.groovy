@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+// tag::greeter[]
 import Dependency
 
 class Greeter {
@@ -26,3 +27,4 @@ class Greeter {
 }
 
 new Greeter()
+// end::greeter[]

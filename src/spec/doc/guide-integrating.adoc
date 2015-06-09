@@ -211,7 +211,7 @@ a directory with the following script inside:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[tags=greeter,indent=0]
 ----
 
 then you can execute this code using a `GroovyScriptEngine`:
@@ -241,7 +241,7 @@ Hello, world!
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[tags=greeter,indent=0]
 ----
 
 And the message should change to:
@@ -260,7 +260,7 @@ the same directory, without interrupting the executing script:
 [source,groovy]
 .Depencency.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[tags=dependency,indent=0]
 ----
 
 and update the `ReloadingTest` script like this:
@@ -268,7 +268,7 @@ and update the `ReloadingTest` script like this:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[tags=greeter,indent=0]
 ----
 
 And this time, the message should change to:
@@ -286,7 +286,7 @@ And as a last test, you can update the `Dependency.groovy` file without touching
 [source,groovy]
 .Depencency.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[tags=dependency,indent=0]
 ----
 
 And you should observe that the dependent file was reloaded:
