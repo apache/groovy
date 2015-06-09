@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+// tag::dependency[]
 class Dependency {
     String message = 'Hello, dependency 1'
 }
+// end::dependency[]

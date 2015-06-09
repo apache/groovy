@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+// tag::greeter[]
 class Greeter {
     String sayHello() {
         def greet = "Hello, world!"
@@ -24,3 +25,4 @@ class Greeter {
 }
 
 new Greeter()
+// end::greeter[]
