@@ -40,6 +40,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1817,9 +1818,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static void writeUTF16BomIfRequired(final String charset, final OutputStream stream) throws IOException {
-        if ("UTF-16BE".equals(charset)) {
+        if ("UTF-16BE".equals(Charset.forName(charset).name())) {
             writeUtf16Bom(stream, true);
-        } else if ("UTF-16LE".equals(charset)) {
+        } else if ("UTF-16LE".equals(Charset.forName(charset).name())) {
             writeUtf16Bom(stream, false);
         }
     }
