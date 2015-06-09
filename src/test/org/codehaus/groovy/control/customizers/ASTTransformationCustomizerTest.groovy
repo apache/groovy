@@ -192,7 +192,7 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
 
 boolean interrupted = false
 try {
-    50.times {
+    100.times {
         Thread.sleep(100)
     }
 } catch (TimeoutException e) {
