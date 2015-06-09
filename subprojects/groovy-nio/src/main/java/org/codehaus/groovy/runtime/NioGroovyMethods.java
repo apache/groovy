@@ -1466,9 +1466,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
+     * Helper method to create a buffered writer for a file.
      *
      * @param self    a Path
      * @param charset the name of the encoding used to write in this file
