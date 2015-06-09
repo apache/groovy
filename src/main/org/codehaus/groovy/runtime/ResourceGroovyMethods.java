@@ -831,7 +831,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the File, using the specified encoding.
+     * Write the text to the File, using the specified encoding.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the file before the text.
      *
      * @param file    a File
      * @param text    the text to write to the File
@@ -960,7 +962,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the File, using a specified encoding.
+     * Append the text at the end of the File, using a specified encoding.  If
+     * the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias)
+     * and the file doesn't already exist, the requisite byte order mark is
+     * written to the file before the text is appended.
      *
      * @param file    a File
      * @param text    the text to append at the end of the File
@@ -1796,8 +1801,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream before the writer
+     * is returned.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1827,7 +1833,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a buffered writer for this file, writing data using the given
-     * encoding.
+     * encoding.  If the given charset is "UTF-16BE" or "UTF-16LE" (or an
+     * equivalent alias), the requisite byte order mark is written to the
+     * stream before the writer is returned.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1874,7 +1882,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new BufferedWriter for this file, passes it to the closure, and
      * ensures the stream is flushed and closed after the closure returns.
-     * The writer will use the given charset encoding.
+     * The writer will use the given charset encoding.  If the given charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the requisite byte
+     * order mark is written to the stream when the writer is created.
      *
      * @param file    a File
      * @param charset the charset used
@@ -1888,8 +1898,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new BufferedWriter which will append to this
-     * file.  The writer is passed to the closure and will be closed before
+     * Create a new BufferedWriter which will append to this file.  If the
+     * given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream when the writer is
+     * created.  The writer is passed to the closure and will be closed before
      * this method returns.
      *
      * @param file    a File
@@ -1931,7 +1943,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create a new PrintWriter for this file, using specified
-     * charset.
+     * charset.  If the given charset is "UTF-16BE" or "UTF-16LE" (or an
+     * equivalent alias), the requisite byte order mark is written to the
+     * stream before the writer is returned.
      *
      * @param file    a File
      * @param charset the charset
@@ -1959,8 +1973,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
+     * Create a new PrintWriter with a specified charset for this file.  If the
+     * given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream when the writer is
+     * created.  The writer is passed to the closure, and will be closed
      * before this method returns.
      *
      * @param file    a File
