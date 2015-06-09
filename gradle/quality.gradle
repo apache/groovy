@@ -155,7 +155,7 @@ task rat(type: JavaExec) {
     classpath = files(configurations.rat)
     args = ['-E', ratExcludesFilePath, '--dir', '.']
     doFirst {
-        println "Runing Apache RAT. Exclusions are defined in: $ratExcludesFilePath"
+        println "Running Apache RAT. Exclusions are defined in: $ratExcludesFilePath"
         println "Using the following exclusions:\n${new File(ratExcludesFilePath).text}"
     }
 }
