@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
@@ -275,6 +276,8 @@ public class FileSystemCompiler {
             configuration.setTargetDirectory(cli.getOptionValue('d'));
         }
 
+        configuration.setParameters(cli.hasOption("pa"));
+
         if (cli.hasOption("encoding")) {
             configuration.setSourceEncoding(cli.getOptionValue("encoding"));
         }
@@ -287,11 +290,18 @@ public class FileSystemCompiler {
         if (cli.hasOption('j')) {
             Map<String, Object> compilerOptions = new HashMap<String, Object>();
 
-            String[] opts = cli.getOptionValues("J");
-            compilerOptions.put("namedValues", opts);
+            String[] namedValues = cli.getOptionValues("J");
+            compilerOptions.put("namedValues", namedValues);
 
-            opts = cli.getOptionValues("F");
-            compilerOptions.put("flags", opts);
+            String[] flags = cli.getOptionValues("F");
+            if (flags != null && cli.hasOption("pa")){
+                // convert to a list, so we can add a parameter...
+                List<String> tmp = new ArrayList<String>(Arrays.asList(flags));
+                tmp.add("parameters");
+                // convert back to an array...
+                flags = tmp.toArray(new String[tmp.size()]);
+            }
+            compilerOptions.put("flags", flags);
 
             configuration.setJointCompilationOptions(compilerOptions);
         }
@@ -336,6 +346,7 @@ public class FileSystemCompiler {
         options.addOption(Option.builder("h").longOpt("help").desc("Print a synopsis of standard options").build());
         options.addOption(Option.builder("v").longOpt("version").desc("Print the version").build());
         options.addOption(Option.builder("e").longOpt("exception").desc("Print stack trace on error").build());
+        options.addOption(Option.builder("pa").longOpt("parameters").desc("Generate metadata for reflection on method parameter names (jdk8+ only)").build());
         options.addOption(Option.builder("j").longOpt("jointCompilation").desc("Attach javac compiler to compile .java files").build());
         options.addOption(Option.builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
 

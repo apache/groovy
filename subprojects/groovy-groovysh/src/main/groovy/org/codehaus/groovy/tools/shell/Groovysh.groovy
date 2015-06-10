@@ -24,6 +24,7 @@ import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
@@ -101,6 +102,17 @@ class Groovysh extends Shell {
         this.packageHelper = new PackageHelperImpl(classLoader)
     }
 
+    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
+        super(io)
+        assert classLoader
+        assert binding
+        assert registrar
+        parser = new Parser()
+        interp = new Interpreter(classLoader, binding, configuration)
+        registrar.call(this)
+        this.packageHelper = new PackageHelperImpl(classLoader)
+    }
+
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
 
         return {Groovysh shell ->
@@ -124,6 +136,11 @@ class Groovysh extends Shell {
 
     Groovysh(final IO io) {
         this(new Binding(), io)
+    }
+
+    Groovysh(final IO io, CompilerConfiguration configuration) {
+        this(Thread.currentThread().contextClassLoader, new Binding(), io,
+                createDefaultRegistrar(Thread.currentThread().contextClassLoader), configuration)
     }
 
     Groovysh() {

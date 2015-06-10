@@ -122,6 +122,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         init.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         init.setDebug(true);
+        init.setParameters(true);
         init.setVerbose(false);
         init.setTolerance(720);
         init.setMinimumRecompilationInterval(234);
@@ -147,6 +148,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(true, init.getDebug());
+        assertEquals(true, init.getParameters());
         assertEquals(false, init.getVerbose());
         assertEquals(720, init.getTolerance());
         assertEquals(234, init.getMinimumRecompilationInterval());
@@ -194,6 +196,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         init.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         init.setDebug(false);
+        init.setParameters(false);
         init.setVerbose(true);
         init.setTolerance(55);
         init.setMinimumRecompilationInterval(975);
@@ -211,6 +214,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(false, init.getDebug());
+        assertEquals(false, init.getParameters());
         assertEquals(true, init.getVerbose());
         assertEquals(55, init.getTolerance());
         assertEquals(975, init.getMinimumRecompilationInterval());

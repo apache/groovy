@@ -194,6 +194,7 @@ public class GroovyMain {
                 .addOption(builder("i").argName("extension").optionalArg(true).desc("modify files in place; create backup if extension is given (e.g. \'.bak\')").build())
                 .addOption(builder("n").hasArg(false).desc("process files line by line using implicit 'line' variable").build())
                 .addOption(builder("p").hasArg(false).desc("process files line by line and print result (see also -n)").build())
+                .addOption(builder("pa").hasArg(false).desc("Generate metadata for reflection on method parameter names (jdk8+ only)").longOpt("parameters").build())
                 .addOption(builder("l").argName("port").optionalArg(true).desc("listen on a port and process inbound lines (default: 1960)").build())
                 .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
                 .addOption(builder().longOpt("indy").desc("enables compilation using invokedynamic").build())
@@ -245,6 +246,7 @@ public class GroovyMain {
         main.isScriptFile = !line.hasOption('e');
         main.debug = line.hasOption('d');
         main.conf.setDebug(main.debug);
+        main.conf.setParameters(line.hasOption("pa"));
         main.processFiles = line.hasOption('p') || line.hasOption('n');
         main.autoOutput = line.hasOption('p');
         main.editFiles = line.hasOption('i');

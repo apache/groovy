@@ -46,4 +46,5 @@ int (disable any int based optimizations) |
 | -n | | process files line by line using implicit 'line' variable |
 | -p | | process files line by line and print result (see also -n) |
 | -v | --version | display the Groovy and JVM versions | groovy -v
+| -pa | --parameters | Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. | groovy --parameters Person.groovy
 |=======================================================================
