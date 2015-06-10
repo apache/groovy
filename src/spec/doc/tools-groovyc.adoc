@@ -38,6 +38,7 @@ argument. | groovyc -cp lib/dep.jar MyClass.groovy
 | | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
 | -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.5 -Jsource=1.5 A.groovy B.java
 | -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
+| -pa | --parameters | Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. | groovyc --parameters Person.groovy
 |=======================================================================
 
 *Notes:*
@@ -143,6 +144,8 @@ turned off. If you wish the compiler to search for source files then
 you need to set this flag to true. Defaults to false. |No
 
 |configscript |Set the configuration file used to customize the compilation configuration. |No
+
+|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
 
 |=======================================================================
 

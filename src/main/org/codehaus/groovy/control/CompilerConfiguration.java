@@ -109,6 +109,11 @@ public class CompilerConfiguration {
     private boolean debug;
 
     /**
+     * If true, generates metadata for reflection on method parameters
+     */
+    private boolean parameters = false;
+
+    /**
      * The number of non-fatal errors to allow before bailing
      */
     private int tolerance;
@@ -179,10 +184,12 @@ public class CompilerConfiguration {
         setClasspath("");
         setVerbose(false);
         setDebug(false);
+        setParameters(safeGetSystemProperty("groovy.parameters") != null);
         setTolerance(10);
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
+        // TODO change following try/catches to use #safeGetSystemProperty(...) ??
         // Target bytecode
         String targetByteCode = null;
         try {
@@ -254,6 +261,45 @@ public class CompilerConfiguration {
     }
 
     /**
+     * Retrieves a System property, or null if any of the following exceptions occur.
+     * <ul>
+     *     <li>SecurityException - if a security manager exists and its checkPropertyAccess method doesn't allow access to the specified system property.</li>
+     *     <li>NullPointerException - if key is null.</li>
+     *     <li>IllegalArgumentException - if key is empty.</li>
+     * </ul>
+     * @param key the name of the system property.
+     * @return
+     */
+    private String safeGetSystemProperty(String key){
+        return safeGetSystemProperty(key, null);
+    }
+
+    /**
+     * Retrieves a System property, or null if any of the following exceptions occur (Warning: Exception messages are
+     * suppressed).
+     * <ul>
+     *     <li>SecurityException - if a security manager exists and its checkPropertyAccess method doesn't allow access to the specified system property.</li>
+     *     <li>NullPointerException - if key is null.</li>
+     *     <li>IllegalArgumentException - if key is empty.</li>
+     * </ul>
+     * @param key the name of the system property.
+     * @param def a default value.
+     * @return
+     */
+    private String safeGetSystemProperty(String key, String def){
+        try {
+            return System.getProperty(key, def);
+        } catch (SecurityException t){
+            // suppress exception
+        } catch (NullPointerException t){
+            // suppress exception
+        } catch (IllegalArgumentException t){
+            // suppress exception
+        }
+        return def;
+    }
+
+    /**
      * Copy constructor.  Use this if you have a mostly correct configuration
      * for your compilation but you want to make a some changes programatically.
      * An important reason to prefer this approach is that your code will most
@@ -276,6 +322,7 @@ public class CompilerConfiguration {
         setClasspathList(new LinkedList<String>(configuration.getClasspath()));
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
+        setParameters(configuration.getParameters());
         setTolerance(configuration.getTolerance());
         setScriptBaseClass(configuration.getScriptBaseClass());
         setRecompileGroovySource(configuration.getRecompileGroovySource());
@@ -449,6 +496,11 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.output.debug");
         if (text != null && text.equalsIgnoreCase("true")) setDebug(true);
+
+        //
+        // Parameters
+        //
+        setParameters(configuration.getProperty("groovy.parameters") != null);
 
         //
         // Tolerance
@@ -626,10 +678,24 @@ public class CompilerConfiguration {
     }
 
     /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return this.parameters;
+    }
+
+    /**
      * Turns debugging operation on or off.
      */
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    /**
+     * Turns parameter metadata generation on or off.
+     */
+    public void setParameters(boolean parameters) {
+        this.parameters = parameters;
     }
 
     /**

@@ -23,6 +23,7 @@ import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import org.codehaus.groovy.control.messages.SimpleMessage
+import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import java.awt.Component
 import java.awt.EventQueue
@@ -174,6 +175,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     File currentClasspathDir = new File(Preferences.userNodeForPackage(Console).get('currentClasspathDir', '.'))
 
     // Running scripts
+    CompilerConfiguration baseConfig
     CompilerConfiguration config
     GroovyShell shell
     int scriptNameCounter = 0
@@ -192,12 +194,30 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action interruptAction
     
     static void main(args) {
-        if (args.length == 1 && args[0] == '--help') {
-            println '''usage: groovyConsole [options] [filename]
-options:
-  --help                               This Help message
-  -cp,-classpath,--classpath <path>    Specify classpath'''
-            return
+        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
+        MessageSource messages = new MessageSource(Console)
+        cli.with {
+            classpath(messages['cli.option.classpath.description'])
+            cp(longOpt: 'classpath', messages['cli.option.cp.description'])
+            h(longOpt: 'help', messages['cli.option.help.description'])
+            V(longOpt: 'version', messages['cli.option.version.description'])
+            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+        }
+        OptionAccessor options = cli.parse(args)
+
+        if (options == null) {
+            // CliBuilder prints error, but does not exit
+            System.exit(22) // Invalid Args
+        }
+
+        if (options.h) {
+            cli.usage()
+            System.exit(0)
+        }
+
+        if (options.V) {
+            System.out.println(messages.format('cli.info.version', GroovySystem.version))
+            System.exit(0)
         }
 
         // full stack trace should not be logged to the output window - GROOVY-4663
@@ -206,10 +226,16 @@ options:
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
-        def console = new Console(Console.class.classLoader?.getRootLoader())
+        def baseConfig = new CompilerConfiguration()
+        baseConfig.setParameters((boolean) options.hasOption("pa"))
+
+        def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
-        if (args.length == 1) console.loadScriptFile(args[0] as File)
+        if (args.length > 0 && !args[-1].toString().startsWith("-")) {
+            console.loadScriptFile(args[-1] as File)
+        }
+
     }
 
     Console() {
@@ -225,6 +251,11 @@ options:
     }
 
     Console(ClassLoader parent, Binding binding) {
+        this(parent, binding, new CompilerConfiguration())
+    }
+
+    Console(ClassLoader parent, Binding binding, CompilerConfiguration baseConfig) {
+        this.baseConfig = baseConfig
         newScript(parent, binding);
         try {
             System.setProperty('groovy.full.stacktrace', System.getProperty('groovy.full.stacktrace',
@@ -247,7 +278,7 @@ options:
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        config = new CompilerConfiguration()
+        config = new CompilerConfiguration(baseConfig)
         if (threadInterrupt) config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
 
         shell = new GroovyShell(parent, binding, config)

@@ -117,6 +117,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * <li>keepStubs</li>
  * <li>forceLookupUnnamedFiles</li>
  * <li>configscript</li>
+ * <li>parameters</li>
  * </ul>
  * And these nested tasks:
  * <ul>
@@ -214,6 +215,12 @@ public class Groovyc extends MatchingTask {
     private String configscript;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
+
+
+    /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     */
+    private boolean parameters = false;
 
     /**
      * Adds a path for source compilation.
@@ -804,6 +811,22 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     *
+     * @param parameters set to true to generate metadata.
+     */
+    public void setParameters(boolean parameters) {
+        this.parameters = parameters;
+    }
+
+    /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return this.parameters;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -1034,6 +1057,13 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * Add "groovyc" parameters to the commandLineList, based on the ant configuration.
+     *
+     * @param commandLineList
+     * @param jointOptions
+     * @param classpath
+     */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
         commandLineList.add("--classpath");
         commandLineList.add(classpath.toString());
@@ -1051,6 +1081,9 @@ public class Groovyc extends MatchingTask {
         }
         if (stacktrace) {
             commandLineList.add("-e");
+        }
+        if (parameters) {
+            commandLineList.add("--parameters");
         }
         if (useIndy) {
             commandLineList.add("--indy");

@@ -35,6 +35,7 @@ Assuming `groovy-all-VERSION.jar` is in `my.classpath` you will need to declare 
 |fork|If enabled the script will be executed in another JVM (disabled by default).|No
 |scriptBaseClass|The name of the base class for scripts.|No
 |indy|If enabled the script will be executed with `invokedynamic` (disabled by default).|No
+|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
 |============================================
 
 == Parameters specified as nested elements

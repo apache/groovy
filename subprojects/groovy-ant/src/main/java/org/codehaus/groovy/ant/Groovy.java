@@ -268,6 +268,22 @@ public class Groovy extends Java {
     }
 
     /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     *
+     * @param parameters set to true to generate metadata.
+     */
+    public void setParameters(boolean parameters) {
+        configuration.setParameters(parameters);
+    }
+
+    /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return configuration.getParameters();
+    }
+
+    /**
      * Load the file and then execute it
      */
     public void execute() throws BuildException {

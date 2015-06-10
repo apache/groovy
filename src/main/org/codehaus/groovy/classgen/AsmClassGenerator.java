@@ -374,6 +374,14 @@ public class AsmClassGenerator extends ClassGenerator {
             visitParameterAnnotations(parameters[i], i, mv);
         }
 
+        // Add parameter names to the MethodVisitor (jdk8+ only)
+        if (getCompileUnit().getConfig().getParameters()) {
+            for (int i = 0; i < parameters.length; i++) {
+                // TODO handle ACC_SYNTHETIC for enum method parameters?
+                mv.visitParameter(parameters[i].getName(), 0);
+            }
+        }
+
         if (controller.getClassNode().isAnnotationDefinition() && !node.isStaticConstructor()) {
             visitAnnotationDefault(node, mv);
         } else if (!node.isAbstract()) {

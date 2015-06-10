@@ -22,6 +22,7 @@ import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
 import jline.WindowsTerminal
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -58,6 +59,14 @@ class Main
         groovysh = new Groovysh(io)
     }
 
+    /**
+     * @param io: may just be new IO(), which is the default
+     */
+    Main(IO io, CompilerConfiguration configuration) {
+        Logger.io = io
+        groovysh = new Groovysh(io, configuration)
+    }
+
     Groovysh getGroovysh() {
         return groovysh
     }
@@ -81,6 +90,7 @@ class Main
             C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
             D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
             T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
+            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
         }
         OptionAccessor options = cli.parse(args)
 
@@ -147,9 +157,11 @@ class Main
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
+        def configuration = new CompilerConfiguration()
+        configuration.setParameters((boolean) options.hasOption("pa"))
 
         List<String> filenames = options.arguments()
-        Main main = new Main(io)
+        Main main = new Main(io, configuration)
         main.startGroovysh(evalString, filenames)
     }
 
