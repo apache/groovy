@@ -37,20 +37,6 @@ public class Dates {
         return utcNow;
     }
 
-    private static Date internalDate(TimeZone tz, int year, int month, int day, int hour, int minute, int second) {
-        Calendar calendar = Calendar.getInstance();
-
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month - 1);
-        calendar.set(Calendar.DAY_OF_MONTH, day);
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, second);
-        calendar.setTimeZone(tz);
-
-        return calendar.getTime();
-    }
-
     private static Date internalDate(TimeZone tz, int year, int month, int day, int hour,
                                      int minute, int second, int miliseconds) {
 
@@ -71,7 +57,7 @@ public class Dates {
 
     public static Date toDate(TimeZone tz, int year, int month, int day,
                               int hour, int minute, int second) {
-        return internalDate(tz, year, month, day, hour, minute, second);
+        return internalDate(tz, year, month, day, hour, minute, second, 0);
     }
 
     public static Date toDate(TimeZone tz, int year, int month, int day,
