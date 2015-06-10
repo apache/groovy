@@ -46,6 +46,8 @@ usage: groovysh [options] [...]
   -e, --evaluate=arg         Evaluate option fist when starting
                              interactive session
   -h, --help                 Display this help message
+  -pa, --parameters          Generate metadata for reflection on method
+                             parameter names (jdk8+ only)
   -q, --quiet                Suppress superfluous output
   -v, --verbose              Enable verbose output
 -----------------------------------------------------------------

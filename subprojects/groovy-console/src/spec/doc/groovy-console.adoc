@@ -32,6 +32,24 @@ the output area.
 [[GroovyConsole-Features]]
 == Features
 
+[[GroovyConsole-Command-lineOptionsandArguments]]
+=== Command-line Options and Arguments
+
+The Groovy Console supports several options to control classpath and other features.
+
+[source,groovy]
+-----------------------------------------------------------------
+./bin/groovyConsole --help
+usage: groovyConsole [options] [filename]
+ -classpath         Specify where to find the class files - must be first
+                    argument
+ -cp,--classpath    Aliases for '-classpath'
+ -h,--help          Display this help message
+ -pa,--parameters   Generate metadata for reflection on method parameter
+                    names (jdk8+ only)
+ -V,--version       Display the version
+-----------------------------------------------------------------
+
 [[GroovyConsole-RunningScripts]]
 === Running Scripts
 
