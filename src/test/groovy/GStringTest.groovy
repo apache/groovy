@@ -570,4 +570,14 @@ class GStringTest extends GroovyTestCase {
         assert gstring.bytes == string.bytes
         assert gstring.getBytes('UTF-8') ==  string.getBytes('UTF-8')
     }
+
+    /**
+     * GROOVY-7377: Interpolated variable followed by asterisk in slashy-string causes compiler error
+     */
+    void testSlashyStringWithInterpolatedVariableFollowedByAsterisk() {
+        assert Eval.me('''def foo='bar'; /$foo*baz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /${foo}*baz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /$foo\u002abaz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /${foo}\u002abaz/''') == 'bar*baz'
+    }
 }
