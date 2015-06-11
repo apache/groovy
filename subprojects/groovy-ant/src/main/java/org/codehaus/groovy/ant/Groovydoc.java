@@ -38,8 +38,6 @@ import java.util.*;
 
 /**
  * Access to the GroovyDoc tool from Ant.
- *
- * @version $Id$
  */
 public class Groovydoc extends Task {
     private final LoggingHelper log = new LoggingHelper(this);

@@ -36,8 +36,6 @@ import java.io.PrintWriter;
  *
  *  @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public abstract class CSTNode

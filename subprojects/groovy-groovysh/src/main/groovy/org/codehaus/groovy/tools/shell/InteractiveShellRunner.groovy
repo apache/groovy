@@ -29,7 +29,6 @@ import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class InteractiveShellRunner
@@ -147,7 +146,6 @@ class InteractiveShellRunner
 /**
  * Completer for interactive shells.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class CommandsMultiCompleter

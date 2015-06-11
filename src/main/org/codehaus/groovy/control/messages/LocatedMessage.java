@@ -30,8 +30,6 @@ import org.codehaus.groovy.syntax.CSTNode;
  *  A base class for compilation messages.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class LocatedMessage extends SimpleMessage

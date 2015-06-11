@@ -26,8 +26,6 @@ import java.io.PrintStream;
 
 /**
  * Intercepts System.out/System.err. Implementation helper for Console.groovy.
- *
- * @version $Id$
  */
 public class SystemOutputInterceptor extends FilterOutputStream {
 

@@ -23,8 +23,6 @@ import org.codehaus.groovy.GroovyException;
 /** Base exception indicating a syntax error.
  *
  *  @author <a href="bob@werken.com">bob mcwhirter</a>
- *
- *  @version $Id$
  */
 public class SyntaxException extends GroovyException {
 

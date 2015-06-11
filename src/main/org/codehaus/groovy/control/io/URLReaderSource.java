@@ -32,8 +32,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  *  A ReaderSource for source files hosted at a URL.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 public class URLReaderSource extends AbstractReaderSource {
     private URL url;  // The URL from which we produce Readers.

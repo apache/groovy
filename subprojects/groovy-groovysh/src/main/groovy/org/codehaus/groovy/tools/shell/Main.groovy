@@ -43,7 +43,6 @@ import org.fusesource.jansi.AnsiConsole
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Main

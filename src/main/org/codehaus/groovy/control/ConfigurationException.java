@@ -27,8 +27,6 @@ import org.codehaus.groovy.GroovyExceptionInterface;
  *  Thrown when configuration data is invalid.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface

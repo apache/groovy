@@ -25,7 +25,6 @@ import groovy.lang.GroovyClassLoader;
  * during processing.
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @version $Id$
  */
 
 public abstract class ProcessingUnit {

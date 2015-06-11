@@ -31,7 +31,6 @@ import org.apache.commons.cli.Options
 /**
  * Custom CLI help formatter to render things correctly.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HelpFormatter

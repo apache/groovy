@@ -25,7 +25,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'record' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class RecordCommand

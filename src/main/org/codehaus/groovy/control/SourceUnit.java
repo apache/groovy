@@ -54,7 +54,6 @@ import com.thoughtworks.xstream.XStream;
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
- * @version $Id$
  */
 
 public class SourceUnit extends ProcessingUnit {

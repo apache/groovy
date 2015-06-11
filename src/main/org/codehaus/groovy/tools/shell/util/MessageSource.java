@@ -29,7 +29,6 @@ import groovy.lang.GroovyObjectSupport;
  * Message source backed up by one or more {@link java.util.ResourceBundle}
  * instances for simple i18n support.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class MessageSource

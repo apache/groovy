@@ -24,7 +24,6 @@ import jline.console.completer.Completer
 /**
  * Provides the interface required for command extensions.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 @CompileStatic

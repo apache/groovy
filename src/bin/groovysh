@@ -24,11 +24,6 @@
 ##                                                                          ##
 ##############################################################################
 
-##
-## $Revision$
-## $Id$
-##
-
 GROOVY_APP_NAME=GroovyShell
 
 # resolve links - $0 may be a soft-link

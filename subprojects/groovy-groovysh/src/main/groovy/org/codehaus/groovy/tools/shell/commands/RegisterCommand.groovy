@@ -27,7 +27,6 @@ import org.codehaus.groovy.tools.shell.Command
  * Registers a class as a new groovysh command.
  * Requires the command to have matching constructors (shell) or (shell, name, alias).
  *
- * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommand

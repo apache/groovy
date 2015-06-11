@@ -35,7 +35,6 @@ import java.io.PrintWriter;
 /**
  * Support for compilation related tasks.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public abstract class CompileTaskSupport

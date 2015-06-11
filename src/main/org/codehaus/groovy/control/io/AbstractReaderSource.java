@@ -29,7 +29,6 @@ import org.codehaus.groovy.control.Janitor;
  * provides common functionality.
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @version $Id$
  */
 
 public abstract class AbstractReaderSource implements ReaderSource {

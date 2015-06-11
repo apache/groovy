@@ -30,8 +30,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  *  A ReaderSource for source strings.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class StringReaderSource extends AbstractReaderSource {

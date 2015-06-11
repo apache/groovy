@@ -25,7 +25,6 @@ import groovy.lang.GroovyRuntimeException;
  * Thrown when compilation fails from source errors.
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @version $Id$
  */
 
 public class CompilationFailedException extends GroovyRuntimeException {

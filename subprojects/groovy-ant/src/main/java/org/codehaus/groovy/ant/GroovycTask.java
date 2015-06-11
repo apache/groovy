@@ -33,7 +33,6 @@ import java.io.File;
 /**
  * Compiles Groovy source files.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class GroovycTask

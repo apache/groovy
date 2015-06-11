@@ -30,7 +30,6 @@ import static org.fusesource.jansi.Ansi.Attribute.*;
 /**
  * Provides a very, very basic logging API.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public final class Logger {

@@ -26,8 +26,6 @@ import java.math.BigDecimal;
  *
  *  @author Brian Larson
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class Numbers

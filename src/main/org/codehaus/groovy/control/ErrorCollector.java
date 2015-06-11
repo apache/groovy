@@ -38,7 +38,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Id$
  */
 public class ErrorCollector {
     

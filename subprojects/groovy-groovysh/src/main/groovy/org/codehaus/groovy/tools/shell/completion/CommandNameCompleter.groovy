@@ -25,7 +25,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * Completor for the command.names
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class CommandNameCompleter extends SimpleCompletor {
