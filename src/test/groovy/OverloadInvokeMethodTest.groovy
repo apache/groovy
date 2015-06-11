@@ -18,9 +18,6 @@
  */
 package groovy
 
-/**
- * @version $Revision: 1.4 $
- */
 class OverloadInvokeMethodTest extends GroovyTestCase {
     
     void testBug() {

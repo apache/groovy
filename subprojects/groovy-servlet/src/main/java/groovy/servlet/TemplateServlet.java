@@ -105,7 +105,6 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author Christian Stein
  * @author Guillaume Laforge
- * @version 2.0
  * @see TemplateServlet#setVariables(ServletBinding)
  */
 public class TemplateServlet extends AbstractHttpServlet {

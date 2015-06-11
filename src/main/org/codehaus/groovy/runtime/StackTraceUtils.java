@@ -35,7 +35,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * Utility methods removing internal lines from stack traces
  *
  * @author Graeme Rocher
- * @version $Revision: 5544 $
  * @since 1.5
  */
 public class StackTraceUtils {

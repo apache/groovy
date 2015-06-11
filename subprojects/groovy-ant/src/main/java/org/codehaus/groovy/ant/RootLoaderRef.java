@@ -55,7 +55,6 @@ import org.codehaus.groovy.tools.RootLoader;
  *
  * @see org.codehaus.groovy.tools.RootLoader
  * @author Jochen Theodorou
- * @version $Revision$ 
  */
 public class RootLoaderRef extends MatchingTask {
     private String name;

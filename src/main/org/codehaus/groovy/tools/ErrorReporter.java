@@ -32,7 +32,6 @@ import groovy.lang.GroovyRuntimeException;
  *  user.  Primary entry point is <code>write()</code>.
  *
  *  @author <a href="mailto:cpoirier%20AT%20tapestry_os%20DOT%20org">Chris Poirier</a>
- *  @version $Revision$
  */
 
 public class ErrorReporter

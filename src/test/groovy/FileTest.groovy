@@ -26,7 +26,6 @@ import static groovy.io.FileVisitResult.*
  *
  * @author Marc Guillemot
  * @author Paul King
- * @version $Revision: 4996 $
  */
 class FileTest extends GroovyTestCase {
 

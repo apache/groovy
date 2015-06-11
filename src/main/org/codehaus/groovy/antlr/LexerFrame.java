@@ -32,9 +32,7 @@ import antlr.*;
 
 /**
  * @author Santhosh Kumar T
- * @version 1.0
  */
-
 public class LexerFrame extends JFrame implements ActionListener{
     JSplitPane jSplitPane1 = new JSplitPane();
     JScrollPane jScrollPane1 = new JScrollPane();

@@ -21,8 +21,7 @@ package groovy.bugs
 import groovy.Foo
 
 /**
- * @author Mark Volkmann 
- * @version $Revision: 1.3 $
+ * @author Mark Volkmann
  */
 class PrintlnWithNewBug extends GroovyTestCase {
     

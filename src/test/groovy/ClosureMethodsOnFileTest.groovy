@@ -22,7 +22,6 @@ package groovy
  * Tests various Closure methods in Groovy on file
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision: 7355 $
  */
 class ClosureMethodsOnFileTest extends GroovyTestCase {
     private File file = new File("src/test/groovy/Bar.groovy")

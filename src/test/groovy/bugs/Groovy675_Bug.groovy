@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  *  @author Pilho Kim
- *  @version $Revision$
  */ 
 class Groovy675_Bug extends GroovyTestCase {
     void testStringAndGString() {

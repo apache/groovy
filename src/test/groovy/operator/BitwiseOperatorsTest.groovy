@@ -22,7 +22,6 @@ package groovy.operator
  * Test Bitwise Operations
  * 
  * @author Pilho Kim
- * @version $Revision: 4996 $
  */
 class BitwiseOperatorsTest extends GroovyTestCase {
 

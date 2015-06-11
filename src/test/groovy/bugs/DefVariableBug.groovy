@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @version $Revision: 1.3 $
- */
 class DefVariableBug extends GroovyTestCase {
     
     void testBug() {

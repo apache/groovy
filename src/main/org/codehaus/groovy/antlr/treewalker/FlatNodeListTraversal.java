@@ -30,7 +30,6 @@ import antlr.collections.AST;
  * A simple iterator over an ordered (flat) List of the nodes of the AST.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision: 3626 $
  */
 public class FlatNodeListTraversal extends TraversalHelper {
     
