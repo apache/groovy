@@ -27,7 +27,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * A simple antlr AST visitor that collects all nodes into a List.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision: 4032 $
  */
 
 public class NodeCollector extends VisitorAdapter {

@@ -28,8 +28,6 @@ import java.io.Serializable;
  * The value of a QName contains a <b>namespaceURI</b>, a <b>localPart</b> and a <b>prefix</b>.
  * The localPart provides the local part of the qualified name. The
  * namespaceURI is a URI reference identifying the namespace.
- *
- * @version 1.1
  */
 public class QName implements Serializable {
 

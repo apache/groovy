@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @version $Revision: 1.4 $
- */
 class ChristofsPropertyBug extends GroovyTestCase {
 
     def mixedCaseProperty

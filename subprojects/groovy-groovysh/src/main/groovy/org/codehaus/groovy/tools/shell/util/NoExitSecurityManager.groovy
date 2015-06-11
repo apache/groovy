@@ -22,8 +22,6 @@ import java.security.Permission
 
 /**
  * Custom security manager to {@link System#exit} (and related) from being used.
- *
- * @version $Rev$ $Date$
  */
 public class NoExitSecurityManager
     extends SecurityManager

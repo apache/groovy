@@ -23,7 +23,6 @@ package groovy.bugs
  *  parentheses and no parameters for print and println.
  *
  *  @author Russel Winder
- *  @version $Revision$
  */
 class Groovy674_Bug extends GroovyTestCase {
   void testTopLevelPrintParenthesesNoParameter ( ) {

@@ -30,7 +30,6 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7953 $
  * @since Groovy 1.1
  */
 public class JScrollBarProperties {

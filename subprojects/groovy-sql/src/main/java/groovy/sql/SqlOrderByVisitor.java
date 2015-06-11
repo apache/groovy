@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
 /**
  * @author Paul King
- * @version $Revision: 6714 $
  */
 public class SqlOrderByVisitor extends CodeVisitorSupport {
 

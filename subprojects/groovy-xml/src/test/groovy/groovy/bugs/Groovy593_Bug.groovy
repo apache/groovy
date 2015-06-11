@@ -25,8 +25,6 @@ import groovy.xml.MarkupBuilder
  *
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  * @author Pilho Kim
- *
- * @version $Revision: 1.4 $
  */
 class Groovy593_Bug extends GroovyTestCase {
 

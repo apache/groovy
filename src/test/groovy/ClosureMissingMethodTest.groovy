@@ -20,7 +20,6 @@ package groovy
 
 /**
  * @author Danno Ferrin
- * @version $Revision: ???? $
  */
 class ClosureMissingMethodTest extends GroovyTestCase {
 

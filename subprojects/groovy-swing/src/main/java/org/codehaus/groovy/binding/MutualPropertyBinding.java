@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 10897 $
  * @since Groovy 1.6
  */
 

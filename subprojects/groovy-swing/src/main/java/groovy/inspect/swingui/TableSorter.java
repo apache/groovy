@@ -32,7 +32,6 @@ package groovy.inspect.swingui;
  * which means that it does not move around rows when its comparison
  * function returns 0 to denote that they are equivalent.
  *
- * @version 1.12 01/23/03
  * @author Philip Milne
  * @author Minimal adjustments by Dierk Koenig, June 2005
  */

@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @version $Revision: 1.5 $
- */
 class ClosureWithStaticVariablesBug extends TestSupport {
     
     static def y = [:]
