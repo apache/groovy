@@ -23,8 +23,6 @@ import antlr.MismatchedCharException;
 import antlr.MismatchedTokenException;
 import antlr.NoViableAltException;
 import antlr.NoViableAltForCharException;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.StaxDriver;
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -40,7 +38,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.Utilities;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -292,14 +289,7 @@ public class SourceUnit extends ProcessingUnit {
     }
 
     private void saveAsXML(String name, ModuleNode ast) {
-        XStream xstream = new XStream(new StaxDriver());
-        try {
-            xstream.toXML(ast, new FileWriter(name + ".xml"));
-            System.out.println("Written AST to " + name + ".xml");
-        } catch (Exception e) {
-            System.out.println("Couldn't write to " + name + ".xml");
-            e.printStackTrace();
-        }
+        XStreamUtils.serialize(name, ast);
     }
 
     //---------------------------------------------------------------------------    // SOURCE SAMPLING
