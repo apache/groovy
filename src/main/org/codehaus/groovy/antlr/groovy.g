@@ -3524,12 +3524,11 @@ options {
     }
 
     protected boolean atValidDollarEscape() throws CharStreamException {
-        // '$' (('*')? ('{' | LETTER)) =>
+        // '$' (('{' | LETTER) =>
         int k = 1;
         char lc = LA(k++);
         if (lc != '$')  return false;
         lc = LA(k++);
-        if (lc == '*')  lc = LA(k++);
         return (lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)));
     }
 
@@ -3801,7 +3800,7 @@ options {
 // multiple-line comments
 ML_COMMENT
 options {
-    paraphrase="a comment";
+    paraphrase="a multi-line comment";
 }
     :   "/*"
         (   /*  '\r' '\n' can be matched in one alternative or by matching
@@ -3900,7 +3899,8 @@ options {
     paraphrase="a multiline regular expression literal";
 }
         {int tt=0;}
-    :   {allowRegexpLiteral()}?
+    :   ( '/' ~('*'|'=') ) =>
+        {allowRegexpLiteral()}?
         '/'!
         {++suppressNewline;}
         //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
@@ -3920,8 +3920,8 @@ options {
         )
         {$setType(tt);}
 
-    |   DIV                 {$setType(DIV);}
-    |   DIV_ASSIGN          {$setType(DIV_ASSIGN);}
+    |   ( '/' ~('*'|'=') ) => DIV {$setType(DIV);}
+    |   DIV_ASSIGN {$setType(DIV_ASSIGN);}
     ;
 
 DOLLAR_REGEXP_LITERAL
@@ -4026,14 +4026,11 @@ options {
     paraphrase="a multiline regular expression character";
 }
     :
-        (
-            ~('*'|'/'|'$'|'\\'|'\n'|'\r'|'\uffff')
-        |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
-        |   '\\' '/'                   { $setText('/'); }
-        |   STRING_NL[true]
-        |!  '\\' ONE_NL[false]
-        )
-        ('*')*      // stars handled specially to avoid ambig. on /**/
+        ~('/'|'$'|'\\'|'\n'|'\r'|'\uffff')
+    |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
+    |   '\\' '/'                   { $setText('/'); }
+    |   STRING_NL[true]
+    |!  '\\' ONE_NL[false]
     ;
 
 protected
@@ -4042,13 +4039,11 @@ options {
     paraphrase="a multiline dollar escaping regular expression character";
 }
     :
-        (
-            ~('$' | '\\' | '/' | '\n' | '\r' | '\uffff')
-        |   { LA(2)!='\n' && LA(2)!='\r' }? '\\'               // backslash only escapes EOL
-        |   ('/' ~'$') => '/'                                  // allow a slash if not followed by a $
-        |   STRING_NL[true]
-        |!  '\\' ONE_NL[false]
-        )
+        ~('$' | '\\' | '/' | '\n' | '\r' | '\uffff')
+    |   { LA(2)!='\n' && LA(2)!='\r' }? '\\'               // backslash only escapes EOL
+    |   ('/' ~'$') => '/'                                  // allow a slash if not followed by a $
+    |   STRING_NL[true]
+    |!  '\\' ONE_NL[false]
     ;
 
 // escape sequence -- note that this is protected; it can only be called
