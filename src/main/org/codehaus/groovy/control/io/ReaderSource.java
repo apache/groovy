@@ -30,8 +30,6 @@ import org.codehaus.groovy.control.Janitor;
  *  on a source stream.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 public interface ReaderSource extends HasCleanup {
    /**

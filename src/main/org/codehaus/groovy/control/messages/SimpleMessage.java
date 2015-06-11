@@ -30,8 +30,6 @@ import org.codehaus.groovy.control.SourceUnit;
  *  A base class for compilation messages.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class SimpleMessage extends Message

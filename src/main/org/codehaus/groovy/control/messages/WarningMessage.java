@@ -30,8 +30,6 @@ import org.codehaus.groovy.syntax.CSTNode;
  *  A class for warning messages.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class WarningMessage extends LocatedMessage

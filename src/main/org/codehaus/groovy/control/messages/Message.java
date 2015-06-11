@@ -31,8 +31,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
  *  A base class for compilation messages.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public abstract class Message

@@ -23,8 +23,6 @@ package org.codehaus.groovy.control;
  *  operations complete.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public interface HasCleanup 

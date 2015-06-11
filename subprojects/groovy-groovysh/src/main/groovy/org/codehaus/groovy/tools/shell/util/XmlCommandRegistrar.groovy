@@ -51,7 +51,6 @@ import org.codehaus.groovy.tools.shell.Command
  * }
  * <pre>
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class XmlCommandRegistrar

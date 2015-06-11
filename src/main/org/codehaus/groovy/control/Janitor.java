@@ -27,8 +27,6 @@ import java.util.Set;
  *  a later time.  Users much implement the HasCleanup interface.  
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class Janitor implements HasCleanup

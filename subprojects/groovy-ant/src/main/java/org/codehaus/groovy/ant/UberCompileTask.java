@@ -38,7 +38,6 @@ import java.io.IOException;
  * such as the source dir and classpath is picked up from this tasks
  * configuration.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class UberCompileTask

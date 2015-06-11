@@ -27,7 +27,6 @@ import org.codehaus.groovy.tools.shell.IO;
 /**
  * Container for shell preferences.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class Preferences

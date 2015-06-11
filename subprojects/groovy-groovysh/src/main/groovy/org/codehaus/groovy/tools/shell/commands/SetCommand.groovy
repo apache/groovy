@@ -28,7 +28,6 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'set' command, used to set preferences.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class SetCommand

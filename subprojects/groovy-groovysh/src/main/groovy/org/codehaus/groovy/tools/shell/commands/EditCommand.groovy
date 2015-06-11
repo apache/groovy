@@ -25,7 +25,6 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'edit' command. Opens Editor to write into the current Buffer.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class EditCommand

@@ -30,8 +30,6 @@ import org.codehaus.groovy.control.SourceUnit;
  *  All compile() routines generate classes to the filesystem.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class Compiler {

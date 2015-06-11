@@ -31,7 +31,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * The 'inspect' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class InspectCommand
@@ -108,7 +107,6 @@ class InspectCommand
 /**
  * Completor for the 'inspect' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class InspectCommandCompletor

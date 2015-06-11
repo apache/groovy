@@ -23,7 +23,6 @@ import org.codehaus.groovy.tools.shell.util.Logger
 /**
  * A registry of shell {@link Command} instances which may be executed.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class CommandRegistry

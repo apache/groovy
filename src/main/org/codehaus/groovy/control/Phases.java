@@ -25,8 +25,6 @@ package org.codehaus.groovy.control;
  *  Compilation phase identifiers.  
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
  */
 
 public class Phases

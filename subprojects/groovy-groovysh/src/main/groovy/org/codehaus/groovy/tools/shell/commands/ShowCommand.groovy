@@ -28,7 +28,6 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'show' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ShowCommand

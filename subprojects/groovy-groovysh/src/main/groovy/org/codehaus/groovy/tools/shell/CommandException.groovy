@@ -23,7 +23,6 @@ import groovy.transform.CompileStatic
 /**
  * Thrown to indicate a problem with command execution.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 @CompileStatic

@@ -26,7 +26,6 @@ import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 /**
  * The 'load' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class LoadCommand
