@@ -295,11 +295,8 @@ public class FileSystemCompiler {
 
             String[] flags = cli.getOptionValues("F");
             if (flags != null && cli.hasOption("pa")){
-                // convert to a list, so we can add a parameter...
-                List<String> tmp = new ArrayList<String>(Arrays.asList(flags));
-                tmp.add("parameters");
-                // convert back to an array...
-                flags = tmp.toArray(new String[tmp.size()]);
+                flags = Arrays.copyOf(flags, flags.length + 1);
+                flags[flags.length - 1] = "parameters";
             }
             compilerOptions.put("flags", flags);
 

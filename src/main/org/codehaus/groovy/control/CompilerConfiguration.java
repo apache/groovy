@@ -189,44 +189,12 @@ public class CompilerConfiguration {
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
-        // TODO change following try/catches to use #safeGetSystemProperty(...) ??
-        // Target bytecode
-        String targetByteCode = null;
-        try {
-            targetByteCode = System.getProperty("groovy.target.bytecode", targetByteCode);
-        } catch (Exception e) {
-            // IGNORE
-        }
-        if(targetByteCode != null) {
-            setTargetBytecode(targetByteCode);
-        } else {
-            setTargetBytecode(getVMVersion());
-        }
-        String tmpDefaultScriptExtension = null;
-        try {
-            tmpDefaultScriptExtension = System.getProperty("groovy.default.scriptExtension");
-        } catch (Exception e) {
-            // IGNORE
-        }
-        if(tmpDefaultScriptExtension != null) {
-            setDefaultScriptExtension(tmpDefaultScriptExtension);
-        } else {
-            setDefaultScriptExtension(".groovy");
-        }
+        setTargetBytecode(safeGetSystemProperty("groovy.target.bytecode", getVMVersion()));
+        setDefaultScriptExtension(safeGetSystemProperty("groovy.default.scriptExtension", ".groovy"));
 
-        //
         // Source file encoding
-        String encoding = null;
-        try {
-            encoding = System.getProperty("file.encoding", "US-ASCII");
-        } catch (Exception e) {
-            // IGNORE
-        }
-        try {
-            encoding = System.getProperty("groovy.source.encoding", encoding);
-        } catch (Exception e) {
-            // IGNORE
-        }
+        String encoding = safeGetSystemProperty("file.encoding", "US-ASCII");
+        encoding = safeGetSystemProperty("groovy.source.encoding", encoding);
         setSourceEncoding(encoding);
 
         try {
@@ -235,13 +203,9 @@ public class CompilerConfiguration {
             // IGNORE
         }
 
-        try {
-            String target = System.getProperty("groovy.target.directory");
-            if (target != null) {
-                setTargetDirectory(target);
-            }
-        } catch (Exception e) {
-            // IGNORE
+        String target = safeGetSystemProperty("groovy.target.directory");
+        if (target != null) {
+            setTargetDirectory(target);
         }
 
         boolean indy = false;
