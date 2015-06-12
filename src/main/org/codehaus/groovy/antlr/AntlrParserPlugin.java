@@ -273,7 +273,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private void saveAsXML(String name, AST ast) {
-        XStreamUtils.serialize(name, ast);
+        XStreamUtils.serialize(name+".antlr", ast);
     }
 
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
