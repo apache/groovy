@@ -7490,7 +7490,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableMap(java.util.Map)
      * @since 1.0
      */
-    public static <K,V> Map<K,V> asImmutable(Map<? extends K, ? extends V> self) {
+    public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
         return Collections.unmodifiableMap(self);
     }
 
@@ -7502,7 +7502,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
      * @since 1.0
      */
-    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K, ? extends V> self) {
+    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
         return Collections.unmodifiableSortedMap(self);
     }
 
@@ -7514,7 +7514,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableList(java.util.List)
      * @since 1.0
      */
-    public static <T> List<T> asImmutable(List<? extends T> self) {
+    public static <T> List<T> asImmutable(List<T> self) {
         return Collections.unmodifiableList(self);
     }
 
@@ -7526,7 +7526,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableSet(java.util.Set)
      * @since 1.0
      */
-    public static <T> Set<T> asImmutable(Set<? extends T> self) {
+    public static <T> Set<T> asImmutable(Set<T> self) {
         return Collections.unmodifiableSet(self);
     }
 
@@ -7559,7 +7559,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
      * @since 1.5.0
      */
-    public static <T> Collection<T> asImmutable(Collection<? extends T> self) {
+    public static <T> Collection<T> asImmutable(Collection<T> self) {
         return Collections.unmodifiableCollection(self);
     }
 
