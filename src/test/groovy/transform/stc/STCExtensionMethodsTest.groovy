@@ -37,7 +37,9 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldFindExtensionMethodWithGrab() {
-        ExtensionModuleHelperForTests.doInFork('groovy.transform.stc.StaticTypeCheckingTestCase', '''
+        URL moduleTest12JarURL = ExtensionModuleHelperForTests.createModuleTest12Jar()
+
+        ExtensionModuleHelperForTests.doInFork('groovy.transform.stc.StaticTypeCheckingTestCase', """
         def impl = new MetaClassImpl(String)
         impl.initialize()
         String.metaClass = impl
@@ -45,13 +47,9 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         // ensure that the module isn't loaded
         assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
 
-        // find jar resource
-        def jarURL = this.class.getResource("/jars")
-        assert jarURL
+        def resolver = "@GrabResolver(name='local',root='$moduleTest12JarURL')"
 
-        def resolver = "@GrabResolver(name='local',root='$jarURL')"
-
-        assertScript resolver + """
+        assertScript resolver + '''
         @Grab('module-test:module-test:1.2-test')
         import org.codehaus.groovy.runtime.m12n.*
 
@@ -60,8 +58,8 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
         // a static method added to String thanks to a @Grab extension
         assert String.answer2() == 42
-        """
-        ''')
+        '''
+        """)
     }
 
     void testExtensionMethodWithGenericsAndPrimitiveReceiver() {
