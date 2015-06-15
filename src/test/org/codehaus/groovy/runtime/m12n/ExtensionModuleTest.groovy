@@ -23,14 +23,6 @@ package org.codehaus.groovy.runtime.m12n
  */
 class ExtensionModuleTest extends GroovyTestCase {
 
-    private static final URL moduleTest12JarURL
-    private static final URL moduleTest107225JarURL
-
-    static {
-        moduleTest12JarURL = ExtensionModuleHelperForTests.createModuleTest12Jar()
-        moduleTest107225JarURL = ExtensionModuleHelperForTests.createModuleTest107225Jar()
-    }
-
     void testThatModuleHasBeenLoaded() {
         ExtensionModuleHelperForTests.doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
@@ -46,14 +38,18 @@ class ExtensionModuleTest extends GroovyTestCase {
     }
 
     void testThatModuleCanBeLoadedWithGrab() {
-        ExtensionModuleHelperForTests.doInFork """
+        ExtensionModuleHelperForTests.doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
             // ensure that the module isn't loaded
             assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
 
-            def resolver = "@GrabResolver('$moduleTest12JarURL')"
+            // find jar resource
+            def jarURL = this.class.getResource("/jars")
+            assert jarURL
 
-            assertScript resolver + '''
+            def resolver = "@GrabResolver('$jarURL')"
+
+            assertScript resolver + """
             @Grab(value='module-test:module-test:1.2-test', changing='true')
             import org.codehaus.groovy.runtime.m12n.*
 
@@ -65,49 +61,57 @@ class ExtensionModuleTest extends GroovyTestCase {
             def str = 'This is a string'
             assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
             assert String.answer2() == 42
-            '''
+            """
 
             // the module should still be available
             assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
-        """
+        '''
     }
 
     void testExtensionModuleUsingGrabAndMap() {
-        ExtensionModuleHelperForTests.doInFork """
+        ExtensionModuleHelperForTests.doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
             // ensure that the module isn't loaded
             assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
 
-            def resolver = "@GrabResolver('$moduleTest12JarURL')"
+            // find jar resource
+            def jarURL = this.class.getResource("/jars")
+            assert jarURL
 
-            assertScript resolver + '''
+            def resolver = "@GrabResolver('$jarURL')"
+
+            assertScript resolver + """
             @Grab(value='module-test:module-test:1.2-test', changing='true')
             import org.codehaus.groovy.runtime.m12n.*
 
             def map = [:]
             assert 'foo'.taille() == 3
             assert map.taille() == 0
-            '''
-        """
+            """
+        '''
     }
 
     /**
      * Test case that reproduces GROOVY-7225.
      */
     void testExtensionModuleUsingGrabAndClosure() {
-        ExtensionModuleHelperForTests.doInFork """
+        ExtensionModuleHelperForTests.doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
             // ensure that the module isn't loaded
             assert !registry.modules.any { it.name == 'Groovy Test 7225' && it.version == '1.0.7225-test' }
 
-            assertScript '''
-            @GrabResolver('$moduleTest107225JarURL')
+            // find jar resource
+            def jarURL = this.class.getResource("/jars")
+            assert jarURL
+
+            assertScript """
+            @GrabResolver('$jarURL')
             @Grab(value='module-test:module-test:1.0.7225-test', changing='true')
             import org.codehaus.groovy.runtime.m12n.*
 
             assert 'test'.groovy7225() == 'test: ok'
             assert {->}.groovy7225() == '{"field":"value"}'
-            '''
-        """
+            """
+        '''
     }
 }
