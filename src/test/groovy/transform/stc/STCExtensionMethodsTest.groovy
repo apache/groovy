@@ -43,7 +43,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         String.metaClass = impl
         ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
         // ensure that the module isn't loaded
-        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
+        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.3' }
 
         // find jar resource
         def jarURL = this.class.getResource("/jars")
@@ -52,7 +52,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver + """
-        @Grab('module-test:module-test:1.2-test')
+        @Grab('module-test:module-test:1.3')
         import org.codehaus.groovy.runtime.m12n.*
 
         // the following methods are added by the Grab test module
