@@ -124,11 +124,21 @@ class AnnotationTest extends CompilableTestSupport {
     }
 
     void testArrayDefault() {
-        shouldNotCompile """
-            @interface X {
-                String[] x() default "1" // must be list
+        // GROOVY-4811
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface Temp {
+                String[] bar() default '1' // coerced to list as per Java but must be correct type
             }
-        """
+
+            @Temp
+            class Bar {}
+
+            assert Bar.getAnnotation(Temp).bar() == ['1']
+        '''
 
         shouldNotCompile """
             @interface X {
