@@ -66,38 +66,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
  * at the Java method call level. I.e. future versions of Groovy may
  * remove or move a method call in this file but would normally
  * aim to keep the method available from within Groovy.
-<<<<<<< HEAD
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jeremy Rayner
- * @author Sam Pullara
- * @author Rod Cope
- * @author Guillaume Laforge
- * @author John Wilson
- * @author Hein Meling
- * @author Dierk Koenig
- * @author Pilho Kim
- * @author Marc Guillemot
- * @author Russel Winder
- * @author bing ran
- * @author Jochen Theodorou
- * @author Paul King
- * @author Michael Baehr
- * @author Joachim Baumann
- * @author Alex Tkachman
- * @author Ted Naleid
- * @author Brad Long
- * @author Jim Jagielski
- * @author Rodolfo Velasco
- * @author jeremi Joslin
- * @author Hamlet D'Arcy
- * @author Cedric Champeau
- * @author Tim Yates
- * @author Dinko Srkoc
- * @author Pascal Lombard
- * @author Christophe Charles
-=======
->>>>>>> 35b5f34... GROOVY-6950: StringGroovyMethods minor performance improvements (make use of line based iterator)
  */
 public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -237,6 +205,28 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static Pattern bitwiseNegate(String self) {
         return bitwiseNegate((CharSequence) self);
+    }
+
+    /**
+     * Convenience method to uncapitalize the first letter of a CharSequence
+     * (typically the first letter of a word). Example usage:
+     * <pre class="groovyTestCase">
+     * assert 'H'.uncapitalize() == 'h'
+     * assert 'Hello'.uncapitalize() == 'hello'
+     * assert 'Hello world'.uncapitalize() == 'hello world'
+     * assert 'Hello World'.uncapitalize() == 'hello World'
+     * assert 'Hello World' ==
+     *     'hello world'.split(' ').collect{ it.uncapitalize() }.join(' ')
+     * </pre>
+     *
+     * @param self The CharSequence to uncapitalize
+     * @return A String containing the uncapitalized toString() of the CharSequence
+     * @since 2.5.0
+     */
+    public static String uncapitalize(CharSequence self) {
+        String s = self.toString();
+        if (s == null || s.length() == 0) return s;
+        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
     }
 
     /**

@@ -165,6 +165,12 @@ class GroovyCharSequenceMethodsTest extends GroovyTestCase {
         assert cs2.capitalize() == 'Foobar'
     }
 
+    void testUncapitalize() {
+        def csfoo = [toString:{->'Foo'}] as CharSequence
+        assert csfoo.uncapitalize() == 'foo'
+        assert cs2.uncapitalize() == 'foobar'
+    }
+
     void testExpand() {
         def csfoobar = makeCharSequence('foo\tbar')
         assert csfoobar.expand() == 'foo     bar'
