@@ -98,6 +98,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
  * @author Dinko Srkoc
  * @author Pascal Lombard
  * @author Christophe Charles
+ * @author Andres Almiray
  */
 public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -237,6 +238,28 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static Pattern bitwiseNegate(String self) {
         return bitwiseNegate((CharSequence) self);
+    }
+
+    /**
+     * Convenience method to uncapitalize the first letter of a CharSequence
+     * (typically the first letter of a word). Example usage:
+     * <pre class="groovyTestCase">
+     * assert 'H'.uncapitalize() == 'h'
+     * assert 'Hello'.uncapitalize() == 'hello'
+     * assert 'Hello world'.uncapitalize() == 'hello world'
+     * assert 'Hello World'.uncapitalize() == 'hello World'
+     * assert 'Hello World' ==
+     *     'hello world'.split(' ').collect{ it.uncapitalize() }.join(' ')
+     * </pre>
+     *
+     * @param self The CharSequence to uncapitalize
+     * @return A String containing the uncapitalized toString() of the CharSequence
+     * @since 2.5.0
+     */
+    public static String uncapitalize(CharSequence self) {
+        String s = self.toString();
+        if (s == null || s.length() == 0) return s;
+        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
     }
 
     /**
