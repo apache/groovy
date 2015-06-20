@@ -19,4 +19,5 @@
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')
+    testRuntime project(':groovy-ant')
 }

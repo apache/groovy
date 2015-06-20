@@ -361,7 +361,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      *     <li>or no argument at all</li>
      * </ul>
      * <p>
-     * Example with a classicala builder-style:
+     * Example with a classical builder-style:
      * <pre class="groovyTestCase">
      * new StringWriter().with { w ->
      *     def json = new groovy.json.StreamingJsonBuilder(w)

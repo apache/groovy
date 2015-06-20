@@ -1622,7 +1622,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * def list = [a, b, c, d]
      * List list2 = list.toUnique(new PersonComparator())
-     * assert( list2 == list && list == [a, b, c] )
+     * assert list2 == [a, b, c] && list == [a, b, c, d]
      * </pre>
      *
      * @param self       an Iterable
@@ -1673,7 +1673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * def list = [a, b, c, d]
      * List list2 = list.toUnique(new PersonComparator())
-     * assert( list2 == list && list == [a, b, c] )
+     * assert list2 == [a, b, c] && list == [a, b, c, d]
      * </pre>
      *
      * @param self       a List
@@ -5670,7 +5670,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5)</pre>
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5 as byte)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -5687,7 +5687,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5)</pre>
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5 as short)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -5738,7 +5738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5)</pre>
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5 as char)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -7954,7 +7954,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ e -> [e.key, e.value] }
+     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ tuple -> [tuple.first, tuple.second] }
      * assert ["0: a", "1: b"] == ["a", "b"].iterator().indexed().collect { idx, str -> "$idx: $str" }.toList()
      * </pre>
      *
@@ -8260,7 +8260,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is true, it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
      * <pre class="groovyTestCase">
-     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
+     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort(false, { a, b -> a.length() <=> b.length() } as Comparator )
      * </pre>
      * <pre class="groovyTestCase">
      * def orig = ["hello","hi","Hey"]
@@ -9174,7 +9174,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the items from the SortedSet excluding the last item. Leaves the original SortedSet unchanged.
      * <pre class="groovyTestCase">
      * def sortedSet = [3, 4, 2] as SortedSet
-     * assert sortedSet.init() == [3, 4] as SortedSet
+     * assert sortedSet.init() == [2, 3] as SortedSet
      * assert sortedSet == [3, 4, 2] as SortedSet
      * </pre>
      *
@@ -9824,14 +9824,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Drops the given number of elements from the tail of this Iterator.
      * <pre class="groovyTestCase">
-     * def obliterator = "obliter8".iterator()
-     * assert abc.dropRight(-1) == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
-     * assert abc.dropRight(0) == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
-     * assert abc.dropRight(1) == ['o', 'b', 'l', 'i', 't', 'e', 'r']
-     * assert abc.dropRight(4) == ['o', 'b', 'l', 'i']
-     * assert abc.dropRight(7) == ['o']
-     * assert abc.dropRight(8) == []
-     * assert abc.dropRight(9) == []
+     * def getObliterator() { "obliter8".iterator() }
+     * assert obliterator.dropRight(-1).toList() == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
+     * assert obliterator.dropRight(0).toList() == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
+     * assert obliterator.dropRight(1).toList() == ['o', 'b', 'l', 'i', 't', 'e', 'r']
+     * assert obliterator.dropRight(4).toList() == ['o', 'b', 'l', 'i']
+     * assert obliterator.dropRight(7).toList() == ['o']
+     * assert obliterator.dropRight(8).toList() == []
+     * assert obliterator.dropRight(9).toList() == []
      * </pre>
      *
      * @param self the original Iterator
@@ -12000,7 +12000,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a SortedSet.  This SortedSet and any nested arrays or
      * collections have their contents (recursively) added to the new SortedSet.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] as SortedSet == ([1,[2,3],[[4]],[],5] as SortedSet).flatten()</pre>
+     * <pre class="groovyTestCase">
+     * Set nested = [[0,1],[2],3,[4],5]
+     * SortedSet sorted = new TreeSet({ a, b -> (a instanceof List ? a[0] : a) <=> (b instanceof List ? b[0] : b) } as Comparator)
+     * sorted.addAll(nested)
+     * assert [0,1,2,3,4,5] as SortedSet == sorted.flatten()
+     * </pre>
      *
      * @param self a SortedSet to flatten
      * @return a flattened SortedSet
