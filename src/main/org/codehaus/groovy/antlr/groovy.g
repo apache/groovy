@@ -1040,7 +1040,6 @@ annotationMemberArrayInitializer
         )?
         RCURLY!
     ;
-*OBS*/
 
 // The two things that can initialize an annotation array element are a conditional expression
 // and an annotation (nested annotation array initialisers are not valid)
@@ -1048,6 +1047,7 @@ annotationMemberArrayValueInitializer
     :   conditionalExpression[0]
     |   annotation nls!
     ;
+*OBS*/
 
 superClassClause!
     {Token first = LT(1);}
@@ -1644,21 +1644,6 @@ initializer
     ;
 *OBS*/
 
-/*OBS???
-// This is the header of a method. It includes the name and parameters
-// for the method.
-// This also watches for a list of exception classes in a "throws" clause.
-ctorHead
-    :   IDENT // the name of the method
-
-        // parse the formal parameter declarations.
-        LPAREN! parameterDeclarationList RPAREN!
-
-        // get the list of exceptions that this method is declared to throw
-        (throwsClause)?
-    ;
-*OBS*/
-
 // This is a list of exception classes that the method is declared to throw
 throwsClause
     :   nls! "throws"^ nls! identifier ( COMMA! nls! identifier )*
@@ -1738,7 +1723,7 @@ multicatch
 variableLengthParameterDeclaration!  {Token first = LT(1);}
     :   pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
 
-        /*OBS* pd:declaratorBrackets[#t]* /
+        pd:declaratorBrackets[#t]
         {#variableLengthParameterDeclaration = #(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1)),
                                                                                             pm, #(create(TYPE,"TYPE",first,LT(1)),t), id);}
     ;
@@ -2511,24 +2496,6 @@ pathElement[AST prefix] {Token operator = LT(1);}
         // since the bracket operator is transformed into a method call.
         ipa:indexPropertyArgs[prefix]!
         {   #pathElement = #ipa;  }
-/*    |
-        (DOT nls "this") => DOT! nls! thisPart:"this"!
-        { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,thisPart); }
-/*NYI*
-    |   DOT^ nls! "this"
-
-    |   DOT^ nls! "super"
-        (   // (new Outer()).super()  (create enclosing instance)
-            lp3:LPAREN^ argList RPAREN!
-            {#lp3.setType(SUPER_CTOR_CALL);}
-        |   DOT^ IDENT
-            (   lps:LPAREN^ {#lps.setType(METHOD_CALL);}
-                argList
-                RPAREN!
-            )?
-        )
-    |   DOT^ nls! newExpression
-*NYI*/
     ;
 
 pathElementStart!
@@ -2911,9 +2878,6 @@ postfixExpression[int lc_stmt]
 // the basic element of an expression
 primaryExpression {Token first = LT(1);}
     :   IDENT
-        /*OBS*  //keywords can follow dot in Groovy; no need for this special case
-        ( options {greedy=true;} : DOT^ "class" )?
-        *OBS*/
     |   constant
     |   newExpression
     |   "this"
@@ -2923,14 +2887,7 @@ primaryExpression {Token first = LT(1);}
     |   closableBlockConstructorExpression
     |   listOrMapConstructorExpression
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
-//deprecated    |   scopeEscapeExpression               // $x
     |   builtInType
-    /*OBS*  //class names work fine as expressions
-            // look for int.class and int[].class
-    |   bt:builtInType!
-        declaratorBrackets[bt]
-        DOT^ nls! "class"
-    *OBS*/
     ;
 
 // Note:  This is guaranteed to be an EXPR AST.
