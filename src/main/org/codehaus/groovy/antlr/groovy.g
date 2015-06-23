@@ -538,17 +538,6 @@ importStatement
             #importStatement = #(create(IMPORT,"import",first,LT(1)),an,is);}
     ;
 
-// TODO REMOVE
-// A type definition is either a class, interface, enum or annotation with possible additional semis.
-//typeDefinition
-//      options {defaultErrorHandler = true;}
-//      :       m:modifiers!
-//              typeDefinitionInternal[#m]
-//      |       SEMI!
-//      ;
-
-// Added this production, even though 'typeDefinition' seems to be obsolete,
-// as this is referenced by many other parts of the grammar.
 // Protected type definitions production for reuse in other productions
 protected typeDefinitionInternal[AST mods]
     :   cd:classDefinition[#mods]       // inner class
@@ -601,10 +590,6 @@ genericMethod!
         }
     ;
 
-
-// *TODO* We must also audit the various occurrences of warning
-// suppressions like "options { greedy = true; }".
-
 /** A declaration with one declarator and no initialization, like a parameterDeclaration.
  *  Used to parse loops like <code>for (int x in y)</code> (up to the <code>in</code> keyword).
  */
@@ -644,13 +629,6 @@ singleDeclaration
  *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
  *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
  *  between 'println' and 'String'.)
- *
- *   *TODO* The declarationStart production needs to be strengthened to recognize
- *  things like {List<String> foo}.
- *  Right now it only knows how to skip square brackets after the type, not
- *  angle brackets.
- *  This probably turns out to be tricky because of >> vs. > >. If so,
- *  just put a TODO comment in.
  */
 declarationStart!
     :   (     ("def" nls)
@@ -692,23 +670,9 @@ constructorStart!
     ;
 
 
-/** Used only as a lookahead predicate for nested type declarations. */
+/** Used only as a lookahead predicate for nested type definitions. */
 
-/*TODO* The lookahead in typeDeclarationStart needs to skip annotations, not
-just stop at '@', because variable and method declarations can also be
-annotated.
-> typeDeclarationStart!
->     :   (modifier!)* ("class" | "interface" | "enum" | "trait" | AT )
-S.B. something like
->     :   (modifier! | annotationTokens!)* ("class" | "interface" |
-> "enum" )
-(And maybe @interface, if Java 5 allows nested annotation types? Don't
-know offhand.)
-Where annotationTokens can be a quick paren-skipper, as in other
-places: '@' ident '(' balancedTokens ')'.
-*/
-
-typeDeclarationStart!
+typeDefinitionStart!
     :   modifiersOpt! ("class" | "interface" | "enum" | "trait" | AT "interface")
     ;
 
@@ -1100,8 +1064,6 @@ if (modifiers != null) {
         { currentClass = prevCurrentClass; }
     ;
 
-//TODO - where has superClassClause! production gone???
-
 // Definition of a Java Interface
 interfaceDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                       if (modifiers != null) {
@@ -1300,7 +1262,7 @@ enumConstantBlock  {Token first = LT(1);}
 // but how to disallow constructors and static initializers...
 enumConstantField! {Token first = LT(1);}
     :   (
-            (typeDeclarationStart)=>
+            (typeDefinitionStart)=>
             mods:modifiersOpt!
             td:typeDefinitionInternal[#mods]
             {#enumConstantField = #td;}
@@ -1391,9 +1353,8 @@ classField!  {Token first = LT(1);}
         dd:declaration
         {#classField = #dd;}
     |
-        //TODO - unify typeDeclaration and typeDefinitionInternal names
-        // type declaration
-        (typeDeclarationStart)=>
+        // type definition
+        (typeDefinitionStart)=>
         mods:modifiersOpt!
         (   td:typeDefinitionInternal[#mods]
                 {#classField = #td;}
@@ -1419,9 +1380,8 @@ interfaceField!
         dg:genericMethod
         {#interfaceField = #dg;}
     |
-        //TODO - unify typeDeclaration and typeDefinitionInternal names
-        // type declaration
-        (typeDeclarationStart)=>
+        // type definition
+        (typeDefinitionStart)=>
         mods:modifiersOpt
         (   td:typeDefinitionInternal[#mods]
             {#interfaceField = #td;}
@@ -1593,7 +1553,6 @@ variableName
 
 /** After some type names, where zero or more empty bracket pairs are allowed.
  *  We use ARRAY_DECLARATOR to represent this.
- *  TODO:  Is there some more Groovy way to view this in terms of the indexed property syntax?
  */
 declaratorBrackets[AST typ]
     :   {#declaratorBrackets=typ;}
@@ -2048,11 +2007,6 @@ branchStatement {Token first = LT(1);}
     |   "throw"! throwE:expression[0]!
         {#branchStatement = #(create(LITERAL_throw,"throw",first,LT(1)),throwE);}
 
-
-    // TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
-    // asserts
-    // 1.4+ ...
-    //      |   "assert"^ expression[0] ( COLON! expression[0] )?
 
     // groovy assertion...
     |   "assert"! assertAle: assignmentLessExpression!
@@ -4171,18 +4125,6 @@ options {
                 ttype = IDENT;
             }
 
-        /* The grammar allows a few keywords to follow dot.
-         * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
-            if (ttype != IDENT && lastSigTokenType == DOT) {
-                // A few keywords can follow a dot:
-                switch (ttype) {
-                case LITERAL_this: case LITERAL_super: case LITERAL_class:
-                    break;
-                default:
-                    ttype = LITERAL_in;  // the poster child for bad dotted names
-                }
-            }
-        */
             $setType(ttype);
 
             // check if "assert" keyword is enabled
@@ -4237,24 +4179,6 @@ options {
 }
     {boolean isDecimal=false; Token t=null;}
     :
-/*OBS*
-        '.' {_ttype = DOT;}
-        (
-            (('0'..'9')+ (EXPONENT)? (f1:FLOAT_SUFFIX {t=f1;})?
-            {
-                if (t != null && t.getText().toUpperCase().indexOf('F')>=0) {
-                    _ttype = NUM_FLOAT;
-                }
-                else {
-                    _ttype = NUM_DOUBLE; // assume double
-                }
-            })
-        |
-            // JDK 1.5 token for variable length arguments
-            (".." {_ttype = TRIPLE_DOT;})
-        )?
-    |
-*OBS*/
         // TODO:  This complex pattern seems wrong.  Verify or fix.
         (   '0' {isDecimal = true;} // special case for just '0'
             (   // hex digits
