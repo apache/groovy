@@ -53,6 +53,16 @@ public class ParsingTest extends gls.CompilableTestSupport {
         assert val4.class.componentType == short
     }
 
+    void testCastPrecedence_Groovy4421_Groovy5185() {
+        def i = (int)1/(int)2
+        assert i.class==BigDecimal
+
+        def result = (long)10.7 % 3L
+        assert result == 1 && result instanceof Long
+
+        assert '42' == (String) { -> 40 + 2 }.call()
+    }
+
     void testExpressionParsingWithCastInFrontOfAMap() {
         shouldCompile """
             def m = (Map)[a:{ "foo"; println 'bar' }]
