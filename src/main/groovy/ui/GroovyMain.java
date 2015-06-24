@@ -391,17 +391,16 @@ public class GroovyMain {
     protected GroovyCodeSource getScriptSource(boolean isScriptFile, String script) throws IOException, URISyntaxException {
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            if (uriPattern.matcher(script).matches()) {
+            // search for the file and if it exists don't try to use URIs ...
+            File scriptFile = huntForTheScriptFile(script);
+            if (!scriptFile.exists() && uriPattern.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
-            } else {
-                return new GroovyCodeSource(huntForTheScriptFile(script));
             }
-        } else {
-            return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
+            return new GroovyCodeSource( scriptFile );
         }
+        return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
     }
 
-    // TODO remove duplication with GroovyClassLoader#uriPattern
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
     // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
