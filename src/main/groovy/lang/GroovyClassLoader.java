@@ -915,9 +915,8 @@ public class GroovyClassLoader extends URLClassLoader {
                     // a URI for the current working directory.
                     // But we use this string match for now so everyone can see it doesn't hurt file-only classpaths.
                     URI newURI;
-                    final File file = new File(path);
-                    if (file.exists()) {
-                        newURI = file.toURI();
+                    if (!URI_PATTERN.matcher(path).matches()) {
+                        newURI = new File(path).toURI();
                     } else {
                         newURI = new URI(path);
                     }
@@ -933,16 +932,20 @@ public class GroovyClassLoader extends URLClassLoader {
                     }
                     addURL(newURI.toURL());
                 } catch (MalformedURLException e) {
-                    // fail fast! if we got a malformed URL the Classloader has to tell it
-                    throw new RuntimeException( e );
-                } catch(URISyntaxException e) {
-                    // fail fast! if we got a malformed URI the Classloader has to tell it
-                    throw new RuntimeException( e );
+                    //TODO: fail through ?
+                } catch (URISyntaxException e) {
+                    // Just doing the same thing...
                 }
                 return null;
             }
         });
     }
+
+    // TODO remove duplication with GroovyMain#uriPattern
+    // RFC2396
+    // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
+    // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
+    private static final Pattern URI_PATTERN = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * <p>Returns all Groovy classes loaded by this class loader.
