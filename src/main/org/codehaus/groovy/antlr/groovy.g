@@ -3490,6 +3490,10 @@ options {
         return LA(1) == '$' && LA(2) == '$';
     }
 
+    protected boolean atMultiCommentStart() throws CharStreamException {
+        return LA(1) == '/' && LA(2) == '*';
+    }
+
     protected boolean atDollarSlashEscape() throws CharStreamException {
         return LA(1) == '$' && LA(2) == '/';
     }
@@ -3756,7 +3760,7 @@ ML_COMMENT
 options {
     paraphrase="a multi-line comment";
 }
-    :   "/*"
+    :   { atMultiCommentStart() }? "/*"
         (   /*  '\r' '\n' can be matched in one alternative or by matching
                 '\r' in one iteration and '\n' in another. I am trying to
                 handle any flavor of newline that comes in, but the language
@@ -3853,29 +3857,30 @@ options {
     paraphrase="a multiline regular expression literal";
 }
         {int tt=0;}
-    :   ( '/' ~('*'|'=') ) =>
-        {allowRegexpLiteral()}?
-        '/'!
-        {++suppressNewline;}
-        //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
-        // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
-        // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
-        (
-            REGEXP_SYMBOL
-            tt=REGEXP_CTOR_END[true]
-        |   {!atValidDollarEscape()}? '$'
-            tt=REGEXP_CTOR_END[true]
-        |   '$'!
-            {
-                // Yes, it's a regexp constructor, and we've got a value part.
-                tt = STRING_CTOR_START;
-                stringCtorState = SCS_VAL + SCS_RE_TYPE;
-            }
-        )
-        {$setType(tt);}
+    :   { !atMultiCommentStart() }?
+        (   {allowRegexpLiteral()}?
+            '/'!
+            {++suppressNewline;}
+            //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
+            // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
+            // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
+            (
+                REGEXP_SYMBOL
+                tt=REGEXP_CTOR_END[true]
+            |   {!atValidDollarEscape()}? '$'
+                tt=REGEXP_CTOR_END[true]
+            |   '$'!
+                {
+                    // Yes, it's a regexp constructor, and we've got a value part.
+                    tt = STRING_CTOR_START;
+                    stringCtorState = SCS_VAL + SCS_RE_TYPE;
+                }
+            )
+            {$setType(tt);}
 
-    |   ( '/' ~('*'|'=') ) => DIV {$setType(DIV);}
-    |   DIV_ASSIGN {$setType(DIV_ASSIGN);}
+        |   ( '/' ~'=' ) => DIV {$setType(DIV);}
+        |   DIV_ASSIGN {$setType(DIV_ASSIGN);}
+        )
     ;
 
 DOLLAR_REGEXP_LITERAL
