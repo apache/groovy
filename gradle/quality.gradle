@@ -138,7 +138,7 @@ allprojects {
             html.enabled = true
         }
     }
-    rat
+    rat {
         // Input directory, defaults to the project's root directory
         inputDir = project.file( 'src' )
 
