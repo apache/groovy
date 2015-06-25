@@ -1,4 +1,4 @@
-/*
+/**
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
@@ -42,6 +41,7 @@ allprojects {
 //        include "**/*.js"
 //        include "**/*.css"
 //        include "**/*.html"
+//        include "**/*.gradle"
 //        include "**/*.xml"
 //        exclude "org/codehaus/groovy/antlr/**"
 //        exclude 'reloading/**' // test resources for documentation of reloading
@@ -138,6 +138,7 @@ allprojects {
             html.enabled = true
         }
     }
+
     rat {
         // Input directory, defaults to the project's root directory
         inputDir = project.file( 'src' )
@@ -154,4 +155,5 @@ allprojects {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
+// Temporarily disabled because of conflict
 //apply from: 'gradle/binarycompatibility.gradle'
