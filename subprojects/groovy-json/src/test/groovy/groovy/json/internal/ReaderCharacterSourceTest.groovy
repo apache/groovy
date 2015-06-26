@@ -16,25 +16,62 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.json.internal;
+package groovy.json.internal
+
+import groovy.json.internal.Exceptions.JsonInternalException;
 
 class ReaderCharacterSourceTest extends GroovyTestCase {
 
-    void testFindNextCharWithRecursionHadEscape() {
-        int[] control = '"\\'.toCharArray() as int[]
+    public static final int QUOTE_CHAR = (int)'"'.charAt(0)
+    public static final int BACKSLASH_CHAR = (int)'\\'.charAt(0)
 
-        // create a ReaderCharacterSource with a very small buffer, findNextChar must be invoked recursive
+    void testFindNextChar() {
+        def testCases = [
+                [ input: '""', expected: '' ],
+                [ input: '"word"', expected: 'word' ],
+                [ input: '"\\u0026value"', expected: '\\u0026value' ],
+                [ input: '"value\\u0026"', expected: 'value\\u0026' ],
+                [ input: '"double\\"quote"', expected: 'double\\"quote' ],
+                [ input: '"\\"\\"\\"\\""', expected: '\\"\\"\\"\\"' ],
+                [ input: '"\\\\\\\\\\\\"', expected: '\\\\\\\\\\\\' ]
+        ]
 
-        // use a string where escape-character is in last invocation
-        ReaderCharacterSource cs = new ReaderCharacterSource(new StringReader('"value\\u0026"'), 6)
-        cs.findNextChar(control[0], control[1])
+        testCases.each {
+            boolean containsEscape = it.input.contains('\\')
+            // Test all possible buffer sizes
+            for (int i = 1; i < it.input.length() + 1; i++) {
+                ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader(it.input), i)
+                rcs.nextChar() // Read the first double quote as if JSON parsing
 
-        assert cs.hadEscape()
+                String result = new String(rcs.findNextChar(QUOTE_CHAR, BACKSLASH_CHAR))
 
-        // use a string where escape-character is in first invocation
-        cs = new ReaderCharacterSource(new StringReader('"\\u0026value"'), 6)
-        cs.findNextChar(control[0], control[1])
+                assertEquals("Buffer size ${i}", it.expected, result)
+                assertEquals("Expected escape character in ${it.input}, buffer size ${i}", containsEscape, rcs.hadEscape())
+            }
+        }
+    }
 
-        assert cs.hadEscape()
+    void testFindNextCharException() {
+        shouldFail(JsonInternalException) {
+            ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote'))
+            rcs.nextChar() // Read the first double quote as if JSON parsing
+            rcs.findNextChar(QUOTE_CHAR, BACKSLASH_CHAR)
+        }
+    }
+
+    void testFindNextCharExceptionWithEscapedEnding() {
+        shouldFail(JsonInternalException) {
+            ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote ending with escape \\'))
+            rcs.nextChar() // Read the first double quote as if JSON parsing
+            rcs.findNextChar(QUOTE_CHAR, BACKSLASH_CHAR)
+        }
+    }
+
+    void testFindNextCharExceptionWithEscapedQuote() {
+        shouldFail(JsonInternalException) {
+            ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote with escaped quote \\"'))
+            rcs.nextChar() // Read the first double quote as if JSON parsing
+            rcs.findNextChar(QUOTE_CHAR, BACKSLASH_CHAR)
+        }
     }
 }
