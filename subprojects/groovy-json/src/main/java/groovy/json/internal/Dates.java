@@ -175,7 +175,7 @@ public class Dates {
             return false;
         }
 
-        valid &= (charArray[start + 19] == '.');
+        valid &= (charArray[start + 19] == '.' || charArray[start + 19] == '+');
 
         if (!valid) {
             return false;
