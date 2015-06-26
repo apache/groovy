@@ -315,6 +315,6 @@ class JsonSlurperTest extends GroovyTestCase {
 			setCheckDates(true).
 				parseText(JsonOutput.toJson([a : new Date()]))
 	
-		assertEquals(Date.class, o.a)
+		assertEquals(Date.class, o.a.class)
 	}
 }
