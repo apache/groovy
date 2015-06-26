@@ -308,13 +308,13 @@ class JsonSlurperTest extends GroovyTestCase {
         assert slurper.parse('{"a":true}'.bytes) == [a: true]
 
     }
-	
-	void testJsonDate() {
-		def o = new JsonSlurper().
-		setType(JsonParserType.INDEX_OVERLAY).
-			setCheckDates(true).
-				parseText(JsonOutput.toJson([a : new Date()]))
-	
-		assertEquals(Date.class, o.a.class)
-	}
+
+    void testJsonDate() {
+        def o = new JsonSlurper().
+            setType(JsonParserType.INDEX_OVERLAY).
+            setCheckDates(true).
+            parseText(JsonOutput.toJson([a : new Date()]))
+
+        assertEquals(Date.class, o.a.class)
+    }
 }
