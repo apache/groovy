@@ -160,81 +160,57 @@ public class ReaderCharacterSource implements CharacterSource {
         try {
             ensureBuffer();
 
-            int idx = index;
-            char[] _chars = readBuf;
-
-            int ch = this.ch;
-            if (ch == '"') {
-
-            } else if (idx < length - 1) {
-                ch = _chars[idx];
-
-                if (ch == '"') {
-                    idx++;
-                }
-            }
-
-            if (idx < length) {
-                ch = _chars[idx];
-            }
-
-            if (ch == '"') {
-                index = idx;
+            if (readBuf[index] == '"') {
                 index++;
                 return EMPTY_CHARS;
             }
-            int start = idx;
 
+            int start = index;
             foundEscape = false;
 
+            char[] results = null;
             boolean foundEnd = false;
-            char[] results;
-
-            for (; idx < length; idx++) {
-                ch = _chars[idx];
-                if (ch == match || ch == esc) {
-                    if (ch == match) {
+            boolean wasEscaped = false;
+            while (!foundEnd) {
+                for (; index < length; index++) {
+                    ch = readBuf[index];
+                    if (wasEscaped) {
+                        wasEscaped = false;
+                    } else if (ch == match) {
                         foundEnd = true;
-
                         break;
                     } else if (ch == esc) {
                         foundEscape = true;
-                        /** if we are dealing with an escape then see if the escaped char is a match
-                         *  if so, skip it.
-                         */
-                        if (idx + 1 < length) {
-                            idx++;
-                        }
+                        wasEscaped = true;
                     }
+                }
+
+                if (results != null) {
+                    results = Chr.add(results, ArrayUtils.copyRange(readBuf, start, index));
+                }
+                else {
+                    results = ArrayUtils.copyRange(readBuf, start, index);
+                }
+
+                ensureBuffer();
+
+                // Reset start if new buffer
+                if (index == 0) {
+                    start = 0;
+                }
+
+                // Exit early if we run out of data
+                if (done) {
+                    break;
                 }
             }
 
-            if (idx == 0) {
-                results = EMPTY_CHARS;
+            // done will only be true if we ran out of data without seeing the match character
+            if (done) {
+                return Exceptions.die(char[].class, "Unable to find close char " + (char)match + ": " + new String(results));
             } else {
-                results = ArrayUtils.copyRange(_chars, start, idx);
-            }
-            index = idx;
-
-            if (foundEnd) {
                 index++;
-                if (index < length) {
-                    ch = _chars[index];
-                    this.ch = ch;
-                }
                 return results;
-            } else {
-                if (index >= length && !done) {
-                    ensureBuffer();
-                    boolean hasAlreadyFoundEscape = foundEscape;
-                    char results2[] = findNextChar(match, esc);
-                    if (hasAlreadyFoundEscape) {
-                        foundEscape = true; //restore foundEscapeState
-                    }
-                    return Chr.add(results, results2);
-                } else {
-                    return Exceptions.die(char[].class, "Unable to find close char " + (char) match + " " + new String(results));
-                }
             }
         } catch (Exception ex) {
             String str = CharScanner.errorDetails("findNextChar issue", readBuf, index, ch);
