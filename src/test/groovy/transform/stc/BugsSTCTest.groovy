@@ -135,6 +135,17 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testGroovy7477NullGenericsType() {
+        assertScript '''
+        class L<E> extends ArrayList<E> {
+            boolean removeIf(Comparator<? super E> filter) { }
+        }
+        L<String> items = ['foo', 'bar'] as L<String>
+        items.removeIf({a, b -> 1} as Comparator<?>)
+        assert items
+        '''
+    }
+
     void testGroovy5482ListsAndFlowTyping() {
         assertScript '''
         class StaticGroovy2 {
