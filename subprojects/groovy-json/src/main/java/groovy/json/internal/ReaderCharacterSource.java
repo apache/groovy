@@ -160,13 +160,13 @@ public class ReaderCharacterSource implements CharacterSource {
         try {
             ensureBuffer();
 
+            foundEscape = false;
             if (readBuf[index] == '"') {
                 index++;
                 return EMPTY_CHARS;
             }
 
             int start = index;
-            foundEscape = false;
 
             char[] results = null;
             boolean foundEnd = false;
