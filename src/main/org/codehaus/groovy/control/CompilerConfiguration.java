@@ -232,7 +232,7 @@ public class CompilerConfiguration {
      *     <li>IllegalArgumentException - if key is empty.</li>
      * </ul>
      * @param key the name of the system property.
-     * @return
+     * @return value of the system property or null
      */
     private String safeGetSystemProperty(String key){
         return safeGetSystemProperty(key, null);
@@ -248,7 +248,7 @@ public class CompilerConfiguration {
      * </ul>
      * @param key the name of the system property.
      * @param def a default value.
-     * @return
+     * @return  value of the system property or null
      */
     private String safeGetSystemProperty(String key, String def){
         try {
