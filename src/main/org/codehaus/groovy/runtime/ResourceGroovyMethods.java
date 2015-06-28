@@ -1524,7 +1524,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Relative path to file. Implementation was borrowed from {@link org.apache.tools.ant.util.FileUtils#getRelativePath(File, File)}
+     * Relative path to file.
      *
      * @param self  the <code>File</code> to calculate the path from
      * @param to    the <code>File</code> to calculate the path to
