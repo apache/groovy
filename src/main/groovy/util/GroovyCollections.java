@@ -117,6 +117,26 @@ public class GroovyCollections {
         return collectedCombos;
     }
 
+    public static <T> List<List<T>> inits(Iterable<T> collections) {
+        List<T> copy = DefaultGroovyMethods.toList(collections);
+        List<List<T>> result = new ArrayList<List<T>>();
+        for (int i = copy.size(); i >= 0; i--) {
+            List<T> next = copy.subList(0, i);
+            result.add(next);
+        }
+        return result;
+    }
+
+    public static <T> List<List<T>> tails(Iterable<T> collections) {
+        List<T> copy = DefaultGroovyMethods.toList(collections);
+        List<List<T>> result = new ArrayList<List<T>>();
+        for (int i = 0; i <= copy.size(); i++) {
+            List<T> next = copy.subList(i, copy.size());
+            result.add(next);
+        }
+        return result;
+    }
+
     /**
      * Transposes an array of lists.
      *
