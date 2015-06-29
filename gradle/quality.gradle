@@ -142,7 +142,7 @@ allprojects {
 subprojects { sp ->
     rat {
         inputDir = sp.projectDir.absolutePath
-        excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml', '**/*.adoc' ]
+        excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml' ]
         failOnError = false
     }
 }
@@ -154,7 +154,6 @@ rat {
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                  '**/target/**', 'licenses/**',
                  '*.ipr',  '*.iml', '*.iws', // Intellij files
-                 '**/*.adoc',  // Until we change license headers
                  '**/assets/**', '**/*.gif', '**/*.png', '**/*.icns' // various image files
     ]
     failOnError = false
