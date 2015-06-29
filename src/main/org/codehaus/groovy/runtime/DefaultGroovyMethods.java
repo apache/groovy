@@ -9063,6 +9063,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Calculates the tail values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of tail on the items.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3, 4].tails() == [[1, 2, 3, 4], [2, 3, 4], [3, 4], [4], []]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a List of the tail values from the given Iterable
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> tails(Iterable<T> self) {
+        return GroovyCollections.tails(self);
+    }
+
+    /**
      * Returns the items from the Iterable excluding the first item.
      * <pre class="groovyTestCase">
      * def list = [3, 4, 2]
@@ -9123,6 +9137,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         self.next();
         return self;
+    }
+
+    /**
+     * Calculates the init values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of init on the items.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3, 4].inits() == [[1, 2, 3, 4], [1, 2, 3], [1, 2], [1], []]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a List of the init values from the given Iterable
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> inits(Iterable<T> self) {
+        return GroovyCollections.inits(self);
     }
 
     /**
