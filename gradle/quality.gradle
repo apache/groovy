@@ -138,20 +138,19 @@ allprojects {
             html.enabled = true
         }
     }
-
+}
+subprojects { sp ->
     rat {
-        // Input directory, defaults to the project's root directory
-        inputDir = project.file( 'src' )
-
-        // XML and HTML reports directory, defaults to 'build/reports/rat'
-        reportDir = project.file( "$buildDir/reports/rat" )
-
-        // List of exclude directives, defaults to none
-        excludes = [ '**/target/**', '**/.gradle/**', '**/assets/**', '**/*.adoc' ]
-
-        // Fail the build on rat errors, defaults to true
+        inputDir = sp.buildDir.absolutePath
+        excludes = [ 'target/**', '.gradle/**', '**/assets/**' ]
         failOnError = false
     }
+}
+
+rat {
+    excludes = [ 'subprojects/**', 'benchmark/**', 'config/**', '**/wrapper/**', '**/target/**', 'licenses/**', 'gradlew*',
+                 '**/*.ipr',  '**/*.iml', '**/*.iws', '**/.gradle/**', '**/assets/**', '**/*.adoc', '**/*.gif', '**/*.png', '**/*.icns' ]
+    failOnError = false
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
