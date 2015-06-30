@@ -151,9 +151,10 @@ rat {
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
                  'config/**',
+                 'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                  '**/target/**', 'licenses/**',
-                 '*.ipr',  '*.iml', '*.iws', // Intellij files
+                 'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
                  '**/assets/**', '**/*.gif', '**/*.png', '**/*.icns' // various image files
     ]
     failOnError = false
