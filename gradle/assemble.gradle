@@ -44,6 +44,7 @@ ext.srcSpec = copySpec {
                 buildDir.path,
                 'classes/**',
                 'cruise/**',
+                'security/groovykeys',
                 '.clover/*',
                 'local.build.properties',
                 'gradle/wrapper',
