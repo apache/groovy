@@ -151,7 +151,6 @@ subprojects { sp ->
     rat {
         inputDir = sp.projectDir.absolutePath
         excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml' , *extras]
-        failOnError = false
     }
 }
 
@@ -166,7 +165,6 @@ rat {
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
                  '**/assets/**', '**/*.gif', '**/*.png', '**/*.icns' // various image files
     ]
-    failOnError = false
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
