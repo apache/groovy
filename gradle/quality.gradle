@@ -139,10 +139,18 @@ allprojects {
         }
     }
 }
+
 subprojects { sp ->
+    def extras = []
+    if (sp.name == 'groovy-templates') extras = [
+            // test files
+            'src/spec/test-resources/*.txt',
+            'src/test/resources/includes/hello-escaped.txt',
+            'src/test/resources/includes/hello.html'
+    ]
     rat {
         inputDir = sp.projectDir.absolutePath
-        excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml' ]
+        excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml' , *extras]
         failOnError = false
     }
 }
@@ -151,6 +159,7 @@ rat {
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
                  'config/**',
+                 'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
                  'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                  '**/target/**', 'licenses/**',
