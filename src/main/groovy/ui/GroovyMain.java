@@ -396,7 +396,7 @@ public class GroovyMain {
             if (!scriptFile.exists() && uriPattern.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
             }
-            return new GroovyCodeSource(huntForTheScriptFile(script));
+            return new GroovyCodeSource( scriptFile );
         }
         return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
     }
