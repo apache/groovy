@@ -18,18 +18,37 @@
  */
 package groovy.bugs
 
-class ConstructorParameterBug extends GroovyTestCase {
+import gls.CompilableTestSupport
 
-    void testMethodWithNativeArray() {
-        int[] value = [2*2]
-        println "${value} of type ${value.class}"
-        /** @todo fixme!
-        blah2(value)
-        */
+class ConstructorParameterBug extends CompilableTestSupport {
+
+    void testParamWithDefaultCallingStaticMethod() {
+        assertScript '''
+        class StaticDefault {
+            def name
+            StaticDefault(name = baz()) {
+                this.name = name
+            }
+            private static baz() {
+                'baz'
+            }
+        }
+        assert 'baz' == new StaticDefault().name
+        '''
     }
 
-    def blah2(int[] wobble) {
-       println(wobble)
+    void testParamWithDefaultCallingInstanceMethod() {
+        def msg = shouldFail '''
+        class InstanceDefault {
+            def name
+            InstanceDefault(name = baz()) {
+                this.name = name
+            }
+            private baz() {
+                'baz'
+            }
+        }
+        '''
+        assert msg.contains("Can't access instance method 'baz' for a constructor parameter default value")
     }
-
 }
