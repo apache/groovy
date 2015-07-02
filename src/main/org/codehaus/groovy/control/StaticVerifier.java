@@ -76,7 +76,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
             final HashSet<String> exceptions = new HashSet<String>();
-            for (Parameter param : node.getParameters()) {
+            for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {
                     param.getInitialExpression().visit(new CodeVisitorSupport() {
@@ -88,6 +88,20 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                                 addVariableError(ve);
                             }
                         }
+
+                        @Override
+                        public void visitMethodCallExpression(MethodCallExpression call) {
+                            Expression objectExpression = call.getObjectExpression();
+                            if (objectExpression instanceof VariableExpression) {
+                                VariableExpression ve = (VariableExpression) objectExpression;
+                                if (ve.isThisExpression()) {
+                                    addError("Can't access instance method '" + call.getMethodAsString() + "' for a constructor parameter default value", param);
+                                    return;
+                                }
+                            }
+                            super.visitMethodCallExpression(call);
+                        }
+
                         @Override
                         public void visitClosureExpression(ClosureExpression expression) {
                             //skip contents, because of dynamic scope
