@@ -76,7 +76,7 @@ class Main
             v(longOpt: 'verbose', messages['cli.option.verbose.description'])
             q(longOpt: 'quiet', messages['cli.option.quiet.description'])
             d(longOpt: 'debug', messages['cli.option.debug.description'])
-            e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
+            e(longOpt: 'evaluate', args: 1, argName: 'CODE', optionalArg: false, messages['cli.option.evaluate.description'])
             C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
             D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
             T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
