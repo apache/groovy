@@ -307,7 +307,7 @@ server.name = "Obelix"
 server.cluster = aCluster
 ----
 
-You can use named parameters with the default constructor (first the constructor is called, then the setters are called in turn in the sequence in which they are specified in the map):
+You can use named parameters with the default constructor (first the constructor is called, then the setters are called in the sequence in which they are specified in the map):
 
 [source,groovy]
 ----
@@ -443,7 +443,7 @@ You can also strip the indentation appearing on the left side of the multiline s
 Also note the difference between single quotes and double quotes in Groovy: single quotes always create Java Strings,
 without interpolation of variables, whereas double quotes either create Java Strings or GStrings when interpolated variables are present.
 
-For multiline strings, you can triple the quotes: ie. triple double quotes for GStrings and triple single quotes for mere Strings.
+For multiline strings, you can triple the quotes: i.e. triple double quotes for GStrings and triple single quotes for mere Strings.
 
 If you need to write regular expression patterns, you should use the "slashy" string notation:
 
