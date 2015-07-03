@@ -46,7 +46,7 @@ String toString() { return "a server" }
 String toString() { "a server" }
 ----
 
-But sometimes, this doesn't look to good when you're using a variable, and see it visually twice on two rows:
+But sometimes, this doesn't look too good when you're using a variable, and see it visually twice on two rows:
 
 [source,groovy]
 ----
@@ -65,7 +65,7 @@ But often, inside of closure, we omit it more often than not, for example. So ev
 this is by no means mandatory to not use it if you think it halters the readability of your code.
 
 A word of caution, however. When using methods which are defined with the `def` keyword instead of a specific concrete type,
-you may be surprise to see the last expression being returned sometimes. So usually prefer using a specific return type like void or a type.
+you may be surprised to see the last expression being returned sometimes. So usually prefer using a specific return type like void or a type.
 In our example above, imagine we forgot to put m2 as last statement to be returned,
 the last expression would be `m2.c = 3`, which would return... `3`, and not the map you expect.
 
@@ -307,7 +307,7 @@ server.name = "Obelix"
 server.cluster = aCluster
 ----
 
-You can use named parameters with the default constructor (first the constructor is called, then the setters are called in turn):
+You can use named parameters with the default constructor (first the constructor is called, then the setters are called in turn in the sequence in which they are specified in the map):
 
 [source,groovy]
 ----
@@ -533,7 +533,7 @@ switch (x) {
     case Number:
         result = "number"
         break
-    case { it > 3 }
+    case { it > 3 }:
         result = "number > 3"
         break
     default: result = "default"
@@ -663,7 +663,7 @@ def result = name ?: "Unknown"
 
 == Catch any exception
 
-If you don't really care of the exception which are thrown inside your `try` block,
+If you don't really care about the type of the exception which is thrown inside your `try` block,
 you can simply catch any of them and simply omit the type of the caught exception.
 So instead of catching the exceptions like in:
 
