@@ -22,8 +22,10 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
+import groovy.transform.CompileStatic;
 import groovy.transform.Generated;
 import groovy.transform.Internal;
+import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.GroovyBugError;
@@ -202,6 +204,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     @Override
     public void visitClass(final ClassNode node) {
+        boolean skipGroovify = !node.getAnnotations(ClassHelper.make(CompileStatic.class)).isEmpty() &&
+                !node.getAnnotations(ClassHelper.make(POJO.class)).isEmpty();
         this.classNode = node;
 
         if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
@@ -232,14 +236,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
 
-        addStaticMetaClassField(node, classInternalName);
+        if (!skipGroovify) {
+            addStaticMetaClassField(node, classInternalName);
 
-        boolean knownSpecialCase =
-                node.isDerivedFrom(ClassHelper.GSTRING_TYPE)
-                        || node.isDerivedFrom(ClassHelper.GROOVY_OBJECT_SUPPORT_TYPE);
+            boolean knownSpecialCase =
+                    node.isDerivedFrom(ClassHelper.GSTRING_TYPE)
+                            || node.isDerivedFrom(ClassHelper.GROOVY_OBJECT_SUPPORT_TYPE);
 
-        addFastPathHelperFieldsAndHelperMethod(node, classInternalName, knownSpecialCase);
-        if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node, classInternalName);
+            addFastPathHelperFieldsAndHelperMethod(node, classInternalName, knownSpecialCase);
+            if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node, classInternalName);
+        }
 
         addDefaultConstructor(node);
 
