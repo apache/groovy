@@ -31,5 +31,22 @@ class JUnit4ExampleTests {
             numbers.get(4)
         }
     }
+
+    // end::junit4_example[]
+
+    // tag::should_fail_return[]
+    @Test
+    void shouldFailReturn() {
+        def e = shouldFail {
+            throw new RuntimeException('foo',
+                                       new RuntimeException('bar'))
+        }
+        assert e instanceof RuntimeException
+        assert e.message == 'foo'
+        assert e.cause.message == 'bar'
+    }
+    // end::should_fail_return[]
+
+    // tag::junit4_example[]
 }
 // end::junit4_example[]

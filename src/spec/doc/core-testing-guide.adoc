@@ -471,6 +471,16 @@ As can be seen in the example above, the static methods found in `GroovyAssert` 
 with the introduction of the power assertion statement, it turned out to be _good practice to rely on assertion statements_
 instead of using the JUnit assertion methods with the improved message being the main reason.
 
+It is worth mentioning that `GroovyAssert.shouldFail` is not absolutely identical to `GroovyTestCase.shouldFail`. While
+`GroovyTestCase.shouldFail` returns the exception message, `GroovyAssert.shouldFail` returns the exception itself. It
+takes a few more keystrokes to get the message, but in return you can access other properties and methods of the
+exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
+----
+
 == Testing with Spock
 
 Spock is a testing and specification framework for Java and Groovy applications. What makes it stand out from the
