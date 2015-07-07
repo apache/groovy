@@ -50,7 +50,7 @@ image:{bintray-watch-image}[Get automatic notifications about new "groovy" versi
 
 == Obtaining the Source
 
-You don't need the source code to use Groovy but if you wish to explore its inner workings or build it for yourself there are two ways to obtain the source files.
+You don't need the source code to use Apache Groovy but if you wish to explore its inner workings or build it for yourself there are two ways to obtain the source files.
 
 === Checking out from Version Control
 
