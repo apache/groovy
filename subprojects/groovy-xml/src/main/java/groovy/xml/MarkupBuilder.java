@@ -210,7 +210,7 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Whether empty elements are expanded from <tagName/> to <tagName></tagName>.
+     * Whether empty elements are expanded from &lt;tagName/&gt; to &lt;tagName&gt;&lt;/tagName&gt;.
      *
      * @param expandEmptyElements if <code>true</code>, empty
      *                            elements will be represented by an opening tag

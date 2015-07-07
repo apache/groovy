@@ -2113,7 +2113,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     /**
      * return null if nothing valid has been found, a MetaMethod (for getter always the case if not null) or
-     * a LinkedList<MetaMethod> if there are multiple setter
+     * a LinkedList&lt;MetaMethod&gt; if there are multiple setter
      */
     private Object filterPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
         // Method has been optimized to reach a target of 325 bytecode size, making it JIT'able

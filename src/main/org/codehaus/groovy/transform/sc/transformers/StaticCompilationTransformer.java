@@ -47,7 +47,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Some expressions use symbols as aliases to method calls (<<, +=, ...). In static compilation,
+ * Some expressions use symbols as aliases to method calls (&lt;&lt;, +=, ...). In static compilation,
  * if such a method call is found, we transform the original binary expression into a method
  * call expression so that the call gets statically compiled.
  *

@@ -23,7 +23,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.util.*;
 
 /**
- * Constructing Ranges like 0..<0
+ * Constructing Ranges like 0..&lt;0
  * @author Dierk Koenig
  * @author Edwin Tellman
  */
