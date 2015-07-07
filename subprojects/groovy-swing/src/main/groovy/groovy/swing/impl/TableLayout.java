@@ -57,7 +57,7 @@ public class TableLayout extends JPanel {
     }
 
     /**
-     * Creates a new row index for child <tr> tags 
+     * Creates a new row index for child tr tags
      * @return nextRowIndex the row number
      */
     public int nextRowIndex() {

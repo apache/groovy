@@ -1588,13 +1588,13 @@ public abstract class StaticTypeCheckingSupport {
      * use supplied type to make a connection from usage to declaration
      * The method operates in two modes. 
      * * For type !instanceof target a structural compare will be done 
-     *   (for example Dummy<T> and List<R> to get T=R) 
+     *   (for example Dummy&lt;T&gt; and List&lt;R&gt; to get T=R)
      * * If type equals target, a structural match is done as well 
-     *   (for example Colection<U> and Collection<E> to get U=E)
+     *   (for example Colection&lt;U&gt; and Collection&lt;E&gt; to get U=E)
      * * otherwise we climb the hierarchy to find a case of type equals target
      *   to then execute the structural match, while applying possibly existing
-     *   generics contexts on the way (for example for IntRange and Collection<E>
-     *   to get E=Integer, since IntRange is an AbstractList<Integer>)
+     *   generics contexts on the way (for example for IntRange and Collection&lt;E&gt;
+     *   to get E=Integer, since IntRange is an AbstractList&lt;Integer&gt;)
      * Should the target not have any generics this method does nothing.
      */
     static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode type, ClassNode target) {

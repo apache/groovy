@@ -395,7 +395,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * wrap type in Class<> if usingClass==true
+     * wrap type in Class&lt;&gt; if usingClass==true
      */
     private ClassNode makeType(ClassNode cn, boolean usingClass) {
         if (usingClass) {

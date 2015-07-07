@@ -40,7 +40,7 @@ public interface VMPlugin {
      * This method will require at least Java 7, but since the source has to compile
      * on older Java versions as well it is not marked to return a MethodHandle and
      * uses Object instead
-     * @return  null in case of jdk<7, otherwise a handel that takes the method call
+     * @return  null in case of jdk&lt;7, otherwise a handel that takes the method call
      *          arguments for the invokespecial call
      */
     Object getInvokeSpecialHandle(Method m, Object receiver);
