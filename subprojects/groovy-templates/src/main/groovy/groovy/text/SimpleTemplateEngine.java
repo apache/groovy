@@ -184,7 +184,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parse the text document looking for <% or <%= and then call out to the appropriate handler, otherwise copy the text directly
+         * Parse the text document looking for &lt;% or &lt;%= and then call out to the appropriate handler, otherwise copy the text directly
          * into the script while escaping quotes.
          *
          * @param reader a reader for the template text

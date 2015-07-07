@@ -120,12 +120,14 @@ public class GStringTemplateEngine extends TemplateEngine {
          * to the writer passed as a parameter
          * <p>
          * For example:
-         * <p>
+         * <pre>
          * '<%= "test" %> of expr and <% test = 1 %>${test} script.'
+         * </pre>
          * <p>
          * would compile into:
-         * <p>
+         * <pre>
          * { out -> out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
+         * </pre>
          *
          * @param reader
          * @param parentLoader
@@ -235,7 +237,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parse a <% .... %> section
+         * Parse a &lt;% .... %&gt; section
          * if we are writing a GString close and append ';'
          * then write the section as a statement
          *
@@ -270,7 +272,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parse a <%= .... %> expression
+         * Parse a &lt;%= .... %&gt; expression
          *
          * @param reader
          * @param writingString
