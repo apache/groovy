@@ -165,7 +165,7 @@ import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
  * <h4>Named and named ordinal parameters</h4>
  *
  * Several of the methods in this class (ones which have a String-based sql query and params in
- * a List<Object> or Object[] or Map) support <em>named</em> or <em>named ordinal</em> parameters.
+ * a List&lt;Object&gt; or Object[] or Map) support <em>named</em> or <em>named ordinal</em> parameters.
  * These methods are useful for queries with large numbers of parameters - though the GString
  * variations are often preferred in such cases too. Reminder: when you see a variant with Object[] as
  * the type of the last parameter, Groovy allows vararg style parameters so you don't explicitly need to
