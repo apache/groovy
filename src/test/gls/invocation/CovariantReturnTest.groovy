@@ -180,6 +180,32 @@ public class CovariantReturnTest extends CompilableTestSupport {
         """
     }
 
+    //GROOVY-7495
+    void testCovariantMerhodReturnTypeFromParentInterface() {
+        shouldCompile """
+            interface Item {}
+            interface DerivedItem extends Item {}
+
+            interface Base {
+                Item getItem()
+            }
+            class BaseImpl implements Base {
+                Item getItem() { null }
+            }
+
+            interface First extends Base {
+                DerivedItem getItem()
+            }
+
+            class FirstImpl extends BaseImpl implements First {
+                DerivedItem getItem() { null }
+            }
+
+            interface Second extends First {}
+            class SecondImpl extends FirstImpl implements Second {}
+        """
+    }
+
     void testCovariantParameterType() {
         assertScript """
             class BaseA implements Comparable<BaseA> {
