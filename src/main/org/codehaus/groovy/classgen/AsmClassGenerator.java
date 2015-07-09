@@ -273,7 +273,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (enclosingMethod != null) {
             // local inner classes do not specify the outer class name
             outerClassName = null;
-            innerClassName = null;
+            if (innerClass.isAnonymous()) innerClassName = null;
         }
         int mods = adjustedClassModifiersForInnerClassTable(cn);
 
