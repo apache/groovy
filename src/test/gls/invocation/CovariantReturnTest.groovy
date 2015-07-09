@@ -204,6 +204,25 @@ public class CovariantReturnTest extends CompilableTestSupport {
             interface Second extends First {}
             class SecondImpl extends FirstImpl implements Second {}
         """
+        shouldCompile """
+            interface A {
+               B foo()
+            }
+            interface B {}
+            interface A2 extends A {
+               B2 foo()
+            }
+            interface B2 extends B {}
+
+            class AA implements A {
+               BB foo() { return new BB() }
+            }
+            class AA2 extends AA implements A2 {
+               BB2 foo() { return new BB2() }
+            }
+            class BB implements B {}
+            class BB2 extends BB implements B2 {}
+        """
     }
 
     void testCovariantParameterType() {
