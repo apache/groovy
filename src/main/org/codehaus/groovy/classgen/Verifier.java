@@ -1212,14 +1212,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             for (Object declaredMethod : declaredMethods) {
                 MethodNode method = (MethodNode) declaredMethod;
                 if (method.isStatic()) continue;
-                storeMissingCovariantMethods(classMethods, method, methodsToAdd, genericsSpec);
+                storeMissingCovariantMethods(classMethods, method, methodsToAdd, genericsSpec, false);
             }
             // super class causing bridge methods for abstract methods in original class
             if (!abstractMethods.isEmpty()) {
                 for (Object classMethod : classMethods) {
                     MethodNode method = (MethodNode) classMethod;
                     if (method.isStatic()) continue;
-                    storeMissingCovariantMethods(abstractMethods.values(), method, methodsToAdd, Collections.EMPTY_MAP);
+                    storeMissingCovariantMethods(abstractMethods.values(), method, methodsToAdd, Collections.EMPTY_MAP, true);
                 }
             }
 
@@ -1233,14 +1233,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             for (Object declaredMethod : declaredMethods) {
                 MethodNode method = (MethodNode) declaredMethod;
                 if (method.isStatic()) continue;
-                storeMissingCovariantMethods(interfacesMethods, method, methodsToAdd, genericsSpec);
+                storeMissingCovariantMethods(interfacesMethods, method, methodsToAdd, genericsSpec, false);
             }
             addCovariantMethods(anInterface, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
         }
 
     }
 
-    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {
+    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec, boolean ignoreError) {
         // method name
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
         if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
@@ -1261,6 +1261,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         ClassNode testmr = correctToGenericsSpec(genericsSpec, omr);
         if (!isAssignable(mr, testmr)) {
+            if (ignoreError) return null;
             throw new RuntimeParserException(
                     "The return type of " +
                             overridingMethod.getTypeDescriptor() +
@@ -1378,10 +1379,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return type.getPlainNodeReference();
     }
 
-    private void storeMissingCovariantMethods(Collection methods, MethodNode method, Map methodsToAdd, Map genericsSpec) {
+    private void storeMissingCovariantMethods(Collection methods, MethodNode method, Map methodsToAdd, Map genericsSpec, boolean ignoreError) {
         for (Object method1 : methods) {
             MethodNode toOverride = (MethodNode) method1;
-            MethodNode bridgeMethod = getCovariantImplementation(toOverride, method, genericsSpec);
+            MethodNode bridgeMethod = getCovariantImplementation(toOverride, method, genericsSpec, ignoreError);
             if (bridgeMethod == null) continue;
             methodsToAdd.put(bridgeMethod.getTypeDescriptor(), bridgeMethod);
             return;
