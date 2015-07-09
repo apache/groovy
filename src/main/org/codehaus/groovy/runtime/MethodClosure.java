@@ -32,9 +32,11 @@ import java.util.List;
  */
 public class MethodClosure extends Closure {
 
+    public static boolean ALLOW_RESOLVE = false;
+
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private String method;
-    
+
     public MethodClosure(Object owner, String method) {
         super(owner);
         this.method = method;
@@ -61,6 +63,13 @@ public class MethodClosure extends Closure {
 
     protected Object doCall(Object arguments) {
         return InvokerHelper.invokeMethod(getOwner(), method, arguments);
+    }
+
+    private Object readResolve() {
+        if (ALLOW_RESOLVE) {
+            return this;
+        }
+        throw new UnsupportedOperationException();
     }
     
     public Object getProperty(String property) {
