@@ -87,7 +87,7 @@ tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String ta
 }
 
 def buildExcludeFilter() {
-    def excludes = ['GroovyTestCase', 'TestSupport', 'DummyTestDerivation', 'LineColumnChecker']
+    def excludes = ['GroovyTestCase', 'TestSupport', 'LineColumnChecker']
 
     // temporary disabling Groovy4393Bug because it requires a specific configuration
     excludes << 'Groovy4393Bug'
