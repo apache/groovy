@@ -1277,7 +1277,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     }
 
-    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {
+    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec, Map methodsToAdd) {
         // method name
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
         if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
@@ -1297,7 +1297,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         boolean equalReturnType = mr.equals(omr);
 
         ClassNode testmr = correctToGenericsSpec(genericsSpec, omr);
-        if (!isAssignable(mr, testmr)) {
+        if (!isAssignable(mr, testmr) && !methodsToAdd.containsKey(overridingMethod.getTypeDescriptor())) {
             throw new RuntimeParserException(
                     "The return type of " +
                             overridingMethod.getTypeDescriptor() +
@@ -1418,7 +1418,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private void storeMissingCovariantMethods(Collection methods, MethodNode method, Map methodsToAdd, Map genericsSpec) {
         for (Object method1 : methods) {
             MethodNode toOverride = (MethodNode) method1;
-            MethodNode bridgeMethod = getCovariantImplementation(toOverride, method, genericsSpec);
+            MethodNode bridgeMethod = getCovariantImplementation(toOverride, method, genericsSpec, methodsToAdd);
             if (bridgeMethod == null) continue;
             methodsToAdd.put(bridgeMethod.getTypeDescriptor(), bridgeMethod);
             return;

@@ -267,6 +267,52 @@ public class CovariantReturnTest extends CompilableTestSupport {
         """
     }
 
+    void testCovariantMethodGenerics_groovy7495() {
+        shouldCompile """
+            interface A {
+               B foo()
+            }
+            interface B {}
+            interface A2 extends A {
+               B2 foo()
+            }
+            interface B2 extends B {}
+
+            class AA implements A {
+               BB foo() { return new BB() }
+            }
+            class AA2 extends AA implements A2 {
+               BB2 foo() { return new BB2() }
+            }
+            class BB implements B {}
+            class BB2 extends BB implements B2 {}
+        """
+        shouldCompile """
+            interface Item {}
+            interface DerivedItem extends Item {}
+
+            interface Base {
+              Item getItem()
+            }
+            class BaseImpl implements Base {
+              Item getItem() { null }
+            }
+
+            interface First extends Base {
+              DerivedItem getItem()
+            }
+
+            class FirstImpl extends BaseImpl implements First {
+              DerivedItem getItem() { null }
+            }
+
+            interface Second extends First {}
+            class SecondImpl extends FirstImpl implements Second {}
+
+            println FirstImpl.name
+        """
+    }
+
     void testCovariantParameter() {
         assertScript """
           interface Interface<SomeType> {
