@@ -18,15 +18,25 @@
  */
 package groovy.util
 
+import groovy.cli.EnhancedCommandLine
+import groovy.cli.Option
+import groovy.cli.TypedOption
+import groovy.cli.Unparsed
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.CommandLineParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.HelpFormatter
-import org.apache.commons.cli.Option
+import org.apache.commons.cli.Option as CliOption
 import org.apache.commons.cli.Options
 import org.apache.commons.cli.ParseException
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.MetaClassHelper
+import org.codehaus.groovy.runtime.StringGroovyMethods
+
+import java.lang.annotation.Annotation
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
 /**
  * Provides a builder to assist the processing of command line arguments.
@@ -237,6 +247,14 @@ class CliBuilder {
      */
     Options options = new Options()
 
+    Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
+    /*
+    Object defaultValue = map.get("defaultValue");
+    defaultValues.put(makeDefaultValueKey(option), defaultValue);
+    Class type = (Class) map.get("type");
+    if (type != null) option.setType(type);
+     */
+
     /**
      * Internal method: Detect option specification method calls.
      */
@@ -246,7 +264,7 @@ class CliBuilder {
                 options.addOption(option(name, [:], args[0]))
                 return null
             }
-            if (args.size() == 1 && args[0] instanceof Option && name == 'leftShift') {
+            if (args.size() == 1 && args[0] instanceof CliOption && name == 'leftShift') {
                 options.addOption(args[0])
                 return null
             }
@@ -268,7 +286,7 @@ class CliBuilder {
             parser = posix != null && posix == false ? new GnuParser() : new DefaultParser()
         }
         try {
-            return new OptionAccessor(parser.parse(options, args as String[], stopAtNonOption))
+            return new OptionAccessor(new EnhancedCommandLine(delegate: parser.parse(options, args as String[], stopAtNonOption)))
         } catch (ParseException pe) {
             writer.println("error: " + pe.message)
             usage()
@@ -284,18 +302,125 @@ class CliBuilder {
         writer.flush()
     }
 
+    public <T> T parseFromSpec(Class<T> optionsClass, String[] args) {
+        addOptionsFromAnnotations(optionsClass, false)
+        def cli = parse(args)
+        def cliOptions = [:]
+        setOptionsFromAnnotations(cli, optionsClass, cliOptions, false)
+        cliOptions as T
+    }
+
+    public <T> T parseFromInstance(T optionInstance, args) {
+        addOptionsFromAnnotations(options.getClass(), true)
+        def cli = parse(args)
+        setOptionsFromAnnotations(cli, optionInstance.getClass(), optionInstance, true)
+        optionInstance
+    }
+
+    void addOptionsFromAnnotations(Class optionClass, boolean namesAreSetters) {
+        optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
+            Annotation annotation = m.getAnnotation(Option)
+            options.addOption(processAddAnnotation(annotation, m, namesAreSetters))
+        }
+        optionClass.declaredFields.findAll{ it.getAnnotation(Option) }.each { Field f ->
+            Annotation annotation = f.getAnnotation(Option)
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            Method m = optionClass.getMethod(setterName, f.getType())
+            options.addOption(processAddAnnotation(annotation, m, true))
+        }
+    }
+
+    private CliOption processAddAnnotation(Option annotation, Method m, boolean namesAreSetters) {
+        String shortName = annotation.shortName()
+        String description = annotation.description()
+        String defaultValue = annotation.defaultValue()
+        char valueSeparator = annotation.valueSeparator()
+        String longName = adjustLongName(annotation.longName(), m, namesAreSetters)
+        def builder = shortName && !shortName.isEmpty() ? CliOption.builder(shortName) : CliOption.builder()
+        builder.longOpt(longName)
+        if (description && !description.isEmpty()) builder.desc(description)
+        if (defaultValue && !defaultValue.isEmpty()) builder.withDefaultValue(defaultValue)
+        if (valueSeparator) builder.valueSeparator(valueSeparator)
+        Class type = namesAreSetters ? (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : null) : m.returnType
+        if (type) {
+            println "$longName $shortName $type"
+            builder.hasArg(type.simpleName.toLowerCase() != 'boolean')
+            builder.type(type)
+        }
+        def typedOption = builder.build()
+        savedTypeOptions[longName] = typedOption
+        typedOption
+    }
+
+    def setOptionsFromAnnotations(def cli, Class optionClass, Object t, boolean namesAreSetters) {
+        optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
+            Annotation annotation = m.getAnnotation(Option)
+            String longName = adjustLongName(annotation.longName(), m, namesAreSetters)
+            processSetAnnotation(m, t, longName, cli, namesAreSetters)
+        }
+        optionClass.declaredFields.findAll{ it.getAnnotation(Option) }.each { Field f ->
+            Annotation annotation = f.getAnnotation(Option)
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            Method m = optionClass.getMethod(setterName, f.getType())
+            String longName = adjustLongName(annotation.longName(), m, true)
+            processSetAnnotation(m, t, longName, cli, true)
+        }
+        def remaining = cli.arguments()
+        optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
+            processSetRemaining(m, remaining, t, namesAreSetters)
+        }
+        optionClass.declaredFields.findAll{ it.getAnnotation(Unparsed) }.each { Field f ->
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            Method m = optionClass.getMethod(setterName, f.getType())
+            processSetRemaining(m, remaining, t, namesAreSetters)
+        }
+    }
+
+    private void processSetRemaining(Method m, remaining, Object t, boolean namesAreSetters) {
+        if (namesAreSetters) {
+            m.invoke(t, remaining.toList())
+        } else {
+            String longName = adjustLongName("", m, namesAreSetters)
+            t.put(longName, { -> remaining.toList() })
+        }
+    }
+
+    private void processSetAnnotation(Method m, Object t, String longName, cli, boolean namesAreSetters) {
+        if (namesAreSetters) {
+            boolean isFlag = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
+            if (cli.hasOption(longName) || isFlag) {
+                m.invoke(t, [isFlag ? cli.hasOption(longName) : cli[longName] /* cliOptions.getOptionValue(savedTypeOptions[longName]) */] as Object[])
+            }
+        } else {
+            boolean isFlag = m.returnType.simpleName.toLowerCase() == 'boolean'
+            t.put(m.getName(), cli.hasOption(longName) ?
+                    { -> isFlag ? true : cli[longName] /* cliOptions.getOptionValue(savedTypeOptions[longName]) */} :
+                    { -> isFlag ? false : null })
+        }
+    }
+
+    private String adjustLongName(String longName, Method m, boolean namesAreSetters) {
+        if (!longName || longName.isEmpty()) {
+            longName = m.getName()
+            if (namesAreSetters && longName.startsWith("set")) {
+                longName = MetaClassHelper.convertPropertyName(longName.substring(3))
+            }
+        }
+        longName
+    }
+
     // implementation details -------------------------------------
 
     /**
      * Internal method: How to create an option from the specification.
      */
-    Option option(shortname, Map details, info) {
-        Option option
+    CliOption option(shortname, Map details, info) {
+        CliOption option
         if (shortname == '_') {
-            option = Option.builder().desc(info).longOpt(details.longOpt).build()
+            option = CliOption.builder().desc(info).longOpt(details.longOpt).build()
             details.remove('longOpt')
         } else {
-            option = new Option(shortname, info)
+            option = new CliOption(shortname, info)
         }
         details.each { key, value -> option[key] = value }
         return option
@@ -336,10 +461,34 @@ class CliBuilder {
 }
 
 class OptionAccessor {
-    CommandLine inner
+    /* EnhancedCommandLine */ def inner
+    Map<String, TypedOption> savedTypeOptions
 
-    OptionAccessor(CommandLine inner) {
+    OptionAccessor(inner) {
         this.inner = inner
+    }
+
+    boolean hasOption(TypedOption typedOption) {
+        return inner.hasOption((String) typedOption.get("longOpt"))
+    }
+
+    public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
+        String optionName = (String) typedOption.get("longOpt");
+        if (hasOption(optionName)) {
+            return getTypedValueFromName(optionName);
+        }
+        return defaultValue;
+    }
+
+    private <T> T getTypedValueFromName(String optionName) {
+        CliOption option = savedTypeOptions.get(optionName);
+        Object type = option.getType();
+        String optionValue = inner.getOptionValue(optionName);
+        return (T) getTypedValue(type, optionValue);
+    }
+
+    private <T> T getTypedValue(Object type, String optionValue) {
+        return StringGroovyMethods.asType(optionValue, (Class<T>) type);
     }
 
     def invokeMethod(String name, Object args) {
@@ -347,7 +496,7 @@ class OptionAccessor {
     }
 
     def getProperty(String name) {
-        def methodname = 'getOptionValue'
+        def methodname = 'getParsedOptionValue'
         if (name.size() > 1 && name.endsWith('s')) {
             def singularName = name[0..-2]
             if (hasOption(singularName)) {
@@ -357,6 +506,7 @@ class OptionAccessor {
         }
         if (name.size() == 1) name = name as char
         def result = InvokerHelper.getMetaClass(inner).invokeMethod(inner, methodname, name)
+        println "result = $result for name $name, methodName $methodname"
         if (null == result) result = inner.hasOption(name)
         if (result instanceof String[]) result = result.toList()
         return result
