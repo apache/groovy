@@ -88,9 +88,6 @@ tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String ta
 def buildExcludeFilter() {
     def excludes = []
 
-    // temporary disabling Groovy4393Bug because it requires a specific configuration
-    excludes << 'Groovy4393Bug'
-
     // deal with OS specific tests
     def windowsTests = ['ExecuteTest_Windows']
     def unixTests = ['ExecuteTest_LinuxSolaris']
@@ -101,9 +98,6 @@ def buildExcludeFilter() {
         osSpecificTests.removeAll unixTests
     }
     excludes += osSpecificTests
-
-    // temporarily disable security tests, see GRADLE-2170
-    excludes << 'security'
 
     // if not compiled with indy support, disable indy tests
     if (!rootProject.useIndy()) {
