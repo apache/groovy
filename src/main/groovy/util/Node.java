@@ -23,6 +23,7 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.xml.QName;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.PrintWriter;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * Represents an arbitrary tree node which can be used for structured metadata or any arbitrary XML-like tree.
@@ -537,26 +539,40 @@ public class Node implements Serializable, Cloneable {
 
     /**
      * Provides a collection of all the nodes in the tree
-     * using a depth first traversal.
+     * using a depth-first preorder traversal.
      *
      * @return the list of (depth-first) ordered nodes
      */
     public List depthFirst() {
+        return depthFirst(true);
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a depth-first traversal.
+     *
+     * @param preorder if false, a postorder depth-first traversal will be performed
+     * @return the list of (depth-first) ordered nodes
+     * @since 2.5.0
+     */
+    public List depthFirst(boolean preorder) {
         List answer = new NodeList();
-        answer.add(this);
-        answer.addAll(depthFirstRest());
+        if (preorder) answer.add(this);
+        answer.addAll(depthFirstRest(preorder));
+        if (!preorder) answer.add(this);
         return answer;
     }
 
-    private List depthFirstRest() {
+    private List depthFirstRest(boolean preorder) {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
-                List children = childNode.depthFirstRest();
-                answer.add(childNode);
+                List children = childNode.depthFirstRest(preorder);
+                if (preorder) answer.add(childNode);
                 if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) answer.addAll(children);
+                if (!preorder) answer.add(childNode);
             } else if (child instanceof String) {
                 answer.add(child);
             }
@@ -566,31 +582,52 @@ public class Node implements Serializable, Cloneable {
 
     /**
      * Provides a collection of all the nodes in the tree
-     * using a breadth-first traversal.
+     * using a breadth-first preorder traversal.
      *
      * @return the list of (breadth-first) ordered nodes
      */
     public List breadthFirst() {
+        return breadthFirst(true);
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a breadth-first traversal.
+     *
+     * @param preorder if false, a postorder breadth-first traversal will be performed
+     * @return the list of (breadth-first) ordered nodes
+     * @since 2.5.0
+     */
+    public List breadthFirst(boolean preorder) {
         List answer = new NodeList();
-        answer.add(this);
-        answer.addAll(breadthFirstRest());
+        if (preorder) answer.add(this);
+        answer.addAll(breadthFirstRest(preorder));
+        if (!preorder) answer.add(this);
         return answer;
     }
 
-    private List breadthFirstRest() {
+    private List breadthFirstRest(boolean preorder) {
         List answer = new NodeList();
-        List nextLevelChildren = getDirectChildren();
+        Stack stack = new Stack();
+        List nextLevelChildren = preorder ? getDirectChildren() : DefaultGroovyMethods.reverse(getDirectChildren());
         while (!nextLevelChildren.isEmpty()) {
             List working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
             for (Object child : working) {
-                answer.add(child);
+                if (preorder) {
+                    answer.add(child);
+                } else {
+                    stack.push(child);
+                }
                 if (child instanceof Node) {
                     Node childNode = (Node) child;
                     List children = childNode.getDirectChildren();
-                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(children);
+                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(preorder ? children : DefaultGroovyMethods.reverse(children));
                 }
             }
+        }
+        while (!stack.isEmpty()) {
+            answer.add(stack.pop());
         }
         return answer;
     }

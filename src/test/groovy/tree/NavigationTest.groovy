@@ -22,29 +22,37 @@ package groovy.tree
  * Simple test of tree walking
  */
 class NavigationTest extends GroovyTestCase {
-    
+
     void testDepthFirst() {
-        def tree = createTree()
-        
+        def tree = createTreeFromNodeBuilder()
         def names = tree.depthFirst().collect { it.name() }
-        def expected = ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
-        
-        assert names == expected
+        assert names == ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
     }
-    
+
     void testBreadthFirst() {
-        def tree = createTree()
-        
+        def tree = createTreeFromNodeBuilder()
         def names = tree.breadthFirst().collect { it.name() }
-        def expected = ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
-        
-        assert names == expected
+        assert names == ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
     }
-    
-    protected def createTree() {       
+
+    void testPrePostOrder() {
+        def root = createTreeFromXmlParser()
+        def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
+        def actual = combos.collect{ preorder, type ->
+            root."$type"(preorder)*.name()
+        }*.toString()
+        def expected = [
+            '[child1a, child1b, parent1, child2a, grandchild2, child2b, child2c, parent2, root]', // df post
+            '[root, parent1, child1a, child1b, parent2, child2a, child2b, grandchild2, child2c]', // df pre
+            '[grandchild2, child1a, child1b, child2a, child2b, child2c, parent1, parent2, root]', // bf post
+            '[root, parent1, parent2, child1a, child1b, child2a, child2b, child2c, grandchild2]'  // bf pre
+        ]
+        (0..3).each{ assert actual[it] == expected[it] }
+    }
+
+    private static createTreeFromNodeBuilder() {
         def b = NodeBuilder.newInstance()
-        
-        def root = b.a(a:5, b:7) {
+        def root = b.a(a: 5, b: 7) {
             b1()
             b2 {
                 c1()
@@ -57,11 +65,25 @@ class NavigationTest extends GroovyTestCase {
             }
             b5()
         }
-        
         assert root != null
-        
-        println(root)
-        
         return root
     }
+
+    private static createTreeFromXmlParser() {
+        def xml = '''
+        <root>
+          <parent1>
+            <child1a/>
+            <child1b/>
+          </parent1>
+          <parent2>
+            <child2a/>
+            <child2b><grandchild2/></child2b>
+            <child2c/>
+          </parent2>
+        </root>
+        '''
+        new XmlParser().parseText(xml)
+    }
+
 }
