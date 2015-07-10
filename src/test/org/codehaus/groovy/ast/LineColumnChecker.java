@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.junit.Ignore;
 
 /**
  * Tests the LineColumn information of the groovy source obtained in the
@@ -63,6 +64,7 @@ import org.codehaus.groovy.control.SourceUnit;
  * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
  *
  */
+@Ignore("helper class for manual testing")
 public class LineColumnChecker extends ASTTest {
     
     private LineCheckVisitor visitor;
