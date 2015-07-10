@@ -31,17 +31,6 @@ public class RunOneGroovyScript extends SecurityTestSupport {
 
     protected static String file;
 
-    public static void main(String[] args) {
-        if (args.length > 0) {
-            file = args[0];
-        }
-        TestRunner.run(suite());
-    }
-
-    public static Test suite() {
-        return new TestSuite(RunOneGroovyScript.class);
-    }
-
     public void testScript() {
         String fileName = System.getProperty("script", file);
         if (fileName == null) {

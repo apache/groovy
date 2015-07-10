@@ -43,14 +43,6 @@ import java.util.PropertyPermission;
  */
 public class SecurityTest extends SecurityTestSupport {
 
-    public static void main(String[] args) {
-        TestRunner.run(suite());
-    }
-
-    public static Test suite() {
-        return new TestSuite(SecurityTest.class);
-    }
-
     public void testForbiddenProperty() {
         String script = "System.getProperty(\"user.home\")";
         assertExecute(script, null, new PropertyPermission("user.home", "read"));
