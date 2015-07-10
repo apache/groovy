@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.junit.Ignore;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
@@ -47,6 +48,7 @@ import java.security.PrivilegedAction;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
+@Ignore("base class for tests")
 public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected static boolean DUMP_CLASS = false;
