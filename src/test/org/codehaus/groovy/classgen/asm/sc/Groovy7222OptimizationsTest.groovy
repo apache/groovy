@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import com.sun.xml.internal.ws.org.objectweb.asm.Opcodes
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -32,6 +31,7 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor
 import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer
+import org.objectweb.asm.Opcodes
 
 class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport  {
     void testShouldOptimizeConstantInitialization() {

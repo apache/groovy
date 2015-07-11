@@ -7140,7 +7140,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an Iterator
-     * @param idx  an index value (-self.size() <= idx < self.size())
+     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size())
      * @return the value at the given index (after normalisation) or null if no corresponding value was found
      * @since 1.7.2
      */
@@ -7183,7 +7183,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an Iterable
-     * @param idx  an index value (-self.size() <= idx < self.size()) but using -ve index values will be inefficient
+     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size()) but using -ve index values will be inefficient
      * @return the value at the given index (after normalisation) or null if no corresponding value was found
      * @since 2.1.0
      */

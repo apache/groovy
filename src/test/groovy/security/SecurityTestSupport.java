@@ -29,6 +29,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import junit.textui.ResultPrinter;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.junit.Ignore;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -39,6 +40,7 @@ import java.util.Enumeration;
 /**
  * @author Steve Goetze
  */
+@Ignore("base class for security tests")
 public class SecurityTestSupport extends GroovyTestCase {
     private static final String POLICY_FILE = "security/groovy.policy";
     private static int counter = 0;

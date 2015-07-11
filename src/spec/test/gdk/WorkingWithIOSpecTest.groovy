@@ -317,7 +317,7 @@ Fin.''')
             process.in.eachLine { line ->               // <2>
                 println line                            // <3>
             }
-            // end::process_list_files[]
+            // end::process_list_files_line_by_line[]
             assert process instanceof Process
         }
     }

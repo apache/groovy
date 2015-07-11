@@ -261,7 +261,7 @@ public class GroovyTestCase extends TestCase {
      * Convenience method for subclasses of GroovyTestCase, identical to
      * <pre> GroovyTestCase.notYetImplemented(this); </pre>.
      *
-     * @return <false> when not itself already in the call stack
+     * @return <code>false</code> when not itself already in the call stack
      * @see #notYetImplemented(java.lang.Object)
      */
     public boolean notYetImplemented() {
