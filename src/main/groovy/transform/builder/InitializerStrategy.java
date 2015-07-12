@@ -184,7 +184,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     }
 
     private String getBuilderClassName(ClassNode buildee, AnnotationNode anno) {
-        return getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
+        return getMemberStringValue(anno, "builderClassName", buildee.getNameWithoutPackage() + "Initializer");
     }
 
     private void addFields(ClassNode buildee, List<FieldNode> filteredFields, ClassNode builder) {

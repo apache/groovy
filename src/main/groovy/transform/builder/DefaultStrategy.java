@@ -224,7 +224,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     private String getFullName(AnnotationNode anno, ClassNode buildee) {
-        String builderClassName = getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
+        String builderClassName = getMemberStringValue(anno, "builderClassName", buildee.getNameWithoutPackage() + "Builder");
         return buildee.getName() + "$" + builderClassName;
     }
 
