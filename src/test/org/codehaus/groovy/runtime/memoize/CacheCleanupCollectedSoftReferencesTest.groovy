@@ -23,13 +23,7 @@ package org.codehaus.groovy.runtime.memoize
  */
 public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {   
 
-    // TODO delete this once another test below is re-enabled
-    public void testNothing_dummyTestToKeepJUnitTestCollectorHappy() {
-        assert true
-    }
-
-    // TODO re-enable this test once CI server can safely handle it
-    public void manual_testCollectedCacheValuesAreEnqueued() {
+    void testCollectedCacheValuesAreEnqueued() {
 
         Closure cl = { 
             new Integer(it + 1) 
@@ -49,8 +43,7 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         checkCollectedSoftReferenceAreEnqueued(softReference)
     }
 
-    // TODO re-enable this test once CI server can safely handle it
-    public void manual_testCollectedCacheValuesAreRemovedFromCache() {
+    void testCollectedCacheValuesAreRemovedFromCache() {
 
         Closure cl = { 
             new Integer(it + 1) 
