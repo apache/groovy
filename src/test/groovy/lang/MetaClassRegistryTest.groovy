@@ -93,7 +93,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
         Integer.metaClass = null
     }
 
-    void _testIteratorRemove() {
+    void testIteratorRemove() {
         Integer.metaClass.foo {-> 1 }
         assert 1.foo() == 1
         for (def it = registry.iterator(); it.hasNext();) {

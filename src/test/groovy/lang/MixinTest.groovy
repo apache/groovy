@@ -157,7 +157,7 @@ class MixinTest extends GroovyTestCase {
         Object.metaClass = null
     }
 
-    void _testMixingLockable() {
+    void testMixingLockable() {
         Object.metaClass.mixin ReentrantLock
         def name = "abcdef"
         name.lock()
