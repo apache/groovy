@@ -50,6 +50,33 @@ class NavigationTest extends GroovyTestCase {
         (0..3).each{ assert actual[it] == expected[it] }
     }
 
+    void testPrePostOrderWithClosure() {
+        def root = createTreeFromXmlParser()
+        def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
+        def actual = combos.collect{ preorder, type ->
+            def names = []
+            root."$type"(preorder: preorder) { names << it.name() }
+            names
+        }*.toString()
+        def expected = [
+            '[child1a, child1b, parent1, child2a, grandchild2, child2b, child2c, parent2, root]', // df post
+            '[root, parent1, child1a, child1b, parent2, child2a, child2b, grandchild2, child2c]', // df pre
+            '[grandchild2, child1a, child1b, child2a, child2b, child2c, parent1, parent2, root]', // bf post
+            '[root, parent1, parent2, child1a, child1b, child2a, child2b, child2c, grandchild2]'  // bf pre
+        ]
+        (0..3).each{ assert actual[it] == expected[it] }
+    }
+
+    void testLevelWithClosure() {
+        def root = createTreeFromXmlParser()
+        def result = [:].withDefault { [] }
+        root.depthFirst { node, index ->
+            result[index] << node.name()
+        }
+        assert result == [1: ['root'], 2: ['parent1', 'parent2'], 4: ['grandchild2'],
+                          3: ['child1a', 'child1b', 'child2a', 'child2b', 'child2c']]
+    }
+
     private static createTreeFromNodeBuilder() {
         def b = NodeBuilder.newInstance()
         def root = b.a(a: 5, b: 7) {
