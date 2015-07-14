@@ -25,17 +25,10 @@ archivesBaseName = 'groovy'
 
 ext.licenseSpec = copySpec {
     from 'config/build'
-    from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
-        include 'META-INF/LICENSE.txt'
-    }) {
-        eachFile { details ->
-            details.path = details.path - 'META-INF'
-            details.name = 'CLI-LICENSE.txt'
-        }
-    }
 }
 
 ext.srcSpec = copySpec {
+    from("$projectDir/licenses/LICENSE-BASE")
     from(projectDir) {
         exclude 'target',
                 'benchmark',
@@ -62,6 +55,7 @@ ext.srcSpec = copySpec {
                 '.gradle',          // used by Gradle
                 'buildSrc/.gradle'  // used by Gradle
     }
+    rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename }
 }
 
 ext.docSpec = copySpec {
@@ -140,12 +134,13 @@ ext.subprojectOsgiManifest = {
 jar {
     dependsOn('dgmConverter')
     metaInf {
-        from 'LICENSE'
+        from("$projectDir/licenses/LICENSE-BIN")
         from 'NOTICE'
         from 'DISCLAIMER'
         from('src/main/META-INF/groovy-release-info.properties') {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
+        rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
     }
 
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
@@ -265,12 +260,13 @@ allprojects {
 subprojects {
     jar {
         metaInf {
-            from "${rootProject.projectDir}/LICENSE"
+            from "${rootProject.projectDir}/licenses/LICENSE-BIN"
             from "${rootProject.projectDir}/NOTICE"
             from "${rootProject.projectDir}/DISCLAIMER"
             from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
+            rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
         }
         exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
@@ -449,9 +445,11 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
 }
 
 ext.distSpec = copySpec {
+    from("$projectDir/licenses/LICENSE-BIN")
     from("$projectDir") {
-        include 'LICENSE.txt', 'NOTICE.txt'
+        include 'NOTICE', 'DISCLAIMER'
     }
+    rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
     into('lib') {
         from jar.archivePath
         from {
@@ -562,15 +560,16 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
 }
 
 task updateLicense {
-    description = 'Updates the top-level LICENSE file'
+    description = 'Updates the LICENSE-BIN file'
 
     ext.licensesDir = "${projectDir}/licenses"
-    ext.licenseFile = "${projectDir}/LICENSE"
-    inputs.files(licensesDir)
+    ext.licenseFile = "${licensesDir}/LICENSE-BIN"
+    ext.licenseBase = "${licensesDir}/LICENSE-BASE"
+    inputs.files(licenseBase)
     outputs.file(licenseFile)
 
     doLast {
-        def files = [file("$licensesDir/LICENSE-BASE")]
+        def files = [file(licenseBase)]
         file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
         file(licenseFile).withWriter('utf-8') { writer ->
             files.sort{ it.name }.each {
