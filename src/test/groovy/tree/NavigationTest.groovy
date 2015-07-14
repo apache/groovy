@@ -22,29 +22,37 @@ package groovy.tree
  * Simple test of tree walking
  */
 class NavigationTest extends GroovyTestCase {
-    
+
     void testDepthFirst() {
-        def tree = createTree()
-        
+        def tree = createTreeFromNodeBuilder()
         def names = tree.depthFirst().collect { it.name() }
-        def expected = ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
-        
-        assert names == expected
+        assert names == ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
     }
-    
+
     void testBreadthFirst() {
-        def tree = createTree()
-        
+        def tree = createTreeFromNodeBuilder()
         def names = tree.breadthFirst().collect { it.name() }
-        def expected = ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
-        
-        assert names == expected
+        assert names == ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
     }
-    
-    protected def createTree() {       
+
+    void testPrePostOrder() {
+        def root = createTreeFromXmlParser()
+        def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
+        def actual = combos.collect{ preorder, type ->
+            root."$type"(preorder)*.name()
+        }*.toString().join('\n')
+        def expected = '''
+            [childa, childb, parent1, childa, grandchild, childb, childc, parent2, root]
+            [root, parent1, childa, childb, parent2, childa, childb, grandchild, childc]
+            [grandchild, childa, childb, childc, childa, childb, parent1, parent2, root]
+            [root, parent1, parent2, childa, childb, childa, childb, childc, grandchild]
+        '''.stripIndent().trim()
+        assert actual == expected
+    }
+
+    private static createTreeFromNodeBuilder() {
         def b = NodeBuilder.newInstance()
-        
-        def root = b.a(a:5, b:7) {
+        def root = b.a(a: 5, b: 7) {
             b1()
             b2 {
                 c1()
@@ -57,11 +65,25 @@ class NavigationTest extends GroovyTestCase {
             }
             b5()
         }
-        
         assert root != null
-        
-        println(root)
-        
         return root
     }
+
+    private static createTreeFromXmlParser() {
+        def xml = '''
+        <root>
+          <parent1>
+            <childa/>
+            <childb/>
+          </parent1>
+          <parent2>
+            <childa/>
+            <childb><grandchild/></childb>
+            <childc/>
+          </parent2>
+        </root>
+        '''
+        new XmlParser().parseText(xml)
+    }
+
 }
