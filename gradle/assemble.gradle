@@ -23,10 +23,6 @@ apply plugin: 'osgi'
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
 
-ext.licenseSpec = copySpec {
-    from 'config/build'
-}
-
 ext.srcSpec = copySpec {
     from("$projectDir/licenses/LICENSE-BASE")
     from(projectDir) {
@@ -78,7 +74,6 @@ ext.docSpec = copySpec {
 
 task copy(type: Copy) {
     into "$buildDir/meta"
-    with licenseSpec
 }
 
 ext.allManifest = manifest {
@@ -134,13 +129,13 @@ ext.subprojectOsgiManifest = {
 jar {
     dependsOn('dgmConverter')
     metaInf {
-        from("$projectDir/licenses/LICENSE-BIN")
+        from("$projectDir/licenses/LICENSE-JARJAR")
         from 'NOTICE'
         from 'DISCLAIMER'
         from('src/main/META-INF/groovy-release-info.properties') {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
-        rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
+        rename { String filename -> filename == 'LICENSE-JARJAR' ? 'LICENSE' : filename }
     }
 
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
@@ -260,13 +255,13 @@ allprojects {
 subprojects {
     jar {
         metaInf {
-            from "${rootProject.projectDir}/licenses/LICENSE-BIN"
+            from "${rootProject.projectDir}/licenses/LICENSE-BASE"
             from "${rootProject.projectDir}/NOTICE"
             from "${rootProject.projectDir}/DISCLAIMER"
             from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
-            rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
+            rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename }
         }
         exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
@@ -342,7 +337,6 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         }
         copy {
             into "$owner.ext.metaInfDir"
-            with licenseSpec
         }
         logger.info 'Packaging with jarjar'
 
@@ -445,11 +439,11 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
 }
 
 ext.distSpec = copySpec {
-    from("$projectDir/licenses/LICENSE-BIN")
+    from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir") {
         include 'NOTICE', 'DISCLAIMER'
     }
-    rename { String filename -> filename == 'LICENSE-BIN' ? 'LICENSE' : filename }
+    rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename }
     into('lib') {
         from jar.archivePath
         from {
@@ -491,7 +485,6 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
-        with licenseSpec
     }
 }
 
@@ -535,7 +528,6 @@ task installGroovy(type: Sync, dependsOn: distBin) {
         logger.lifecycle "Groovy installed under ${installDir()}"
     }
     with distSpec
-    with licenseSpec
     into installDir
 }
 
@@ -545,7 +537,6 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     appendix 'sdk'
     into "groovy-$version"
     with distSpec
-    with licenseSpec
     into('doc') {
         with docSpec
     }
@@ -560,19 +551,27 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
 }
 
 task updateLicense {
-    description = 'Updates the LICENSE-BIN file'
-
+    description = 'Updates the LICENSE-BINZIP and LICENSE-JARJAR files'
     ext.licensesDir = "${projectDir}/licenses"
-    ext.licenseFile = "${licensesDir}/LICENSE-BIN"
-    ext.licenseBase = "${licensesDir}/LICENSE-BASE"
-    inputs.files(licenseBase)
-    outputs.file(licenseFile)
+    ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
+    ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseJarJarDir = "${licensesDir}/jarjar"
+    ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
+    ext.licenseBinZipDir = "${licensesDir}/binzip"
+    inputs.files(licenseBaseFile, licenseBinZipDir, licenseJarJarDir)
+    outputs.files(licenseBinZipFile, licenseJarJarFile)
 
     doLast {
-        def files = [file(licenseBase)]
-        file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
-        file(licenseFile).withWriter('utf-8') { writer ->
-            files.each {
+        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licenseJarJarDir).sort{ it.name }
+        def binzipFiles = [file(licenseBaseFile)] + (fileTree(licenseJarJarDir) + fileTree(licenseBinZipDir)).sort{ it.name }
+        file(licenseJarJarFile).withWriter('utf-8') { writer ->
+            jarjarFiles.each {
+                writer << "${it.text}\n"
+                writer << '---------------------------------------------------------------------\n'
+            }
+        }
+        file(licenseBinZipFile).withWriter('utf-8') { writer ->
+            binzipFiles.each {
                 writer << "${it.text}\n"
                 writer << '---------------------------------------------------------------------\n'
             }
