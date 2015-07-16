@@ -21,8 +21,7 @@ package org.codehaus.groovy.transform
 import gls.CompilableTestSupport
 
 /**
- * @author Marcin Grzejszczak
- * @author Paul King
+ * Tests for {@code @Builder} transform.
  */
 class BuilderTransformTest extends CompilableTestSupport {
 
@@ -567,6 +566,28 @@ class BuilderTransformTest extends CompilableTestSupport {
             @Builder(builderStrategy=InitializerStrategy) class PersonInit { String foo }
             assert PersonInit.createInitializer().class.name == 'alfa.beta.PersonInit$PersonInitInitializer'
         '''
+    }
+
+    void testInitializerStrategyEmptyCases_GROOVY7503() {
+        def message = shouldNotCompile '''
+            import groovy.transform.builder.*
+            @Builder(builderStrategy=InitializerStrategy) class Foo { }
+        '''
+        assert message.contains('at least one property is required for this strategy')
+        message = shouldNotCompile '''
+            import groovy.transform.builder.*
+            @Builder(builderStrategy=InitializerStrategy, excludes='bar') class Foo { String bar }
+        '''
+        assert message.contains('at least one property is required for this strategy')
+        message = shouldNotCompile '''
+            import groovy.transform.builder.*
+            class Foo {
+              @Builder(builderStrategy=InitializerStrategy)
+              Foo() {
+              }
+            }
+        '''
+        assert message.contains('at least one parameter is required for this strategy')
     }
 
 }
