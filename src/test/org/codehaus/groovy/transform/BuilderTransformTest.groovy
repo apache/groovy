@@ -504,4 +504,19 @@ class BuilderTransformTest extends CompilableTestSupport {
             test()
         '''
     }
+
+    void testBuilderWithPackageName_GROOVY7501() {
+        assertScript '''
+            package alfa.beta
+
+            import groovy.transform.builder.*
+
+            @Builder class PersonDef { }
+            assert PersonDef.builder().class.name == 'alfa.beta.PersonDef$PersonDefBuilder'
+
+            @Builder(builderStrategy=InitializerStrategy) class PersonInit { String foo }
+            assert PersonInit.createInitializer().class.name == 'alfa.beta.PersonInit$PersonInitInitializer'
+        '''
+    }
+
 }
