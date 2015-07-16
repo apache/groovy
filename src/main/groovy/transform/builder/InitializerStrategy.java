@@ -110,9 +110,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * to call your constructor. Any parameters to your constructor become the properties expected by the initializer.
  * If you use such a builder on a constructor as well as on the class or on more than one constructor, then it is up to you
  * to define unique values for 'builderClassName' and 'builderMethodName' for each annotation.
- *
- * @author Paul King
- * @author Marcin Grzejszczak
  */
 public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
 
@@ -146,6 +143,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
+        if (filteredFields.isEmpty()) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: at least one property is required for this strategy", anno);
+        }
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), filteredFields.size());
         addFields(buildee, filteredFields, builder);
 
@@ -169,6 +170,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         }
         ClassNode buildee = mNode.getDeclaringClass();
         Parameter[] parameters = mNode.getParameters();
+        if (parameters.length == 0) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: at least one parameter is required for this strategy", anno);
+        }
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), parameters.length);
         List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
 
