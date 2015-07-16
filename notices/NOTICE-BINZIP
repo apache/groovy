@@ -10,7 +10,7 @@ Developed by Terence Parr 1989-2006
 This product includes/uses ASM (asm.ow2.org)
 Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
-This product includes/uses XStream (https://x-stream.github.io/)
+This product includes/uses XStream (https://x-stream.github.io)
 Made available under a BSD license. Copyright (c) 2003-2006, Joe Walnes
 Copyright (c) 2006-2009, 2011 XStream Committers. All rights reserved.
 
@@ -21,7 +21,7 @@ This product includes/uses Hamcrest (www.hamcrest.org)
 Made available under a BSD License.
 Copyright (c) 2000-2015. All rights reserved.
 
-This product includes/uses Jline (http://jline.sourceforge.net/)
+This product includes/uses Jline (http://jline.sourceforge.net)
 Distributed under the BSD license
 Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
 
@@ -31,3 +31,6 @@ Copyright 2002-2009 Joe Walnes and QDox Project Team
 This product includes/uses source files adapted from the JSR-223 reference
 implementation which has the following notice
 Copyright 2006 Sun Microsystems, Inc. All rights reserved.
+
+This product includes/uses Multiverse (https://github.com/pveentjer/Multiverse)
+Copyright (c) 2011, The Multiverse Team. All rights reserved.

@@ -161,7 +161,7 @@ rat {
                  'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
                  'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
-                 '**/target/**', 'licenses/**',
+                 '**/target/**', 'licenses/**', 'notices/**',
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
                  '**/assets/**', '**/*.gif', '**/*.png', '**/*.icns' // various image files
     ]

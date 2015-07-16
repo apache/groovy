@@ -551,29 +551,28 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
 }
 
 task updateLicense {
-    description = 'Updates the LICENSE-BINZIP and LICENSE-JARJAR files'
+    description = 'Updates the LICENSE, LICENSE-BINZIP and LICENSE-JARJAR files'
     ext.licensesDir = "${projectDir}/licenses"
     ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
+    ext.licenseSrcFile = "${projectDir}/LICENSE"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
-    ext.licenseJarJarDir = "${licensesDir}/jarjar"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
+    ext.licenseSrcDir = "${licensesDir}/src"
+    ext.licenseJarJarDir = "${licensesDir}/jarjar"
     ext.licenseBinZipDir = "${licensesDir}/binzip"
-    inputs.files(licenseBaseFile, licenseBinZipDir, licenseJarJarDir)
-    outputs.files(licenseBinZipFile, licenseJarJarFile)
+    inputs.files(licenseBaseFile, licenseBinZipDir, licenseJarJarDir, licenseSrcDir)
+    outputs.files(licenseSrcFile, licenseJarJarFile, licenseBinZipFile)
 
     doLast {
-        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licenseJarJarDir).sort{ it.name }
-        def binzipFiles = [file(licenseBaseFile)] + (fileTree(licenseJarJarDir) + fileTree(licenseBinZipDir)).sort{ it.name }
-        file(licenseJarJarFile).withWriter('utf-8') { writer ->
-            jarjarFiles.each {
-                writer << "${it.text}\n"
-                writer << '---------------------------------------------------------------------\n'
-            }
-        }
-        file(licenseBinZipFile).withWriter('utf-8') { writer ->
-            binzipFiles.each {
-                writer << "${it.text}\n"
-                writer << '---------------------------------------------------------------------\n'
+        def srcFiles = [file(licenseBaseFile)] + fileTree(licenseSrcDir).sort{ it.name }
+        def jarjarFiles = [file(licenseBaseFile)] + (fileTree(licenseSrcDir) + fileTree(licenseJarJarDir)).sort{ it.name }
+        def binzipFiles = [file(licenseBaseFile)] + (fileTree(licenseSrcDir) + fileTree(licenseJarJarDir) + fileTree(licenseBinZipDir)).sort{ it.name }
+        [(licenseSrcFile):srcFiles, (licenseJarJarFile):jarjarFiles, (licenseBinZipFile):binzipFiles].each { outFile, inFiles ->
+            file(outFile).withWriter('utf-8') { writer ->
+                inFiles.each {
+                    writer << "${it.text}\n"
+                    writer << '---------------------------------------------------------------------\n'
+                }
             }
         }
     }
