@@ -1,4 +1,14 @@
 /*
+ * Adapted from JLine which has the following license
+ *
+ *  Copyright (c) 2002-2012, the original author or authors.
+ *  This software is distributable under the BSD license. See the terms of the
+ *  BSD license in the documentation provided with this software.
+ *
+ *    http://www.opensource.org/licenses/bsd-license.php
+ *
+ * Subsequent modifications by the Groovy community have been done under the Apache License v2:
+ *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -19,20 +29,9 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import jline.console.completer.Completer
+import jline.internal.Configuration
 
-/*
- * Copyright (c) 2002-2012, the original author or authors.
- *
- * This software is distributable under the BSD license. See the terms of the
- * BSD license in the documentation provided with this software.
- *
- * http://www.opensource.org/licenses/bsd-license.php
- */
-
-
-import jline.internal.Configuration;
-
-import static jline.internal.Preconditions.checkNotNull;
+import static jline.internal.Preconditions.checkNotNull
 
 /**
  * PATCHED copy from jline 2.12, with
