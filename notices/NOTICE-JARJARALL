@@ -14,3 +14,7 @@ All rights reserved.
 This product includes/uses source files adapted from the JSR-223 reference
 implementation which has the following notice
 Copyright 2006 Sun Microsystems, Inc. All rights reserved.
+
+This product includes/uses Jline (http://jline.sourceforge.net)
+Distributed under the BSD license
+Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>

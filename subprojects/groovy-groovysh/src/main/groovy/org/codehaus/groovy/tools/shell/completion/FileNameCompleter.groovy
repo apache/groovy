@@ -36,6 +36,9 @@ import static jline.internal.Preconditions.checkNotNull
 /**
  * PATCHED copy from jline 2.12, with
  * https://github.com/jline/jline2/issues/90 (no trailing blank)
+ * NOTE: we hope to work with the jline project to have this functionality
+ * absorbed into a future jline release and then remove this file, so keep
+ * that in mind if you are thinking of changing this file.
  *
  * A file name completer takes the buffer and issues a list of
  * potential completions.
