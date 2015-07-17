@@ -44,7 +44,7 @@ Notice the result is a plain map and can be handled like a normal Groovy object 
 given JSON as defined by the http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf[ECMA-404 JSON Interchange Standard]
 plus support for JavaScript comments and dates.
 
-In addition to maps `JsonSlurper` supports JSON arrays which are being converted to lists.
+In addition to maps `JsonSlurper` supports JSON arrays which are converted to lists.
 
 [source,groovy]
 ----
