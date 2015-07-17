@@ -1,4 +1,4 @@
-JSR223 License
+JLine License
 
 The following file in the optional groovy-groovysh component:
 

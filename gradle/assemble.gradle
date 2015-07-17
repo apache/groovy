@@ -497,8 +497,12 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
 task distDoc(type: Zip, dependsOn: doc) {
     baseName = 'apache-groovy'
     appendix = 'docs'
-    into("groovy-$version")
-    with docSpec
+    into("groovy-$version") {
+        with docSpec
+        from "$projectDir/licenses/LICENSE-BASE"
+        from "$projectDir/notices/NOTICE-DOC"
+        rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-DOC' ? 'NOTICE' : filename }
+    }
 }
 
 task syncDoc(type: Copy, dependsOn: doc) {
