@@ -2,8 +2,8 @@ NORMALIZE.CSS LICENSE
 
 The following file (two usages) is used with documentation:
 
-    org/codehaus/groovy/tools/stylesheet.css
-    org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
+    subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/stylesheet.css
+    subprojects/groovy-groovydoc/src/main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
 
 Copyright (c) Nicolas Gallagher and Jonathan Neal
 

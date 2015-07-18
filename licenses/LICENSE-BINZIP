@@ -319,20 +319,6 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
 WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
----------------------------------------------------------------------
-JLine License
-
-The following file in the optional groovy-groovysh component:
-
-    org.codehaus.groovy.tools.shell.completion/FileNameCompleter.java
-
-was derived from JLine 2.12, and the following patch:
-https://github.com/jline/jline2/issues/90
-
-Copyright (c) 2002-2012, the original author or authors.
-This software is distributable under the BSD license. See the terms of the
-BSD license in the documentation provided with this software.
-http://www.opensource.org/licenses/bsd-license.php
 
 ---------------------------------------------------------------------
 JLine License
@@ -372,6 +358,22 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+---------------------------------------------------------------------
+JLine Patch License
+
+The following file in the optional groovy-groovysh component:
+
+    org.codehaus.groovy.tools.shell.completion/FileNameCompleter.java
+
+was derived from JLine 2.12, and the following patch:
+https://github.com/jline/jline2/issues/90
+
+Copyright (c) 2002-2012, the original author or authors.
+This software is distributable under the BSD license. See the terms of the
+BSD license in the documentation provided with this software.
+http://www.opensource.org/licenses/bsd-license.php
+
 ---------------------------------------------------------------------
 JQUERY LICENSE
 
@@ -405,9 +407,9 @@ JSR223 License
 
 The following files in the optional groovy-jsr223 component:
 
-    src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
 
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
@@ -445,6 +447,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
+
 ---------------------------------------------------------------------
 JUnit License
 
@@ -675,14 +678,13 @@ Eclipse Public License - v 1.0
    this Agreement will bring a legal action under this Agreement more than
    one year after the cause of action arose. Each party waives its rights
    to a jury trial in any resulting litigation.
-
 ---------------------------------------------------------------------
 NORMALIZE.CSS LICENSE
 
 The following file (two usages) is used with documentation:
 
-    org/codehaus/groovy/tools/stylesheet.css
-    org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
+    subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/stylesheet.css
+    subprojects/groovy-groovydoc/src/main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
 
 Copyright (c) Nicolas Gallagher and Jonathan Neal
 

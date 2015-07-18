@@ -1,4 +1,4 @@
-JLine License
+JLine Patch License
 
 The following file in the optional groovy-groovysh component:
 
