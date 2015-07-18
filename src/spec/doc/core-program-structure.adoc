@@ -56,7 +56,9 @@ Default imports are the imports that Groovy language provides by default. For ex
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=default_import,indent=0]
 ----
 
-The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
+The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. 
+
+The below imports are added by groovy for you:
 
 [source,groovy]
 ----
@@ -70,6 +72,8 @@ import java.math.BigInteger
 import java.math.BigDecimal
 ----
 
+This is done because the classes from these packages are most commonly used. By importing these boilerplate code is reduced.
+
 === Simple import
 
 A simple import is an import statement where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is a simple import which directly refers to a class inside a package.
@@ -81,14 +85,14 @@ include::{projectdir}/src/spec/test/PackageTest.groovy[tags=import_statement,ind
 
 === Star import
 
-Groovy, like Java, provides a special way to import all classes from a package using `*`, a so called Star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
+Groovy, like Java, provides a special way to import all classes from a package using `*`, the so called star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=multiple_import,indent=0]
 ----
 
-That's perfectly valid code. But with a `*` import, we can achieve the same effect with just one line, where `*` imports all the classes under package `groovy.xml`:
+That's perfectly valid code. But with a `*` import, we can achieve the same effect with just one line. The star imports all the classes under package `groovy.xml`:
 
 [source,groovy]
 ----
@@ -203,7 +207,7 @@ include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy
 <1> The `Main` class extends the `groovy.lang.Script` class
 <2> `groovy.lang.Script` requires a `run` method returning a value
 <3> the script body goes into the `run` method
-<4> the `main` method it automatically generated
+<4> the `main` method is automatically generated
 <5> and delegates the execution of the script on the `run` method
 
 If the script is in a file, then the base name of the file is used to determine the name of the generated script class.
