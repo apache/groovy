@@ -52,7 +52,7 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
         assertScript '''
             // tag::method_in_script[]
             int fib(int n) {
-                n<2?1:fib(n-1)+fib(n-2)
+                n < 2 ? 1 : fib(n-1) + fib(n-2)
             }
             assert fib(10)==89
             // end::method_in_script[]
