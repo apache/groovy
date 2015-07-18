@@ -253,7 +253,11 @@ allprojects {
 subprojects { sp ->
     jar {
         metaInf {
-            from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+            if (file("${projectDir}/LICENSE").exists()) {
+                from "${projectDir}/LICENSE"
+            } else {
+                from "${rootProject.projectDir}/notices/LICENSE-BASE"
+            }
             if (file("${projectDir}/NOTICE").exists()) {
                 from "${projectDir}/NOTICE"
             } else {
@@ -334,9 +338,14 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
         manifest.writeTo(manifestPath)
         copy {
-            from("$projectDir/notices/NOTICE-JARJARALL")
+            from("$projectDir/notices/NOTICE-ALLJARJAR")
             into owner.ext.metaInfDir
-            rename('NOTICE-JARJARALL', 'NOTICE')
+            rename('NOTICE-ALLJARJAR', 'NOTICE')
+        }
+        copy {
+            from("$projectDir/notices/LICENSE-ALLJARJAR")
+            into owner.ext.metaInfDir
+            rename('LICENSE-ALLJARJAR', 'NOTICE')
         }
         copy {
             from(mergeModuleDescriptors())
@@ -499,9 +508,9 @@ task distDoc(type: Zip, dependsOn: doc) {
     appendix = 'docs'
     into("groovy-$version") {
         with docSpec
-        from "$projectDir/licenses/LICENSE-BASE"
+        from "$projectDir/licenses/LICENSE-DOC"
         from "$projectDir/notices/NOTICE-DOC"
-        rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-DOC' ? 'NOTICE' : filename }
+        rename { String filename -> filename == 'LICENSE-DOC' ? 'LICENSE' : filename == 'NOTICE-DOC' ? 'NOTICE' : filename }
     }
 }
 
@@ -561,23 +570,42 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
 }
 
 task updateLicense {
-    description = 'Updates the LICENSE, LICENSE-BINZIP and LICENSE-JARJAR files'
+    description = 'Updates the LICENSE (SRC), LICENSE-ALLJARJAR, LICENSE-BINZIP, LICENSE-DOC and LICENSE-JARJAR files'
     ext.licensesDir = "${projectDir}/licenses"
     ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
+
     ext.licenseSrcFile = "${projectDir}/LICENSE"
-    ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseAllJarJarFile = "${licensesDir}/LICENSE-ALLJARJAR"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
-    ext.licenseSrcDir = "${licensesDir}/src"
-    ext.licenseJarJarDir = "${licensesDir}/jarjar"
-    ext.licenseBinZipDir = "${licensesDir}/binzip"
-    inputs.files(licenseBaseFile, licenseBinZipDir, licenseJarJarDir, licenseSrcDir)
-    outputs.files(licenseSrcFile, licenseJarJarFile, licenseBinZipFile)
+    ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
+    ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseSrcFile = "${licensesDir}/LICENSE-SRC"
+    inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
+    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile)
 
     doLast {
-        def srcFiles = [file(licenseBaseFile)] + fileTree(licenseSrcDir).sort{ it.name }
-        def jarjarFiles = [file(licenseBaseFile)] + (fileTree(licenseSrcDir) + fileTree(licenseJarJarDir)).sort{ it.name }
-        def binzipFiles = [file(licenseBaseFile)] + (fileTree(licenseSrcDir) + fileTree(licenseJarJarDir) + fileTree(licenseBinZipDir)).sort{ it.name }
-        [(licenseSrcFile):srcFiles, (licenseJarJarFile):jarjarFiles, (licenseBinZipFile):binzipFiles].each { outFile, inFiles ->
+        def srcFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-SRC*.txt').sort{ it.name }
+        def docFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-DOC*.txt').sort{ it.name }
+        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
+            include '*-SRC*.txt'
+            include '*-JARJAR*.txt'
+        }.sort{ it.name }
+        def allJarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
+            include '*-SRC*.txt'
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+        }.sort{ it.name }
+        def binzipFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
+            include '*-SRC*.txt'
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+            include '*-BINZIP*.txt'
+        }.sort{ it.name }
+        [(licenseAllJarJarFile):allJarjarFiles,
+         (licenseBinZipFile):binzipFiles,
+         (licenseDocFile):docFiles,
+         (licenseJarJarFile):jarjarFiles,
+         (licenseSrcFile):srcFiles].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 inFiles.each {
                     writer << "${it.text}\n"

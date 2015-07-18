@@ -2,9 +2,9 @@ JSR223 License
 
 The following files in the optional groovy-jsr223 component:
 
-    src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
+    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
 
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
