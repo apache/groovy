@@ -69,7 +69,7 @@ include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_
 <1> A closure referencing a variable named `item`
 <2> It is possible to explicitly separate closure parameters from code by adding an arrow (`+->+`)
 <3> A closure using an implicit parameter (`it`)
-<4> An alternative version where `it` is this time an explicit parameter
+<4> An alternative version where `it` is an explicit parameter
 <5> In that case it is often better to use an explicit name for the parameter
 <6> A closure accepting two typed parameters
 <7> A closure can contain multiple statements
