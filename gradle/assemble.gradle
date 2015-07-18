@@ -343,9 +343,9 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
             rename('NOTICE-ALLJARJAR', 'NOTICE')
         }
         copy {
-            from("$projectDir/notices/LICENSE-ALLJARJAR")
+            from("$projectDir/licenses/LICENSE-ALLJARJAR")
             into owner.ext.metaInfDir
-            rename('LICENSE-ALLJARJAR', 'NOTICE')
+            rename('LICENSE-ALLJARJAR', 'LICENSE')
         }
         copy {
             from(mergeModuleDescriptors())
@@ -360,10 +360,10 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         ant {
             taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: configurations.tools.asPath
             jarjar(jarfile: archivePathTmp, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF', excludes: 'META-INF')
-                zipfileset(src: jar.archivePath)
+                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF')
+                zipfileset(src: jar.archivePath, excludes:'META-INF/NOTICE,META-INF/LICENSE')
                 moduleJars().each {
-                    zipfileset(src: it)
+                    zipfileset(src: it, excludes:'META-INF/NOTICE,META-INF/LICENSE')
                 }
             }
         }
@@ -380,7 +380,7 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         ant {
             copy(file: archivePathTmp, tofile: archivePath)
             jar(destfile: archivePath, update:true, manifest: manifestPath) {
-                zipfileset(src: jar.archivePath)
+                zipfileset(src: jar.archivePath, excludes:'META-INF')
             }
             delete(file: archivePathTmp, quiet: true, deleteonexit: true)
         }
@@ -586,10 +586,7 @@ task updateLicense {
     doLast {
         def srcFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-SRC*.txt').sort{ it.name }
         def docFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-DOC*.txt').sort{ it.name }
-        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
-            include '*-SRC*.txt'
-            include '*-JARJAR*.txt'
-        }.sort{ it.name }
+        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-JARJAR*.txt').sort{ it.name }
         def allJarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
             include '*-SRC*.txt'
             include '*-JARJAR*.txt'
