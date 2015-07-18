@@ -237,7 +237,7 @@ In Groovy, bitwise operators have the particularity of being <<Operator-Overload
 === Not operator
 
 The "not" operator is represented with an exclamation mark (`!`) and inverts the result of the underlying boolean expression. In
-particular, it is possible to combine the `not` operator with the <<Groovy-Truth,Groovy truth>>:
+particular, it is possible to combine the `not` operator with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>:
 
 [source,groovy]
 ----
@@ -263,7 +263,7 @@ You can write:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
 ----
 
-The ternary operator is also compatible with the <<Groovy-Truth,Groovy truth>>, so you can make it even simpler:
+The ternary operator is also compatible with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>, so you can make it even simpler:
 
 [source,groovy]
 ----
@@ -274,7 +274,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ter
 
 The "Elvis operator" is a shortening of the ternary operator. One instance of where this is handy is for returning
 a 'sensible default' value if an expression resolves to `false`-ish (as in
-<<Groovy-Truth,Groovy truth>>). A simple example might look like this:
+<<core-semantics.adoc#Groovy-Truth,Groovy truth>>). A simple example might look like this:
 
 [source,groovy]
 ----
