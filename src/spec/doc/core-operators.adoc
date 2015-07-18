@@ -347,7 +347,7 @@ convert an existing method for the needs of the strategy pattern:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_strategy,indent=0]
 ----
 <1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
-<2> we define a function that takes a `Person` a returns a `String`
+<2> we define a function that takes a `Person` and returns a `String`
 <3> we create a method pointer on that function
 <4> we create the list of elements we want to collect the descriptors
 <5> the method pointer can be used where a `Closure` was expected
