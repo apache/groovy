@@ -1,0 +1,2 @@
+This product includes/uses JUnit (junit.org)
+Under the terms of the Eclipse Public License - v1.0

@@ -256,7 +256,7 @@ subprojects { sp ->
             if (file("${projectDir}/LICENSE").exists()) {
                 from "${projectDir}/LICENSE"
             } else {
-                from "${rootProject.projectDir}/notices/LICENSE-BASE"
+                from "${rootProject.projectDir}/licenses/LICENSE-BASE"
             }
             if (file("${projectDir}/NOTICE").exists()) {
                 from "${projectDir}/NOTICE"
@@ -510,6 +510,7 @@ task distDoc(type: Zip, dependsOn: doc) {
         with docSpec
         from "$projectDir/licenses/LICENSE-DOC"
         from "$projectDir/notices/NOTICE-DOC"
+        from "$projectDir/DISCLAIMER"
         rename { String filename -> filename == 'LICENSE-DOC' ? 'LICENSE' : filename == 'NOTICE-DOC' ? 'NOTICE' : filename }
     }
 }
