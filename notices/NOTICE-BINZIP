@@ -4,45 +4,59 @@ Copyright 2003-2015 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
-This product includes/uses ANTLR (www.antlr2.org)
+This product includes/uses ANTLR (http://www.antlr2.org/)
 Developed by Terence Parr 1989-2006
-
-This product includes/uses ASM (asm.ow2.org)
-Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
-
-This product includes/uses XStream (https://x-stream.github.io)
-Made available under a BSD license. Copyright (c) 2003-2006, Joe Walnes
-Copyright (c) 2006-2009, 2011 XStream Committers. All rights reserved.
-
-This product includes/uses JUnit (junit.org)
-Under the terms of the Eclipse Public License - v1.0
-
-This product includes/uses Hamcrest (www.hamcrest.org)
-Made available under a BSD License.
-Copyright (c) 2000-2015. All rights reserved.
-
-This product includes/uses Jline (http://jline.sourceforge.net)
-Distributed under the BSD license
-Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
-
-This product includes/uses QDox (https://github.com/paul-hammant/qdox)
-Copyright 2002-2009 Joe Walnes and QDox Project Team
-
-This product includes/uses source files adapted from the JSR-223 reference
-implementation which has the following notice
-Copyright 2006 Sun Microsystems, Inc. All rights reserved.
-
-This product includes/uses Multiverse (https://github.com/pveentjer/Multiverse)
-Copyright (c) 2011, The Multiverse Team. All rights reserved.
-
-This product includes/uses git/io/stylesheet.css
-which is distributed under the MIT license
-Copyright (c) Nicolas Gallagher and Jonathan Neal
 
 This product includes/uses software/assets from asciidoctor.org
 use is granted under the terms of the MIT License
 Copyright (c) 2012-2014 Dan Allen, Ryan Waldron and the Asciidoctor Project
 
+This product includes/uses ASM (http://asm.ow2.org/)
+Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
+
+This product bundles the Hamcrest jar (www.hamcrest.org)
+which is made available under a BSD License.
+Copyright (c) 2000-2015. All rights reserved.
+
+This product bundles the Jline2 jar (https://github.com/jline/jline2)
+which is distributed under the BSD license
+Copyright (c) 2002-2012, the original author or authors. All rights reserved.
+
+This product includes/uses a source file from Jline2 (https://github.com/jline/jline2)
+Distributed under the BSD license
+Copyright (c) 2002-2012, the original author or authors. All rights reserved.
+
 This product includes/uses software/assets from jquery.org
 use is granted under the terms of the MIT License
 Copyright jQuery Foundation and other contributors, https://jquery.org/
+
+This product includes/uses source files adapted from the JSR-223 reference
+implementation which has the following notice
+Copyright 2006 Sun Microsystems, Inc. All rights reserved.
+
+This product bundles the JUnit jar (junit.org)
+which is available under the terms of the Eclipse Public License v1.0
+
+This product bundles the Multiverse jar (https://github.com/pveentjer/Multiverse)
+Copyright (c) 2011, The Multiverse Team. All rights reserved.
+
+This product includes/uses the git.io/normalize.css stylesheet
+which is distributed under the MIT license
+Copyright (c) Nicolas Gallagher and Jonathan Neal
+
+This product embeds the OpenBeans jar within its grooid jar artifacts
+OpenBeans includes/uses files from Apache Harmony and the following notice applies
+Copyright 2006, 2010 The Apache Software Foundation.
+Portions of Apache Harmony were originally developed by Intel Corporation and are
+licensed to the Apache Software Foundation under the "Software Grant and Corporate
+Contribution License Agreement" and for which the following copyright notices apply
+    (C) Copyright 2005 Intel Corporation
+    (C) Copyright 2005-2006 Intel Corporation
+    (C) Copyright 2006 Intel Corporation
+
+This product bundles the QDox jar (https://github.com/paul-hammant/qdox)
+Copyright 2002-2009 Joe Walnes and QDox Project Team
+
+This product bundles the XStream jar (https://x-stream.github.io)
+which is made available under a BSD license. Copyright (c) 2003-2006, Joe Walnes.
+Copyright (c) 2006-2009, 2011 XStream Committers. All rights reserved.
