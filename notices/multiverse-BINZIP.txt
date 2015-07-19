@@ -1,0 +1,2 @@
+This product includes/uses Multiverse (https://github.com/pveentjer/Multiverse)
+Copyright (c) 2011, The Multiverse Team. All rights reserved.
