@@ -231,9 +231,10 @@ allprojects {
                 ant {
                     taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
                     jarjar(jarfile: target) {
-                        zipfileset(src: jarjar.archivePath)
+                        zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
+                        zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
                         if (isRootProject) {
-                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') })
+                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
                         }
                         rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
                         rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
@@ -570,7 +571,7 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     }
 }
 
-task updateLicense {
+task updateLicenses {
     description = 'Updates the LICENSE (SRC), LICENSE-ALLJARJAR, LICENSE-BINZIP, LICENSE-DOC and LICENSE-JARJAR files'
     ext.licensesDir = "${projectDir}/licenses"
     ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
@@ -580,35 +581,82 @@ task updateLicense {
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
-    ext.licenseSrcFile = "${licensesDir}/LICENSE-SRC"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
     outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile)
 
     doLast {
-        def srcFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-SRC*.txt').sort{ it.name }
-        def docFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-DOC*.txt').sort{ it.name }
-        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-JARJAR*.txt').sort{ it.name }
+        def srcFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
+        def docFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-DOC*.txt').sort { it.name }
+        def jarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir).include('*-JARJAR*.txt').sort { it.name }
         def allJarjarFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
             include '*-SRC*.txt'
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
-        }.sort{ it.name }
+        }.sort { it.name }
         def binzipFiles = [file(licenseBaseFile)] + fileTree(licensesDir) {
             include '*-SRC*.txt'
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
             include '*-BINZIP*.txt'
-        }.sort{ it.name }
-        [(licenseAllJarJarFile):allJarjarFiles,
-         (licenseBinZipFile):binzipFiles,
-         (licenseDocFile):docFiles,
-         (licenseJarJarFile):jarjarFiles,
-         (licenseSrcFile):srcFiles].each { outFile, inFiles ->
+        }.sort { it.name }
+        [(licenseAllJarJarFile): allJarjarFiles,
+         (licenseBinZipFile)   : binzipFiles,
+         (licenseDocFile)      : docFiles,
+         (licenseJarJarFile)   : jarjarFiles,
+         (licenseSrcFile)      : srcFiles].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
-                inFiles.each {
-                    writer << "${it.text}\n"
-                    writer << '---------------------------------------------------------------------\n'
-                }
+                writer << inFiles.collect {
+                    it.text.trim()
+                }.join('\n\n--------------------------------------------------------------------\n\n')
+            }
+        }
+    }
+}
+
+task updateNotices {
+    description = 'Updates the NOTICE (SRC), NOTICE-ALLJARJAR, NOTICE-BINZIP, NOTICE-DOC and NOTICE-JARJAR files'
+    ext.noticesDir = "${projectDir}/notices"
+    ext.noticeBaseFile = "${noticesDir}/NOTICE-BASE"
+
+    ext.noticeSrcFile = "${projectDir}/NOTICE"
+    ext.noticeAllJarJarFile = "${noticesDir}/NOTICE-ALLJARJAR"
+    ext.noticeBinZipFile = "${noticesDir}/NOTICE-BINZIP"
+    ext.noticeDocFile = "${noticesDir}/NOTICE-DOC"
+    ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
+    ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
+    ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
+    inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
+    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeDocFile, noticeGrooidFile, noticeGrooidJarJarFile, noticeJarJarFile, noticeSrcFile)
+
+    doLast {
+        def srcFiles = [file(noticeBaseFile)] + fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
+        def docFiles = [file(noticeBaseFile)] + fileTree(noticesDir).include('*-DOC*.txt').sort { it.name }
+        def grooidFiles = [file(noticeBaseFile)] + fileTree(noticesDir).include('*-GROOID*.txt').sort { it.name }
+        def jarjarFiles = [file(noticeBaseFile)] + fileTree(noticesDir).include('*-JARJAR*.txt').sort { it.name }
+        def grooidJarjarFiles = [file(noticeBaseFile)] + fileTree(noticesDir) {
+            include '*-JARJAR*.txt'
+            include '*-GROOID*.txt'
+        }.sort { it.name }
+        def allJarjarFiles = [file(noticeBaseFile)] + fileTree(noticesDir) {
+            include '*-SRC*.txt'
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+        }.sort { it.name }
+        def binzipFiles = [file(noticeBaseFile)] + fileTree(noticesDir) {
+            include '*-SRC*.txt'
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+            include '*-BINZIP*.txt'
+        }.sort { it.name }
+        [(noticeAllJarJarFile)   : allJarjarFiles,
+         (noticeBinZipFile)      : binzipFiles,
+         (noticeDocFile)         : docFiles,
+         (noticeGrooidFile)      : grooidFiles,
+         (noticeGrooidJarJarFile): grooidJarjarFiles,
+         (noticeJarJarFile)      : jarjarFiles,
+         (noticeSrcFile)         : srcFiles].each { outFile, inFiles ->
+            file(outFile).withWriter('utf-8') { writer ->
+                writer << inFiles.collect { it.text.trim() }.join('\n\n')
             }
         }
     }
