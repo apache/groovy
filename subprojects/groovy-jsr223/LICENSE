@@ -200,14 +200,16 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
----------------------------------------------------------------------
+
+--------------------------------------------------------------------
+
 JSR223 License
 
-The following files in the optional groovy-jsr223 component:
+The following classes within this product:
 
-    src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
-    src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+    org.codehaus.groovy.jsr223.GroovyCompiledScript
+    org.codehaus.groovy.jsr223.GroovyScriptEngineFactory
+    org.codehaus.groovy.jsr223.GroovyScriptEngineImpl
 
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
@@ -245,4 +247,3 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
----------------------------------------------------------------------

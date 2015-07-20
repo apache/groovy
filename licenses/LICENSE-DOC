@@ -201,7 +201,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 ASCIIDOC LICENSE
 
 The following file is used within documentation:
@@ -230,7 +231,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 JQUERY LICENSE
 
 The following file is used within documentation:
@@ -258,13 +260,12 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 NORMALIZE.CSS LICENSE
 
-The following file (two usages) is used with documentation:
-
-    subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/stylesheet.css
-    subprojects/groovy-groovydoc/src/main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
+The stylesheet.css file (originally normalize.css) is used by the
+groovydoc and docgenerator components for groovy-jdk/gapi documentation.
 
 Copyright (c) Nicolas Gallagher and Jonathan Neal
 
@@ -285,4 +286,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------------------

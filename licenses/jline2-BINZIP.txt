@@ -1,4 +1,4 @@
-JLine License
+JLine2 License
 
 Copyright (c) 2002-2012, the original author or authors.
 All rights reserved.

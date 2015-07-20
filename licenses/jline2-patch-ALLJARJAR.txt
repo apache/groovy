@@ -1,0 +1,13 @@
+JLine2 Patch License
+
+The following class within this product:
+
+    org.codehaus.groovy.tools.shell.completion.FileNameCompleter
+
+was derived from JLine 2.12, and the following patch:
+https://github.com/jline/jline2/issues/90
+
+Copyright (c) 2002-2012, the original author or authors.
+This software is distributable under the BSD license. See the terms of the
+BSD license in the documentation provided with this software.
+http://www.opensource.org/licenses/bsd-license.php
