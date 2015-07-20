@@ -201,7 +201,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 ANTLR 2 License
 
 We reserve no legal rights to the ANTLR--it is fully in the public domain. An individual or company may do
@@ -226,7 +227,8 @@ version 3 or later (this part is not included in the binary JAR files). See [1] 
 
 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=750643#80%22
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 ASM 4 License
 
 Copyright (c) 2000-2011 INRIA, France Telecom
@@ -258,5 +260,3 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
-
----------------------------------------------------------------------

@@ -201,7 +201,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 ANTLR 2 License
 
 We reserve no legal rights to the ANTLR--it is fully in the public domain. An individual or company may do
@@ -226,36 +227,8 @@ version 3 or later (this part is not included in the binary JAR files). See [1] 
 
 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=750643#80%22
 
----------------------------------------------------------------------
-ASCIIDOC LICENSE
+--------------------------------------------------------------------
 
-The following file is used within documentation:
-
-    src/spec/assets/css/style.css
-
-The MIT License
-
-Copyright (C) 2012-2015 Dan Allen, Ryan Waldron and the Asciidoctor Project
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
----------------------------------------------------------------------
 ASM 4 License
 
 Copyright (c) 2000-2011 INRIA, France Telecom
@@ -288,7 +261,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 Hamcrest License
 
 BSD License
@@ -319,8 +293,9 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
 WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
----------------------------------------------------------------------
-JLine License
+--------------------------------------------------------------------
+
+JLine2 License
 
 Copyright (c) 2002-2012, the original author or authors.
 All rights reserved.
@@ -357,12 +332,13 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
----------------------------------------------------------------------
-JLine Patch License
+--------------------------------------------------------------------
 
-The following file in the optional groovy-groovysh component:
+JLine2 Patch License
 
-    org.codehaus.groovy.tools.shell.completion/FileNameCompleter.java
+The following class within this product:
+
+    org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 
 was derived from JLine 2.12, and the following patch:
 https://github.com/jline/jline2/issues/90
@@ -372,42 +348,15 @@ This software is distributable under the BSD license. See the terms of the
 BSD license in the documentation provided with this software.
 http://www.opensource.org/licenses/bsd-license.php
 
----------------------------------------------------------------------
-JQUERY LICENSE
+--------------------------------------------------------------------
 
-The following file is used within documentation:
-
-    src/spec/assets/css/jquery-2.1.1.min.js
-
-Copyright jQuery Foundation and other contributors, https://jquery.org/
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----------------------------------------------------------------------
 JSR223 License
 
-The following files in the optional groovy-jsr223 component:
+The following classes within this product:
 
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+    org.codehaus.groovy.jsr223.GroovyCompiledScript
+    org.codehaus.groovy.jsr223.GroovyScriptEngineFactory
+    org.codehaus.groovy.jsr223.GroovyScriptEngineImpl
 
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
@@ -446,7 +395,8 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 JUnit License
 
 Eclipse Public License - v 1.0
@@ -677,13 +627,12 @@ Eclipse Public License - v 1.0
    one year after the cause of action arose. Each party waives its rights
    to a jury trial in any resulting litigation.
 
----------------------------------------------------------------------
+--------------------------------------------------------------------
+
 NORMALIZE.CSS LICENSE
 
-The following file (two usages) is used with documentation:
-
-    subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/stylesheet.css
-    subprojects/groovy-groovydoc/src/main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates/topLevel/stylesheet.css
+The stylesheet.css file (originally normalize.css) is used by the
+groovydoc and docgenerator components for groovy-jdk/gapi documentation.
 
 Copyright (c) Nicolas Gallagher and Jonathan Neal
 
@@ -704,7 +653,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------------------
+
+--------------------------------------------------------------------
+
 XSTREAM is made available under a BSD license
 
 Copyright (c) 2003-2006, Joe Walnes
@@ -735,4 +686,3 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
 WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
----------------------------------------------------------------------

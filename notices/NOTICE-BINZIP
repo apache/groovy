@@ -7,10 +7,6 @@ The Apache Software Foundation (http://www.apache.org/).
 This product includes/uses ANTLR (http://www.antlr2.org/)
 Developed by Terence Parr 1989-2006
 
-This product includes/uses software/assets from asciidoctor.org
-use is granted under the terms of the MIT License
-Copyright (c) 2012-2014 Dan Allen, Ryan Waldron and the Asciidoctor Project
-
 This product includes/uses ASM (http://asm.ow2.org/)
 Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -22,13 +18,9 @@ This product bundles the Jline2 jar (https://github.com/jline/jline2)
 which is distributed under the BSD license
 Copyright (c) 2002-2012, the original author or authors. All rights reserved.
 
-This product includes/uses a source file from Jline2 (https://github.com/jline/jline2)
-Distributed under the BSD license
+This product includes/uses a source file adapted from Jline2 (https://github.com/jline/jline2)
+which is distributable under the BSD license and has the following notice
 Copyright (c) 2002-2012, the original author or authors. All rights reserved.
-
-This product includes/uses software/assets from jquery.org
-use is granted under the terms of the MIT License
-Copyright jQuery Foundation and other contributors, https://jquery.org/
 
 This product includes/uses source files adapted from the JSR-223 reference
 implementation which has the following notice
@@ -56,6 +48,11 @@ Contribution License Agreement" and for which the following copyright notices ap
 
 This product bundles the QDox jar (https://github.com/paul-hammant/qdox)
 Copyright 2002-2009 Joe Walnes and QDox Project Team
+
+This product bundles icons from the famfamfam.com silk icons set
+http://www.famfamfam.com/lab/icons/silk/
+Licensed under the Creative Commons Attribution Licence v2.5
+http://creativecommons.org/licenses/by/2.5/
 
 This product bundles the XStream jar (https://x-stream.github.io)
 which is made available under a BSD license. Copyright (c) 2003-2006, Joe Walnes.
