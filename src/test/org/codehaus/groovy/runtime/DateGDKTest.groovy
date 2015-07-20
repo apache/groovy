@@ -1,5 +1,4 @@
-/*
- *  Licensed to the Apache Software Foundation (ASF) under one
+/* *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -30,42 +29,52 @@ class DateGDKTest extends GroovyTestCase {
     void testGDKDateMethods() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
-        Locale locale = Locale.UK
-        Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
-        TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
-        Date d = new Date(0)
-        assertEquals '1970-01-01', d.format('yyyy-MM-dd')
-        assertEquals '01/Jan/1970', d.format('dd/MMM/yyyy', TimeZone.getTimeZone('GMT'))
-        assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
-        assertEquals '01/01/70', d.dateString
-        assertEquals DateFormat.getTimeInstance(DateFormat.MEDIUM, locale).format(d), d.timeString
-        assertEquals '00:00:00', d.timeString
-        assertEquals DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale).format(d), d.dateTimeString
-        assertEquals '01/01/70 00:00:00', d.dateTimeString
-
-        Locale.default = defaultLocale
-        TimeZone.setDefault defaultTZ
+        try {
+            Locale locale = Locale.UK
+            Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
+            TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
+            
+            Date d = new Date(0)
+            
+            assertEquals '1970-01-01', d.format('yyyy-MM-dd')
+            assertEquals '01/Jan/1970', d.format('dd/MMM/yyyy', TimeZone.getTimeZone('GMT'))
+            assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
+            assertEquals '01/01/70', d.dateString
+            assertEquals DateFormat.getTimeInstance(DateFormat.MEDIUM, locale).format(d), d.timeString
+            assertEquals '00:00:00', d.timeString
+            assertEquals DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale).format(d), d.dateTimeString
+            assertEquals '01/01/70 00:00:00', d.dateTimeString
+        } finally {
+            Locale.default = defaultLocale
+            TimeZone.setDefault defaultTZ
+        }
     }
 
     void testStaticParse() {
         TimeZone defaultTZ = TimeZone.default
-        TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
+        try {
+            TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
 
-        Date d = Date.parse('yy/MM/dd hh:mm:ss', '70/01/01 00:00:00')
-        assertEquals 0, d.time
-
-        TimeZone.setDefault defaultTZ
+            Date d = Date.parse('yy/MM/dd hh:mm:ss', '70/01/01 00:00:00')
+            
+            assertEquals 0, d.time
+        } finally {
+            TimeZone.setDefault defaultTZ
+        }
     }
 
     void testParseWithTimeZone() {
         TimeZone defaultTZ = TimeZone.default
-
-        TimeZone.default = TimeZone.getTimeZone("GMT+05")
-        def tz = TimeZone.getTimeZone("GMT+03")
-        def newYear = Date.parse('yyyy-MM-dd', "2015-01-01", tz)
-        assert newYear.toString() == 'Thu Jan 01 02:00:00 GMT+05:00 2015'
-
-        TimeZone.default = defaultTZ
+        try {
+            TimeZone.default = TimeZone.getTimeZone("GMT+05")
+            def tz = TimeZone.getTimeZone("GMT+03")
+            
+            def newYear = Date.parse('yyyy-MM-dd', "2015-01-01", tz)
+            
+            assert newYear.toString() == 'Thu Jan 01 02:00:00 GMT+05:00 2015'
+        } finally {
+            TimeZone.default = defaultTZ
+        }
     }
 
     void testRoundTrip() {
@@ -81,22 +90,24 @@ class DateGDKTest extends GroovyTestCase {
     void testCalendarTimeZone() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
-        Locale locale = Locale.UK
-        Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
-        TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
+        try {
+            Locale locale = Locale.UK
+            Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
+            TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
 
-        def offset = 8
-        def notLocalTZ = TimeZone.getTimeZone("GMT-$offset")
-        Calendar cal = Calendar.getInstance(notLocalTZ)
-        def offsetHr = cal.format('HH') as int
-        def hr = cal.time.format('HH') as int
-
-        if (hr < offset) hr += 24 // if GMT hr has rolled over to next day
-        // offset should be 8 hours behind GMT:
-        assertEquals(offset, hr - offsetHr)
-
-        Locale.default = defaultLocale
-        TimeZone.setDefault defaultTZ
+            def offset = 8
+            def notLocalTZ = TimeZone.getTimeZone("GMT-$offset")
+            Calendar cal = Calendar.getInstance(notLocalTZ)
+            def offsetHr = cal.format('HH') as int
+            def hr = cal.time.format('HH') as int
+            if (hr < offset) hr += 24 // if GMT hr has rolled over to next day
+            
+            // offset should be 8 hours behind GMT:
+            assertEquals(offset, hr - offsetHr)
+        } finally {
+            Locale.default = defaultLocale
+            TimeZone.setDefault defaultTZ
+        }
     }
 
     static SimpleDateFormat f = new SimpleDateFormat('MM/dd/yyyy')
@@ -148,12 +159,16 @@ class DateGDKTest extends GroovyTestCase {
     /** GROOVY-4789 */
     void testStaticParseToStringDate() {
         TimeZone tz = TimeZone.getDefault()
-        TimeZone.setDefault(TimeZone.getTimeZone("CET"))
-        Date date = new Date(0)
-        String toStringRepresentation = date.toString()
-        assert toStringRepresentation == "Thu Jan 01 01:00:00 CET 1970"
-        assert date == Date.parseToStringDate(toStringRepresentation)
-        TimeZone.setDefault(tz)
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("CET"))
+            Date date = new Date(0)
+            String toStringRepresentation = date.toString()
+            assert toStringRepresentation == "Thu Jan 01 01:00:00 CET 1970"
+            assert date == Date.parseToStringDate(toStringRepresentation)
+        }
+        finally {
+            TimeZone.setDefault(tz)
+        }
     }
 
     void test_Upto_Date_ShouldExecuteClosureForEachDayUpToDate() {
