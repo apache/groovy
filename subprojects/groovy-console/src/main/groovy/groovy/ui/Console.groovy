@@ -466,11 +466,11 @@ options:
 
     // Return false if use elected to cancel
     boolean askToSaveFile() {
-        if (scriptFile == null || !dirty) {
+        if (!dirty) {
             return true
         }
         switch (JOptionPane.showConfirmDialog(frame,
-            'Save changes to ' + scriptFile.name + '?',
+            'Save changes' + (scriptFile != null ? " to ${scriptFile.name}" : '') + '?',
             'GroovyConsole', JOptionPane.YES_NO_CANCEL_OPTION))
         {
             case JOptionPane.YES_OPTION:
@@ -637,9 +637,11 @@ options:
     }
 
     void fileOpen(EventObject evt = null) {
-        def scriptName = selectFilename()
-        if (scriptName != null) {
-            loadScriptFile(scriptName)
+        if (askToSaveFile()) {
+            def scriptName = selectFilename()
+            if (scriptName != null) {
+                loadScriptFile(scriptName)
+            }
         }
     }
 
