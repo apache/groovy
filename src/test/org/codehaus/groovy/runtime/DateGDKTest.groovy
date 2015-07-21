@@ -30,20 +30,19 @@ class DateGDKTest extends GroovyTestCase {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
         try {
-            Locale locale = Locale.UK
+            Locale locale = Locale.GERMANY
             Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
-            TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
+            TimeZone.setDefault TimeZone.getTimeZone('Europe/Berlin')
             
             Date d = new Date(0)
             
             assertEquals '1970-01-01', d.format('yyyy-MM-dd')
-            assertEquals '01/Jan/1970', d.format('dd/MMM/yyyy', TimeZone.getTimeZone('GMT'))
+            assertEquals '01/01/1970', d.format('dd/MM/yyyy', TimeZone.getTimeZone('GMT'))
             assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
-            assertEquals '01/01/70', d.dateString
+            assertEquals '01.01.70', d.dateString
             assertEquals DateFormat.getTimeInstance(DateFormat.MEDIUM, locale).format(d), d.timeString
-            assertEquals '00:00:00', d.timeString
+            assertEquals '01:00:00', d.timeString
             assertEquals DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale).format(d), d.dateTimeString
-            assertEquals '01/01/70 00:00:00', d.dateTimeString
         } finally {
             Locale.default = defaultLocale
             TimeZone.setDefault defaultTZ
@@ -160,10 +159,12 @@ class DateGDKTest extends GroovyTestCase {
     void testStaticParseToStringDate() {
         TimeZone tz = TimeZone.getDefault()
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("CET"))
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"))
+
             Date date = new Date(0)
             String toStringRepresentation = date.toString()
-            assert toStringRepresentation == "Thu Jan 01 01:00:00 CET 1970"
+
+            assert toStringRepresentation == "Thu Jan 01 00:00:00 GMT 1970"
             assert date == Date.parseToStringDate(toStringRepresentation)
         }
         finally {
