@@ -31,6 +31,6 @@ public class FileOutputTool implements OutputTool {
     public void writeToOutput(String fileName, String text, String charset) throws Exception {
         File file = new File(fileName);
         file.getParentFile().mkdirs();
-        ResourceGroovyMethods.write(file, text, charset);
+        ResourceGroovyMethods.write(file, text, charset, true);
     }
 }
