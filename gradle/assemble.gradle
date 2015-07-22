@@ -490,6 +490,10 @@ ext.distSpec = copySpec {
         }
         from('src/tools/org/codehaus/groovy/tools/groovy.ico')
     }
+    into('licenses') {
+        from 'licenses'
+        include '*-license.txt'
+    }
     into('embeddable') {
         from jarAll.archivePath
         from { new File(jarAll.archivePath.parent, "${jarAll.baseName}-${jarAll.appendix}-${jarAll.version}-indy.jar") }
