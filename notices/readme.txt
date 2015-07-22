@@ -7,4 +7,4 @@ NOTICE-GROOIDJARJAR gets ALLJARJAR, JARJAR and GROOID snippets.
 NOTICE-ALLJARJAR gets JARJAR and ALLJARJAR snippets.
 NOTICE-BINZIP gets JARJAR, ALLJARJAR and BINZIP snippets.
 In addition, NOTICE files are generated for these subprojects:
-groovy-docgenerator, groovy-groovydoc, groovy-console, groovy-groovysh, groovy-jsr223
+groovy-console

@@ -213,9 +213,9 @@ For details, see licenses/asciidoc-style-license.txt.
 
 JLine2 Patch License
 
-The following file in the optional groovy-groovysh component:
+The following class within this product:
 
-    subprojects/groovy-groovysh/org/codehaus/groovy/tools/shell/completion/FileNameCompleter.java
+    org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 
 was derived from JLine 2.12, and the following patch:
 https://github.com/jline/jline2/issues/90
@@ -224,70 +224,33 @@ For details, see licenses/jline2-license.
 
 --------------------------------------------------------------------
 
-JQUERY LICENSE
+JQuery License
 
 The following file is used within documentation:
 
     src/spec/assets/css/jquery-2.1.1.min.js
 
-Copyright jQuery Foundation and other contributors, https://jquery.org/
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+This file is made available under the following MIT license:
+licenses/jquery-js-license.txt
 
 --------------------------------------------------------------------
 
 JSR223 License
 
-The following files in the optional groovy-jsr223 component:
+The following classes within this product:
 
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyCompiledScript.java
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineFactory.java
-    subprojects/groovy-jsr223/src/main/org/codehaus/groovy/jsr223/GroovyScriptEngineImpl.java
+    org.codehaus.groovy.jsr223.GroovyCompiledScript
+    org.codehaus.groovy.jsr223.GroovyScriptEngineFactory
+    org.codehaus.groovy.jsr223.GroovyScriptEngineImpl
 
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
-license details can be found in: licenses/jsr223-license.txt
+has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
 
 --------------------------------------------------------------------
 
-NORMALIZE.CSS LICENSE
+normalize.css License
 
 The stylesheet.css file (originally normalize.css) is used by the
 groovydoc and docgenerator components for groovy-jdk/gapi documentation.
-
-Copyright (c) Nicolas Gallagher and Jonathan Neal
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+It is made available under a MIT License. Details: licenses/normalize-stylesheet-license.txt

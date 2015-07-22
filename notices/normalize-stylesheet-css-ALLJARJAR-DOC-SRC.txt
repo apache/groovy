@@ -1,3 +1,0 @@
-This product includes/uses the git.io/normalize.css stylesheet
-which is distributed under the MIT license
-Copyright (c) Nicolas Gallagher and Jonathan Neal

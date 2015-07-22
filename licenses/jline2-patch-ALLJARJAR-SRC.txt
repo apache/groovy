@@ -1,8 +1,8 @@
 JLine2 Patch License
 
-The following file in the optional groovy-groovysh component:
+The following class within this product:
 
-    subprojects/groovy-groovysh/org/codehaus/groovy/tools/shell/completion/FileNameCompleter.java
+    org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 
 was derived from JLine 2.12, and the following patch:
 https://github.com/jline/jline2/issues/90

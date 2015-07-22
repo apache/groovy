@@ -1,3 +1,0 @@
-This product includes/uses software/assets from jquery.org
-use is granted under the terms of the MIT License
-Copyright jQuery Foundation and other contributors, https://jquery.org/

@@ -68,6 +68,12 @@ ext.docSpec = copySpec {
     into('html/groovy-jdk') {
         from docGDK.destinationDir
     }
+    into('licenses') {
+        from 'licenses'
+        include 'asciidoc-style-license.txt'
+        include 'jquery-js-license.txt'
+        include 'normalize-stylesheet-license.txt'
+    }
 }
 
 task copy(type: Copy) {
@@ -128,6 +134,11 @@ jar {
     dependsOn('dgmConverter')
     metaInf {
         from("$projectDir/licenses/LICENSE-JARJAR")
+        from("$projectDir/licenses") {
+            into('licenses')
+            include('asm-license.txt')
+            include('antlr2-license.txt')
+        }
         from("$projectDir/notices/NOTICE-JARJAR")
         from 'DISCLAIMER'
         from('src/main/META-INF/groovy-release-info.properties') {
@@ -339,12 +350,19 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
         manifest.writeTo(manifestPath)
         copy {
-            from("$projectDir/notices/NOTICE-ALLJARJAR")
+            from "$projectDir/notices/NOTICE-ALLJARJAR"
             into owner.ext.metaInfDir
             rename('NOTICE-ALLJARJAR', 'NOTICE')
         }
         copy {
-            from("$projectDir/licenses/LICENSE-ALLJARJAR")
+            from "$projectDir/licenses"
+            into "$owner.ext.metaInfDir/licenses"
+            include 'normalize-stylesheet-license.txt'
+            include 'jsr223-license.txt'
+            include 'jline2-license.txt'
+        }
+        copy {
+            from "$projectDir/licenses/LICENSE-ALLJARJAR"
             into owner.ext.metaInfDir
             rename('LICENSE-ALLJARJAR', 'LICENSE')
         }
@@ -492,7 +510,14 @@ ext.distSpec = copySpec {
     }
     into('licenses') {
         from 'licenses'
-        include '*-license.txt'
+        include 'antlr2-license.txt'
+        include 'asm-license.txt'
+        include 'hamcrest-license.txt'
+        include 'jline2-license.txt'
+        include 'jsr166y-license.txt'
+        include 'jsr223-license.txt'
+        include 'junit-license.txt'
+        include 'xstream-license.txt'
     }
     into('embeddable') {
         from jarAll.archivePath
@@ -514,9 +539,9 @@ task distDoc(type: Zip, dependsOn: doc) {
     into("groovy-$version") {
         with docSpec
         from "$projectDir/licenses/LICENSE-DOC"
-        from "$projectDir/notices/NOTICE-DOC"
+        from "$projectDir/notices/NOTICE-BASE"
         from "$projectDir/DISCLAIMER"
-        rename { String filename -> filename == 'LICENSE-DOC' ? 'LICENSE' : filename == 'NOTICE-DOC' ? 'NOTICE' : filename }
+        rename { String filename -> filename == 'LICENSE-DOC' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
     }
 }
 
@@ -609,8 +634,8 @@ task updateLicenses {
         }.sort { it.name }
         def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
-        def groovyshFiles = fileTree(licensesDir).include('jline2-patch-ALLJARJAR.txt')
-        def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR.txt')
+        def groovyshFiles = fileTree(licensesDir).include('jline2-patch-ALLJARJAR-SRC.txt')
+        def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
         [
                 (licenseAllJarJarFile)  : allJarjarFiles,
                 (licenseBinZipFile)     : binzipFiles,
@@ -637,30 +662,22 @@ task updateNotices {
     ext.noticeBaseFile = "${noticesDir}/NOTICE-BASE"
 
     ext.noticeSrcFile = "${projectDir}/NOTICE"
-    ext.noticeDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/NOTICE"
-    ext.noticeGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/NOTICE"
     ext.noticeGroovyConsoleFile = "${projectDir}/subprojects/groovy-console/NOTICE"
-    ext.noticeGroovyshFile = "${projectDir}/subprojects/groovy-groovysh/NOTICE"
-    ext.noticeJsr223File = "${projectDir}/subprojects/groovy-jsr223/NOTICE"
     ext.noticeAllJarJarFile = "${noticesDir}/NOTICE-ALLJARJAR"
     ext.noticeBinZipFile = "${noticesDir}/NOTICE-BINZIP"
-    ext.noticeDocFile = "${noticesDir}/NOTICE-DOC"
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
-    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeDocFile, noticeGrooidFile,
-            noticeGrooidJarJarFile, noticeJarJarFile, noticeSrcFile, noticeDocGeneratorFile,
-            noticeGroovyDocFile, noticeGroovyshFile, noticeJsr223File, noticeGroovyConsoleFile)
+    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile,
+            noticeGrooidJarJarFile, noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
-        def docFiles = fileTree(noticesDir).include('*-DOC*.txt').sort { it.name }
         def grooidFiles = fileTree(noticesDir).include('*-GROOID*.txt').sort { it.name }
         def jarjarFiles = fileTree(noticesDir).include('*-JARJAR*.txt').sort { it.name }
         def grooidJarjarFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
             include '*-GROOID*.txt'
         }.sort { it.name }
         def allJarjarFiles = fileTree(noticesDir) {
@@ -670,26 +687,18 @@ task updateNotices {
         def binzipFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
+            include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def docgeneratorFiles = fileTree(noticesDir).include('normalize-stylesheet-css-ALLJARJAR-DOC-SRC.txt')
         def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
-        def groovydocFiles = fileTree(noticesDir).include('normalize-stylesheet-css-ALLJARJAR-DOC-SRC.txt')
-        def groovyshFiles = fileTree(noticesDir).include('jline2-patch-ALLJARJAR-SRC.txt')
-        def jsr223Files = fileTree(noticesDir).include('jsr223-ALLJARJAR-SRC.txt')
         [
                 (noticeAllJarJarFile): allJarjarFiles,
                 (noticeBinZipFile): binzipFiles,
-                (noticeDocFile): docFiles,
                 (noticeGrooidFile): grooidFiles,
                 (noticeGrooidJarJarFile): grooidJarjarFiles,
                 (noticeJarJarFile): jarjarFiles,
                 (noticeSrcFile): srcFiles,
-                (noticeDocGeneratorFile): docgeneratorFiles,
                 (noticeGroovyConsoleFile): groovyconsoleFiles,
-                (noticeGroovyDocFile): groovydocFiles,
-                (noticeGroovyshFile): groovyshFiles,
-                (noticeJsr223File): jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(noticeBaseFile)] + inFiles).collect {

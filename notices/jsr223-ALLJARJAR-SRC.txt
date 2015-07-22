@@ -1,3 +1,0 @@
-This product includes/uses source files adapted from the JSR-223 reference
-implementation which has the following notice
-Copyright 2006 Sun Microsystems, Inc. All rights reserved.
