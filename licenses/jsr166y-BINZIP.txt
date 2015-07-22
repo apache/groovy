@@ -1,0 +1,4 @@
+Jsr166y License
+
+This product bundles the jsr166y jar, which is available in
+the public domain.  For details, see licenses/jsr166y-license.

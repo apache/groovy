@@ -1,0 +1,5 @@
+Asciidoc License
+
+This product uses the style.css from asciidoctor.org within
+documentation. The file is available under the MIT License.
+For details, see licenses/asciidoc-style-license.txt.
