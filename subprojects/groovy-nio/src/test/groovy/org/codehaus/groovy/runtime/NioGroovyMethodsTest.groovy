@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime
 
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 import groovy.io.FileType
@@ -34,6 +33,139 @@ class NioGroovyMethodsTest extends Specification {
 
     @Rule
     TemporaryFolder temporaryFolder
+
+    def testShouldAppendByteArrayToFile() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        byte[] bytes = ' World'.bytes
+        path.append(bytes)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendStringToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        path.append(' World')
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        Reader reader = new StringReader(' World')
+        path.append(reader)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        Writer writer = new StringWriter()
+        writer.append(' World')
+        path.append(writer)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendStringToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        path.append(' ؁', encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        path.append(reader, encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        Writer writer = new CharArrayWriter()
+        writer.append(' ')
+        writer.append('؁')
+        path.append(writer, encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendStringToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        path.append(' ؁', encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        path.append(reader, encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        Writer writer = new CharArrayWriter()
+        writer.append(' ')
+        writer.append('؁')
+        path.append(writer, encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
 
     def testPathSize() {
         when:
@@ -177,6 +309,16 @@ class NioGroovyMethodsTest extends Specification {
 
         then:
         file.text == str
+    }
+
+    def testWriteWithEncodingAndBom() {
+        when:
+        def str = '؁'
+        def file = temporaryFolder.newFile()
+        file.toPath().write(str, 'UTF-16LE', true)
+
+        then:
+        assert file.getBytes() == [-1, -2, 1, 6] as byte[]
     }
 
     def testAppendObject() {
@@ -325,7 +467,9 @@ class NioGroovyMethodsTest extends Specification {
     def testAppendUTF16LE() {
         setup:
         def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
         def file = temporaryFolder.newFile()
+        file.delete()
         def str = 'Hello world!'
 
         // save using a File, thus uses ResourcesGroovyMethods
@@ -351,6 +495,30 @@ class NioGroovyMethodsTest extends Specification {
         path.getText('UTF-16LE') == 'Hello world! - Hola Mundo!'
     }
 
+    def testWriteUTF16LE() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
+
+        when:
+        path.write(str, 'UTF-16LE')
+
+        then:
+        path.getText('UTF-16LE') == str
+    }
+
+    def testWriteUTF16LEWithBom() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
+
+        when:
+        path.write(str, 'UTF-16LE', true)
+
+        then:
+        assert NioGroovyMethods.getBytes(path) == [-1, -2, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33, 0] as byte[]
+    }
+
     def testWriteUTF16BE() {
         setup:
         def path = temporaryFolder.newFile().toPath()
@@ -361,6 +529,18 @@ class NioGroovyMethodsTest extends Specification {
 
         then:
         path.getText('UTF-16BE') == str
+    }
+
+    def testWriteUTF16BEWithBom() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
+
+        when:
+        path.write(str, 'UTF-16BE', true)
+
+        then:
+        assert NioGroovyMethods.getBytes(path) == [-2, -1, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33] as byte[]
     }
 
     def testWithCloseable() {
