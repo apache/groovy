@@ -1,2 +1,0 @@
-This product bundles the QDox jar (https://github.com/paul-hammant/qdox)
-Copyright 2002-2009 Joe Walnes and QDox Project Team

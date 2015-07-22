@@ -1,3 +1,0 @@
-This product includes/uses a source file adapted from Jline2 (https://github.com/jline/jline2)
-which is distributable under the BSD license and has the following notice
-Copyright (c) 2002-2012, the original author or authors. All rights reserved.

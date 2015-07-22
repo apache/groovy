@@ -1,3 +1,0 @@
-This product bundles the XStream jar (https://x-stream.github.io)
-which is made available under a BSD license. Copyright (c) 2003-2006, Joe Walnes.
-Copyright (c) 2006-2009, 2011 XStream Committers. All rights reserved.

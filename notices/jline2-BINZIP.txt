@@ -1,3 +1,0 @@
-This product bundles the Jline2 jar (https://github.com/jline/jline2)
-which is distributed under the BSD license
-Copyright (c) 2002-2012, the original author or authors. All rights reserved.

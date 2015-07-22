@@ -1,3 +1,0 @@
-This product bundles the Hamcrest jar (www.hamcrest.org)
-which is made available under a BSD License.
-Copyright (c) 2000-2015. All rights reserved.

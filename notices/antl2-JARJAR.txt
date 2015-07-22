@@ -1,2 +1,2 @@
 This product includes/uses ANTLR (http://www.antlr2.org/)
-Developed by Terence Parr 1989-2006
+developed by Terence Parr 1989-2006
