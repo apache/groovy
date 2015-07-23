@@ -666,7 +666,7 @@ task updateLicenses {
                 (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
-                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr)
+                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr) + '\n'
             }
         }
         file(licenseSdkFile).withWriter { writer ->
@@ -674,7 +674,7 @@ task updateLicenses {
                     file(licenseBinZipFile).text,
                     "This convenience zip embeds Groovy's src and doc zips.\nSee also src/LICENSE " +
                             "and doc/LICENSE files for additional license information."
-            ].join(licenseHdr)
+            ].join(licenseHdr) + '\n'
         }
     }
 }
