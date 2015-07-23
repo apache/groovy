@@ -91,7 +91,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * 70
      * [x:10, y:20]
      * </pre>
-     * because the x and y fields declared in the Test class the variables in the delegate.<p>
+     * because the x and y fields declared in the Test class shadow the variables in the delegate.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int OWNER_FIRST = 0;
@@ -256,7 +256,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Gets the strategy which the closure users to resolve methods and properties
+     * Gets the strategy which the closure uses to resolve methods and properties
      *
      * @return The resolve strategy
      *
