@@ -41,20 +41,40 @@ public class HashCodeHelper {
         return shift(current) + (int) var;
     }
 
+    public static int updateHash(int current, Character var) {
+        return updateHash(current, var == null ? 0 : var.charValue());
+    }
+
     public static int updateHash(int current, int var) {
         return shift(current) + var;
+    }
+
+    public static int updateHash(int current, Integer var) {
+        return updateHash(current, var == null ? 0 : var.intValue());
     }
 
     public static int updateHash(int current, long var) {
         return shift(current) + (int) (var ^ (var >>> 32));
     }
 
+    public static int updateHash(int current, Long var) {
+        return updateHash(current, var == null ? 0L : var.longValue());
+    }
+
     public static int updateHash(int current, float var) {
         return updateHash(current, Float.floatToIntBits(var));
     }
 
+    public static int updateHash(int current, Float var) {
+        return updateHash(current, var == null ? 0f : var.floatValue());
+    }
+
     public static int updateHash(int current, double var) {
         return updateHash(current, Double.doubleToLongBits(var));
+    }
+
+    public static int updateHash(int current, Double var) {
+        return updateHash(current, var == null ? 0d : var.doubleValue());
     }
 
     public static int updateHash(int current, Object var) {

@@ -45,6 +45,24 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testHashCodeNullWrapperTypeCompileStatic_GROOVY7518() {
+        assertScript """
+            import groovy.transform.*
+
+            @EqualsAndHashCode
+            @CompileStatic
+            class Person {
+                Character someCharacter
+                Integer someInteger
+                Long someLong
+                Float someFloat
+                Double someDouble
+            }
+
+            assert new Person().hashCode()
+        """
+    }
+
     void testBooleanPropertyGROOVY6407() {
         assertScript """
             @groovy.transform.EqualsAndHashCode
