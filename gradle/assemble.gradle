@@ -74,6 +74,11 @@ ext.docSpec = copySpec {
         include 'jquery-js-license.txt'
         include 'normalize-stylesheet-license.txt'
     }
+    from "$projectDir/licenses/LICENSE-DOC"
+    from "$projectDir/notices/NOTICE-BASE"
+    from "$projectDir/DISCLAIMER"
+    rename 'LICENSE-DOC', 'LICENSE'
+    rename 'NOTICE-BASE', 'NOTICE'
 }
 
 task copy(type: Copy) {
@@ -481,10 +486,12 @@ ext.distSpec = copySpec {
     into('lib') {
         from jar.archivePath
         from {
-            configurations.runtime.findAll { it.name.endsWith('jar') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
+            configurations.runtime.findAll {
+                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
                     modules()*.jar.archivePath +
                     modules().configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-')
+                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) &&
+                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('openbeans-')
                     }.flatten() as Set
         }
         from('src/bin/groovy.icns')
@@ -494,6 +501,14 @@ ext.distSpec = copySpec {
         from {
             modules()*.jar.collect { j ->
                 new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
+            }
+        }
+    }
+    into('grooid') {
+        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
+        from {
+            modules()*.jar.collect { j ->
+                new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
             }
         }
     }
@@ -538,10 +553,6 @@ task distDoc(type: Zip, dependsOn: doc) {
     appendix = 'docs'
     into("groovy-$version") {
         with docSpec
-        from "$projectDir/licenses/LICENSE-DOC"
-        from "$projectDir/notices/NOTICE-BASE"
-        from "$projectDir/DISCLAIMER"
-        rename { String filename -> filename == 'LICENSE-DOC' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
     }
 }
 
@@ -556,7 +567,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
     into('gapi') {
         from groovydoc.destinationDir
     }
-    // groovy-jdk already at the good place
+    // groovy-jdk already at the correct place
 }
 
 task distSrc(type: Zip) {
@@ -581,11 +592,17 @@ task installGroovy(type: Sync, dependsOn: distBin) {
     into installDir
 }
 
+import org.gradle.api.file.DuplicatesStrategy
+
 task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
     baseName = 'apache-groovy'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     appendix 'sdk'
     into "groovy-$version"
+    from("$projectDir/licenses/LICENSE-SDK")
+    from("$projectDir/notices/NOTICE-SDK")
+    rename { String filename -> filename == 'LICENSE-SDK' ? 'LICENSE' : filename == 'NOTICE-SDK' ? 'NOTICE' : filename }
     with distSpec
     into('doc') {
         with docSpec
@@ -614,10 +631,10 @@ task updateLicenses {
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
-    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile,
-            licenseJarJarFile, licenseSrcFile, licenseDocGeneratorFile,
-            licenseGroovyDocFile, licenseGroovyshFile, licenseJsr223File)
+    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
+            licenseDocGeneratorFile, licenseGroovyDocFile, licenseGroovyshFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -636,6 +653,7 @@ task updateLicenses {
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
         def groovyshFiles = fileTree(licensesDir).include('jline2-patch-ALLJARJAR-SRC.txt')
         def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
+        def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
                 (licenseAllJarJarFile)  : allJarjarFiles,
                 (licenseBinZipFile)     : binzipFiles,
@@ -648,10 +666,15 @@ task updateLicenses {
                 (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
-                writer << ([file(licenseBaseFile)] + inFiles).collect {
-                    it.text.replaceAll(/[\n\r]*$/, '')
-                }.join('\n\n--------------------------------------------------------------------\n\n')
+                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr)
             }
+        }
+        file(licenseSdkFile).withWriter { writer ->
+            writer << [
+                    file(licenseBinZipFile).text,
+                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/LICENSE " +
+                            "and doc/LICENSE files for additional license information."
+            ].join(licenseHdr)
         }
     }
 }
@@ -668,9 +691,10 @@ task updateNotices {
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
+    ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
-    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile,
-            noticeGrooidJarJarFile, noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile)
+    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
+            noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
@@ -705,6 +729,13 @@ task updateNotices {
                     it.text.replaceAll(/[\n\r]*$/, '')
                 }.join('\n\n')
             }
+        }
+        file(noticeSdkFile).withWriter { writer ->
+            writer << [
+                    file(noticeBinZipFile).text,
+                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/NOTICE " +
+                            "and doc/NOTICE files for additional notice information."
+            ].join('\n\n')
         }
     }
 }

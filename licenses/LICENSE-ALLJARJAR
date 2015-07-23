@@ -201,20 +201,20 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 ANTLR 2 License
 
 Antlr2 is released in the public domain.
 See licenses/antlr2-license.txt for details.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 ASM 4 License
 
 ASM 4 uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JLine2 Patch License
 
@@ -227,7 +227,7 @@ https://github.com/jline/jline2/issues/90
 JLine2 is made available under a BSD License.
 For details, see licenses/jline2-license.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JSR223 License
 
@@ -241,7 +241,7 @@ were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
 has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 normalize.css License
 

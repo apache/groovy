@@ -201,7 +201,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 Asciidoc License
 
@@ -209,7 +209,7 @@ This product uses the style.css from asciidoctor.org within
 documentation. The file is available under the MIT License.
 For details, see licenses/asciidoc-style-license.txt.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JQuery License
 
@@ -220,7 +220,7 @@ The following file is used within documentation:
 This file is made available under the following MIT license:
 licenses/jquery-js-license.txt
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 normalize.css License
 
