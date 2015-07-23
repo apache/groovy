@@ -201,7 +201,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 Asciidoc License
 
@@ -209,7 +209,7 @@ This product uses the style.css from asciidoctor.org within
 documentation. The file is available under the MIT License.
 For details, see licenses/asciidoc-style-license.txt.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JLine2 Patch License
 
@@ -222,7 +222,7 @@ https://github.com/jline/jline2/issues/90
 JLine2 is made available under a BSD License.
 For details, see licenses/jline2-license.
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JQuery License
 
@@ -233,7 +233,7 @@ The following file is used within documentation:
 This file is made available under the following MIT license:
 licenses/jquery-js-license.txt
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 JSR223 License
 
@@ -247,7 +247,7 @@ were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
 has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
 
---------------------------------------------------------------------
+------------------------------------------------------------------------
 
 normalize.css License
 
