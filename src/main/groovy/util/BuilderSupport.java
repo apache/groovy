@@ -20,6 +20,7 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -142,7 +143,11 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
             setCurrent(node);
             // let's register the builder as the delegate
             setClosureDelegate(closure, node);
-            closure.call();
+            try {
+                closure.call();
+            } catch (Exception e) {
+                throw new GroovyRuntimeException(e);
+            }
             setCurrent(oldCurrent);
         }
 
