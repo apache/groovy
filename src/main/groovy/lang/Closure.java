@@ -256,7 +256,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Gets the strategy which the closure users to resolve methods and properties
+     * Gets the strategy which the closure uses to resolve methods and properties
      *
      * @return The resolve strategy
      *
