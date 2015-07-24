@@ -870,6 +870,17 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return the content of this ByteArrayOutputStream's backing byte[] as a String.
+     *
+     * @param os the stream
+     * @return the text from stream
+     * @since 2.4.5
+     */
+    public static String getText(ByteArrayOutputStream os) {
+        return os.toString();
+    }
+
+    /**
      * Read the content of this InputStream and return it as a byte[].
      * The stream is closed before this method returns.
      *
