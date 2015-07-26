@@ -532,7 +532,8 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=intrange,indent=0]
 <5> meaning that you can call the `size` method on it
 
 Ranges implementation is lightweight, meaning that only the lower and upper bounds are stored. You can create a range
-from any `Comparable` object. For example, you can create a range of characters this way:
+from any `Comparable` object that has `next()` and `previous()` methods to determine the next / previous item in the range.
+For example, you can create a range of characters this way:
 
 [source,groovy]
 ----
