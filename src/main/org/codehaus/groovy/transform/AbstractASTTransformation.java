@@ -131,7 +131,42 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return defaultValue;
     }
 
+    public List<String> getMemberStringList(AnnotationNode anno, String name) {
+        Expression expr = anno.getMember(name);
+        if (expr == null) {
+            return null;
+        }
+        if (expr instanceof ListExpression) {
+            List<String> list = new ArrayList<String>();
+            final ListExpression listExpression = (ListExpression) expr;
+            if (isUndefinedMarkerList(listExpression)) {
+                return null;
+            }
+            for (Expression itemExpr : listExpression.getExpressions()) {
+                if (itemExpr != null && itemExpr instanceof ConstantExpression) {
+                    Object value = ((ConstantExpression) itemExpr).getValue();
+                    if (value != null) list.add(value.toString());
+                }
+            }
+            return list;
+        }
+        return tokenize(getMemberStringValue(anno, name));
+    }
+
+    private static boolean isUndefinedMarkerList(ListExpression listExpression) {
+        if (listExpression.getExpressions().size() != 1) return false;
+        Expression itemExpr = listExpression.getExpression(0);
+        if (itemExpr != null && itemExpr instanceof ConstantExpression) {
+            Object value = ((ConstantExpression) itemExpr).getValue();
+            System.out.println("value = " + value);
+            if (isUndefined(value.toString())) return true;
+        }
+        return false;
+    }
+
+    //@Deprecated
     public List<String> getMemberList(AnnotationNode anno, String name) {
+        // TODO mark deprecated once all bundled AST transforms have been switched over to use getMemberStringList
         List<String> list;
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
@@ -197,6 +232,10 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return name.contains("$");
     }
 
+    public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.contains(name));
+    }
+
     public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
         return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
@@ -254,6 +293,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     protected boolean checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
         if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+            addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
+            return false;
+        }
+        return true;
+    }
+
+    protected boolean checkIncludeExcludeUndefinedAware(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
+        if (includes != null && excludes != null && !excludes.isEmpty()) {
             addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
             return false;
         }

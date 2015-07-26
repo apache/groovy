@@ -110,9 +110,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean force = memberHasValue(anno, "force", true);
             boolean defaults = !memberHasValue(anno, "defaults", false);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
-            List<String> excludes = getMemberList(anno, "excludes");
-            List<String> includes = getMemberList(anno, "includes");
-            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
+            List<String> excludes = getMemberStringList(anno, "excludes");
+            List<String> includes = getMemberStringList(anno, "includes");
+            if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
@@ -155,7 +155,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         final BlockStatement body = new BlockStatement();
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
-            if (shouldSkip(name, excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(name, excludes, includes)) continue;
             params.add(createParam(fNode, name, defaults, xform));
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
@@ -173,7 +173,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
-            if (shouldSkip(name, excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(name, excludes, includes)) continue;
             Parameter nextParam = createParam(fNode, name, defaults, xform);
             params.add(nextParam);
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
