@@ -754,36 +754,46 @@ Here is a complete list of the operators and their corresponding methods:
 
 | `*`
 | a.multiply(b)
-| `<<`
-| a.leftShift(b)
+| `a in b`
+| b.isCase(a)
 
 | `/`
 | a.div(b)
-| `>>`
-| a.rightShift(b)
+| `<<`
+| a.leftShift(b)
 
 | `%`
 | a.mod(b)
-| `++`
-| a.next()
+| `>>`
+| a.rightShift(b)
 
 | `**`
 | a.power(b)
-| `--`
-| a.previous()
+| `>>>`
+| a.rightShiftUnsigned(b)
 
 | `\|`
 | a.or(b)
-| `+a`
-| a.positive()
+| `++`
+| a.next()
 
 | `&`
 | a.and(b)
-| `-a`
-| a.negative()
+| `--`
+| a.previous()
 
 | `^`
 | a.xor(b)
+| `+a`
+| a.positive()
+
+| `as`
+| a.asType(b)
+| `-a`
+| a.negative()
+
+| `a()`
+| a.call()
 | `~a`
 | a.bitwiseNegative()
 |====
