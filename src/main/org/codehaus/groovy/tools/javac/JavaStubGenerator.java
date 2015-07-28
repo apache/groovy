@@ -197,7 +197,12 @@ public class JavaStubGenerator {
                     // not required for stub generation
                 }
             };
+            int origNumConstructors = classNode.getDeclaredConstructors().size();
             verifier.visitClass(classNode);
+            // undo unwanted side-effect of verifier
+            if (origNumConstructors == 0 && classNode.getDeclaredConstructors().size() == 1) {
+                classNode.getDeclaredConstructors().clear();
+            }
             currentModule = classNode.getModule();
 
             boolean isInterface = isInterfaceOrTrait(classNode);

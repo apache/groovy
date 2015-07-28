@@ -36,6 +36,20 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testExistingEmptyConstructorTakesPrecedence_groovy7522() {
+        assertScript """
+            @groovy.transform.TupleConstructor
+            class Cat {
+                String name
+                int age
+                Cat(String name) {}
+            }
+
+            assert new Cat("Mr. Bigglesworth").name == null
+            assert Cat.declaredConstructors.size() == 1
+        """
+    }
+
     void testIncludesAndExcludesTogetherResultsInError() {
         def message = shouldFail {
             evaluate """
