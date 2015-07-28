@@ -127,12 +127,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults) {
         // no processing if existing constructors found
-        List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
-        if (constructors.size() > 1 && !force) return;
-        boolean foundEmpty = constructors.size() == 1 && constructors.get(0).getFirstStatement() == null;
-        if (constructors.size() == 1 && !foundEmpty && !force) return;
-        // HACK: JavaStubGenerator could have snuck in a constructor we don't want
-        if (foundEmpty) constructors.remove(0);
+        if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
         List<FieldNode> superList = new ArrayList<FieldNode>();
         if (includeSuperProperties) {
