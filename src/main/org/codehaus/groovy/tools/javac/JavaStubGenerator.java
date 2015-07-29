@@ -873,9 +873,15 @@ public class JavaStubGenerator {
                 val = constValue.toString();
             else
                 val = "\"" + escapeSpecialChars(constValue.toString()) + "\"";
-        } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
+        } else if (memberValue instanceof PropertyExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
+        } else if (memberValue instanceof VariableExpression) {
+            val = ((Expression) memberValue).getText();
+            //check for an alias
+            ImportNode alias = currentModule.getStaticImports().get(val);
+            if (alias != null)
+                val = alias.getClassName() + "." + alias.getFieldName();
         } else if (memberValue instanceof ClosureExpression) {
             // annotation closure; replaced with this specific class literal to cover the
             // case where annotation type uses Class<? extends Closure> for the closure's type
@@ -925,7 +931,8 @@ public class JavaStubGenerator {
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticImports().entrySet()) {
-            imports.add("static "+entry.getValue().getType().getName()+"."+entry.getKey());
+            if (entry.getKey().equals(entry.getValue().getFieldName()))
+                imports.add("static "+entry.getValue().getType().getName()+"."+entry.getKey());
         }
 
         for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticStarImports().entrySet()) {
