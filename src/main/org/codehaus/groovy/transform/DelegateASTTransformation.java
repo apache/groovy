@@ -116,11 +116,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
             final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (type.isInterface() && !skipInterfaces);
-            List<String> excludes = getMemberList(node, MEMBER_EXCLUDES);
-            List<String> includes = getMemberList(node, MEMBER_INCLUDES);
-            List<ClassNode> excludeTypes = getClassList(node, MEMBER_EXCLUDE_TYPES);
-            List<ClassNode> includeTypes = getClassList(node, MEMBER_INCLUDE_TYPES);
-            checkIncludeExclude(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
+            List<String> excludes = getMemberStringList(node, MEMBER_EXCLUDES);
+            List<String> includes = getMemberStringList(node, MEMBER_INCLUDES);
+            List<ClassNode> excludeTypes = getMemberClassList(node, MEMBER_EXCLUDE_TYPES);
+            List<ClassNode> includeTypes = getMemberClassList(node, MEMBER_INCLUDE_TYPES);
+            checkIncludeExcludeUndefinedAware(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
@@ -202,10 +202,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         genericsSpec = addMethodGenerics(candidate, genericsSpec);
         extractSuperClassGenerics(fieldNode.getType(), candidate.getDeclaringClass(), genericsSpec);
 
-        if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
+        if ((excludeTypes != null && !excludeTypes.isEmpty()) || includeTypes != null) {
             MethodNode correctedMethodNode = correctToGenericsSpec(genericsSpec, candidate);
             boolean checkReturn = fieldNode.getType().getMethods().contains(candidate);
-            if (shouldSkipOnDescriptor(checkReturn, genericsSpec, correctedMethodNode, excludeTypes, includeTypes)) return;
+            if (shouldSkipOnDescriptorUndefinedAware(checkReturn, genericsSpec, correctedMethodNode, excludeTypes, includeTypes))
+                return;
         }
 
         // ignore methods from GroovyObject

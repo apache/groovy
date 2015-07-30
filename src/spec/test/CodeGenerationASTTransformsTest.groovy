@@ -581,6 +581,36 @@ assert Musician.constructors.size() == 1
 '''
     }
 
+    void testMapConstructor() {
+        assertScript '''
+// tag::mapconstructor_simple[]
+import groovy.transform.*
+
+@ToString
+@MapConstructor
+class Person {
+    String firstName
+    String lastName
+}
+
+def p1 = new Person(firstName: 'Jack', lastName: 'Nicholson')
+assert p1.toString() == 'Person(Jack, Nicholson)'
+// end::mapconstructor_simple[]
+        '''
+/*
+// tag::mapconstructor_equiv[]
+public Person(Map args) {
+    if (args.containsKey('firstName')) {
+        this.firstName = args.get('firstName')
+    }
+    if (args.containsKey('lastName')) {
+        this.lastName = args.get('lastName')
+    }
+}
+// end::mapconstructor_equiv[]
+*/
+    }
+
     void testCanonical() {
         assertScript '''
 // tag::canonical_simple[]

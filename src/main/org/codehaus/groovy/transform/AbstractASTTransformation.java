@@ -156,17 +156,18 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     private static boolean isUndefinedMarkerList(ListExpression listExpression) {
         if (listExpression.getExpressions().size() != 1) return false;
         Expression itemExpr = listExpression.getExpression(0);
-        if (itemExpr != null && itemExpr instanceof ConstantExpression) {
+        if (itemExpr == null) return false;
+        if (itemExpr instanceof ConstantExpression) {
             Object value = ((ConstantExpression) itemExpr).getValue();
-            System.out.println("value = " + value);
-            if (isUndefined(value.toString())) return true;
+            if (value instanceof String && isUndefined((String)value)) return true;
+        } else if (itemExpr instanceof ClassExpression && isUndefined(itemExpr.getType())) {
+            return true;
         }
         return false;
     }
 
-    //@Deprecated
+    @Deprecated
     public List<String> getMemberList(AnnotationNode anno, String name) {
-        // TODO mark deprecated once all bundled AST transforms have been switched over to use getMemberStringList
         List<String> list;
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
@@ -184,6 +185,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
+    @Deprecated
     public List<ClassNode> getClassList(AnnotationNode anno, String name) {
         List<ClassNode> list = new ArrayList<ClassNode>();
         Expression expr = anno.getMember(name);
@@ -197,6 +199,31 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             }
         } else if (expr != null && expr instanceof ClassExpression) {
             ClassNode cn = expr.getType();
+            if (cn != null) list.add(cn);
+        }
+        return list;
+    }
+
+    public List<ClassNode> getMemberClassList(AnnotationNode anno, String name) {
+        List<ClassNode> list = new ArrayList<ClassNode>();
+        Expression expr = anno.getMember(name);
+        if (expr == null) {
+            return null;
+        }
+        if (expr instanceof ListExpression) {
+            final ListExpression listExpression = (ListExpression) expr;
+            if (isUndefinedMarkerList(listExpression)) {
+                return null;
+            }
+            for (Expression itemExpr : listExpression.getExpressions()) {
+                if (itemExpr != null && itemExpr instanceof ClassExpression) {
+                    ClassNode cn = itemExpr.getType();
+                    if (cn != null) list.add(cn);
+                }
+            }
+        } else if (expr instanceof ClassExpression) {
+            ClassNode cn = expr.getType();
+            if (isUndefined(cn)) return null;
             if (cn != null) list.add(cn);
         }
         return list;
@@ -240,6 +267,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
+    @Deprecated
     public static boolean shouldSkipOnDescriptor(boolean checkReturn, Map genericsSpec, MethodNode mNode, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
         String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
@@ -290,7 +318,61 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         return true;
     }
+    public static boolean shouldSkipOnDescriptorUndefinedAware(boolean checkReturn, Map genericsSpec, MethodNode mNode,
+                                                  List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+        String descriptor = mNode.getTypeDescriptor();
+        String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
+        if (excludeTypes != null) {
+            for (ClassNode cn : excludeTypes) {
+                List<ClassNode> remaining = new LinkedList<ClassNode>();
+                remaining.add(cn);
+                Map updatedGenericsSpec = new HashMap(genericsSpec);
+                while (!remaining.isEmpty()) {
+                    ClassNode next = remaining.remove(0);
+                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                        for (MethodNode mn : next.getMethods()) {
+                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                            if (checkReturn) {
+                                String md = correctedMethodNode.getTypeDescriptor();
+                                if (md.equals(descriptor)) return true;
+                            } else {
+                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                                if (md.equals(descriptorNoReturn)) return true;
+                            }
+                        }
+                        remaining.addAll(Arrays.asList(next.getInterfaces()));
+                    }
+                }
+            }
+        }
+        if (includeTypes == null) return false;
+        for (ClassNode cn : includeTypes) {
+            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            remaining.add(cn);
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!remaining.isEmpty()) {
+                ClassNode next = remaining.remove(0);
+                if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                    for (MethodNode mn : next.getMethods()) {
+                        MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                        if (checkReturn) {
+                            String md = correctedMethodNode.getTypeDescriptor();
+                            if (md.equals(descriptor)) return false;
+                        } else {
+                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            if (md.equals(descriptorNoReturn)) return false;
+                        }
+                    }
+                    remaining.addAll(Arrays.asList(next.getInterfaces()));
+                }
+            }
+        }
+        return true;
+    }
 
+    @Deprecated
     protected boolean checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
         if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
             addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
@@ -307,11 +389,24 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return true;
     }
 
+    @Deprecated
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
         int found = 0;
         if (includes != null && !includes.isEmpty()) found++;
         if (excludes != null && !excludes.isEmpty()) found++;
         if (includeTypes != null && !includeTypes.isEmpty()) found++;
+        if (excludeTypes != null && !excludeTypes.isEmpty()) found++;
+        if (found > 1) {
+            addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
+        }
+    }
+
+    protected void checkIncludeExcludeUndefinedAware(AnnotationNode node, List<String> excludes, List<String> includes,
+                                        List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
+        int found = 0;
+        if (includes != null) found++;
+        if (excludes != null && !excludes.isEmpty()) found++;
+        if (includeTypes != null) found++;
         if (excludeTypes != null && !excludeTypes.isEmpty()) found++;
         if (found > 1) {
             addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);

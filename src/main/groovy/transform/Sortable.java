@@ -58,8 +58,10 @@ public @interface Sortable {
     /**
      * Property names to include in the comparison algorithm.
      * Must not be used if 'excludes' is used.
+     * The default value is a special marker value indicating that no includes are defined; all properties
+     * are included if 'includes' remains undefined and 'excludes' is explicitly or implicitly an empty list.
      */
-    String[] includes() default {};
+    String[] includes() default {Undefined.STRING};
 
     /**
      * Property names to exclude in the comparison algorithm.

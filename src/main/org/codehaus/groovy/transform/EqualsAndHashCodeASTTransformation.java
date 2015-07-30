@@ -71,9 +71,9 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = getMemberList(anno, "excludes");
-            List<String> includes = getMemberList(anno, "includes");
-            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
+            List<String> excludes = getMemberStringList(anno, "excludes");
+            List<String> includes = getMemberStringList(anno, "includes");
+            if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);

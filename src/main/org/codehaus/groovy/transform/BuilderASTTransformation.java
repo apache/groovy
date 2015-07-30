@@ -129,24 +129,31 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected boolean getIncludeExclude(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> excludes, List<String> includes) {
-            List<String> directExcludes = transform.getMemberList(anno, "excludes");
+            List<String> directExcludes = transform.getMemberStringList(anno, "excludes");
             if (directExcludes != null) excludes.addAll(directExcludes);
-            List<String> directIncludes = transform.getMemberList(anno, "includes");
-            if (directIncludes != null) includes.addAll(directIncludes);
-            if (includes.isEmpty() && excludes.isEmpty()) {
+            List<String> directIncludes = transform.getMemberStringList(anno, "includes");
+            if (directIncludes != null) {
+                includes.clear();
+                includes.addAll(directIncludes);
+            }
+            if (directIncludes == null && excludes.isEmpty()) {
                 if (transform.hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
                     AnnotationNode tupleConstructor = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
                     if (excludes.isEmpty()) {
-                        List<String>  tupleExcludes = transform.getMemberList(tupleConstructor, "excludes");
+                        List<String>  tupleExcludes = transform.getMemberStringList(tupleConstructor, "excludes");
                         if (tupleExcludes != null) excludes.addAll(tupleExcludes);
                     }
                     if (includes.isEmpty()) {
-                        List<String>  tupleIncludes = transform.getMemberList(tupleConstructor, "includes");
-                        if (tupleIncludes != null) includes.addAll(tupleIncludes);
+                        List<String>  tupleIncludes = transform.getMemberStringList(tupleConstructor, "includes");
+                        if (tupleIncludes != null) {
+                            includes.clear();
+                            includes.addAll(tupleIncludes);
+                        }
                     }
                 }
             }
-            return transform.checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            List<String> includesToCheck = includes.size() == 1 && isUndefined(includes.get(0)) ? null : includes;
+            return transform.checkIncludeExcludeUndefinedAware(anno, excludes, includesToCheck, MY_TYPE_NAME);
         }
 
         protected static class PropertyInfo {
