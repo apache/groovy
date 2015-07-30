@@ -532,6 +532,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode replacementType = field.getOriginType();
+            ClassNode boxedReplacementType = ClassHelper.getWrapper(replacementType);
             OperandStack operandStack = controller.getOperandStack();
             if (field.isStatic()) {
                 mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));
@@ -547,6 +548,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     mv.visitInsn(DUP);
                     Label doGet = new Label();
                     mv.visitJumpInsn(IFNONNULL, doGet);
+                    mv.visitInsn(POP);
+                    mv.visitInsn(ACONST_NULL);
                     mv.visitJumpInsn(GOTO, exit);
                     mv.visitLabel(doGet);
                 }

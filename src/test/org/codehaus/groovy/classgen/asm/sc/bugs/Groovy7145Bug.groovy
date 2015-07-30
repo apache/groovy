@@ -61,4 +61,31 @@ class SafeNavigation {
 }
 '''
     }
+
+    void testCorrectTypeForJVMAfterNavigation() {
+        assertScript '''
+public class JavaTool {
+    public static Data getData() {
+        return new Data("fieldDataString")
+    }
+
+    public static class Data {
+        public String fieldData;
+
+        public Data(String fieldData) {
+            this.fieldData = fieldData
+        }
+    }
+}
+boolean bar(String s){true}
+
+def foo() {
+    JavaTool.Data jdata = JavaTool.getData()
+    if ( bar(jdata?.fieldData) ) {
+        return "HAS GROOVY TOOL DATA"
+    }
+}
+assert foo() == "HAS GROOVY TOOL DATA"
+'''
+    }
 }
