@@ -18,6 +18,7 @@
  */
 package groovy.transform.builder;
 
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -143,7 +144,9 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
+        includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
+        if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
         if (filteredFields.isEmpty()) {
@@ -360,7 +363,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
-            if (AbstractASTTransformation.shouldSkip(fNode.getName(), excludes, includes)) continue;
+            if (AbstractASTTransformation.shouldSkipUndefinedAware(fNode.getName(), excludes, includes)) continue;
             fields.add(fNode);
         }
         return fields;

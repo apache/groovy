@@ -18,6 +18,7 @@
  */
 package groovy.transform.builder;
 
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -95,15 +96,19 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
 
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
+        includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
+        if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         String prefix = getMemberStringValue(anno, "prefix", "set");
         List<FieldNode> fields = getInstancePropertyFields(buildee);
-        for (String name : includes) {
-            checkKnownField(transform, anno, name, fields);
+        if (includes != null) {
+            for (String name : includes) {
+                checkKnownField(transform, anno, name, fields);
+            }
         }
         for (FieldNode field : fields) {
             String fieldName = field.getName();
-            if (!AbstractASTTransformation.shouldSkip(fieldName, excludes, includes)) {
+            if (!AbstractASTTransformation.shouldSkipUndefinedAware(fieldName, excludes, includes)) {
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
                 buildee.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(

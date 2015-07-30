@@ -80,9 +80,9 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     }
 
     private void createSortable(AnnotationNode annotation, ClassNode classNode) {
-        List<String> includes = getMemberList(annotation, "includes");
-        List<String> excludes = getMemberList(annotation, "excludes");
-        if (!checkIncludeExclude(annotation, excludes, includes, MY_TYPE_NAME)) return;
+        List<String> includes = getMemberStringList(annotation, "includes");
+        List<String> excludes = getMemberStringList(annotation, "excludes");
+        if (!checkIncludeExcludeUndefinedAware(annotation, excludes, includes, MY_TYPE_NAME)) return;
         if (!checkPropertyList(classNode, includes, "includes", annotation, MY_TYPE_NAME, false)) return;
         if (!checkPropertyList(classNode, excludes, "excludes", annotation, MY_TYPE_NAME, false)) return;
         if (classNode.isInterface()) {
@@ -196,14 +196,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         for (PropertyNode property : classNode.getProperties()) {
             String propertyName = property.getName();
             if (property.isStatic() ||
-                    excludes.contains(propertyName) ||
-                    !includes.isEmpty() && !includes.contains(propertyName)) continue;
+                    (excludes != null && excludes.contains(propertyName)) ||
+                    includes != null && !includes.contains(propertyName)) continue;
             properties.add(property);
         }
         for (PropertyNode pNode : properties) {
             checkComparable(pNode);
         }
-        if (!includes.isEmpty()) {
+        if (includes != null) {
             Comparator<PropertyNode> includeComparator = new Comparator<PropertyNode>() {
                 public int compare(PropertyNode o1, PropertyNode o2) {
                     return new Integer(includes.indexOf(o1.getName())).compareTo(includes.indexOf(o2.getName()));

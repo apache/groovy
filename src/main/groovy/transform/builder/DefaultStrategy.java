@@ -18,6 +18,7 @@
  */
 package groovy.transform.builder;
 
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -55,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGener
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkip;
+import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkipUndefinedAware;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -194,7 +196,9 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
+        includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
+        if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         ClassNode builder = createBuilder(anno, buildee);
         createBuilderFactoryMethod(anno, buildee, builder);
         List<FieldNode> fields = getInstancePropertyFields(buildee);
@@ -284,7 +288,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
-            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes)) continue;
             fields.add(fNode);
         }
         return fields;
