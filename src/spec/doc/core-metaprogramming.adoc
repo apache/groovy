@@ -914,7 +914,7 @@ The `@TupleConstructor` AST transformation accepts several configuration options
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_excludes,indent=0]
 ----
-|includes|Empty list|List of fields to include in tuple constructor generation|
+|includes|Undefined list (indicates all fields)|List of fields to include in tuple constructor generation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
