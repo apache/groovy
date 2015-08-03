@@ -21,12 +21,12 @@ public class Groovy7363Support {
     }
 
     public static class ABC implements A<C, BC> {
+        public void setB(BC b) {}
+
         @Override
         public BC getB() {
             return new BC();
         }
-
-        public void setB(BC b) {}
     }
 
     public interface B<T> {
