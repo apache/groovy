@@ -58,6 +58,7 @@ class ImportStaticAliasTest extends StringSourcesStubTestCase {
     }
 
     void verifyStubs() {
-
+        // Stubs should not include import statements for aliased static imports
+        assert !stubJavaSourceFor('test.Test').contains('import static test.Constants.C1')
     }
 }
