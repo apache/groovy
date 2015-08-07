@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -2325,7 +2326,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static String padLeft(String self, Number numberOfChars, String padding) {
-        return padLeft((CharSequence) self, numberOfChars,(CharSequence) padding);
+        return padLeft((CharSequence) self, numberOfChars, (CharSequence) padding);
     }
 
     /**
@@ -2776,7 +2777,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
      * <p>
      * For example (with some replaceAll variants thrown in for comparison purposes),
-     * <pre>
+     * <pre class="groovyTestCase">
      * assert "hellO world" == "hello world".replaceFirst(~"(o)") { it[0].toUpperCase() } // first match
      * assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }   // all matches
      *
@@ -2829,6 +2830,143 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static String replaceFirst(final String self, final String regex, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
         return replaceFirst((CharSequence) self, (CharSequence) regex, closure);
+    }
+
+    /**
+     * Helper class used by {@link #replace(CharSequence, Map)}
+     */
+    private static class ReplaceState {
+        public ReplaceState(Map<CharSequence, CharSequence> replacements) {
+            this.noMoreMatches = new boolean[replacements.size()];
+            this.replacementsList = DefaultGroovyMethods.toList(replacements.entrySet());
+        }
+
+        int textIndex = -1;
+        int tempIndex = -1;
+        int replaceIndex = -1;
+        int start = -1;
+        boolean[] noMoreMatches;
+        private List<Map.Entry<CharSequence, CharSequence>> replacementsList;
+
+        CharSequence key(int i) {
+            return replacementsList.get(i).getKey();
+        }
+
+        CharSequence value(int i) {
+            return replacementsList.get(i).getValue();
+        }
+
+        int numReplacements() {
+            return replacementsList.size();
+        }
+    }
+
+    /**
+     * Replaces all occurrences of replacement CharSequences (supplied via a map) within a provided CharSequence.
+     *
+     * <pre class="groovyTestCase">
+     * assert 'foobar'.replace(f:'b', foo:'bar') == 'boobar'
+     * assert 'foobar'.replace(foo:'bar', f:'b') == 'barbar'
+     * def replacements = [foo:'bar', f:'b', b: 'f', bar:'boo']
+     * assert 'foobar'.replace(replacements) == 'barfar'
+     * </pre>
+     *
+     * @param self a CharSequence
+     * @param replacements a map of before (key) and after (value) pairs processed in the natural order of the map
+     * @return a String formed from the provided CharSequence after performing all of the replacements
+     */
+    public static String replace(final CharSequence self, final Map<CharSequence, CharSequence> replacements) {
+        return replace(self, -1, replacements);
+    }
+
+    /**
+     * Replaces all occurrences of replacement CharSequences (supplied via a map) within a provided CharSequence
+     * with control over the internally created StringBuilder's capacity. This method uses a StringBuilder internally.
+     * Java auto-expands a StringBuilder's capacity if needed. In rare circumstances, the overhead involved with
+     * repeatedly expanding the StringBuilder may become significant. If you have measured the performance of your
+     * application and found this to be a significant bottleneck, use this variant to have complete control over
+     * the internally created StringBuilder's capacity.
+     *
+     * <pre class="groovyTestCase">
+     * assert 'foobar'.replace(9, [r:'rbaz']) == 'foobarbaz'
+     * assert 'foobar'.replace(1, [fooba:'']) == 'r'
+     * </pre>
+     *
+     * @param self a CharSequence
+     * @param capacity an optimization parameter, set to size after replacements or a little larger to avoid resizing overheads
+     * @param replacements a map of before (key) and after (value) pairs processed in the natural order of the map
+     * @return a String formed from the provided CharSequence after performing all of the replacements
+     */
+    public static String replace(final CharSequence self, final int capacity, final Map<CharSequence, CharSequence>
+            replacements) {
+        // modelled very closely on the commons lang StringUtils replaceEach method
+        if (self == null) return null;
+        String text = self.toString();
+        if (replacements == null || replacements.isEmpty() || text.isEmpty()) return text;
+        ReplaceState state = new ReplaceState(replacements);
+        nextMatch(text, state);
+        if (state.textIndex == -1) {
+            return text;
+        }
+        StringBuilder buf = new StringBuilder(guessCapacity(capacity, replacements));
+
+        state.start = 0;
+        while (state.textIndex != -1) {
+            for (int i = state.start; i < state.textIndex; i++) {
+                buf.append(text.charAt(i));
+            }
+            buf.append(state.value(state.replaceIndex));
+            state.start = state.textIndex + state.key(state.replaceIndex).length();
+            state.textIndex = -1;
+            state.replaceIndex = -1;
+            nextMatch(text, state);
+        }
+        int textLength = text.length();
+        for (int i = state.start; i < textLength; i++) {
+            buf.append(text.charAt(i));
+        }
+        return buf.toString();
+    }
+
+    /**
+     * Crude heuristic for setting the created StringBuilder capacity if not supplied:
+     * If at least one replacement text is bigger than the original text use a
+     * capacity 50% larger than the original; otherwise, use the original size.
+     */
+    private static int guessCapacity(int capacity, Map<CharSequence, CharSequence> replacements) {
+        if (capacity >= 0) {
+            return capacity;
+        }
+        boolean possiblyBigger = false;
+        for (Map.Entry<CharSequence, CharSequence> entry : replacements.entrySet()) {
+            if (entry.getValue().length() > entry.getKey().length()) {
+                possiblyBigger = true;
+                break;
+            }
+        }
+        return possiblyBigger ? replacements.size() * 3 / 2 : replacements.size();
+    }
+
+    /**
+     * Helper method to find the next match for the replace method.
+     */
+    private static void nextMatch(String text, ReplaceState state) {
+        for (int i = 0; i < state.numReplacements(); i++) {
+            if (state.noMoreMatches[i] || state.key(i) == null ||
+                    state.key(i).length() == 0 || state.value(i) == null) {
+                continue;
+            }
+            state.tempIndex = text.indexOf(state.key(i).toString(), state.start);
+
+            if (state.tempIndex == -1) {
+                state.noMoreMatches[i] = true;
+            } else {
+                if (state.textIndex == -1 || state.tempIndex < state.textIndex) {
+                    state.textIndex = state.tempIndex;
+                    state.replaceIndex = i;
+                }
+            }
+        }
     }
 
     /**
