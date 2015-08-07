@@ -241,7 +241,7 @@ Singly-quoted literals in Groovy are used for `String`, and double-quoted result
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=type_depends_on_quoting_AND_whether_we_actually_interpolate,indent=0]
 ----
 
-Groovy will automatically cast a single-character `String` to `char` when assigning to
+Groovy will automatically cast a single-character `String` to `char` only when assigning to
 a variable of type `char`. When calling methods with arguments of type `char` we need
 to either cast explicitly or make sure the value has been cast in advance.
 
@@ -268,7 +268,7 @@ Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
 `a.is(b)`.
 
 
-== Different keywords
+== Extra keywords
 
 There are a few more keywords in Groovy than in Java.  Don't use them for
 variable names etc.
