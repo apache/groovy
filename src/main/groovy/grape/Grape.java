@@ -30,6 +30,7 @@ public class Grape {
 
     public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
     public static final String DISABLE_CHECKSUMS_SETTING = "disableChecksums";
+    public static final String SYSTEM_PROPERTIES_SETTING = "systemProperties";
 
     private static boolean enableGrapes = Boolean.valueOf(System.getProperty("groovy.grape.enable", "true"));
     private static boolean enableAutoDownload = Boolean.valueOf(System.getProperty("groovy.grape.autoDownload", "true"));

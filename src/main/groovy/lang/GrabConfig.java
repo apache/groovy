@@ -85,6 +85,18 @@ public @interface GrabConfig {
     boolean systemClassLoader() default false;
 
     /**
+     * Define any system properties which must be set before invoking the grab - useful for
+     * declaring SSL certificates or proxy settings. Currently, this only affects the generated
+     * class or script. You may need to also set those same properties for the Groovy compiler.
+     * For convenience, a String with comma separated name=value pairs
+     * can be used in addition to an array (using Groovy's literal list notation) of String name=value items.
+     * The single String shorthand form can't be used if value part of a property contains a comma.
+     *
+     * @since 2.4.5
+     */
+    String[] systemProperties() default "";
+
+    /**
      * Set to true if you want the context classloader to be initialised to the classloader
      * of the current class or script. This is useful for libraries or frameworks that assume
      * that the context classloader has been set. But be careful when using this flag as your

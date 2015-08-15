@@ -131,7 +131,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return defaultValue;
     }
 
-    public List<String> getMemberStringList(AnnotationNode anno, String name) {
+    public static List<String> getMemberStringList(AnnotationNode anno, String name) {
         Expression expr = anno.getMember(name);
         if (expr == null) {
             return null;
@@ -251,7 +251,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return (annots != null && annots.size() > 0);
     }
 
-    protected List<String> tokenize(String rawExcludes) {
+    public static List<String> tokenize(String rawExcludes) {
         return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
 

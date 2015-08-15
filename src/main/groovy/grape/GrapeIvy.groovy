@@ -242,6 +242,7 @@ class GrapeIvy implements GrapeEngine {
     public grab(Map args, Map... dependencies) {
         ClassLoader loader = null
         grabRecordsForCurrDependencies.clear()
+
         try {
             // identify the target classloader early, so we fail before checking repositories
             loader = chooseClassLoader(
