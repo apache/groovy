@@ -377,4 +377,15 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert jars.contains ("neo4j-kernel-2.0.0-RC1-tests.jar")
     }
 
+    void testSystemProperties_groovy7548() {
+        System.setProperty('groovy7548prop', 'x')
+        assert System.getProperty('groovy7548prop') == 'x'
+        new GroovyShell().evaluate '''
+            @GrabConfig(systemProperties='groovy7548prop=y')
+            @Grab('commons-lang:commons-lang:2.6')
+            import org.apache.commons.lang.StringUtils
+            assert StringUtils.name == 'org.apache.commons.lang.StringUtils'
+        '''
+        assert System.getProperty('groovy7548prop') == 'y'
+    }
 }
