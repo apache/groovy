@@ -651,6 +651,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 writeModCall(receiver, arguments, rType, aType);
                 return true;
             }
+            else if("rightShiftUnsigned".equals(message))
+            {
+                writeShiftOperatorCall(receiver, arguments, rType, aType);
+                return true;
+            }
         } else if (STRING_TYPE.equals(rType) && "plus".equals(message)) {
             writeStringPlusCall(receiver, message, arguments);
             return true;
@@ -750,7 +755,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", "mod", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         controller.getOperandStack().replace(Number_TYPE, 2);
     }
-    
+
+    private void writeShiftOperatorCall(Expression receiver, Expression arguments, ClassNode rType, ClassNode aType) {
+        prepareSiteAndReceiver(receiver, "rightShiftUnsigned", false, controller.getCompileStack().isLHS());
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
+        visitBoxedArgument(arguments);
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", "rightShiftUnsigned", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
+        controller.getOperandStack().replace(Number_TYPE, 2);
+    }
+
     private void writePowerCall(Expression receiver, Expression arguments, final ClassNode rType, ClassNode aType) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
