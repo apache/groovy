@@ -125,7 +125,7 @@ public class TypeCheckingContext {
 
     /**
      * Pushes a closure expression into the closure expression stack.
-     * @param closureExpression the binary expression to be pushed
+     * @param closureExpression the closure expression to be pushed
      */
     public void pushEnclosingClosureExpression(ClosureExpression closureExpression) {
         enclosingClosures.addFirst(new EnclosingClosure(closureExpression));
@@ -160,7 +160,7 @@ public class TypeCheckingContext {
 
     /**
      * Pushes a method into the method stack.
-     * @param methodNode the binary expression to be pushed
+     * @param methodNode the method to be pushed
      */
     public void pushEnclosingMethod(MethodNode methodNode) {
         enclosingMethods.addFirst(methodNode);
@@ -194,8 +194,8 @@ public class TypeCheckingContext {
     }
 
     /**
-     * Pushes a method into the method stack.
-     * @param classNode the binary expression to be pushed
+     * Pushes a class into the classes stack.
+     * @param classNode the class to be pushed
      */
     public void pushEnclosingClassNode(ClassNode classNode) {
         enclosingClassNodes.addFirst(classNode);
@@ -210,9 +210,9 @@ public class TypeCheckingContext {
     }
 
     /**
-     * Returns the method node which is on the top of the stack, or null
+     * Returns the class node which is on the top of the stack, or null
      * if there's no such element.
-     * @return the enclosing method on top of the stack, or null if no such element.
+     * @return the enclosing class on top of the stack, or null if no such element.
      */
     public ClassNode getEnclosingClassNode() {
         if (enclosingClassNodes.isEmpty()) return null;
