@@ -1,6 +1,5 @@
 package org.codehaus.groovy.tools.shell.completion
 
-import jline.console.completer.Completer
 import jline.console.completer.StringsCompleter
 
 import static jline.internal.Preconditions.checkNotNull
