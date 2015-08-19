@@ -405,7 +405,6 @@ asciidoctor: WARNING: template-engines.adoc: line 145: section title out of sequ
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-groovyc.adoc
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-groovyconsole.adoc
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-groovydoc.adoc
-Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-groovyeclipse.adoc
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-groovysh.adoc
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/tools-ide.adoc
 Rendering /media/martin/LINKS/groovy-core/groovy-core/src/spec/doc/version-scheme.adoc

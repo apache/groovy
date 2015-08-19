@@ -243,7 +243,7 @@ have difficulties with joint Java-Groovy projects (for the same reason
 <<section-gmaven,GMaven>> and <<Gradle>> can have issues).
 The <<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>>
 sidesteps the joint compilation issues. Read
-<<Groovy-EclipsecompilerpluginforMaven-WhyanotherGroovycompilerforMavenWhataboutGMaven, this>>
+https://github.com/groovy/groovy-eclipse/wiki/Groovy-Eclipse-Maven-plugin#why-another-groovy-compiler-for-maven-what-about-gmaven[this]
 for a deeper discussion of the benefits and disadvantages of the two
 approaches.
 
@@ -368,9 +368,9 @@ https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of
 features of GMaven (a couple notable exceptions being
 http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html[mojo Javadoc tags]
 and support for older Groovy versions). Its joint compilation uses stubs (which
-means it has the same potential issues as GMaven and <<Gradle>>). The main
+means it has the same potential issues as <<GMaven>> and <<Gradle>>). The main
 advantages over its predecessor are that it supports recent Groovy versions,
-InvokeDynamic, Groovy on Android, and GroovyDoc.
+InvokeDynamic, Groovy on Android, GroovyDoc, and configuration scripts.
 
 [[section-gmaven2]]
 ==== GMaven 2
@@ -381,7 +381,12 @@ non-scripting features of the GMaven plugin. It has not yet had any release and
 appears to be inactive currently.
 
 [[section-groovyeclipse]]
-include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[leveloffset=+2]
+=== The Groovy Eclipse Maven plugin
+https://github.com/groovy/groovy-eclipse/wiki/Groovy-Eclipse-Maven-plugin[Groovy-Eclipse]
+provides a compiler plugin for Maven. Using the compiler
+plugin, it is possible to compile your maven projects using the
+Groovy-Eclipse compiler. One feature unavailable elsewhere is
+stubless joint compilation.
 
 [[section-jointcompilation]]
 === Joint compilation
