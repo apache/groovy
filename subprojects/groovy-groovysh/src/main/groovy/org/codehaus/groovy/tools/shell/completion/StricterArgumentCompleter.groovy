@@ -29,7 +29,6 @@ import static jline.internal.Preconditions.checkNotNull;
 
 /**
  * This fixes strict jline 2.12 ArgumentCompleter
- * See https://github.com/jline/jline2/pull/123
  * See https://github.com/jline/jline2/pull/202
  *
  */
