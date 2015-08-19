@@ -1033,7 +1033,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             " for class: " + receiverType.getName(), receiver);
                 } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    ClassNode toBeAssignedTo = lookup.get();
+                    MethodNode setter = receiverType.getSetterMethod("set" + MetaClassHelper.capitalize(pexp.getPropertyAsString()), false);
+                    ClassNode toBeAssignedTo = setter == null ? lookup.get() : setter.getParameters()[0].getType();
                     if (!isAssignableTo(valueType, toBeAssignedTo)
                             && !extension.handleIncompatibleAssignment(toBeAssignedTo, valueType, entryExpression)) {
                         addAssignmentError(toBeAssignedTo, valueType, entryExpression);
