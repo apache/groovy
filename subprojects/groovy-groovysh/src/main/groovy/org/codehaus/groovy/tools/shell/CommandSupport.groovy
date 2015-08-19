@@ -23,7 +23,6 @@ import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
-import org.codehaus.groovy.tools.shell.completion.PatchedStringsCompleter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
@@ -145,10 +144,13 @@ abstract class CommandSupport
         List<Completer> list = new ArrayList<Completer>()
         List<Completer> completers = createCompleters()
 
-        PatchedStringsCompleter stringCompleter = new PatchedStringsCompleter(name, shortcut)
-        if (!completers) {
-             stringCompleter.setWithBlank(false)
+        StringsCompleter stringCompleter
+        if (completers) {
+            stringCompleter = new StringsCompleter(name + ' ', shortcut + ' ')
+        } else {
+            stringCompleter = new StringsCompleter(name, shortcut)
         }
+
         list << stringCompleter
 
         if (completers) {

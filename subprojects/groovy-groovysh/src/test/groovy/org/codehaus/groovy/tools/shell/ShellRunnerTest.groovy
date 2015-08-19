@@ -19,6 +19,8 @@
 package org.codehaus.groovy.tools.shell
 
 import groovy.mock.interceptor.MockFor
+import jline.console.ConsoleReader
+import jline.console.completer.CandidateListCompletionHandler
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 class ShellRunnerTest extends GroovyTestCase {
@@ -94,8 +96,10 @@ class ShellRunnerTest extends GroovyTestCase {
     }
 
     private MockFor primedMockForConsoleReader() {
-        def readerMocker = new MockFor(PatchedConsoleReader)
-        readerMocker.demand.setCompletionHandler {}
+        def readerMocker = new MockFor(ConsoleReader)
+        CandidateListCompletionHandler clch = new CandidateListCompletionHandler()
+        clch.stripAnsi = true
+        readerMocker.demand.getCompletionHandler(1) {clch}
         readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker
@@ -115,8 +119,8 @@ class ShellRunnerTest2 extends GroovyTestCase {
         groovysh.buffers.buffers.add(['Foo { {'])
         groovysh.buffers.select(1)
 
-        MockFor readerMocker = new MockFor(PatchedConsoleReader)
-        readerMocker.demand.setCompletionHandler {}
+        MockFor readerMocker = new MockFor(ConsoleReader)
+        readerMocker.demand.getCompletionHandler {new CandidateListCompletionHandler()}
         readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}

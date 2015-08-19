@@ -20,6 +20,8 @@ package org.codehaus.groovy.tools.shell
 
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
+import jline.console.completer.CandidateListCompletionHandler
+import jline.console.completer.CompletionHandler
 import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.completion.*
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -47,8 +49,16 @@ class InteractiveShellRunner
 
         this.prompt = prompt
         this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
-        this.reader = new PatchedConsoleReader(wrappedInputStream, shell.io.outputStream)
-        this.reader.setCompletionHandler(new PatchedCandidateListCompletionHandler())
+        this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
+
+        CompletionHandler currentCompletionHandler = this.reader.getCompletionHandler()
+        if (currentCompletionHandler instanceof CandidateListCompletionHandler) {
+            // have to downcast because methods not part of the interface
+            ((CandidateListCompletionHandler) currentCompletionHandler).setStripAnsi(true)
+            ((CandidateListCompletionHandler) currentCompletionHandler).setPrintSpaceAfterFullCompletion(false)
+        }
+
+
         // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
         this.reader.expandEvents = false
 

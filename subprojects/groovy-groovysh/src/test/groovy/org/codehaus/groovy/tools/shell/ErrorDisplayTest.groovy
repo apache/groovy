@@ -19,12 +19,14 @@
 package org.codehaus.groovy.tools.shell
 
 import jline.console.ConsoleReader
+import jline.console.completer.CandidateListCompletionHandler
 
 
 class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testInput() {
         readerStubber.demand.readLine { 'foo' }
+        readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
         shellMocker.use {
             readerStubber.use {
                 Groovysh shellMock = new Groovysh()
@@ -40,6 +42,7 @@ class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testError() {
         readerStubber.demand.readLine { throw new StringIndexOutOfBoundsException() }
+        readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
         shellMocker.use {
             readerStubber.use {
                 Groovysh shellMock = new Groovysh()
@@ -55,6 +58,7 @@ class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testError2() {
         readerStubber.demand.readLine { throw new Throwable('MockException') }
+        readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
         shellMocker.use { readerStubber.use {
             Groovysh shellMock = new Groovysh()
             ConsoleReader readerStub = new ConsoleReader()
