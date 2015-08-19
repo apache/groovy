@@ -382,6 +382,7 @@ appears to be inactive currently.
 
 [[section-groovyeclipse]]
 === The Groovy Eclipse Maven plugin
+
 https://github.com/groovy/groovy-eclipse/wiki/Groovy-Eclipse-Maven-plugin[Groovy-Eclipse]
 provides a compiler plugin for Maven. Using the compiler
 plugin, it is possible to compile your maven projects using the
@@ -389,7 +390,7 @@ Groovy-Eclipse compiler. One feature unavailable elsewhere is
 stubless joint compilation.
 
 [[section-jointcompilation]]
-=== Joint compilation
+== Joint compilation
 
 Joint compilation means that the Groovy compiler will parse the
 Groovy source files, create stubs for all of them, invoke the Java
