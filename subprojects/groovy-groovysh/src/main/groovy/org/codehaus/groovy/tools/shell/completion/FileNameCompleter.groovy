@@ -115,14 +115,15 @@ implements Completer
             translated = translated.substring(1);
         }
 
-        File homeDir = getUserHome();
-
-        // Special character: ~ maps to the user's home directory
-        if (translated.startsWith("~" + separator())) {
-            translated = homeDir.getPath() + translated.substring(1);
-        }
-        else if (translated.startsWith("~")) {
-            translated = homeDir.getParentFile().getAbsolutePath();
+        // Special character: ~ maps to the user's home directory in most OSs
+        if (!OS_IS_WINDOWS && translated.startsWith("~")) {
+            File homeDir = getUserHome();
+            if (translated.startsWith("~" + separator())) {
+                translated = homeDir.getPath() + translated.substring(1);
+            }
+            else {
+                translated = homeDir.getParentFile().getAbsolutePath();
+            }
         }
         else if (!(new File(translated).isAbsolute())) {
             String cwd = getUserDir().getAbsolutePath();
