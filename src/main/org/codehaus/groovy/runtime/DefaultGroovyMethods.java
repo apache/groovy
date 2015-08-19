@@ -6811,6 +6811,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Check whether an <code>Iterable</code> has elements
+     * <pre class="groovyTestCase">
+     * def items = [1]
+     * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
+     * assert !iterable.isEmpty()
+     * iterable.next()
+     * assert iterable.isEmpty()
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return true if the iterable has no elements, false otherwise
+     * @since 2.4.5
+     */
+    public static boolean isEmpty(Iterable self) {
+        return !self.iterator().hasNext();
+    }
+
+
+    /**
      * Support the range subscript operator for a List.
      * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
      * assert list[1..2] == ["a", 4.5]</pre>
