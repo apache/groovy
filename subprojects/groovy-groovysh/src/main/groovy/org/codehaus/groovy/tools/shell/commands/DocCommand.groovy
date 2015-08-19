@@ -71,11 +71,9 @@ class DocCommand extends CommandSupport {
     }
 
     @Override
-    Completer getCompleter() {
-        return new AggregateCompleter([
-            new ArgumentCompleter([
-                new StringsCompleter(name, shortcut),
-                new ImportCompleter(shell.packageHelper, shell.interp, false)])])
+    protected List<Completer> createCompleters() {
+        return [new ImportCompleter(shell.packageHelper, shell.interp, false),
+                null]
     }
 
     @Override

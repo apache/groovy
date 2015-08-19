@@ -45,10 +45,10 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(':a', ':a'.length(), candidates)
-            assert [':a', AliasCommand.COMMAND_NAME] == candidates
+            assert [':a ', AliasCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
             assert 3 == completor.complete(':a ', ':a '.length(), candidates)
-            assert [':=', ':S', SetCommand.COMMAND_NAME, ShowCommand.COMMAND_NAME] == candidates
+            assert [':= ', ':S ', SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
         }
     }
 
@@ -70,15 +70,15 @@ extends CompletorTestSupport {
             candidates = []
             assert 5 == completor.complete(buffer, buffer.length(), candidates)
         }
-        assert Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates
-        assert Groovysh.COLORS_PREFERENCE_KEY in candidates
-        assert Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY in candidates
-        assert Preferences.EDITOR_KEY in candidates
-        assert Preferences.PARSER_FLAVOR_KEY in candidates
-        assert Preferences.VERBOSITY_KEY in candidates
-        assert Preferences.SANITIZE_STACK_TRACE_KEY in candidates
-        assert Preferences.SHOW_LAST_RESULT_KEY in candidates
-        assert Preferences.VERBOSITY_KEY in candidates
+        assert Groovysh.AUTOINDENT_PREFERENCE_KEY + ' ' in candidates
+        assert Groovysh.COLORS_PREFERENCE_KEY + ' ' in candidates
+        assert Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY + ' ' in candidates
+        assert Preferences.EDITOR_KEY + ' ' in candidates
+        assert Preferences.PARSER_FLAVOR_KEY + ' ' in candidates
+        assert Preferences.VERBOSITY_KEY + ' ' in candidates
+        assert Preferences.SANITIZE_STACK_TRACE_KEY + ' ' in candidates
+        assert Preferences.SHOW_LAST_RESULT_KEY + ' ' in candidates
+        assert Preferences.VERBOSITY_KEY + ' ' in candidates
     }
 
     void testSave() {
@@ -90,7 +90,7 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(':s', ':s'.length(), candidates)
-            assert [':s', SaveCommand.COMMAND_NAME] == candidates
+            assert [':s ', SaveCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
             String buffer = SaveCommand.COMMAND_NAME + ' '
             assert 6 == completor.complete(buffer, buffer.length(), candidates)
@@ -132,7 +132,7 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(':s', ':s'.length(), candidates)
-            assert [':s', SaveCommand.COMMAND_NAME, SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
+            assert [':s ', SaveCommand.COMMAND_NAME + ' ', SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
             String buffer = SaveCommand.COMMAND_NAME + ' '
             assert 6 == completor.complete(buffer, buffer.length(), candidates)

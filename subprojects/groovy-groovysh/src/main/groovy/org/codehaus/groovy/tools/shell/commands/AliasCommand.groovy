@@ -41,7 +41,7 @@ class AliasCommand
     @Override
     protected List<Completer> createCompleters() {
         return [
-                new CommandNameCompleter(registry),
+                new CommandNameCompleter(registry, true),
                 null
         ]
     }

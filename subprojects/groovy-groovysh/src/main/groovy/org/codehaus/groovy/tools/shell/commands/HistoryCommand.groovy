@@ -47,8 +47,10 @@ class HistoryCommand
             return list
         }
 
+        SimpleCompletor subCommandsCompletor = new SimpleCompletor(loader)
+        subCommandsCompletor.setWithBlank(false)
         return [
-            new SimpleCompletor(loader),
+            subCommandsCompletor,
             null
         ]
     }

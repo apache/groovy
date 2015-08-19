@@ -43,7 +43,7 @@ class HelpCommand
 
     protected List<Completer> createCompleters() {
         return [
-            new CommandNameCompleter(registry),
+            new CommandNameCompleter(registry, false),
             null
         ]
     }

@@ -33,7 +33,9 @@ class SimpleCompletor implements Completer {
     /**
     * A delimiter to use to qualify completions.
     */
-    String delimiter
+    protected String delimiter
+
+    boolean withBlank = true
 
 
     SimpleCompletor(final String[] candidates) {
@@ -72,6 +74,10 @@ class SimpleCompletor implements Completer {
         }
     }
 
+    void setWithBlank(boolean withBlank) {
+        this.withBlank = withBlank
+    }
+
     void add(final String candidate) {
         addCandidateString(candidate)
     }
@@ -82,9 +88,6 @@ class SimpleCompletor implements Completer {
         return null
     }
 
-    //
-    // NOTE: Duplicated (and augmented) from JLine sources to make it call getCandidates() to make the list more dynamic
-    //
     @Override
     int complete(final String buffer, final int cursor, final List<CharSequence> clist) {
         String start = (buffer == null) ? '' : buffer
@@ -108,11 +111,11 @@ class SimpleCompletor implements Completer {
                 }
             }
 
-            clist.add(can)
-        }
+            if (withBlank) {
+                can += ' '
+            }
 
-        if (clist.size() == 1) {
-            clist.set(0, ((String) clist.get(0)) + ' ')
+            clist.add(can)
         }
 
         // the index of the completion is always from the beginning of the buffer.
