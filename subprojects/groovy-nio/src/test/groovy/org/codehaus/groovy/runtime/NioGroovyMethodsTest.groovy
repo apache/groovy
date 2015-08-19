@@ -168,6 +168,17 @@ class NioGroovyMethodsTest extends Specification {
         file.text == 'Hello world!'
     }
 
+    def testWriteWithEncoding()  {
+        when:
+        def str = 'Hello world!'
+        def file = temporaryFolder.newFile()
+        file.toPath().write('Ciao mundo!')
+        file.toPath().write(str, 'UTF-8')
+
+        then:
+        file.text == str
+    }
+
     def testAppendObject() {
         setup:
         def file = temporaryFolder.newFile()
