@@ -30,9 +30,9 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class CommandNameCompleter extends SimpleCompletor {
     private final CommandRegistry registry
 
-    CommandNameCompleter(final CommandRegistry registry) {
+    CommandNameCompleter(final CommandRegistry registry, boolean withBlank) {
         assert registry
-
+        setWithBlank(withBlank)
         this.registry = registry
     }
 

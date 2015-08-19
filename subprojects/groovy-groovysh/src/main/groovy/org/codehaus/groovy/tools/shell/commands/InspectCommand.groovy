@@ -72,7 +72,7 @@ class InspectCommand
         }
 
         if (!subject) {
-            io.out.println('Subject is null; nothing to inspect') // TODO: i18n
+            io.out.println('Subject is null, false or empty; nothing to inspect') // TODO: i18n
         } else {
             // Only set LAF once.
             if (!lafInitialized) {
@@ -116,7 +116,7 @@ class InspectCommandCompletor
 
     InspectCommandCompletor(final Binding binding) {
         assert binding
-
+        this.setWithBlank(false)
         this.binding = binding
     }
 

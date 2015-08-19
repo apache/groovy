@@ -49,7 +49,7 @@ abstract class ComplexCommandSupport
     @Override
     protected List<Completer> createCompleters() {
         def c = new SimpleCompletor()
-
+        c.setWithBlank(false)
         functions.each { String it -> c.add(it) }
 
         return [ c, null ]

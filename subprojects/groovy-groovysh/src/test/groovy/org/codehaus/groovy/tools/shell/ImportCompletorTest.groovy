@@ -17,14 +17,15 @@
  *  under the License.
  */
 package org.codehaus.groovy.tools.shell
-
 import groovy.mock.interceptor.MockFor
+import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
+import jline.console.completer.NullCompleter
+import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
-
 /**
  * as opposed to MockFor, traditional custom mocking allows @CompileStatic for the class under Test
  */
@@ -287,7 +288,7 @@ class ImportCompleterTest extends CompletorTestSupport {
             def candidates = []
             assert 0 == completer.complete('', 0, candidates)
             // order changed by sort
-            assert [':i', ':i', 'import', 'import'] == candidates.sort()
+            assert [':i ', ':i ', 'import ', 'import '] == candidates.sort()
         }
     }
 
@@ -332,7 +333,7 @@ class ImportCompleterTest extends CompletorTestSupport {
             def candidates = []
             // argument completer completes after 'import '
             String buffer = 'import java.'
-            assert 12 == completer.complete(buffer, buffer.length(), candidates)
+            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to run tests on different JDKs
             assert ['* ', 'java.', 'test.'] == candidates.sort()
         }
@@ -349,14 +350,14 @@ class ImportCompleterTest extends CompletorTestSupport {
             def candidates = []
             // argument completer completes after 'import '
             String buffer = 'import java.lang.'
-            assert 17 == completer.complete(buffer, buffer.length(), candidates)
+            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to make tests run on different JDks
             assert ['* ', 'java.', 'test.'] == candidates.sort()
         }
     }
 
     void testAs() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
+        mockPackageHelper = new MockPackageHelper(['java', 'Test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
@@ -365,8 +366,8 @@ class ImportCompleterTest extends CompletorTestSupport {
             Completer completer = iCom.completer
             def candidates = []
             // mock package
-            String buffer = 'import java.test '
-            assert 17 == completer.complete(buffer, buffer.length(), candidates)
+            String buffer = 'import java.Test '
+            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
             assert ['as '] == candidates
         }
     }

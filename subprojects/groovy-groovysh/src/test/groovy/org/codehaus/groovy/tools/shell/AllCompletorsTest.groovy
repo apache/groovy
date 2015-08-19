@@ -105,18 +105,18 @@ class AllCompletorsTest extends GroovyTestCase {
 
     void testEmpty() {
         def result = complete('', 0)
-        assert HelpCommand.COMMAND_NAME in result[0]
+        assert HelpCommand.COMMAND_NAME + ' ' in result[0]
         assert ExitCommand.COMMAND_NAME in result[0]
-        assert 'import' in result[0]
-        assert ShowCommand.COMMAND_NAME in result[0]
-        assert SetCommand.COMMAND_NAME in result[0]
-        assert InspectCommand.COMMAND_NAME in result[0]
-        assert DocCommand.COMMAND_NAME in result[0]
+        assert 'import ' in result[0]
+        assert ShowCommand.COMMAND_NAME + ' ' in result[0]
+        assert SetCommand.COMMAND_NAME + ' ' in result[0]
+        assert InspectCommand.COMMAND_NAME + ' ' in result[0]
+        assert DocCommand.COMMAND_NAME + ' ' in result[0]
         assert 0 == result[1]
     }
 
     void testExitEdit() {
-        assert [["${ExitCommand.COMMAND_NAME} ", ':e', EditCommand.COMMAND_NAME], 0] == complete(':e', 0)
+        assert [[ExitCommand.COMMAND_NAME, ':e', EditCommand.COMMAND_NAME], 0] == complete(':e', 0)
     }
 
     void testShow() {
@@ -126,7 +126,7 @@ class AllCompletorsTest extends GroovyTestCase {
 
     void testShowV() {
         String prompt = ShowCommand.COMMAND_NAME + ' v'
-        assert [['variables '], prompt.length() - 1] == complete(prompt, prompt.length())
+        assert [['variables'], prompt.length() - 1] == complete(prompt, prompt.length())
     }
 
     void testShowVariables() {
