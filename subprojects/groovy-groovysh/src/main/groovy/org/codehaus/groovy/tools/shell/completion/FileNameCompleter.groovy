@@ -66,9 +66,17 @@ implements Completer
 
     private static final boolean OS_IS_WINDOWS;
 
-    private final boolean blankSuffix = true;
+    private boolean printSpaceAfterFullCompletion = true;
 
-    private final handleLeadingHyphen = false;
+    private boolean handleLeadingHyphen = false;
+
+    public boolean getPrintSpaceAfterFullCompletion() {
+        return printSpaceAfterFullCompletion;
+    }
+
+    public void setPrintSpaceAfterFullCompletion(boolean printSpaceAfterFullCompletion) {
+        this.printSpaceAfterFullCompletion = printSpaceAfterFullCompletion;
+    }
 
     static {
         String os = Configuration.getOsName();
@@ -78,8 +86,8 @@ implements Completer
     public FileNameCompleter() {
     }
 
-    public FileNameCompleter(boolean blankSuffix) {
-        this.blankSuffix = blankSuffix;
+    public FileNameCompleter(boolean printSpaceAfterFullCompletion) {
+        this.printSpaceAfterFullCompletion = printSpaceAfterFullCompletion;
     }
 
 
@@ -136,19 +144,19 @@ implements Completer
         return matchFiles(buffer, translated, entries, candidates, hyphenChar);
     }
 
-    protected String separator() {
+    protected static String separator() {
         return File.separator;
     }
 
-    protected File getUserHome() {
+    protected static File getUserHome() {
         return Configuration.getUserHome();
     }
 
-    protected File getUserDir() {
+    protected static File getUserDir() {
         return new File(".");
     }
 
-    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates, hyphenChar) {
+    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates, final String hyphenChar) {
         if (files == null) {
             return -1;
         }
@@ -168,7 +176,7 @@ implements Completer
                     if (file.isDirectory()) {
                         name += separator();
                     } else {
-                        if (blankSuffix && !hyphenChar) {
+                        if (printSpaceAfterFullCompletion && !hyphenChar) {
                             name += ' ';
                         }
                     }
@@ -192,8 +200,8 @@ implements Completer
         return name;
     }
 
-    private String escapedNameInHyphens(String name, String hyphen) {
+    private String escapedNameInHyphens(final CharSequence name, String hyphen) {
         // need to escape every instance of chartoEscape, and every instance of the escape char backslash
-        return hyphen + name.replace('\\', '\\\\').replace(hyphen, '\\' + hyphen) + hyphen
+        return hyphen + name.toString().replace('\\', '\\\\').replace(hyphen, '\\' + hyphen) + hyphen
     }
 }
