@@ -64,6 +64,7 @@ abstract class ShellRunnerTestSupport extends GroovyTestCase {
 
         readerStubber = new StubFor(ConsoleReader)
         readerStubber.demand.setExpandEvents {}
+        readerStubber.demand.setCompletionHandler {}
         // adding 2 completers
         readerStubber.demand.addCompleter {}
         readerStubber.demand.printNewline {}

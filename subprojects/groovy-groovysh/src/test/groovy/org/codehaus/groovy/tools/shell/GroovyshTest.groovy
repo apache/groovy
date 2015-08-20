@@ -23,8 +23,8 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.TokenUtilTest
-import org.codehaus.groovy.tools.shell.util.JAnsiHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.fusesource.jansi.AnsiOutputStream
 
 class GroovyshTest extends GroovyTestCase {
 
@@ -505,9 +505,28 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         def candidates = []
         compl.complete(TokenUtilTest.tokenList(/['a':3, 'b':4]./), candidates)
         assert candidates.size() > 1
-        assert candidates.reverse().subList(0, 3).collect({ String it -> JAnsiHelper.stripAnsi(it) }) == ['empty', 'b', 'a']
+        assert candidates.reverse().subList(0, 3).collect({ String it -> stripAnsi(it) }) == ['empty', 'b', 'a']
     }
+
+    /**
+    * copied from jline2 ConsoleReader
+    */
+    private static CharSequence stripAnsi(final CharSequence str) {
+        if (str == null) return ''
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream()
+            AnsiOutputStream aos = new AnsiOutputStream(baos)
+            aos.write(str.toString().bytes)
+            aos.flush()
+            return baos.toString()
+        } catch (IOException e) {
+            return str
+        }
+    }
+
 }
+
+
 
 class GroovyshUtilsTest extends GroovyTestCase {
 
