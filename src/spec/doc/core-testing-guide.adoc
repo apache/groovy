@@ -27,9 +27,9 @@ The Groovy programming language comes with great support for writing tests. In a
 features and test integration with state-of-the-art testing libraries and frameworks, the Groovy ecosystem has born
 a rich set of testing libraries and frameworks.
 
-This chapter will start with language specific testing features and continue with a closer look at JUnit integration,
-Spock for specifications and Geb for functional tests. Finally, we an overview of other testing libraries known to
-be working with Groovy.
+This chapter will start with language specific testing features and continue with a closer look at JUnit
+integration, Spock for specifications, and Geb for functional tests. Finally, we'll do an overview of other testing
+libraries known to be working with Groovy.
 
 == Language Features
 
