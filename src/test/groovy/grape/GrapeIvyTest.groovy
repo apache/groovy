@@ -31,7 +31,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         // make sure files are installed locally
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'2.2.12'],
             [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']],
             [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15']
         ].each {
