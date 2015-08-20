@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.Completer
 import jline.console.completer.NullCompleter
+import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.tools.shell.CommandSupport
@@ -31,7 +32,6 @@ import org.codehaus.groovy.tools.shell.Interpreter
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
-import org.codehaus.groovy.tools.shell.completion.PatchedStringsCompleter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 
@@ -60,8 +60,8 @@ class ImportCommand
     @Override
     Completer getCompleter() {
         // need a different completer setup due to static import
-        Completer impCompleter = new PatchedStringsCompleter(name, shortcut)
-        Completer asCompleter = new PatchedStringsCompleter('as')
+        Completer impCompleter = new StringsCompleter(name + ' ', shortcut + ' ')
+        Completer asCompleter = new StringsCompleter('as ')
         Completer nullCompleter = new NullCompleter()
         PackageHelper packageHelper = shell.packageHelper
         Interpreter interp = shell.interp
@@ -72,7 +72,7 @@ class ImportCommand
                 nullCompleter])
         Completer staticCompleter = new StricterArgumentCompleter([
                 impCompleter,
-                new PatchedStringsCompleter('static'),
+                new StringsCompleter('static '),
                 new ImportCompleter(packageHelper, interp, true),
                 asCompleter,
                 nullCompleter])
