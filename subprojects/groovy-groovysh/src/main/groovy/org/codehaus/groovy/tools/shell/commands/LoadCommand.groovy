@@ -41,7 +41,7 @@ class LoadCommand
 
     @Override
     protected List<Completer> createCompleters() {
-        return [ new FileNameCompleter(true, true) ]
+        return [ new FileNameCompleter(true) ]
     }
 
     @Override

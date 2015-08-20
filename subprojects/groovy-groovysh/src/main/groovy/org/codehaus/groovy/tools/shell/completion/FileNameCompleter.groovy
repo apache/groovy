@@ -36,10 +36,14 @@ import static jline.internal.Preconditions.checkNotNull
 /**
  * PATCHED copy from jline 2.12, with
  * https://github.com/jline/jline2/issues/90 (no trailing blank)
+ * https://github.com/jline/jline2/pull/204
+ *
  * NOTE: we hope to work with the jline project to have this functionality
  * absorbed into a future jline release and then remove this file, so keep
  * that in mind if you are thinking of changing this file.
- *
+ */
+
+ /**
  * A file name completer takes the buffer and issues a list of
  * potential completions.
  * <p/>
@@ -62,13 +66,9 @@ import static jline.internal.Preconditions.checkNotNull
 public class FileNameCompleter
 implements Completer
 {
-    // TODO: Handle files with spaces in them
-
     private static final boolean OS_IS_WINDOWS;
 
     private boolean printSpaceAfterFullCompletion = true;
-
-    private boolean handleLeadingHyphen = false;
 
     public boolean getPrintSpaceAfterFullCompletion() {
         return printSpaceAfterFullCompletion;
@@ -91,15 +91,9 @@ implements Completer
     }
 
 
-    public FileNameCompleter(boolean blankSuffix, boolean handleLeadingHyphen) {
-        this(blankSuffix)
-        this.handleLeadingHyphen = handleLeadingHyphen
-    }
-
     public int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
         // buffer can be null
         checkNotNull(candidates);
-        String hyphenChar = null;
 
         if (buffer == null) {
             buffer = "";
@@ -110,10 +104,6 @@ implements Completer
         }
 
         String translated = buffer;
-        if (handleLeadingHyphen && (translated.startsWith('\'') || translated.startsWith('"'))) {
-            hyphenChar = translated[0];
-            translated = translated.substring(1);
-        }
 
         // Special character: ~ maps to the user's home directory in most OSs
         if (!OS_IS_WINDOWS && translated.startsWith("~")) {
@@ -142,7 +132,7 @@ implements Completer
 
         File[] entries = (dir == null) ? new File[0] : dir.listFiles();
 
-        return matchFiles(buffer, translated, entries, candidates, hyphenChar);
+        return matchFiles(buffer, translated, entries, candidates);
     }
 
     protected static String separator() {
@@ -153,36 +143,31 @@ implements Completer
         return Configuration.getUserHome();
     }
 
-    protected static File getUserDir() {
+    /*
+     * non static for testing
+     */
+    protected File getUserDir() {
         return new File(".");
     }
 
-    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates, final String hyphenChar) {
+    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates) {
         if (files == null) {
             return -1;
         }
 
-        int matches = 0;
-
-        // first pass: just count the matches
         for (File file : files) {
             if (file.getAbsolutePath().startsWith(translated)) {
-                matches++;
-            }
-        }
-        for (File file : files) {
-            if (file.getAbsolutePath().startsWith(translated)) {
-                CharSequence name = file.getName()
-                if (matches == 1) {
-                    if (file.isDirectory()) {
-                        name += separator();
-                    } else {
-                        if (printSpaceAfterFullCompletion && !hyphenChar) {
-                            name += ' ';
-                        }
+                CharSequence name = file.getName();
+                String renderedName = render(name).toString();
+                if (file.isDirectory()) {
+                    renderedName += separator();
+                } else {
+                    if (printSpaceAfterFullCompletion) {
+                        renderedName += ' '
                     }
                 }
-                candidates.add(render(name, hyphenChar).toString());
+
+                candidates.add(renderedName);
             }
         }
 
@@ -191,18 +176,21 @@ implements Completer
         return index + separator().length();
     }
 
-    protected CharSequence render(final CharSequence name, final String hyphenChar) {
-        if (hyphenChar != null) {
-            return escapedNameInHyphens(name, hyphenChar);
-        }
-        if (name.contains(' ')) {
-            return escapedNameInHyphens(name, '\'');
-        }
-        return name;
+    /**
+     * @param name
+     * @param hyphenChar force hyphenation with this if not null
+     * @return name in hyphens if it contains a blank
+     */
+    protected static CharSequence render(final CharSequence name) {
+        return escapedName(name);
     }
 
-    private String escapedNameInHyphens(final CharSequence name, String hyphen) {
-        // need to escape every instance of chartoEscape, and every instance of the escape char backslash
-        return hyphen + name.toString().replace('\\', '\\\\').replace(hyphen, '\\' + hyphen) + hyphen
+    /**
+     *
+     * @return name in hyphens Strings with hyphens and backslashes escaped
+     */
+    private static String escapedName(final CharSequence name) {
+        // Escape blanks, hyphens and escape characters
+        return name.toString().replace('\\', '\\\\').replace('"', '\\"').replace('\'', '\\\'').replace(' ', '\\ ')
     }
 }
