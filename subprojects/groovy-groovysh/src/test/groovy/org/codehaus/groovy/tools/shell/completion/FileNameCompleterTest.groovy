@@ -18,24 +18,48 @@
  */
 package org.codehaus.groovy.tools.shell.completion
 
+import org.junit.rules.TemporaryFolder
+
 class FileNameCompleterTest extends GroovyTestCase {
 
     void testRender() {
-        FileNameCompleter completer = new FileNameCompleter()
-        assert completer.render('foo', null) == 'foo'
-        assert completer.render('foo bar', null) == '\'foo bar\''
-        assert completer.render('foo \'bar', null) == '\'foo \\\'bar\''
-        assert completer.render('foo \'bar', '\'') == '\'foo \\\'bar\''
-        assert completer.render('foo " \'bar', '"') == '"foo \\" \'bar"'
+        assert FileNameCompleter.render('foo') == 'foo'
+        assert FileNameCompleter.render('foo bar') == 'foo\\ bar'
+        // intentionally adding empty String, to get better power assert output
+        assert FileNameCompleter.render('foo \'\"bar') == 'foo\\ \\\'\\\"bar' + ''
+    }
+
+    void testCompletionNoFiles() {
+        // abusing junit testrule
+        TemporaryFolder testFolder = null;
+        try {
+            testFolder = new TemporaryFolder();
+            testFolder.create()
+
+            FileNameCompleter completor = new FileNameCompleter() {
+                @Override
+                protected File getUserDir() {
+                    return testFolder.getRoot()
+                }
+            }
+            def candidates = []
+            String buffer = ''
+            assert 0 == completor.complete(buffer, 0, candidates)
+            assert [] == candidates
+        } finally {
+            if (testFolder != null) {
+                testFolder.delete()
+            }
+        }
     }
 
     void testMatchFiles_Unix() {
         if(! System.getProperty('os.name').startsWith('Windows')) {
             FileNameCompleter completer = new FileNameCompleter()
             List<String> candidates = []
-            int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates, null)
+            int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates)
             assert resultIndex == 'foo/'.length()
-            assert candidates == ['baroo', 'barbee']
+            assert candidates == ['baroo ', 'barbee ']
         }
     }
 }
