@@ -121,12 +121,15 @@ public class InvokerHelper {
     }
 
     public static String toString(Object arguments) {
-        if (arguments instanceof Object[])
+        if (arguments instanceof Object[]) {
             return toArrayString((Object[]) arguments);
-        if (arguments instanceof Collection)
+        }
+        if (arguments instanceof Collection) {
             return toListString((Collection) arguments);
-        if (arguments instanceof Map)
+        }
+        if (arguments instanceof Map) {
             return toMapString((Map) arguments);
+        }
         return format(arguments, false);
     }
 
