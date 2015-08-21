@@ -795,16 +795,45 @@ public class InvokerHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments) {
-        if (arguments == null) {
+        return toArrayString(arguments, false, -1, false);
+    }
+
+    private static String toArrayString(Object[] collection, boolean verbose, int maxSize, boolean safe) {
+        if (collection == null) {
             return "null";
         }
-        StringBuilder argBuf = new StringBuilder(arguments.length);
+        boolean first = true;
+        StringBuilder argBuf = new StringBuilder(collection.length);
         argBuf.append('[');
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
+
+        for (Object item : collection) {
+            if (first) {
+                first = false;
+            } else {
                 argBuf.append(", ");
             }
-            argBuf.append(format(arguments[i], false));
+            if (maxSize != -1 && argBuf.length() > maxSize) {
+                argBuf.append("...");
+                break;
+            }
+            if (item == collection) {
+                argBuf.append("(this Collection)");
+            } else {
+                String str;
+                try {
+                    str = format(item, verbose, sizeLeft(maxSize, argBuf));
+                } catch (Exception ex) {
+                    if (!safe) throw new GroovyRuntimeException(ex);
+                    String hash;
+                    try {
+                        hash = Integer.toHexString(item.hashCode());
+                    } catch (Exception ignored) {
+                        hash = "????";
+                    }
+                    str = "<" + item.getClass().getName() + "@" + hash + ">";
+                }
+                argBuf.append(str);
+            }
         }
         argBuf.append(']');
         return argBuf.toString();
@@ -820,7 +849,7 @@ public class InvokerHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments, int maxSize, boolean safe) {
-        return toListString(DefaultTypeTransformation.asCollection(arguments), maxSize, safe);
+        return toArrayString(arguments, false, maxSize, safe);
     }
 
     public static List createRange(Object from, Object to, boolean inclusive) {
