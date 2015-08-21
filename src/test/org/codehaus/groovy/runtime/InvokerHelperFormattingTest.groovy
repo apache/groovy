@@ -208,14 +208,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert '[(this Collection)]' == InvokerHelper.toString(l)
 
         Map m = [:]
-        m.put('x', m)
-        assert '[x:(this Map)]' == InvokerHelper.toString(m)
-
-        Map m2 = [:]
-        m2.put(m2, m2)
-        shouldFail(StackOverflowError) {
-            InvokerHelper.toString(m2)
-        }
+        m.put(m, m)
+        assert '[(this Map):(this Map)]' == InvokerHelper.toString(m)
     }
 
 }
