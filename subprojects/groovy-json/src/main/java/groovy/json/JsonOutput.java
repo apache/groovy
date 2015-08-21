@@ -39,10 +39,27 @@ import java.util.*;
  * @author Roshan Dawrani
  * @author Andrey Bloschetsov
  * @author Rick Hightower
+ * @author Graeme Rocher
  *
  * @since 1.8.0
  */
 public class JsonOutput {
+
+    static final char OPEN_BRACKET = '[';
+    static final char CLOSE_BRACKET = ']';
+    static final char OPEN_BRACE = '{';
+    static final char CLOSE_BRACE = '}';
+    static final char COLON = ':';
+    static final char COMMA = ',';
+    static final char SPACE = ' ';
+    static final char NEW_LINE = '\n';
+    static final char QUOTE = '"';
+
+    private static final char[] EMPTY_STRING_CHARS = Chr.array(QUOTE, QUOTE);
+
+    private static final String NULL_VALUE = "null";
+    private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+    private static final String DEFAULT_TIMEZONE = "GMT";
 
     /**
      * @return "true" or "false" for a boolean value
@@ -53,8 +70,6 @@ public class JsonOutput {
 
         return buffer.toString();
     }
-
-    private static final String NULL_VALUE = "null";
 
     /**
      * @return a string representation for a number
@@ -296,7 +311,6 @@ public class JsonOutput {
         }
     }
 
-    private static final char[] EMPTY_STRING_CHARS = Chr.array('"', '"');
 
     /**
      * Serializes any char sequence and writes it into specified buffer.
@@ -313,8 +327,8 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
-        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        SimpleDateFormat formatter = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
         buffer.addQuoted(formatter.format(date));
     }
 
@@ -322,13 +336,13 @@ public class JsonOutput {
      * Serializes array and writes it into specified buffer.
      */
     private static void writeArray(Class<?> arrayClass, Object array, CharBuf buffer) {
-        buffer.addChar('[');
+        buffer.addChar(OPEN_BRACKET);
         if (Object[].class.isAssignableFrom(arrayClass)) {
             Object[] objArray = (Object[]) array;
             if (objArray.length > 0) {
                 writeObject(objArray[0], buffer);
                 for (int i = 1; i < objArray.length; i++) {
-                    buffer.addChar(',');
+                    buffer.addChar(COMMA);
                     writeObject(objArray[i], buffer);
                 }
             }
@@ -337,7 +351,7 @@ public class JsonOutput {
             if (intArray.length > 0) {
                 buffer.addInt(intArray[0]);
                 for (int i = 1; i < intArray.length; i++) {
-                    buffer.addChar(',').addInt(intArray[i]);
+                    buffer.addChar(COMMA).addInt(intArray[i]);
                 }
             }
         } else if (long[].class.isAssignableFrom(arrayClass)) {
@@ -345,7 +359,7 @@ public class JsonOutput {
             if (longArray.length > 0) {
                 buffer.addLong(longArray[0]);
                 for (int i = 1; i < longArray.length; i++) {
-                    buffer.addChar(',').addLong(longArray[i]);
+                    buffer.addChar(COMMA).addLong(longArray[i]);
                 }
             }
         } else if (boolean[].class.isAssignableFrom(arrayClass)) {
@@ -353,7 +367,7 @@ public class JsonOutput {
             if (booleanArray.length > 0) {
                 buffer.addBoolean(booleanArray[0]);
                 for (int i = 1; i < booleanArray.length; i++) {
-                    buffer.addChar(',').addBoolean(booleanArray[i]);
+                    buffer.addChar(COMMA).addBoolean(booleanArray[i]);
                 }
             }
         } else if (char[].class.isAssignableFrom(arrayClass)) {
@@ -361,7 +375,7 @@ public class JsonOutput {
             if (charArray.length > 0) {
                 buffer.addJsonEscapedString(Chr.array(charArray[0]));
                 for (int i = 1; i < charArray.length; i++) {
-                    buffer.addChar(',').addJsonEscapedString(Chr.array(charArray[i]));
+                    buffer.addChar(COMMA).addJsonEscapedString(Chr.array(charArray[i]));
                 }
             }
         } else if (double[].class.isAssignableFrom(arrayClass)) {
@@ -369,7 +383,7 @@ public class JsonOutput {
             if (doubleArray.length > 0) {
                 buffer.addDouble(doubleArray[0]);
                 for (int i = 1; i < doubleArray.length; i++) {
-                    buffer.addChar(',').addDouble(doubleArray[i]);
+                    buffer.addChar(COMMA).addDouble(doubleArray[i]);
                 }
             }
         } else if (float[].class.isAssignableFrom(arrayClass)) {
@@ -377,7 +391,7 @@ public class JsonOutput {
             if (floatArray.length > 0) {
                 buffer.addFloat(floatArray[0]);
                 for (int i = 1; i < floatArray.length; i++) {
-                    buffer.addChar(',').addFloat(floatArray[i]);
+                    buffer.addChar(COMMA).addFloat(floatArray[i]);
                 }
             }
         } else if (byte[].class.isAssignableFrom(arrayClass)) {
@@ -385,7 +399,7 @@ public class JsonOutput {
             if (byteArray.length > 0) {
                 buffer.addByte(byteArray[0]);
                 for (int i = 1; i < byteArray.length; i++) {
-                    buffer.addChar(',').addByte(byteArray[i]);
+                    buffer.addChar(COMMA).addByte(byteArray[i]);
                 }
             }
         } else if (short[].class.isAssignableFrom(arrayClass)) {
@@ -393,21 +407,21 @@ public class JsonOutput {
             if (shortArray.length > 0) {
                 buffer.addShort(shortArray[0]);
                 for (int i = 1; i < shortArray.length; i++) {
-                    buffer.addChar(',').addShort(shortArray[i]);
+                    buffer.addChar(COMMA).addShort(shortArray[i]);
                 }
             }
         }
-        buffer.addChar(']');
+        buffer.addChar(CLOSE_BRACKET);
     }
 
-    private static final char[] EMPTY_MAP_CHARS = {'{', '}'};
+    private static final char[] EMPTY_MAP_CHARS = {OPEN_BRACE, CLOSE_BRACE};
 
     /**
      * Serializes map and writes it into specified buffer.
      */
     private static void writeMap(Map<?, ?> map, CharBuf buffer) {
         if (!map.isEmpty()) {
-            buffer.addChar('{');
+            buffer.addChar(OPEN_BRACE);
             boolean firstItem = true;
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 if (entry.getKey() == null) {
@@ -415,7 +429,7 @@ public class JsonOutput {
                 }
 
                 if (!firstItem) {
-                    buffer.addChar(',');
+                    buffer.addChar(COMMA);
                 } else {
                     firstItem = false;
                 }
@@ -423,28 +437,28 @@ public class JsonOutput {
                 buffer.addJsonFieldName(entry.getKey().toString());
                 writeObject(entry.getValue(), buffer);
             }
-            buffer.addChar('}');
+            buffer.addChar(CLOSE_BRACE);
         } else {
             buffer.addChars(EMPTY_MAP_CHARS);
         }
     }
 
-    private static final char[] EMPTY_LIST_CHARS = {'[', ']'};
+    private static final char[] EMPTY_LIST_CHARS = {OPEN_BRACKET, CLOSE_BRACKET};
 
     /**
      * Serializes iterator and writes it into specified buffer.
      */
     private static void writeIterator(Iterator<?> iterator, CharBuf buffer) {
         if (iterator.hasNext()) {
-            buffer.addChar('[');
+            buffer.addChar(OPEN_BRACKET);
             Object it = iterator.next();
             writeObject(it, buffer);
             while (iterator.hasNext()) {
                 it = iterator.next();
-                buffer.addChar(',');
+                buffer.addChar(COMMA);
                 writeObject(it, buffer);
             }
-            buffer.addChar(']');
+            buffer.addChar(CLOSE_BRACKET);
         } else {
             buffer.addChars(EMPTY_LIST_CHARS);
         }
@@ -469,38 +483,38 @@ public class JsonOutput {
             switch (token.getType()) {
                 case OPEN_CURLY:
                     indentSize += 4;
-                    output.addChars(Chr.array('{', '\n')).addChars(getIndent(indentSize, indentCache));
+                    output.addChars(Chr.array(OPEN_BRACE, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
 
                     break;
                 case CLOSE_CURLY:
                     indentSize -= 4;
-                    output.addChar('\n');
+                    output.addChar(NEW_LINE);
                     if (indentSize > 0) {
                         output.addChars(getIndent(indentSize, indentCache));
                     }
-                    output.addChar('}');
+                    output.addChar(CLOSE_BRACE);
 
                     break;
                 case OPEN_BRACKET:
                     indentSize += 4;
-                    output.addChars(Chr.array('[', '\n')).addChars(getIndent(indentSize, indentCache));
+                    output.addChars(Chr.array(OPEN_BRACKET, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
 
                     break;
                 case CLOSE_BRACKET:
                     indentSize -= 4;
-                    output.addChar('\n');
+                    output.addChar(NEW_LINE);
                     if (indentSize > 0) {
                         output.addChars(getIndent(indentSize, indentCache));
                     }
-                    output.addChar(']');
+                    output.addChar(CLOSE_BRACKET);
 
                     break;
                 case COMMA:
-                    output.addChars(Chr.array(',', '\n')).addChars(getIndent(indentSize, indentCache));
+                    output.addChars(Chr.array(COMMA, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
 
                     break;
                 case COLON:
-                    output.addChars(Chr.array(':', ' '));
+                    output.addChars(Chr.array(COLON, SPACE));
 
                     break;
                 case STRING:
@@ -530,7 +544,7 @@ public class JsonOutput {
         char[] indent = indentCache.get(indentSize);
         if (indent == null) {
             indent = new char[indentSize];
-            Arrays.fill(indent, ' ');
+            Arrays.fill(indent, SPACE);
             indentCache.put(indentSize, indent);
         }
 
