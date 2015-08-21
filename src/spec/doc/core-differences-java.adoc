@@ -260,6 +260,19 @@ with exception.
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
 ----
 
+== Primitives and wrappers
+
+Because Groovy uses Objects for everything, it link:core-object-orientation.html#_primitive_types[autowraps] references
+to primitives. Because of this, it does not follow Java's behavior of widening taking priority over boxing.
+Here's an example using `int`
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=widening_vs_boxing,indent=0]
+----
+<1> This is the method that Java would call, since widening has precedence over unboxing.
+<2> This is the method Groovy actually calls, since all primitive references use their wrapper class.
+
 == Behaviour of `==`
 
 In Java `==` means equality of primitive types or identity for objects.  In
