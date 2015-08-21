@@ -601,7 +601,7 @@ public class InvokerHelper {
             }
         }
         if (arguments instanceof Collection) {
-            return formatList((Collection) arguments, verbose, maxSize);
+            return formatCollection((Collection) arguments, verbose, maxSize);
         }
         if (arguments instanceof Map) {
             return formatMap((Map) arguments, verbose, maxSize);
@@ -672,11 +672,11 @@ public class InvokerHelper {
         return maxSize == -1 ? maxSize : Math.max(0, maxSize - buffer.length());
     }
 
-    private static String formatList(Collection collection, boolean verbose, int maxSize) {
-        return formatList(collection, verbose, maxSize, false);
+    private static String formatCollection(Collection collection, boolean verbose, int maxSize) {
+        return formatCollection(collection, verbose, maxSize, false);
     }
 
-    private static String formatList(Collection collection, boolean verbose, int maxSize, boolean safe) {
+    private static String formatCollection(Collection collection, boolean verbose, int maxSize, boolean safe) {
         StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
         buffer.append('[');
         boolean first = true;
@@ -784,7 +784,7 @@ public class InvokerHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg, int maxSize, boolean safe) {
-        return formatList(arg, false, maxSize, safe);
+        return formatCollection(arg, false, maxSize, safe);
     }
 
     /**
