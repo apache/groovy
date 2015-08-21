@@ -597,10 +597,18 @@ public class InvokerHelper {
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
-            if (verbose) {
-                return range.inspect();
-            } else {
-                return range.toString();
+            try {
+                if (verbose) {
+                    return range.inspect();
+                } else {
+                    return range.toString();
+                }
+            } catch (RuntimeException ex) {
+                if (!safe) throw  ex;
+                return handleFormattingException(arguments, ex);
+            } catch (Exception ex) {
+                if (!safe) throw  new GroovyRuntimeException(ex);
+                return handleFormattingException(arguments, ex);
             }
         }
         if (arguments instanceof Collection) {
@@ -640,16 +648,24 @@ public class InvokerHelper {
 //        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
         try {
             return arguments.toString();
+        } catch (RuntimeException ex) {
+            if (!safe) throw  ex;
+            return handleFormattingException(arguments, ex);
         } catch (Exception ex) {
-            if (!safe) throw new GroovyRuntimeException(ex);
-            String hash;
-            try {
-                hash = Integer.toHexString(arguments.hashCode());
-            } catch (Exception ignored) {
-                hash = "????";
-            }
-            return "<" + arguments.getClass().getName() + "@" + hash + ">";
+            if (!safe) throw  new GroovyRuntimeException(ex);
+            return handleFormattingException(arguments, ex);
         }
+    }
+
+    private static String handleFormattingException(Object item, Exception ex) {
+
+        String hash;
+        try {
+            hash = Integer.toHexString(item.hashCode());
+        } catch (Exception ignored) {
+            hash = "????";
+        }
+        return "<" + item.getClass().getName() + "@" + hash + ">";
     }
 
     private static String formatMap(Map map, boolean verbose, int maxSize, boolean safe) {
