@@ -670,7 +670,11 @@ public class InvokerHelper {
                 break;
             }
             Map.Entry entry = (Map.Entry) o;
-            buffer.append(format(entry.getKey(), verbose));
+            if (entry.getKey() == map) {
+                buffer.append("(this Map)");
+            } else {
+                buffer.append(format(entry.getKey(), verbose, sizeLeft(maxSize, buffer), safe));
+            }
             buffer.append(":");
             if (entry.getValue() == map) {
                 buffer.append("(this Map)");
