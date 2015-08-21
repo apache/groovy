@@ -62,6 +62,9 @@ public class InvokerHelper {
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
     protected static final Class[] EMPTY_TYPES = {};
 
+    // heuristic size to pre-alocate stringbuffers for collections of items
+    private static final int ITEM_ALLOCATE_SIZE = 5;
+
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
     public static void removeClass(Class clazz) {
@@ -639,7 +642,8 @@ public class InvokerHelper {
         if (map.isEmpty()) {
             return "[:]";
         }
-        StringBuilder buffer = new StringBuilder("[");
+        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * map.size() * 2);
+        buffer.append('[');
         boolean first = true;
         for (Object o : map.entrySet()) {
             if (first) {
@@ -660,7 +664,7 @@ public class InvokerHelper {
                 buffer.append(format(entry.getValue(), verbose, sizeLeft(maxSize, buffer)));
             }
         }
-        buffer.append("]");
+        buffer.append(']');
         return buffer.toString();
     }
 
@@ -673,7 +677,8 @@ public class InvokerHelper {
     }
 
     private static String formatList(Collection collection, boolean verbose, int maxSize, boolean safe) {
-        StringBuilder buffer = new StringBuilder("[");
+        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
+        buffer.append('[');
         boolean first = true;
         for (Object item : collection) {
             if (first) {
@@ -704,7 +709,7 @@ public class InvokerHelper {
                 buffer.append(str);
             }
         }
-        buffer.append("]");
+        buffer.append(']');
         return buffer.toString();
     }
 
@@ -793,16 +798,15 @@ public class InvokerHelper {
         if (arguments == null) {
             return "null";
         }
-        String sbdry = "[";
-        String ebdry = "]";
-        StringBuilder argBuf = new StringBuilder(sbdry);
+        StringBuilder argBuf = new StringBuilder(arguments.length);
+        argBuf.append('[');
         for (int i = 0; i < arguments.length; i++) {
             if (i > 0) {
                 argBuf.append(", ");
             }
             argBuf.append(format(arguments[i], false));
         }
-        argBuf.append(ebdry);
+        argBuf.append(']');
         return argBuf.toString();
     }
 
