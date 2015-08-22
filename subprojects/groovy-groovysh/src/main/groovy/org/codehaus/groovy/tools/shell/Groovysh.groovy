@@ -87,19 +87,7 @@ class Groovysh extends Shell {
     PackageHelper packageHelper
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
-        super(io)
-
-        assert classLoader
-        assert binding
-        assert registrar
-
-        parser = new Parser()
-
-        interp = new Interpreter(classLoader, binding)
-
-        registrar.call(this)
-
-        this.packageHelper = new PackageHelperImpl(classLoader)
+        this(classLoader, binding, io, registrar, null)
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
