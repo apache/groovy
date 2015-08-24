@@ -44,12 +44,12 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * The first value in the range.
      */
-    private Comparable from;
+    private final Comparable from;
 
     /**
      * The last value in the range.
      */
-    private Comparable to;
+    private final Comparable to;
 
     /**
      * The cached size, or -1 if not yet computed
@@ -69,32 +69,19 @@ public class ObjectRange extends AbstractList implements Range {
      * @param to   the last value in the range.
      */
     public ObjectRange(Comparable from, Comparable to) {
-        if (from == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
-        }
-        if (to == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
-        }
-
-        try {
-            this.reverse = ScriptBytecodeAdapter.compareGreaterThan(from, to);
-        } catch (ClassCastException cce) {
-            throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", cce);
-        }
-        if (this.reverse) {
-            constructorHelper(to, from);
-        } else {
-            constructorHelper(from, to);
-        }
+        this(to, from, areReversed(from, to));
     }
 
+    /**
+     * Creates a new {@link ObjectRange,} assumes smaller <= larger, else behavior is undefined.
+     * USE WITH CAUTION
+     *
+     * Optimized Constructor avoiding initial computation of comparison.
+     */
     public ObjectRange(Comparable from, Comparable to, boolean reverse) {
-        constructorHelper(from, to);
 
         this.reverse = reverse;
-    }
 
-    private void constructorHelper(Comparable from, Comparable to) {
         if (from instanceof Short) {
             from = ((Short) from).intValue();
         } else if (from instanceof Float) {
@@ -122,7 +109,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
         if (from instanceof String || to instanceof String) {
             // this test depends deeply on the String.next implementation
-            // 009.next is 00:, not 010 
+            // 009.next is 00:, not 010
             String start = from.toString();
             String end = to.toString();
             if (start.length() > end.length()) {
@@ -137,6 +124,22 @@ public class ObjectRange extends AbstractList implements Range {
                 throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
             }
 
+        }
+    }
+
+
+    private static boolean areReversed(Comparable from, Comparable to) {
+        if (from == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
+        }
+        if (to == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
+        }
+
+        try {
+            return ScriptBytecodeAdapter.compareGreaterThan(from, to);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", cce);
         }
     }
 
@@ -332,6 +335,10 @@ public class ObjectRange extends AbstractList implements Range {
         return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
+    /**
+     * iterates over all values and returns true if one value matches.
+     * Also see containsWithinBounds.
+     */
     public boolean contains(Object value) {
         Iterator it = iterator();
         if (value == null) return false;

@@ -102,28 +102,32 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * For non-inclusive aware ranges, the first number in the range; <code>from</code> is always less than or equal to <code>to</code>.
      * For inclusive aware ranges, the <code>from</code> argument supplied to the constructor.
      */
-    private int from;
+    private final int from;
 
     /**
      * For non-inclusive aware ranges, the last number in the range; <code>to</code> is always greater than or equal to <code>from</code>.
      * For inclusive aware ranges, the <code>from</code> argument supplied to the constructor.
      */
-    private int to;
+    private final int to;
 
     /**
      * If <code>false</code>, counts up from <code>from</code> to <code>to</code>.  Otherwise, counts down
-     * from <code>to</code> to <code>from</code>. Not used for inclusive aware ranges.
+     * from <code>to</code> to <code>from</code>. Not used for inclusive-aware ranges (inclusive = true|false).
      */
-    private boolean reverse;
+    private final boolean reverse;
 
     /**
-     * If <code>true</code>, <code>to</code> is included in the range.  Otherwise, the range stops
-     * before the <code>to</code> value. Null for non-inclusive aware ranges.
+     * If <code>true</code> or null, <code>to</code> is included in the range.
+     * If <code>false</code>, the range stops before the <code>to</code> value.
+     *
+     * Null for non-inclusive-aware ranges (which are inclusive).
+     *
+     * If true or false, the reverse flag is discarded.
      */
-    private Boolean inclusive;
+    private final Boolean inclusive;
 
     /**
-     * Creates a new non-inclusive <code>IntRange</code>. If <code>from</code> is greater than
+     * Creates a new non-inclusive aware <code>IntRange</code>. If <code>from</code> is greater than
      * <code>to</code>, a reverse range is created with <code>from</code> and <code>to</code> swapped.
      *
      * @param from the first number in the range.
@@ -139,6 +143,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         } else {
             this.from = from;
             this.to = to;
+            this.reverse = false;
         }
 
         // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
@@ -185,6 +190,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
+        this.reverse = false; // range may still be reversed, this value is ignored for inclusive-aware ranges
     }
 
     /**
