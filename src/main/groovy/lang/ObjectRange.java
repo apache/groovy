@@ -73,45 +73,46 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     /**
-     * Creates a new {@link ObjectRange,} assumes smaller <= larger, else behavior is undefined.
+     * Creates a new {@link ObjectRange,} assumes arguments are compatible
+     * and smaller <= larger, else behavior is undefined.
      * USE WITH CAUTION
      *
      * Optimized Constructor avoiding initial computation of comparison.
      */
-    public ObjectRange(Comparable from, Comparable to, boolean reverse) {
+    public ObjectRange(Comparable smaller, Comparable larger, boolean reverse) {
 
         this.reverse = reverse;
 
-        if (from instanceof Short) {
-            from = ((Short) from).intValue();
-        } else if (from instanceof Float) {
-            from = ((Float) from).doubleValue();
+        if (smaller instanceof Short) {
+            smaller = ((Short) smaller).intValue();
+        } else if (smaller instanceof Float) {
+            smaller = ((Float) smaller).doubleValue();
         }
-        if (to instanceof Short) {
-            to = ((Short) to).intValue();
-        } else if (to instanceof Float) {
-            to = ((Float) to).doubleValue();
+        if (larger instanceof Short) {
+            larger = ((Short) larger).intValue();
+        } else if (larger instanceof Float) {
+            larger = ((Float) larger).doubleValue();
         }
 
-        if (from instanceof Integer && to instanceof Long) {
-            from = Long.valueOf(((Integer) from).longValue());
-        } else if (to instanceof Integer && from instanceof Long) {
-            to = Long.valueOf(((Integer) to).longValue());
+        if (smaller instanceof Integer && larger instanceof Long) {
+            smaller = Long.valueOf(((Integer) smaller).longValue());
+        } else if (larger instanceof Integer && smaller instanceof Long) {
+            larger = Long.valueOf(((Integer) larger).longValue());
         }
 
         // TODO: should we care about different types here?
-        if (from.getClass() == to.getClass()) {
-            this.from = from;
-            this.to = to;
+        if (smaller.getClass() == larger.getClass()) {
+            this.from = smaller;
+            this.to = larger;
         } else {
-            this.from = normaliseStringType(from);
-            this.to = normaliseStringType(to);
+            this.from = normaliseStringType(smaller);
+            this.to = normaliseStringType(larger);
         }
-        if (from instanceof String || to instanceof String) {
+        if (smaller instanceof String || larger instanceof String) {
             // this test depends deeply on the String.next implementation
             // 009.next is 00:, not 010
-            String start = from.toString();
-            String end = to.toString();
+            String start = smaller.toString();
+            String end = larger.toString();
             if (start.length() > end.length()) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
             }
