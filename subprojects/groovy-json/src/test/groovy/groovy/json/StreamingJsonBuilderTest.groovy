@@ -72,6 +72,16 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testUnescapedJson() {
+        new StringWriter().with { w ->
+            new StreamingJsonBuilder(w).call {
+                a 1
+                b JsonOutput.unescaped('{"name":"Fred"}')
+            }
+            assert w.toString() == '{"a":1,"b":{"name":"Fred"}}'
+        }
+    }
+
     void testEmptyArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
