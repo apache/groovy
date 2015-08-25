@@ -55,7 +55,7 @@ class LoadCommand
         for (source in args) {
             URL url
 
-            log.debug("Attempting to load: \"$url\"")
+            log.debug("Attempting to load: \"$source\"")
 
             try {
                 url = new URL("$source")

@@ -81,17 +81,29 @@ abstract class CommandSupport
 
     @Override
     String getDescription() {
-        return messages['command.description']
+        try {
+            return messages.getMessage('command.description')
+        } catch (MissingResourceException) {
+            return 'No description'
+        }
     }
 
     @Override
     String getUsage() {
-        return messages['command.usage']
+        try {
+            return messages.getMessage('command.usage')
+        } catch (MissingResourceException) {
+            return 'No usage description'
+        }
     }
 
     @Override
     String getHelp() {
-        return messages['command.help']
+        try {
+            return messages.getMessage('command.help')
+        } catch (MissingResourceException) {
+            return 'No help'
+        }
     }
 
     @Override
