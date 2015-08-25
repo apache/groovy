@@ -291,6 +291,8 @@ public class JsonOutput {
                 buffer.addJsonEscapedString(object.toString());
             } else if (objectClass == UUID.class) {
                 buffer.addQuoted(object.toString());
+            } else if (objectClass == JsonUnescaped.class) {
+                buffer.add(object.toString());
             } else if (Closure.class.isAssignableFrom(objectClass)) {
                 writeMap(JsonDelegate.cloneDelegateAndGetContent((Closure<?>) object), buffer);
             } else if (Expando.class.isAssignableFrom(objectClass)) {
@@ -565,6 +567,36 @@ public class JsonOutput {
         }
 
         return indent;
+    }
+
+    /**
+     * Obtains JSON unescaped text for the given text
+     *
+     * @param text The text
+     * @return The unescaped text
+     */
+    public static JsonUnescaped unescaped(CharSequence text) {
+        return new JsonUnescaped(text);
+    }
+
+    /**
+     * Represents unescaped JSON
+     */
+    public static class JsonUnescaped {
+        private CharSequence text;
+
+        public JsonUnescaped(CharSequence text) {
+            this.text = text;
+        }
+
+        public CharSequence getText() {
+            return text;
+        }
+
+        @Override
+        public String toString() {
+            return text.toString();
+        }
     }
 
 }
