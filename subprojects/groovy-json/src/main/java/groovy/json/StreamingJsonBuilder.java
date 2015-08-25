@@ -545,6 +545,18 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writeValue(value);
         }
 
+        /**
+         * Writes an unescaped value. Note: can cause invalid JSON if passed JSON is invalid
+         *
+         * @param name The attribute name
+         * @param json The value
+         * @throws IOException
+         */
+        public void call(String name, JsonOutput.JsonUnescaped json) throws IOException {
+            writeName(name);
+            writer.write(json.toString());
+        }
+
 
         private void writeObjects(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
             verifyValue();
