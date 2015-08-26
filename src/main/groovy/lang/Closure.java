@@ -637,10 +637,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Typical usage:
      * <pre>
      * def twice = { a -> a * 2 }
-     * def thrice = { a -> a * 3 }
-     * def times6 = twice >> thrice
-     * // equivalent: times6 = { a -> thrice(twice(a)) }
-     * assert times6(3) == 18
+     * def add3 = { a -> a + 3 }
+     * def transform = twice >> add3
+     * // equivalent: transform = { a -> add3(twice(a)) }
+     * assert transform(3) == 9
      * </pre>
      *
      * @param other the Closure to compose with the current Closure
@@ -656,10 +656,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Typical usage:
      * <pre>
      * def twice = { a -> a * 2 }
-     * def thrice = { a -> a * 3 }
-     * def times6 = thrice << twice
-     * // equivalent: times6 = { a -> thrice(twice(a)) }
-     * assert times6(3) == 18
+     * def add3 = { a -> a + 3 }
+     * def transform = twice << add3
+     * // equivalent: transform = { a -> twice(add3(a)) }
+     * assert transform(3) == 12
      * </pre>
      *
      * @param other the Closure to compose with the current Closure
