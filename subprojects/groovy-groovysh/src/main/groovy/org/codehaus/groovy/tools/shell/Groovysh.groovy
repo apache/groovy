@@ -242,12 +242,12 @@ class Groovysh extends Shell {
      */
     private Object evaluateWithStoredBoundVars(String importsSpec, final List<String> current) {
         Object result
-        String variableBlocks = ''
-        // To make groovysh behave more like an interpreter, we need to retrive all bound
+        String variableBlocks = null
+        // To make groovysh behave more like an interpreter, we need to retrieve all bound
         // vars at the end of script execution, and then update them into the groovysh Binding context.
         Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(importsSpec + Parser.NEWLINE + current.join(Parser.NEWLINE))
-        variableBlocks += "$COLLECTED_BOUND_VARS_MAP_VARNAME = new HashMap();"
         if (boundVars) {
+            variableBlocks = "$COLLECTED_BOUND_VARS_MAP_VARNAME = new HashMap();"
             boundVars.each({ String varname ->
                 // bound vars can be in global or some local scope.
                 // We discard locally scoped vars by ignoring MissingPropertyException
@@ -257,11 +257,19 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             })
         }
         // Evaluate the current buffer w/imports and dummy statement
-        List<String> buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
+        List<String> buff;
+        if (variableBlocks) {
+            buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
+        } else {
+            buff = [importsSpec] + ['true'] + current
+        }
         setLastResult(result = interp.evaluate(buff))
 
-        Map<String, Object> boundVarValues = interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
-        boundVarValues.each({ String name, Object value -> interp.context.setVariable(name, value) })
+        if (variableBlocks) {
+            Map<String, Object> boundVarValues = interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
+            boundVarValues.each({ String name, Object value -> interp.context.setVariable(name, value) })
+        }
+
         return result
     }
 
