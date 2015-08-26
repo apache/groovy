@@ -39,6 +39,7 @@ class GroovyshTest extends GroovyTestCase {
         mockErr = new ByteArrayOutputStream()
         testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
         testio.setVerbosity(IO.Verbosity.INFO)
+        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'false')
     }
 
     void testCompleteExpr() {
@@ -267,6 +268,17 @@ class GroovyshTest extends GroovyTestCase {
         } catch (ArithmeticException e) {}
     }
 
+    void testImports() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.execute('import java.rmi.Remote ')
+        assert mockOut.toString().length() > 0
+        assert 'java.rmi.Remote\n' == mockOut.toString().normalize()[-('java.rmi.Remote\n'.length())..-1]
+        groovysh.execute('Remote r')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert 'null\n' == mockOut.toString().normalize()[-5..-1]
+    }
+
     static File createTemporaryGroovyScriptFile(content) {
         String testName = 'GroovyshTest' + System.currentTimeMillis()
         File groovyCode = new File(System.getProperty('java.io.tmpdir'), testName)
@@ -295,8 +307,6 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
 
     void testBoundVar() {
         Groovysh groovysh = new Groovysh(testio)
-        // default is false
-
         groovysh.execute('int x = 3')
         assert mockOut.toString().length() > 0
         assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
@@ -307,8 +317,6 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
 
     void testBoundVarmultiple() {
         Groovysh groovysh = new Groovysh(testio)
-        // default is false
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
         groovysh.execute('int x, y, z')
         assert mockOut.toString().length() > 0
         assert ' 0\n' == mockOut.toString().normalize()[-3..-1]

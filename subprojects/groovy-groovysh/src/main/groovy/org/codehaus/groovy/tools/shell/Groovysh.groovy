@@ -204,7 +204,7 @@ class Groovysh extends Shell {
                     setLastResult(result = interp.evaluate(buff))
                 } else {
                     // Evaluate Buffer wrapped with code storing bounded vars
-                    result = evaluateWithStoredBoundVars(current)
+                    result = evaluateWithStoredBoundVars(importsSpec, current)
                 }
 
                 buffers.clearSelected()
@@ -240,12 +240,12 @@ class Groovysh extends Shell {
      * to simulate an interpreter mode, this method wraps the statements into a try/finally block that
      * stores bound variables like unbound variables
      */
-    private Object evaluateWithStoredBoundVars(final List<String> current) {
+    private Object evaluateWithStoredBoundVars(String importsSpec, final List<String> current) {
         Object result
         String variableBlocks = ''
         // To make groovysh behave more like an interpreter, we need to retrive all bound
         // vars at the end of script execution, and then update them into the groovysh Binding context.
-        Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(current.join(Parser.NEWLINE))
+        Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(importsSpec + Parser.NEWLINE + current.join(Parser.NEWLINE))
         variableBlocks += "$COLLECTED_BOUND_VARS_MAP_VARNAME = new HashMap();"
         if (boundVars) {
             boundVars.each({ String varname ->
@@ -256,10 +256,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 } catch (MissingPropertyException e){}"""
             })
         }
-
         // Evaluate the current buffer w/imports and dummy statement
-        List<String> buff = imports + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
-
+        List<String> buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
         setLastResult(result = interp.evaluate(buff))
 
         Map<String, Object> boundVarValues = interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
