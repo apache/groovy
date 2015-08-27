@@ -2535,7 +2535,7 @@ namePart  {Token first = LT(1);}
 
 /*
  * Allowed keywords after dot (as a member name) and before colon (as a label).
- * Includes all Java keywords plus "in" and "as".
+ * Includes all Java keywords plus "as", "def", "in", and "trait".
  */
 keywordPropertyNames
     :   (
