@@ -36,7 +36,7 @@ import java.io.Writer;
  * <p>
  * Groovy allows instances of Closures to be called in a
  * short form. For example:
- * <pre>
+ * <pre class="groovyTestCase">
  * def a = 1
  * def c = { a }
  * assert c() == 1
@@ -48,7 +48,7 @@ import java.io.Writer;
  * {@link #getParameterTypes()} will work too without any
  * additional code. If no doCall method is provided a
  * closure must be used in its long form like
- * <pre>
+ * <pre class="groovyTestCase">
  * def a = 1
  * def c = {a}
  * assert c.call() == 1
@@ -561,7 +561,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure "right" currying.
      * Parameters are supplied on the right rather than left as per the normal curry() method.
      * Typical usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def divide = { a, b -> a / b }
      * def halver = divide.rcurry(2)
      * assert halver(8) == 4
@@ -635,12 +635,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure forward composition.
      * <p>
      * Typical usage:
-     * <pre>
-     * def twice = { a -> a * 2 }
+     * <pre class="groovyTestCase">
+     * def times2 = { a -> a * 2 }
      * def add3 = { a -> a + 3 }
-     * def transform = twice >> add3
-     * // equivalent: transform = { a -> add3(twice(a)) }
-     * assert transform(3) == 9
+     * def timesThenAdd = times2 >> add3
+     * // equivalent: timesThenAdd = { a -> add3(times2(a)) }
+     * assert timesThenAdd(3) == 9
      * </pre>
      *
      * @param other the Closure to compose with the current Closure
@@ -654,12 +654,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure reverse composition.
      * <p>
      * Typical usage:
-     * <pre>
-     * def twice = { a -> a * 2 }
+     * <pre class="groovyTestCase">
+     * def times2 = { a -> a * 2 }
      * def add3 = { a -> a + 3 }
-     * def transform = twice << add3
-     * // equivalent: transform = { a -> twice(add3(a)) }
-     * assert transform(3) == 12
+     * def addThenTimes = times2 << add3
+     * // equivalent: addThenTimes = { a -> times2(add3(a)) }
+     * assert addThenTimes(3) == 12
      * </pre>
      *
      * @param other the Closure to compose with the current Closure
@@ -673,10 +673,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Alias for calling a Closure for non-closure arguments.
      * <p>
      * Typical usage:
-     * <pre>
-     * def twice = { a -> a * 2 }
-     * def thrice = { a -> a * 3 }
-     * assert thrice << twice << 3 == 18
+     * <pre class="groovyTestCase">
+     * def times2 = { a -> a * 2 }
+     * def add3 = { a -> a * 3 }
+     * assert add3 << times2 << 3 == 9
      * </pre>
      *
      * @param arg the argument to call the closure with
