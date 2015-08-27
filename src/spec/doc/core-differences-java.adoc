@@ -273,5 +273,7 @@ Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
 There are a few more keywords in Groovy than in Java.  Don't use them for
 variable names etc.
 
-* `in` 
-* `trait` 
+* `as`
+* `def`
+* `in`
+* `trait`
