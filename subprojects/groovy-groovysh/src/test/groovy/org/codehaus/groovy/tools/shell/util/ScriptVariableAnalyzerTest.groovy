@@ -25,7 +25,11 @@ package org.codehaus.groovy.tools.shell.util
 class ScriptVariableAnalyzerTest extends GroovyTestCase {
 
     void testEmptyScript() {
-        assert [] as Set == ScriptVariableAnalyzer.getBoundVars('')
+        assert [] as Set == ScriptVariableAnalyzer.getBoundVars('', Thread.currentThread().contextClassLoader)
+    }
+
+    void testEmptyScriptNullLOader() {
+        assert [] as Set == ScriptVariableAnalyzer.getBoundVars('', null)
     }
 
     void testBound() {
@@ -33,7 +37,7 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    int a = 6
    String b = "7"
 '''
-        assert ['a', 'b'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert ['a', 'b'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText, Thread.currentThread().contextClassLoader)
     }
 
     void testUnBound() {
@@ -41,7 +45,7 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    a = 6
    b = "7"
 '''
-        assert [] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert [] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText, Thread.currentThread().contextClassLoader)
     }
 
     void testMixed() {
@@ -58,6 +62,6 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    }
    assert b
 '''
-        assert ['b', 'c'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert ['b', 'c'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText, Thread.currentThread().contextClassLoader)
     }
 }
