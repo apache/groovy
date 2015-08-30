@@ -71,6 +71,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberList;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
 
 /**
@@ -503,7 +504,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private void checkForSystemProperties(AnnotationNode node) {
         systemProperties = new HashMap<String, String>();
-        List<String> nameValueList = AbstractASTTransformation.getMemberStringList(node, SYSTEM_PROPERTIES_SETTING);
+        List<String> nameValueList = getMemberList(node, SYSTEM_PROPERTIES_SETTING);
         if (nameValueList != null) {
             for (String nameValue : nameValueList) {
                 int equalsDelim = nameValue.indexOf('=');
