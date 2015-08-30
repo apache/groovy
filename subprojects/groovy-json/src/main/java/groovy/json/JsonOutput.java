@@ -287,7 +287,7 @@ public class JsonOutput {
                 writeArray(objectClass, object, buffer);
             } else if (Enum.class.isAssignableFrom(objectClass)) {
                 buffer.addQuoted(((Enum<?>) object).name());
-            }else if (objectClass == File.class){
+            }else if (File.class.isAssignableFrom(objectClass)){
                 Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
                 properties.remove("class");
                 properties.remove("declaringClass");
