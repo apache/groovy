@@ -41,7 +41,15 @@ public class HashCodeHelper {
         return shift(current) + (int) var;
     }
 
+    public static int updateHash(int current, Character var) {
+        return shift(current) + (int) var;
+    }
+
     public static int updateHash(int current, int var) {
+        return shift(current) + var;
+    }
+
+    public static int updateHash(int current, Integer var) {
         return shift(current) + var;
     }
 
@@ -49,11 +57,23 @@ public class HashCodeHelper {
         return shift(current) + (int) (var ^ (var >>> 32));
     }
 
+    public static int updateHash(int current, Long var) {
+        return shift(current) + (int) (var ^ (var >>> 32));
+    }
+
     public static int updateHash(int current, float var) {
         return updateHash(current, Float.floatToIntBits(var));
     }
 
+    public static int updateHash(int current, Float var) {
+        return updateHash(current, Float.floatToIntBits(var));
+    }
+
     public static int updateHash(int current, double var) {
+        return updateHash(current, Double.doubleToLongBits(var));
+    }
+
+    public static int updateHash(int current, Double var) {
         return updateHash(current, Double.doubleToLongBits(var));
     }
 
