@@ -24,6 +24,7 @@ import groovy.lang.Closure;
 import groovy.util.Expando;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import java.io.File;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -286,6 +287,21 @@ public class JsonOutput {
                 writeArray(objectClass, object, buffer);
             } else if (Enum.class.isAssignableFrom(objectClass)) {
                 buffer.addQuoted(((Enum<?>) object).name());
+            }else if (File.class.isAssignableFrom(objectClass)){
+                Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
+                properties.remove("class");
+                properties.remove("declaringClass");
+                properties.remove("metaClass");
+                //Clean up all recursive references to File objects
+                Iterator<? extends Map.Entry<?, ?>> iterator = properties.entrySet().iterator();
+                while(iterator.hasNext()){
+                    Map.Entry<?,?> entry = iterator.next();
+                    if(entry.getValue() instanceof File){
+                        iterator.remove();
+                    }
+                }
+
+                writeMap(properties, buffer);
             } else {
                 Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
                 properties.remove("class");

@@ -415,6 +415,20 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson({'\1' 0}) == '{"\\u0001":0}'
         assert toJson({'\u0002' 0}) == '{"\\u0002":0}'
     }
+
+    void testFile() {
+        def file  = File.createTempFile('test', 'file-json')
+        def unusedProp = ['class', 'metaclass', 'declaringClass', 'canonicalFile', 'absoluteFile', 'parentFile']
+        def removeUnused = { map -> unusedProp.each { map.remove(it)}; map }
+
+        assert toJson(file) == toJson(removeUnused(file.properties))
+        def dir = File.createTempDir()
+        assert toJson(dir) == toJson(removeUnused(dir.properties))
+
+        def objectWithFile = new JsonEmbeddedFile(name: 'testFile', file: file)
+        assert toJson(objectWithFile) == "{\"file\":${toJson(file)},\"name\":\"testFile\"}".toString()
+    }
+
 }
 
 @Canonical
@@ -447,4 +461,9 @@ class JsonFoo {
 
 enum JsonStreetKind {
     street, boulevard, avenue
+}
+
+class JsonEmbeddedFile {
+    String name
+    File file
 }
