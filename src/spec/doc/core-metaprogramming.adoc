@@ -348,7 +348,7 @@ There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xf
 
 (TBD)
 
-===== Magic package
+===== Magic package (Maksym Stavytskyi)
 
 (TBD)
 
