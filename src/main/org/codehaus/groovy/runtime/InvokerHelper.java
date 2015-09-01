@@ -124,11 +124,6 @@ public class InvokerHelper {
     }
 
     public static String toString(Object arguments) {
-        if (arguments instanceof Range) {
-            // for historic reasons, toString() formats Ranges by printing
-            // them as a list, whereas format prints them in .. notation
-            return toListString((Collection) arguments);
-        }
         return format(arguments, false);
     }
 
