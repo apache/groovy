@@ -20,7 +20,37 @@ package org.codehaus.groovy.runtime
 
 class InvokerHelperFormattingTest extends GroovyTestCase {
 
-    public void testFormatLiterals() {
+    private static class ExceptionOnToString implements Comparable {
+        public static final String MATCHER = '<org.codehaus.groovy.runtime.InvokerHelperFormattingTest\\$ExceptionOnToString@[0-9a-z]+>'
+
+        @Override
+        String toString() {
+            throw new UnsupportedOperationException("toString() throws Exception for Testing")
+        }
+
+        @Override
+        int compareTo(Object o) {
+            throw new UnsupportedOperationException("compareTo() throws Exception for Testing")
+        }
+    }
+
+    public void testToStringLiterals() {
+        assert 'null' == InvokerHelper.toString(null)
+        assert '0.5' == InvokerHelper.toString(0.5)
+        assert '2' == InvokerHelper.toString(2)
+        assert '2' == InvokerHelper.toString(2L)
+        assert 'a' == InvokerHelper.toString('a')
+        assert 'a\'b' == InvokerHelper.toString('a\'b')
+
+    }
+
+    public void testToStringThrows() {
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toString(new ExceptionOnToString())
+        }
+    }
+
+    public void testFormat() {
         assert 'null' == InvokerHelper.format(null, false)
         assert '0.5' == InvokerHelper.format(0.5, false)
         assert '2' == InvokerHelper.format(2, false)
@@ -28,7 +58,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert 'a' == InvokerHelper.format('a', false)
         assert 'a\'b' == InvokerHelper.format('a\'b', false)
         assert 'a\\b' + '' == InvokerHelper.format('a\\b', false)
-
+        assert '\'a\\\'b\'' == InvokerHelper.format('a\'b', true)
+        
         assert 'null' == InvokerHelper.format(null, true)
         assert '0.5' == InvokerHelper.format(0.5, true)
         assert '2' == InvokerHelper.format(2, true)
@@ -36,16 +67,144 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert '\'a\'' == InvokerHelper.format('a', true)
         assert '\'a\\\'b\'' + '' == InvokerHelper.format('a\'b', true)
         assert '\'a\\\\b\'' + '' == InvokerHelper.format('a\\b', true)
+        
+        Object eObject = new ExceptionOnToString()
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.format(eObject, false)
+        }
     }
 
-    public void testPrintSelfContained() {
+    public void testFormatRanges() {
+        assert '1..4' == InvokerHelper.format(1..4, false)
+        assert "a'b..a'd" == InvokerHelper.format('a\'b'..'a\'d', false)
+        assert "[1..4]" == InvokerHelper.format([1..4], false)
+        assert "[a'b..a'd]" == InvokerHelper.format(['a\'b'..'a\'d'], false)
+        // verbose
+        assert '1..4' == InvokerHelper.format(1..4, true)
+        assert "'a\\'b'..'a\\'d'" == InvokerHelper.format('a\'b'..'a\'d', true)
+        assert "[1..4]" == InvokerHelper.format([1..4], true)
+        assert "['a\\'b'..'a\\'d']" == InvokerHelper.format(['a\'b'..'a\'d'], true)
+
+        Object eObject = new ExceptionOnToString()
+        Object eObject2 = new ExceptionOnToString()
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.format(eObject..eObject2)
+        }
+    }
+
+    public void testToStringLists() {
+        assert '[]' == InvokerHelper.toString([])
+        assert '[1, true, a, \'b\']' == InvokerHelper.toString([1, true, 'a, \'b\''])
+    }
+
+    public void testToListString() {
+        assert '[]' == InvokerHelper.toString([])
+        assert '[1, true, a, \'b\']' == InvokerHelper.toListString([1, true, 'a, \'b\''])
+        assert '[1, ...]' == InvokerHelper.toListString([1, true, 'a, \'b\''], 2)
+        Object eObject = new ExceptionOnToString()
+        assert InvokerHelper.toListString([eObject], -1, true) =~ "\\[${ExceptionOnToString.MATCHER}\\]"
+        List list = [[z: eObject]]
+        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.LinkedHashMap@' + Integer.toHexString(list[0].hashCode()) +'>]'
+        // even when throwing object is deeply nested, exception handling only happens in Collection
+        list = [[x: [y: [z: eObject, a: 2, b: 4]]]]
+        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.LinkedHashMap@' + Integer.toHexString(list[0].hashCode()) + '>]'
+
+        list = [[eObject, 1, 2]]
+        // safe argument is not passed on recursively
+        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.ArrayList@' + Integer.toHexString(list[0].hashCode()) + '>]'
+        list = [[[[[eObject, 1, 2]]]]]
+        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.ArrayList@' + Integer.toHexString(list[0].hashCode()) + '>]'
+
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toListString([eObject], -1, false)
+        }
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toListString([eObject], -1)
+        }
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toListString([eObject])
+        }
+    }
+
+    public void testToStringRanges() {
+        assert '[1, 2, 3, 4]' == InvokerHelper.toString(1..4)
+        assert "[a'b, a'c, a'd]" == InvokerHelper.toString('a\'b'..'a\'d')
+        // within other lists, ranges get ToStringed in code form
+        assert "[1..4]" == InvokerHelper.toString([1..4])
+        assert "[a'b..a'd]" == InvokerHelper.toString(['a\'b'..'a\'d'])
+    }
+
+    public void testToStringArrays() {
+        assert "[a, a'b]" == InvokerHelper.toString(['a', 'a\'b'] as String[])
+        assert "[a, a'b]" == InvokerHelper.toString(['a', 'a\'b'] as Object[])
+    }
+
+    public void testFormatArrays() {
+        assert "[a, a'b]" == InvokerHelper.format(['a', 'a\'b'] as String[], false)
+        assert "[a, a'b]" == InvokerHelper.format(['a', 'a\'b'] as Object[], false)
+        assert "['a', 'a\\'b']" == InvokerHelper.format(['a', 'a\'b'] as String[], true)
+        assert "['a', 'a\\'b']" == InvokerHelper.format(['a', 'a\'b'] as Object[], true)
+        Object eObject = new ExceptionOnToString()
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.format([eObject] as ExceptionOnToString[], false)
+        }
+    }
+
+    public void testToStringMaps() {
+        assert '[:]' == InvokerHelper.toString([:])
+        assert "[a'b:1, 2:b'c]" == InvokerHelper.toString(['a\'b':1, 2:'b\'c'])
+    }
+
+    public void testFormatMaps() {
+        assert '[:]' == InvokerHelper.format([:], false)
+        assert "[a'b:1, 2:b'c]" == InvokerHelper.format(['a\'b':1, 2:'b\'c'], false)
+
+        Object eObject = new ExceptionOnToString()
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.format([foo: eObject], false)
+        }
+
+    }
+
+    public void testToMapString() {
+        assert '[:]' == InvokerHelper.toMapString([:])
+        assert "[a'b:1, 2:b'c]" == InvokerHelper.toMapString(['a\'b':1, 2:'b\'c'])
+        assert "[a'b:1, ...]" == InvokerHelper.toMapString(['a\'b':1, 2:'b\'c'], 2)
+        Object eObject = new ExceptionOnToString()
+        // no safe / verbose toMapString method provided
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toMapString([x: eObject])
+        }
+        shouldFail(UnsupportedOperationException) {
+            InvokerHelper.toMapString([x: eObject], 2)
+        }
+    }
+
+    public void testEmbedded() {
+        List list = []
+        list.add(['a\'b': 'c\'d'])
+        list.add(['e', 'f', 'g'])
+        list.add(5..9)
+        list.add('fog'..'fop')
+        list.add(['h', 'i'] as String[])
+        list.add([10, 11] as int[])
+        assert "[key:[[a'b:c'd], [e, f, g], 5..9, fog..fop, [h, i], [10, 11]]]" == InvokerHelper.toString([key: list])
+    }
+
+    public void testToStringSelfContained() {
         List l = [];
         l.add(l)
-        assert '[(this Collection)]' == InvokerHelper.toListString(l)
+        assert '[(this Collection)]' == InvokerHelper.toString(l)
 
         Map m = [:]
         m.put('x', m)
-        assert '[x:(this Map)]' == InvokerHelper.toMapString(m)
+        assert '[x:(this Map)]' == InvokerHelper.toString(m)
+
+        Map m2 = [:]
+        m2.put(m2, m2)
+        shouldFail(StackOverflowError) {
+            InvokerHelper.toString(m2)
+        }
     }
 
 }
