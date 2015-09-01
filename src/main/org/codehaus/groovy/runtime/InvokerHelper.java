@@ -62,6 +62,9 @@ public class InvokerHelper {
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
     protected static final Class[] EMPTY_TYPES = {};
 
+    // heuristic size to pre-alocate stringbuffers for collections of items
+    private static final int ITEM_ALLOCATE_SIZE = 5;
+
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
     public static void removeClass(Class clazz) {
@@ -121,13 +124,11 @@ public class InvokerHelper {
     }
 
     public static String toString(Object arguments) {
-        if (arguments instanceof Object[])
-            return toArrayString((Object[]) arguments);
-        if (arguments instanceof Collection)
-            return toListString((Collection) arguments);
-        if (arguments instanceof Map)
-            return toMapString((Map) arguments);
-        return format(arguments, false);
+        return toString(arguments, false, -1, false);
+    }
+
+    public static String toString(Object arguments, boolean verbose, int maxSize, boolean safe) {
+        return format(arguments, verbose, maxSize, safe);
     }
 
     public static String inspect(Object self) {
@@ -576,29 +577,45 @@ public class InvokerHelper {
     }
 
     public static String format(Object arguments, boolean verbose, int maxSize) {
+        return format(arguments, verbose, maxSize, false);
+    }
+
+    public static String format(Object arguments, boolean verbose, int maxSize, boolean safe) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         if (arguments.getClass().isArray()) {
+            if (arguments instanceof Object[]) {
+                return toArrayString((Object[]) arguments, verbose, maxSize, safe);
+            }
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
             }
-            return format(DefaultTypeTransformation.asCollection(arguments), verbose, maxSize);
+            // other primitives
+            return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), verbose, maxSize);
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
-            if (verbose) {
-                return range.inspect();
-            } else {
-                return range.toString();
+            try {
+                if (verbose) {
+                    return range.inspect();
+                } else {
+                    return range.toString();
+                }
+            } catch (RuntimeException ex) {
+                if (!safe) throw  ex;
+                return handleFormattingException(arguments, ex);
+            } catch (Exception ex) {
+                if (!safe) throw  new GroovyRuntimeException(ex);
+                return handleFormattingException(arguments, ex);
             }
         }
         if (arguments instanceof Collection) {
-            return formatList((Collection) arguments, verbose, maxSize);
+            return formatCollection((Collection) arguments, verbose, maxSize, safe);
         }
         if (arguments instanceof Map) {
-            return formatMap((Map) arguments, verbose, maxSize);
+            return formatMap((Map) arguments, verbose, maxSize, safe);
         }
         if (arguments instanceof Element) {
             try {
@@ -629,14 +646,34 @@ public class InvokerHelper {
         }
         // TODO: For GROOVY-2599 do we need something like below but it breaks other things
 //        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
-        return arguments.toString();
+        try {
+            return arguments.toString();
+        } catch (RuntimeException ex) {
+            if (!safe) throw  ex;
+            return handleFormattingException(arguments, ex);
+        } catch (Exception ex) {
+            if (!safe) throw  new GroovyRuntimeException(ex);
+            return handleFormattingException(arguments, ex);
+        }
     }
 
-    private static String formatMap(Map map, boolean verbose, int maxSize) {
+    private static String handleFormattingException(Object item, Exception ex) {
+
+        String hash;
+        try {
+            hash = Integer.toHexString(item.hashCode());
+        } catch (Exception ignored) {
+            hash = "????";
+        }
+        return "<" + item.getClass().getName() + "@" + hash + ">";
+    }
+
+    private static String formatMap(Map map, boolean verbose, int maxSize, boolean safe) {
         if (map.isEmpty()) {
             return "[:]";
         }
-        StringBuilder buffer = new StringBuilder("[");
+        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * map.size() * 2);
+        buffer.append('[');
         boolean first = true;
         for (Object o : map.entrySet()) {
             if (first) {
@@ -649,15 +686,19 @@ public class InvokerHelper {
                 break;
             }
             Map.Entry entry = (Map.Entry) o;
-            buffer.append(format(entry.getKey(), verbose));
+            if (entry.getKey() == map) {
+                buffer.append("(this Map)");
+            } else {
+                buffer.append(format(entry.getKey(), verbose, sizeLeft(maxSize, buffer), safe));
+            }
             buffer.append(":");
             if (entry.getValue() == map) {
                 buffer.append("(this Map)");
             } else {
-                buffer.append(format(entry.getValue(), verbose, sizeLeft(maxSize, buffer)));
+                buffer.append(format(entry.getValue(), verbose, sizeLeft(maxSize, buffer), safe));
             }
         }
-        buffer.append("]");
+        buffer.append(']');
         return buffer.toString();
     }
 
@@ -665,12 +706,9 @@ public class InvokerHelper {
         return maxSize == -1 ? maxSize : Math.max(0, maxSize - buffer.length());
     }
 
-    private static String formatList(Collection collection, boolean verbose, int maxSize) {
-        return formatList(collection, verbose, maxSize, false);
-    }
-
-    private static String formatList(Collection collection, boolean verbose, int maxSize, boolean safe) {
-        StringBuilder buffer = new StringBuilder("[");
+    private static String formatCollection(Collection collection, boolean verbose, int maxSize, boolean safe) {
+        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
+        buffer.append('[');
         boolean first = true;
         for (Object item : collection) {
             if (first) {
@@ -685,23 +723,10 @@ public class InvokerHelper {
             if (item == collection) {
                 buffer.append("(this Collection)");
             } else {
-                String str;
-                try {
-                    str = format(item, verbose, sizeLeft(maxSize, buffer));
-                } catch (Exception ex) {
-                    if (!safe) throw new GroovyRuntimeException(ex);
-                    String hash;
-                    try {
-                        hash = Integer.toHexString(item.hashCode());
-                    } catch (Exception ignored) {
-                        hash = "????";
-                    }
-                    str = "<" + item.getClass().getName() + "@" + hash + ">";
-                }
-                buffer.append(str);
+                buffer.append(format(item, verbose, sizeLeft(maxSize, buffer), safe));
             }
         }
-        buffer.append("]");
+        buffer.append(']');
         return buffer.toString();
     }
 
@@ -743,7 +768,7 @@ public class InvokerHelper {
      * @return the string representation of the map
      */
     public static String toMapString(Map arg, int maxSize) {
-        return formatMap(arg, false, maxSize);
+        return formatMap(arg, false, maxSize, false);
     }
 
     /**
@@ -776,7 +801,7 @@ public class InvokerHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg, int maxSize, boolean safe) {
-        return formatList(arg, false, maxSize, safe);
+        return formatCollection(arg, false, maxSize, safe);
     }
 
     /**
@@ -787,19 +812,34 @@ public class InvokerHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments) {
-        if (arguments == null) {
+        return toArrayString(arguments, false, -1, false);
+    }
+
+    private static String toArrayString(Object[] collection, boolean verbose, int maxSize, boolean safe) {
+        if (collection == null) {
             return "null";
         }
-        String sbdry = "[";
-        String ebdry = "]";
-        StringBuilder argBuf = new StringBuilder(sbdry);
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
+        boolean first = true;
+        StringBuilder argBuf = new StringBuilder(collection.length);
+        argBuf.append('[');
+
+        for (Object item : collection) {
+            if (first) {
+                first = false;
+            } else {
                 argBuf.append(", ");
             }
-            argBuf.append(format(arguments[i], false));
+            if (maxSize != -1 && argBuf.length() > maxSize) {
+                argBuf.append("...");
+                break;
+            }
+            if (item == collection) {
+                argBuf.append("(this Collection)");
+            } else {
+                argBuf.append(format(item, verbose, sizeLeft(maxSize, argBuf), safe));
+            }
         }
-        argBuf.append(ebdry);
+        argBuf.append(']');
         return argBuf.toString();
     }
 
@@ -813,7 +853,7 @@ public class InvokerHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments, int maxSize, boolean safe) {
-        return toListString(DefaultTypeTransformation.asCollection(arguments), maxSize, safe);
+        return toArrayString(arguments, false, maxSize, safe);
     }
 
     public static List createRange(Object from, Object to, boolean inclusive) {
