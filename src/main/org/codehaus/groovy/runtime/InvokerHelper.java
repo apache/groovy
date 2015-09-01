@@ -590,7 +590,7 @@ public class InvokerHelper {
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
             }
-            return format(DefaultTypeTransformation.asCollection(arguments), verbose, maxSize);
+            return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), verbose, maxSize);
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
