@@ -583,9 +583,13 @@ public class InvokerHelper {
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         if (arguments.getClass().isArray()) {
+            if (arguments instanceof Object[]) {
+                return toArrayString((Object[]) arguments, maxSize, false);
+            }
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
             }
+            // other primitives
             return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), verbose, maxSize);
         }
         if (arguments instanceof Range) {
