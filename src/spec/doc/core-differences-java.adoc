@@ -280,6 +280,62 @@ Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
 `a.equals(b)` otherwise.  To check for identity, there is `is`.  E.g.
 `a.is(b)`.
 
+== Conversions
+
+Java does automatic widening and narrowing
+https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html[conversions].
+
+[cols=">2s,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a"]
+.Java Conversions
+|============================================================================================
+|             8+|*Converts to*
+| Converts from | *boolean* | *byte* | *short* | *char* | *int* | *long* | *float* | *double*
+| boolean       | -         | N      | N       | N      | N     | N      | N       | N
+| byte          | N         | -      | Y       | C      | Y     | Y      | Y       | Y
+| short         | N         | C      | -       | C      | Y     | Y      | Y       | Y
+| char          | N         | C      | C       | -      | Y     | Y      | Y       | Y
+| int           | N         | C      | C       | C      | -     | Y      | T       | Y
+| long          | N         | C      | C       | C      | C     | -      | T       | T
+| float         | N         | C      | C       | C      | C     | C      | -       | Y
+| double        | N         | C      | C       | C      | C     | C      | C       | -
+|============================================================================================
+^*^ 'Y' indicates a conversion Java can make, 'C' indicates a conversion Java can make when there is an explicit cast,
+'T` indicates a conversion Java can make but data is truncated, 'N' indicates a conversion Java can't make.
+
+Groovy expands greatly on this.
+
+[cols=">2s,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a"]
+.Groovy Conversions
+|=================================================================================================================================================================================================================
+|            18+|*Converts to*
+| Converts from | *boolean* | *Boolean* | *byte* | *Byte* | *short* | *Short* | *char* | *Character* | *int* | *Integer* | *long* | *Long* | *BigInteger* | *float* | *Float* | *double* | *Double* | *BigDecimal*
+| boolean       | -         | B         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
+| Boolean       | B         | -         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
+| byte          | T         | T         | -      | B      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| Byte          | T         | T         | B      | -      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| short         | T         | T         | D      | D      | -       | B       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| Short         | T         | T         | D      | T      | B       | -       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| char          | T         | T         | Y      | D      | Y       | D       | -      | D           | Y     | D         | Y      | D      | D            | Y       | D       | Y        | D        | D
+| Character     | T         | T         | D      | D      | D       | D       | D      | -           | D     | D         | D      | D      | D            | D       | D       | D        | D        | D
+| int           | T         | T         | D      | D      | D       | D       | Y      | D           | -     | B         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| Integer       | T         | T         | D      | D      | D       | D       | Y      | D           | B     | -         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| long          | T         | T         | D      | D      | D       | D       | Y      | D           | D     | D         | -      | B      | Y            | T       | T       | T        | T        | Y
+| Long          | T         | T         | D      | D      | D       | T       | Y      | D           | D     | T         | B      | -      | Y            | T       | T       | T        | T        | Y
+| BigInteger    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | -            | D       | D       | D        | D        | T
+| float         | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | -       | B       | Y        | Y        | Y
+| Float         | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | B       | -       | Y        | Y        | Y
+| double        | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | D       | D       | -        | B        | Y
+| Double        | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | D       | T       | B        | -        | Y
+| BigDecimal    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | D            | T       | D       | T        | D        | -
+|=================================================================================================================================================================================================================
+^*^ 'Y' indicates a conversion Groovy can make, 'D' indicates a conversion Groovy can make when compiled dynamically or
+explicitly cast, 'T` indicates a conversion Groovy can make but data is truncated, 'B' indicates a boxing/unboxing
+operation, 'N' indicates a conversion Groovy can't make.
+
+The truncation uses link:semantics.html#Groovy-Truth[Groovy Truth] when converting to `boolean`/`Boolean`. Converting
+from a number to a character casts the `Number.intvalue()` to `char`. Groovy constructs `BigInteger` and `BigDecimal`
+using `Number.doubleValue()` when converting from a `Float` or `Double`, otherwise it constructs using `toString()`.
+Other conversions have their behavior defined by `java.lang.Number`.
 
 == Extra keywords
 
