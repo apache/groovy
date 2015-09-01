@@ -616,12 +616,14 @@ public class InvokerHelper {
         }
         if (arguments instanceof String) {
             if (verbose) {
-                String arg = ((String) arguments).replaceAll("\\n", "\\\\n");    // line feed
-                arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
-                arg = arg.replaceAll("\\t", "\\\\t");      // tab
-                arg = arg.replaceAll("\\f", "\\\\f");      // form feed
-                arg = arg.replaceAll("'", "\\\\'");    // single quotation mark
-                arg = arg.replaceAll("\\\\", "\\\\");      // backslash
+                String arg = ((String) arguments)
+                        // must replace backslashes first, as the other replacements add backslashes not to be escaped
+                        .replace("\\", "\\\\")      // backslash
+                        .replace("\n", "\\n")    // line feed
+                        .replaceAll("\\r", "\\\\r")      // carriage return
+                        .replaceAll("\\t", "\\\\t")      // tab
+                        .replaceAll("\\f", "\\\\f")      // form feed
+                        .replaceAll("'", "\\\\'");    // single quotation mark
                 return "\'" + arg + "\'";
             } else {
                 return (String) arguments;
