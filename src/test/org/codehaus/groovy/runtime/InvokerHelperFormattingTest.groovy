@@ -127,9 +127,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
     }
 
     public void testToStringRanges() {
-        assert '[1, 2, 3, 4]' == InvokerHelper.toString(1..4)
-        assert "[a'b, a'c, a'd]" == InvokerHelper.toString('a\'b'..'a\'d')
-        // within other lists, ranges get ToStringed in code form
+        assert '1..4' == InvokerHelper.toString(1..4)
+        assert "a'b..a'd" == InvokerHelper.toString('a\'b'..'a\'d')
         assert "[1..4]" == InvokerHelper.toString([1..4])
         assert "[a'b..a'd]" == InvokerHelper.toString(['a\'b'..'a\'d'])
     }
