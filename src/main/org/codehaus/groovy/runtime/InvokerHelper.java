@@ -593,10 +593,18 @@ public class InvokerHelper {
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
-            if (verbose) {
-                return range.inspect();
-            } else {
-                return range.toString();
+            try {
+                if (verbose) {
+                    return range.inspect();
+                } else {
+                    return range.toString();
+                }
+            } catch (RuntimeException ex) {
+                if (!safe) throw ex;
+                return handleFormattingException(arguments, ex);
+            } catch (Exception ex) {
+                if (!safe) throw new GroovyRuntimeException(ex);
+                return handleFormattingException(arguments, ex);
             }
         }
         if (arguments instanceof Collection) {

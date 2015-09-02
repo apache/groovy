@@ -92,6 +92,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.format(eObject..eObject2)
         }
+
+        assert InvokerHelper.format(eObject..eObject, false, -1, true) == '<groovy.lang.ObjectRange@????>'
     }
 
     public void testToStringLists() {
