@@ -72,6 +72,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.format(eObject, false)
         }
+        assert InvokerHelper.format(new ExceptionOnToString(), false, -1, true) =~ (ExceptionOnToString.MATCHER)
     }
 
     public void testFormatRanges() {
@@ -79,6 +80,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert "a'b..a'd" == InvokerHelper.format('a\'b'..'a\'d', false)
         assert "[1..4]" == InvokerHelper.format([1..4], false)
         assert "[a'b..a'd]" == InvokerHelper.format(['a\'b'..'a\'d'], false)
+
         // verbose
         assert '1..4' == InvokerHelper.format(1..4, true)
         assert "'a\\'b'..'a\\'d'" == InvokerHelper.format('a\'b'..'a\'d', true)
@@ -104,16 +106,16 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         Object eObject = new ExceptionOnToString()
         assert InvokerHelper.toListString([eObject], -1, true) =~ "\\[${ExceptionOnToString.MATCHER}\\]"
         List list = [[z: eObject]]
-        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.LinkedHashMap@' + Integer.toHexString(list[0].hashCode()) +'>]'
+        assert InvokerHelper.toListString(list, -1, true) =~ "\\[\\[z:${ExceptionOnToString.MATCHER}\\]\\]"
         // even when throwing object is deeply nested, exception handling only happens in Collection
         list = [[x: [y: [z: eObject, a: 2, b: 4]]]]
-        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.LinkedHashMap@' + Integer.toHexString(list[0].hashCode()) + '>]'
+        assert InvokerHelper.toListString(list, -1, true) =~ "\\[\\[x:\\[y:\\[z:${ExceptionOnToString.MATCHER}, a:2, b:4\\]\\]\\]\\]"
 
         list = [[eObject, 1, 2]]
         // safe argument is not passed on recursively
-        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.ArrayList@' + Integer.toHexString(list[0].hashCode()) + '>]'
+        assert InvokerHelper.toListString(list, -1, true) =~ "\\[\\[${ExceptionOnToString.MATCHER}, 1, 2\\]\\]"
         list = [[[[[eObject, 1, 2]]]]]
-        assert InvokerHelper.toListString(list, -1, true) == '[<java.util.ArrayList@' + Integer.toHexString(list[0].hashCode()) + '>]'
+        assert InvokerHelper.toListString(list, -1, true) =~ "\\[\\[\\[\\[\\[${ExceptionOnToString.MATCHER}, 1, 2\\]\\]\\]\\]\\]"
 
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.toListString([eObject], -1, false)
@@ -147,6 +149,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.format([eObject] as ExceptionOnToString[], false)
         }
+
+        assert InvokerHelper.format([new ExceptionOnToString()] as Object[], false, -1, true) =~ "\\[${ExceptionOnToString.MATCHER}\\]"
     }
 
     public void testToStringMaps() {
@@ -157,12 +161,18 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
     public void testFormatMaps() {
         assert '[:]' == InvokerHelper.format([:], false)
         assert "[a'b:1, 2:b'c]" == InvokerHelper.format(['a\'b':1, 2:'b\'c'], false)
+        assert "['a\\'b':1, 2:'b\\'c']" == InvokerHelper.format(['a\'b':1, 2:'b\'c'], true, -1, true)
 
         Object eObject = new ExceptionOnToString()
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.format([foo: eObject], false)
         }
 
+        assert InvokerHelper.format([foo: eObject], false, -1, true) =~ "\\[foo:${ExceptionOnToString.MATCHER}\\]"
+        assert InvokerHelper.format([foo: eObject], true, -1, true) =~ "\\['foo':${ExceptionOnToString.MATCHER}\\]"
+        Map m = [:]
+        m.put(eObject, eObject)
+        assert InvokerHelper.format(m, false, -1, true) =~ "\\[${ExceptionOnToString.MATCHER}:${ExceptionOnToString.MATCHER}\\]"
     }
 
     public void testToMapString() {
@@ -188,6 +198,8 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         list.add(['h', 'i'] as String[])
         list.add([10, 11] as int[])
         assert "[key:[[a'b:c'd], [e, f, g], 5..9, fog..fop, [h, i], [10, 11]]]" == InvokerHelper.toString([key: list])
+
+        assert "['key':[['a\\'b':'c\\'d'], ['e', 'f', 'g'], 5..9, 'fog'..'fop', ['h', 'i'], [10, 11]]]" == InvokerHelper.format([key:list], true, -1, false)
     }
 
     public void testToStringSelfContained() {
