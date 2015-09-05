@@ -600,7 +600,7 @@ public static String getText(File file, String charset) throws IOException {
 }
 ----------------------------------------------------------------------------
 
-You may notice that the extension method is defined using a static method in a ``helper'' class (where various extension
+You may notice that the extension method is defined using a static method in a helper class (where various extension
 methods are defined). The first argument of the `getText` method corresponds to the receiver, while additional parameters
 correspond to the arguments of the extension method. So here, we are defining a method called _getText_ on
 the `File` class (because the first argument is of type `File`), which takes a single argument as a parameter (the encoding `String`).
