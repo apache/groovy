@@ -1894,7 +1894,7 @@ This code is equivalent to annotating a class with `@TimedInterrupt` like this:
 
 [source,groovy]
 ----
-@TimedInterrup(value=1, unit=TimeUnit.SECONDS)
+@TimedInterrupt(value=1, unit=TimeUnit.SECONDS)
 class MyClass {
     def fib(int n) {
         n<2?n:fib(n-1)+fib(n-2)
