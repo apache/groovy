@@ -645,7 +645,7 @@ include::{projectdir}/src/spec/test/ExtensionModuleSpecTest.groovy[tags=instance
 ==== Static methods
 
 It is also possible to add static methods to a class. In that case, the static method needs to be defined in its *own*
-file:
+file. Static and instance extension methods *cannot* be present in the same class.
 
 [source,groovy]
 .StaticStringExtension.groovy
