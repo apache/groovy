@@ -112,6 +112,8 @@ class GroovyshTest extends GroovyTestCase {
                     new StackTraceElement(Interpreter.SCRIPT_FILENAME, 'run', 'scriptFile', 42)]
         })
         assert '' == mockOut.toString()
+        assert mockErr.toString().contains('org.codehaus.groovy.tools.shell.GroovyshTest$1')
+        assert mockErr.toString().contains('fooClass')
         assert mockErr.toString().contains('foo')
         assert ! mockErr.toString().contains(Interpreter.SCRIPT_FILENAME)
         assert ! mockErr.toString().contains('...')

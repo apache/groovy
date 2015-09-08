@@ -461,7 +461,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        if (log.debug || ! cause instanceof CompilationFailedException) {
+        if (log.debug || ! (cause instanceof CompilationFailedException)) {
             // For CompilationErrors, the Exception Class is usually not useful to the user
             io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
         }
