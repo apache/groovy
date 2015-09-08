@@ -282,15 +282,17 @@ public class ObjectRange extends AbstractList implements Range {
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 size = sizeNum.intValue();
             } else {
-                // let's lazily calculate the size
-                size = 0;
+                // let's brute-force calculate the size by iterating start to end
+                // use temp variable for thread-safety
+                int tempsize = 0;
                 Comparable first = from;
                 Comparable value = from;
                 while (compareTo(to, value) >= 0) {
                     value = (Comparable) increment(value);
-                    size++;
+                    tempsize++;
                     if (compareTo(first, value) >= 0) break; // handle back to beginning due to modulo incrementing
                 }
+                size = tempsize;
             }
         }
         return size;
