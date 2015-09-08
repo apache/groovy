@@ -21,6 +21,7 @@ package groovy.lang;
 import junit.framework.TestCase;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,10 +40,21 @@ public class ObjectRangeTest extends TestCase {
 
         r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
         assertEquals("Size of " + r, 8, r.size());
+
+        r = createRange("a", "d");
+        assertEquals(Arrays.asList("a", "b", "c", "d"), r.step(1));
+
+        r = createRange("aa4", "aa1");
+        assertEquals("Size of " + r, 4, r.size());
+        assertEquals(Arrays.asList("aa4", "aa3", "aa2", "aa1"), r.step(1));
     }
 
     public void testProperties() {
         Range r = createRange(0, 10);
+        assertEquals("from", 0, r.getFrom());
+        assertEquals("to", 10, r.getTo());
+
+        r = createRange(10, 0);
         assertEquals("from", 0, r.getFrom());
         assertEquals("to", 10, r.getTo());
     }
@@ -108,6 +120,28 @@ public class ObjectRangeTest extends TestCase {
         }
 
     }
+
+    public void testMixedCreation() {
+        try {
+            createRange("aa", "a");
+            fail();
+        } catch (IllegalArgumentException e) {
+            // pass
+        }
+        try {
+            createRange("11", 11);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // pass
+        }
+        try {
+            createRange(11, "11");
+            fail();
+        } catch (IllegalArgumentException e) {
+            // pass
+        }
+    }
+
 
     public void testContains() {
         Range r = createRange(10, 20);
@@ -206,9 +240,10 @@ public class ObjectRangeTest extends TestCase {
         return new ObjectRange(new Integer(from), new Integer(to));
     }
 
-    protected Range createRange(BigDecimal from, BigDecimal to) {
+    private Range createRange(Comparable from, Comparable to) {
         return new ObjectRange(from, to);
     }
+
 
     protected void assertEquals(String msg, int expected, Object value) {
         assertEquals(msg, new Integer(expected), value);
