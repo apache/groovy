@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author James Strachan
  */
-public class RangeTest extends TestCase {
+public class ObjectRangeTest extends TestCase {
 
     public void testSize() {
         Range r = createRange(0, 10);
