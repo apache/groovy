@@ -24,7 +24,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 
 /**
- * A Gradle task for modules which generate the module descritor file.
+ * A Gradle task to generate module descriptor files for Groovy extension modules.
  *
  * @author Cedric Champeau
  */
