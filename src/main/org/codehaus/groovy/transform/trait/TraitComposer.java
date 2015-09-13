@@ -62,7 +62,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -80,16 +79,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
  * @since 2.3.0
  */
 public abstract class TraitComposer {
-    /**
-     * This comparator is used to make sure that generated direct getters appear first in the list of method
-     * nodes.
-     */
-    private static final Comparator<MethodNode> GETTER_FIRST_COMPARATOR = new Comparator<MethodNode>() {
-        public int compare(final MethodNode o1, final MethodNode o2) {
-            if (o1.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) return -1;
-            return 1;
-        }
-    };
+
     public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
 
     /**
@@ -201,8 +191,14 @@ public abstract class TraitComposer {
             // we should implement the field helper interface too
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
-            List<MethodNode> declaredMethods = fieldHelperClassNode.getAllDeclaredMethods();
-            Collections.sort(declaredMethods, GETTER_FIRST_COMPARATOR);
+            List<MethodNode> declaredMethods = new LinkedList<MethodNode>();
+            for (MethodNode declaredMethod : fieldHelperClassNode.getAllDeclaredMethods()) {
+                if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
+                    declaredMethods.add(0, declaredMethod);
+                } else {
+                    declaredMethods.add(declaredMethod);
+                }
+            }
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
                 if (fieldName.endsWith(Traits.DIRECT_GETTER_SUFFIX) || fieldName.endsWith(Traits.DIRECT_SETTER_SUFFIX)) {
