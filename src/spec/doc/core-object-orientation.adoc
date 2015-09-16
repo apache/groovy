@@ -35,6 +35,51 @@ Groovy supports the same primitive types as those defined by the {jls}[Java Lang
 * `boolean` type (exactly `true` or `false`)
 * `char` type (16 bit, usable as a numeric type, representing an UTF-16 code)
 
+While Groovy declares and stores primitive fields and variables as primitives, because it uses Objects for
+everything, it autowraps references to primitives. Just like Java, the wrappers it uses are
+
+[cols="1,1" options="header"]
+.primitive wrappers
+|====
+| Primitive type
+| Wrapper class
+
+| boolean
+| Boolean
+
+| char
+| Character
+
+| short
+| Short
+
+| int
+| Integer
+
+| long
+| Long
+
+| float
+| Float
+
+| double
+| Double
+|====
+
+Here's an example using `int`
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=primitive_references,indent=0]
+----
+
+Now you may be concerned that this means every time you use a mathematical operator on a reference to a primitive
+that you'll incur the cost of unboxing and reboxing the primitive. But this is not the case, as Groovy will compile
+your operators into their link:core-operators.html#_operator-overloading[method equivalents] and uses those instead.
+Additionally, Groovy will automatically unbox to a primitive when calling a Java method that takes a primitive
+parameter and automatically box primitive method return values from Java. However, be aware there are some
+link:core-differences-java.html#_primitives_and_wrappers[differences] from Java's method resolution.
+
 === Class
 
 Groovy classes are very similar to Java classes, being compatible to those ones at JVM level. They may have methods and fields/properties, which can have the same modifiers (public, protected, private, static, etc) as Java classes.

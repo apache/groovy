@@ -23,6 +23,7 @@ import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
+import org.codehaus.groovy.tools.shell.completion.PatchedStringsCompleter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
@@ -81,17 +82,29 @@ abstract class CommandSupport
 
     @Override
     String getDescription() {
-        return messages['command.description']
+        try {
+            return messages.getMessage('command.description')
+        } catch (MissingResourceException) {
+            return 'No description'
+        }
     }
 
     @Override
     String getUsage() {
-        return messages['command.usage']
+        try {
+            return messages.getMessage('command.usage')
+        } catch (MissingResourceException) {
+            return 'No usage description'
+        }
     }
 
     @Override
     String getHelp() {
-        return messages['command.help']
+        try {
+            return messages.getMessage('command.help')
+        } catch (MissingResourceException) {
+            return 'No help'
+        }
     }
 
     @Override
@@ -130,23 +143,27 @@ abstract class CommandSupport
         }
 
         List<Completer> list = new ArrayList<Completer>()
-        list << new StringsCompleter(name, shortcut)
-
         List<Completer> completers = createCompleters()
 
+        PatchedStringsCompleter stringCompleter = new PatchedStringsCompleter(name, shortcut)
+        if (!completers) {
+             stringCompleter.setWithBlank(false)
+        }
+        list << stringCompleter
+
         if (completers) {
+            // replace null/empty with NullCompleter
             completers.each {Completer it ->
                 if (it) {
                     list << it
-                }
-                else {
+                } else {
                     list << new NullCompleter()
                 }
             }
-        }
-        else {
+        } else {
             list << new NullCompleter()
         }
+
 
         return new StricterArgumentCompleter(list)
     }

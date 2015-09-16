@@ -1,0 +1,4 @@
+JUnit License (optional dependency when using Groovy for testing)
+
+This product bundles the JUnit jar, which is available under the
+Eclipse Public License v1.0.  For details, see licenses/junit-license.

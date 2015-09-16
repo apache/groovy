@@ -18,10 +18,7 @@
  */
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.console.completer.AggregateCompleter
-import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
-import jline.console.completer.StringsCompleter
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
@@ -71,11 +68,9 @@ class DocCommand extends CommandSupport {
     }
 
     @Override
-    Completer getCompleter() {
-        return new AggregateCompleter([
-            new ArgumentCompleter([
-                new StringsCompleter(name, shortcut),
-                new ImportCompleter(shell.packageHelper, shell.interp, false)])])
+    protected List<Completer> createCompleters() {
+        return [new ImportCompleter(shell.packageHelper, shell.interp, false),
+                null]
     }
 
     @Override
@@ -114,9 +109,9 @@ class DocCommand extends CommandSupport {
         } else if (hasAWTDesktopPlatformSupport) {
             browseWithAWT(urls)
         } else {
-            fail "Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set " +
+            fail 'Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set ' +
                  "a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable referring to the browser binary to " +
-                 "solve this issue."
+                 'solve this issue.'
         }
     }
 

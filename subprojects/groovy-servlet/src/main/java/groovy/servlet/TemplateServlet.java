@@ -428,7 +428,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         long getMillis;
         String name;
         
-        File file = super.getScriptUriAsFile(request);
+        File file = getScriptUriAsFile(request);
         if (file != null) {
             name = file.getName();
             if (!file.exists()) {
@@ -443,7 +443,7 @@ public class TemplateServlet extends AbstractHttpServlet {
             template = getTemplate(file);
             getMillis = System.currentTimeMillis() - getMillis;
         } else {
-            name = super.getScriptUri(request);
+            name = getScriptUri(request);
             URL url = servletContext.getResource(name);
             getMillis = System.currentTimeMillis();
             template = getTemplate(url);

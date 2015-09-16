@@ -18,10 +18,13 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import org.junit.Ignore
+
 /**
  * @author Rafael Luque
  */
-public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {   
+@Ignore("do not run consistently on the build server")
+class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
 
     void testCollectedCacheValuesAreEnqueued() {
 
@@ -67,7 +70,6 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         assert cache.cache.size() == 1 : 'collected SoftReferences should be removed from cache'
     }
 
-
     private void checkSoftReferenceAreSoftlyReachable(softReference) {
         assert softReference.get() == null : 
             'cache values should be softly reachable and collected before an OOME'
@@ -84,6 +86,5 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         } catch (Throwable e) {
             // Ignore OOME
         }
-
     }
 }

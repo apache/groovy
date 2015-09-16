@@ -193,7 +193,9 @@ clearOutputAction = action(
     name: 'Clear Output',
     closure: controller.&clearOutput,
     mnemonic: 'C',
-    accelerator: shortcut('W')
+    accelerator: shortcut('W'),
+    smallIcon: imageIcon(resource:'icons/clear.png', class:this),
+    shortDescription: 'Clear Output Area'
 )
 
 runAction = action(

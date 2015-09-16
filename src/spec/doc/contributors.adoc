@@ -25,6 +25,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 
 * https://github.com/mojavelinux[Dan Allen]
 * http://hamletdarcy.blogspot.fr/[Hamlet D'Arcy]
+* https://github.com/anshbansal[Aseem Bansal]
 * https://github.com/bura[Andrey Bloschetsov]
 * https://github.com/JBrownVisualSpection[J Brown]
 * https://github.com/jeffbrown[Jeff Scott Brown]
@@ -44,6 +45,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * https://github.com/marcpa00[Marc Paquette]
 * https://github.com/michaelss[Michael Schuenck]
 * https://github.com/PascalSchumacher[Pascal Schumacher]
+* https://github.com/shils[Shil Sinha]
 * https://github.com/stavytskyi[Maksym Stavytskyi]
 * https://twitter.com/asteingr[André Steingreß]
 * https://github.com/EPadronU[Edinson Padrón Urdaneta]

@@ -168,6 +168,17 @@ class NioGroovyMethodsTest extends Specification {
         file.text == 'Hello world!'
     }
 
+    def testWriteWithEncoding()  {
+        when:
+        def str = 'Hello world!'
+        def file = temporaryFolder.newFile()
+        file.toPath().write('Ciao mundo!')
+        file.toPath().write(str, 'UTF-8')
+
+        then:
+        file.text == str
+    }
+
     def testAppendObject() {
         setup:
         def file = temporaryFolder.newFile()
@@ -369,6 +380,23 @@ class NioGroovyMethodsTest extends Specification {
         closeable.closed
     }
 
+    def testWithAutoCloseable() {
+        setup:
+            def closeable = new DummyAutoCloseable()
+
+        when:
+            def closeableParam = null
+            def result = closeable.withAutoCloseable {
+                closeableParam = it
+                123
+            }
+
+        then:
+            closeableParam == closeable
+            result == 123
+            closeable.closed
+    }
+
     def testWithCloseableAndException() {
         setup:
         def closeable = new ExceptionDummyCloseable()
@@ -382,6 +410,15 @@ class NioGroovyMethodsTest extends Specification {
 }
 
 class DummyCloseable implements Closeable {
+    boolean closed = false
+
+    @Override
+    void close() throws IOException {
+        closed = true
+    }
+}
+
+class DummyAutoCloseable implements AutoCloseable {
     boolean closed = false
 
     @Override

@@ -368,5 +368,27 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             blah(a:'foo')
         '''
     }
+
+    //GROOVY-7164
+    void testDefaultConstructorWhenSetterParamAndFieldHaveDifferentTypes() {
+        assertScript '''
+            class Test {
+                private long timestamp
+
+                Date getTimestamp() {
+                    return timestamp ? new Date(timestamp) : null
+                }
+
+                void setTimestamp (Date timestamp) {
+                    this.timestamp = timestamp.time
+                }
+
+                def main() {
+                    new Test(timestamp: new Date())
+                }
+            }
+            new Test().main()
+        '''
+    }
 }
 

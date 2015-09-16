@@ -22,8 +22,11 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
+import groovy.lang.Tuple2;
 import groovy.xml.QName;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.util.ListHashMap;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -33,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * Represents an arbitrary tree node which can be used for structured metadata or any arbitrary XML-like tree.
@@ -537,26 +541,40 @@ public class Node implements Serializable, Cloneable {
 
     /**
      * Provides a collection of all the nodes in the tree
-     * using a depth first traversal.
+     * using a depth-first preorder traversal.
      *
      * @return the list of (depth-first) ordered nodes
      */
     public List depthFirst() {
+        return depthFirst(true);
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a depth-first traversal.
+     *
+     * @param preorder if false, a postorder depth-first traversal will be performed
+     * @return the list of (depth-first) ordered nodes
+     * @since 2.5.0
+     */
+    public List depthFirst(boolean preorder) {
         List answer = new NodeList();
-        answer.add(this);
-        answer.addAll(depthFirstRest());
+        if (preorder) answer.add(this);
+        answer.addAll(depthFirstRest(preorder));
+        if (!preorder) answer.add(this);
         return answer;
     }
 
-    private List depthFirstRest() {
+    private List depthFirstRest(boolean preorder) {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
-                List children = childNode.depthFirstRest();
-                answer.add(childNode);
+                List children = childNode.depthFirstRest(preorder);
+                if (preorder) answer.add(childNode);
                 if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) answer.addAll(children);
+                if (!preorder) answer.add(childNode);
             } else if (child instanceof String) {
                 answer.add(child);
             }
@@ -566,33 +584,161 @@ public class Node implements Serializable, Cloneable {
 
     /**
      * Provides a collection of all the nodes in the tree
-     * using a breadth-first traversal.
+     * using a depth-first preorder traversal.
+     *
+     * @param c the closure to run for each node (a one or two parameter can be used; if one parameter is given the
+     *          closure will be passed the node, for a two param closure the second parameter will be the level).
+     * @since 2.5.0
+     */
+    public void depthFirst(Closure c) {
+        Map<String, Object> options = new ListHashMap<String, Object>();
+        options.put("preorder", true);
+        depthFirst(options, c);
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a depth-first traversal.
+     * A boolean 'preorder' options is supported.
+     *
+     * @param options map containing options
+     * @param c the closure to run for each node (a one or two parameter can be used; if one parameter is given the
+     *          closure will be passed the node, for a two param closure the second parameter will be the level).
+     * @since 2.5.0
+     */
+    public void depthFirst(Map<String, Object> options, Closure c) {
+        boolean preorder = Boolean.valueOf(options.get("preorder").toString());
+        if (preorder) callClosureForNode(c, this, 1);
+        depthFirstRest(preorder, 2, c);
+        if (!preorder) callClosureForNode(c, this, 1);
+    }
+
+    private static <T> T callClosureForNode(Closure<T> closure, Object node, int level) {
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(new Object[]{node, level});
+        }
+        return closure.call(node);
+    }
+
+    private void depthFirstRest(boolean preorder, int level, Closure c) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
+            Object child = iter.next();
+            if (child instanceof Node) {
+                Node childNode = (Node) child;
+                if (preorder) callClosureForNode(c, childNode, level);
+                childNode.depthFirstRest(preorder, level + 1, c);
+                if (!preorder) callClosureForNode(c, childNode, level);
+            }
+        }
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a breadth-first preorder traversal.
      *
      * @return the list of (breadth-first) ordered nodes
      */
     public List breadthFirst() {
+        return breadthFirst(true);
+    }
+
+    /**
+     * Provides a collection of all the nodes in the tree
+     * using a breadth-first traversal.
+     *
+     * @param preorder if false, a postorder breadth-first traversal will be performed
+     * @return the list of (breadth-first) ordered nodes
+     * @since 2.5.0
+     */
+    public List breadthFirst(boolean preorder) {
         List answer = new NodeList();
-        answer.add(this);
-        answer.addAll(breadthFirstRest());
+        if (preorder) answer.add(this);
+        answer.addAll(breadthFirstRest(preorder));
+        if (!preorder) answer.add(this);
         return answer;
     }
 
-    private List breadthFirstRest() {
+    private List breadthFirstRest(boolean preorder) {
         List answer = new NodeList();
-        List nextLevelChildren = getDirectChildren();
+        Stack stack = new Stack();
+        List nextLevelChildren = preorder ? getDirectChildren() : DefaultGroovyMethods.reverse(getDirectChildren());
         while (!nextLevelChildren.isEmpty()) {
             List working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
             for (Object child : working) {
-                answer.add(child);
+                if (preorder) {
+                    answer.add(child);
+                } else {
+                    stack.push(child);
+                }
                 if (child instanceof Node) {
                     Node childNode = (Node) child;
                     List children = childNode.getDirectChildren();
-                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(children);
+                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(preorder ? children : DefaultGroovyMethods.reverse(children));
                 }
             }
         }
+        while (!stack.isEmpty()) {
+            answer.add(stack.pop());
+        }
         return answer;
+    }
+
+    /**
+     * Calls the provided closure for all the nodes in the tree
+     * using a breadth-first preorder traversal.
+     *
+     * @param c the closure to run for each node (a one or two parameter can be used; if one parameter is given the
+     *          closure will be passed the node, for a two param closure the second parameter will be the level).
+     * @since 2.5.0
+     */
+    public void breadthFirst(Closure c) {
+        Map<String, Object> options = new ListHashMap<String, Object>();
+        options.put("preorder", true);
+        breadthFirst(options, c);
+    }
+
+    /**
+     * Calls the provided closure for all the nodes in the tree
+     * using a breadth-first traversal.
+     * A boolean 'preorder' options is supported.
+     *
+     * @param options map containing options
+     * @param c the closure to run for each node (a one or two parameter can be used; if one parameter is given the
+     *          closure will be passed the node, for a two param closure the second parameter will be the level).
+     * @since 2.5.0
+     */
+    public void breadthFirst(Map<String, Object> options, Closure c) {
+        boolean preorder = Boolean.valueOf(options.get("preorder").toString());
+        if (preorder) callClosureForNode(c, this, 1);
+        breadthFirstRest(preorder, 2, c);
+        if (!preorder) callClosureForNode(c, this, 1);
+    }
+
+    private void breadthFirstRest(boolean preorder, int level, Closure c) {
+        Stack<Tuple2<Object, Integer>> stack = new Stack<Tuple2<Object, Integer>>();
+        List nextLevelChildren = preorder ? getDirectChildren() : DefaultGroovyMethods.reverse(getDirectChildren());
+        while (!nextLevelChildren.isEmpty()) {
+            List working = new NodeList(nextLevelChildren);
+            nextLevelChildren = new NodeList();
+            for (Object child : working) {
+                if (preorder) {
+                    callClosureForNode(c, child, level);
+                } else {
+                    stack.push(new Tuple2<Object, Integer>(child, level));
+                }
+                if (child instanceof Node) {
+                    Node childNode = (Node) child;
+                    List children = childNode.getDirectChildren();
+                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(preorder ? children : DefaultGroovyMethods.reverse(children));
+                }
+            }
+            level++;
+        }
+        while (!stack.isEmpty()) {
+            Tuple2<Object, Integer> next = stack.pop();
+            callClosureForNode(c, next.getFirst(), next.getSecond());
+        }
     }
 
     /**

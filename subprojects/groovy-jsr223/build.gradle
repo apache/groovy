@@ -17,6 +17,7 @@
  *  under the License.
  */
 ext.scriptingCapable = {
+    // TODO remove this eventually - will break compiling on JDK 5
     try {
         Class.forName('javax.script.ScriptEngine')
     } catch (e) {

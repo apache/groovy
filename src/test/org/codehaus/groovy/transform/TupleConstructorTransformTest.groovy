@@ -36,6 +36,20 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testExistingEmptyConstructorTakesPrecedence_groovy7522() {
+        assertScript """
+            @groovy.transform.TupleConstructor
+            class Cat {
+                String name
+                int age
+                Cat(String name) {}
+            }
+
+            assert new Cat("Mr. Bigglesworth").name == null
+            assert Cat.declaredConstructors.size() == 1
+        """
+    }
+
     void testIncludesAndExcludesTogetherResultsInError() {
         def message = shouldFail {
             evaluate """
@@ -84,6 +98,17 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
             """
         }
         assert message.contains("Error during @TupleConstructor processing: 'excludes' property 'sirName' does not exist.")
+    }
+
+    void testIncludesWithEmptyList_groovy7523() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(includes=[])
+            class Cat {
+                String name
+                int age
+            }
+            assert Cat.declaredConstructors.size() == 1
+        '''
     }
 
 }

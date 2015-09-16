@@ -89,7 +89,8 @@ class ScriptVariableAnalyzer {
     static class VisitorClassLoader extends GroovyClassLoader {
         final GroovyClassVisitor visitor
 
-        VisitorClassLoader(final GroovyClassVisitor visitor) {
+        VisitorClassLoader(final GroovyClassVisitor visitor, ClassLoader parent) {
+            super(parent == null ?  Thread.currentThread().getContextClassLoader() : parent)
             this.visitor = visitor
         }
 
@@ -101,10 +102,10 @@ class ScriptVariableAnalyzer {
         }
     }
 
-    static Set<String> getBoundVars(final String scriptText) {
+    static Set<String> getBoundVars(final String scriptText, ClassLoader parent) {
         assert scriptText != null
         GroovyClassVisitor visitor = new VariableVisitor()
-        VisitorClassLoader myCL = new VisitorClassLoader(visitor)
+        VisitorClassLoader myCL = new VisitorClassLoader(visitor, parent)
         // simply by parsing the script with our classloader
         // our visitor will be called and will visit all the variables
         myCL.parseClass(scriptText)

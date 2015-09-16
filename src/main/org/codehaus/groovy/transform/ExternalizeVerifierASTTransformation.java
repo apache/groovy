@@ -61,7 +61,7 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             boolean checkPropertyTypes = memberHasValue(anno, "checkPropertyTypes", true);
-            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> excludes = getMemberStringList(anno, "excludes");
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             List<FieldNode> list = getInstancePropertyFields(cNode);
             if (includeFields) {
@@ -73,7 +73,7 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
 
     private void checkProps(List<FieldNode> list, List<String> excludes, boolean checkPropertyTypes) {
         for (FieldNode fNode : list) {
-            if (excludes.contains(fNode.getName())) continue;
+            if (excludes != null && excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             if ((fNode.getModifiers() & ACC_FINAL) != 0) {
                 addError(MY_TYPE_NAME + ": The Externalizable property (or field) '" + fNode.getName() + "' cannot be final", fNode);

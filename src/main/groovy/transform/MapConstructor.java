@@ -83,8 +83,10 @@ public @interface MapConstructor {
      * List of field and/or property names to include within the constructor.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
+     * The default value is a special marker value indicating that no includes are defined; all fields and/or properties
+     * are included if 'includes' remains undefined and 'excludes' is explicitly or implicitly an empty list.
      */
-    String[] includes() default {};
+    String[] includes() default {Undefined.STRING};
 
     /**
      * Include fields in the constructor.

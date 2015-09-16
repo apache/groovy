@@ -28,6 +28,9 @@ class CommandArgumentParserTest extends GroovyTestCase {
         // blanks
         assert ['foo', 'bar'] == CommandArgumentParser.parseLine('  foo bar  ')
 
+        // escaped blanks
+        assert ['foo bar'] == CommandArgumentParser.parseLine('foo\\ bar')
+
         // empties
         assert ['', '', '', ''] == CommandArgumentParser.parseLine('\'\'\'\' \'\'  \'\'')
         assert ['', '', '', ''] == CommandArgumentParser.parseLine('"""" ""  ""')
@@ -36,8 +39,13 @@ class CommandArgumentParserTest extends GroovyTestCase {
         assert ['foo bar', 'baz bam'] == CommandArgumentParser.parseLine(' \'foo bar\' \'baz bam\'')
         assert ['foo bar', 'baz bam'] == CommandArgumentParser.parseLine(' "foo bar" "baz bam"')
 
-        // escaped hyphens and escape signs
-        assert ['foo \\ "\' bar'] == CommandArgumentParser.parseLine('\'foo \\\\ "\\\' bar\'')
+        // escaped hyphens and escape signs within hyphens
+        // intentionally adding list on left hand side because power asserts become confusing with escaping
+        assert [] + ['foo \\\\ "\\\' bar'] == CommandArgumentParser.parseLine('\'foo \\\\ "\\\' bar\'')
+
+        // escaped hyphens and escape signs outside hyphens
+        assert [] + ['foo', '\\', '"', '\'', 'bar'] == CommandArgumentParser.parseLine('foo \\\\ \\" \\\' bar')
+
         // no space between hyphentokens
         assert ['bar', 'foo', 'bam', 'baz'] == CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'')
 

@@ -20,7 +20,7 @@
 @if "%DEBUG%" == "" @echo off
 @rem ##########################################################################
 @rem                                                                         ##
-@rem  Groovy JVM Bootstrap for Windowz                                       ##
+@rem  Groovy JVM Bootstrap for Windows                                       ##
 @rem                                                                         ##
 @rem ##########################################################################
 
@@ -131,7 +131,7 @@ shift
 :init
 @rem get name of script to launch with full path
 set GROOVY_SCRIPT_NAME=%~f1
-@rem Get command-line arguments, handling Windowz variants
+@rem Get command-line arguments, handling Windows variants
 if not "%OS%" == "Windows_NT" goto win9xME_args
 if "%eval[2+2]" == "4" goto 4NT_args
 
@@ -150,7 +150,7 @@ if not defined _ARGS goto execute
 set _ARGS=%_ARGS:-=-d%
 set _ARGS=%_ARGS:"=-q%
 set _ARGS=%_ARGS:?=-n%
-rem Windowz will try to match * with files so we escape it here
+rem Windows will try to match * with files so we escape it here
 rem but it is also a meta char for env var string substitution
 rem so it can't be first char here, hack just for common cases.
 rem If in doubt use a space or bracket before * if using -e.

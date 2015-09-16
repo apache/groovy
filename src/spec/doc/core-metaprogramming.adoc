@@ -348,7 +348,7 @@ There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xf
 
 (TBD)
 
-===== Magic package
+===== Magic package (Maksym Stavytskyi)
 
 (TBD)
 
@@ -600,7 +600,7 @@ public static String getText(File file, String charset) throws IOException {
 }
 ----------------------------------------------------------------------------
 
-You may notice that the extension method is defined using a static method in a ``helper'' class (where various extension
+You may notice that the extension method is defined using a static method in a helper class (where various extension
 methods are defined). The first argument of the `getText` method corresponds to the receiver, while additional parameters
 correspond to the arguments of the extension method. So here, we are defining a method called _getText_ on
 the `File` class (because the first argument is of type `File`), which takes a single argument as a parameter (the encoding `String`).
@@ -645,7 +645,7 @@ include::{projectdir}/src/spec/test/ExtensionModuleSpecTest.groovy[tags=instance
 ==== Static methods
 
 It is also possible to add static methods to a class. In that case, the static method needs to be defined in its *own*
-file:
+file. Static and instance extension methods *cannot* be present in the same class.
 
 [source,groovy]
 .StaticStringExtension.groovy
@@ -784,7 +784,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_excludes,indent=0]
 ----
-|includes|Empty list|List of fields to include in toString|
+|includes|Undefined marker list (indicates all fields)|List of fields to include in toString|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includes,indent=0]
@@ -848,7 +848,7 @@ There are several options available to tweak the behavior of `@EqualsAndHashCode
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_excludes,indent=0]
 ----
-|includes|Empty list|List of fields to include in equals/hashCode|
+|includes|Undefined marker list (indicating all fields)|List of fields to include in equals/hashCode|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_includes,indent=0]
@@ -914,7 +914,7 @@ The `@TupleConstructor` AST transformation accepts several configuration options
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_excludes,indent=0]
 ----
-|includes|Empty list|List of fields to include in tuple constructor generation|
+|includes|Undefined list (indicates all fields)|List of fields to include in tuple constructor generation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
@@ -965,6 +965,25 @@ Set to false to obtain exactly one constructor but with initial value support an
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_false,indent=0]
 ----
 |=======================================================================
+
+[[xform-MapConstructor]]
+===== @groovy.transform.MapConstructor
+
+The `@MapConstructor` annotation aims at eliminating boilerplate code by generating a map constructor for you. A map
+constructor is created such that each property in the class is set based on the value in the supplied map
+having the key with the name of the property. Usage is as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=mapconstructor_simple,indent=0]
+----
+
+The generated constructor will be roughly like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=mapconstructor_equiv,indent=0]
+----
 
 [[xform-Canonical]]
 ===== @groovy.transform.Canonical
@@ -1232,9 +1251,10 @@ And calling the chained setters would look like this:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_prefix_usage,indent=0]
 ----
 
-You can use the `SimpleStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
-explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
-from `@Canonical` will be re-used for `@Builder`.
+You can use the `SimpleStrategy` in conjunction with `@TupleConstructor`. If your `@Builder`
+annotation doesn't have explicit `includes` or `excludes` annotation attributes but your `@TupleConstructor`
+annotation does, the ones from `@TupleConstructor` will be re-used for `@Builder`. The same applies for any
+annotation aliases which combine `@TupleConstructor` such as `@Canonical`.
 
 The annotation attribute `useSetters` can be used if you have a setter which you want called as part of the
 construction process. See the JavaDoc for details.
@@ -1290,9 +1310,10 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 
 The `builderMethodName` and `builderClassName` annotation attributes for `@Builder` aren't applicable for this strategy.
 
-You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
-explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
-the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
+You can use the `ExternalStrategy` in conjunction with `@TupleConstructor`. If your `@Builder` annotation doesn't have
+explicit `includes` or `excludes` annotation attributes but the `@TupleConstructor` annotation of the class you are creating
+the builder for does, the ones from `@TupleConstructor` will be re-used for `@Builder`. The same applies for any
+annotation aliases which combine `@TupleConstructor` such as `@Canonical`.
 
 .DefaultStrategy
 To use the `DefaultStrategy`, annotate your Groovy class using the `@Builder` annotation as shown in this example:
@@ -1428,7 +1449,9 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludes_header,indent=0]
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludes_footer,indent=0]
 ----
-|includes|Empty array|A list of methods to be included in delegation. For more fine-grained control, see also `includeTypes`.|
+|includes|Undefined marker array (indicates all methods)|A list of methods to be included in delegation. For more
+fine-grained
+control, see also `includeTypes`.|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]
@@ -1439,7 +1462,8 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludeTypes,indent=0]
 ----
-|includeTypes|Empty array|A list of interfaces containing method signatures to be included in delegation|
+|includeTypes|Undefined marker array (indicates no list be default)|A list of interfaces containing method signatures to
+ be included in delegation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includeTypes_header,indent=0]
@@ -1938,7 +1962,7 @@ This code is equivalent to annotating a class with `@TimedInterrupt` like this:
 
 [source,groovy]
 ----
-@TimedInterrup(value=1, unit=TimeUnit.SECONDS)
+@TimedInterrupt(value=1, unit=TimeUnit.SECONDS)
 class MyClass {
     def fib(int n) {
         n<2?n:fib(n-1)+fib(n-2)

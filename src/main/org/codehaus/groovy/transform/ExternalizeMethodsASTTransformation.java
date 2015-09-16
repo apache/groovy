@@ -74,7 +74,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             cNode.addInterface(EXTERNALIZABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> excludes = getMemberStringList(anno, "excludes");
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             List<FieldNode> list = getInstancePropertyFields(cNode);
             if (includeFields) {
@@ -89,7 +89,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         final BlockStatement body = new BlockStatement();
         Parameter out = param(OBJECTOUTPUT_TYPE, "out");
         for (FieldNode fNode : list) {
-            if (excludes.contains(fNode.getName())) continue;
+            if (excludes != null && excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             body.addStatement(stmt(callX(varX(out), "write" + suffixForField(fNode), varX(fNode))));
         }
@@ -101,7 +101,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         final BlockStatement body = new BlockStatement();
         Parameter oin = param(OBJECTINPUT_TYPE, "oin");
         for (FieldNode fNode : list) {
-            if (excludes.contains(fNode.getName())) continue;
+            if (excludes != null && excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             String suffix = suffixForField(fNode);
             Expression readObject = callX(varX(oin), "read" + suffix);

@@ -23,15 +23,14 @@ import jline.console.completer.ArgumentCompleter
 import jline.console.completer.ArgumentCompleter.ArgumentDelimiter
 import jline.console.completer.ArgumentCompleter.ArgumentList
 import jline.console.completer.Completer
+import jline.internal.Log
 
 import static jline.internal.Preconditions.checkNotNull;
 
 /**
- * Similar to a strict jline ArgumentCompleter, this completer
- * completes the n+1th argument only if the 1st to nth argument have matches.
- * However, it only does so if the 1st to nth argument match *exactly*, not just partially.
- * This prevents interaction of completers between e.g. ":s", ":set" ":show" on same ":s foo"
+ * This fixes strict jline 2.12 ArgumentCompleter
  * See https://github.com/jline/jline2/pull/123
+ * See https://github.com/jline/jline2/pull/202
  *
  */
 @CompileStatic
@@ -48,40 +47,91 @@ class StricterArgumentCompleter extends ArgumentCompleter {
     }
 
     public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-        if (isStrict()) {
-            checkNotNull(candidates);
-            ArgumentDelimiter delim = getDelimiter();
-            ArgumentList list = delim.delimit(buffer, cursor);
-            int argIndex = list.getCursorArgumentIndex();
-            // stricter check that all previous arguments have been matched *exactly*
-            // ensure that all the previous completers are successful before allowing this completer to pass (only if strict).
-            for (int i = 0; i < argIndex; i++) {
-                Completer sub = completers.get(i >= completers.size() ? (completers.size() - 1) : i);
-                String[] args = list.getArguments();
-                String arg = (args == null || i >= args.length) ? "" : args[i];
+        // buffer can be null
+        checkNotNull(candidates);
 
-                List<CharSequence> subCandidates = new LinkedList<CharSequence>();
+        ArgumentDelimiter delim = getDelimiter();
+        ArgumentList list = delim.delimit(buffer, cursor);
+        int argpos = list.getArgumentPosition();
+        int argIndex = list.getCursorArgumentIndex();
 
-                if (sub.complete(arg, arg.length(), subCandidates) == -1) {
-                    return -1;
-                }
+        if (argIndex < 0) {
+            return -1;
+        }
 
-                boolean candidateMatches = false;
-                for (CharSequence subCandidate: subCandidates) {
-                    // Since we know delimiter is whitespace, we can use String.trim(), in contrast to super class
-                    String trimmedCand = subCandidate.toString().trim();
-                    if (trimmedCand.equals(arg)) {
-                        candidateMatches = true;
-                        break;
-                    }
-                }
-                if (!candidateMatches) {
-                    return -1;
-                }
+        List<Completer> completers = getCompleters();
+        Completer completer;
 
+        // if we are beyond the end of the completers, just use the last one
+        if (argIndex >= completers.size()) {
+            completer = completers.get(completers.size() - 1);
+        }
+        else {
+            completer = completers.get(argIndex);
+        }
+
+        // ensure that all the previous completers are successful before allowing this completer to pass (only if strict).
+        for (int i = 0; isStrict() && (i < argIndex); i++) {
+            Completer sub = completers.get(i >= completers.size() ? (completers.size() - 1) : i);
+            String[] args = list.getArguments();
+            String arg = (args == null || i >= args.length) ? "" : args[i];
+
+            List<CharSequence> subCandidates = new LinkedList<CharSequence>();
+            int offset = sub.complete(arg, arg.length(), subCandidates);
+            if (offset == -1) {
+                return -1;
             }
 
+            // for strict matching, one of the candidates must equal the current argument "arg",
+            // starting from offset within arg, but the suitable candidate may actually also have a
+            // delimiter at then end.
+            boolean candidateMatches = false;
+            for (CharSequence subCandidate: subCandidates) {
+                // each SUbcandidate may end with the delimiter.
+                // That it contains the delimiter is possible, but not plausible.
+                String[] candidateDelimList = delim.delimit(subCandidate, 0).getArguments();
+                if (candidateDelimList.length == 0) {
+                    continue;
+                }
+                String trimmedCand = candidateDelimList[0];
+                if (trimmedCand.equals(arg.substring(offset))) {
+                    candidateMatches = true;
+                    break;
+                }
+            }
+            if (!candidateMatches) {
+                return -1;
+            }
         }
-        return super.complete(buffer, cursor, candidates);
+
+        int ret = completer.complete(list.getCursorArgument(), argpos, candidates);
+
+        if (ret == -1) {
+            return -1;
+        }
+
+        int pos = ret + list.getBufferPosition() - argpos;
+
+        // Special case: when completing in the middle of a line, and the area under the cursor is a delimiter,
+        // then trim any delimiters from the candidates, since we do not need to have an extra delimiter.
+        //
+        // E.g., if we have a completion for "foo", and we enter "f bar" into the buffer, and move to after the "f"
+        // and hit TAB, we want "foo bar" instead of "foo  bar".
+
+        if ((cursor != buffer.length()) && delim.isDelimiter(buffer, cursor)) {
+            for (int i = 0; i < candidates.size(); i++) {
+                CharSequence val = candidates.get(i);
+
+                while (val.length() > 0 && delim.isDelimiter(val, val.length() - 1)) {
+                    val = val.subSequence(0, val.length() - 1);
+                }
+
+                candidates.set(i, val);
+            }
+        }
+
+        Log.trace("Completing ", buffer, " (pos=", cursor, ") with: ", candidates, ": offset=", pos);
+
+        return pos;
     }
 }

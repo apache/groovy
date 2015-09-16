@@ -129,13 +129,16 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 
 If you want to see what Grape is doing set the system property
 `groovy.grape.report.downloads` to `true` (e.g. add
-`-Dgroovy.grape.report.downloads=true` to JAVA_OPTS) and Grape will
+`-Dgroovy.grape.report.downloads=true` to invocation or JAVA_OPTS) and Grape will
 print the following infos to System.error:
 
 * Starting resolve of a dependency
 * Starting download of an artifact
 * Retrying download of an artifact
 * Download size and time for downloaded artifacts
+
+To log with even more verbosity, increase the Ivy log level
+(defaults to `-1`). For example `-Divy.message.logger.level=4`.
 
 [[Grape-Detail]]
 == Detail

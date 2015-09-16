@@ -31,7 +31,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         // make sure files are installed locally
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'2.2.12'],
             [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']],
             [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15']
         ].each {
@@ -377,4 +377,15 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert jars.contains ("neo4j-kernel-2.0.0-RC1-tests.jar")
     }
 
+    void testSystemProperties_groovy7548() {
+        System.setProperty('groovy7548prop', 'x')
+        assert System.getProperty('groovy7548prop') == 'x'
+        new GroovyShell().evaluate '''
+            @GrabConfig(systemProperties='groovy7548prop=y')
+            @Grab('commons-lang:commons-lang:2.6')
+            import org.apache.commons.lang.StringUtils
+            assert StringUtils.name == 'org.apache.commons.lang.StringUtils'
+        '''
+        assert System.getProperty('groovy7548prop') == 'y'
+    }
 }

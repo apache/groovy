@@ -83,7 +83,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             cNode.addInterface(CLONEABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             AutoCloneStyle style = getStyle(anno, "style");
-            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> excludes = getMemberStringList(anno, "excludes");
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             List<FieldNode> list = getInstancePropertyFields(cNode);
             if (includeFields) {
@@ -161,7 +161,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             }
             for (FieldNode fieldNode : list) {
                 String name = fieldNode.getName();
-                if (excludes.contains(name)) continue;
+                if (excludes != null && excludes.contains(name)) continue;
                 ClassNode fieldType = fieldNode.getType();
                 Expression direct = propX(other, name);
                 Expression to = propX(varX("this"), name);
@@ -222,7 +222,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         }
         for (FieldNode fieldNode : fieldNodes) {
             String name = fieldNode.getName();
-            if (excludes.contains(name)) continue;
+            if (excludes != null && excludes.contains(name)) continue;
             ClassNode fieldType = fieldNode.getType();
             Expression direct = propX(varX("this"), name);
             Expression to = propX(other, name);
@@ -246,7 +246,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         final Expression result = varX("_result", cNode);
         body.addStatement(declS(result, castX(cNode, callSuperX("clone"))));
         for (FieldNode fieldNode : fieldNodes) {
-            if (excludes.contains(fieldNode.getName())) continue;
+            if (excludes != null && excludes.contains(fieldNode.getName())) continue;
             ClassNode fieldType = fieldNode.getType();
             Expression fieldExpr = varX(fieldNode);
             Expression to = propX(result, fieldNode.getName());

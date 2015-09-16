@@ -1,0 +1,4 @@
+XStream License (optional dependency when serializing AST as XML)
+
+This product bundles the XStream jar, which is available under a
+"3-clause BSD" license.  For details, see licenses/xstream-license.

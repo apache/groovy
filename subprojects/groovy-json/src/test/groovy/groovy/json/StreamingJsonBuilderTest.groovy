@@ -18,16 +18,67 @@
  */
 package groovy.json
 
+import groovy.transform.CompileStatic
+
 /**
  * @author Tim Yates
  * @author Guillaume Laforge
  */
 class StreamingJsonBuilderTest extends GroovyTestCase {
 
+    @CompileStatic
+    void testJsonBuilderUsageWithCompileStatic() {
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder(w)
+            json.call('response') {
+                call "status", "ok"
+                call "userTier", "free"
+                call "total", 2413
+                call "startIndex", 1
+                call "pageSize", 10
+                call "currentPage", 1
+                call "pages", 242
+                call "orderBy", "newest"
+                call("results",
+                [
+                        id: "world/video/2011/jan/19/tunisia-demonstrators-democracy-video",
+                        sectionId: "world",
+                        sectionName: "World news",
+                        webPublicationDate: "2011-01-19T15:12:46Z",
+                        webTitle: "Tunisian demonstrators demand new democracy - video",
+                        webUrl: "http://www.guardian.co.uk/world/video/2011/jan/19/tunisia-demonstrators-democracy-video",
+                        apiUrl: "http://content.guardianapis.com/world/video/2011/jan/19/tunisia-demonstrators-democracy-video"
+                ],
+                        [
+                                id: "world/gallery/2011/jan/19/tunisia-protests-pictures",
+                                sectionId: "world",
+                                sectionName: "World news",
+                                webPublicationDate: "2011-01-19T15:01:09Z",
+                                webTitle: "Tunisia protests continue in pictures ",
+                                webUrl: "http://www.guardian.co.uk/world/gallery/2011/jan/19/tunisia-protests-pictures",
+                                apiUrl: "http://content.guardianapis.com/world/gallery/2011/jan/19/tunisia-protests-pictures"
+                        ])
+            }
+
+            assert w.toString() ==
+                    '''{"response":{"status":"ok","userTier":"free","total":2413,"startIndex":1,"pageSize":10,"currentPage":1,"pages":242,"orderBy":"newest","results":[{"id":"world/video/2011/jan/19/tunisia-demonstrators-democracy-video","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:12:46Z","webTitle":"Tunisian demonstrators demand new democracy - video","webUrl":"http://www.guardian.co.uk/world/video/2011/jan/19/tunisia-demonstrators-democracy-video","apiUrl":"http://content.guardianapis.com/world/video/2011/jan/19/tunisia-demonstrators-democracy-video"},{"id":"world/gallery/2011/jan/19/tunisia-protests-pictures","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:01:09Z","webTitle":"Tunisia protests continue in pictures ","webUrl":"http://www.guardian.co.uk/world/gallery/2011/jan/19/tunisia-protests-pictures","apiUrl":"http://content.guardianapis.com/world/gallery/2011/jan/19/tunisia-protests-pictures"}]}}'''
+        }
+    }
+
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w, [a: 1, b: true])
             assert w.toString() == '{"a":1,"b":true}'
+        }
+    }
+
+    void testUnescapedJson() {
+        new StringWriter().with { w ->
+            new StreamingJsonBuilder(w).call {
+                a 1
+                b JsonOutput.unescaped('{"name":"Fred"}')
+            }
+            assert w.toString() == '{"a":1,"b":{"name":"Fred"}}'
         }
     }
 

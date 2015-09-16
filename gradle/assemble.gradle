@@ -23,18 +23,6 @@ apply plugin: 'osgi'
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
 
-ext.licenseSpec = copySpec {
-    from 'config/build'
-    from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
-        include 'META-INF/LICENSE.txt'
-    }) {
-        eachFile { details ->
-            details.path = details.path - 'META-INF'
-            details.name = 'CLI-LICENSE.txt'
-        }
-    }
-}
-
 ext.srcSpec = copySpec {
     from(projectDir) {
         exclude 'target',
@@ -80,11 +68,21 @@ ext.docSpec = copySpec {
     into('html/groovy-jdk') {
         from docGDK.destinationDir
     }
+    into('licenses') {
+        from 'licenses'
+        include 'asciidoc-style-license.txt'
+        include 'jquery-js-license.txt'
+        include 'normalize-stylesheet-license.txt'
+    }
+    from "$projectDir/licenses/LICENSE-DOC"
+    from "$projectDir/notices/NOTICE-BASE"
+    from "$projectDir/DISCLAIMER"
+    rename 'LICENSE-DOC', 'LICENSE'
+    rename 'NOTICE-BASE', 'NOTICE'
 }
 
 task copy(type: Copy) {
     into "$buildDir/meta"
-    with licenseSpec
 }
 
 ext.allManifest = manifest {
@@ -140,12 +138,18 @@ ext.subprojectOsgiManifest = {
 jar {
     dependsOn('dgmConverter')
     metaInf {
-        from 'LICENSE'
-        from 'NOTICE'
+        from("$projectDir/licenses/LICENSE-JARJAR")
+        from("$projectDir/licenses") {
+            into('licenses')
+            include('asm-license.txt')
+            include('antlr2-license.txt')
+        }
+        from("$projectDir/notices/NOTICE-JARJAR")
         from 'DISCLAIMER'
         from('src/main/META-INF/groovy-release-info.properties') {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
+        rename { String filename -> filename == 'LICENSE-JARJAR' ? 'LICENSE' : filename == 'NOTICE-JARJAR' ? 'NOTICE' : filename }
     }
 
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
@@ -243,9 +247,10 @@ allprojects {
                 ant {
                     taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
                     jarjar(jarfile: target) {
-                        zipfileset(src: jarjar.archivePath)
+                        zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
+                        zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
                         if (isRootProject) {
-                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') })
+                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
                         }
                         rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
                         rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
@@ -262,15 +267,24 @@ allprojects {
     }
 }
 
-subprojects {
+subprojects { sp ->
     jar {
         metaInf {
-            from "${rootProject.projectDir}/LICENSE"
-            from "${rootProject.projectDir}/NOTICE"
+            if (file("${projectDir}/LICENSE").exists()) {
+                from "${projectDir}/LICENSE"
+            } else {
+                from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+            }
+            if (file("${projectDir}/NOTICE").exists()) {
+                from "${projectDir}/NOTICE"
+            } else {
+                from "${rootProject.projectDir}/notices/NOTICE-BASE"
+            }
             from "${rootProject.projectDir}/DISCLAIMER"
             from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
+            rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
         }
         exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
@@ -341,12 +355,28 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
         manifest.writeTo(manifestPath)
         copy {
+            from "$projectDir/notices/NOTICE-ALLJARJAR"
+            into owner.ext.metaInfDir
+            rename('NOTICE-ALLJARJAR', 'NOTICE')
+        }
+        copy {
+            from "$projectDir/licenses"
+            into "$owner.ext.metaInfDir/licenses"
+            include 'normalize-stylesheet-license.txt'
+            include 'jsr223-license.txt'
+            include 'jline2-license.txt'
+        }
+        copy {
+            from "$projectDir/licenses/LICENSE-ALLJARJAR"
+            into owner.ext.metaInfDir
+            rename('LICENSE-ALLJARJAR', 'LICENSE')
+        }
+        copy {
             from(mergeModuleDescriptors())
             into "$owner.ext.metaInfDir/services"
         }
         copy {
             into "$owner.ext.metaInfDir"
-            with licenseSpec
         }
         logger.info 'Packaging with jarjar'
 
@@ -354,10 +384,10 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         ant {
             taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: configurations.tools.asPath
             jarjar(jarfile: archivePathTmp, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF', excludes: 'META-INF')
-                zipfileset(src: jar.archivePath)
+                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF')
+                zipfileset(src: jar.archivePath, excludes:'META-INF/NOTICE,META-INF/LICENSE')
                 moduleJars().each {
-                    zipfileset(src: it)
+                    zipfileset(src: it, excludes:'META-INF/NOTICE,META-INF/LICENSE')
                 }
             }
         }
@@ -374,7 +404,7 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         ant {
             copy(file: archivePathTmp, tofile: archivePath)
             jar(destfile: archivePath, update:true, manifest: manifestPath) {
-                zipfileset(src: jar.archivePath)
+                zipfileset(src: jar.archivePath, excludes:'META-INF')
             }
             delete(file: archivePathTmp, quiet: true, deleteonexit: true)
         }
@@ -449,16 +479,19 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
 }
 
 ext.distSpec = copySpec {
-    from("$projectDir") {
-        include 'LICENSE.txt', 'NOTICE.txt'
-    }
+    from("$projectDir/licenses/LICENSE-BINZIP")
+    from("$projectDir/notices/NOTICE-BINZIP")
+    from("$projectDir/DISCLAIMER")
+    rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename == 'NOTICE-BINZIP' ? 'NOTICE' : filename }
     into('lib') {
         from jar.archivePath
         from {
-            configurations.runtime.findAll { it.name.endsWith('jar') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
+            configurations.runtime.findAll {
+                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
                     modules()*.jar.archivePath +
                     modules().configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-')
+                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) &&
+                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('openbeans-')
                     }.flatten() as Set
         }
         from('src/bin/groovy.icns')
@@ -468,6 +501,14 @@ ext.distSpec = copySpec {
         from {
             modules()*.jar.collect { j ->
                 new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
+            }
+        }
+    }
+    into('grooid') {
+        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
+        from {
+            modules()*.jar.collect { j ->
+                new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
             }
         }
     }
@@ -482,6 +523,17 @@ ext.distSpec = copySpec {
         }
         from('src/tools/org/codehaus/groovy/tools/groovy.ico')
     }
+    into('licenses') {
+        from 'licenses'
+        include 'antlr2-license.txt'
+        include 'asm-license.txt'
+        include 'hamcrest-license.txt'
+        include 'jline2-license.txt'
+        include 'jsr166y-license.txt'
+        include 'jsr223-license.txt'
+        include 'junit-license.txt'
+        include 'xstream-license.txt'
+    }
     into('embeddable') {
         from jarAll.archivePath
         from { new File(jarAll.archivePath.parent, "${jarAll.baseName}-${jarAll.appendix}-${jarAll.version}-indy.jar") }
@@ -493,15 +545,15 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
-        with licenseSpec
     }
 }
 
 task distDoc(type: Zip, dependsOn: doc) {
     baseName = 'apache-groovy'
     appendix = 'docs'
-    into("groovy-$version")
-    with docSpec
+    into("groovy-$version") {
+        with docSpec
+    }
 }
 
 task syncDoc(type: Copy, dependsOn: doc) {
@@ -515,7 +567,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
     into('gapi') {
         from groovydoc.destinationDir
     }
-    // groovy-jdk already at the good place
+    // groovy-jdk already at the correct place
 }
 
 task distSrc(type: Zip) {
@@ -537,17 +589,21 @@ task installGroovy(type: Sync, dependsOn: distBin) {
         logger.lifecycle "Groovy installed under ${installDir()}"
     }
     with distSpec
-    with licenseSpec
     into installDir
 }
+
+import org.gradle.api.file.DuplicatesStrategy
 
 task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
     baseName = 'apache-groovy'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     appendix 'sdk'
     into "groovy-$version"
+    from("$projectDir/licenses/LICENSE-SDK")
+    from("$projectDir/notices/NOTICE-SDK")
+    rename { String filename -> filename == 'LICENSE-SDK' ? 'LICENSE' : filename == 'NOTICE-SDK' ? 'NOTICE' : filename }
     with distSpec
-    with licenseSpec
     into('doc') {
         with docSpec
     }
@@ -561,22 +617,125 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     }
 }
 
-task updateLicense {
-    description = 'Updates the top-level LICENSE file'
-
+task updateLicenses {
+    description = 'Updates the various LICENSE files'
     ext.licensesDir = "${projectDir}/licenses"
-    ext.licenseFile = "${projectDir}/LICENSE"
-    inputs.files(licensesDir)
-    outputs.file(licenseFile)
+    ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
+
+    ext.licenseSrcFile = "${projectDir}/LICENSE"
+    ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
+    ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
+    ext.licenseGroovyshFile = "${projectDir}/subprojects/groovy-groovysh/LICENSE"
+    ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
+    ext.licenseAllJarJarFile = "${licensesDir}/LICENSE-ALLJARJAR"
+    ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
+    ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
+    ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
+    inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
+    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
+            licenseDocGeneratorFile, licenseGroovyDocFile, licenseGroovyshFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
-        def files = [file("$licensesDir/LICENSE-BASE")]
-        file(licensesDir).eachFileMatch(~/.*.txt/) { files << it }
-        file(licenseFile).withWriter('utf-8') { writer ->
-            files.sort{ it.name }.each {
-                writer << "${it.text}\n"
-                writer << '---------------------------------------------------------------------\n'
+        def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
+        def docFiles = fileTree(licensesDir).include('*-DOC*.txt').sort { it.name }
+        def jarjarFiles = fileTree(licensesDir).include('*-JARJAR*.txt').sort { it.name }
+        def allJarjarFiles = fileTree(licensesDir) {
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+        }.sort { it.name }
+        def binzipFiles = fileTree(licensesDir) {
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+            include '*-BINZIP*.txt'
+        }.sort { it.name }
+        def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
+        def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
+        def groovyshFiles = fileTree(licensesDir).include('jline2-patch-ALLJARJAR-SRC.txt')
+        def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
+        def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
+        [
+                (licenseAllJarJarFile)  : allJarjarFiles,
+                (licenseBinZipFile)     : binzipFiles,
+                (licenseDocFile)        : docFiles,
+                (licenseJarJarFile)     : jarjarFiles,
+                (licenseSrcFile)        : srcFiles,
+                (licenseDocGeneratorFile): docgeneratorFiles,
+                (licenseGroovyDocFile)   : groovydocFiles,
+                (licenseGroovyshFile)    : groovyshFiles,
+                (licenseJsr223File)      : jsr223Files,
+        ].each { outFile, inFiles ->
+            file(outFile).withWriter('utf-8') { writer ->
+                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr) + '\n'
             }
+        }
+        file(licenseSdkFile).withWriter { writer ->
+            writer << [
+                    file(licenseBinZipFile).text,
+                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/LICENSE " +
+                            "and doc/LICENSE files for additional license information."
+            ].join(licenseHdr) + '\n'
+        }
+    }
+}
+
+task updateNotices {
+    description = 'Updates the various NOTICE files'
+    ext.noticesDir = "${projectDir}/notices"
+    ext.noticeBaseFile = "${noticesDir}/NOTICE-BASE"
+
+    ext.noticeSrcFile = "${projectDir}/NOTICE"
+    ext.noticeGroovyConsoleFile = "${projectDir}/subprojects/groovy-console/NOTICE"
+    ext.noticeAllJarJarFile = "${noticesDir}/NOTICE-ALLJARJAR"
+    ext.noticeBinZipFile = "${noticesDir}/NOTICE-BINZIP"
+    ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
+    ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
+    ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
+    ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
+    inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
+    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
+            noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
+
+    doLast {
+        def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
+        def grooidFiles = fileTree(noticesDir).include('*-GROOID*.txt').sort { it.name }
+        def jarjarFiles = fileTree(noticesDir).include('*-JARJAR*.txt').sort { it.name }
+        def grooidJarjarFiles = fileTree(noticesDir) {
+            include '*-JARJAR*.txt'
+            include '*-GROOID*.txt'
+        }.sort { it.name }
+        def allJarjarFiles = fileTree(noticesDir) {
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+        }.sort { it.name }
+        def binzipFiles = fileTree(noticesDir) {
+            include '*-JARJAR*.txt'
+            include '*-ALLJARJAR*.txt'
+            include '*-GROOID*.txt'
+            include '*-BINZIP*.txt'
+        }.sort { it.name }
+        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
+        [
+                (noticeAllJarJarFile): allJarjarFiles,
+                (noticeBinZipFile): binzipFiles,
+                (noticeGrooidFile): grooidFiles,
+                (noticeGrooidJarJarFile): grooidJarjarFiles,
+                (noticeJarJarFile): jarjarFiles,
+                (noticeSrcFile): srcFiles,
+                (noticeGroovyConsoleFile): groovyconsoleFiles,
+        ].each { outFile, inFiles ->
+            file(outFile).withWriter('utf-8') { writer ->
+                writer << ([file(noticeBaseFile)] + inFiles).collect {
+                    it.text.replaceAll(/[\n\r]*$/, '')
+                }.join('\n\n')
+            }
+        }
+        file(noticeSdkFile).withWriter { writer ->
+            writer << [
+                    file(noticeBinZipFile).text,
+                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/NOTICE " +
+                            "and doc/NOTICE files for additional notice information."
+            ].join('\n\n')
         }
     }
 }

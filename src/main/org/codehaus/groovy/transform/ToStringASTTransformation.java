@@ -75,13 +75,13 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             }
             boolean includeNames = memberHasValue(anno, "includeNames", true);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = getMemberList(anno, "excludes");
-            List<String> includes = getMemberList(anno, "includes");
+            List<String> excludes = getMemberStringList(anno, "excludes");
+            List<String> includes = getMemberStringList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
             boolean includePackage = !memberHasValue(anno, "includePackage", false);
             boolean allProperties = !memberHasValue(anno, "allProperties", false);
 
-            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
+            if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties);

@@ -142,15 +142,24 @@ allprojects {
 
 subprojects { sp ->
     def extras = []
-    if (sp.name == 'groovy-templates') extras = [
-            // test files
-            'src/spec/test-resources/*.txt',
-            'src/test/resources/includes/hello-escaped.txt',
-            'src/test/resources/includes/hello.html'
-    ]
+    switch(sp.name) {
+        case 'groovy-templates':
+            extras = [
+                    // test files
+                    'src/spec/test-resources/*.txt',
+                    'src/test/resources/includes/hello-escaped.txt',
+                    'src/test/resources/includes/hello.html'
+            ]
+            break;
+        case ['groovy-groovydoc', 'groovy-docgenerator']:
+            extras = [
+                    '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
+            ]
+            break;
+    }
     rat {
         inputDir = sp.projectDir.absolutePath
-        excludes = [ 'target/**', '.gradle/**', '**/assets/**', '*.iml' , *extras]
+        excludes = [ 'target/**', '.gradle/**', '*.iml' , *extras]
     }
 }
 
@@ -161,9 +170,10 @@ rat {
                  'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
                  'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
-                 '**/target/**', 'licenses/**',
+                 '**/target/**', 'licenses/**', 'notices/**',
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
-                 '**/assets/**', '**/*.gif', '**/*.png', '**/*.icns' // various image files
+                 '**/style.css', // MIT license as per NOTICE/LICENSE files
+                 '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
     ]
 }
 

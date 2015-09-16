@@ -44,7 +44,7 @@ Notice the result is a plain map and can be handled like a normal Groovy object 
 given JSON as defined by the http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf[ECMA-404 JSON Interchange Standard]
 plus support for JavaScript comments and dates.
 
-In addition to maps `JsonSlurper` supports JSON arrays which are being converted to lists.
+In addition to maps `JsonSlurper` supports JSON arrays which are converted to lists.
 
 [source,groovy]
 ----
@@ -187,8 +187,9 @@ include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.gr
 `prettyPrint` takes a `String` as single parameter. It must not be used in conjunction with the other `JsonOutput` methods,
 it can be applied on arbitrary JSON `String` instances.
 
-Another way to create JSON from Groovy is to use the `JsonBuilder` or `StreamingJsonBuilder`. Both builders provide a
-DSL which allows to formulate an object graph which is then converted to JSON at some point.
+Another way to create JSON from Groovy is to use `JsonBuilder` or `StreamingJsonBuilder`. Both builders provide a
+DSL which allows to formulate an object graph which is then converted to JSON.
 
 [NOTE]
-For more details on builders, have a look at the builders chapter which covers both JSON builders in great depth.
+For more details on builders, have a look at the builders chapter which covers both <<core-domain-specific-languages.adoc#_jsonbuilder,JsonBuilder>>
+and <<core-domain-specific-languages.adoc#_streamingjsonbuilder,StreamingJsonBuilder>>.

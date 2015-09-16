@@ -168,7 +168,7 @@ Switch supports the following kinds of comparisons:
 
 NOTE: `default` must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
 
-NOTE: when using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`)
+NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
 
 ==== Looping structures
 ===== Classic for loop
@@ -400,11 +400,11 @@ We can decompose the expression `this.class.methods.name.grep(~/.*Bar/)` to get 
 `this.class.methods.name`:: apply a property accessor on each element of an array and produce a list of the results.
 `this.class.methods.name.grep(...)`:: call method `grep` on each element of the list yielded by `this.class.methods.name` and produce a list of the results.
 
-WARNING: a sub-expression like `this.class.methods` yields an array because this is what calling `this.getClass().getMethods()` in Java
-would produce : `GPath` expressions have not invented a convention where a `s` means a list or anything like that.
+WARNING: A sub-expression like `this.class.methods` yields an array because this is what calling `this.getClass().getMethods()` in Java
+would produce. `GPath` expressions do not have a convention where a `s` means a list or anything like that.
 
 One powerful feature of GPath expression is that property access on a collection is converted to a _property access on each element of the collection_ with
-the results collected into a collection.  Therefore, the expression `this.class.methods.name` could be expressed as follows in Java:
+the results collected into a collection. Therefore, the expression `this.class.methods.name` could be expressed as follows in Java:
 [source,java]
 ----
 List<String> methodNames = new ArrayList<String>();

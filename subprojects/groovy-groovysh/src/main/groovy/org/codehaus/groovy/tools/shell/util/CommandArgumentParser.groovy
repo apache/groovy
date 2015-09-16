@@ -25,7 +25,7 @@ class CommandArgumentParser {
 
     /**
      * takes a String and tokenizes it according to posix-shell-like rules, meaning
-     * arguments are separated by blanks or hyphens, and hyphens wrap tokens regardless
+     * arguments are separated by non-escaped blanks or hyphens, and hyphens wrap tokens regardless
      * of blanks, other hyphens or escaped hyphens within the wrapping hyphens.
      *
      * Example: "foo bar 123'456' 'abc\'def\\' ''"  has 6 tokens:
@@ -50,12 +50,25 @@ class CommandArgumentParser {
                 break
             }
             String ch = line.charAt(index)
-            // escaped char?
-            if (ch == '\\' && (singleHyphenOpen || doubleHyphenOpen)) {
-                ch = (index == line.length() - 1) ? '\\' : line.charAt(index + 1)
-                index++
-                currentToken += ch
-                continue
+            // escaped char? -> maybe unescape
+            if (ch == '\\') {
+                if (index >= line.length() - 1) {
+                    // end reached
+                    currentToken += ch
+                    continue
+                }
+                if (singleHyphenOpen || doubleHyphenOpen) {
+                    // add escaped, no other parsing action
+                    currentToken += ch
+                    index++
+                    currentToken += line.charAt(index)
+                    continue
+                } else {
+                    // unescape, only add char after, no parsing action
+                    index++
+                    currentToken += line.charAt(index)
+                    continue
+                }
             }
 
             if (ch == '"' && !singleHyphenOpen) {

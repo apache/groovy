@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * Tests for the {@link SetCommand} class.
@@ -39,15 +39,15 @@ class SetCommandTest
 
         List<String> candidates = []
         SetCommand command = new SetCommand(shell)
-        ArrayList<SimpleCompletor> completors = command.createCompleters()
+        List<Completer> completors = command.createCompleters()
         assert 2 == completors.size()
         assert 0 == completors[0].complete('', 0, candidates)
-        assert Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates
-        assert PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY in candidates
-        assert Preferences.EDITOR_KEY in candidates
-        assert Preferences.PARSER_FLAVOR_KEY in candidates
-        assert Preferences.SANITIZE_STACK_TRACE_KEY in candidates
-        assert Preferences.SHOW_LAST_RESULT_KEY in candidates
-        assert Preferences.VERBOSITY_KEY in candidates
+        assert Groovysh.AUTOINDENT_PREFERENCE_KEY + ' ' in candidates
+        assert PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY + ' ' in candidates
+        assert Preferences.EDITOR_KEY + ' ' in candidates
+        assert Preferences.PARSER_FLAVOR_KEY + ' ' in candidates
+        assert Preferences.SANITIZE_STACK_TRACE_KEY + ' ' in candidates
+        assert Preferences.SHOW_LAST_RESULT_KEY + ' ' in candidates
+        assert Preferences.VERBOSITY_KEY + ' ' in candidates
     }
 }

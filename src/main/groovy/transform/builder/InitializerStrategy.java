@@ -18,6 +18,7 @@
  */
 package groovy.transform.builder;
 
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -112,9 +113,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * to call your constructor. Any parameters to your constructor become the properties expected by the initializer.
  * If you use such a builder on a constructor as well as on the class or on more than one constructor, then it is up to you
  * to define unique values for 'builderClassName' and 'builderMethodName' for each annotation.
- *
- * @author Paul King
- * @author Marcin Grzejszczak
  */
 public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
 
@@ -146,9 +144,15 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
+        includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
+        if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
+        if (filteredFields.isEmpty()) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: at least one property is required for this strategy", anno);
+        }
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), filteredFields.size());
         addFields(buildee, filteredFields, builder);
 
@@ -157,7 +161,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     }
 
     private void createBuilderForAnnotatedMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno, boolean useSetters) {
-        if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "includes") != null) {
+        if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "excludes") != null) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
                     " processing: includes/excludes only allowed on classes", anno);
         }
@@ -172,6 +176,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         }
         ClassNode buildee = mNode.getDeclaringClass();
         Parameter[] parameters = mNode.getParameters();
+        if (parameters.length == 0) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: at least one parameter is required for this strategy", anno);
+        }
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), parameters.length);
         List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
 
@@ -355,7 +363,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
-            if (AbstractASTTransformation.shouldSkip(fNode.getName(), excludes, includes)) continue;
+            if (AbstractASTTransformation.shouldSkipUndefinedAware(fNode.getName(), excludes, includes)) continue;
             fields.add(fNode);
         }
         return fields;
