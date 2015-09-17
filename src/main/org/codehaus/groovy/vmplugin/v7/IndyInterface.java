@@ -72,13 +72,20 @@ public class IndyInterface {
         /** boolean to indicate if logging for indy is enabled */
         protected static final boolean LOG_ENABLED;
         static {
+            boolean enableLogger = false;
+
             LOG = Logger.getLogger(IndyInterface.class.getName());
-            if (System.getProperty("groovy.indy.logging")!=null) {
-                LOG.setLevel(Level.ALL);
-                LOG_ENABLED = true;
-            } else {
-                LOG_ENABLED = false;
+
+            try {
+                if (System.getProperty("groovy.indy.logging")!=null) {
+                    LOG.setLevel(Level.ALL);
+                    enableLogger = true;
+                }
+            } catch (SecurityException e) {
+                // Allow security managers to prevent system property access
             }
+
+            LOG_ENABLED = enableLogger;
         }
         /** LOOKUP constant used for for example unreflect calls */
         public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
