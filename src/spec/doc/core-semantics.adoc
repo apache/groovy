@@ -166,8 +166,6 @@ Switch supports the following kinds of comparisons:
 * Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
 * If none of the above are used then the case value matches if the case value equals the switch value
 
-NOTE: `default` must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
-
 NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
 
 ==== Looping structures
