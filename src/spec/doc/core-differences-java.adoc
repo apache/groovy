@@ -346,7 +346,3 @@ variable names etc.
 * `def`
 * `in`
 * `trait`
-
-== default must be last in switch case
-
-`default` must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the `default` in Groovy is used more as an else than assigning a default case.
