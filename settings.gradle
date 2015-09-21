@@ -31,12 +31,17 @@ def subprojects = ['groovy-ant',
         'groovy-templates',
         'groovy-test',
         'groovy-testng',
-        'groovy-xml']
+        'groovy-xml'
+]
 
 if(JavaVersion.current().isJava7Compatible()) {
     subprojects << 'groovy-nio'
 }
- 
+
+if (JavaVersion.current().isJava8Compatible()) {
+    subprojects << 'performance'
+}
+
 include(subprojects as String[])
         
 rootProject.children.each { prj ->

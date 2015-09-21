@@ -1,0 +1,90 @@
+import java.text.DecimalFormat
+
+configurations {
+    stats
+    testCompile.extendsFrom(stats)
+}
+
+dependencies {
+    testCompile 'org.codehaus.groovy:groovy:2.4.4'
+    stats 'org.apache.commons:commons-math3:3.5'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+task performanceTests {
+    ext.outputDir = file("$buildDir/compilation")
+    ext.dataFile = file("$buildDir/compilation-stats.csv")
+
+    dependsOn rootProject.jarAll
+    doLast {
+        ext.outputDir.deleteDir()
+        def versions = []
+        dataFile.eachLine {
+            def (version, mean, stdDev) = it.split(';')
+            mean = Double.valueOf(mean)
+            stdDev = Double.valueOf(stdDev)
+            versions << [version == project.version ? 'current' : version, mean, stdDev]
+        }
+        versions = versions.sort { it[1] }
+        def fastest = versions[0][1]
+        versions.each { version, mean, stdDev ->
+            print "Groovy $version Average ${mean}ms ± ${new DecimalFormat("#.##").format(stdDev)}ms "
+            if (mean > fastest) {
+                def diff = 100 * (mean - fastest) / fastest
+                print "(${new DecimalFormat("#.##").format(diff)}% slower)"
+            }
+            println()
+        }
+        dataFile.delete()
+    }
+}
+
+['1.8.9', '2.0.8', '2.1.9', '2.2.2', '2.3.10', '2.3.11', '2.4.4', 'current'].each { version ->
+    def t = task "performanceTestGroovy${version.replace('.', '_')}"(type: JavaExec) {
+        dependsOn compileTestJava
+        def groovyConf = configurations.detachedConfiguration(
+                dependencies.create(
+                        'current' == version ? files(rootProject.jarAll.archivePath) : "org.codehaus.groovy:groovy-all:$version")
+        )
+        groovyConf.transitive = false
+        main = 'org.apache.groovy.perf.CompilerPerformanceTest'
+        classpath = groovyConf + sourceSets.test.output + configurations.stats
+        jvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxPermSize=512m']
+        def compileClassPath = [
+                '-cp',
+                groovyConf.files[0]
+        ]
+        rootProject.sourceSets.test.compileClasspath.files
+                .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') }
+                .collect(compileClassPath) { it.absolutePath }
+
+        // configure some files to compile. This is an arbitrary set of files which can be compiled
+        // independently of the version of Groovy being tested
+        def testFiles = ['gls/CompilableTestSupport.groovy',
+                         'groovy/beans',
+                         'groovy/benchmarks',
+                         'groovy/execute',
+                         'groovy/gpath',
+                         'groovy/io',
+                         'groovy/script',
+                         'groovy/time',
+                         'groovy/tree',
+                         'gls/syntax'].collect { "../../src/test/$it" }
+        ['groovy-ant', 'groovy-test', 'groovy-jsr223'].collect(testFiles) { "../../subprojects/$it/src/test/groovy" }
+
+        ['ackermann', 'fibo', 'random', 'spectralnorm', 'ary', 'hello', 'recursive', 'threadring',
+         'binarytrees', 'mandelbrot', 'regexdna', 'wordfreq',
+         'fannkuch', 'nsieve', 'revcomp'].collect(testFiles) {
+            "../../benchmark/bench/${it}.groovy"
+        }
+
+        args = [
+                *testFiles,
+                *compileClassPath
+        ]
+
+    }
+    performanceTests.dependsOn(t)
+}
