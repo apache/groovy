@@ -426,8 +426,13 @@ allprojects {
             targetCompatibility = 1.7
         }
         tasks.withType(JavaCompile) {
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
+            if (project.name=='performance') {
+                sourceCompatibility = 1.8
+                targetCompatibility = 1.8
+            } else {
+                sourceCompatibility = 1.7
+                targetCompatibility = 1.7
+            }
         }
         jar {
             classifier = 'indy'
