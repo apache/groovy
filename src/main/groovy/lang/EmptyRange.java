@@ -179,16 +179,28 @@ public class EmptyRange extends AbstractList implements Range {
         throw new UnsupportedOperationException("cannot set in Empty Ranges");
     }
 
+    @Override
+    public void step(int step, Closure closure) {
+        step((Number) step, closure);
+    }
+
     /**
      * Always does nothing for an empty range.
      */
-    public void step(int step, Closure closure) {
+    @Override
+    public void step(Number step, Closure closure) {
+    }
+
+    @Override
+    public List step(int step) {
+        return step((Number) step);
     }
 
     /**
      * Always returns an empty list for an empty range.
      */
-    public List step(int step) {
+    @Override
+    public List step(Number step) {
         return new ArrayList();
     }
 }
