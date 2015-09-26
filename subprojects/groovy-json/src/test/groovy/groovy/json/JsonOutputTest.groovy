@@ -427,9 +427,6 @@ class JsonOutputTest extends GroovyTestCase {
         def dir = File.createTempDir()
         dir.deleteOnExit()
         assert toJson(dir) == toJson(removeUnused(dir.properties))
-
-        def objectWithFile = new JsonEmbeddedFile(name: 'testFile', file: file)
-        assert toJson(objectWithFile) == "{\"file\":${toJson(file)},\"name\":\"testFile\"}"
     }
 
 }
@@ -464,9 +461,4 @@ class JsonFoo {
 
 enum JsonStreetKind {
     street, boulevard, avenue
-}
-
-class JsonEmbeddedFile {
-    String name
-    File file
 }
