@@ -29,9 +29,9 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http:/
 
 === Stable
 
-- **Download zip**: https://bintray.com/artifact/download/groovy/maven/groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://bintray.com/artifact/download/groovy/maven/groovy-src-{groovy-full-version}.zip[Source Release]
-- **Download documentation**: https://bintray.com/artifact/download/groovy/maven/groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
+- **Download zip**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://bintray.com/artifact/download/groovy/maven/groovy-src-{groovy-full-version}.zip[Source Release]
+- **Download documentation**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
 You can learn more about this version in the http://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the http://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
