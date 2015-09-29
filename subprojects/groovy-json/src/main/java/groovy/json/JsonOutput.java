@@ -61,7 +61,8 @@ public class JsonOutput {
     private static final String NULL_VALUE = "null";
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String DEFAULT_TIMEZONE = "GMT";
-
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat(JSON_DATE_FORMAT);
+    private static TimeZone timeZone = TimeZone.getTimeZone(DEFAULT_TIMEZONE);
     /**
      * @return "true" or "false" for a boolean value
      */
@@ -220,6 +221,13 @@ public class JsonOutput {
     }
 
     /**
+     * @param tz - time zone string to be used in the DateFormat
+     */
+    public static void setTimeZone(String tz) {
+        timeZone = TimeZone.getTimeZone(tz);
+    }
+
+    /**
      * Serializes Number value and writes it into specified buffer.
      */
     private static void writeNumber(Class<?> numberClass, Number value, CharBuf buffer) {
@@ -345,9 +353,8 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-        SimpleDateFormat formatter = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
-        formatter.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
-        buffer.addQuoted(formatter.format(date));
+        dateFormat.setTimeZone(timeZone);
+        buffer.addQuoted(dateFormat.format(date));
     }
 
     /**

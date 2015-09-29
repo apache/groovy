@@ -177,6 +177,13 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(d) == '"2008-03-04T12:50:00+0000"'
     }
 
+    void testDateTimeZone() {
+        def d = Date.parse("yyyy/MM/dd HH:mm:ss z", "2008/03/04 08:20:00 GMT")
+        JsonOutput.setTimeZone("IST")
+        assert toJson(d) == '"2008-03-04T13:50:00+0530"'
+        JsonOutput.setTimeZone("GMT")
+    }
+
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
         assert toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
