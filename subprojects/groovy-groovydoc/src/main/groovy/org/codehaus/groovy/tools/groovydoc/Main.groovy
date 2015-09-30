@@ -26,8 +26,6 @@ import groovy.io.FileType
 
 /**
  * Main CLI entry-point for <tt>groovydoc</tt>.
- *
- * @author Paul King
  */
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
