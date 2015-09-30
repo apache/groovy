@@ -44,6 +44,7 @@ class Main {
     private static Boolean noScripts
     private static Boolean noMainForScripts
     private static Boolean noTimestamp
+    private static Boolean noVersionStamp
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
@@ -73,6 +74,7 @@ class Main {
         cli.noscripts(messages['cli.option.noscripts.description'])
         cli.nomainforscripts(messages['cli.option.nomainforscripts.description'])
         cli.notimestamp(messages['cli.option.notimestamp.description'])
+        cli.noversionstamp(messages['cli.option.noversionstamp.description'])
         cli.overview(args:1, argName: 'file', messages['cli.option.overview.description'])
         cli.public(messages['cli.option.public.description'])
         cli.protected(messages['cli.option.protected.description'])
@@ -126,6 +128,7 @@ class Main {
         noScripts = Boolean.valueOf(options.noscripts) ?: false
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
         noTimestamp = Boolean.valueOf(options.notimestamp) ?: false
+        noVersionStamp = Boolean.valueOf(options.noversionstamp) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -195,6 +198,7 @@ class Main {
         properties.put("processScripts", (!noScripts).toString())
         properties.put("includeMainForScripts", (!noMainForScripts).toString())
         properties.put("timestamp", (!noTimestamp).toString())
+        properties.put("versionStamp", (!noVersionStamp).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
 
         def links = new ArrayList<LinkArgument>();
