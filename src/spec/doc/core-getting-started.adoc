@@ -25,7 +25,7 @@
 
 In this download area, you will be able to download the distribution (binary and source), the Windows installer and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic <<gvm-the-groovy-environment-manager,instructions>> can be found below.
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://sdkman.io/[SDKMAN!] (The Software Development Kit Manager) to download and configure any **Groovy** version of your choice. Basic <<SDKMAN,instructions>> can be found below.
 
 === Stable
 
@@ -85,7 +85,8 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 
 To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append &#39;:indy' for Gradle or <classifier>indy</classifier> for Maven.
 
-== GVM (the Groovy enVironment Manager)
+[[SDKMAN]]
+== SDKMAN! (The Software Development Kit Manager)
 
 This tool makes installing Groovy on any Bash platform (Mac OSX, Linux, Cygwin, Solaris or FreeBSD) very easy.
 
@@ -93,7 +94,7 @@ Simply open a new terminal and enter:
 
 [source,shell]
 ----
-$ curl -s get.gvmtool.net | bash
+$ curl -s get.sdkman.io | bash
 ----
 
 Follow the instructions on-screen to complete installation.
@@ -102,14 +103,14 @@ Open a new terminal or type the command:
 
 [source,shell]
 ----
-$ source "$HOME/.gvm/bin/gvm-init.sh"
+$ source "$HOME/.sdkman/bin/sdkman-init.sh"
 ----
 
 Then install the latest stable Groovy:
 
 [source,shell]
 ----
-$ gvm install groovy
+$ sdk install groovy
 ----
 
 After installation is complete and you've made it your default version, test it with:
