@@ -307,12 +307,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return true;
         }
 
-        return resolveNestedClass(type) ||
+        return  resolveFQN(type) ||
+                resolveNestedClass(type) ||
                 resolveFromModule(type, testModuleImports) ||
                 resolveFromCompileUnit(type) ||
                 resolveFromDefaultImports(type, testDefaultImports) ||
                 resolveFromStaticInnerClasses(type, testStaticInnerClasses) ||
                 resolveToOuter(type);
+
     }
 
     private boolean resolveNestedClass(ClassNode type) {
@@ -658,6 +660,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
         return false;
+    }
+
+    private boolean resolveFQN(ClassNode type) {
+        String name = type.getName();
+        if (name.indexOf('.')==-1) return false;
+        return resolveToOuter(type);
     }
 
     private boolean resolveToOuter(ClassNode type) {
