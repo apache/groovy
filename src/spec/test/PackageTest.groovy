@@ -17,6 +17,7 @@
  *  under the License.
  */
 class PackageTest extends GroovyTestCase {
+
     void testPackages() {
         assertScript '''
 			// tag::package_statement[]
@@ -32,7 +33,7 @@ class PackageTest extends GroovyTestCase {
 			
 			assert foo != null
 		    assert Foo.class.name == 'com.yoursite.Foo'
-			'''
+		'''
 
         assertScript '''
 			//tag::import_statement[]
@@ -44,7 +45,6 @@ class PackageTest extends GroovyTestCase {
 			
 			assert xml != null
 			// end::import_statement[]
-			
 		'''
     }
 
@@ -58,7 +58,6 @@ class PackageTest extends GroovyTestCase {
 
     void testMultipleImportsFromSamePackage() {
         assertScript '''
-			
 			// tag::multiple_import[]
 			import groovy.xml.MarkupBuilder
 			import groovy.xml.StreamingMarkupBuilder
@@ -69,7 +68,6 @@ class PackageTest extends GroovyTestCase {
 			
 			assert new StreamingMarkupBuilder() != null 
 			// end::multiple_import[]
-			
 		'''
     }
 
@@ -88,31 +86,8 @@ class PackageTest extends GroovyTestCase {
 		'''
     }
 
-    /*
-    void testMakeItTwice()
-    {
-        assertScript '''
-            //tag::type_aliasing[]
-
-            package com.lib
-
-            public class MultiplyTwo
-            {
-                def multiply(def value)
-                {
-                    return value * 3 //intentionally wrong.
-                }
-            }
-
-            assert 4 != new MultiplyTwo().multiply(2)
-
-            //end::type_aliasing[]
-        '''
-    }*/
-
     void testStaticImports() {
         assertScript '''
-			
 			// tag::static_imports[]
 			
 			import static Boolean.FALSE
@@ -126,7 +101,6 @@ class PackageTest extends GroovyTestCase {
 
     void testStaticImportWithAs() {
         assertScript '''
-			
 			// tag::static_importswithas[]
 			
 			import static Calendar.getInstance as now
@@ -134,7 +108,6 @@ class PackageTest extends GroovyTestCase {
 			assert now().class == Calendar.getInstance().class
 			
 			// end::static_importswithas[]
-			
 		'''
     }
 
@@ -150,38 +123,39 @@ class PackageTest extends GroovyTestCase {
 			// end::static_importswithstar[]
 		'''
     }
-
-    void testThirdLib() {
+    
+    void testStaticStarImportSameMethodNameDifferentParameterType() {
         assertScript '''
-			import thirdpartylib.MultiplyTwo
+            // tag::static_import_same_method_name_different_parameter_type[]
+			import static java.lang.String.format // <1>
+
+            class SomeClass {
+            
+                String format(Integer i) { // <2>
+                    i.toString()
+                }
+            
+                static void main(String[] args) {
+                    assert format('String') == 'String' // <3>
+                    assert new SomeClass().format(Integer.valueOf(1)) == '1'
+                }
+            }
+			// end::static_import_same_method_name_different_parameter_type[]
+		'''
+    }
+    
+    void testAliasImport() {
+        assertScript '''
+			// tag::alias_import[]
+            import java.util.Date
+			import java.sql.Date as SQLDate
 			
-			// tag::using_third_party_lib[]
-			def result = new MultiplyTwo().multiply(2)
-			// end::using_third_party_lib[]
-		
-			assert 4 != new MultiplyTwo().multiply(2)
+			Date utilDate = new Date(1000L)
+            SQLDate sqlDate = new SQLDate(1000L)
+            
+            assert utilDate instanceof java.util.Date
+            assert sqlDate instanceof java.sql.Date
+			// end::alias_import[]
 		'''
     }
-
-    void testFixThirdLib() {
-        assertScript '''
-			// tag::fixing_thrid_party_lib[]
-			import thirdpartylib.MultiplyTwo as OrigMultiplyTwo
-
-			class MultiplyTwo extends OrigMultiplyTwo {
-				def multiply(def value) {
-					return value * 2 // fixed here
-				}
-			}
-
-			// nothing to change below here
-			def multiplylib = new MultiplyTwo()
-
-			// assert passes as well
-			assert 4 == new MultiplyTwo().multiply(2)
-			// end::fixing_thrid_party_lib[]
-		'''
-    }
-
 }
-
