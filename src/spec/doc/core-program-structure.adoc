@@ -103,14 +103,24 @@ One problem with `*` imports is that they can clutter your local namespace. But 
 
 === Static import
 
-Groovy's static import capability allows you to reference imported classes as if they were static methods in your own class. This is similar to Java's static import capability but works with Java 1.4 and above and is a little more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types. If you have the same types, the imported class takes precedence. Here is a sample of its usage:
+Groovy's static import capability allows you to reference imported classes as if they were static methods in your own class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_imports,indent=0]
 ----
 
-As you can see, now we can able to refer to the static variable `FALSE` in our code base cleanly.
+This is similar to Java's static import capability but is a more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_import_same_method_name_different_parameter_type,indent=0]
+----
+<1> static import of method
+<2> declaration of method with same name as method statically imported above, but with a different parameter type
+<3> compile error in java, but is valid groovy code
+
+If you have the same types, the imported class takes precedence.
 
 === Static import aliasing
 
@@ -141,32 +151,12 @@ As you can see, we were able to access the methods `sin` and `cos` directly, wit
 
 With type aliasing, we can refer to a fully qualified class name using a name of our choice. This can be done with the `as` keyword, as before.
 
-Consider the following class, provided by some third-party library code:
+For example we can import `java.sql.Date` as `SQLDate` and use it in the same file as `java.util.Date` without having to use the fully qualified name of either class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/thirdpartylib/MultiplyTwo.groovy[tags=third_party_lib,indent=0]
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=alias_import,indent=0]
 ----
-
-Suppose we have some existing code using the library:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=using_third_party_lib,indent=0]
-----
-
-Now suppose that, after using this library throughout your codebase, we discover that it doesn't give correct results. How can we fix it in one place, outside of the original class, without changing all the code that's using it? Groovy has an elegant solution to this problem.
-
-With a simple import aliasing, we can fix the bug like this:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=fixing_thrid_party_lib,indent=0]
-----
-
-Thats it! Notice how Groovy allowed us to use the `as` keyword to rename our imported class and solve this common problem.
-
-Type aliasing is also useful to solve name collision problems which can occur with `*` imports.
 
 == Scripts versus classes
 
