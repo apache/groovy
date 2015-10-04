@@ -562,7 +562,6 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     boolean tryImplicitReceiver(final Expression origin, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
-        ClassNode propertyOwnerType = origin.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (implicitThis && implicitReceiver==null && origin instanceof MethodCallExpression) {
             implicitReceiver = ((MethodCallExpression) origin).getObjectExpression().getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         }
@@ -576,9 +575,6 @@ public class StaticInvocationWriter extends InvocationWriter {
                 pexp = new PropertyExpression(pexp, propertyPath[i]);
             }
             pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, implicitReceiver);
-            if (propertyOwnerType!=null) {
-                pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, propertyOwnerType);
-            }
             origin.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
             if (origin instanceof PropertyExpression) {
                 PropertyExpression rewritten = new PropertyExpression(
