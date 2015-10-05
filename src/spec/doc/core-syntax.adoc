@@ -877,7 +877,7 @@ The following table summarizes those rules:
 |====
 
 [NOTE]
-Thanks Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
+Thanks to Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
 unlike in Java where you have to use explicit methods for operating on those numbers.
 
 [[integer_division]]
