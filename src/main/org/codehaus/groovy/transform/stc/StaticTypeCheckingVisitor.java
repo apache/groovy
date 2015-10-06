@@ -1816,6 +1816,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         virtualDecl.visit(this);
                         ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
                         if (!missesGenericsTypes(newlyInferred)) type = newlyInferred;
+                    } else {
+                        checkTypeGenerics(enclosingMethod.getReturnType(), inferred, expression);
                     }
                     return type;
                 } else {

@@ -64,7 +64,7 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
     // GROOVY-5988
     void testMapArraySetPropertyAssignment() {
         assertScript '''
-            Map<String, String> props(Object p) {
+            Map<String, Object> props(Object p) {
                 Map<String, Object> props = [:]
 
                 for(String property in p.properties.keySet()){
