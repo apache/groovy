@@ -48,16 +48,30 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER})
 public @interface DelegatesTo {
     Class value() default Target.class;
+
+    /**
+     * The {@link Closure#resolveStrategy} used by the closure.
+     */
     int strategy() default Closure.OWNER_FIRST;
+
+    /**
+     * The index of the generic type that will be the type of the closure's delegate.
+     * The generic types are considered with respect to the {@code @DelegatesTo.Target} annotated
+     * parameter for this usage, with the index starting at 0.
+     */
     int genericTypeIndex() default -1;
 
+    /**
+     * In cases when there are multiple {@code @DelegatesTo.Target} annotated parameters, this
+     * member should be set to the {@link DelegatesTo.Target#value()} of the correct target.
+     */
     String target() default "";
 
     /**
-     * The type member should be used when the type of the delagate cannot
+     * The type member should be used when the type of the delegate cannot
      * be represented with {@link #value()}, {@link #genericTypeIndex()} or
      * {@link #target()}. In this case, it is possible to use a String to represent
-     * the type, at the cost of potential uncatched errors at compile time if the
+     * the type, at the cost of potential uncaught errors at compile time if the
      * type is invalid and increased compile time.
      *
      * @return a String representation of a type
@@ -65,9 +79,18 @@ public @interface DelegatesTo {
      */
     String type() default "";
 
+    /**
+     * Parameter annotation used to specify the delegate for a {@code @DelegatesTo} annotated
+     * parameter of the same method.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @java.lang.annotation.Target({ElementType.PARAMETER})
     public static @interface Target {
-        String value() default ""; // optional id
+
+        /**
+         * An identifier that should be used to disambiguate targets when there are
+         * multiple {@code @DelegatesTo.Target} annotated parameters.
+         */
+        String value() default "";
     }
 }
