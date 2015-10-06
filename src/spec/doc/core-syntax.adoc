@@ -416,7 +416,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_1,
 In either case, both placeholders are embedded closures.
 
 In appearance, it looks like a more verbose way of defining expressions to be interpolated,
-but closure have an interesting advantage over mere expressions: lazy evaluation.
+but closures have an interesting advantage over mere expressions: lazy evaluation.
 
 Let's consider the following sample:
 
@@ -877,7 +877,7 @@ The following table summarizes those rules:
 |====
 
 [NOTE]
-Thanks Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
+Thanks to Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
 unlike in Java where you have to use explicit methods for operating on those numbers.
 
 [[integer_division]]
