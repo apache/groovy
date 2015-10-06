@@ -62,7 +62,6 @@ public class JsonOutput {
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String DEFAULT_TIMEZONE = "GMT";
     private static SimpleDateFormat dateFormat = new SimpleDateFormat(JSON_DATE_FORMAT);
-    private static TimeZone timeZone = TimeZone.getTimeZone(DEFAULT_TIMEZONE);
     /**
      * @return "true" or "false" for a boolean value
      */
@@ -120,12 +119,24 @@ public class JsonOutput {
      * @return a formatted date in the form of a string
      */
     public static String toJson(Date date) {
+        dateFormat.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+        return toJson(date, dateFormat);
+    }
+
+    /**
+     * Format a date that is parseable from JavaScript, according to ISO-8601.
+     *
+     * @param date the date to format to a JSON string
+     * @param format a simpleDateTimeForat to represent the date.
+     * @return a formatted date in the form of a string
+     */
+    public static String toJson(Date date, SimpleDateFormat format) {
         if (date == null) {
             return NULL_VALUE;
         }
 
         CharBuf buffer = CharBuf.create(26);
-        writeDate(date, buffer);
+        writeDate(date, buffer, format);
 
         return buffer.toString();
     }
@@ -137,12 +148,24 @@ public class JsonOutput {
      * @return a formatted date in the form of a string
      */
     public static String toJson(Calendar cal) {
+        dateFormat.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+        return toJson(cal, dateFormat);
+    }
+
+    /**
+     * Format a calendar instance that is parseable from JavaScript, according to ISO-8601.
+     *
+     * @param cal the calendar to format to a JSON string
+     * @param format the date time format in which cal should be formatted.
+     * @return a formatted date in the form of a string
+     */
+    public static String toJson(Calendar cal, SimpleDateFormat format) {
         if (cal == null) {
             return NULL_VALUE;
         }
 
         CharBuf buffer = CharBuf.create(26);
-        writeDate(cal.getTime(), buffer);
+        writeDate(cal.getTime(), buffer, format);
 
         return buffer.toString();
     }
@@ -218,21 +241,6 @@ public class JsonOutput {
         writeMap(m, buffer);
 
         return buffer.toString();
-    }
-
-    /**
-     * @param format - a SimpleDateFormat object
-     */
-    public static void setDateFormat(SimpleDateFormat format) {
-        dateFormat = format;
-        timeZone = dateFormat.getTimeZone();
-    }
-
-    /**
-     * @param tz - time zone string to be used in the DateFormat
-     */
-    public static void setTimeZone(String tz) {
-        timeZone = TimeZone.getTimeZone(tz);
     }
 
     /**
@@ -361,8 +369,15 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-        dateFormat.setTimeZone(timeZone);
+        dateFormat.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
         buffer.addQuoted(dateFormat.format(date));
+    }
+
+    /**
+     * Serializes date and writes it into specified buffer.
+     */
+    private static void writeDate(Date date, CharBuf buffer, SimpleDateFormat format) {
+        buffer.addQuoted(format.format(date));
     }
 
     /**

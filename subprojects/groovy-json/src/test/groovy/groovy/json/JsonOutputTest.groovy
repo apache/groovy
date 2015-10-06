@@ -177,19 +177,11 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(d) == '"2008-03-04T12:50:00+0000"'
     }
 
-    void testDateTimeZone() {
-        def d = Date.parse("yyyy/MM/dd HH:mm:ss z", "2008/03/04 08:20:00 GMT")
-        JsonOutput.setTimeZone("IST")
-        assert toJson(d) == '"2008-03-04T13:50:00+0530"'
-        JsonOutput.setTimeZone("GMT")
-    }
-
     void testDateDateFormat() {
         def d = Date.parse("yyyy/MM/dd HH:mm:ss z", "2008/03/04 08:20:00 GMT")
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy'T'HH:mm:ss z");
-        JsonOutput.setDateFormat(sdf)
-        JsonOutput.setTimeZone("IST")
-        assert toJson(d) == '"04/03/2008T13:50:00 IST"'
+        sdf.setTimeZone(TimeZone.getTimeZone("IST"))
+        assert toJson(d, sdf) == '"04/03/2008T13:50:00 IST"'
     }
 
     void testURL() {
@@ -199,12 +191,18 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testCalendar() {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
+        c.clearTime()
+        c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
+        assert toJson(c) == '"2008-03-04T12:50:00+0000"'
+    }
+
+    void testCalendarDateFormat() {
+        def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         c.clearTime()
         c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
-        JsonOutput.setDateFormat(sdf)
-        assert toJson(c) == '"2008-03-04T12:50:00+0000"'
+        assert toJson(c, sdf) == '"2008-03-04T12:50:00+0000"'
     }
 
     void testComplexObject() {
