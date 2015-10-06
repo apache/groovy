@@ -201,7 +201,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
-    void testCompatibleGenericAssignmentWithInferrence() {
+    void testCompatibleGenericAssignmentWithInference() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
         ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
@@ -1642,6 +1642,27 @@ assert result == 'ok'
             }
             Wrapper w = new Wrapper()
             assert new Foo<Wrapper>().doIt([w]) == w
+        '''
+    }
+
+    void testReturnTypeChecking() {
+        shouldFailWithMessages '''
+            class Foo {
+                List<String> run() {
+                    [11, 12]
+                }
+            }
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Integer> to: java.util.List <String>'
+    }
+
+    void testBoundedReturnTypeChecking() {
+        assertScript '''
+            class Foo {
+                List<? extends Serializable> run() {
+                    [1, 'a']
+                }
+            }
+            null
         '''
     }
 
