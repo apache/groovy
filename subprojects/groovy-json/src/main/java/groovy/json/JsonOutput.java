@@ -61,7 +61,7 @@ public class JsonOutput {
     private static final String NULL_VALUE = "null";
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String DEFAULT_TIMEZONE = "GMT";
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat(JSON_DATE_FORMAT);
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat(JSON_DATE_FORMAT);
     private static TimeZone timeZone = TimeZone.getTimeZone(DEFAULT_TIMEZONE);
     /**
      * @return "true" or "false" for a boolean value
@@ -218,6 +218,14 @@ public class JsonOutput {
         writeMap(m, buffer);
 
         return buffer.toString();
+    }
+
+    /**
+     * @param format - a SimpleDateFormat object
+     */
+    public static void setDateFormat(SimpleDateFormat format) {
+        dateFormat = format;
+        timeZone = dateFormat.getTimeZone();
     }
 
     /**

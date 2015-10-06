@@ -17,7 +17,7 @@
  *  under the License.
  */
 package groovy.json
-
+import java.text.SimpleDateFormat;
 import static groovy.json.JsonOutput.toJson
 
 import groovy.transform.Canonical
@@ -184,6 +184,14 @@ class JsonOutputTest extends GroovyTestCase {
         JsonOutput.setTimeZone("GMT")
     }
 
+    void testDateDateFormat() {
+        def d = Date.parse("yyyy/MM/dd HH:mm:ss z", "2008/03/04 08:20:00 GMT")
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy'T'HH:mm:ss z");
+        JsonOutput.setDateFormat(sdf)
+        JsonOutput.setTimeZone("IST")
+        assert toJson(d) == '"04/03/2008T13:50:00 IST"'
+    }
+
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
         assert toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
@@ -191,9 +199,11 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testCalendar() {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         c.clearTime()
         c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
-
+        JsonOutput.setDateFormat(sdf)
         assert toJson(c) == '"2008-03-04T12:50:00+0000"'
     }
 
