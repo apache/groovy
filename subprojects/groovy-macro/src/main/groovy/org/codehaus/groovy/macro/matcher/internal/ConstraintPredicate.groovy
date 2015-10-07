@@ -16,37 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def subprojects = ['groovy-ant',
-        'groovy-bsf',
-        'groovy-console',
-        'groovy-docgenerator',
-        'groovy-groovydoc',
-        'groovy-groovysh',
-        'groovy-jmx',
-        'groovy-json',
-        'groovy-jsr223',
-        'groovy-servlet',
-        'groovy-sql',
-        'groovy-swing',
-        'groovy-templates',
-        'groovy-test',
-        'groovy-testng',
-        'groovy-xml',
-        'groovy-macro'
-]
+package org.codehaus.groovy.macro.matcher.internal
 
-if(JavaVersion.current().isJava7Compatible()) {
-    subprojects << 'groovy-nio'
+import groovy.transform.CompileStatic
+
+@CompileStatic
+interface ConstraintPredicate<T> {
+    boolean apply(T a)
 }
-
-if (JavaVersion.current().isJava8Compatible()) {
-    subprojects << 'performance'
-}
-
-include(subprojects as String[])
-        
-rootProject.children.each { prj ->
-    prj.projectDir = new File("$rootDir/subprojects/$prj.name")
-}
-
-rootProject.name = 'groovy' // TODO should this be groovy-core?

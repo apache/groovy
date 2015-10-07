@@ -18,17 +18,11 @@
  */
 package org.codehaus.groovy.ast.builder;
 
-import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.ArrayList;
@@ -49,92 +43,17 @@ import java.util.List;
  */
 
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class AstBuilderTransformation implements ASTTransformation {
+public class AstBuilderTransformation extends MethodCallTransformation {
 
-    public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
-
+    @Override
+    protected GroovyCodeVisitor getTransformer(ASTNode[] nodes, SourceUnit sourceUnit) {
         // todo : are there other import types that can be specified?
-        AstBuilderInvocationTrap transformer = new AstBuilderInvocationTrap(
-                sourceUnit.getAST().getImports(),
-                sourceUnit.getAST().getStarImports(),
-                sourceUnit.getSource(),
-                sourceUnit
+        return new AstBuilderInvocationTrap(
+            sourceUnit.getAST().getImports(),
+            sourceUnit.getAST().getStarImports(),
+            sourceUnit.getSource(),
+            sourceUnit
         );
-        if (nodes != null) {
-            for (ASTNode it : nodes) {
-                if (!(it instanceof AnnotationNode) && !(it instanceof ClassNode)) {
-                    it.visit(transformer);
-                }
-            }
-        }
-        if (sourceUnit.getAST() != null) {
-            sourceUnit.getAST().visit(transformer);
-            if (sourceUnit.getAST().getStatementBlock() != null) {
-                sourceUnit.getAST().getStatementBlock().visit(transformer);
-            }
-            if (sourceUnit.getAST().getClasses() != null) {
-                for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
-                    if (classNode.getMethods() != null) {
-                        for (MethodNode node : classNode.getMethods()) {
-                            if (node != null && node.getCode() != null) {
-                                node.getCode().visit(transformer);
-                            }
-                        }
-                    }
-
-                    try {
-                        if (classNode.getDeclaredConstructors() != null) {
-                            for (MethodNode node : classNode.getDeclaredConstructors()) {
-                                if (node != null && node.getCode() != null) {
-                                    node.getCode().visit(transformer);
-                                }
-                            }
-                        }
-                    } catch (MissingPropertyException ignored) {
-                        // todo: inner class nodes don't have a constructors field available
-                    }
-
-                    // all properties are also always fields
-                    if (classNode.getFields() != null) {
-                        for (FieldNode node : classNode.getFields()) {
-                            if (node.getInitialValueExpression() != null) {
-                                node.getInitialValueExpression().visit(transformer);
-                            }
-                        }
-                    }
-
-                    try {
-                        if (classNode.getObjectInitializerStatements() != null) {
-                            for (Statement node : classNode.getObjectInitializerStatements()) {
-                                if (node != null) {
-                                    node.visit(transformer);
-                                }
-                            }
-                        }
-                    } catch (MissingPropertyException ignored) {
-                        // todo: inner class nodes don't have a objectInitializers field available
-                    }
-
-                    // todo: is there anything to do with the module ???
-                }
-            }
-            if (sourceUnit.getAST().getMethods() != null) {
-                for (MethodNode node : sourceUnit.getAST().getMethods()) {
-                    if (node != null) {
-                        if (node.getParameters() != null) {
-                            for (Parameter parameter : node.getParameters()) {
-                                if (parameter != null && parameter.getInitialExpression() != null) {
-                                    parameter.getInitialExpression().visit(transformer);
-                                }
-                            }
-                        }
-                        if (node.getCode() != null) {
-                            node.getCode().visit(transformer);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -142,11 +61,9 @@ public class AstBuilderTransformation implements ASTTransformation {
      * the contents of the closure into expressions by reading the source of the Closure and sending
      * that as a String to AstBuilder.build(String, CompilePhase, boolean) at runtime.
      */
-    private static class AstBuilderInvocationTrap extends CodeVisitorSupport {
+    private static class AstBuilderInvocationTrap extends MethodInvocationTrap {
 
         private final List<String> factoryTargets = new ArrayList<String>();
-        private final ReaderSource source;
-        private final SourceUnit sourceUnit;
 
         /**
          * Creates the trap and captures all the ways in which a class may be referenced via imports.
@@ -157,10 +74,7 @@ public class AstBuilderTransformation implements ASTTransformation {
          * @param sourceUnit     the source unit being compiled. Used for error messages.
          */
         AstBuilderInvocationTrap(List<ImportNode> imports, List<ImportNode> importPackages, ReaderSource source, SourceUnit sourceUnit) {
-            if (source == null) throw new IllegalArgumentException("Null: source");
-            if (sourceUnit == null) throw new IllegalArgumentException("Null: sourceUnit");
-            this.source = source;
-            this.sourceUnit = sourceUnit;
+            super(source, sourceUnit);
 
             // factory type may be references as fully qualified, an import, or an alias
             factoryTargets.add("org.codehaus.groovy.ast.builder.AstBuilder");//default package
@@ -182,47 +96,22 @@ public class AstBuilderTransformation implements ASTTransformation {
                 }
             }
         }
+        
+        @Override
+        protected boolean handleTargetMethodCallExpression(MethodCallExpression call) {
+            ClosureExpression closureExpression = getClosureArgument(call);
+            List<Expression> otherArgs = getNonClosureArguments(call);
+            String source = convertClosureToSource(closureExpression);
 
-        /**
-         * Reports an error back to the source unit.
-         *
-         * @param msg  the error message
-         * @param expr the expression that caused the error message.
-         */
-        private void addError(String msg, ASTNode expr) {
-            sourceUnit.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), sourceUnit)
-            );
-        }
-
-
-        /**
-         * Attempts to find AstBuilder 'from code' invocations. When found, converts them into calls
-         * to the 'from string' approach.
-         *
-         * @param call the method call expression that may or may not be an AstBuilder 'from code' invocation.
-         */
-        public void visitMethodCallExpression(MethodCallExpression call) {
-
-            if (isBuildInvocation(call)) {
-
-                ClosureExpression closureExpression = getClosureArgument(call);
-                List<Expression> otherArgs = getNonClosureArguments(call);
-                String source = convertClosureToSource(closureExpression);
-
-                // parameter order is build(CompilePhase, boolean, String)
-                otherArgs.add(new ConstantExpression(source));
-                call.setArguments(new ArgumentListExpression(otherArgs));
-                call.setMethod(new ConstantExpression("buildFromBlock"));
-                call.setSpreadSafe(false);
-                call.setSafe(false);
-                call.setImplicitThis(false);
-            } else {
-                // continue normal tree walking
-                call.getObjectExpression().visit(this);
-                call.getMethod().visit(this);
-                call.getArguments().visit(this);
-            }
+            // parameter order is build(CompilePhase, boolean, String)
+            otherArgs.add(new ConstantExpression(source));
+            call.setArguments(new ArgumentListExpression(otherArgs));
+            call.setMethod(new ConstantExpression("buildFromBlock"));
+            call.setSpreadSafe(false);
+            call.setSafe(false);
+            call.setImplicitThis(false);
+            
+            return false;
         }
 
         private List<Expression> getNonClosureArguments(MethodCallExpression call) {
@@ -255,7 +144,8 @@ public class AstBuilderTransformation implements ASTTransformation {
          *
          * @param call the method call expression, may not be null
          */
-        private boolean isBuildInvocation(MethodCallExpression call) {
+        @Override
+        protected boolean isBuildInvocation(MethodCallExpression call) {
             if (call == null) throw new IllegalArgumentException("Null: call");
 
             // is method name correct?
@@ -280,21 +170,6 @@ public class AstBuilderTransformation implements ASTTransformation {
                 }
             }
             return false;
-        }
-
-        /**
-         * Converts a ClosureExpression into the String source.
-         *
-         * @param expression a closure
-         * @return the source the closure was created from
-         */
-        private String convertClosureToSource(ClosureExpression expression) {
-            try {
-                return ClosureUtils.convertClosureToSource(source, expression);
-            } catch(Exception e) {
-                addError(e.getMessage(), expression);
-            }
-            return null;
         }
     }
 }
