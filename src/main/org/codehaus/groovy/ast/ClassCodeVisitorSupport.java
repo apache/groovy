@@ -161,11 +161,6 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         super.visitAssertStatement(statement);
     }
 
-    public void visitBlockStatement(BlockStatement block) {
-        visitStatement(block);
-        super.visitBlockStatement(block);
-    }
-
     public void visitBreakStatement(BreakStatement statement) {
         visitStatement(statement);
         super.visitBreakStatement(statement);

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -53,6 +54,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
@@ -679,5 +681,42 @@ public class GeneralUtils {
             return callX(receiver, getterName);
         }
         return propX(receiver, pNode.getName());
+    }
+
+    /**
+     * Converts an expression into the String source. Only some specific expressions like closure expression
+     * support this.
+     *
+     * @param readerSource a source
+     * @param expression an expression. Can't be null
+     * @return the source the closure was created from
+     * @throws java.lang.IllegalArgumentException when expression is null
+     * @throws java.lang.Exception when closure can't be read from source
+     */
+    public static String convertASTToSource(ReaderSource readerSource, ASTNode expression) throws Exception {
+        if (expression == null) throw new IllegalArgumentException("Null: expression");
+
+        StringBuilder result = new StringBuilder();
+        for (int x = expression.getLineNumber(); x <= expression.getLastLineNumber(); x++) {
+            String line = readerSource.getLine(x, null);
+            if (line == null) {
+                throw new Exception(
+                        "Error calculating source code for expression. Trying to read line " + x + " from " + readerSource.getClass()
+                );
+            }
+            if (x == expression.getLastLineNumber()) {
+                line = line.substring(0, expression.getLastColumnNumber() - 1);
+            }
+            if (x == expression.getLineNumber()) {
+                line = line.substring(expression.getColumnNumber() - 1);
+            }
+            //restoring line breaks is important b/c of lack of semicolons
+            result.append(line).append('\n');
+        }
+
+
+        String source = result.toString().trim();
+
+        return source;
     }
 }
