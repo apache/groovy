@@ -774,8 +774,8 @@ True if the corresponding Boolean value is `true`.
 include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=boolean_truth,indent=0]
 ----
 
-=== Collections
-Non-empty Collections are true.
+=== Collections and Arrays
+Non-empty Collections and arrays are true.
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=collection_truth,indent=0]
