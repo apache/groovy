@@ -648,9 +648,11 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,ind
 
 ==== Alternative non-base 10 representations
 
+Numbers can also be represented in binary, octal, hexadecimal and decimal bases.
+
 ===== Binary literal
 
-In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the `0b` prefix:
+Binary numbers start with a `0b` prefix:
 
 [source,groovy]
 ----

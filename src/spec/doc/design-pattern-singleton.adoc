@@ -65,7 +65,7 @@ Collector:15959960, Votes:2
 Variations to this pattern:
 
 - To support lazy-loading and multi-threading, we could just use the `synchronized` keyword with the `getInstance()` method. This has a performance hit but will work.
-- We can consider variations involving double-checked locking and the `volatile` keyword (for Java 5 and above), but see the limitations of this approach http://www.ibm.com/developerworks/java/library/j-dcl/index.html[here].
+- We can consider variations involving double-checked locking and the `volatile` keyword, but see the limitations of this approach http://www.ibm.com/developerworks/java/library/j-dcl/index.html[here].
 
 == Example: Singleton via MetaProgramming
 
