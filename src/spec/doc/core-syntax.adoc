@@ -758,6 +758,7 @@ Division and power binary operations aside (covered below),
 * binary operations between `byte`, `char`, `short` and `int` result in `int`
 * binary operations involving `long` with `byte`, `char`, `short` and `int` result in `long`
 * binary operations involving `BigInteger` and any other integral type result in `BigInteger`
+* binary operations involving `BigDecimal` with `byte`, `char`, `short`, `int` and `BigInteger` result in `BigDecimal`
 * binary operations between `float`, `double` and `BigDecimal` result in `double`
 * binary operations between two `BigDecimal` result in `BigDecimal`
 
@@ -785,7 +786,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *char*
 | 
@@ -796,7 +797,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *short*
 | 
@@ -807,7 +808,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *int*
 | 
@@ -818,7 +819,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *long*
 | 
@@ -829,7 +830,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *BigInteger*
 | 
@@ -840,7 +841,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *float*
 | 
