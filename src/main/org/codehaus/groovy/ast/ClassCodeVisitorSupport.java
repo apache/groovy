@@ -100,11 +100,6 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         }
     }
 
-    public void visitBlockStatement(BlockStatement block) {
-        visitStatement(block);
-        super.visitBlockStatement(block);
-    }
-
     protected void visitClassCodeContainer(Statement code) {
         if (code != null) code.visit(this);
     }
