@@ -3333,16 +3333,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Retrieves the list of Methods held by the class
+     * Retrieves the list of MetaMethods held by the class. This list does not include MetaMethods added by groovy.lang.ExpandoMetaClass.
      *
-     * @return A list of Methods
+     * @return A list of MetaMethods
      */
     public List<MetaMethod> getMethods() {
         return allMethods;
     }
 
     /**
-      * Retrieves the list of MetaMethods held by this class
+      * Retrieves the list of MetaMethods held by this class. This list includes MetaMethods added by groovy.lang.ExpandoMetaClass.
       *
       * @return A list of MetaMethods
       */
