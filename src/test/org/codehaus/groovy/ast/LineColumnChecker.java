@@ -64,7 +64,7 @@ import org.junit.Ignore;
  * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
  *
  */
-@Ignore("helper class for manual testing")
+@Ignore("helper class for LineColumnCheckTestSuite")
 public class LineColumnChecker extends ASTTest {
     
     private LineCheckVisitor visitor;

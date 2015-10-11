@@ -32,23 +32,25 @@ public class Test {
 [FieldNode,(2:24),(2:34)][ConstantExpression,(2:33),(2:34)];
 [FieldNode,(3:2),(3:26)][ConstantExpression,(3:16),(3:26)]
 
-###ifelse:::
+###ifElse:::
 if (expression) {
 	
 } else {
 	
 }
-:::[IfStatement,(1:1),(5:2)];[BlockStatement,(1:17),(3:3)];
+:::[IfStatement,(1:1),(5:2)];
+[BooleanExpression,(1:5),(1:15)][VariableExpression,(1:5),(1:15)];
+[BlockStatement,(1:17),(3:3)];
 [BlockStatement,(3:8),(5:2)]
 
-###ifwithoutElse:::
+###ifWithoutElse:::
 if (expression) {
 	
 	
 }
 :::[IfStatement,(1:1),(4:2)];[BlockStatement,(1:17),(4:2)]
 
-###ifElseif:::
+###ifElseIf:::
 if (expression) {
 
 	
