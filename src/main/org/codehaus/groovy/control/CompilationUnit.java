@@ -35,6 +35,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.AnnotationCollectorTransform;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.TraitComposer;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -237,6 +238,17 @@ public class CompilationUnit extends ProcessingUnit {
                 ecv.visitClass(classNode);
             }
         }, Phases.CANONICALIZATION);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                Object callback = classNode.getNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK);
+                if (callback instanceof PrimaryClassNodeOperation) {
+                    ((PrimaryClassNodeOperation) callback).call(source, context, classNode);
+                    classNode.removeNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK);
+                }
+            }
+        }, Phases.INSTRUCTION_SELECTION);
 
         // apply configuration customizers if any
         if (configuration != null) {
@@ -956,7 +968,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     /**
-     * An callback interface for use in the applyToSourceUnits loop driver.
+     * An callback interface for use in the applyToPrimaryClassNodes loop driver.
      */
     public abstract static class PrimaryClassNodeOperation {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;

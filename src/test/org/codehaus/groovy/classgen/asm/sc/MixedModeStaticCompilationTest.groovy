@@ -292,4 +292,97 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implemen
 
     }
 
+    void testSCClosureCanAccessPrivateFieldsOfNonSCEnclosingClass() {
+        assertScript '''
+            class Test {
+                private String str = "hi"
+
+                @groovy.transform.CompileStatic
+                String strInSCClosure() {
+                    Closure c = { str }
+                    c()
+                }
+            }
+            assert new Test().strInSCClosure() == 'hi'
+        '''
+    }
+
+    void testSCClosureCanAccessPrivateMethodsOfNonSCEnclosingClass() {
+        assertScript '''
+            class Test {
+                private String str() { 'hi' }
+
+                @groovy.transform.CompileStatic
+                String strInSCClosure() {
+                    Closure c = { str() }
+                    c()
+                }
+            }
+            assert new Test().strInSCClosure() == 'hi'
+        '''
+    }
+
+    void testSCInnerClassCanAccessPrivateFieldsOfNonSCOuterClass() {
+        assertScript '''
+            class Test {
+                private String str = "hi"
+
+                @groovy.transform.CompileStatic
+                class Inner {
+                    String outerStr() { str }
+                }
+
+                String strInSCInner() { new Inner().outerStr() }
+            }
+            assert new Test().strInSCInner() == 'hi'
+        '''
+    }
+
+    void testSCInnerClassCanAccessPrivateMethodsOfNonSCOuterClass() {
+        assertScript '''
+            class Test {
+                private String str() { 'hi' }
+
+                @groovy.transform.CompileStatic
+                class Inner {
+                    String outerStr() { str() }
+                }
+
+                String strInSCInner() { new Inner().outerStr() }
+            }
+            assert new Test().strInSCInner() == 'hi'
+        '''
+    }
+
+    void testSCAICCanAccessPrivateFieldsOfNonSCOuterClass() {
+        assertScript '''
+            class Test {
+                private String str = "hi"
+
+                @groovy.transform.CompileStatic
+                String strInSCAIC() {
+                    new Object() {
+                        String outerStr() { str }
+                    }.outerStr()
+                }
+            }
+            assert new Test().strInSCAIC() == 'hi'
+        '''
+    }
+
+    void testSCAICCanAccessPrivateMethodsOfNonSCOuterClass() {
+        assertScript '''
+            class Test {
+                private String str() { 'hi' }
+
+                @groovy.transform.CompileStatic
+                String strInSCAIC() {
+                    new Object() {
+                        String outerStr() { str() }
+                    }.outerStr()
+                }
+            }
+            assert new Test().strInSCAIC() == 'hi'
+        '''
+    }
 }
