@@ -28,9 +28,12 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -102,6 +105,21 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    private void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
+        if (outer != null && !isStaticallyCompiled(outer)
+                && outer.getNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK) == null) {
+            outer.putNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
+                @Override
+                public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                    if (classNode == outer) {
+                        addPrivateBridgeMethods(classNode);
+                        addPrivateFieldsAccessors(classNode);
+                    }
+                }
+            });
+        }
+    }
+
     @Override
     public void visitClass(final ClassNode node) {
         boolean skip = shouldSkipClassNode(node);
@@ -122,6 +140,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
+        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getOuterClass());
         classNode = oldCN;
     }
 
@@ -136,7 +155,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      * If we are in a constructor, that is static compiled, but in a class, that
      * is not, it may happen that init code from object initializers, fields
      * or properties is added into the constructor code. The backend assumes
-     * a purely static contructor, so it may fail if it encounters dynamic
+     * a purely static constructor, so it may fail if it encounters dynamic
      * code here. Thus we make this kind of code fail
      */
     private void checkForConstructorWithCSButClassWithout(MethodNode node) {
@@ -163,6 +182,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         super.visitMethod(node);
         checkForConstructorWithCSButClassWithout(node);
+        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getDeclaringClass());
     }
 
     /**

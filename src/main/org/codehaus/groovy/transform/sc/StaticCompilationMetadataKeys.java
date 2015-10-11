@@ -29,6 +29,7 @@ public enum StaticCompilationMetadataKeys {
     PRIVATE_BRIDGE_METHODS, // private bridge methods are methods used by an outer class to access an inner class method
     PRIVATE_FIELDS_ACCESSORS, // private fields accessors are methods used by an inner class to access an outer class field
     PRIVATE_FIELDS_MUTATORS, // private fields mutators are methods used by an inner class to set an outer class field
+    DYNAMIC_OUTER_NODE_CALLBACK, // callback for dynamic classes that contain statically compiled inner classes or methods
     PROPERTY_OWNER, // the type of the class which owns the property
     COMPONENT_TYPE, // for list.property expressions, we need the inferred component type
     RECEIVER_OF_DYNAMIC_PROPERTY // if a receiver is the receiver of a dynamic property (for mixed mode compilation)
