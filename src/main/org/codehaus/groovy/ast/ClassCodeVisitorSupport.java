@@ -100,6 +100,11 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         }
     }
 
+    public void visitBlockStatement(BlockStatement block) {
+        visitStatement(block);
+        super.visitBlockStatement(block);
+    }
+
     protected void visitClassCodeContainer(Statement code) {
         if (code != null) code.visit(this);
     }
@@ -159,11 +164,6 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     public void visitAssertStatement(AssertStatement statement) {
         visitStatement(statement);
         super.visitAssertStatement(statement);
-    }
-
-    public void visitBlockStatement(BlockStatement block) {
-        visitStatement(block);
-        super.visitBlockStatement(block);
     }
 
     public void visitBreakStatement(BreakStatement statement) {

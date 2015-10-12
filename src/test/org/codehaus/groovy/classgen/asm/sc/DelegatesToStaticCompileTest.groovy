@@ -80,4 +80,37 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticC
             assert bytecode.contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6955Support$Request.getHeaders')
         }
     }
+
+    // GROOVY-7597
+    void testImplicitDelegateShouldNotBeCheckedAsTypeOfPropertyOwner() {
+        try {
+            assertScript '''
+                class Calculation {
+                    boolean isValid() { true }
+                }
+
+                class Entity {
+                    Calculation getCalculation(String name) { new Calculation() }
+                }
+
+                class Handler {
+                    def doWithEntity(@DelegatesTo(Entity) Closure c) {
+                        new Entity().with(c)
+                    }
+
+                    def doIt() {
+                        doWithEntity() {
+                            getCalculation("whatever").valid
+                        }
+                    }
+                }
+
+                assert new Handler().doIt()
+            '''
+        } finally {
+            def bytecode = astTrees['Handler$_doIt_closure1'][1]
+            assert !bytecode.contains('CHECKCAST Calculation')
+            assert !bytecode.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.castToType')
+        }
+    }
 }

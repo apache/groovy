@@ -16,13 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-// tag::third_party_lib[]
-package thirdpartylib
+package org.codehaus.groovy.macro.transform;
 
-public class MultiplyTwo {
-    def static multiply(def value) {
-        return value * 3 //intentionally wrong.
-    }
+public abstract class MacroClass {
 }
-
-// end::third_party_lib[]

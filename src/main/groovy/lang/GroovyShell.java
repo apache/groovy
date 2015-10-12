@@ -466,12 +466,6 @@ public class GroovyShell extends GroovyObjectSupport {
      * @return true if the class appears to be a test
      */
     private boolean isJUnit4Test(Class scriptClass) {
-        // if we are running under Java 1.4 don't bother trying to check
-        char version = System.getProperty("java.version").charAt(2);
-        if (version < '5') {
-            return false;
-        }
-
         // check if there are appropriate class or method annotations
         // that suggest we have a JUnit 4 test
         boolean isTest = false;

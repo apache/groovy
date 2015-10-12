@@ -1816,6 +1816,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         virtualDecl.visit(this);
                         ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
                         if (!missesGenericsTypes(newlyInferred)) type = newlyInferred;
+                    } else {
+                        checkTypeGenerics(enclosingMethod.getReturnType(), inferred, expression);
                     }
                     return type;
                 } else {
@@ -2363,7 +2365,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] blockParameterTypes = (ClassNode[]) openBlock.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
         if (blockParameterTypes==null) {
             Parameter[] p = openBlock.getParameters();
-            if (p.length==0 && parameterTypesForSAM.length!=0) {
+            if (p == null) {
+                // zero parameter closure e.g. { -> println 'no args' }
+                blockParameterTypes = ClassNode.EMPTY_ARRAY;
+            } else if (p.length==0 && parameterTypesForSAM.length!=0) {
                 // implicit it
                 blockParameterTypes = parameterTypesForSAM;
             } else {

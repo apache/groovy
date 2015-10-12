@@ -48,7 +48,7 @@ The remainder of this page shows you how to:
 
 == Monitoring the JVM
 
-MBeans are not accessed directly by an application but are managed by a repository called an __MBean server__. Java 5 and above includes a special MBean server called the __platform MBean server__, which is built into the JVM. Platform MBeans are registered in this server using unique names.
+MBeans are not accessed directly by an application but are managed by a repository called an __MBean server__. Java includes a special MBean server called the __platform MBean server__, which is built into the JVM. Platform MBeans are registered in this server using unique names.
 
 You can monitor the JVM through its platform MBeans with the following code:
 

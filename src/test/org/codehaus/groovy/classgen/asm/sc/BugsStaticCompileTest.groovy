@@ -1393,5 +1393,22 @@ println someInt
             assert foo.name == 'fluent'
         '''
     }
+
+    // GROOVY-7610
+    void testNullSafeIsCallConditionShouldNotThrowVerifyError() {
+        assertScript '''
+            class A {
+                void ifCondition(Object x, Object y) {
+                    if (x?.is(y))
+                        return
+                }
+
+                void ternaryCondition(Object x, Object y) {
+                    x?.is(y) ? 'foo' : 'bar'
+                }
+            }
+            new A()
+        '''
+    }
 }
 

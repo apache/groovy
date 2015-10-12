@@ -26,8 +26,6 @@ import groovy.io.FileType
 
 /**
  * Main CLI entry-point for <tt>groovydoc</tt>.
- *
- * @author Paul King
  */
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
@@ -43,6 +41,8 @@ class Main {
     private static Boolean author
     private static Boolean noScripts
     private static Boolean noMainForScripts
+    private static Boolean noTimestamp
+    private static Boolean noVersionStamp
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
@@ -71,6 +71,8 @@ class Main {
         cli.author(messages['cli.option.author.description'])
         cli.noscripts(messages['cli.option.noscripts.description'])
         cli.nomainforscripts(messages['cli.option.nomainforscripts.description'])
+        cli.notimestamp(messages['cli.option.notimestamp.description'])
+        cli.noversionstamp(messages['cli.option.noversionstamp.description'])
         cli.overview(args:1, argName: 'file', messages['cli.option.overview.description'])
         cli.public(messages['cli.option.public.description'])
         cli.protected(messages['cli.option.protected.description'])
@@ -123,6 +125,8 @@ class Main {
         author = Boolean.valueOf(options.author) ?: false
         noScripts = Boolean.valueOf(options.noscripts) ?: false
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
+        noTimestamp = Boolean.valueOf(options.notimestamp) ?: false
+        noVersionStamp = Boolean.valueOf(options.noversionstamp) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -191,6 +195,8 @@ class Main {
         properties.put("author", author.toString())
         properties.put("processScripts", (!noScripts).toString())
         properties.put("includeMainForScripts", (!noMainForScripts).toString())
+        properties.put("timestamp", (!noTimestamp).toString())
+        properties.put("versionStamp", (!noVersionStamp).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
 
         def links = new ArrayList<LinkArgument>();

@@ -416,7 +416,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_1,
 In either case, both placeholders are embedded closures.
 
 In appearance, it looks like a more verbose way of defining expressions to be interpolated,
-but closure have an interesting advantage over mere expressions: lazy evaluation.
+but closures have an interesting advantage over mere expressions: lazy evaluation.
 
 Let's consider the following sample:
 
@@ -648,9 +648,11 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,ind
 
 ==== Alternative non-base 10 representations
 
+Numbers can also be represented in binary, octal, hexadecimal and decimal bases.
+
 ===== Binary literal
 
-In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the `0b` prefix:
+Binary numbers start with a `0b` prefix:
 
 [source,groovy]
 ----
@@ -758,6 +760,7 @@ Division and power binary operations aside (covered below),
 * binary operations between `byte`, `char`, `short` and `int` result in `int`
 * binary operations involving `long` with `byte`, `char`, `short` and `int` result in `long`
 * binary operations involving `BigInteger` and any other integral type result in `BigInteger`
+* binary operations involving `BigDecimal` with `byte`, `char`, `short`, `int` and `BigInteger` result in `BigDecimal`
 * binary operations between `float`, `double` and `BigDecimal` result in `double`
 * binary operations between two `BigDecimal` result in `BigDecimal`
 
@@ -785,7 +788,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *char*
 | 
@@ -796,7 +799,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *short*
 | 
@@ -807,7 +810,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *int*
 | 
@@ -818,7 +821,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *long*
 | 
@@ -829,7 +832,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *BigInteger*
 | 
@@ -840,7 +843,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *float*
 | 
@@ -877,7 +880,7 @@ The following table summarizes those rules:
 |====
 
 [NOTE]
-Thanks Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
+Thanks to Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
 unlike in Java where you have to use explicit methods for operating on those numbers.
 
 [[integer_division]]

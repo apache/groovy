@@ -170,9 +170,10 @@ public class MethodCallExpressionTransformer {
      * @return null if the method call is not DGM#is, or {@link CompareIdentityExpression}
      */
     private static Expression tryTransformIsToCompareIdentity(MethodCallExpression call) {
+        if (call.isSafe()) return null;
         MethodNode methodTarget = call.getMethodTarget();
         if (methodTarget instanceof ExtensionMethodNode && "is".equals(methodTarget.getName()) && methodTarget.getParameters().length==1) {
-           methodTarget = ((ExtensionMethodNode) methodTarget).getExtensionMethodNode();
+            methodTarget = ((ExtensionMethodNode) methodTarget).getExtensionMethodNode();
             ClassNode owner = methodTarget.getDeclaringClass();
             if (DGM_CLASSNODE.equals(owner)) {
                 Expression args = call.getArguments();
