@@ -123,7 +123,7 @@ class LineColumnCheckTest extends ASTTest {
         visitor.visitModuleNode(getAST(source))
         String was = visitor.getASTString()
         //comment out next line to view the output of the visitor
-        println(name + ': ' + was)
+        //println(name + ': ' + was)
         for (String anExpected : expected) {
             assertTrue("'" + anExpected + "' not found in '" + was + "'", was.indexOf(anExpected.trim()) != -1)
         }
