@@ -22,6 +22,9 @@ import groovy.ui.view.Defaults
 import groovy.ui.view.GTKDefaults
 import groovy.ui.view.MacOSXDefaults
 import groovy.ui.view.WindowsDefaults
+
+import javax.swing.Action
+import javax.swing.text.DefaultEditorKit
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.*
 import javax.swing.UIManager
@@ -105,6 +108,12 @@ controller.origDividerSize = origDividerSize
 controller.splitPane = splitPane
 controller.blank = blank
 controller.scrollArea = scrollArea
+controller.selectWordAction = inputArea.getActions().find {
+    DefaultEditorKit.selectWordAction.equals(it.getValue(Action.NAME))
+}
+controller.selectPreviousWordAction = inputArea.getActions().find {
+    DefaultEditorKit.selectionPreviousWordAction.equals(it.getValue(Action.NAME))
+}
 
 // some more UI linkage
 controller.outputArea.addComponentListener(controller)
