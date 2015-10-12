@@ -385,3 +385,11 @@ commentAction = action(
     accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()),
     shortDescription: 'Comment/Uncomment Selected Script'
 )
+
+selectBlockAction = action(
+    name: 'Select Block',
+    closure: controller.&selectBlock,
+    mnemonic: 'B',
+    accelerator: shortcut('B'),
+    shortDescription: 'Selects current Word, Line or Block in Script'
+)
