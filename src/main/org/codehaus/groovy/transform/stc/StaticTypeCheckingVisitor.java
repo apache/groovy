@@ -1225,12 +1225,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 field = allowStaticAccessToMember(field, staticOnly);
                 if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode)) return true;
 
-                PropertyNode propertyNode = current.getProperty(propertyName);
-                propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
-                if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
+                boolean isThisExpression = objectExpression instanceof VariableExpression
+                        && ((VariableExpression) objectExpression).isThisExpression()
+                        && objectExpressionType.equals(current);
 
-                boolean isThisExpression = objectExpression instanceof VariableExpression &&
-                        ((VariableExpression) objectExpression).isThisExpression() && objectExpressionType.equals(current);
                 if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode))
                     return true;
 
@@ -1246,7 +1244,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // need to visit even if we only look for a setters for compatibility
                 if (visitor != null && getter != null) visitor.visitMethod(getter);
 
-                if (readMode) {
+                PropertyNode propertyNode = current.getProperty(propertyName);
+                propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
+                //prefer explicit getter or setter over property if receiver is not 'this'
+                boolean checkGetterOrSetter = !isThisExpression || propertyNode == null;
+
+                if (readMode && checkGetterOrSetter) {
                     if (getter != null) {
                         ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                         storeInferredTypeForPropertyExpression(pexp, cn);
@@ -1256,7 +1259,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
                         return true;
                     }
-                } else {
+                } else if (!readMode && checkGetterOrSetter) {
                     if (!setters.isEmpty()) {
                         if (visitor != null) {
                             if (field != null) {
@@ -1281,11 +1284,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
                         }
                         return true;
-                    } else if (getter != null) {
+                    } else if (getter != null && propertyNode == null) {
                         pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, true);
                     }
                 }
                 foundGetterOrSetter = foundGetterOrSetter || !setters.isEmpty() || getter != null;
+
+                if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
 
                 if (storeField(field, true, pexp, current, visitor, receiver.getData(), !readMode)) return true;
                 // if the property expression is an attribute expression (o.@attr), then
