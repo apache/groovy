@@ -47,6 +47,9 @@ public class ObjectRangeTest extends TestCase {
         r = createRange("aa4", "aa1");
         assertEquals("Size of " + r, 4, r.size());
         assertEquals(Arrays.asList("aa4", "aa3", "aa2", "aa1"), r.step(1));
+
+        r = createRange("7", 59.5);
+        assertEquals("Size of " + r, 5, r.size());
     }
 
     public void testProperties() {
