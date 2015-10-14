@@ -129,11 +129,19 @@ public class ObjectRange extends AbstractList implements Range {
             this.from = normaliseStringType(smaller);
             this.to = normaliseStringType(larger);
         }
+        checkBoundaryCompatibility();
+    }
+
+    /**
+     * throws IllegalArgumentException if to and from are incompatible, meaning they e.g. (likely) produce infinite sequences.
+     * Called at construction time, subclasses may override cautiously (using only members to and from).
+     */
+    protected void checkBoundaryCompatibility() {
         if (from instanceof String || to instanceof String) {
             // this test depends deeply on the String.next implementation
             // 009.next is 00:, not 010
-            String start = smaller.toString();
-            String end = larger.toString();
+            String start = from.toString();
+            String end = to.toString();
             if (start.length() > end.length()) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
             }
@@ -145,7 +153,6 @@ public class ObjectRange extends AbstractList implements Range {
             if (i < length - 1) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
             }
-
         }
     }
 
@@ -278,7 +285,7 @@ public class ObjectRange extends AbstractList implements Range {
         return contains(value);
     }
 
-    private int compareTo(Comparable first, Comparable second) {
+    protected int compareTo(Comparable first, Comparable second) {
         return DefaultGroovyMethods.numberAwareCompareTo(first, second);
     }
 
