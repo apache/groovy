@@ -1176,7 +1176,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
     }
 
     public void testDoWhileStatement() {
-        // DoWhileStatement doesn't seemed to be used, and the do/while source doesn't compile either
+        // DoWhileStatement doesn't seem to be used, and the do/while source doesn't compile either
     }
 
     public void testStatement() {
