@@ -176,8 +176,7 @@ OK, see QU50.
 ==== CS10
 _The project maintains a public list of its contributors who have decision power -- the project's PMC (Project Management Committee) consists of those contributors._
 
-TODO, I don't think that list exists but it will eventually be at people.apache.org/committers-by-project.html#groovy-pmc
-once the project graduates. 
+OK: will be at people.apache.org/committers-by-project.html#groovy-pmc once the project graduates. 
 
 ==== CS20
 _Decisions are made by consensus among PMC members and are documented on the project's main communications channel. Community opinions are taken into account but the PMC has the final word if needed._
