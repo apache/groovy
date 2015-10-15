@@ -35,11 +35,7 @@ OK: of course.
 ==== CD20
 _The project's code is easily discoverable and publicly accessible._
 
-TODO: http://groovy.apache.org/ redirects to http://groovy-lang.org/, do we plan on keeping
-it like that?
-
-TODO: http://groovy-lang.org/ does not include an obvious link to the code repository (unless 
-I missed something)
+http://groovy-lang.org/ (see CO10) includes a "fork me on Github" banner.
 
 ==== CD30
 _The code can be built in a reproducible way using widely available standard tools._
@@ -141,7 +137,9 @@ OK, response times on the users list and jira are good.
 ==== CO10
 _The project has a well-known homepage that points to all the information required to operate according to this maturity model._
 
-TODO, see CD20 
+http://groovy.apache.org/ redirects to http://groovy-lang.org/ for now. The plan 
+for the future is to use the former for Groovy development topics, and the latter
+for its user community.
 
 ==== CO20
 _The community welcomes contributions from anyone who acts in good faith and in a respectful manner and adds value to the project._ 
