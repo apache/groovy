@@ -89,6 +89,11 @@ public class ObjectRange extends AbstractList implements Range {
      * @param reverse direction of the range. If null, causes direction to be computed (can be expensive).
      */
     private ObjectRange(Comparable smaller, Comparable larger, Boolean reverse) {
+        if (smaller == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
+        } else if (larger == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
+        }
         if (reverse == null) {
             boolean computedReverse = areReversed(smaller, larger);
             // ensure invariant from <= to
@@ -155,13 +160,6 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     private static boolean areReversed(Comparable from, Comparable to) {
-        if (from == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
-        }
-        if (to == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
-        }
-
         try {
             return ScriptBytecodeAdapter.compareGreaterThan(from, to);
         } catch (ClassCastException cce) {
