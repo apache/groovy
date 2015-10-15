@@ -105,7 +105,8 @@ OK, verified in release votes.
 ==== RE40
 _Convenience binaries can be distributed alongside source code but they are not Apache Releases -- they are just a convenience provided with no guarantee._
 
-TODO check the status of binaries in existing releases and briefly document it here.  
+OK: https://dist.apache.org/repos/dist/release/incubator/groovy/2.4.5-incubating/ for example clearly differentiates
+between source releases and distributions.   
 
 === Quality
 
