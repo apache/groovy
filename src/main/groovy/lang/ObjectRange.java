@@ -124,29 +124,43 @@ public class ObjectRange extends AbstractList implements Range {
             larger = ((Integer) larger).longValue();
         }
 
-        // TODO: should we care about different types here?
-        if (smaller.getClass() == larger.getClass()) {
+        /*
+        areReversed() already does an implicit type compatibility check
+        based on DefaultTypeTransformation.compareToWithEqualityCheck() for mixed classes
+        but it is only invoked if reverse == null.
+        So Object Range has to perform those type checks for consistency even when not calling
+        compareToWithEqualityCheck(), and ObjectRange has
+        to use the normalized value used in a successful comparison in
+        compareToWithEqualityCheck(). Currently that means Chars and single-char Strings
+        are evaluated as the char's charValue (an integer) when compared to numbers.
+        So '7'..'9' should produce ['7', '8', '9'], whereas ['7'..9] and [7..'9'] should produce [55, 56, 57].
+        if classes match, or both numericals, no checks possible / necessary
+        */
+        if (smaller.getClass() == larger.getClass() ||
+                (smaller instanceof Number && larger instanceof Number)) {
             this.from = smaller;
             this.to = larger;
         } else {
             // Convenience hack: try convert single-char strings to ints
             Comparable tempfrom = normaliseStringType(smaller);
             Comparable tempto = normaliseStringType(larger);
-            if (tempfrom.getClass() != tempto.getClass()) {
+            // if after normalizing both are numbers, assume intended range was numbers
+            if (tempfrom instanceof Number && tempto instanceof Number) {
+                this.from = tempfrom;
+                this.to = tempto;
+            } else {
                 // if convenience hack did not make classes match,
-                // and thus "from" cannot be advanced over "to", throw exception.
-                // Note if from as an unusual Object, it could have a next() method
+                // throw exception when starting with known class, and thus "from" cannot be advanced over "to".
+                // Note if start is an unusual Object, it could have a next() method
                 // that yields a Number or String to close the range
-                if ((tempfrom instanceof Number && !(tempto instanceof Number))
-                        || (tempfrom instanceof String && !(tempto instanceof String))) {
+                Comparable start = this.reverse ? larger : smaller;
+                if (start instanceof String || start instanceof Number) {
+                    // starting with number will never reach a non-number, same for string
                     throw new IllegalArgumentException("Incompatible Argument classes for ObjectRange " + smaller.getClass() + ", " + larger.getClass());
                 }
                 // Since normalizing did not help, use original values at users risk
                 this.from = smaller;
                 this.to = larger;
-            } else {
-                this.from = tempfrom;
-                this.to = tempto;
             }
         }
         checkBoundaryCompatibility();
