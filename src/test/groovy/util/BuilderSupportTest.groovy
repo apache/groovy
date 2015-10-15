@@ -148,6 +148,19 @@ class BuilderSupportTest extends GroovyTestCase{
     void nestedBuilderCall(builder) {
         builder.inner()
     }
+
+    // GROOVY-7156
+    void testSimpleNodeWithClosureThatThrowsAMissingMethodException() {
+      def builder = new SpoofBuilder()
+      String errorMessage = shouldFail(MissingMethodException, {
+          builder.a {
+              b {
+                  error('xy'.foo())
+              }
+          }
+      })
+      assert errorMessage.contains('No signature of method: java.lang.String.foo()')
+  }
 }
 
 /**
