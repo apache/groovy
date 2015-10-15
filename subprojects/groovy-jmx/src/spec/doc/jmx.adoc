@@ -1042,8 +1042,6 @@ If you use an **event listener closure (see above) that accepts a parameter**, y
 
 - http://www.ddj.com/dept/java/184406481?pgno=1[Monitoring the Java Virtual Machine]
 - http://buttso.blogspot.com/2006/05/using-groovy-for-system-management.html[Using Groovy for System Management]
-- http://jmesnil.net/weblog/2007/03/23/jmx-scripts-using-jruby[JMX Scripts using JRuby - Part I]
-- http://jmesnil.net/weblog/2007/04/03/jmx-scripts-using-jruby-part-ii[JMX Scripts using JRuby - Part II]
 - https://blogs.oracle.com/sundararajan/entry/groovier_jconsole[Groovier jconsole!]
 - http://jmesnil.net/weblog/2007/05/23/jmx-scripts-with-eclipse-monkey[JMX Scripts with Eclipse Monkey]
 - http://activemq.apache.org/jmx.html[Using JMX to monitor Apache ActiveMQ]
