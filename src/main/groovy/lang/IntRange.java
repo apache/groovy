@@ -28,18 +28,26 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Represents a list of Integer objects from a specified int up (or down) to and including
- * a given to.<p>
+ * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
+ * to and potentially including a given {@code to} value.
  * <p>
- * This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
- * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  * Instances of this class may be either inclusive aware or non-inclusive aware. See the
  * relevant constructors for creating each type. Inclusive aware IntRange instances are
  * suitable for use with Groovy's range indexing - in particular if the from or to values
  * might be negative. This normally happens underneath the covers but is worth keeping
  * in mind if creating these ranges yourself explicitly.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * <p>
+ * Note: the design of this class might seem a little strange at first. It contains a Boolean
+ * field, {@code inclusive}, which can be {@code true}, {@code false} or {@code null}. This
+ * design is for backwards compatibility reasons. Groovy uses this class under the covers
+ * to represent range indexing, e.g. {@code someList[x..y]} and {@code someString[x..<y]}.
+ * In early versions of Groovy the ranges in these expressions were represented under the
+ * covers by the {@code new IntRange(x, y)} and {@code new IntRange(x, y-1)}. This turns
+ * out to be a lossy abstraction when x and/or y are negative values. Now the latter case
+ * is represented by {@code new IntRange(false, x, y)}.
+ * <p>
+ * Note: This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
+ * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  */
 public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 

@@ -34,10 +34,8 @@ import java.util.List;
  * Represents an inclusive list of objects from a value to a value using
  * comparators.
  * <p>
- * This class is similar to {@link IntRange}. If you make any changes to this
+ * Note: This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ObjectRange extends AbstractList implements Range {
 
@@ -101,7 +99,7 @@ public class ObjectRange extends AbstractList implements Range {
             }
             this.reverse = computedReverse;
         } else {
-            this.reverse = reverse.booleanValue();
+            this.reverse = reverse;
         }
 
         if (smaller instanceof Short) {
@@ -116,9 +114,9 @@ public class ObjectRange extends AbstractList implements Range {
         }
 
         if (smaller instanceof Integer && larger instanceof Long) {
-            smaller = Long.valueOf(((Integer) smaller).longValue());
+            smaller = ((Integer) smaller).longValue();
         } else if (larger instanceof Integer && smaller instanceof Long) {
-            larger = Long.valueOf(((Integer) larger).longValue());
+            larger = ((Integer) larger).longValue();
         }
 
         // TODO: should we care about different types here?
@@ -292,7 +290,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * protection against calls from Groovy
      */
-    private void setSize(int x) {
+    private void setSize(int size) {
         throw new UnsupportedOperationException("size must not be changed");
     }
 
@@ -457,7 +455,7 @@ public class ObjectRange extends AbstractList implements Range {
 
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
-            return (int) ((Character) operand).charValue();
+            return (int) (Character) operand;
         } else if (operand instanceof String) {
             final String string = (String) operand;
 
