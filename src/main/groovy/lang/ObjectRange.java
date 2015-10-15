@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * Represents an inclusive list of objects from a value to a value using
  * comparators.
- * <p>
+ *
  * Note: This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
  */
@@ -85,7 +85,7 @@ public class ObjectRange extends AbstractList implements Range {
      * 'smaller' must not be larger than 'larger'.
      *
      * @param smaller start of the range, must no be larger than to when reverse != null
-     * @param larger end of the range, must be larger than from when reverse != null
+     * @param larger  end of the range, must be larger than from when reverse != null
      * @param reverse direction of the range. If null, causes direction to be computed (can be expensive).
      */
     private ObjectRange(Comparable smaller, Comparable larger, Boolean reverse) {
@@ -311,14 +311,14 @@ public class ObjectRange extends AbstractList implements Range {
                 char toNum = (Character) to;
                 size = toNum - fromNum + 1;
             } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
-                       from instanceof BigInteger || to instanceof BigInteger) {
+                    from instanceof BigInteger || to instanceof BigInteger) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal(from.toString());
                 BigDecimal toNum = new BigDecimal(to.toString());
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 size = sizeNum.intValue();
             } else {
-                // let's lazily calculate the size
+                // let's brute-force calculate the size
                 size = 0;
                 Comparable first = from;
                 Comparable value = from;
