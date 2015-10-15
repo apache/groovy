@@ -129,8 +129,25 @@ public class ObjectRange extends AbstractList implements Range {
             this.from = smaller;
             this.to = larger;
         } else {
-            this.from = normaliseStringType(smaller);
-            this.to = normaliseStringType(larger);
+            // Convenience hack: try convert single-char strings to ints
+            Comparable tempfrom = normaliseStringType(smaller);
+            Comparable tempto = normaliseStringType(larger);
+            if (tempfrom.getClass() != tempto.getClass()) {
+                // if convenience hack did not make classes match,
+                // and thus "from" cannot be advanced over "to", throw exception.
+                // Note if from as an unusual Object, it could have a next() method
+                // that yields a Number or String to close the range
+                if ((tempfrom instanceof Number && !(tempto instanceof Number))
+                        || (tempfrom instanceof String && !(tempto instanceof String))) {
+                    throw new IllegalArgumentException("Incompatible Argument classes for ObjectRange " + smaller.getClass() + ", " + larger.getClass());
+                }
+                // Since normalizing did not help, use original values at users risk
+                this.from = smaller;
+                this.to = larger;
+            } else {
+                this.from = tempfrom;
+                this.to = tempto;
+            }
         }
         checkBoundaryCompatibility();
     }
@@ -140,19 +157,20 @@ public class ObjectRange extends AbstractList implements Range {
      * Called at construction time, subclasses may override cautiously (using only members to and from).
      */
     protected void checkBoundaryCompatibility() {
-        if (from instanceof String || to instanceof String) {
+        if (from instanceof String && to instanceof String) {
             // this test depends deeply on the String.next implementation
             // 009.next is 00:, not 010
             String start = from.toString();
             String end = to.toString();
-            if (start.length() > end.length()) {
-                throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
+            if (start.length() != end.length()) {
+                throw new IllegalArgumentException("Incompatible Strings for Range: different length");
             }
-            int length = Math.min(start.length(), end.length());
+            int length = start.length();
             int i;
             for (i = 0; i < length; i++) {
                 if (start.charAt(i) != end.charAt(i)) break;
             }
+            // strings must be equal except for the last character
             if (i < length - 1) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
             }
@@ -287,8 +305,8 @@ public class ObjectRange extends AbstractList implements Range {
                 char fromNum = (Character) from;
                 char toNum = (Character) to;
                 size = toNum - fromNum + 1;
-            } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
-                    from instanceof BigInteger || to instanceof BigInteger) {
+            } else if (((from instanceof BigDecimal || from instanceof BigInteger ) && to instanceof Number) ||
+                    ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal(from.toString());
                 BigDecimal toNum = new BigDecimal(to.toString());
@@ -302,7 +320,8 @@ public class ObjectRange extends AbstractList implements Range {
                 while (compareTo(to, value) >= 0) {
                     value = (Comparable) increment(value);
                     size++;
-                    if (compareTo(first, value) >= 0) break; // handle back to beginning due to modulo incrementing
+                    // handle back to beginning due to modulo incrementing
+                    if (compareTo(first, value) >= 0) break;
                 }
             }
         }
@@ -415,6 +434,11 @@ public class ObjectRange extends AbstractList implements Range {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
 
+    /**
+     * if operand is a Character or a String with one character, return that characters int value.
+     * @param operand
+     * @return
+     */
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
             return (int) (Character) operand;
