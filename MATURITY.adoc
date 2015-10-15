@@ -17,8 +17,9 @@ that happens.
 First evaluation done, lots of OK states below but also a number of TODO to resolve. 
 
 == Overall assessment
-Groovy looks ready to graduate, discussions and votes are ongoing on the project's
-dev list as I write this (October 2015).
+Once the below _TODO_ are fixed (either by documenting the corresponding decisions or by
+making the corresponding changes) Groovy looks ready to graduate, discussions and votes 
+are ongoing on the project's dev list as I write this (October 2015).
 
 == Maturity model assessment 
 Mentors and community members are encouraged to contribute to this 
