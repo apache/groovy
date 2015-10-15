@@ -13,8 +13,12 @@ Maintaining such a file is a new, experimental idea as part of the continuous
 improvement of the ASF incubation process. Groovy is the first podling where 
 that happens.
 
+== Status of this document
+At this point this is just a skeleton with the maturity items spelled out but
+no detailed assessment.
+
 == Overall assessment
-Groovy looks ready to graduate, discussions are ongoing on the project's
+Groovy looks ready to graduate, discussions and votes are ongoing on the project's
 dev list as I write this (October 2015).
 
 == Maturity model assessment 
@@ -124,7 +128,7 @@ _Documented voting rules are used to build consensus when discussion is not suff
 _In Apache projects, vetoes are only valid for code commits and are justified by a technical explanation, as per the Apache voting rules defined in CS30._ 
 
 ==== CS50
-_All "important" discussions happen asynchronously in written form on the project's main communications channel. Offline, face-to-face or private discussions 11 that affect the project are also documented on that channel._ 
+_All "important" discussions happen asynchronously in written form on the project's main communications channel. Offline, face-to-face or private discussions that affect the project are also documented on that channel._ 
 
 === Independence
 
