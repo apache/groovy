@@ -196,11 +196,11 @@ public class ObjectRangeTest extends TestCase {
 
         Range mixed = createRange('7',  59.5);
         assertEquals(5, mixed.size());
-        assertEquals(Arrays.asList('7', '8', '9', ':', ';'), mixed.step(1));
+        assertEquals(Arrays.asList(55, 56, 57, 58, 59), mixed.step(1));
 
         mixed = createRange('7', BigInteger.valueOf(59));
         assertEquals(5, mixed.size());
-        assertEquals(Arrays.asList('7', '8', '9', ':', ';'), mixed.step(1));
+        assertEquals(Arrays.asList(55, 56, 57, 58, 59), mixed.step(1));
     }
 
 
