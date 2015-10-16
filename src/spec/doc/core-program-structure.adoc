@@ -264,4 +264,4 @@ share data between the script and the application. Readers might refer to the li
 for more information.
 
 TIP: If you want a variable to become a field of the class without going into the `Binding`, you can use the
-link:metaprogramming.html#xform-Field[@Field annotation].
+<<core-metaprogramming.adoc#xform-Field,@Field annotation>>.
