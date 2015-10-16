@@ -40,6 +40,7 @@ buildscript {
         //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
+        classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
     }
 }
 
@@ -47,6 +48,7 @@ apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/bintray.gradle'
 apply plugin: 'javadocHotfix'
+apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -464,6 +466,11 @@ if (!JavaVersion.current().java7Compatible) {
     ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
     ***********************************************************************************************
 '''
+}
+
+licenseReport {
+    excludeGroups = ['com.googlecode'] // openbeans dependency (jar) has no pom but is ASL2
+//    configurations = ['compile']
 }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
