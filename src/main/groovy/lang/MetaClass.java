@@ -159,9 +159,9 @@ public interface MetaClass extends MetaObjectProtocol {
      List<MetaProperty> getProperties();
 
     /**
-     * Retrieves a list of Methods held by the class
+     * Retrieves a list of MetaMethods held by the class. This list does not include MetaMethods added by groovy.lang.ExpandoMetaClass.
      *
-     * @return A list of Methods
+     * @return A list of MetaMethods
      */
      List<MetaMethod> getMethods();
      
@@ -173,7 +173,7 @@ public interface MetaClass extends MetaObjectProtocol {
      ClassNode getClassNode();
 
      /**
-      * Retrieves a list of MetaMethods held by this class
+      * Retrieves a list of MetaMethods held by this class. This list includes MetaMethods added by groovy.lang.ExpandoMetaClass.
       *
       * @return A list of MetaMethods
       */

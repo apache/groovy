@@ -181,7 +181,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>Double</li>
      * <li>Float</li>
      * <li>File</li>
-     * <li>Subclasses of Enum (Java 5 and above)</li>
+     * <li>Subclasses of Enum</li>
      * </ul>
      * If any other type is given, the call is delegated to
      * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(Object, Class)}.

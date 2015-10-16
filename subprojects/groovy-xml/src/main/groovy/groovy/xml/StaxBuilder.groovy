@@ -20,7 +20,7 @@ package groovy.xml
 
 /**
  * A Groovy builder that works with Stax processors.
- * Using Java 6, typical usage is as follows:
+ * A typical usage is as follows:
  * <pre>
  * def factory = XMLOutputFactory.newInstance()
  * def writer = new StringWriter()

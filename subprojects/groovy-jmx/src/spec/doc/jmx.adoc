@@ -48,7 +48,7 @@ The remainder of this page shows you how to:
 
 == Monitoring the JVM
 
-MBeans are not accessed directly by an application but are managed by a repository called an __MBean server__. Java 5 and above includes a special MBean server called the __platform MBean server__, which is built into the JVM. Platform MBeans are registered in this server using unique names.
+MBeans are not accessed directly by an application but are managed by a repository called an __MBean server__. Java includes a special MBean server called the __platform MBean server__, which is built into the JVM. Platform MBeans are registered in this server using unique names.
 
 You can monitor the JVM through its platform MBeans with the following code:
 
@@ -1042,8 +1042,6 @@ If you use an **event listener closure (see above) that accepts a parameter**, y
 
 - http://www.ddj.com/dept/java/184406481?pgno=1[Monitoring the Java Virtual Machine]
 - http://buttso.blogspot.com/2006/05/using-groovy-for-system-management.html[Using Groovy for System Management]
-- http://jmesnil.net/weblog/2007/03/23/jmx-scripts-using-jruby[JMX Scripts using JRuby - Part I]
-- http://jmesnil.net/weblog/2007/04/03/jmx-scripts-using-jruby-part-ii[JMX Scripts using JRuby - Part II]
 - https://blogs.oracle.com/sundararajan/entry/groovier_jconsole[Groovier jconsole!]
 - http://jmesnil.net/weblog/2007/05/23/jmx-scripts-with-eclipse-monkey[JMX Scripts with Eclipse Monkey]
 - http://activemq.apache.org/jmx.html[Using JMX to monitor Apache ActiveMQ]

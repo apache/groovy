@@ -28,18 +28,26 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Represents a list of Integer objects from a specified int up (or down) to and including
- * a given to.<p>
- * <p>
- * This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
- * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
+ * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
+ * to and potentially including a given {@code to} value.
+ * <p/>
  * Instances of this class may be either inclusive aware or non-inclusive aware. See the
  * relevant constructors for creating each type. Inclusive aware IntRange instances are
  * suitable for use with Groovy's range indexing - in particular if the from or to values
  * might be negative. This normally happens underneath the covers but is worth keeping
  * in mind if creating these ranges yourself explicitly.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * <p/>
+ * Note: the design of this class might seem a little strange at first. It contains a Boolean
+ * field, {@code inclusive}, which can be {@code true}, {@code false} or {@code null}. This
+ * design is for backwards compatibility reasons. Groovy uses this class under the covers
+ * to represent range indexing, e.g. {@code someList[x..y]} and {@code someString[x..<y]}.
+ * In early versions of Groovy the ranges in these expressions were represented under the
+ * covers by the {@code new IntRange(x, y)} and {@code new IntRange(x, y-1)}. This turns
+ * out to be a lossy abstraction when x and/or y are negative values. Now the latter case
+ * is represented by {@code new IntRange(false, x, y)}.
+ * <p/>
+ * Note: This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
+ * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  */
 public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
@@ -90,8 +98,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         /**
          * Not supported.
          *
-         * @throws java.lang.UnsupportedOperationException
-         *          always
+         * @throws java.lang.UnsupportedOperationException always
          */
         public void remove() {
             IntRange.this.remove(index);
@@ -102,28 +109,32 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * For non-inclusive aware ranges, the first number in the range; <code>from</code> is always less than or equal to <code>to</code>.
      * For inclusive aware ranges, the <code>from</code> argument supplied to the constructor.
      */
-    private int from;
+    private final int from;
 
     /**
      * For non-inclusive aware ranges, the last number in the range; <code>to</code> is always greater than or equal to <code>from</code>.
      * For inclusive aware ranges, the <code>from</code> argument supplied to the constructor.
      */
-    private int to;
+    private final int to;
 
     /**
      * If <code>false</code>, counts up from <code>from</code> to <code>to</code>.  Otherwise, counts down
-     * from <code>to</code> to <code>from</code>. Not used for inclusive aware ranges.
+     * from <code>to</code> to <code>from</code>. Not used for inclusive-aware ranges (inclusive = true|false).
      */
-    private boolean reverse;
+    private final boolean reverse;
 
     /**
-     * If <code>true</code>, <code>to</code> is included in the range.  Otherwise, the range stops
-     * before the <code>to</code> value. Null for non-inclusive aware ranges.
+     * If <code>true</code> or null, <code>to</code> is included in the range.
+     * If <code>false</code>, the range stops before the <code>to</code> value.
+     * <p/>
+     * Null for non-inclusive-aware ranges (which are inclusive).
+     * <p/>
+     * If true or false, the reverse flag is discarded.
      */
-    private Boolean inclusive;
+    private final Boolean inclusive;
 
     /**
-     * Creates a new non-inclusive <code>IntRange</code>. If <code>from</code> is greater than
+     * Creates a new non-inclusive aware <code>IntRange</code>. If <code>from</code> is greater than
      * <code>to</code>, a reverse range is created with <code>from</code> and <code>to</code> swapped.
      *
      * @param from the first number in the range.
@@ -139,6 +150,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         } else {
             this.from = from;
             this.to = to;
+            this.reverse = false;
         }
 
         // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
@@ -177,14 +189,15 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * Creates a new inclusive aware <code>IntRange</code>.
      *
-     * @param from    the first value in the range.
-     * @param to      the last value in the range.
+     * @param from      the first value in the range.
+     * @param to        the last value in the range.
      * @param inclusive <code>true</code> if the to value is included in the range.
      */
     public IntRange(boolean inclusive, int from, int to) {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
+        this.reverse = false; // range may still be reversed, this value is ignored for inclusive-aware ranges
     }
 
     /**
@@ -195,7 +208,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * @return the calculated range information (with 1 added to the to value, ready for providing to subList
      */
     public RangeInfo subListBorders(int size) {
-        if (inclusive == null) throw new IllegalStateException("Should not call subListBorders on a non-inclusive aware IntRange");
+        if (inclusive == null)
+            throw new IllegalStateException("Should not call subListBorders on a non-inclusive aware IntRange");
         int tempFrom = from;
         if (tempFrom < 0) {
             tempFrom += size;
@@ -214,11 +228,11 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * Determines if this object is equal to another object. Delegates to
      * {@link AbstractList#equals(Object)} if <code>that</code> is anything
      * other than an {@link IntRange}.
-     * <p>
+     * <p/>
      * It is not necessary to override <code>hashCode</code>, as
      * {@link AbstractList#hashCode()} provides a suitable hash code.<p>
-     * <p>
-     * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List,List)}
+     * <p/>
+     * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List, List)}
      * instead of this method.
      *
      * @param that the object to compare
@@ -400,7 +414,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
             int value = getFrom();
             while (value <= getTo()) {
                 closure.call(Integer.valueOf(value));
-                if((0L + value + step) >= Integer.MAX_VALUE) {
+                if ((0L + value + step) >= Integer.MAX_VALUE) {
                     break;
                 }
                 value = value + step;
@@ -409,7 +423,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
             int value = getTo();
             while (value >= getFrom()) {
                 closure.call(Integer.valueOf(value));
-                if((0L + value + step) <= Integer.MIN_VALUE) {
+                if ((0L + value + step) <= Integer.MIN_VALUE) {
                     break;
                 }
                 value = value + step;

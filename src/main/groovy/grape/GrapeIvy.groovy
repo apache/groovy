@@ -109,6 +109,7 @@ class GrapeIvy implements GrapeEngine {
 
         settings.setVariable("ivy.default.configuration.m2compatible", "true")
         ivyInstance = Ivy.newInstance(settings)
+        org.apache.ivy.core.IvyContext.getContext().setIvy(ivyInstance);
         resolvedDependencies = []
         downloadedArtifacts = []
 
