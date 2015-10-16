@@ -174,12 +174,7 @@ class JsonOutputTest extends GroovyTestCase {
     void testDate() {
         def d = Date.parse("yyyy/MM/dd HH:mm:ss Z", "2008/03/04 13:50:00 +0100")
 
-        assert toJson(d) == '"2008-03-04T12:50:00Z"'
-    }
-
-    void testDateTimeZone() {
-        def d = Date.parse("yyyy/MM/dd HH:mm:ss z", "2008/03/04 08:20:00 GMT")
-        assert toJson(d, "IST") == '"2008-03-04T13:50:00+0530"'
+        assert toJson(d) == '"2008-03-04T12:50:00+0000"'
     }
 
     void testURL() {
@@ -191,13 +186,7 @@ class JsonOutputTest extends GroovyTestCase {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
         c.clearTime()
         c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
-        assert toJson(c) == '"2008-03-04T12:50:00Z"'
-    }
-
-    void testCalendarDateFormat() {
-        def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
-        c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50, second: 00)
-        assert toJson(c, "IST") == '"2008-03-04T18:20:00+0530"'
+        assert toJson(c) == '"2008-03-04T12:50:00+0000"'
     }
 
     void testComplexObject() {

@@ -29,6 +29,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -59,8 +60,32 @@ public class JsonOutput {
     private static final char[] EMPTY_STRING_CHARS = Chr.array(QUOTE, QUOTE);
 
     private static final String NULL_VALUE = "null";
-    private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXX";
+    private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String DEFAULT_TIMEZONE = "GMT";
+    private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXX";
+    private static final String ISO8601_TIMEZONE = "UTC";
+    private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>() {
+        @Override
+	protected DateFormat initialValue() {
+	    SimpleDateFormat sdf;
+	    if (ISO8601_DATE_FORMAT.equals(System.getProperty("groovy.json.dateFormat"))) {
+		sdf = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
+		sdf.setTimeZone(TimeZone.getTimeZone(ISO8601_TIMEZONE));
+	    } else {
+		sdf = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
+		sdf.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+	    }
+	    return sdf;
+	}
+    };
+
+    /**
+     * @param DateFormat field to set the format to
+     */
+    public static void setDateFormat(DateFormat dfmt) {
+	dateFormat.set(dfmt);
+    }
+    
     /**
      * @return "true" or "false" for a boolean value
      */
@@ -118,25 +143,12 @@ public class JsonOutput {
      * @return a formatted date in the form of a string
      */
     public static String toJson(Date date) {
-        return toJson(date, DEFAULT_TIMEZONE);
-    }
-
-    /**
-     * Format a date that is parseable from JavaScript, according to ISO-8601.
-     *
-     * @param date the date to format to a JSON string
-     * @param timeZone as a string.
-     * @return a formatted date in the form of a string
-     */
-    public static String toJson(Date date, String timeZone) {
         if (date == null) {
             return NULL_VALUE;
         }
 
-	SimpleDateFormat format = new SimpleDateFormat(JSON_DATE_FORMAT);
-	format.setTimeZone(TimeZone.getTimeZone(timeZone));
         CharBuf buffer = CharBuf.create(26);
-        writeDate(date, buffer, format);
+        writeDate(date, buffer);
 
         return buffer.toString();
     }
@@ -148,25 +160,12 @@ public class JsonOutput {
      * @return a formatted date in the form of a string
      */
     public static String toJson(Calendar cal) {
-        return toJson(cal, DEFAULT_TIMEZONE);
-    }
-
-    /**
-     * Format a calendar instance that is parseable from JavaScript, according to ISO-8601.
-     *
-     * @param cal the calendar to format to a JSON string
-     * @param timeZone as a string.
-     * @return a formatted date in the form of a string
-     */
-    public static String toJson(Calendar cal, String timeZone) {
         if (cal == null) {
             return NULL_VALUE;
         }
 
-	SimpleDateFormat format = new SimpleDateFormat(JSON_DATE_FORMAT);
-	format.setTimeZone(TimeZone.getTimeZone(timeZone));
         CharBuf buffer = CharBuf.create(26);
-        writeDate(cal.getTime(), buffer, format);
+        writeDate(cal.getTime(), buffer);
 
         return buffer.toString();
     }
@@ -370,16 +369,7 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-	SimpleDateFormat dateFormat = new SimpleDateFormat(JSON_DATE_FORMAT);
-	dateFormat.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
-        buffer.addQuoted(dateFormat.format(date));
-    }
-
-    /**
-     * Serializes date and writes it into specified buffer.
-     */
-    private static void writeDate(Date date, CharBuf buffer, SimpleDateFormat format) {
-        buffer.addQuoted(format.format(date));
+        buffer.addQuoted(dateFormat.get().format(date));
     }
 
     /**
