@@ -795,6 +795,6 @@ Here is a complete list of the operators and their corresponding methods:
 | `a()`
 | a.call()
 | `~a`
-| a.bitwiseNegative()
+| a.bitwiseNegate()
 |====
 
