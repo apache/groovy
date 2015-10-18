@@ -1410,5 +1410,21 @@ println someInt
             new A()
         '''
     }
+
+    // GROOVY-7631
+    void testPrimitiveNotEqualNullShouldReturnTrue() {
+        assertScript '''
+            assert false != null
+            assert true != null
+            assert (byte) 1 != null
+            assert (short) 1 != null
+            assert 0 != null
+            assert 1 != null
+            assert 1L != null
+            assert 1f != null
+            assert 1d != null
+            assert (char) 1 != null
+        '''
+    }
 }
 

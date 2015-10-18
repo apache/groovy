@@ -62,7 +62,7 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
             ClassNode top = controller.getOperandStack().getTopOperand();
             if (ClassHelper.isPrimitiveType(top)) {
                 controller.getOperandStack().pop();
-                mv.visitInsn(ICONST_0);
+                mv.visitInsn(equalsNull ? ICONST_0 : ICONST_1);
                 controller.getOperandStack().push(ClassHelper.boolean_TYPE);
                 return;
             }
