@@ -32,7 +32,7 @@ import static org.apache.lucene.document.Field.Store.*
  *
  * @author Jeremy Rayner <groovy@ross-rayner.com>
  * based on examples in the wonderful 'Lucene in Action' book
- * by Erik Hatcher and Otis Gospodnetic ( http://www.lucenebook.com )
+ * by Erik Hatcher and Otis Gospodnetic (https://www.manning.com/books/lucene-in-action-second-edition)
  *
  * June 25th, 2013: Updated for Lucene 4.3.1
  * requires a lucene-4.3.x.jar from http://lucene.apache.org
