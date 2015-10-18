@@ -142,7 +142,7 @@ ext {
     jarjarVersion = '1.3'
     jlineVersion = '2.12'
     jmockVersion = '1.2.0'
-    logbackVersion = '1.1.2'
+    logbackVersion = '1.1.3'
     log4jVersion = '1.2.17'
     log4j2Version = '2.3'
     luceneVersion = '4.7.2'
