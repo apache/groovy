@@ -550,7 +550,7 @@ public class DefaultTypeTransformation {
         else if (right == null) {
             return 1;
         }
-        if (left instanceof Comparable) {
+        if (left instanceof Comparable || left instanceof Number) {
             if (left instanceof Number) {
                 if (right instanceof Character || right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
@@ -561,15 +561,21 @@ public class DefaultTypeTransformation {
             }
             else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
-                    return DefaultGroovyMethods.compareTo((Character)left, ShortTypeHandling.castToChar(right));
+                    return DefaultGroovyMethods.compareTo((Character) left, ShortTypeHandling.castToChar(right));
                 }
                 if (right instanceof Number) {
-                    return DefaultGroovyMethods.compareTo((Character)left,(Number)right);
+                    return DefaultGroovyMethods.compareTo((Character) left, (Number) right);
+                }
+                if (right instanceof String) {
+                    return (left.toString()).compareTo((String) right);
+                }
+                if (right instanceof GString) {
+                    return (left.toString()).compareTo(right.toString());
                 }
             }
             else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
-                    return DefaultGroovyMethods.compareTo(ShortTypeHandling.castToChar(left),(Number) right);
+                    return DefaultGroovyMethods.compareTo(ShortTypeHandling.castToChar(left), (Number) right);
                 }
             }
             else if (left instanceof String && right instanceof Character) {
@@ -582,7 +588,16 @@ public class DefaultTypeTransformation {
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
                     || (left instanceof GString && right instanceof String)) {
                 Comparable comparable = (Comparable) left;
-                return comparable.compareTo(right);
+                try {
+                    return comparable.compareTo(right);
+                } catch (ClassCastException cce) {
+                    throw new GroovyRuntimeException(
+                            MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
+                                    left.getClass().getName(),
+                                    left,
+                                    right.getClass().getName(),
+                                    right));
+                }
             }
         }
 
