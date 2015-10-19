@@ -61,7 +61,7 @@ public class DefaultTypeTransformation {
 
     //  --------------------------------------------------------
     //                  unboxing methods
-    //  --------------------------------------------------------       
+    //  --------------------------------------------------------
 
     public static byte byteUnbox(Object value) {
         Number n = castToNumber(value, byte.class);
@@ -103,7 +103,7 @@ public class DefaultTypeTransformation {
 
     //  --------------------------------------------------------
     //                  boxing methods
-    //  --------------------------------------------------------       
+    //  --------------------------------------------------------
 
     @Deprecated
     public static Object box(boolean value) {
@@ -550,7 +550,7 @@ public class DefaultTypeTransformation {
         } else if (right == null) {
             return 1;
         }
-        if (left instanceof Comparable) {
+        if (left instanceof Comparable || left instanceof Number) {
             if (left instanceof Number) {
                 if (right instanceof Character || right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
@@ -564,6 +564,12 @@ public class DefaultTypeTransformation {
                 }
                 if (right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Character) left, (Number) right);
+                }
+                if (right instanceof String) {
+                    return (left.toString()).compareTo((String) right);
+                }
+                if (right instanceof GString) {
+                    return (left.toString()).compareTo(right.toString());
                 }
             } else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
