@@ -1,22 +1,25 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
  */
-package groovy
+package org.codehaus.groovy.runtime.typehandling
+
+import static org.codehaus.groovy.runtime.typehandling.NumberMath.getMath
 
 /**
  * Basic NumberMath test.
@@ -158,6 +161,55 @@ class NumberMathTest extends GroovyTestCase {
             return
         }
         fail("Should catch an UnsupportedOperationException")
+    }
+
+
+    private static class MyNumber extends Number {
+        def n
+
+        MyNumber(n) {
+            this.n = n
+        }
+
+        int intValue() { n }
+
+        long longValue() { n }
+
+        float floatValue() { n }
+
+        double doubleValue() { n }
+
+        int hashCode() { -n }
+
+        boolean equals(other) {
+            if (other instanceof MyNumber) {
+                return n == other.n
+            }
+            return false
+        }
+
+        String toString() { return Double.toString(floatValue()) }
+    }
+
+    void testGetMathCustom() {
+        assert getMath(1G) == BigIntegerMath.INSTANCE;
+        assert getMath(1.0G) == BigDecimalMath.INSTANCE;
+        assert getMath(Long.valueOf(1)) == LongMath.INSTANCE;
+        assert getMath(Integer.valueOf(1)) == IntegerMath.INSTANCE;
+        assert getMath(Short.valueOf("1")) == IntegerMath.INSTANCE;
+        assert getMath(Byte.valueOf("1")) == IntegerMath.INSTANCE;
+        assert getMath(Double.valueOf(1.0)) == FloatingPointMath.INSTANCE;
+        assert getMath(Float.valueOf(1.0f)) == FloatingPointMath.INSTANCE;
+
+        MyNumber num = new MyNumber(42);
+        assert getMath(num) == BigDecimalMath.INSTANCE;
+
+        assert getMath(num, Integer.valueOf(25)) == BigDecimalMath.INSTANCE;
+        assert getMath(num, Double.valueOf(25.0)) == FloatingPointMath.INSTANCE;
+        assert getMath(Integer.valueOf(25), num) == BigDecimalMath.INSTANCE;
+        assert getMath(Double.valueOf(25.0), num) == FloatingPointMath.INSTANCE;
+        assert getMath(num, 25) == BigDecimalMath.INSTANCE;
+        assert getMath(25, num) == BigDecimalMath.INSTANCE;
     }
 
     void testGetMath() {
