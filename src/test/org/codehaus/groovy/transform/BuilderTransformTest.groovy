@@ -149,6 +149,31 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testSimpleBuilderShouldInheritFromParent() {
+        assertScript """
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            class Mamal {
+                int age
+            }
+            @Builder(builderStrategy=SimpleStrategy)
+            class Person extends Mamal {
+                String firstName
+                String lastName
+            }
+
+            @CompileStatic
+            def parentBuilder() {
+                def person = new Person().setAge(21).setFirstName("Robert").setLastName("Lewandowski")
+                assert person.firstName == "Robert"
+                assert person.lastName == "Lewandowski"
+                assert person.age == 21
+            }
+            parentBuilder()
+         """
+    }
+
     void testDefaultBuilder() {
         def shell = new GroovyShell()
         shell.parse """
@@ -299,7 +324,35 @@ class BuilderTransformTest extends CompilableTestSupport {
                 }
             }
         """
+
         assert message.contains("includes/excludes only allowed on classes")
+    }
+
+    void testDefaultBuilderShoulInheritFromParent() {
+        assertScript """
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @Builder
+            class Mamal {
+                int age
+            }
+            @Builder
+            class Person extends Mamal {
+                String firstName
+                String lastName
+            }
+
+            @CompileStatic
+            def parentBuilder() {
+                def builder = Person.builder()
+                Person person = builder.age(21).firstName("Robert").lastName("Lewandowski").build()
+                assert person.firstName == "Robert"
+                assert person.lastName == "Lewandowski"
+                assert person.age == 21
+            }
+            parentBuilder()
+         """
     }
 
     void testExternalBuilder() {
@@ -424,6 +477,33 @@ class BuilderTransformTest extends CompilableTestSupport {
                 PersonBuilder.getMethod("withBorn", Integer.TYPE)
             }
         '''
+    }
+
+    void testExternalBuilderInheritsFromParent() {
+        assertScript """
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            class Mamal {
+                int age
+            }
+            class Person extends Mamal {
+                String firstName
+                String lastName
+            }
+
+            @Builder(builderStrategy=ExternalStrategy, forClass = Person)
+            class PersonBuilder { }
+
+            @CompileStatic
+            def parentBuilder() {
+                Person person = new PersonBuilder().age(21).firstName("Robert").lastName("Lewandowski").build()
+                assert person.firstName == "Robert"
+                assert person.lastName == "Lewandowski"
+                assert person.age == 21
+            }
+            parentBuilder()
+        """
     }
 
     void testInitializerStrategy() {
@@ -552,6 +632,55 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
             make()
         '''
+    }
+
+    void testInitializerStrategyInheritsFromParent() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            class Mamal {
+                int age
+            }
+
+            @ToString(includeSuperProperties = true)
+            @Builder(builderStrategy=InitializerStrategy)
+            class Person extends Mamal {
+                String firstName
+                String lastName
+            }
+
+            @CompileStatic
+            def parentBuilder() {
+                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
+            }
+            // static case
+            parentBuilder()
+            // dynamic case
+            assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
+        '''
+        def message = shouldNotCompile '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            class Mamal {
+                int age
+            }
+
+            @ToString
+            @Builder(builderStrategy=InitializerStrategy)
+            class Person extends Mamal {
+                String firstName
+                String lastName
+            }
+
+            @CompileStatic
+            def firstLastButNoAge() {
+                new Person(Person.createInitializer().firstName("John").lastName("Smith"))
+            }
+        '''
+        assert message.contains('[Static type checking] - Cannot call Person#<init>')
+        assert message =~ /.*SET.*SET.*UNSET.*/
     }
 
     void testBuilderWithPackageName_GROOVY7501() {
