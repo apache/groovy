@@ -643,7 +643,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 int age
             }
 
-            @ToString
+            @ToString(includeSuperProperties = true)
             @Builder(builderStrategy=InitializerStrategy)
             class Person extends Mamal {
                 String firstName
@@ -661,7 +661,7 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
         def message = shouldNotCompile '''
             import groovy.transform.builder.*
-            import groovy.transform.CompileStatic
+            import groovy.transform.*
 
             class Mamal {
                 int age
