@@ -22,6 +22,9 @@ import groovy.ui.Console
 import groovy.ui.ConsoleActions
 import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
+
+import javax.swing.JTextPane
+import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 import org.junit.rules.TemporaryFolder
 
@@ -435,4 +438,78 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             }
         }
     }
+
+    void testSelectBlock() {
+        testInEDT {
+            final consoleActions = new ConsoleActions()
+            def swing = new SwingBuilder()
+            final console = new Console()
+            swing.controller = console
+            swing.build(consoleActions)
+            console.run()
+            JTextPane inputArea = console.inputArea
+            ActionEvent event = new ActionEvent(inputArea, 1, '')
+
+            inputArea.text =
+                    'import com.example.HelloWorldService\n' +  //0-36
+                    '    \n' +                                  //37-41
+                    'def service = new HelloWorldService()\n' + //42-79
+                    'service.init()\n' +                        //80-94
+                    '\n' +                                      //95
+                    'if (service.isAvailable()) {\n' +          //96-124
+                    '    service.printGreeting()\n' +           //125-152
+                    '}\n' +                                     //153-154
+                    '\n' +                                      //155
+                    'println service'                           //156-171
+
+            inputArea.setCaretPosition(0)
+            console.selectBlock(event)
+            assert 'import' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'import com.example.HelloWorldService' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'import com.example.HelloWorldService\n' == inputArea.getSelectedText()
+
+            inputArea.setCaretPosition(49) // ser(v)ice
+            console.selectBlock(event)
+            assert 'service' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'def service = new HelloWorldService()' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert inputArea.getSelectedText() ==
+                    'def service = new HelloWorldService()\n' +
+                    'service.init()\n'
+
+            inputArea.setCaretPosition(95)
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            assert 95 == inputArea.getCaretPosition()
+
+            inputArea.setCaretPosition(125)
+            console.selectBlock(event)
+            assert '    ' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert '    service.printGreeting()' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert inputArea.getSelectedText() ==
+                    'if (service.isAvailable()) {\n' +
+                    '    service.printGreeting()\n' +
+                    '}\n'
+
+            inputArea.setCaretPosition(171)
+            console.selectBlock(event)
+            assert 'service' == inputArea.getSelectedText()
+        }
+    }
+
 }

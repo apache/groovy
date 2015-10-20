@@ -14,11 +14,10 @@ improvement of the ASF incubation process. Groovy is the first podling where
 that happens.
 
 == Status of this document
-First evaluation done, lots of OK states below but also a number of TODO to resolve. 
+All open items resolved, ready for PPMC approval voting. 
 
 == Overall assessment
-Once the below _TODO_ are fixed (either by documenting the corresponding decisions or by
-making the corresponding changes) Groovy looks ready to graduate, discussions and votes 
+All the below items are marked OK, Groovy looks ready to graduate, discussions and votes 
 are ongoing on the project's dev list as I write this (October 2015).
 
 == Maturity model assessment 
@@ -35,7 +34,7 @@ OK: of course.
 ==== CD20
 _The project's code is easily discoverable and publicly accessible._
 
-http://groovy-lang.org/ (see CO10) includes a "fork me on Github" banner.
+OK: http://groovy-lang.org/ (see CO10) includes a "fork me on Github" banner.
 
 ==== CD30
 _The code can be built in a reproducible way using widely available standard tools._
@@ -64,12 +63,21 @@ OK, LICENSE file has been accepted in release votes.
 ==== LC20
 _Libraries that are mandatory dependencies of the project's code do not create more restrictions than the Apache License does._
 
-TODO: do we have a documented verification of that? JIRA ticket? 
+OK: The list of dependencies at https://wiki.apache.org/incubator/GroovyProposal has been verified when entering incubation.
+
+The current dependency licenses (including build, runtime and optional dependencies) are found at
+https://github.com/apache/incubator-groovy/tree/master/licenses
+
+Assembling the licenses depending on the artifacts is done here:
+https://github.com/apache/incubator-groovy/blob/master/gradle/assemble.gradle
+so that the various artifacts get their correct sets of licenses.
+
+Release reviews have not shown any incompatible licenses.
 
 ==== LC30
 _The libraries mentioned in LC20 are available as Open Source software._
 
-TODO: See LC20 
+OK, see LC20 
 
 ==== LC40
 _Committers are bound by an Individual Contributor Agreement (the "Apache iCLA") that defines which code they are allowed to commit and how they need to identify code that is not their own._
@@ -119,8 +127,11 @@ OK, see QU10
 ==== QU30
 _The project provides a well-documented channel to report security issues, along with a documented way of responding to them._
 
-TODO: http://groovy-lang.org/ does not include that information as far as I can see. 
-See also http://www.apache.org/foundation/marks/pmcs.html#navigation for required links on the project's homepage. 
+OK: http://groovy-lang.org/ does include a "security" link to http://groovy-lang.org/security.html which in turns points
+to http://www.apache.org/security/.
+
+The website also include the mandatory links listed at 
+http://www.apache.org/foundation/marks/pmcs.html#navigation 
 
 ==== QU40
 _The project puts a high priority on backwards compatibility and aims to document any incompatible changes and provide tools and documentation to help users transition to new features._ 
@@ -137,7 +148,7 @@ OK, response times on the users list and jira are good.
 ==== CO10
 _The project has a well-known homepage that points to all the information required to operate according to this maturity model._
 
-http://groovy.apache.org/ redirects to http://groovy-lang.org/ for now. The plan 
+OK: http://groovy.apache.org/ redirects to http://groovy-lang.org/ for now. The plan 
 for the future is to use the former for Groovy development topics, and the latter
 for its user community.
 

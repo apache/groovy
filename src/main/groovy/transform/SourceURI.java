@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Variable annotation used for getting the URI of the current script.
  * <p>
- * The type of the variable annotated with {@code @BaseScript} must be assignment compatible with {@link java.net.URI}.
+ * The type of the variable annotated with {@code @SourceURI} must be assignment compatible with {@link java.net.URI}.
  * It will be used to hold a URI object that references the source for the current script.
  * </p><p>By default the URI
  * will be made absolute (which is to say it will have an authority) in the case where a relative path was used

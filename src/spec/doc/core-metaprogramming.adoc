@@ -1755,7 +1755,7 @@ For details
 
 ==== Easier cloning and externalizing
 
-Groovy provides two annotations aimed at facilitating the implementation of `Clonable` and `Externalizable` interfaces,
+Groovy provides two annotations aimed at facilitating the implementation of `Cloneable` and `Externalizable` interfaces,
 respectively named `@AutoClone` and `@AutoExternalize`.
 
 [[xform-AutoClone]]

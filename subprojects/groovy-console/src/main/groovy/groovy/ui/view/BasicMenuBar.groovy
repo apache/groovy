@@ -52,6 +52,7 @@ menuBar {
         menuItem(selectAllAction)
 	separator()
 	menuItem(commentAction)
+        menuItem(selectBlockAction)
     }
 
     menu(text: 'View', mnemonic: 'V') {
