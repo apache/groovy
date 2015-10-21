@@ -53,7 +53,7 @@ while (true) {
 def t = Thread.start {
     shell.evaluate(userCode)
 }
-t.join(500) // give at most 500ms for the script to complete
+t.join(1000) // give at most 1000ms for the script to complete
 if (t.alive) {
     t.interrupt()
 }
