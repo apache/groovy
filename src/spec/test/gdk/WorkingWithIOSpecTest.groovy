@@ -73,13 +73,6 @@ Le bruit de l'eau.''')
             // tag::file_bytes[]
             byte[] contents = file.bytes
             // end::file_bytes[]
-            def expectedLength = 64
-            // e with acute accent won't be encoded on some systems -23 vs -61, -87
-            if (System.getProperty('file.encoding').endsWith('1252')) {
-                expectedLength = 63
-            }
-            assert contents.length == expectedLength
-
         }
     }
 
