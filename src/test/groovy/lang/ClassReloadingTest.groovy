@@ -52,7 +52,7 @@ class ClassReloadingTest extends GroovyTestCase {
             """
             def success = file.setLastModified(System.currentTimeMillis())
             assert success
-            sleep 1500
+            sleep 3000
 
             // reload
             groovyClass = cl.loadClass(className, true, false)
