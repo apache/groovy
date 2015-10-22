@@ -211,7 +211,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 <4> Getting the value as a String
 <5> Getting the value of the attribute as an `Integer`
 
-As you can see there are to types of notations to get attributes,
+As you can see there are two types of notations to get attributes,
 the
 
 * _direct notation_ with `@nameoftheattribute`
