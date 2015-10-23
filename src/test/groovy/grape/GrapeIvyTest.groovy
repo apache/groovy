@@ -20,6 +20,7 @@ package groovy.grape
 
 import org.codehaus.groovy.control.CompilationFailedException
 import gls.CompilableTestSupport
+import org.junit.Test
 
 import static org.junit.Assume.assumeFalse
 
@@ -29,7 +30,7 @@ import static org.junit.Assume.assumeFalse
  */
 class GrapeIvyTest extends CompilableTestSupport {
 
-    public GrapeIvyTest() {
+    GrapeIvyTest() {
         // make sure files are installed locally
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
@@ -41,7 +42,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         }
     }
 
-    public void testSingleArtifact() {
+    @Test
+    void testSingleArtifact() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -51,7 +53,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
-    public void testModuleWithDependencies() {
+    @Test
+    void testModuleWithDependencies() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -61,7 +64,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
-    public void testMultipleDependencies() {
+    @Test
+    void testMultipleDependencies() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -79,7 +83,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
-    public void testListDependencies() {
+    @Test
+    void testListDependencies() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -100,7 +105,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         ]
     }
 
-    public void testGrabRefless() {
+    @Test
+    void testGrabRefless() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -110,7 +116,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
-    public void testGrabScriptClass() {
+    @Test
+    void testGrabScriptClass() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -120,7 +127,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
-    public void testGrabScriptLoader() {
+    @Test
+    void testGrabScriptLoader() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shell.setVariable("loader", loader)
@@ -131,7 +139,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
-    public void testGrabReflessMultiple() {
+    @Test
+    void testGrabReflessMultiple() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -148,7 +157,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
-    public void testGrabScriptClassMultiple() {
+    @Test
+    void testGrabScriptClassMultiple() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -165,7 +175,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
-    public void testGrabScriptLoaderMultiple() {
+    @Test
+    void testGrabScriptLoaderMultiple() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shell.setVariable("loader", loader)
@@ -183,7 +194,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
-    public void testSerialGrabs() {
+    @Test
+    void testSerialGrabs() {
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
         Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
@@ -200,7 +212,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert !jars.contains ("log4j-1.2.13.jar")
     }
 
-    public void testConf() {
+    @Test
+    void testConf() {
         GroovyClassLoader loader = new GroovyClassLoader()
 
         def coreJars = ["ivy-2.0.0.jar"] as Set
@@ -249,7 +262,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         loader.getURLs().collect { URL it -> it.getPath().split('/')[-1] } as Set
     }
 
-    public void testClassifier() {
+    @Test
+    void testClassifier() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
@@ -259,7 +273,8 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert shell.evaluate("import net.sf.json.JSON; JSON").name == 'net.sf.json.JSON'
     }
 
-    public void testClassifierWithConf() {
+    @Test
+    void testClassifierWithConf() {
         assumeFalse('Test always fails on builds.apache.org on Windows, so we skip it there.',
                 (new File('.').absolutePath =~ /jenkins|hudson/).matches() &&
                         System.properties['os.name'].toLowerCase().contains('windows'))
@@ -304,7 +319,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert jarNames(loader) == coreJars + optionalJars
     }
 
-    
+    @Test
     void testTransitiveShorthandControl() {
         // BeanUtils is a transitive dependency for Digester
         assertScript '''
@@ -316,6 +331,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTransitiveShorthandExpectFailure() {
         assertScript '''
             @Grab('commons-digester:commons-digester:2.1;transitive=false')
@@ -329,6 +345,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAutoDownloadGrapeConfig() {
 
         assertScript '''
@@ -364,7 +381,8 @@ class GrapeIvyTest extends CompilableTestSupport {
     /**
      * GROOVY-470: multiple jars should be loaded for an artifacts with and without a classifier
      */
-    public void testClassifierAndNonClassifierOnSameArtifact() {
+    @Test
+    void testClassifierAndNonClassifierOnSameArtifact() {
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classLoader:loader)
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classifier:'tests', classLoader:loader)
@@ -383,6 +401,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert jars.contains ("neo4j-kernel-2.0.0-RC1-tests.jar")
     }
 
+    @Test
     void testSystemProperties_groovy7548() {
         System.setProperty('groovy7548prop', 'x')
         assert System.getProperty('groovy7548prop') == 'x'
