@@ -21,6 +21,8 @@ package groovy.grape
 import org.codehaus.groovy.control.CompilationFailedException
 import gls.CompilableTestSupport
 
+import static org.junit.Assume.assumeFalse
+
 /**
  * @author Danno Ferrin
  * @author Paul King
@@ -258,6 +260,9 @@ class GrapeIvyTest extends CompilableTestSupport {
     }
 
     public void testClassifierWithConf() {
+        assumeFalse('Test always fails on builds.apache.org on Windows, so we skip it there.',
+                new File('.').absolutePath =~ /jenkins|hudson/ && System.properties['os.name'].toLowerCase().contains('windows'))
+
         def coreJars = [
                 "json-lib-2.2.3-jdk15.jar",
                 "commons-lang-2.4.jar",
