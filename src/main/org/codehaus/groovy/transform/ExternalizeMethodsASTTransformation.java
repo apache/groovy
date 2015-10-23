@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
@@ -91,7 +92,9 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         for (FieldNode fNode : list) {
             if (excludes != null && excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            body.addStatement(stmt(callX(varX(out), "write" + suffixForField(fNode), varX(fNode))));
+            MethodCallExpression writeObject = callX(varX(out), "write" + suffixForField(fNode), varX(fNode));
+            writeObject.setImplicitThis(false);
+            body.addStatement(stmt(writeObject));
         }
         ClassNode[] exceptions = {make(IOException.class)};
         cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(out), exceptions, body);
@@ -104,7 +107,8 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
             if (excludes != null && excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             String suffix = suffixForField(fNode);
-            Expression readObject = callX(varX(oin), "read" + suffix);
+            MethodCallExpression readObject = callX(varX(oin), "read" + suffix);
+            readObject.setImplicitThis(false);
             body.addStatement(assignS(varX(fNode), suffix.equals("Object") ? castX(GenericsUtils.nonGeneric(fNode.getType()), readObject) : readObject));
         }
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(oin), ClassNode.EMPTY_ARRAY, body);
