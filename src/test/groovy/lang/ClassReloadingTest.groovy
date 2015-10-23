@@ -26,7 +26,7 @@ class ClassReloadingTest extends GroovyTestCase {
 
     public void testReloading() {
         assumeFalse('Test always fails on builds.apache.org, so we skip it there.',
-                new File('.').absolutePath =~ /jenkins|hudson/)
+                (new File('.').absolutePath =~ /jenkins|hudson/).matches())
 
         def file = File.createTempFile("TestReload", ".groovy", new File("target"))
         file.deleteOnExit()

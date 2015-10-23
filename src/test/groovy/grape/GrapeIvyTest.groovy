@@ -261,7 +261,8 @@ class GrapeIvyTest extends CompilableTestSupport {
 
     public void testClassifierWithConf() {
         assumeFalse('Test always fails on builds.apache.org on Windows, so we skip it there.',
-                new File('.').absolutePath =~ /jenkins|hudson/ && System.properties['os.name'].toLowerCase().contains('windows'))
+                (new File('.').absolutePath =~ /jenkins|hudson/).matches() &&
+                        System.properties['os.name'].toLowerCase().contains('windows'))
 
         def coreJars = [
                 "json-lib-2.2.3-jdk15.jar",
