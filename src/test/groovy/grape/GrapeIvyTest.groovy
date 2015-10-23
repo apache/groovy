@@ -275,9 +275,7 @@ class GrapeIvyTest extends CompilableTestSupport {
 
     @Test
     void testClassifierWithConf() {
-        assumeFalse('Test always fails on builds.apache.org on Windows, so we skip it there.',
-                (new File('.').absolutePath =~ /jenkins|hudson/).matches() &&
-                        System.properties['os.name'].toLowerCase().contains('windows'))
+        assumeNotOnBuildsApacheOrgAndNotOnWindows()
 
         def coreJars = [
                 "json-lib-2.2.3-jdk15.jar",
@@ -317,6 +315,12 @@ class GrapeIvyTest extends CompilableTestSupport {
         loader = new GroovyClassLoader()
         Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:['default', 'optional'], classLoader:loader)
         assert jarNames(loader) == coreJars + optionalJars
+    }
+
+    private assumeNotOnBuildsApacheOrgAndNotOnWindows() {
+        boolean buildsApacheOrg = new File('.').absolutePath =~ /jenkins|hudson/
+        boolean windows = System.properties['os.name'].toLowerCase().contains('windows')
+        assumeFalse('Test always fails on builds.apache.org on Windows, so we skip it there.', buildsApacheOrg && windows)
     }
 
     @Test

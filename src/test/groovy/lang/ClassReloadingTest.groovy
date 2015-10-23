@@ -28,8 +28,7 @@ class ClassReloadingTest extends GroovyTestCase {
 
     @Test
     void testReloading() {
-        assumeFalse('Test always fails on builds.apache.org, so we skip it there.',
-                (new File('.').absolutePath =~ /jenkins|hudson/).matches())
+        assumeNotOnBuildsApacheOrg()
 
         def file = File.createTempFile("TestReload", ".groovy", new File("target"))
         file.deleteOnExit()
@@ -69,6 +68,11 @@ class ClassReloadingTest extends GroovyTestCase {
         } finally {
             file.delete()
         }
+    }
+
+    private assumeNotOnBuildsApacheOrg() {
+        boolean buildsApacheOrg = new File('.').absolutePath =~ /jenkins|hudson/
+        assumeFalse('Test always fails on builds.apache.org, so we skip it there.', buildsApacheOrg)
     }
 
     @Test
