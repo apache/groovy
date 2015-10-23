@@ -552,6 +552,18 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testAutoExternalizeNestedClassCompileStatic_GROOVY7644() {
+        new GroovyShell().evaluate '''
+            import org.codehaus.groovy.transform.*
+
+            def orig = new Person7NestedAddressCS.Address7CS(street: 'somewhere lane', town: 'my town')
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream{ os -> os.writeObject(orig) }
+            def bais = new ByteArrayInputStream(baos.toByteArray())
+            bais.withObjectInputStream { is -> assert is.readObject().toString() == 'Person7NestedAddressCS$Address7CS(somewhere lane, my town)' }
+        '''
+    }
+
     // GROOVY-4570
     void testToStringForEnums() {
         assert Color.PURPLE.toString() == 'org.codehaus.groovy.transform.Color(r:255, g:0, b:255)'
@@ -752,6 +764,16 @@ class Name7CS implements Serializable { String first, last }
 @ToString(includePackage=false)
 @CompileStatic
 class Address7CS { String street, town }
+
+// GROOVY-7644
+class Person7NestedAddressCS {
+    @ToString(includePackage=false)
+    @AutoExternalize(checkPropertyTypes=true)
+    @CompileStatic
+    static class Address7CS {
+        String street, town
+    }
+}
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")
