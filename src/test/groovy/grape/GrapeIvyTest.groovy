@@ -21,6 +21,8 @@ package groovy.grape
 import org.codehaus.groovy.control.CompilationFailedException
 import gls.CompilableTestSupport
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 import static org.junit.Assume.assumeFalse
 
@@ -28,6 +30,7 @@ import static org.junit.Assume.assumeFalse
  * @author Danno Ferrin
  * @author Paul King
  */
+@RunWith(JUnit4)
 class GrapeIvyTest extends CompilableTestSupport {
 
     GrapeIvyTest() {
