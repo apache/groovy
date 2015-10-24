@@ -18,10 +18,17 @@
  */
 package org.codehaus.groovy.tools.shell.completion
 
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+import static org.junit.Assume.assumeFalse
+
+@RunWith(JUnit4)
 class FileNameCompleterTest extends GroovyTestCase {
 
+    @Test
     void testRender() {
         assert FileNameCompleter.render('foo') == 'foo'
         assert FileNameCompleter.render('foo bar') == 'foo\\ bar'
@@ -29,6 +36,7 @@ class FileNameCompleterTest extends GroovyTestCase {
         assert FileNameCompleter.render('foo \'\"bar') == 'foo\\ \\\'\\\"bar' + ''
     }
 
+    @Test
     void testCompletionNoFiles() {
         // abusing junit testrule
         TemporaryFolder testFolder = null;
@@ -53,13 +61,14 @@ class FileNameCompleterTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMatchFiles_Unix() {
-        if(! System.getProperty('os.name').startsWith('Windows')) {
-            FileNameCompleter completer = new FileNameCompleter()
-            List<String> candidates = []
-            int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates)
-            assert resultIndex == 'foo/'.length()
-            assert candidates == ['baroo ', 'barbee ']
-        }
+        assumeFalse('Test requires unix like system.', System.getProperty('os.name').startsWith('Windows'))
+
+        FileNameCompleter completer = new FileNameCompleter()
+        List<String> candidates = []
+        int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates)
+        assert resultIndex == 'foo/'.length()
+        assert candidates == ['baroo ', 'barbee ']
     }
 }

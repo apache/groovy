@@ -21,6 +21,13 @@
 
 package groovy.execute
 
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+import static org.junit.Assume.assumeTrue
+
 /**
  * Test to ensure that the execute mechanism works fine on *nix-like systems.  For these OSs we
  * can effectively guarantee the existence of some programs that we can run.  Assume the search
@@ -30,17 +37,32 @@ package groovy.execute
  *
  * @author Russel Winder
  */
+@RunWith(JUnit4)
 class ExecuteTest_LinuxSolaris extends GroovyTestCase {
+
+  private static final boolean linuxOrSolaris = System.getProperty('os.name').contains('Linux') ||
+          System.getProperty('os.name').contains('sunos')
+
+  @Before
+  void assumeUnixOrSolaris() {
+    assumeTrue('Test requires Linux or Solaris.', linuxOrSolaris)
+  }
+
+  @Test
   void testShellEchoOneArray ( ) {
     def process = ( [ "sh" , "-c" , "echo 1" ] as String[] ).execute ( )
     process.waitFor ( )
     assert process.in.text.trim ( ) == "1"
   }
+
+  @Test
   void testShellEchoOneList ( ) {
     def process = [ "sh" , "-c" , "echo 1" ].execute ( )
     process.waitFor ( )
     assert process.in.text.trim ( ) == "1"
   }
+
+  @Test
   void testEchoOneArray ( ) {
     try {
       def process = ( [ "echo 1" ] as String[] ).execute ( )
@@ -49,6 +71,8 @@ class ExecuteTest_LinuxSolaris extends GroovyTestCase {
     }
     catch ( IOException ioe ) { }
   }
+
+  @Test
   void testEchoOneList ( ) {
     try {
       def process = [ "echo 1" ].execute ( )
@@ -57,16 +81,22 @@ class ExecuteTest_LinuxSolaris extends GroovyTestCase {
     }
     catch ( IOException ioe ) { }
   }
+
+  @Test
   void testEchoOneScalar ( ) {
     def process = "echo 1".execute ( )
     process.waitFor ( )
     assert process.in.text.trim ( ) == "1"
   }
+
+  @Test
   void testEchoArray ( ) {
     def process = ( [ "echo" , "1" ] as String[] ).execute ( )
     process.waitFor ( )
     assert process.in.text.trim ( ) == "1"
    }
+
+  @Test
   void testEchoList ( ) {
     def process = [ "echo" , "1" ].execute ( )
     process.waitFor ( )
