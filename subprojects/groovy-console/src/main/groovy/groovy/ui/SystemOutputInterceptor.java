@@ -32,7 +32,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     private Closure callback;
     private boolean output;
 
-    private static final ThreadLocal<Integer> consoleId = new ThreadLocal<Integer>() {
+    private static final ThreadLocal<Integer> consoleId = new InheritableThreadLocal<Integer>() {
         @Override
         protected Integer initialValue() {
             return Integer.valueOf(0);
