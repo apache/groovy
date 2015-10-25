@@ -853,40 +853,62 @@ options:
         updateFontSize(inputArea.font.size + 2)
     }
 
-    static boolean notifySystemOut(String str) {
+    static boolean notifySystemOut(int consoleId, String str) {
         if (!captureStdOut) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendOutputLines(str, console.outputStyle)
+            } else {
                 consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
             }
+        }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
         }
         return false
     }
 
-    static boolean notifySystemErr(String str) {
+    static boolean notifySystemErr(int consoleId, String str) {
         if (!captureStdErr) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendStacktrace(str)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendStacktrace(str)
+            } else {
                 consoleControllers.each {it.appendStacktrace(str)}
             }
         }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
+        }
         return false
+    }
+
+    int getConsoleId() {
+        return System.identityHashCode(this)
+    }
+
+    private static Console findConsoleById(int consoleId) {
+        return consoleControllers.find { it.consoleId == consoleId }
     }
 
     // actually run the script
@@ -969,6 +991,7 @@ options:
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
             try {
+                systemOutInterceptor.setConsoleId(this.getConsoleId())
                 SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if(beforeExecution) {
@@ -1003,6 +1026,7 @@ options:
                 runThread = null
                 scriptRunning = false
                 interruptAction.enabled = false
+                systemOutInterceptor.removeConsoleId()
             }
         }
     }

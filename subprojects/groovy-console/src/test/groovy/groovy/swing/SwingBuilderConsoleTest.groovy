@@ -435,4 +435,58 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             }
         }
     }
+
+    void testSystemOutputAndErrorRedirectedToCorrectConsole() {
+        testInEDT {
+            SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
+                runnable.run()
+            }
+            Thread.metaClass.static.start = { Runnable runnable ->
+                runnable.run()
+            }
+
+            Console.prefs = testPreferences
+
+            try {
+                def swing = new SwingBuilder()
+                final Console console = new Console()
+                swing.controller = console
+                swing.build(new ConsoleActions())
+                console.run()
+                console.fileNewWindow()
+                final Console console2 = Console.consoleControllers.last()
+
+                console.showScriptInOutput = false
+                console2.showScriptInOutput = false
+
+                def doc = console.outputArea.document
+                def doc2 = console2.outputArea.document
+
+                assert console.consoleId != console2.consoleId
+
+                console.inputArea.text = 'println "test1"'
+                console.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert '' == doc2.getText(0, doc2.length).trim()
+
+                console2.inputArea.text = 'println "test2"'
+                console2.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert 'test2' == doc2.getText(0, doc2.length).trim()
+
+                console2.inputArea.text = 'System.err.println "error2"'
+                console2.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
+                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
+                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
+            }
+        }
+    }
+
 }
