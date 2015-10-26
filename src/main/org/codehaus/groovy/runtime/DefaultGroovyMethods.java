@@ -3788,6 +3788,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             Object key = list.size() == 0 ? null : list.get(0);
             Object value = list.size() <= 1 ? null : list.get(1);
             leftShift(result, new MapEntry(key, value));
+        } else if (newEntry.getClass().isArray()) {
+            Object[] array = (Object[]) newEntry;
+            // def (key, value) == array.toList()
+            Object key = array.length == 0 ? null : array[0];
+            Object value = array.length <= 1 ? null : array[1];
+            leftShift(result, new MapEntry(key, value));
         } else {
             // TODO: enforce stricter behavior?
             // given Map.Entry is an interface, we get a proxy which gives us lots
