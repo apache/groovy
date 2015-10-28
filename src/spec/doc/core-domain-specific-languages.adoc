@@ -226,7 +226,7 @@ is possible by doing this:
 include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_method,indent=0]
 ----
 <1> the base script class should define one (and only one) abstract method
-<2> the `run` method can be overriden and perform a task before executing the script body
+<2> the `run` method can be overridden and perform a task before executing the script body
 <3> `run` calls the abstract `scriptBody` method which will delegate to the user script
 <4> then it can return something else than the value from the script
 

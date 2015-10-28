@@ -63,7 +63,7 @@ public interface GroovyObject {
 ==== invokeMethod
 
 According to the schema in <<core-metaprogramming.adoc#_runtime_metaprogramming,Runtime Metaprogramming>> this method is called when the method you called is not present on a Groovy object.
-Here is a simple example using a overriden `invokeMethod()` method:
+Here is a simple example using a overridden `invokeMethod()` method:
 
 [source,groovy]
 ----
