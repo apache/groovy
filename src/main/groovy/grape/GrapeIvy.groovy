@@ -564,7 +564,15 @@ class GrapeIvy implements GrapeEngine {
         // err on the side of using the class already loaded into the
         // classloader rather than adding another jar of the same module
         // with a different version
-        ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
+        ResolveReport report = null
+        try {
+            report = getDependencies(args, *localDeps.asList().reverse())
+        } catch (Exception e) {
+            // clean-up the state first
+            localDeps.removeAll(grabRecordsForCurrDependencies)
+            grabRecordsForCurrDependencies.clear()
+            throw e
+        }
 
         List<URI> results = []
         for (ArtifactDownloadReport adl in report.allArtifactsReports) {
