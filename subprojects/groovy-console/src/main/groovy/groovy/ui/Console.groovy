@@ -1091,7 +1091,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         runThread = Thread.start {
             try {
                 SwingUtilities.invokeLater { showCompilingMessage() }
-                shell.parse(record.allText)
+                shell.getClassLoader().parseClass(record.allText)
                 SwingUtilities.invokeLater { compileFinishNormal() }
             } catch (Throwable t) {
                 SwingUtilities.invokeLater { finishException(t, false) }
