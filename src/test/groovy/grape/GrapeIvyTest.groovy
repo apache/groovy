@@ -420,4 +420,15 @@ class GrapeIvyTest extends CompilableTestSupport {
         '''
         assert System.getProperty('groovy7548prop') == 'y'
     }
+
+    @Test // GROOVY-7649
+    void testResolveSucceedsAfterFailure() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+
+        shouldFail{
+            Grape.resolve([classLoader:loader], [], [groupId:'bogus', artifactId:'bogus', version:'0.1'])
+        }
+
+        Grape.resolve([classLoader:loader], [], [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'])
+    }
 }
