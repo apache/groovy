@@ -402,7 +402,7 @@ public abstract class BaseTemplate implements Writable {
      * Imports a template and renders it using the specified model, allowing fine grained composition of templates and
      * layouting. This works similarily to a template include but allows a distinct model to be used. If the layout
      * inherits from the parent model, a new model is created, with the values from the parent model, eventually
-     * overriden with those provided specifically for this layout.
+     * overridden with those provided specifically for this layout.
      *
      * @param model        model to be passed to the template
      * @param templateName the name of the template to be used as a layout

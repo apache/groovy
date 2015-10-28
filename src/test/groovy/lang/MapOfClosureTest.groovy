@@ -64,7 +64,7 @@ class MapOfClosureTest extends GroovyTestCase {
     }
 
     /**
-     * Checks public and protected methods from parents can also be overriden by the Map coercion to classes.
+     * Checks public and protected methods from parents can also be overridden by the Map coercion to classes.
      */
     void testOverrideProtectedMethods() {
         def b = [pub: { "map pub" }, prot: { "map prot" }, child: { "map child" }] as B
@@ -76,7 +76,7 @@ class MapOfClosureTest extends GroovyTestCase {
     }
 
     /**
-     * Checks that abstract methods can also be overriden.
+     * Checks that abstract methods can also be overridden.
      */
     void testAbstractMethodIsOverrided() {
         def a = [abstractMethod: { "map abstract" }] as A
@@ -85,7 +85,7 @@ class MapOfClosureTest extends GroovyTestCase {
     }
 
     /**
-     * Verify that complex method signatures, even with primitive types and arrays, can be overriden.
+     * Verify that complex method signatures, even with primitive types and arrays, can be overridden.
      */
     void testComplexMethodSignature() {
         def c = [foo: { int a, List b, Double[] c -> ["map foo"] as String[] }] as C

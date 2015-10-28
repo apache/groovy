@@ -1744,8 +1744,8 @@ of a closure: its type is inferred from the body of the closure.
 .Closures vs methods
 ****
 It's worth noting that return type inference is only applicable to closures. While the type checker could do the
-same on a method, it is in practice not desirable: _in general_, methods can be overriden and it is not statically
-possible to make sure that the method which is called is not an overriden version. So flow typing would actually
+same on a method, it is in practice not desirable: _in general_, methods can be overridden and it is not statically
+possible to make sure that the method which is called is not an overridden version. So flow typing would actually
 think that a method returns something, while in reality, it could return something else, like illustrated in the
 following example:
 

@@ -838,7 +838,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_process
 <11> we add that expression to the annotation node, which is now `@CompileStatic(TypeCheckingMode.SKIP)`
 <12> return the generated annotation
 
-In the example, the `visit` method is the only method which has to be overriden. It is meant to return a list of
+In the example, the `visit` method is the only method which has to be overridden. It is meant to return a list of
 annotation nodes that will be added to the node annotated with the meta-annotation. In this example, we return a
 single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
 

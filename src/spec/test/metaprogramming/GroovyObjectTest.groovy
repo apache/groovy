@@ -80,14 +80,14 @@ class POGO {
     String property 
     
     void setProperty(String name, Object value) {
-        this.@"$name" = 'overriden'
+        this.@"$name" = 'overridden'
     }
 }
 
 def pogo = new POGO()
 pogo.property = 'a'
 
-assert pogo.property == 'overriden'
+assert pogo.property == 'overridden'
 // end::groovy_set_property[]
 '''
     }
