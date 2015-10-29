@@ -74,7 +74,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * The generated proxy implements the {@link GroovyObject} interface.
  *
- * Additionaly, this proxy generator supports delegation to another object. In that case, if a method is defined
+ * Additionally, this proxy generator supports delegation to another object. In that case, if a method is defined
  * both in the closure map and the delegate, the version from the map is preferred. This allows overriding methods
  * from delegates with ease.
  *
@@ -525,7 +525,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private String proxyName() {
-        String name = delegateClass!=null?delegateClass.getName():superClass.getName();
+        String name = delegateClass != null ? delegateClass.getName() : superClass.getName();
+        if (name.startsWith("[") && name.endsWith(";")) {
+            name = name.substring(1, name.length() - 1) + "_array";
+        }
         int index = name.lastIndexOf('.');
         if (index == -1) return name + pxyCounter.incrementAndGet() + "_groovyProxy";
         return name.substring(index + 1, name.length()) + pxyCounter.incrementAndGet() + "_groovyProxy";
@@ -541,10 +544,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
         }
         Class parent = clazz.getSuperclass();
-        if (parent !=null) {
-            return isImplemented(parent, name, desc);
-        }
-        return false;
+        return parent != null && isImplemented(parent, name, desc);
     }
 
     @Override
