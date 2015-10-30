@@ -616,13 +616,7 @@ public class InvokerHelper {
         }
         if (arguments instanceof String) {
             if (verbose) {
-                String arg = ((String) arguments)
-                        // must replace backslashes first, as the other replacements add backslashes not to be escaped
-                        .replace("\\", "\\\\")      // backslash
-                        .replace("\n", "\\n")    // line feed
-                        .replaceAll("\\r", "\\\\r")      // carriage return
-                        .replaceAll("\\t", "\\\\t")      // tab
-                        .replaceAll("\\f", "\\\\f")      // form feed
+                String arg = escapeBackslashes((String) arguments)
                         .replaceAll("'", "\\\\'");    // single quotation mark
                 return "\'" + arg + "\'";
             } else {
@@ -632,6 +626,16 @@ public class InvokerHelper {
         // TODO: For GROOVY-2599 do we need something like below but it breaks other things
 //        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
         return arguments.toString();
+    }
+
+    public static String escapeBackslashes(String orig) {
+        // must replace backslashes first, as the other replacements add backslashes not to be escaped
+        return orig
+                .replace("\\", "\\\\")           // backslash
+                .replace("\n", "\\n")            // line feed
+                .replaceAll("\\r", "\\\\r")      // carriage return
+                .replaceAll("\\t", "\\\\t")      // tab
+                .replaceAll("\\f", "\\\\f");     // form feed
     }
 
     private static String formatMap(Map map, boolean verbose, int maxSize) {

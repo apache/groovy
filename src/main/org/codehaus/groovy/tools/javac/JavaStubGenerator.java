@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -952,7 +953,8 @@ public class JavaStubGenerator {
     }
 
     private static String escapeSpecialChars(String value) {
-        return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
+        return InvokerHelper.escapeBackslashes(value).replace("\"", "\\\"");
+
     }
 
     private static boolean isInterfaceOrTrait(ClassNode cn) {
