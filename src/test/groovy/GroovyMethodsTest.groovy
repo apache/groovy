@@ -1471,6 +1471,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    void testCollectEntriesWithArray() {
+        def cityList = '1 San Francisco,2 Cupertino'
+        def cityMap = cityList.split(',').
+                collectEntries{ it.split(' ', 2) }
+        assert cityMap == ['1': 'San Francisco', '2': 'Cupertino']
+    }
+
     void testListTakeWhile() {
         def data = [
             new ArrayList( [ 1, 3, 2 ] ),
