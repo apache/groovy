@@ -14988,17 +14988,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static float trunc(Float number, int precision) {
+        if (number < 0f) {
+            return (float)(Math.ceil(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
+        }
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
     }
 
     /**
      * Truncate the value
      *
-     * @param number a Double
-     * @return the Double truncated to 0 decimal places (i.e. a synonym for floor)
+     * @param number a Float
+     * @return the Float truncated to 0 decimal places
      * @since 1.6.0
      */
     public static float trunc(Float number) {
+        if (number < 0f) {
+            return (float)Math.ceil(number.doubleValue());
+        }
         return (float)Math.floor(number.doubleValue());
     }
 
@@ -15029,10 +15035,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Truncate the value
      *
      * @param number a Double
-     * @return the Double truncated to 0 decimal places (i.e. a synonym for floor)
+     * @return the Double truncated to 0 decimal places
      * @since 1.6.4
      */
     public static double trunc(Double number) {
+        if (number < 0d) {
+            return Math.ceil(number);
+        }
         return Math.floor(number);
     }
 
@@ -15045,6 +15054,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.4
      */
     public static double trunc(Double number, int precision) {
+        if (number < 0d) {
+            return Math.ceil(number *Math.pow(10,precision))/Math.pow(10,precision);
+        }
         return Math.floor(number *Math.pow(10,precision))/Math.pow(10,precision);
     }
 
