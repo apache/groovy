@@ -73,6 +73,13 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(f, 4), 1000.1234f);
         assertEquals(DefaultGroovyMethods.trunc(f, 5), 1000.12345f);
         assertEquals(DefaultGroovyMethods.trunc(f, 6), 1000.123456f);
+
+        Float f2 = -123.739f
+
+        assertEquals(DefaultGroovyMethods.trunc(f2), -123.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 0), -123.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 1), -123.7f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 2), -123.73f)
     }
 
     public void testDoubleTruncate() throws Exception {
@@ -86,6 +93,13 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(d, 4), 1000.1234);
         assertEquals(DefaultGroovyMethods.trunc(d, 5), 1000.12345);
         assertEquals(DefaultGroovyMethods.trunc(d, 6), 1000.123456);
+
+        Double d2 = -123.739d
+
+        assertEquals(DefaultGroovyMethods.trunc(d2), -123.0d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 0), -123.0d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 1), -123.7d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 2), -123.73d)
     }
 
     // GROOVY-6626
