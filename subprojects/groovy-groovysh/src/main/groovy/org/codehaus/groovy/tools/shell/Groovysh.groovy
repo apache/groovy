@@ -354,7 +354,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     /**
      * Format the given number suitable for rendering as a line number column.
      */
-    private String formatLineNumber(final int num) {
+    protected String formatLineNumber(final int num) {
         assert num >= 0
 
         // Make a %03d-like string for the line number
@@ -407,7 +407,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     // Recording
     //
 
-    private void maybeRecordInput(final String line) {
+    protected void maybeRecordInput(final String line) {
         RecordCommand record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
@@ -415,7 +415,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
     }
 
-    private void maybeRecordResult(final Object result) {
+    protected void maybeRecordResult(final Object result) {
         RecordCommand record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
@@ -423,7 +423,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
     }
 
-    private void maybeRecordError(Throwable cause) {
+    protected void maybeRecordError(Throwable cause) {
         RecordCommand record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
