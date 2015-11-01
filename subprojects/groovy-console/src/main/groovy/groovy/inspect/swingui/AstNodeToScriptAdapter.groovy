@@ -72,7 +72,7 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
     * @param script
     *    the source code to be compiled. If invalid, a compile error occurs
     * @param compilePhase
-    *    the CompilePhase. Must be an int mapped in @{link CompilePhase}
+    *    the CompilePhase. Must be an int mapped in {@link CompilePhase}
     * @param classLoader
     *    (optional) the classloader to use. If missing/null then the current is used.    
     *    This parameter enables things like ASTBrowser to invoke this with the correct classpath

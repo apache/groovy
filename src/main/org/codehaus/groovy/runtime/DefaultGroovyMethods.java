@@ -10631,7 +10631,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts the given collection to another type. A default concrete
      * type is used for List, Set, or SortedSet. If the given type has
      * a constructor taking a collection, that is used. Otherwise, the
-     * call is deferred to {link #asType(Object,Class)}.  If this
+     * call is deferred to {@link #asType(Object,Class)}.  If this
      * collection is already of the given type, the same instance is
      * returned.
      *
@@ -10698,7 +10698,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Converts the given array to either a List, Set, or
      * SortedSet.  If the given class is something else, the
-     * call is deferred to {link #asType(Object,Class)}.
+     * call is deferred to {@link #asType(Object,Class)}.
      *
      * @param ary   an array
      * @param clazz the desired class
