@@ -61,6 +61,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15077,6 +15078,68 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return Math.ceil(number *Math.pow(10,precision))/Math.pow(10,precision);
         }
         return Math.floor(number *Math.pow(10,precision))/Math.pow(10,precision);
+    }
+
+    /**
+     * Round the value
+     * <p>
+     * Note that this method differs from {@link java.math.BigDecimal#round(java.math.MathContext)}
+     * which specifies the digits to retain starting from the leftmost nonzero
+     * digit. This methods rounds the integral part to the nearest whole number.
+     *
+     * @param number a BigDecimal
+     * @return the rounded value of that BigDecimal
+     * @see #round(java.math.BigDecimal, int)
+     * @see java.math.BigDecimal#round(java.math.MathContext)
+     * @since 2.5.0
+     */
+    public static BigDecimal round(BigDecimal number) {
+        return round(number, 0);
+    }
+
+    /**
+     * Round the value
+     * <p>
+     * Note that this method differs from {@link java.math.BigDecimal#round(java.math.MathContext)}
+     * which specifies the digits to retain starting from the leftmost nonzero
+     * digit. This method operates on the fractional part of the number and
+     * the precision argument specifies the number of digits to the right of
+     * the decimal point to retain.
+     *
+     * @param number a BigDecimal
+     * @param precision the number of decimal places to keep
+     * @return a BigDecimal rounded to the number of decimal places specified by precision
+     * @see #round(java.math.BigDecimal)
+     * @see java.math.BigDecimal#round(java.math.MathContext)
+     * @since 2.5.0
+     */
+    public static BigDecimal round(BigDecimal number, int precision) {
+        return number.setScale(precision, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Truncate the value
+     *
+     * @param number a BigDecimal
+     * @return a BigDecimal truncated to 0 decimal places
+     * @see #trunc(java.math.BigDecimal, int)
+     * @since 2.5.0
+     */
+    public static BigDecimal trunc(BigDecimal number) {
+        return trunc(number, 0);
+    }
+
+    /**
+     * Truncate the value
+     *
+     * @param number a BigDecimal
+     * @param precision the number of decimal places to keep
+     * @return a BigDecimal truncated to the number of decimal places specified by precision
+     * @see #trunc(java.math.BigDecimal)
+     * @since 2.5.0
+     */
+    public static BigDecimal trunc(BigDecimal number, int precision) {
+        return number.setScale(precision, RoundingMode.DOWN);
     }
 
     /**
