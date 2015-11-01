@@ -69,6 +69,11 @@ public class ObjectRangeTest extends TestCase {
         assertEquals(5, mixed.size());
         mixed = createRange('7',  new BigDecimal("59.5"));
         assertEquals(5, mixed.size());
+
+        // integer overflow
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(0L, Integer.MAX_VALUE + 1L).size());
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(Long.MIN_VALUE, Long.MAX_VALUE).size());
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(new BigInteger("-10"), new BigInteger(Long.toString((long) Integer.MAX_VALUE) + 1L)).size());
     }
 
     public void testProperties() {
