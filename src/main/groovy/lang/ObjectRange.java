@@ -271,33 +271,49 @@ public class ObjectRange extends AbstractList implements Range {
 
     public int size() {
         if (size == -1) {
+            int tempsize = 0;
             if ((from instanceof Integer || from instanceof Long)
                     && (to instanceof Integer || to instanceof Long)) {
                 // let's fast calculate the size
-                long fromNum = ((Number) from).longValue();
-                long toNum = ((Number) to).longValue();
-                size = (int) (toNum - fromNum + 1);
+                BigInteger fromNum = new BigInteger(from.toString());
+                BigInteger toNum = new BigInteger(to.toString());
+                BigInteger sizeNum = toNum.subtract(fromNum).add(new BigInteger("1"));
+                tempsize = sizeNum.intValue();
+                if (!BigInteger.valueOf(tempsize).equals(sizeNum)) {
+                    tempsize = Integer.MAX_VALUE;
+                }
             } else if (from instanceof Character && to instanceof Character) {
                 // let's fast calculate the size
                 char fromNum = (Character) from;
                 char toNum = (Character) to;
-                size = toNum - fromNum + 1;
+                tempsize = toNum - fromNum + 1;
             } else if (((from instanceof BigDecimal || from instanceof BigInteger ) && to instanceof Number) ||
                     ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal(from.toString());
                 BigDecimal toNum = new BigDecimal(to.toString());
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
-                size = sizeNum.intValue();
+                tempsize = sizeNum.intValue();
+                if (!BigInteger.valueOf(tempsize).equals(sizeNum)) {
+                    tempsize = Integer.MAX_VALUE;
+                }
             } else {
                 // let's brute-force calculate the size by iterating start to end
                 Iterator iter = new StepIterator(this, 1);
-                int tempsize = 0;
                 while (iter.hasNext()) {
                     tempsize++;
+                    // integer overflow
+                    if (tempsize < 0) {
+                        break;
+                    }
                     iter.next();
                 }
-                size = tempsize;            }
+            }
+            // integer overflow
+            if (tempsize < 0) {
+                tempsize = Integer.MAX_VALUE;
+            }
+            size = tempsize;
         }
         return size;
     }
