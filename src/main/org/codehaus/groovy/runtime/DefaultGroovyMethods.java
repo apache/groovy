@@ -170,6 +170,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //            NioGroovyMethods.class
     };
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+    private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<Comparable>();
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -1115,8 +1116,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static int numberAwareCompareTo(Comparable self, Comparable other) {
-        NumberAwareComparator<Comparable> numberAwareComparator = new NumberAwareComparator<Comparable>();
-        return numberAwareComparator.compare(self, other);
+        return COMPARABLE_NUMBER_AWARE_COMPARATOR.compare(self, other);
     }
 
     /**
