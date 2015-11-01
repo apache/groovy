@@ -300,20 +300,17 @@ class GroovyshTest extends GroovyTestCase {
  */
 class GroovyshInterpreterModeTest extends GroovyshTest {
 
-    @Override
-    void setUp() {
-        super.setUp()
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
-    }
-
-    @Override
-    void tearDown() {
-        super.tearDown()
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'false')
-    }
-
     void testBoundVar() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = new Groovysh(testio) {
+            @Override
+            protected String getPreference(String key, String theDefault) {
+                if (key == INTERPRETER_MODE_PREFERENCE_KEY) {
+                    return 'true'
+                }
+                return super.getPreference(key, theDefault)
+            }
+        }
+
         groovysh.execute('int x = 3')
         assert mockOut.toString().length() > 0
         assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
@@ -323,7 +320,15 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
     }
 
     void testBoundVarmultiple() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = new Groovysh(testio) {
+            @Override
+            protected String getPreference(String key, String theDefault) {
+                if (key == INTERPRETER_MODE_PREFERENCE_KEY) {
+                    return 'true'
+                }
+                return super.getPreference(key, theDefault)
+            }
+        }
         groovysh.execute('int x, y, z')
         assert mockOut.toString().length() > 0
         assert ' 0\n' == mockOut.toString().normalize()[-3..-1]
