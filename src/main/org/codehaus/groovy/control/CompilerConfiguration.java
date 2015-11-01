@@ -378,8 +378,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Method to configure a this CompilerConfiguration by using Properties.
-     * For a list of available properties look at {link {@link #CompilerConfiguration(Properties)}.
+     * Method to configure a CompilerConfiguration by using Properties.
+     * For a list of available properties look at {@link #CompilerConfiguration(Properties)}.
      * @param configuration The properties to get flag values from.
      */
     public void configure(Properties configuration) throws ConfigurationException {
@@ -499,7 +499,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Gets the currently configured warning level.  See WarningMessage
+     * Gets the currently configured warning level. See {@link WarningMessage}
      * for level details.
      */
     public int getWarningLevel() {
@@ -507,7 +507,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets the warning level.  See WarningMessage for level details.
+     * Sets the warning level. See {@link WarningMessage} for level details.
      */
     public void setWarningLevel(int level) {
         if (level < WarningMessage.NONE || level > WarningMessage.PARANOIA) {
