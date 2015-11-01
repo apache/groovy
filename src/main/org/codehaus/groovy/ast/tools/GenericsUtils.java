@@ -155,6 +155,18 @@ public class GenericsUtils {
         }
 
         if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
+        if (node.isGenericsPlaceHolder()) {
+            extractPlaceholdersFromPlaceholder(node, map);
+        } else {
+            extractPlaceholdersFromType(node, map);
+        }
+    }
+
+    private static void extractPlaceholdersFromPlaceholder(ClassNode node, Map<String, GenericsType> map) {
+        setExtractedPlaceholder(node.getName(), new GenericsType(node.redirect()), map);
+    }
+
+    private static void extractPlaceholdersFromType(ClassNode node, Map<String, GenericsType> map) {
         GenericsType[] parameterized = node.getGenericsTypes();
         if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
@@ -164,24 +176,27 @@ public class GenericsUtils {
             if (redirectType.isPlaceholder()) {
                 String name = redirectType.getName();
                 if (!map.containsKey(name)) {
-                    GenericsType value = parameterized[i];
-                    map.put(name, value);
-                    if (value.isWildcard()) {
-                        ClassNode lowerBound = value.getLowerBound();
-                        if (lowerBound!=null) {
-                            extractPlaceholders(lowerBound, map);
-                        }
-                        ClassNode[] upperBounds = value.getUpperBounds();
-                        if (upperBounds!=null) {
-                            for (ClassNode upperBound : upperBounds) {
-                                extractPlaceholders(upperBound, map);
-                            }
-                        }
-                    } else if (!value.isPlaceholder()) {
-                        extractPlaceholders(value.getType(), map);
-                    }
+                    setExtractedPlaceholder(name, parameterized[i], map);
                 }
             }
+        }
+    }
+
+    private static void setExtractedPlaceholder(String name, GenericsType value, Map<String, GenericsType> map) {
+        map.put(name, value);
+        if (value.isWildcard()) {
+            ClassNode lowerBound = value.getLowerBound();
+            if (lowerBound!=null) {
+                extractPlaceholders(lowerBound, map);
+            }
+            ClassNode[] upperBounds = value.getUpperBounds();
+            if (upperBounds!=null) {
+                for (ClassNode upperBound : upperBounds) {
+                    extractPlaceholders(upperBound, map);
+                }
+            }
+        } else if (!value.isPlaceholder()) {
+            extractPlaceholders(value.getType(), map);
         }
     }
 

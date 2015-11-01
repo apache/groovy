@@ -20,10 +20,8 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
-import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7538Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    @NotYetImplemented
+class Groovy7538Bug extends StaticTypeCheckingTestCase {
     void testFluentSubTypeToSuperType() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7538Support
             Groovy7538Support.assertThat("true").isNotEmpty().isNotEqualTo("false")
