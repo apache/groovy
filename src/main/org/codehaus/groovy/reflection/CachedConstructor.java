@@ -45,9 +45,12 @@ public class CachedConstructor extends ParameterTypes {
                     return null;
                 }
             });
-        }
-        catch (SecurityException e) {
+        } catch (SecurityException e) {
             // IGNORE
+        } catch (RuntimeException re) {
+            // test for JDK9 JIGSAW
+            if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
+            // else IGNORE
         }
     }
 

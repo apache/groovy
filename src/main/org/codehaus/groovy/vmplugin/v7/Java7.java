@@ -57,6 +57,10 @@ public class Java7 extends Java6 {
             }
         } catch (SecurityException se) {
             con = null;
+        } catch (RuntimeException re) {
+            // test for JDK9 JIGSAW
+            if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
+            con = null;
         }
         LOOKUP_Constructor = con;
     }
