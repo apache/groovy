@@ -36,6 +36,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
+import org.codehaus.groovy.transform.sc.TemporaryVariableExpression;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -426,6 +427,13 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         // if call is spread safe, replace it with a for in loop
         if (spreadSafe && origin instanceof MethodCallExpression) {
+            // List literals should not be visited twice, avoid by using a temporary variable for the receiver
+            if (receiver instanceof ListExpression) {
+                TemporaryVariableExpression tmp = new TemporaryVariableExpression(receiver);
+                makeCall(origin, tmp, message, arguments, adapter, true, true, false);
+                tmp.remove(controller);
+                return;
+            }
             MethodVisitor mv = controller.getMethodVisitor();
             CompileStack compileStack = controller.getCompileStack();
             TypeChooser typeChooser = controller.getTypeChooser();

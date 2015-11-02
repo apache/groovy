@@ -80,6 +80,25 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         '''
     }
 
+    // GROOVY-7656
+    void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
+        try {
+            assertScript '''
+                class Foo {
+                    static void test() {
+                        def list = [1, 2]
+                        def lengths = [list << 3]*.size()
+                        assert lengths == [3]
+                        assert list == [1, 2, 3]
+                    }
+                }
+                Foo.test()
+            '''
+        } finally {
+            assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
+        }
+    }
+
     @Override
     void testForInLoop() {
         try {
