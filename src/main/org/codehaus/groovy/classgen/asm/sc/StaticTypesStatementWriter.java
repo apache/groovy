@@ -234,7 +234,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
-
+        compileStack.removeVar(iteratorIdx);
     }
 
     private void writeEnumerationBasedForEachLoop(
