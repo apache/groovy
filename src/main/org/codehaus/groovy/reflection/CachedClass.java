@@ -55,6 +55,9 @@ public class CachedClass {
                            AccessibleObject.setAccessible(df, true);
                        } catch (SecurityException e) {
                            // swallow for strict security managers
+                       } catch (RuntimeException re) {
+                           // test for JDK9 JIGSAW
+                           if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
                        }
                        return df;                                                   
                    }
