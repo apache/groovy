@@ -15,12 +15,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7363Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    @NotYetImplemented
     void testCascadingGenericTypes() {
         assertScript """import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7363Support
             Groovy7363Support.ABC a = new Groovy7363Support.ABC()
