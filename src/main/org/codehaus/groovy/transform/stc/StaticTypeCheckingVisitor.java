@@ -4292,9 +4292,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType explicitTypeHint = explicitTypeHints[i];
                     resolvedPlaceholders.put(methodGenericType.getName(), explicitTypeHint);
                 }
-                for (GenericsType typeHint : explicitTypeHints) {
-                    System.err.println("Type hint = " + typeHint);
-                }
             }
         }
     }
