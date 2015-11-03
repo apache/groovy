@@ -59,6 +59,8 @@ public class Groovydoc extends Task {
     private Boolean includeMainForScripts;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;
+    private Boolean noTimestamp;
+    private Boolean noVersionStamp;
     private List<DirSet> packageSets;
     private List<String> sourceFilesToDoc;
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
@@ -84,6 +86,8 @@ public class Groovydoc extends Task {
         author = true;
         processScripts = true;
         includeMainForScripts = true;
+        noTimestamp = false;
+        noVersionStamp = false;
     }
 
     /**
@@ -117,6 +121,24 @@ public class Groovydoc extends Task {
      */
     public void setAuthor(boolean author) {
         this.author = author;
+    }
+
+    /**
+     * If set to true, hidden timestamp will not appear within generated HTML.
+     *
+     * @param noTimestamp new value
+     */
+    public void setNoTimestamp(boolean noTimestamp) {
+        this.noTimestamp = noTimestamp;
+    }
+
+    /**
+     * If set to true, hidden version stamp will not appear within generated HTML.
+     *
+     * @param noVersionStamp new value
+     */
+    public void setNoVersionStamp(boolean noVersionStamp) {
+        this.noVersionStamp = noVersionStamp;
     }
 
     /**
@@ -424,6 +446,8 @@ public class Groovydoc extends Task {
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
         properties.setProperty("charset", charset != null ? charset : "");
         properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
+        properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
+        properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
