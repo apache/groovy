@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of tuple constructors in classes.
+ * Do not use with {@link InheritConstructors}.
  * <p>
  * It allows you to write classes in this shortened form:
  * <pre>

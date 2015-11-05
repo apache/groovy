@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation to make constructors from a super class available in a sub class.
+ * Do not use with {@link TupleConstructor}.
  * <p>
  * {@code @InheritConstructors} saves you typing some boilerplate code.
  * <p>
