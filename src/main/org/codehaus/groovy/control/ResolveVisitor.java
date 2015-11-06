@@ -139,7 +139,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * does for vanilla names starting with a lower case letter. The idea
      * that if we use a vanilla name with a lower case letter, that this
      * is in most cases no class. If it is a class the class needs to be
-     * imported explicitly. The efffect is that in an expression like
+     * imported explicitly. The effect is that in an expression like
      * "def foo = bar" we do not have to use a loadClass call to check the
      * name foo and bar for being classes. Instead we will ask the module
      * for an alias for this name which is much faster.
@@ -163,7 +163,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (redirect()!=this) {
                 return super.setName(name);
             } else {
-                throw new GroovyBugError("ConstructedClassWithPackage#setName should not be called");
+                throw new GroovyBugError("LowerCaseClass#setName should not be called");
             }
         }
     }
