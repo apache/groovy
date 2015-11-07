@@ -624,6 +624,28 @@ class CharScannerTest extends GroovyTestCase {
         )
     }
 
+    void testParseJsonNumberToDecimal() {
+        def num = CharScanner.parseJsonNumber('123.40'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == 123.40G
+        assert num.scale() == 2
+
+        num = CharScanner.parseJsonNumber('-123.400'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == -123.400G
+        assert num.scale() == 3
+
+        num = CharScanner.parseJsonNumber('3.7e-5'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == 0.000037G
+        assert num.scale() == 6
+
+        num = CharScanner.parseJsonNumber('-1.25E+7'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == -12500000.0G
+        assert num.scale() == -5
+    }
+
     protected assertArrayEquals(char[] expected, char[] actual) {
         assertArrayEquals((Object[]) expected, (Object[]) actual)
     }
