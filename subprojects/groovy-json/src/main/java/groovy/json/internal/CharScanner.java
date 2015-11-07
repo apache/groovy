@@ -653,23 +653,8 @@ public class CharScanner {
             } else {
                 value = parseLongFromTo(buffer, from, index);
             }
-        } else if (foundDot && simple) {
-            BigDecimal lvalue;
-
-            if (length < powersOf10.length) {
-                if (isInteger(buffer, from, length)) {
-                    lvalue = new BigDecimal(parseIntFromToIgnoreDot(buffer, from, index));
-                } else {
-                    lvalue = new BigDecimal(parseLongFromToIgnoreDot(buffer, from, index));
-                }
-
-                BigDecimal power = new BigDecimal(powersOf10[digitsPastPoint]);
-                value = lvalue.divide(power);
-            } else {
-                value = new BigDecimal(new String(buffer, from, length));
-            }
         } else {
-            value = new BigDecimal(new String(buffer, from, index - from));
+            value = parseBigDecimal(buffer, from, length);
         }
 
         if (size != null) {
