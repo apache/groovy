@@ -97,6 +97,36 @@ class GroovyshTest extends GroovyTestCase {
         }
     }
 
+    void testIncompleteBracketMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('a = [')
+        groovysh.execute('1,')
+        groovysh.execute('2,')
+        groovysh.execute('3')
+        groovysh.execute(']')
+        groovysh.execute('a.size() == 3')
+        assert mockOut.toString().contains('true')
+    }
+
+    void testIncompleteParenMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('mc = { num1, num2 -> num1 + num2 }')
+        groovysh.execute('mc(3')
+        groovysh.execute(',')
+        groovysh.execute('7')
+        groovysh.execute(') == 10')
+        assert mockOut.toString().contains('true')
+    }
+
+    void testIncompleteBraceMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('mc = {')
+        groovysh.execute('3')
+        groovysh.execute('}')
+        groovysh.execute('mc() == 3')
+        assert mockOut.toString().contains('true')
+    }
+
     void testMissingPropertyExpr() {
         Groovysh groovysh = createGroovysh()
         // this is a special case, e.g. happens for Gradle DefaultExtraPropertiesExtension

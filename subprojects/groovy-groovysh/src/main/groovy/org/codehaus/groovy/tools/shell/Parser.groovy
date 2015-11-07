@@ -181,7 +181,8 @@ final class RigidParser implements Parsing
                 // HACK: Super insane hack... we detect a syntax error, but might still ignore
                 // it depending on the line ending
                 if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim()) ||
-                    isAnnotationExpression(e, buffer[-1].trim())) {
+                        isAnnotationExpression(e, buffer[-1].trim()) ||
+                        hasUnmatchedOpenBracketOrParen(source)) {
                     log.debug("Ignoring parse failure; might be valid: $e")
                 } else {
                     error = e
@@ -209,6 +210,25 @@ final class RigidParser implements Parsing
             }
         }
         return false
+    }
+
+    static boolean hasUnmatchedOpenBracketOrParen(String source) {
+        if (!source) {
+            return false
+        }
+        int parens = 0
+        int brackets = 0
+        for (ch in source) {
+            switch(ch) {
+                case '[': ++brackets; break;
+                case ']': --brackets; break;
+                case '(': ++parens; break;
+                case ')': --parens; break;
+                default:
+                    break
+            }
+        }
+        return (brackets > 0 || parens > 0)
     }
 
     static boolean isAnnotationExpression(CompilationFailedException e, String line) {
