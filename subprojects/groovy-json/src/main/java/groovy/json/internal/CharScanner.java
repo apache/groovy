@@ -684,7 +684,7 @@ public class CharScanner {
     }
 
     public static BigDecimal parseBigDecimal(char[] buffer, int from, int to) {
-        return new BigDecimal(parseDouble(buffer, from, to));
+        return new BigDecimal(buffer, from, to);
     }
 
     public static float parseFloat(char[] buffer, int from, int to) {
