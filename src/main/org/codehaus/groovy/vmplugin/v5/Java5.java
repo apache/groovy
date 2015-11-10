@@ -390,7 +390,7 @@ public class Java5 implements VMPlugin {
         } catch (NoClassDefFoundError e) {
             throw new NoClassDefFoundError("Unable to load class "+classNode.toString(false)+" due to missing dependency "+e.getMessage());
         } catch (MalformedParameterizedTypeException e) {
-            throw new MalformedParameterizedTypeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
+            throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
         }
     }
 
