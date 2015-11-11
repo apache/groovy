@@ -71,7 +71,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     /**
-     * Creates a new {@link ObjectRange,} assumes smaller <= larger, else behavior is undefined.
+     * Creates a new {@link ObjectRange} assumes smaller <= larger, else behavior is undefined.
      * Caution: Prefer the other constructor when in doubt.
      *
      * Optimized Constructor avoiding initial computation of comparison.
