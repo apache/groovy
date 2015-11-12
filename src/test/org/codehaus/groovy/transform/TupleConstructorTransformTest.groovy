@@ -111,4 +111,30 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testCombiningWithInheritConstructors_groovy7524() {
+        assertScript '''
+            import groovy.transform.*
+
+            @TupleConstructor
+            class NameId {
+                String name
+                Integer id
+            }
+
+            @ToString(includeSuperProperties=true, ignoreNulls=true, includeNames=true)
+            @TupleConstructor(force=true, defaults=false)
+            //@TupleConstructor(force=true, defaults=false, includeSuperProperties=true)
+            @InheritConstructors
+            class Cat extends NameId {
+                Double age
+            }
+
+            assert new Cat("Felix").toString() == 'Cat(name:Felix)'
+            assert new Cat("Felix", 42).toString() == 'Cat(name:Felix, id:42)'
+            //assert new Cat("Felix", 42, 3.5d).toString() == 'Cat(age:3.5, name:Felix, id:42)'
+            assert new Cat(3.5d).toString() == 'Cat(age:3.5)'
+            assert new Cat().toString() == 'Cat()'
+        '''
+    }
+
 }
