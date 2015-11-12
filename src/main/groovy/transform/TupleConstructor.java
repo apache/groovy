@@ -71,11 +71,10 @@ import java.lang.annotation.Target;
  * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property (or field)</li>
  * </ul>
  *
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.TupleConstructorASTTransformation")
 public @interface TupleConstructor {
