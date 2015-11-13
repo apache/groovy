@@ -966,6 +966,22 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 |=======================================================================
 
+Setting the `defaults` annotation attribute to `false` and the `force` annotation attribute to `true` allows
+multiple tuple constructors to be created by using different customization options for the different cases
+(provided each case has a different type signature) as shown in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_multiple,indent=0]
+----
+
+Similarly, here is another example using different options for `includes`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_multipleIncludes,indent=0]
+----
+
 [[xform-MapConstructor]]
 ===== @groovy.transform.MapConstructor
 

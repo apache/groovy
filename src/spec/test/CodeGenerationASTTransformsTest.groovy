@@ -579,6 +579,51 @@ assert new Musician('Jimi', 'Guitar', 1942).toString() == 'Musician(Jimi, Guitar
 assert Musician.constructors.size() == 1
 // end::tupleconstructor_example_defaults_false[]
 '''
+
+        assertScript '''
+import groovy.transform.*
+// tag::tupleconstructor_example_defaults_multiple[]
+class Named {
+  String name
+}
+
+@ToString(includeSuperProperties=true, ignoreNulls=true, includeNames=true, includeFields=true)
+@TupleConstructor(force=true, defaults=false)
+@TupleConstructor(force=true, defaults=false, includeFields=true)
+@TupleConstructor(force=true, defaults=false, includeSuperProperties=true)
+class Book extends Named {
+  Integer published
+  private Boolean fiction
+  Book() {}
+}
+
+assert new Book("Regina", 2015).toString() == 'Book(published:2015, name:Regina)'
+assert new Book(2015, false).toString() == 'Book(published:2015, fiction:false)'
+assert new Book(2015).toString() == 'Book(published:2015)'
+assert new Book().toString() == 'Book()'
+assert Book.constructors.size() == 4
+// end::tupleconstructor_example_defaults_multiple[]
+'''
+
+        assertScript '''
+import groovy.transform.*
+// tag::tupleconstructor_example_defaults_multipleIncludes[]
+@ToString(includeSuperProperties=true, ignoreNulls=true, includeNames=true, includeFields=true)
+@TupleConstructor(force=true, defaults=false, includes='name,year')
+@TupleConstructor(force=true, defaults=false, includes='year,fiction')
+@TupleConstructor(force=true, defaults=false, includes='name,fiction')
+class Book {
+    String name
+    Integer year
+    Boolean fiction
+}
+
+assert new Book("Regina", 2015).toString() == 'Book(name:Regina, year:2015)'
+assert new Book(2015, false).toString() == 'Book(year:2015, fiction:false)'
+assert new Book("Regina", false).toString() == 'Book(name:Regina, fiction:false)'
+assert Book.constructors.size() == 3
+// end::tupleconstructor_example_defaults_multipleIncludes[]
+'''
     }
 
     void testMapConstructor() {
