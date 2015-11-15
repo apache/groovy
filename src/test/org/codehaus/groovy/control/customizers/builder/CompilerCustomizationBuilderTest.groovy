@@ -321,7 +321,6 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
     }
 
     void testCompilerConfigurationBuilderStyle() {
-        println 'hello'
         def config = new CompilerConfiguration()
         // the "customizers" method is added through a custom metaclass
         CompilerCustomizationBuilder.withConfig(config) {
@@ -331,6 +330,16 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         def result = shell.evaluate '''class A { int x }
         new A(x:1).toString()'''
         assert result == 'A(1)'
+    }
+
+    void testCompilerConfigurationBuilderWithSecureAstCustomizer() {
+        def config = new CompilerConfiguration()
+        CompilerCustomizationBuilder.withConfig(config) {
+            secureAst {
+                importsWhitelist = []
+            }
+        }
+        assert config.compilationCustomizers.first().importsWhitelist == []
     }
 
     private static class SourceUnit {
