@@ -370,6 +370,13 @@ public class JsonParserLax extends JsonParserCharArray {
         }
     }
 
+    /**
+     * Decodes a number from a JSON value.  If at any point it is determined that
+     * the value is not a valid number the value is treated as a {@code String}.
+     *
+     * @param minus indicate whether the number is negative
+     * @return a number, or {@code String} if not a valid number
+     */
     protected final Value decodeNumberLax(boolean minus) {
         char[] array = charArray;
 
@@ -377,6 +384,9 @@ public class JsonParserLax extends JsonParserCharArray {
         int index = __index;
         char currentChar;
         boolean doubleFloat = false;
+        boolean foundDot = false;
+        boolean foundSign = false;
+        boolean foundExp = false;
 
         if (minus && index + 1 < array.length) {
             index++;
@@ -391,10 +401,39 @@ public class JsonParserLax extends JsonParserCharArray {
             } else if (isDelimiter(currentChar)) {
                 break;
             } else if (isDecimalChar(currentChar)) {
+                switch (currentChar) {
+                    case DECIMAL_POINT:
+                        if (foundDot || foundExp) { return decodeStringLax(); }
+                        foundDot = true;
+                        break;
+                    case LETTER_E:
+                    case LETTER_BIG_E:
+                        if (foundExp) { return decodeStringLax(); }
+                        foundExp = true;
+                        break;
+                    case MINUS:
+                    case PLUS:
+                        if (foundSign || !foundExp) { return decodeStringLax(); }
+                        if (foundExp && array[index - 1] != LETTER_E && array[index - 1] != LETTER_BIG_E) {
+                            return decodeStringLax();
+                        }
+                        foundSign = true;
+                        break;
+                }
                 doubleFloat = true;
+            } else {
+                return decodeStringLax();
             }
             index++;
             if (index >= array.length) break;
+        }
+
+        // Handle the case where the exponential number ends without the actual exponent
+        if (foundExp) {
+            char prevChar = array[index - 1];
+            if (prevChar == LETTER_E || prevChar == LETTER_BIG_E || prevChar == MINUS || prevChar == PLUS) {
+                return decodeStringLax();
+            }
         }
 
         __index = index;

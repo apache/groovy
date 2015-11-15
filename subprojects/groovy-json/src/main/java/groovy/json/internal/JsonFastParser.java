@@ -163,6 +163,8 @@ public class JsonFastParser extends JsonParserCharArray {
         char currentChar;
         boolean doubleFloat = false;
         boolean foundDot = false;
+        boolean foundSign = false;
+        boolean foundExp = false;
 
         if (minus && index + 1 < array.length) {
             index++;
@@ -176,17 +178,40 @@ public class JsonFastParser extends JsonParserCharArray {
                 break;
             } else if (isDelimiter(currentChar)) {
                 break;
-            } else if (currentChar == '.') {
-                if (foundDot) {
-                    complain("unexpected character " + currentChar);
-                }
-                foundDot = true;
-                doubleFloat = true;
             } else if (isDecimalChar(currentChar)) {
+                switch (currentChar) {
+                    case DECIMAL_POINT:
+                        if (foundDot || foundExp) { complain("unexpected character " + currentChar); }
+                        foundDot = true;
+                        break;
+                    case LETTER_E:
+                    case LETTER_BIG_E:
+                        if (foundExp) { complain("unexpected character " + currentChar); }
+                        foundExp = true;
+                        break;
+                    case MINUS:
+                    case PLUS:
+                        if (foundSign || !foundExp) { complain("unexpected character " + currentChar); }
+                        if (foundExp && array[index - 1] != LETTER_E && array[index - 1] != LETTER_BIG_E) {
+                            complain("unexpected character " + currentChar);
+                        }
+                        foundSign = true;
+                        break;
+                }
                 doubleFloat = true;
+            } else {
+                complain("unexpected character " + currentChar);
             }
             index++;
             if (index >= array.length) break;
+        }
+
+        // Handle the case where the exponential number ends without the actual exponent
+        if (foundExp) {
+            char prevChar = array[index - 1];
+            if (prevChar == LETTER_E || prevChar == LETTER_BIG_E || prevChar == MINUS || prevChar == PLUS) {
+                complain("unexpected character " + currentChar);
+            }
         }
 
         __index = index;
