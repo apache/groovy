@@ -99,6 +99,17 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         }
     }
 
+    //GROOVY-7442
+    void testSpreadDotOperatorWithinAssert() {
+        assertScript '''
+            def myMethod(String a, String b) {
+                assert [a, b]*.size() == [5, 5]
+            }
+
+            myMethod('hello', 'world')
+        '''
+    }
+
     @Override
     void testForInLoop() {
         try {
