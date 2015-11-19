@@ -53,9 +53,6 @@ ext.srcSpec = copySpec {
 }
 
 ext.docSpec = copySpec {
-    into('pdf') {
-        from 'src/wiki-snapshot.pdf'
-    }
     into('html/api') {
         from javadocAll.destinationDir
     }
