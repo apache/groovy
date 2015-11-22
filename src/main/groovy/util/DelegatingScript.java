@@ -107,7 +107,7 @@ public abstract class DelegatingScript extends Script {
     @Override
     public Object invokeMethod(String name, Object args) {
         try {
-            return metaClass.invokeMethod(delegate,name,args);
+            return InvokerHelper.invokeMethod(delegate, name, args);
         } catch (MissingMethodException mme) {
             return super.invokeMethod(name, args);
         }
