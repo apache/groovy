@@ -1233,9 +1233,9 @@ enumConstants
             (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
         |   nls! COMMA!
             (
-                (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
-            |
                 (nls annotationsOpt IDENT) => nls! enumConstant
+            |
+                (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
             )
         )*
     ;
