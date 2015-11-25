@@ -56,7 +56,7 @@ The following binary arithmetic operators are available in Groovy:
 | Use `intdiv()` for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
 
 | `%`
-| modulo
+| remainder
 |
 
 | `**`
@@ -679,7 +679,7 @@ The table below lists all groovy operators in order of precedence.
 |   | `[]` &#160; `++` &#160; `--` | list/map/array index, post inc/decrement
 | 2 | `**` | power
 | 3 | `++` &#160; `--` &#160; `+` &#160; `-` | pre inc/decrement, unary plus, unary minus
-| 4 | `*` &#160; `/` &#160; `%` | multiply, div, modulo
+| 4 | `*` &#160; `/` &#160; `%` | multiply, div, remainder
 | 5 | `+` &#160; `-` | addition, subtraction
 | 6 | `<<` &#160; `>>` &#160; `>>>` &#160; `..` &#160; `..<` | left/right (unsigned) shift, inclusive/exclusive range
 | 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `instanceof` &#160; `as` | less/greater than/or equal, in, instanceof, type coercion
