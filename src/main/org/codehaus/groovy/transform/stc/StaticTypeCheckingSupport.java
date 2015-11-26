@@ -1804,6 +1804,54 @@ public abstract class StaticTypeCheckingSupport {
         return map;
     }
 
+    /**
+     * Apply the bounds from the declared type when the using type simply declares a parameter as an unbounded wildcard.
+     *
+     * @param type A parameterized type
+     * @return A parameterized type with more precise wildcards
+     */
+    static ClassNode boundUnboundedWildcards(ClassNode type) {
+        if (type.isArray()) {
+            return boundUnboundedWildcards(type.getComponentType()).makeArray();
+        }
+        ClassNode target = type.redirect();
+        if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return type;
+        ClassNode newType = type.getPlainNodeReference();
+        newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
+        newType.setGenericsTypes(boundUnboundedWildcards(type.getGenericsTypes(), target.getGenericsTypes()));
+        return newType;
+    }
+
+    private static GenericsType[] boundUnboundedWildcards(GenericsType[] usage, GenericsType[] declaration) {
+        GenericsType[] newGts = new GenericsType[usage.length];
+        for (int i = 0; i < usage.length; i++) {
+            newGts[i] = boundUnboundedWildcard(usage[i], declaration[i]);
+        }
+        return newGts;
+    }
+
+    private static GenericsType boundUnboundedWildcard(GenericsType gt, GenericsType spec) {
+        if (isUnboundedWildcard(gt)) {
+            ClassNode base = ClassHelper.makeWithoutCaching("?");
+            // The bounds on the declared type are at least as good as the ones on an unbounded wildcard, since it has
+            // none!
+            GenericsType newGt = new GenericsType(base, spec.getUpperBounds(), spec.getLowerBound());
+            newGt.setWildcard(true);
+            return newGt;
+        }
+        return gt;
+    }
+
+    private static boolean isUnboundedWildcard(GenericsType gt) {
+        if (gt.isWildcard() && gt.getLowerBound() == null) {
+            ClassNode[] upperBounds = gt.getUpperBounds();
+            return upperBounds == null ||
+                    upperBounds.length == 0 ||
+                    (upperBounds.length == 1 && OBJECT_TYPE.equals(upperBounds[0]));
+        }
+        return false;
+    }
+
     static Map<String, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
         if (mn==null) return null;
         Map<String, GenericsType> map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
