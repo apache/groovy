@@ -4216,7 +4216,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
         }
         resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
-        if (resolvedPlaceholders.isEmpty()) return returnType;
+        if (resolvedPlaceholders.isEmpty()) {
+            return boundUnboundedWildcards(returnType);
+        }
         Map<String, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyGenericsConnections(placeholdersFromContext,resolvedPlaceholders);
 
