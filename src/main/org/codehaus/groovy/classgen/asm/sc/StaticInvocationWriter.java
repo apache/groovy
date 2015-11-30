@@ -439,19 +439,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             ClassNode classNode = controller.getClassNode();
             int counter = labelCounter.incrementAndGet();
 
-            // create an empty arraylist
-            VariableExpression result = new VariableExpression(
-                    "spreadresult" + counter,
-                    StaticCompilationVisitor.ARRAYLIST_CLASSNODE
-            );
+            // use a temporary variable for the arraylist in which the results of the spread call will be stored
             ConstructorCallExpression cce = new ConstructorCallExpression(StaticCompilationVisitor.ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
             cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
-            DeclarationExpression declr = new DeclarationExpression(
-                    result,
-                    Token.newSymbol("=", origin.getLineNumber(), origin.getColumnNumber()),
-                    cce
-            );
-            declr.visit(controller.getAcg());
+            TemporaryVariableExpression result = new TemporaryVariableExpression(cce);
+            result.visit(controller.getAcg());
             operandStack.pop();
             // if (receiver != null)
             tmpReceiver.visit(controller.getAcg());
@@ -497,6 +489,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (tmpReceiver instanceof TemporaryVariableExpression) {
                 ((TemporaryVariableExpression) tmpReceiver).remove(controller);
             }
+            result.remove(controller);
         } else if (safe && origin instanceof MethodCallExpression) {
             // wrap call in an IFNULL check
             MethodVisitor mv = controller.getMethodVisitor();
