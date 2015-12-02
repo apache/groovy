@@ -518,4 +518,19 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
             }
         }
     }
+
+    //GROOVY-7698
+    void testSafePropertyStyleSetterCalls() {
+        assertScript '''
+            class Foo {
+                private String id
+
+                void setId(String id) {
+                    this.id = id
+                }
+            }
+            Foo foo = null
+            foo?.id = 'new'
+        '''
+    }
 }
