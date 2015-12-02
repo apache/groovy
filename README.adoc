@@ -56,11 +56,11 @@ You don't need the source code to use Apache Groovy but if you wish to explore i
 
 Apache Groovy uses Git. The official Git repository is at:
 
-    http://git-wip-us.apache.org/repos/asf/incubator-groovy.git
+    https://git-wip-us.apache.org/repos/asf/groovy.git
 
 And a mirror is hosted on Github:
 
-    https://github.com/apache/incubator-groovy
+    https://github.com/apache/groovy
 
 The Github mirror is read-only and provides convenience to users and developers to explore the code and for the community to accept contributions via Github pull requests.
 
