@@ -219,7 +219,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         int dist = 0;
         if (args.length<params.length) return -1;
-        // we already know the lengths are equal
+        // we already know there are at least params.length elements in both arrays
         for (int i = 0; i < params.length; i++) {
             ClassNode paramType = params[i].getType();
             ClassNode argType = args[i];
@@ -281,7 +281,7 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode vargsBase = params[params.length - 1].getType().getComponentType();
         for (int i = params.length; i < args.length; i++) {
             if (!isAssignableTo(args[i],vargsBase)) return -1;
-            else if (!args[i].equals(vargsBase)) dist+=getDistance(args[i], vargsBase);
+            else dist += getClassDistance(vargsBase, args[i]);
         }
         return dist;
     }
@@ -949,10 +949,8 @@ public abstract class StaticTypeCheckingSupport {
         int bestDist = Integer.MAX_VALUE;
         Collection<MethodNode> choicesLeft = removeCovariants(methods);
         for (MethodNode candidateNode : choicesLeft) {
-            ClassNode declaringClass = candidateNode.getDeclaringClass();
-            ClassNode actualReceiver = receiver!=null?receiver: declaringClass;
-            final ClassNode declaringClassForDistance = declaringClass;
-            final ClassNode actualReceiverForDistance = actualReceiver;
+            ClassNode declaringClassForDistance = candidateNode.getDeclaringClass();
+            ClassNode actualReceiverForDistance = receiver != null ? receiver : candidateNode.getDeclaringClass();
             MethodNode safeNode = candidateNode;
             ClassNode[] safeArgs = args;
             boolean isExtensionMethodNode = candidateNode instanceof ExtensionMethodNode;
@@ -961,8 +959,6 @@ public abstract class StaticTypeCheckingSupport {
                 System.arraycopy(args, 0, safeArgs, 1, args.length);
                 safeArgs[0] = receiver;
                 safeNode = ((ExtensionMethodNode) candidateNode).getExtensionMethodNode();
-                declaringClass = safeNode.getDeclaringClass();
-                actualReceiver = declaringClass;
             }
 
             // todo : corner case
@@ -979,52 +975,35 @@ public abstract class StaticTypeCheckingSupport {
             Parameter[] params = makeRawTypes(safeNode.getParameters());
             if (params.length == safeArgs.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, safeArgs);
-                boolean firstParamMatches = true;
-                // check first parameters
-                if (safeArgs.length > 0) {
-                    Parameter[] firstParams = new Parameter[params.length - 1];
-                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
-                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, safeArgs) >= 0;
-                }
-                int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, safeArgs):-1;
+                int firstParamDist = firstParametersAndArgumentsMatch(params, safeArgs);
+                int lastArgMatch = isVargs(params) && firstParamDist >= 0?lastArgMatchesVarg(params, safeArgs):-1;
                 if (lastArgMatch>=0) {
-                    lastArgMatch += 256-params.length; // ensure exact matches are preferred over vargs
+                    lastArgMatch += getVarargsDistance(params);
                 }
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
-                if (dist>=0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
-                if (dist>=0 && !isExtensionMethodNode) {
-                    dist++;
-                }
-                if (dist>=0 && dist<bestDist) {
-                    bestChoices.clear();
-                    bestChoices.add(candidateNode);
-                    bestDist = dist;
-                } else if (dist>=0 && dist==bestDist) {
-                    bestChoices.add(candidateNode);
+                if (dist >= 0) {
+                    dist += getClassDistance(declaringClassForDistance, actualReceiverForDistance);
+                    dist += getExtensionDistance(isExtensionMethodNode);
+                    if (dist < bestDist) {
+                        bestChoices.clear();
+                        bestChoices.add(candidateNode);
+                        bestDist = dist;
+                    } else if (dist == bestDist) {
+                        bestChoices.add(candidateNode);
+                    }
                 }
             } else if (isVargs(params)) {
-                boolean firstParamMatches = true;
-                int dist = -1;
-                // check first parameters
-                if (safeArgs.length > 0) {
-                    Parameter[] firstParams = new Parameter[params.length - 1];
-                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
-                    dist = allParametersAndArgumentsMatch(firstParams, safeArgs);
-                    firstParamMatches =  dist >= 0;
-                } else {
-                    dist = 0;
-                }
-                if (firstParamMatches) {
+                int dist = firstParametersAndArgumentsMatch(params, safeArgs);
+                if (dist >= 0) {
                     // there are three case for vargs
                     // (1) varg part is left out
                     if (params.length == safeArgs.length + 1) {
-                        if (dist>=0) {
-                            dist += 256-params.length; // ensure exact matches are preferred over vargs
-                        }
-                        if (bestDist > 1+dist) {
+                        dist += getVarargsDistance(params);
+                        dist++; // increment to discriminate foo(Object,String) vs foo(Object,String, Object...)
+                        if (dist < bestDist) {
                             bestChoices.clear();
                             bestChoices.add(candidateNode);
-                            bestDist = 1+dist; // 1+dist to discriminate foo(Object,String) vs foo(Object,String, Object...)
+                            bestDist = dist;
                         }
                     } else {
                         // (2) last argument is put in the vargs array
@@ -1033,20 +1012,18 @@ public abstract class StaticTypeCheckingSupport {
                         int excessArgumentsDistance = excessArgumentsMatchesVargsParameter(params, safeArgs);
                         if (excessArgumentsDistance < 0) continue;
                         dist += excessArgumentsDistance;
-                        if (dist >= 0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
+                        dist += getClassDistance(declaringClassForDistance, actualReceiverForDistance);
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)
-                        dist+=256-params.length;
-                        if (dist>=0 && !isExtensionMethodNode) {
-                            dist++;
-                        }
-                        if (params.length < safeArgs.length && dist >= 0) {
-                            if (dist >= 0 && dist < bestDist) {
+                        dist += getVarargsDistance(params);
+                        dist += getExtensionDistance(isExtensionMethodNode);
+                        if (params.length < safeArgs.length) {
+                            if (dist < bestDist) {
                                 bestChoices.clear();
                                 bestChoices.add(candidateNode);
                                 bestDist = dist;
-                            } else if (dist >= 0 && dist == bestDist) {
+                            } else if (dist == bestDist) {
                                 bestChoices.add(candidateNode);
                             }
                         }
@@ -1067,6 +1044,32 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return bestChoices;
+    }
+
+    private static int firstParametersAndArgumentsMatch(Parameter[] params, ClassNode[] safeArgs) {
+        int dist = 0;
+        // check first parameters
+        if (params.length > 0) {
+            Parameter[] firstParams = new Parameter[params.length - 1];
+            System.arraycopy(params, 0, firstParams, 0, firstParams.length);
+            dist = allParametersAndArgumentsMatch(firstParams, safeArgs);
+        }
+        return dist;
+    }
+
+    private static int getVarargsDistance(Parameter[] params) {
+        return 256 - params.length; // ensure exact matches are preferred over vargs
+    }
+
+    private static int getClassDistance(ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
+        if (actualReceiverForDistance.equals(declaringClassForDistance)) {
+            return 0;
+        }
+        return getDistance(actualReceiverForDistance, declaringClassForDistance);
+    }
+
+    private static int getExtensionDistance(boolean isExtensionMethodNode) {
+        return isExtensionMethodNode ? 0 : 1;
     }
 
     private static Parameter[] makeRawTypes(Parameter[] params) {
