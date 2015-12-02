@@ -154,7 +154,7 @@ You may download other distributions of Groovy from https://bintray.com/groovy/m
 
 === Source Code
 
-If you prefer to live on the bleeding edge, you can also grab the https://github.com/apache/incubator-groovy[source code from GitHub].
+If you prefer to live on the bleeding edge, you can also grab the https://github.com/apache/groovy[source code from GitHub].
 
 === IDE plugin
 

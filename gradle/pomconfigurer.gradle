@@ -590,9 +590,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             url 'http://issues.apache.org/jira/browse/GROOVY'
         }
         scm {
-            connection 'scm:git:https://github.com/apache/incubator-groovy.git'
-            developerConnection 'scm:git:https://github.com/apache/incubator-groovy.git'
-            url 'https://github.com/apache/incubator-groovy.git'
+            connection 'scm:git:https://github.com/apache/groovy.git'
+            developerConnection 'scm:git:https://github.com/apache/groovy.git'
+            url 'https://github.com/apache/groovy.git'
         }
     }
 }

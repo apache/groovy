@@ -75,7 +75,7 @@ You can find live icon:twitter[] https://twitter.com/hashtag/groovylang[#groovyl
 
 === Where is Groovy ?
 
-Open source developers often need somewhere to keep all their assets. These assets are typically stored in a repository somewhere on the internet. icon:github[link="https://github.com/"] https://github.com/[*GitHub*] is one such storage facility. At *[blue]#Groovy#*, we keep https://github.com/apache/incubator-groovy[our _source code_ here]. 
+Open source developers often need somewhere to keep all their assets. These assets are typically stored in a repository somewhere on the internet. icon:github[link="https://github.com/"] https://github.com/[*GitHub*] is one such storage facility. At *[blue]#Groovy#*, we keep https://github.com/apache/groovy[our _source code_ here].
 
 Visit our *[blue]#Groovy#* information portal at image:assets/img/groovy.png[Groovy Website, 60, 30, link="http://groovy-lang.org/"] 
 
@@ -96,7 +96,7 @@ Sometimes, you may spot a tiny flaw in our otherwise perfect product. It's buggi
 
 [red yellow-background big]*Sure icon:exclamation[]*
 
-Let's say you need to fix the [blue]#Groovy# README.adoc file in https://github.com/apache/incubator-groovy[https://github.com/apache/incubator-groovy] - our core location.
+Let's say you need to fix the [blue]#Groovy# README.adoc file in https://github.com/apache/groovy[https://github.com/apache/groovy] - our core location.
 
 '''
 
@@ -114,7 +114,7 @@ Your view should look like this, except it will say +groovy / groovy-core+ ( thi
 '''
 
 .README.adoc View
-image::assets/img/example16.png[Details, align="center", link="https://github.com/apache/incubator-groovy/blob/master/README.adoc"] 
+image::assets/img/example16.png[Details, align="center", link="https://github.com/apache/groovy/blob/master/README.adoc"]
 
 This view is the current content of the *README* file. You can see ( but not edit ) the raw text by clicking the +RAW+ button. But for this example, you want to change some text. The red arrow points to the editor *PENCIL*. Click that to open an editable version of this page. See below.
 
@@ -122,7 +122,7 @@ This view is the current content of the *README* file. You can see ( but not edi
 '''
 
 .Groovy-core/README.adoc page
-image::assets/img/example17.png[Details, align="center", link="https://github.com/apache/incubator-groovy/blob/master/README.adoc"] 
+image::assets/img/example17.png[Details, align="center", link="https://github.com/apache/groovy/blob/master/README.adoc"]
 
 Confirm you're on the correct page ( blue square ). Then on line 80, after the words _Continuous Integration_ add the word _Server_
 
@@ -145,7 +145,7 @@ First we look at the home of [blue]#Groovy# . Then we review the structure and i
 
 === Notes About GitHub
 
-At *[blue]#Groovy#*, we keep https://github.com/apache/incubator-groovy[our _source code_ here].
+At *[blue]#Groovy#*, we keep https://github.com/apache/groovy[our _source code_ here].
 
 ==== GitHub Information
 
@@ -210,10 +210,10 @@ From here on, we've assumed you have logged into your own *GitHub* account.
 
 ==== Visit Groovy Core Repository on GitHub
 
-Open a web browser, then use address https://github.com/apache/incubator-groovy[https://github.com/apache/incubator-groovy] to review the [blue]#Groovy# code base. It looks like this :
+Open a web browser, then use address https://github.com/apache/groovy[https://github.com/apache/groovy] to review the [blue]#Groovy# code base. It looks like this :
 
-.Groovy Core on *Github* icon:github[link="https://github.com/apache/incubator-groovy", window="_blank"]
-image::assets/img/github4.png[Groovy Core Repository on GitHub, 495, 436, link="https://github.com/apache/incubator-groovy",align="center"] 
+.Groovy Core on *Github* icon:github[link="https://github.com/apache/groovy", window="_blank"]
+image::assets/img/github4.png[Groovy Core Repository on GitHub, 495, 436, link="https://github.com/apache/groovy",align="center"]
 
 There are a number of folders within the [blue]#Groovy# code base. The most important folders are */src* and */subprojects* as these folders hold the base code and scripts for [blue]#Groovy#.
 
@@ -221,23 +221,23 @@ There are a number of folders within the [blue]#Groovy# code base. The most impo
 
 The core of [blue]#Groovy# lives within this folder. Here is where we find a variety of artifacts, scripts, tests, resources, images, etc. 
 
-.Groovy Core Source Folder on *Github* icon:github[link="https://github.com/apache/incubator-groovy/tree/master/src", window="_blank"]
-image::assets/img/github1.png[Groovy Core Source, 497, 313, link="https://github.com/apache/incubator-groovy/tree/master/src",align="center"] 
+.Groovy Core Source Folder on *Github* icon:github[link="https://github.com/apache/groovy/tree/master/src", window="_blank"]
+image::assets/img/github1.png[Groovy Core Source, 497, 313, link="https://github.com/apache/groovy/tree/master/src",align="center"]
 
 
 ==== The +/subprojects+ Folder
 
 [blue]#Groovy# has many additional features that are not part of the core system. Source code for these added features can be found in the *subprojects* folder. It looks something like this :
 
-.Groovy Core Sub-Projects Source Folder on *Github*  icon:github[link="https://github.com/apache/incubator-groovy/tree/master/subprojects", window="_blank"]
-image::assets/img/github2.png[Groovy Core Source, 499, 397, link="https://github.com/apache/incubator-groovy/tree/master/subprojects",align="center"] 
+.Groovy Core Sub-Projects Source Folder on *Github*  icon:github[link="https://github.com/apache/groovy/tree/master/subprojects", window="_blank"]
+image::assets/img/github2.png[Groovy Core Source, 499, 397, link="https://github.com/apache/groovy/tree/master/subprojects",align="center"]
 
 ==== The Documentation Folder
 
 Within each */src* and */subproject/src* is a */spec* documents folder that exists, or will soon be created. 
 
-.Groovy Document Specifications Folder on *Github*  icon:github[link="https://github.com/apache/incubator-groovy/tree/master/src/spec", window="_blank"]
-image::assets/img/github3.png[Groovy Documents Source, 500, 185, link="https://github.com/apache/incubator-groovy/tree/master/src/spec",align="center"] 
+.Groovy Document Specifications Folder on *Github*  icon:github[link="https://github.com/apache/groovy/tree/master/src/spec", window="_blank"]
+image::assets/img/github3.png[Groovy Documents Source, 500, 185, link="https://github.com/apache/groovy/tree/master/src/spec",align="center"]
 
 The two most useful folders here are */doc* and */test*. These two folders hold our documents and test cases.
 
@@ -246,14 +246,14 @@ The two most useful folders here are */doc* and */test*. These two folders hold 
 All of our documents are written as typical text files encoded as *UTF-8* characters. The text is styled in the markup syntax known as http://asciidoctor.org/docs/user-manual/[*asciidoc*] or http://asciidoctor.org/docs/user-manual/[*asciidoctor*] ( the more recent version ). These text files have a filename suffix designation of *.adoc*.
 
 .Groovy Documentation Folder on *Github*
-image::assets/img/github5.png[Groovy Documents Folder, 501, 170, link="https://github.com/apache/incubator-groovy/tree/master/src/spec/doc",align="center"] 
+image::assets/img/github5.png[Groovy Documents Folder, 501, 170, link="https://github.com/apache/groovy/tree/master/src/spec/doc",align="center"]
 
 ===== Test Cases
 
 To prove that [blue]#Groovy# modules work as expected, we often construct test cases that exercise code logic. These test cases are actually [blue]#Groovy# scripts that reside in the */test* folder.
 
-.Groovy Core Test Folder on *Github* icon:github[link="https://github.com/apache/incubator-groovy/tree/master/src/spec/test", window="_blank"]
-image::assets/img/github6.png[Groovy Testcase Folder, 505, 303, link="https://github.com/apache/incubator-groovy/tree/master/src/spec/test",align="center"] 
+.Groovy Core Test Folder on *Github* icon:github[link="https://github.com/apache/groovy/tree/master/src/spec/test", window="_blank"]
+image::assets/img/github6.png[Groovy Testcase Folder, 505, 303, link="https://github.com/apache/groovy/tree/master/src/spec/test",align="center"]
 
 If you would like to know more about writing effective test cases, please http://groovy-lang.org/testing.html[review this link].
  
@@ -287,16 +287,16 @@ Ok, let's look for the *groovy-core* repository. In the field named +Search or t
 ''' 
 
 .Fork Groovy Core on *GitHub*
-image::assets/img/githubfork.png[Fork The Code, 541, 156, link="https://github.com/apache/incubator-groovy",align="center"] 
+image::assets/img/githubfork.png[Fork The Code, 541, 156, link="https://github.com/apache/groovy",align="center"]
 
 So you can work on your own version of [blue]#Groovy#, you'll need to make a copy of it. This copy is placed in your own *GitHub* account under your credentials. This task of making a copy is known as *Fork* -ing.
 
 Check you're logged into your own *GitHub* account before you start to search.
 
-Fork the https://github.com/apache/incubator-groovy[groovy/groovy-core] repository on *GitHub* to your own *GitHub* account. Click the +Fork+ button while on the *groovy/groovy-core* panel. When you look at your own *GitHub* home page, you'll see the list of your forked repos and any new repos you make.
+Fork the https://github.com/apache/groovy[groovy/groovy-core] repository on *GitHub* to your own *GitHub* account. Click the +Fork+ button while on the *groovy/groovy-core* panel. When you look at your own *GitHub* home page, you'll see the list of your forked repos and any new repos you make.
 
 .Fork Groovy Core on *GitHub*
-image::assets/img/repolist.png[List of Repos, link="https://github.com/apache/incubator-groovy",align="center"] 
+image::assets/img/repolist.png[List of Repos, link="https://github.com/apache/groovy",align="center"]
 
 You now have your own version of [blue]#Groovy# in your *GitHub* account on the remote server. Next, you'll want to bring a copy of it onto your local system. It's easier to work with documents and test cases that way.
 
@@ -496,7 +496,7 @@ As you update documents, you may need to see how it looks. Following the previou
 
 Do you have a special interest, or know some areas where you have some knowledge or where your skills may be useful ? There are many areas where your expertise can be put to good use. Here's one idea.
 
-Open the https://github.com/apache/incubator-groovy/tree/master/src/spec/doc[Groovy Documentation Tree]. There are a large number of  document files, one for each core component and each separate sub-project extension within [blue]#Groovy#. These are simple text file (no funny stuff)  in a markup syntax called *asciidoc*. Document files end with *.adoc*.
+Open the https://github.com/apache/groovy/tree/master/src/spec/doc[Groovy Documentation Tree]. There are a large number of  document files, one for each core component and each separate sub-project extension within [blue]#Groovy#. These are simple text file (no funny stuff)  in a markup syntax called *asciidoc*. Document files end with *.adoc*.
 
 '''
 
@@ -781,7 +781,7 @@ icon:thumbs-up[] Ok, let's review test cases next.
 
 === Review Current Tests
 
-Review the https://github.com/apache/incubator-groovy/tree/master/src/spec/test[Test Case] folder. There may already be tests that cover your area of interest. Some were written before tag standards  came into existence. It might be as simple as adding asciidoctor tags around a test method.
+Review the https://github.com/apache/groovy/tree/master/src/spec/test[Test Case] folder. There may already be tests that cover your area of interest. Some were written before tag standards  came into existence. It might be as simple as adding asciidoctor tags around a test method.
 
 ==== Change Known Test Cases 
 
@@ -992,9 +992,9 @@ Follow the directions given in link:groovy-contributions.html#_stand_and_declare
 
 ==== Groovy *PULL* Requests
 
-In a browser, enter https://github.com/apache/incubator-groovy[https://github.com/apache/incubator-groovy] to see the *groovy-core* home page in *GitHub*. It's where we can get to the feature to ask our changes to be merged.
+In a browser, enter https://github.com/apache/groovy[https://github.com/apache/groovy] to see the *groovy-core* home page in *GitHub*. It's where we can get to the feature to ask our changes to be merged.
 
-image::assets/img/example2.png[GitHub Groovy-core, 794, 182, align="center", link="https://github.com/apache/incubator-groovy"] 
+image::assets/img/example2.png[GitHub Groovy-core, 794, 182, align="center", link="https://github.com/apache/groovy"]
 
 Take a look here. See *[blue]#Pull Request#* +24+  ? This is where you can see how many other *PULL* requests are open, waiting to be done. Clicking +Pull Requests+ gives you the next view.  The [white green-background]*New pull request* button is there
 
@@ -1004,7 +1004,7 @@ Take a look here. See *[blue]#Pull Request#* +24+  ? This is where you can see h
 
 ==== *PULL* The Other One
 
-image::assets/img/example4.png[Groovy-core PULL list, 877, 463, align="center", link="https://github.com/apache/incubator-groovy/pulls"] 
+image::assets/img/example4.png[Groovy-core PULL list, 877, 463, align="center", link="https://github.com/apache/groovy/pulls"]
 
 These are the current *PULL* requests for [blue]#Groovy#. Notice how each request has a title ? It's important to provide some idea about what a request will do.
 
@@ -1062,9 +1062,9 @@ Now, you've submitted your request to [blue]#Groovy# admins icon:user[]  and rec
 
 Again, do the same thing we did to create the request.
 
-To follow the progress of your request, in a browser, enter https://github.com/apache/incubator-groovy[https://github.com/apache/incubator-groovy] to see the *groovy-core* home page in *GitHub*. 
+To follow the progress of your request, in a browser, enter https://github.com/apache/groovy[https://github.com/apache/groovy] to see the *groovy-core* home page in *GitHub*.
 
-image::assets/img/example2.png[GitHub Groovy-core, 794, 182, align="center", link="https://github.com/apache/incubator-groovy"] 
+image::assets/img/example2.png[GitHub Groovy-core, 794, 182, align="center", link="https://github.com/apache/groovy"]
 
 Look again. This is where you can saw how many other *PULL* requests were open, waiting to be done, including yours. Clicking +Pull Request+ took you to the next page for that view.  
 
@@ -1075,7 +1075,7 @@ Look again. This is where you can saw how many other *PULL* requests were open, 
 ==== The *PULL* List
 
 .List Of Requests
-image::assets/img/example4.png[Groovy-core PULL list, 877, 463, align="center", link="https://github.com/apache/incubator-groovy/pulls"] 
+image::assets/img/example4.png[Groovy-core PULL list, 877, 463, align="center", link="https://github.com/apache/groovy/pulls"]
 
 Here are waiting *PULL* requests for [blue]#Groovy#. As this example is about adding *new Builder Documentation*, it was given a request number *488*. Look down the page to find it. 
 
