@@ -355,7 +355,7 @@ groovy -Dgrape.root=/repo/grape yourscript.groovy
 
 You can customize the ivy settings that Grape uses by creating a
 ~/.groovy/grapeConfig.xml file. If no such file exists,
-https://github.com/apache/incubator-groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
+https://github.com/apache/groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
 are the default settings used by Grape.
 
 For more information on how to customize these settings, please refer to

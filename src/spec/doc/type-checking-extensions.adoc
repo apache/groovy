@@ -1084,11 +1084,11 @@ type checking extensions and AST transformations.
 
 Examples of real life type checking extensions are easy to find. You can download the source code for Groovy and
 take a look at the
-https://github.com/apache/incubator-groovy/blob/master/src/test/groovy/transform/stc/TypeCheckingExtensionsTest.groovy[TypeCheckingExtensionsTest]
+https://github.com/apache/groovy/blob/master/src/test/groovy/transform/stc/TypeCheckingExtensionsTest.groovy[TypeCheckingExtensionsTest]
 class which is linked to
-https://github.com/apache/incubator-groovy/tree/master/src/test-resources/groovy/transform/stc[various extension scripts].
+https://github.com/apache/groovy/tree/master/src/test-resources/groovy/transform/stc[various extension scripts].
 
 An example of a complex type checking extension can be found in the link:markup-template-engine.html[Markup Template Engine]
 source code: this template engine relies on a type checking extension and AST transformations to transform templates into
 fully statically compiled code. Sources for this can be found
-https://github.com/apache/incubator-groovy/tree/master/subprojects/groovy-templates/src/main/groovy/groovy/text/markup[here].
+https://github.com/apache/groovy/tree/master/subprojects/groovy-templates/src/main/groovy/groovy/text/markup[here].
