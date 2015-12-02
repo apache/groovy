@@ -231,6 +231,51 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testIterableAndClosure() {
+        def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
+        Iterable it = [iterator:{->
+            authors.iterator()
+        }] as Iterable
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder(w)
+            json it, { Author author ->
+                name author.name
+            }
+
+            assert w.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+        }
+    }
+
+    void testMethodWithIterableAndClosure() {
+        def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
+        Iterable it = [iterator:{->
+            authors.iterator()
+        }] as Iterable
+
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder(w)
+            json.authors it, { Author author ->
+                name author.name
+            }
+
+            assert w.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+        }
+    }
+
+    void testMethodWithArrayAndClosure() {
+        def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
+
+
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder(w)
+            json.authors authors as Author[], { Author author ->
+                name author.name
+            }
+
+            assert w.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+        }
+    }
+
     void testMethodWithCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
