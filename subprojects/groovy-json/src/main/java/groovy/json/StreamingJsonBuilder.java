@@ -210,6 +210,13 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     }
 
     /**
+     * Delegates to {@link #call(Iterable, Closure)}
+     */
+    public Object call(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        return call((Iterable)coll, c);
+    }
+
+    /**
      * A closure passed to a JSON builder will create a root JSON object
      * <p>
      * Example:
@@ -291,6 +298,13 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         writer.write(JsonOutput.COLON);
         call(coll, c);
         writer.write(JsonOutput.CLOSE_BRACE);
+    }
+
+    /**
+     * Delegates to {@link #call(String, Iterable, Closure)}
+     */
+    public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        call(name, (Iterable)coll, c);
     }
 
     /**
@@ -571,6 +585,13 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         }
 
         /**
+         * Delegates to {@link #call(String, Iterable, Closure)}
+         */
+        public void call(String name, Collection coll, Closure c) throws IOException {
+            call(name, (Iterable)coll, c);
+        }
+
+        /**
          * Writes the name and value of a JSON attribute
          *
          * @param name The attribute name
@@ -665,6 +686,10 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
 
         public static boolean isCollectionWithClosure(Object[] args) {
             return args.length == 2 && args[0] instanceof Iterable && args[1] instanceof Closure;
+        }
+
+        public static Object writeCollectionWithClosure(Writer writer, Collection coll, Closure closure) throws IOException {
+            return writeCollectionWithClosure(writer, (Iterable)coll, closure);
         }
 
         public static Object writeCollectionWithClosure(Writer writer, Iterable coll, Closure closure) throws IOException {
