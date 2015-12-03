@@ -218,8 +218,6 @@ import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
  * facade behavior associated with the various aspects of managing
  * the interaction with the underlying database.
  *
- * This class is <b>not</b> thread-safe.
- *
  * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
@@ -3467,7 +3465,7 @@ public class Sql {
      *
      * @param cacheStatements the new value
      */
-    public void setCacheStatements(boolean cacheStatements) {
+    public synchronized void setCacheStatements(boolean cacheStatements) {
         this.cacheStatements = cacheStatements;
         if (!cacheStatements) {
             clearStatementCache();
@@ -3489,7 +3487,7 @@ public class Sql {
      * @param closure the given closure
      * @throws SQLException if a database error occurs
      */
-    public void cacheConnection(Closure closure) throws SQLException {
+    public synchronized void cacheConnection(Closure closure) throws SQLException {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
@@ -3514,7 +3512,7 @@ public class Sql {
      * @param closure the given closure
      * @throws SQLException if a database error occurs
      */
-    public void withTransaction(Closure closure) throws SQLException {
+    public synchronized void withTransaction(Closure closure) throws SQLException {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
@@ -3833,7 +3831,7 @@ public class Sql {
      * @throws SQLException if a database error occurs
      * @see #setCacheStatements(boolean)
      */
-    public void cacheStatements(Closure closure) throws SQLException {
+    public synchronized void cacheStatements(Closure closure) throws SQLException {
         boolean savedCacheStatements = cacheStatements;
         cacheStatements = true;
         Connection connection = null;
@@ -4314,11 +4312,15 @@ public class Sql {
 
     private void clearStatementCache() {
         Statement statements[];
-        if (statementCache.isEmpty())
-            return;
-        statements = new Statement[statementCache.size()];
-        statementCache.values().toArray(statements);
-        statementCache.clear();
+        synchronized (statementCache) {
+            if (statementCache.isEmpty())
+                return;
+            // Arrange to call close() outside synchronized block, since
+            // the close may involve server requests.
+            statements = new Statement[statementCache.size()];
+            statementCache.values().toArray(statements);
+            statementCache.clear();
+        }
         for (Statement s : statements) {
             try {
                 s.close();
@@ -4334,10 +4336,12 @@ public class Sql {
     private Statement getAbstractStatement(AbstractStatementCommand cmd, Connection connection, String sql) throws SQLException {
         Statement stmt;
         if (cacheStatements) {
-            stmt = statementCache.get(sql);
-            if (stmt == null) {
-                stmt = cmd.execute(connection, sql);
-                statementCache.put(sql, stmt);
+            synchronized (statementCache) { // checking for existence without sync can cause leak if object needs close().
+                stmt = statementCache.get(sql);
+                if (stmt == null) {
+                    stmt = cmd.execute(connection, sql);
+                    statementCache.put(sql, stmt);
+                }
             }
         } else {
             stmt = cmd.execute(connection, sql);
