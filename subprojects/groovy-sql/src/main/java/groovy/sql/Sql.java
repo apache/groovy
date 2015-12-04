@@ -898,7 +898,7 @@ public class Sql {
      * used. Depending on which features you are using, you may be able to do
      * this on the connection object directly but the preferred approach is to
      * call the {@link #close()} method which will close the connection but also
-     * free any caches resources.
+     * free any cached resources.
      *
      * @param connection the Connection to use
      */
