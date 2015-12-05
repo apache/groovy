@@ -305,10 +305,7 @@ public class JsonOutput {
             } else if (Enum.class.isAssignableFrom(objectClass)) {
                 buffer.addQuoted(((Enum<?>) object).name());
             }else if (File.class.isAssignableFrom(objectClass)){
-                Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
-                properties.remove("class");
-                properties.remove("declaringClass");
-                properties.remove("metaClass");
+                Map<?, ?> properties = getObjectProperties(object);
                 //Clean up all recursive references to File objects
                 Iterator<? extends Map.Entry<?, ?>> iterator = properties.entrySet().iterator();
                 while(iterator.hasNext()){
@@ -320,13 +317,18 @@ public class JsonOutput {
 
                 writeMap(properties, buffer);
             } else {
-                Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
-                properties.remove("class");
-                properties.remove("declaringClass");
-                properties.remove("metaClass");
+                Map<?, ?> properties = getObjectProperties(object);
                 writeMap(properties, buffer);
             }
         }
+    }
+
+    private static Map<?, ?> getObjectProperties(Object object) {
+        Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
+        properties.remove("class");
+        properties.remove("declaringClass");
+        properties.remove("metaClass");
+        return properties;
     }
 
 
