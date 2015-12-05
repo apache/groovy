@@ -47,9 +47,10 @@ public class JsonDelegate extends GroovyObjectSupport {
 
             if (arr.length == 1) {
                 val = arr[0];
-            } else if (arr.length == 2 && arr[0] instanceof Collection && arr[1] instanceof Closure) {
+            } else if (isIterableOrArrayAndClosure(arr)) {
                 Closure<?> closure = (Closure<?>) arr[1];
-                Iterator<?> iterator = ((Collection) arr[0]).iterator();
+                Iterator<?> iterator = (arr[0] instanceof Iterable) ?
+                        ((Iterable) arr[0]).iterator() : Arrays.asList((Object[])arr[0]).iterator();
                 List<Object> list = new ArrayList<Object>();
                 while (iterator.hasNext()) {
                     list.add(curryDelegateAndGetContent(closure, iterator.next()));
@@ -62,6 +63,13 @@ public class JsonDelegate extends GroovyObjectSupport {
         content.put(name, val);
 
         return val;
+    }
+
+    private boolean isIterableOrArrayAndClosure(Object[] args) {
+        if (args.length != 2 || !(args[1] instanceof Closure)) {
+            return false;
+        }
+        return ((args[0] instanceof Iterable) || (args[0] != null && args[0].getClass().isArray()));
     }
 
     /**
