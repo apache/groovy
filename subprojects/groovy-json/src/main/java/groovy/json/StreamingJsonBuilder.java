@@ -616,7 +616,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writeObject(writer, value, callable);
         }
         /**
-         * Writes the name and another JSON boject
+         * Writes the name and another JSON object
          *
          * @param name The attribute name
          * @param value The value
