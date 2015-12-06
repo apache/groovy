@@ -75,7 +75,7 @@ class CollateTest extends GroovyTestCase {
   }
 
   void testEmpty() {
-    assert [].collate( 3 ) == [[]]
+    assert [].collate( 3 ) == []
   }
 
   void testZero() {
