@@ -3055,7 +3055,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
         List<T> selfList = asList(self);
         List<List<T>> answer = new ArrayList<List<T>>();
-        if (size <= 0 || selfList.isEmpty()) {
+        if (size <= 0) {
             answer.add(selfList);
         } else {
             for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
@@ -6306,7 +6306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(Iterable)
      * @since 1.0
      */
-    @Deprecated 
+    @Deprecated
     public static <T> T min(Collection<T> self) {
         return GroovyCollections.min(self);
     }
@@ -11387,7 +11387,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
-     * For collection of custom objects; objects should implement java.lang.Comparable  
+     * For collection of custom objects; objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
      *
      * @param left  a Collection
@@ -11423,7 +11423,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * For collection of custom objects; objects should implement java.lang.Comparable  
+     * For collection of custom objects; objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
      *
      * @param left  an Iterable
@@ -14494,7 +14494,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14514,7 +14514,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14534,7 +14534,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14554,7 +14554,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14574,7 +14574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14594,7 +14594,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14614,7 +14614,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
@@ -14692,7 +14692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
@@ -14701,7 +14701,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else {
             BigDecimal to1 = new BigDecimal(to.toString());
@@ -14710,7 +14710,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to upto() cannot be less than the value (" + self + ") it's called on.");
         }
     }
@@ -14732,7 +14732,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
@@ -14752,7 +14752,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
@@ -14772,7 +14772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
@@ -14792,7 +14792,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
@@ -14811,7 +14811,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
@@ -14830,7 +14830,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
@@ -14849,7 +14849,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
@@ -14924,7 +14924,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
@@ -14932,7 +14932,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else {
             BigDecimal to1 = new BigDecimal(to.toString());
             if (self.compareTo(to1) >= 0) {
@@ -14940,7 +14940,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
+                throw new GroovyRuntimeException("The argument (" + to +
                         ") to downto() cannot be greater than the value (" + self + ") it's called on.");        }
     }
 
