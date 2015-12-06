@@ -72,8 +72,7 @@ public class GroovyCategorySupport {
         private Map<String, String> propertySetterMap;
 
         private void newScope () {
-            atomicCategoryUsageCounter.incrementAndGet();
-            categoriesInUse = atomicCategoryUsageCounter.get();
+            categoriesInUse = atomicCategoryUsageCounter.incrementAndGet();
             DefaultMetaClassInfo.setCategoryUsed(true);
             VMPluginFactory.getPlugin().invalidateCallSites();
             level++;
@@ -96,8 +95,7 @@ public class GroovyCategorySupport {
                 }
             }
             level--;
-            atomicCategoryUsageCounter.getAndDecrement();
-            categoriesInUse = atomicCategoryUsageCounter.get();
+            categoriesInUse = atomicCategoryUsageCounter.decrementAndGet();
             VMPluginFactory.getPlugin().invalidateCallSites();
             if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
             if (level == 0) {

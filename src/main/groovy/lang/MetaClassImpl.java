@@ -89,6 +89,8 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -2418,20 +2420,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static final Map<String, String> PROP_NAMES = new HashMap<String, String>(1024);
+    private static final ConcurrentMap<String, String> PROP_NAMES = new ConcurrentHashMap<String, String>(1024);
 
     private String getPropName(String methodName) {
         String name = PROP_NAMES.get(methodName);
-        if (name != null)
-            return name;
-
-        synchronized (PROP_NAMES) {
+        if (name == null) {
             // assume "is" or "[gs]et"
             String stripped = methodName.startsWith("is") ? methodName.substring(2) : methodName.substring(3);
             String propName = java.beans.Introspector.decapitalize(stripped);
-            PROP_NAMES.put(methodName, propName);
-            return propName;
+            PROP_NAMES.putIfAbsent(methodName, propName);
+            name = PROP_NAMES.get(methodName);
         }
+        return name;
     }
 
     private MetaProperty makeReplacementMetaProperty(MetaProperty mp, String propName, boolean isGetter, MetaMethod propertyMethod) {
@@ -3116,10 +3116,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return method;
             }
         }
-        //log.warning("Creating reflection based dispatcher for: " + aMethod);
-        synchronized (aMethod.cachedClass) {
-            return aMethod;
-        }
+        return aMethod;
     }
 
 

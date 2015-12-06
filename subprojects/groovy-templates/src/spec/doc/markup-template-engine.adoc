@@ -332,7 +332,7 @@ But it is also possible to override a value from the parent model:
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit_override,indent=0]
 ----
 <1> `true` means inherit from the parent model
-<2> but `title` is overriden
+<2> but `title` is overridden
 
 then the output will be:
 

@@ -3373,6 +3373,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             cn = getWrapper(cn);
         } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe() && isPrimitiveType(cn)) {
             cn = getWrapper(cn);
+        } else if (exp instanceof PropertyExpression && ((PropertyExpression) exp).isSafe() && isPrimitiveType(cn)) {
+            cn = getWrapper(cn);
         }
         if (cn == UNKNOWN_PARAMETER_TYPE) {
             // this can happen for example when "null" is used in an assignment or a method parameter.
@@ -4236,7 +4238,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
         }
         resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
-        if (resolvedPlaceholders.isEmpty()) return returnType;
+        if (resolvedPlaceholders.isEmpty()) {
+            return boundUnboundedWildcards(returnType);
+        }
         Map<String, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyGenericsConnections(placeholdersFromContext,resolvedPlaceholders);
 
@@ -4289,9 +4293,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType methodGenericType = methodGenericTypes[i];
                     GenericsType explicitTypeHint = explicitTypeHints[i];
                     resolvedPlaceholders.put(methodGenericType.getName(), explicitTypeHint);
-                }
-                for (GenericsType typeHint : explicitTypeHints) {
-                    System.err.println("Type hint = " + typeHint);
                 }
             }
         }

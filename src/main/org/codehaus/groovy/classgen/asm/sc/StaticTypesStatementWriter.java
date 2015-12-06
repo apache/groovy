@@ -145,6 +145,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitLabel(breakLabel);
 
+        compileStack.removeVar(loopIdx);
+        compileStack.removeVar(arrayLen);
+        compileStack.removeVar(array);
     }
 
     private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
@@ -234,7 +237,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
-
+        compileStack.removeVar(iteratorIdx);
     }
 
     private void writeEnumerationBasedForEachLoop(

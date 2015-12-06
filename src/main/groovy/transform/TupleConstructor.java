@@ -27,6 +27,8 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of tuple constructors in classes.
+ * Should be used with care with other annotations which create constructors - see "Known
+ * Limitations" for more details.
  * <p>
  * It allows you to write classes in this shortened form:
  * <pre>
@@ -54,17 +56,25 @@ import java.lang.annotation.Target;
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>
- * Limitations:
+ * Known Limitations:
  * <ul>
+ * <li>This AST transform might become a no-op if you are defining your own constructors or
+ * combining with other AST transforms which create constructors (e.g. {@code @InheritConstructors});
+ * the order in which the particular transforms are processed becomes important in that case.
+ * See the {@code force} attribute for further details about customizing this behavior.</li>
+ * <li>This AST transform normally uses default parameter values which creates multiple constructors under
+ * the covers. You should use with care if you are defining your own constructors or
+ * combining with other AST transforms which create constructors (e.g. {@code @InheritConstructors});
+ * the order in which the particular transforms are processed becomes important in that case.
+ * See the {@code defaults} attribute for further details about customizing this behavior.</li>
  * <li>Groovy's normal map-style naming conventions will not be available if the first property (or field)
  * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property (or field)</li>
  * </ul>
  *
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.TupleConstructorASTTransformation")
 public @interface TupleConstructor {

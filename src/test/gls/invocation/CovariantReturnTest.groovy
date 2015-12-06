@@ -159,7 +159,7 @@ public class CovariantReturnTest extends CompilableTestSupport {
 
     void testImplementedInterfacesNotInfluencing() {
         // in GROOVY-3229 some methods from Appendable were not correctly recognized
-        // as already being overriden (PrintWriter<Writer<Appenable)
+        // as already being overridden (PrintWriter<Writer<Appenable)
         shouldCompile """
             class IndentWriter extends java.io.PrintWriter {
                public IndentWriter(Writer w)  { super(w, true) }

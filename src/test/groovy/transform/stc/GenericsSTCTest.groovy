@@ -494,7 +494,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         }
         new ClassB()
-        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <java.lang.Object extends java.lang.Object>]'
+        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-5516
@@ -1664,6 +1664,30 @@ assert result == 'ok'
             }
             null
         '''
+    }
+
+    // GROOVY-7691
+    @NotYetImplemented
+    void testCovariantGenericField() {
+        assertScript '''
+            abstract class AbstractNumberWrapper<S extends Number> {
+                protected final S number;
+
+                AbstractNumberWrapper(S number) {
+                    this.number = number
+                }
+            }
+            class LongWrapper<S extends Long> extends AbstractNumberWrapper<S> {
+                LongWrapper(S longNumber) {
+                    super(longNumber)
+                }
+
+                S getValue() {
+                    return number;
+                }
+            }
+            assert new LongWrapper<Long>(42L).value == 42L
+'''
     }
 
     static class MyList extends LinkedList<String> {}

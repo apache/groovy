@@ -36,4 +36,15 @@ class GroovyshParsersTest extends GroovyTestCase {
             assert RigidParser.isAnnotationExpression(mcee, '@Override')
         }
     }
+
+    void testHasUnmatchedOpenBracketOrParen() {
+        assert RigidParser.hasUnmatchedOpenBracketOrParen('a = [')
+        assert !RigidParser.hasUnmatchedOpenBracketOrParen('a = [1,2,3]')
+        assert !RigidParser.hasUnmatchedOpenBracketOrParen('a = 1,2,3]')
+
+        assert RigidParser.hasUnmatchedOpenBracketOrParen('myfunc(3')
+        assert !RigidParser.hasUnmatchedOpenBracketOrParen('myfunc(1,2,3)')
+        assert !RigidParser.hasUnmatchedOpenBracketOrParen('a = 1,2,3)')
+    }
+
 }

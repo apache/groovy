@@ -73,7 +73,7 @@ It takes any class and decorates it so that any `String` method parameter will a
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_usage,indent=0]
 ----
 
-Just be careful with ordering here. The original decorators were restricted to decorating `Logger` objects. This decorator work with any object type, so we can't swap the ordering around, i.e. this won't work:
+Just be careful with ordering here. The original decorators were restricted to decorating `Logger` objects. This decorator works with any object type, so we can't swap the ordering around, i.e. this won't work:
 
 ----
 // Can't mix and match Interface-Oriented and Generic decorators

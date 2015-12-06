@@ -1096,13 +1096,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public MethodNode getGetterMethod(String getterName) {
+        MethodNode getterMethod = null;
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (getterName.equals(method.getName())
                     && ClassHelper.VOID_TYPE!=method.getReturnType()
                     && method.getParameters().length == 0) {
-                return method;
+                // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
+                // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
+                // has the most specific and exact return type of the two. Picking the bridge method results in loss of
+                // type information, as it down-casts the return type to the lower bound of the generic parameter.
+                if (getterMethod == null || getterMethod.isSynthetic()) {
+                    getterMethod = method;
+                }
             }
         }
+        if (getterMethod != null) return getterMethod;
         ClassNode parent = getSuperClass();
         if (parent!=null) return parent.getGetterMethod(getterName);
         return null;

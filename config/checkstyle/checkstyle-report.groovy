@@ -31,7 +31,7 @@ def severityMapping = [
 
 def github = { path, line=null ->
     def localPath = (path - project.rootDir).replaceAll('\\\\','/')
-    def link = """https://github.com/apache/incubator-groovy/blob/master$localPath${line?"#L$line":""}"""
+    def link = """https://github.com/apache/groovy/blob/master$localPath${line?"#L$line":""}"""
 
     if (line) {
         "<a href='$link'>$line</a>"

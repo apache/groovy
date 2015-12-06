@@ -47,6 +47,7 @@ public class SecureASTCustomizerFactory extends AbstractFactory {
         if (node instanceof SecureASTCustomizer) {
             Closure clone = (Closure) childContent.clone();
             clone.setDelegate(node);
+            clone.setResolveStrategy(Closure.DELEGATE_FIRST);
             clone.call();
         }
         return false;

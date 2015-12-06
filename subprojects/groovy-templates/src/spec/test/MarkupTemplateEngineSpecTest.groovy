@@ -715,13 +715,13 @@ layout 'layout-main.tpl', true,                             // <1>
         templateContents = '''
 // tag::layout_template_inherit_override[]
 layout 'layout-main.tpl', true,                             // <1>
-    title: 'Overriden title',                               // <2>
+    title: 'overridden title',                               // <2>
     bodyContents: contents { p('This is the body') }
 // end::layout_template_inherit_override[]
 '''
         expectedRendered = stripAsciidocMarkup '''
 // tag::layout_expected_3[]
-<html><head><title>Overriden title</title></head><body><p>This is the body</p></body></html>
+<html><head><title>overridden title</title></head><body><p>This is the body</p></body></html>
 // end::layout_expected_3[]
 '''
         assertRendered()
