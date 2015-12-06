@@ -3051,15 +3051,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
         List<T> selfList = asList(self);
         List<List<T>> answer = new ArrayList<List<T>>();
-        for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
-            if (!keepRemainder && pos > selfList.size() - size) {
-                break ;
+        if (size <= 0) {
+            answer.add(selfList);
+        } else {
+            for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
+                if (!keepRemainder && pos > selfList.size() - size) {
+                    break ;
+                }
+                List<T> element = new ArrayList<T>() ;
+                for (int offs = pos; offs < pos + size && offs < selfList.size(); offs++) {
+                    element.add(selfList.get(offs));
+                }
+                answer.add( element ) ;
             }
-            List<T> element = new ArrayList<T>() ;
-            for (int offs = pos; offs < pos + size && offs < selfList.size(); offs++) {
-                element.add(selfList.get(offs));
-            }
-            answer.add( element ) ;
         }
         return answer ;
     }
