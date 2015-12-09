@@ -65,6 +65,22 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testJsonBuilderWithNestedClosures() {
+        new StringWriter().with { w ->
+            def builder = new StreamingJsonBuilder(w)
+
+            builder.response {
+                status "ok"
+                results {
+                    sectionId "world"
+                    assert delegate instanceof StreamingJsonBuilder.StreamingJsonDelegate
+                }
+            }
+
+            assert w.toString() == '{"response":{"status":"ok","results":{"sectionId":"world"}}}'
+        }
+    }
+
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w, [a: 1, b: true])
