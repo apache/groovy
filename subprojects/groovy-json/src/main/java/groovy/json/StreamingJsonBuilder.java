@@ -487,6 +487,9 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             this.first = first;
         }
 
+        /**
+         * @return Obtains the current writer
+         */
         public Writer getWriter() {
             return writer;
         }
@@ -500,7 +503,12 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                     switch (len) {
                         case 1:
                             final Object value = arr[0];
-                            call(name, value);
+                            if(value instanceof Closure) {
+                                call(name, (Closure)value);
+                            }
+                            else {
+                                call(name, value);
+                            }
                             return null;
                         case 2:
                             if(arr[len -1] instanceof Closure) {
