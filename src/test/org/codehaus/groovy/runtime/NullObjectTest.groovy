@@ -100,11 +100,27 @@ class NullObjectTest extends GroovyTestCase {
         }
         assert a == 2
     }
+
+    void testEqualsInCategory() {
+        def val = null
+        use (MyCategory) {
+            assert val.isNull()
+            assert val.isNull2()
+        }
+    }
 }
 
 class MyCategory {
     public static String toString(NullObject obj) {
         return ""
+    }
+
+    static boolean isNull(value) {
+        value == null
+    }
+
+    static boolean isNull2(value) {
+        null == value
     }
 }
 
