@@ -29,6 +29,7 @@ import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -38,6 +39,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
@@ -53,6 +55,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.*;
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
+    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", new Parameter[0]);
 
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
@@ -297,6 +300,60 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 );
                 call.visit(controller.getAcg());
                 return true;
+            }
+            if (isThisExpression && !controller.isInClosure()) {
+                receiverType = controller.getClassNode();
+            }
+            if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, property, arguments, safe, spreadSafe, implicitThis)) return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean makeSetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        WriterController controller = getController();
+        FieldNode field = receiverType.getField(fieldName);
+        ClassNode outerClass = receiverType.getOuterClass();
+        if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
+            Expression pexp;
+            if (controller.isInClosure()) {
+                MethodCallExpression mce = new MethodCallExpression(
+                    new VariableExpression("this"),
+                    "getThisObject",
+                    ArgumentListExpression.EMPTY_ARGUMENTS
+                );
+                mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
+                mce.setImplicitThis(true);
+                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                pexp = new CastExpression(controller.getOutermostClass(),mce);
+            } else {
+                pexp = new PropertyExpression(
+                    new ClassExpression(outerClass),
+                    "this"
+                );
+                ((PropertyExpression)pexp).setImplicitThis(true);
+            }
+            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
+            pexp.setSourcePosition(receiver);
+            return makeSetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, arguments, safe, spreadSafe, true);
+        }
+        ClassNode classNode = controller.getClassNode();
+        if (field != null && Modifier.isPrivate(field.getModifiers())
+            && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
+            && !receiverType.equals(classNode)) {
+            Map<String, MethodNode> mutators = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
+            if (mutators != null) {
+                MethodNode methodNode = mutators.get(fieldName);
+                if (methodNode != null) {
+                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
+                        new ArgumentListExpression(field.isStatic()?new ConstantExpression(null):receiver, arguments));
+                        mce.setMethodTarget(methodNode);
+                        mce.setSafe(safe);
+                        mce.setSpreadSafe(spreadSafe);
+                    mce.setImplicitThis(implicitThis);
+                    mce.visit(controller.getAcg());
+                    return true;
+                }
             }
         }
         return false;

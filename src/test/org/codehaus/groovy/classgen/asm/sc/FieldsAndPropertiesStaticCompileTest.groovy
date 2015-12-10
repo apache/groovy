@@ -533,4 +533,167 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
             foo?.id = 'new'
         '''
     }
+
+    void testPrivateFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private String s
+                    Closure c = { this.s = 'abc' }
+
+                    void test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testImplicitPrivateFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private String s
+                    Closure c = { s = 'abc' }
+
+                    String test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testPrivateStaticFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private static String s
+                    Closure c = { s = 'abc' }
+
+                    String test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testPrivateFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    void test() {
+                        def aic = new Runnable() { void run() { A.this.x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testImplicitPrivateFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    void test() {
+                        def aic = new Runnable() { void run() { x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testPrivateStaticFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private static int x
+                    void test() {
+                        def aic = new Runnable() { void run() { x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testMultiplePrivateFieldMutatorBridgeMethods() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    private String y
+                    Closure mutate = { x = 1; y = 'abc' }
+
+                    void test() {
+                        mutate()
+                        assert x == 1
+                        assert y == 'abc'
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$01 (LA;Ljava/lang/String;)Ljava/lang/String;')
+        }
+    }
+
+    void testPrivateFieldBridgeMethodsAreGeneratedAsNecessary() {
+        try {
+            assertScript '''
+                class A {
+                    private int accessed = 0
+                    private String mutated
+                    private String accessedAndMutated = ''
+                    Closure c = {
+                        println accessed
+                        mutated = 'abc'
+                        println accessedAndMutated
+                        accessedAndMutated = 'def'
+                    }
+
+                    void test() {
+                        c()
+                        assert mutated == 'abc'
+                        assert accessedAndMutated == 'def'
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert !astTrees['A'][1].contains('pfaccess$00') // no mutator bridge method for 'accessed'
+            assert !astTrees['A'][1].contains('pfaccess$1') // no accessor bridge method for 'mutated'
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$2 (LA;)Ljava/lang/String;')
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$02 (LA;Ljava/lang/String;)Ljava/lang/String;')
+        }
+    }
 }

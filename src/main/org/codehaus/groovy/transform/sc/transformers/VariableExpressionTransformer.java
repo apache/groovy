@@ -66,6 +66,9 @@ public class VariableExpressionTransformer {
 
     private Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
         FieldNode field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
+        if (field == null) {
+            field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
+        }
         if (field != null) {
             // access to a private field from a section of code that normally doesn't have access to it, like a
             // closure or an inner class
