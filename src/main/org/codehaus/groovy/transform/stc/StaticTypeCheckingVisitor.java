@@ -341,13 +341,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given a field node, checks if we are calling a private field from an inner class.
+     * Given a field node, checks if we are accessing or setting a private field from an inner class.
      */
-    private void checkOrMarkPrivateAccess(Expression source, FieldNode fn) {
+    private void checkOrMarkPrivateAccess(Expression source, FieldNode fn, boolean lhsOfAssignment) {
         if (fn!=null && Modifier.isPrivate(fn.getModifiers()) &&
             (fn.getDeclaringClass() != typeCheckingContext.getEnclosingClassNode() || typeCheckingContext.getEnclosingClosure()!=null) &&
             fn.getDeclaringClass().getModule() == typeCheckingContext.getEnclosingClassNode().getModule()) {
-            addPrivateFieldOrMethodAccess(source, fn.getDeclaringClass(), StaticTypesMarker.PV_FIELDS_ACCESS, fn);
+            StaticTypesMarker marker = lhsOfAssignment ? StaticTypesMarker.PV_FIELDS_MUTATION : StaticTypesMarker.PV_FIELDS_ACCESS;
+            addPrivateFieldOrMethodAccess(source, fn.getDeclaringClass(), marker, fn);
         }
     }
 
@@ -994,6 +995,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
+        if (leftExpression instanceof VariableExpression
+                && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
+            checkOrMarkPrivateAccess(leftExpression, (FieldNode) ((VariableExpression) leftExpression).getAccessedVariable(), true);
+        }
+
         //TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
@@ -1217,7 +1223,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 field = allowStaticAccessToMember(field, staticOnly);
-                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData())) return true;
+                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode)) return true;
 
                 PropertyNode propertyNode = current.getProperty(propertyName);
                 propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
@@ -1225,7 +1231,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 boolean isThisExpression = objectExpression instanceof VariableExpression &&
                         ((VariableExpression) objectExpression).isThisExpression() && objectExpressionType.equals(current);
-                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData()))
+                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode))
                     return true;
 
                 MethodNode getter = current.getGetterMethod("get" + capName);
@@ -1281,7 +1287,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 foundGetterOrSetter = foundGetterOrSetter || !setters.isEmpty() || getter != null;
 
-                if (storeField(field, true, pexp, current, visitor, receiver.getData())) return true;
+                if (storeField(field, true, pexp, current, visitor, receiver.getData(), !readMode)) return true;
                 // if the property expression is an attribute expression (o.@attr), then
                 // we stop now, otherwise we must check the parent class
                 if (/*!isAttributeExpression && */current.getSuperClass() != null) {
@@ -1438,11 +1444,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeType(expressionToStoreOn, type);
     }
 
-    private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
+    private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData, boolean lhsOfAssignment) {
         if (field==null || !returnTrueIfFieldExists) return false;
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
-        checkOrMarkPrivateAccess(expressionToStoreOn, field);
+        checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         if (delegationData!=null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
@@ -1458,7 +1464,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         return true;
     }
-
 
     protected void storeInferredTypeForPropertyExpression(final PropertyExpression pexp, final ClassNode flatInferredType) {
         if (pexp.isSpreadSafe()) {
@@ -3930,7 +3935,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
-                checkOrMarkPrivateAccess(vexp, (FieldNode) variable);
+                checkOrMarkPrivateAccess(vexp, (FieldNode) variable, isLHSOfEnclosingAssignment(vexp));
                 return getType((FieldNode) variable);
             }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
