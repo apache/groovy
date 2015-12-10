@@ -27,10 +27,12 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -165,35 +167,54 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     /**
-     * Adds special accessors for private constants so that inner classes can retrieve them.
+     * Adds special accessors and mutators for private fields so that inner classes can get/set them
      */
     @SuppressWarnings("unchecked")
     private void addPrivateFieldsAccessors(ClassNode node) {
         Set<ASTNode> accessedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
-        if (accessedFields==null) return;
-        Map<String, MethodNode> privateConstantAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
-        if (privateConstantAccessors!=null) {
+        Set<ASTNode> mutatedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
+        if (accessedFields == null && mutatedFields == null) return;
+        Map<String, MethodNode> privateFieldAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
+        Map<String, MethodNode> privateFieldMutators = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
+        if (privateFieldAccessors != null || privateFieldMutators != null) {
             // already added
             return;
         }
         int acc = -1;
-        privateConstantAccessors = new HashMap<String, MethodNode>();
+        privateFieldAccessors = accessedFields != null ? new HashMap<String, MethodNode>() : null;
+        privateFieldMutators = mutatedFields != null ? new HashMap<String, MethodNode>() : null;
         final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
-            if (accessedFields.contains(fieldNode)) {
-
+            boolean generateAccessor = accessedFields != null && accessedFields.contains(fieldNode);
+            boolean generateMutator = mutatedFields != null && mutatedFields.contains(fieldNode);
+            if (generateAccessor) {
                 acc++;
                 Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
-                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression(param);
+                Expression receiver = fieldNode.isStatic() ? new ClassExpression(node) : new VariableExpression(param);
                 Statement stmt = new ExpressionStatement(new PropertyExpression(
                         receiver,
                         fieldNode.getName()
                 ));
-                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, stmt);
-                privateConstantAccessors.put(fieldNode.getName(), accessor);
+                MethodNode accessor = node.addMethod("pfaccess$" + acc, access, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, stmt);
+                privateFieldAccessors.put(fieldNode.getName(), accessor);
+            }
+
+            if (generateMutator) {
+                //increment acc if it hasn't been incremented in the current iteration
+                if (!generateAccessor) acc++;
+                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
+                Expression receiver = fieldNode.isStatic() ? new ClassExpression(node) : new VariableExpression(param);
+                Parameter value = new Parameter(fieldNode.getOriginType(), "$value");
+                Statement stmt = GeneralUtils.assignS(
+                        new PropertyExpression(receiver, fieldNode.getName()),
+                        new VariableExpression(value)
+                );
+                MethodNode mutator = node.addMethod("pfaccess$0" + acc, access, fieldNode.getOriginType(), new Parameter[]{param, value}, ClassNode.EMPTY_ARRAY, stmt);
+                privateFieldMutators.put(fieldNode.getName(), mutator);
             }
         }
-        node.setNodeMetaData(PRIVATE_FIELDS_ACCESSORS, privateConstantAccessors);
+        if (privateFieldAccessors != null) node.setNodeMetaData(PRIVATE_FIELDS_ACCESSORS, privateFieldAccessors);
+        if (privateFieldMutators != null) node.setNodeMetaData(PRIVATE_FIELDS_MUTATORS, privateFieldMutators);
     }
 
     /**

@@ -27,7 +27,8 @@ public enum StaticCompilationMetadataKeys {
     STATIC_COMPILE_NODE, // used to mark a section of code as to be statically compiled
     BINARY_EXP_TARGET, // use to tell which method should be used in a binary expression
     PRIVATE_BRIDGE_METHODS, // private bridge methods are methods used by an outer class to access an inner class method
-    PRIVATE_FIELDS_ACCESSORS, // private constants methods are methods used by an outer class to access an outer class constant
+    PRIVATE_FIELDS_ACCESSORS, // private fields accessors are methods used by an inner class to access an outer class field
+    PRIVATE_FIELDS_MUTATORS, // private fields mutators are methods used by an inner class to set an outer class field
     PROPERTY_OWNER, // the type of the class which owns the property
     COMPONENT_TYPE, // for list.property expressions, we need the inferred component type
     RECEIVER_OF_DYNAMIC_PROPERTY // if a receiver is the receiver of a dynamic property (for mixed mode compilation)
