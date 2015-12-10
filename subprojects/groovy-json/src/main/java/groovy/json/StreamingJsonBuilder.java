@@ -616,11 +616,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writeObject(writer, value, callable);
         }
         /**
-<<<<<<< c9db44a9f71be65a92ae9e03e04e97eb7f491df1
          * Writes the name and another JSON object
-=======
-         * Writes the name and another JSON boject
->>>>>>> Support for Array and Iterable not just Collection in StreamingJsonBuilder
          *
          * @param name The attribute name
          * @param value The value
