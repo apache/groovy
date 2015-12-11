@@ -639,6 +639,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          */
         public void call(String name, JsonOutput.JsonUnescaped json) throws IOException {
             writeName(name);
+            verifyValue();
             writer.write(json.toString());
         }
 
