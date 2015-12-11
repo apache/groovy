@@ -371,7 +371,7 @@ class ClosuresSpecTest extends GroovyTestCase {
             assert cl() == 42
             cl.delegate = t
             try {
-            cl()
+                cl()
                 assert false
             } catch (MissingPropertyException ex) {
                 // "age" is not defined on the delegate
