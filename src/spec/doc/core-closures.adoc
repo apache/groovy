@@ -187,7 +187,7 @@ include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_vargs,i
 <1> A closure accepting a variable number of strings as first parameter
 <2> It may be called using any number of arguments *without* having to explicitly wrap them into an array
 <3> The same behavior is directly available if the _args_ parameter is declared as an array
-<4> As long as the *last* parameter is an array of an explicit vargs type
+<4> As long as the *last* parameter is an array or an explicit vargs type
 
 == Delegation strategy
 
@@ -295,7 +295,7 @@ Then by changing the delegate of the closure, you can see that the target object
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_asserts,indent=0]
 ----
 
-At this point, the behavior is not different from having a `variable defined in the lexical scope of the closure:
+At this point, the behavior is not different from having a `target` variable defined in the lexical scope of the closure:
 
 [source,groovy]
 ----
