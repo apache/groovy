@@ -391,7 +391,7 @@ For simple variables, or `variable.property`, you can even drop the curly braces
 throw new Exception("Unable to convert resource: $resource")
 ----
 
-You can even lazily evaluate those expressions using a closure notation with `${-> resource }`.
+You can even lazily evaluate those expressions using a closure notation with `${\-> resource }`.
 When the GString will be coerced to a String, it'll evaluate the closure and get the `toString()` representation of the return value.
 
 Example:
