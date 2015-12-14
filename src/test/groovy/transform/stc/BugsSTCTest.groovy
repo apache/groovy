@@ -648,6 +648,30 @@ Printer
         '''
     }
 
+    void testAmbiguousMethodResolutionGroovy7710NoArgsOverloaded() {
+        shouldFailWithMessages '''
+            Arrays.sort()
+        ''', 'Reference to method is ambiguous. Cannot choose between '
+    }
+
+    void testAmbiguousMethodResolutionGroovy7711NoArgsCovariantOverride() {
+        assertScript '''
+            class A {}
+            class B {
+                Object m(Object[] args) {
+                    new Object()
+                }
+            }
+            class C extends B {
+                A m(Object[] args) {
+                    new A()
+                }
+            }
+            C c = new C()
+            A a = c.m()
+        '''
+    }
+
     // GROOVY-6911
     void testShouldNotThrowArrayIndexOfOutBoundsException() {
         assertScript '''
