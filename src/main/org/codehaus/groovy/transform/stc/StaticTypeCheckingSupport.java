@@ -1311,7 +1311,6 @@ public abstract class StaticTypeCheckingSupport {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), arguments, candidateMethod);
         }
         // both candidate method and receiver have generic information so a check is possible
-        Parameter[] parameters = candidateMethod.getParameters();
         GenericsType[] genericsTypes = candidateMethod.getGenericsTypes();
         boolean methodUsesGenerics = (genericsTypes != null && genericsTypes.length > 0);
         boolean isExtensionMethod = candidateMethod instanceof ExtensionMethodNode;
@@ -1888,7 +1887,6 @@ public abstract class StaticTypeCheckingSupport {
     private static class ExtensionMethodCache {
 
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-        private List<ExtensionModule> modules = Collections.emptyList();
         private Map<String, List<MethodNode>> cachedMethods = null;
         private WeakReference<ClassLoader> origin = new WeakReference<ClassLoader>(null);
 
