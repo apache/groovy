@@ -2162,7 +2162,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
 
-        final ClassNode rememberLastItType = typeCheckingContext.lastImplicitItType;
         Expression callArguments = call.getArguments();
 
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
@@ -2801,7 +2800,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        final ClassNode rememberLastItType = typeCheckingContext.lastImplicitItType;
         Expression callArguments = call.getArguments();
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
 
