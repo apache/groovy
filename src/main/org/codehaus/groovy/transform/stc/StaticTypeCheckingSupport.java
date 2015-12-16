@@ -1574,7 +1574,7 @@ public abstract class StaticTypeCheckingSupport {
         if (orig.isGenericsPlaceHolder()!=copy.isGenericsPlaceHolder()) return false;
         if (!orig.equals(copy)) return false;
         GenericsType[] gt1 = orig.getGenericsTypes();
-        GenericsType[] gt2 = orig.getGenericsTypes();
+        GenericsType[] gt2 = copy.getGenericsTypes();
         if ((gt1==null || gt2==null) && gt1!=gt2) return false;
         if (gt1==gt2) return true;
         if (gt1.length!=gt2.length) return false;
