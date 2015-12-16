@@ -881,7 +881,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean addedReadOnlyPropertyError(Expression expr) {
         // if expr is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
         if (expr.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY) == null) return false;
-        String name = null;
+        String name;
         if (expr instanceof VariableExpression) {
             name = ((VariableExpression) expr).getName();
         } else {
@@ -1410,7 +1410,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private <T> T allowStaticAccessToMember(T member, boolean staticOnly) {
         if (member == null) return null;
         if (!staticOnly) return member;
-        boolean isStatic = false;
+        boolean isStatic;
         if (member instanceof Variable) {
             Variable v = (Variable) member;
             isStatic = Modifier.isStatic(v.getModifiers());
@@ -1859,7 +1859,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
 
-        MethodNode node = null;
+        MethodNode node;
         if (args.length == 1
                 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)
                 && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size() == 1
@@ -2389,7 +2389,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private List<ClassNode[]> getSignaturesFromHint(final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
         // initialize hints
-        List<ClassNode[]> closureSignatures = null;
+        List<ClassNode[]> closureSignatures;
         try {
             ClassLoader transformLoader = getTransformLoader();
             @SuppressWarnings("unchecked")
@@ -2835,7 +2835,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, data);
                     }
                 }
-                int nbOfArgs = 0;
+                int nbOfArgs;
                 if (callArguments instanceof ArgumentListExpression) {
                     ArgumentListExpression list = (ArgumentListExpression) callArguments;
                     nbOfArgs = list.getExpressions().size();
@@ -3715,14 +3715,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Parameter[] newParams = new Parameter[parameters.length - j];
                 int index = 0;
                 int k = 1;
-                for (int i = 0; i < parameters.length; i++) {
-                    if (k > counter - j && parameters[i] != null && parameters[i].hasInitialExpression()) {
+                for (Parameter parameter : parameters) {
+                    if (k > counter - j && parameter != null && parameter.hasInitialExpression()) {
                         k++;
-                    } else if (parameters[i] != null && parameters[i].hasInitialExpression()) {
-                        newParams[index++] = parameters[i];
+                    } else if (parameter != null && parameter.hasInitialExpression()) {
+                        newParams[index++] = parameter;
                         k++;
                     } else {
-                        newParams[index++] = parameters[i];
+                        newParams[index++] = parameter;
                     }
                 }
                 MethodNode stubbed;
@@ -4028,7 +4028,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private ClassNode getGenericsResolvedTypeOfFieldOrProperty(AnnotatedNode an, ClassNode type) {
         if (!type.isUsingGenerics()) return type;
-        Map<String, GenericsType> connections = new HashMap();
+        Map<String, GenericsType> connections = new HashMap<String, GenericsType>();
         //TODO: inner classes mean a different this-type. This is ignored here!
         extractGenericsConnections(connections, typeCheckingContext.getEnclosingClassNode(), an.getDeclaringClass());
         type= applyGenericsContext(connections, type);
