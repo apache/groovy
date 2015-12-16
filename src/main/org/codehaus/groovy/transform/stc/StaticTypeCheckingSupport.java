@@ -1575,7 +1575,7 @@ public abstract class StaticTypeCheckingSupport {
         if (!orig.equals(copy)) return false;
         GenericsType[] gt1 = orig.getGenericsTypes();
         GenericsType[] gt2 = copy.getGenericsTypes();
-        if ((gt1==null || gt2==null) && gt1!=gt2) return false;
+        if ((gt1==null) ^ (gt2==null)) return false;
         if (gt1==gt2) return true;
         if (gt1.length!=gt2.length) return false;
         for (int i=0; i<gt1.length; i++) {
@@ -1862,11 +1862,10 @@ public abstract class StaticTypeCheckingSupport {
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
         if (newGenerics == null || newGenerics.length == 0) return current;
         if (current==null) current = new HashMap<String, GenericsType>();
-        for (int i = 0; i < newGenerics.length; i++) {
-            GenericsType gt = newGenerics[i];
+        for (GenericsType gt : newGenerics) {
             if (!gt.isPlaceholder()) continue;
             String name = gt.getName();
-            if (!current.containsKey(name)) current.put(name, newGenerics[i]);
+            if (!current.containsKey(name)) current.put(name, gt);
         }
         return current;
     }
