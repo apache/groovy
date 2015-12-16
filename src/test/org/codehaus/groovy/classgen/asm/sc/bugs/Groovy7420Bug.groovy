@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7420Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    @NotYetImplemented
     void testOverloadedMethodWithPrimitiveOrObjectParameter() {
         assertScript '''
             class A {
@@ -38,6 +36,9 @@ class Groovy7420Bug extends StaticTypeCheckingTestCase implements StaticCompilat
 
             Long l = 42L
             assert A.m(l) == "object"
+            assert A.m(l.longValue()) == "primitive"
+            int i = 42
+            assert A.m(i) == "primitive" // Primitive widening
         '''
     }
 }
