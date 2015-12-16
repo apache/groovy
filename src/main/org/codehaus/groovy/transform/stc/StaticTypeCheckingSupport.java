@@ -816,7 +816,9 @@ public abstract class StaticTypeCheckingSupport {
                 && unwrapReceiver!=unwrapCompare) {
             dist = getPrimitiveDistance(unwrapReceiver, unwrapCompare);
         }
-        if (isPrimitiveType(receiver) && !isPrimitiveType(compare)) {
+        // Add a penalty against boxing or unboxing, to get a resolution similar to JLS 15.12.2
+        // (http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.12.2).
+        if (isPrimitiveType(receiver) ^ isPrimitiveType(compare)) {
             dist = (dist+1)<<1;
         }
         if (unwrapCompare.equals(unwrapReceiver)) return dist;
