@@ -3781,7 +3781,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);
-                return Collections.singletonList(node);
+                methods = Collections.singletonList(node);
+                if (receiver.isArray()) {
+                    // No need to check the arguments against an array constructor: it just needs to exist. The array is
+                    // created through coercion or by specifying its dimension(s), anyway, and would not match an
+                    // arbitrary number of parameters.
+                    return methods;
+                }
             }
         } else {
             methods = findMethodsWithGenerated(receiver,name);
