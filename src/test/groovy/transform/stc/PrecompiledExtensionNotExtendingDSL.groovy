@@ -39,7 +39,7 @@ class PrecompiledExtensionNotExtendingDSL extends AbstractTypeCheckingExtension 
     @Override
     void onMethodSelection(final Expression expression, final MethodNode target) {
         if (target.name=='println') {
-            addStaticTypeError('Error thrown from extension in onMethodSelection', expression.parameters[0])
+            addStaticTypeError('Error thrown from extension in onMethodSelection', expression.arguments[0])
         }
     }
 }
