@@ -78,14 +78,13 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         try {
             shell.evaluate(code, getTestClassName())
         } catch (MultipleCompilationErrorsException mce) {
-            mce.errorCollector.errors.each {
-                messages.each { message ->
-                    success = success || (it instanceof SyntaxErrorMessage && it.cause.message.contains(message))
+            success = messages.every { message ->
+                mce.errorCollector.errors.any {
+                    it instanceof SyntaxErrorMessage && it.cause.message.contains(message)
                 }
             }
-            if (!success) throw mce;
             if (success && mce.errorCollector.errorCount!=messages.length) {
-                throw new AssertionError("Expected error message was found, but compiler thrown more than one error : "+mce.toString())
+                throw new AssertionError("Expected error messages were found, but compiler threw additional errors : " + mce.toString())
             }
         }
         if (!success) throw new AssertionError("Test should have failed with messages [$messages]")
