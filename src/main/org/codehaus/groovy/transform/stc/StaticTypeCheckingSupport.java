@@ -1396,7 +1396,7 @@ public abstract class StaticTypeCheckingSupport {
         Set<String> result = new HashSet<String>();
         for (Map.Entry<String, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
             GenericsType value = entry.getValue();
-            if (value.isPlaceholder() || value.isPlaceholder()) continue;
+            if (value.isPlaceholder()) continue;
             result.add(entry.getKey());
         }
         return result;
@@ -1418,7 +1418,7 @@ public abstract class StaticTypeCheckingSupport {
         // since it is possible that the callsite uses some generics as well, 
         // we may have to add additional elements here
         addMissingEntries(connections, resolvedMethodGenerics);
-        // to finally see if the parameter and the argument fit togehter,
+        // to finally see if the parameter and the argument fit together,
         // we use the provided information to transform the parameter
         // into something that can exist in the callsite context
         type = applyGenericsContext(resolvedMethodGenerics, type);
@@ -1535,18 +1535,44 @@ public abstract class StaticTypeCheckingSupport {
                 GenericsType original = entry.getValue(); 
                 if (!original.isWildcard() && !original.isPlaceholder()) {
                     continue;
-                } else if (!replacement.isPlaceholder()) {
-                    entry.setValue(replacement);
-                    continue;
                 }
-                GenericsType connectedType = resolvedPlaceholders.get(replacement.getName());
-                if (replacement==connectedType) continue;
-                entry.setValue(replacement);
-                checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(original,replacement);
+                boolean placeholderReplacement = replacement.isPlaceholder();
+                if (placeholderReplacement) {
+                    GenericsType connectedType = resolvedPlaceholders.get(replacement.getName());
+                    if (replacement==connectedType) continue;
+                }
+                // GROOVY-6787: Don't override the original if the replacement placeholder doesn't respect the bounds,
+                // otherwise the original bounds are lost which can result in accepting an incompatible type as an
+                // argument, for example.
+                ClassNode replacementType = extractType(replacement);
+                if (original.isCompatibleWith(replacementType)) {
+                    entry.setValue(replacement);
+                    if (placeholderReplacement) {
+                        checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(original,replacement);
+                    }
+                }
             }
             if (!checkForMorePlaceHolders) break;
         }
         if  (count>=10000) throw new GroovyBugError("unable to handle generics in "+resolvedPlaceholders+" with connections "+connections);
+    }
+
+    private static ClassNode extractType(GenericsType gt) {
+        if (!gt.isPlaceholder()) {
+            return gt.getType();
+        }
+        // For a placeholder, a type based on the generics type is used for the compatibility check, to match on
+        // the actual bounds and not the name of the placeholder.
+        ClassNode replacementType = OBJECT_TYPE;
+        if (gt.getType().getGenericsTypes() != null) {
+            GenericsType realGt = gt.getType().getGenericsTypes()[0];
+            if (realGt.getLowerBound() != null) {
+                replacementType = realGt.getLowerBound();
+            } else if (realGt.getUpperBounds() != null && realGt.getUpperBounds().length > 0) {
+                replacementType = realGt.getUpperBounds()[0];
+            }
+        }
+        return replacementType;
     }
 
     private static boolean equalIncludingGenerics(GenericsType orig, GenericsType copy) {
