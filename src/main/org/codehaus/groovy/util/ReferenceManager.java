@@ -120,7 +120,16 @@ public class ReferenceManager {
                 int count = refCnt.incrementAndGet();
                 if (count>threshold || count<0) {
                     manager = callback;
+                    callback.afterReferenceCreation(r);
                 }
+            }
+            @Override
+            public void removeStallEntries() {
+                manager.removeStallEntries();
+            }
+            @Override
+            public void stopThread() {
+                manager.stopThread();
             }
             @Override
             public String toString() {
