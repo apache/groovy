@@ -156,15 +156,27 @@ public class FastStringUtils {
         if (STRING_VALUE_FIELD_OFFSET != -1L) {
             if (STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L) {
                 return StringImplementation.OFFSET;
-            } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L) {
+            } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L && valueFieldIsCharArray()) {
                 return StringImplementation.DIRECT_CHARS;
             } else {
-                // WTF this is a French abbreviation for unknown.
+                // JDK 9
+                // TODO: GROOVY-7716 workaround - find way to optimize JDK9 String (or rethink need for Unsafe usage)
                 return StringImplementation.UNKNOWN;
             }
         } else {
             return StringImplementation.UNKNOWN;
         }
+    }
+
+    /**
+     * JDK9 Compat Strings enhancement changed the internal representation of the value field from a char[]
+     * to a byte[] (see http://openjdk.java.net/jeps/254).
+     *
+     * @return true if internal String value field is a char[], otherwise false
+     */
+    private static boolean valueFieldIsCharArray() {
+        Object o = UNSAFE.getObject("", STRING_VALUE_FIELD_OFFSET);
+        return (o instanceof char[]);
     }
 
     /**
