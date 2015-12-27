@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -44,6 +48,8 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
     {
         if (VMPluginFactory.getPlugin().getVersion()>=7) handleCache = new ConcurrentHashMap();
     }
+
+    private MetaClass metaClass;
 
     /**
      * Creates a ConversionHandler with an delegate.
@@ -102,6 +108,13 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
 
         if (!checkMethod(method)) {
             try {
+                if (method.getDeclaringClass() == GroovyObject.class) {
+                    if ("getMetaClass".equals(method.getName())) {
+                        return getMetaClass(proxy);
+                    } else if ("setMetaClass".equals(method.getName())) {
+                        return setMetaClass((MetaClass) args[0]);
+                    }
+                }
                 return invokeCustom(proxy, method, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
@@ -189,4 +202,17 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
         return Object.class.equals(method.getDeclaringClass());
     }
 
+    private MetaClass setMetaClass(MetaClass mc) {
+        metaClass = mc;
+        return mc;
+    }
+
+    private MetaClass getMetaClass(Object proxy) {
+        MetaClass mc = metaClass;
+        if (mc == null) {
+            mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(proxy);
+            metaClass = mc;
+        }
+        return mc;
+    }
 }
