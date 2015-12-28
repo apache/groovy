@@ -19,6 +19,7 @@
 package groovy.util;
 
 import groovy.lang.Binding;
+import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -107,7 +108,10 @@ public abstract class DelegatingScript extends Script {
     @Override
     public Object invokeMethod(String name, Object args) {
         try {
-            return metaClass.invokeMethod(delegate,name,args);
+            if (delegate instanceof GroovyObject) {
+                return ((GroovyObject) delegate).invokeMethod(name, args);
+            }
+            return metaClass.invokeMethod(delegate, name, args);
         } catch (MissingMethodException mme) {
             return super.invokeMethod(name, args);
         }
