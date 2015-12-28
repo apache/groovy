@@ -1224,7 +1224,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
 
                 boolean isThisExpression = objectExpression instanceof VariableExpression &&
-                        ((VariableExpression) objectExpression).isThisExpression();
+                        ((VariableExpression) objectExpression).isThisExpression() && objectExpressionType.equals(current);
                 if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData()))
                     return true;
 

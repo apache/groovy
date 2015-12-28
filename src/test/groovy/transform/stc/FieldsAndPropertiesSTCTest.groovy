@@ -568,7 +568,7 @@ class FooWorker {
     }
 }
 
-new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
+new FooWorker().doSomething()''', 'Cannot assign value of type java.util.ArrayList <Integer> to variable of type java.util.List <String>'
     }
 
     void testAICAsStaticProperty() {
@@ -728,6 +728,14 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
             def i="d"
             i=1
             i.MAX_VALUE
+        '''
+    }
+
+    void testImplicitPropertyOfDelegateShouldNotPreferField() {
+        assertScript '''
+            Calendar.instance.with {
+                Date d1 = time
+            }
         '''
     }
 
