@@ -271,7 +271,7 @@ class InnerClassTest extends CompilableTestSupport {
         '''
     }
 
-    void testUsageOfOuterFieldOverriden_FAILS() {
+    void testUsageOfOuterFieldOverridden_FAILS() {
         if (notYetImplemented()) return
 
         assertScript """
@@ -340,7 +340,7 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfOuterMethodOverriden() {
+    void testUsageOfOuterMethodoverridden() {
         assertScript """
             interface Run {
                 def run()

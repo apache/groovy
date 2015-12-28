@@ -36,7 +36,7 @@ public class TestNgRunner implements GroovyRunner {
 
     /**
      * Utility method to check via reflection if the parsed class appears to be a TestNG
-     * test, i.e.&nsbp;checks whether it appears to be using the relevant TestNG annotations.
+     * test, i.e. checks whether it appears to be using the relevant TestNG annotations.
      *
      * @param scriptClass the class we want to check
      * @param loader the GroovyClassLoader to use to find classes

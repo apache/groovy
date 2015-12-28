@@ -19,6 +19,8 @@
 package groovy.util
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import groovy.xml.MarkupBuilder
+import java.io.StringWriter
 
 public class DelegatingScriptTest extends GroovyTestCase {
     public void testDelegatingScript() throws Exception {
@@ -36,6 +38,22 @@ public class DelegatingScriptTest extends GroovyTestCase {
         script.run();
         assert dsl.foo==6;
         assert dsl.innerBar()=='testset';
+    }
+
+    public void testUseMarkupBuilderAsDelegate() throws Exception {
+        def cc = new CompilerConfiguration()
+        cc.scriptBaseClass = DelegatingScript.class.name
+        def sh = new GroovyShell(new Binding(), cc)
+        def script = sh.parse(''' foo{ bar() }
+        ''')
+        StringWriter sw = new StringWriter()
+        def markupBuilder = new MarkupBuilder(sw)
+        script.setDelegate(markupBuilder)
+        script.run()
+
+        assert sw.toString() == """<foo>
+  <bar />
+</foo>"""
     }
 }
 

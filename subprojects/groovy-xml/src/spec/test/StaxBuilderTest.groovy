@@ -38,6 +38,7 @@ class StaxBuilderTest extends GroovyTestCase {
         assertScript '''
             // tag::stax_builder_external_library[]
             @Grab('org.codehaus.jettison:jettison:1.3.3')
+            @GrabExclude('stax:stax-api') // part of Java 6 and later
             import org.codehaus.jettison.mapped.*
 
             def writer = new StringWriter()

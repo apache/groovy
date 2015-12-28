@@ -377,7 +377,7 @@ public class BinaryExpressionTransformer {
                 directMCT,
                 arg,
                 false,
-                false,
+                leftExpression.isSafe(),
                 false,
                 true, // to be replaced with a proper test whether a return value should be used or not
                 leftExpression

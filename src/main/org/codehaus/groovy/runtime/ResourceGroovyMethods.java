@@ -731,7 +731,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the File.
+     * Write the text to the File without writing a BOM.
      *
      * @param file a File
      * @param text the text to write to the File
@@ -739,18 +739,23 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new FileWriter(file);
-            writer.write(text);
-            writer.flush();
+        write(file, text, false);
+    }
 
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+    /**
+     * Write the text to the File.  If the default charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to write to the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(File file, String text, boolean writeBom) throws IOException {
+        write(file, text, Charset.defaultCharset().name(), writeBom);
     }
 
     /**
@@ -831,9 +836,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the File, using the specified encoding.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
-     * requisite byte order mark is written to the file before the text.
+     * Write the text to the File without writing a BOM,
+     * using the specified encoding.
      *
      * @param file    a File
      * @param text    the text to write to the File
@@ -842,10 +846,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text, String charset) throws IOException {
+        write(file, text, charset, false);
+    }
+
+    /**
+     * Write the text to the File, using the specified encoding.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to write to the File
+     * @param charset  the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(File file, String text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
             FileOutputStream out = new FileOutputStream(file);
-            writeUTF16BomIfRequired(charset, out);
+            if (writeBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+            }
             writer = new OutputStreamWriter(out, charset);
             writer.write(text);
             writer.flush();
@@ -859,7 +882,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the File.
+     * Append the text at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param text the text to append at the end of the File
@@ -867,22 +890,27 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new FileWriter(file, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+        append(file, text, false);
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text at the end of the File.  If the default
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Object text, boolean writeBom) throws IOException {
+        append(file, text, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param reader the Reader supplying the text to append at the end of the File
@@ -890,11 +918,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3
      */
     public static void append(File file, Reader reader) throws IOException {
-        appendBuffered(file, reader);
+        append(file, reader, false);
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text supplied by the Writer at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param writer the Writer supplying the text to append at the end of the File
@@ -902,13 +930,33 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3
      */
     public static void append(File file, Writer writer) throws IOException {
-         appendBuffered(file, writer);
+         append(file, writer, false);
     }
-    
-    private static void appendBuffered(File file, Object text) throws IOException {
+
+    /**
+     * Append the text supplied by the Writer at the end of the File.  If the default
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param writer   the Writer supplying the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Writer writer, boolean writeBom) throws IOException {
+        appendBuffered(file, writer, writeBom);
+    }
+
+    private static void appendBuffered(File file, Object text, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, true);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, Charset.defaultCharset().name());
+            }
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -921,7 +969,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append bytes to the end of a File.
+     * Append bytes to the end of a File.  It <strong>will not</strong> be
+     * interpreted as text.
      *
      * @param file  a File
      * @param bytes the byte array to append to the end of the File
@@ -962,10 +1011,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the File, using a specified encoding.  If
-     * the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias)
-     * and the file doesn't already exist, the requisite byte order mark is
-     * written to the file before the text is appended.
+     * Append the text at the end of the File without writing a BOM,
+     * using a specified encoding.
      *
      * @param file    a File
      * @param text    the text to append at the end of the File
@@ -974,11 +1021,30 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text, String charset) throws IOException {
+        append(file, text, charset, false);
+    }
+
+    /**
+     * Append the text at the end of the File, using a specified encoding.  If
+     * the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file     a File
+     * @param text     the text to append at the end of the File
+     * @param charset  the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Object text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             FileOutputStream out = new FileOutputStream(file, true);
-            if (!file.exists()) {
-                writeUTF16BomIfRequired(charset, out);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, charset);
             InvokerHelper.write(writer, text);
@@ -991,37 +1057,96 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             closeWithWarning(writer);
         }
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * Append the text supplied by the Writer at the end of the File
+     * without writing a BOM, using a specified encoding.
      *
-     * @param file a File
-     * @param writer the Writer supplying the text to append at the end of the File
+     * @param file    a File
+     * @param writer  the Writer supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
      * @since 2.3
      */
     public static void append(File file, Writer writer, String charset) throws IOException {
-        appendBuffered(file, writer, charset);
+        append(file, writer, charset, false);
     }
-    
+
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file    a File
+     * @param writer  the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Writer writer, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, writer, charset, writeBom);
+    }
+
     /**
      * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
      *
-     * @param file a File
-     * @param reader the Reader supplying the text to append at the end of the File
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Reader reader, boolean writeBom) throws IOException {
+        append(file, reader, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Reader at the end of the File
+     * without writing a BOM, using a specified encoding.
+     *
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
      * @since 2.3
      */
     public static void append(File file, Reader reader, String charset) throws IOException {
-        appendBuffered(file, reader, charset);
+        append(file, reader, charset, false);
     }
-    
-    private static void appendBuffered(File file, Object text, String charset) throws IOException {
+
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Reader reader, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, reader, charset, writeBom);
+    }
+
+    private static void appendBuffered(File file, Object text, String charset, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, charset, true);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+            }
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -1800,10 +1925,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
-     * requisite byte order mark is written to the stream before the writer
-     * is returned.
+     * Helper method to create a buffered writer for a file without writing a BOM.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1813,29 +1935,43 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
+        return newWriter(file, charset, append, false);
+    }
+
+    /**
+     * Helper method to create a buffered writer for a file.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream before the writer
+     * is returned.
+     *
+     * @param file    a File
+     * @param charset the name of the encoding used to write in this file
+     * @param append  true if in append mode
+     * @param writeBom whether to write a BOM
+     * @return a BufferedWriter
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static BufferedWriter newWriter(File file, String charset, boolean append, boolean writeBom) throws IOException {
+        boolean shouldWriteBom = writeBom && !file.exists();
         if (append) {
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
+            FileOutputStream stream = new FileOutputStream(file, append);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+            }
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         } else {
-            // first write the Byte Order Mark for Unicode encodings
             FileOutputStream stream = new FileOutputStream(file);
-            writeUTF16BomIfRequired(charset, stream);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+            }
             return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         }
     }
 
-    private static void writeUTF16BomIfRequired(final String charset, final OutputStream stream) throws IOException {
-        if ("UTF-16BE".equals(Charset.forName(charset).name())) {
-            writeUtf16Bom(stream, true);
-        } else if ("UTF-16LE".equals(Charset.forName(charset).name())) {
-            writeUtf16Bom(stream, false);
-        }
-    }
-
     /**
-     * Creates a buffered writer for this file, writing data using the given
-     * encoding.  If the given charset is "UTF-16BE" or "UTF-16LE" (or an
-     * equivalent alias), the requisite byte order mark is written to the
-     * stream before the writer is returned.
+     * Creates a buffered writer for this file, writing data without writing a
+     * BOM, using a specified encoding.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1845,24 +1981,6 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BufferedWriter newWriter(File file, String charset) throws IOException {
         return newWriter(file, charset, false);
-    }
-
-    /**
-     * Write a Byte Order Mark at the beginning of the file
-     *
-     * @param stream    the FileOutputStream to write the BOM to
-     * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    private static void writeUtf16Bom(OutputStream stream, boolean bigEndian) throws IOException {
-        if (bigEndian) {
-            stream.write(-2);
-            stream.write(-1);
-        } else {
-            stream.write(-1);
-            stream.write(-2);
-        }
     }
 
     /**

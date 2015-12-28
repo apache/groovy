@@ -69,7 +69,7 @@ public class ExtensionModuleHelperForTests {
             String out = ant.project.properties.out
             String err = ant.project.properties.err
             baseDir.deleteDir()
-            if (err) {
+            if (err && err.trim() != 'Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8') {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
             } else if ( out.contains('FAILURES') || ! out.contains("OK")) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")

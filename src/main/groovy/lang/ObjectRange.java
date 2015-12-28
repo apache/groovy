@@ -71,7 +71,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     /**
-     * Creates a new {@link ObjectRange,} assumes smaller <= larger, else behavior is undefined.
+     * Creates a new {@link ObjectRange} assumes smaller &lt;&#61; larger, else behavior is undefined.
      * Caution: Prefer the other constructor when in doubt.
      *
      * Optimized Constructor avoiding initial computation of comparison.
@@ -89,6 +89,11 @@ public class ObjectRange extends AbstractList implements Range {
      * @param reverse direction of the range. If null, causes direction to be computed (can be expensive).
      */
     private ObjectRange(Comparable smaller, Comparable larger, Boolean reverse) {
+        if (smaller == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
+        } else if (larger == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
+        }
         if (reverse == null) {
             boolean computedReverse = areReversed(smaller, larger);
             // ensure invariant from <= to
@@ -155,13 +160,6 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     private static boolean areReversed(Comparable from, Comparable to) {
-        if (from == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
-        }
-        if (to == null) {
-            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
-        }
-
         try {
             return ScriptBytecodeAdapter.compareGreaterThan(from, to);
         } catch (ClassCastException cce) {
@@ -169,9 +167,6 @@ public class ObjectRange extends AbstractList implements Range {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean equals(Object that) {
         return (that instanceof ObjectRange) ? equals((ObjectRange) that) : super.equals(that);
     }
@@ -189,30 +184,18 @@ public class ObjectRange extends AbstractList implements Range {
                 && DefaultTypeTransformation.compareEqual(this.to, that.to);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public Comparable getFrom() {
         return from;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public Comparable getTo() {
         return to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean isReverse() {
         return reverse;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public Object get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
@@ -236,9 +219,6 @@ public class ObjectRange extends AbstractList implements Range {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public Iterator iterator() {
         return new Iterator() {
             private int index;
@@ -294,9 +274,6 @@ public class ObjectRange extends AbstractList implements Range {
         throw new UnsupportedOperationException("size must not be changed");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public int size() {
         if (size == -1) {
             if ((from instanceof Integer || from instanceof Long)
@@ -332,9 +309,6 @@ public class ObjectRange extends AbstractList implements Range {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public List subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -352,16 +326,10 @@ public class ObjectRange extends AbstractList implements Range {
         return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(--toIndex), reverse);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public String toString() {
         return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public String inspect() {
         String toText = InvokerHelper.inspect(to);
         String fromText = InvokerHelper.inspect(from);
@@ -385,9 +353,6 @@ public class ObjectRange extends AbstractList implements Range {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void step(int step, Closure closure) {
         if (step == 0) {
             if (compareTo(from, to) != 0) {
@@ -424,9 +389,6 @@ public class ObjectRange extends AbstractList implements Range {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public List step(int step) {
         IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);

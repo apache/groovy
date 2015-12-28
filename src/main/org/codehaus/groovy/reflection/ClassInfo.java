@@ -25,9 +25,6 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.lang.ref.PhantomReference;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -115,44 +112,20 @@ public class ClassInfo {
     }
 
     public static ClassInfo getClassInfo (Class cls) {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.get(cls);
         return globalClassValue.get(cls);
     }
 
-    private static LocalMap getLocalClassInfoMap() {
-        ThreadLocalMapHandler handler = localMapRef.get();
-        SoftReference<LocalMap> ref=null;
-        if (handler!=null) ref = handler.get();
-        LocalMap map=null;
-        if (ref!=null) map = ref.get();
-        return map;
-    }
-
     public static Collection<ClassInfo> getAllClassInfo () {
-        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
-        return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
+        return getAllGlobalClassInfo();
     }
 
     public static void onAllClassInfo(ClassInfoAction action) {
-        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
-        if (localClassInfos!=null) {
-            for (ClassInfo localClassInfo : localClassInfos) {
-                action.onClassInfo(localClassInfo);
-            }
-        }
         for (ClassInfo classInfo : getAllGlobalClassInfo()) {
             action.onClassInfo(classInfo);
         }
     }
 
     private static Collection<ClassInfo> getAllGlobalClassInfo() {
-        return globalClassSet.values();
-    }
-
-    private static Collection<ClassInfo> getAllLocalClassInfo() {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.values();
         return globalClassSet.values();
     }
 
@@ -391,61 +364,6 @@ public class ClassInfo {
 
     public boolean hasPerInstanceMetaClasses () {
         return perInstanceMetaClassMap != null;
-    }
-
-    private static final class LocalMap extends HashMap<Class,ClassInfo> {
-
-        // We use a PhantomReference or a WeakReference for the Thread
-        // because the ThreadLocal manages a map with the thread as key.
-        // If we make a strong reference to the thread here, then it is 
-        // possible, that the map cannot be cleaned. If the number of 
-        // threads is not limited, then this map may consume too much memory
-        // This reference here is unmanaged (queue==null) because if the map 
-        // key gets collected, the reference will too. 
-        private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
-
-        private LocalMap() {
-        }
-
-        public ClassInfo get(Class key) {
-            ClassInfo info = super.get(key);
-            if (info != null)
-              return info;
-
-            return globalClassValue.get(key);
-        }
-
-    }
-
-    private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
-        SoftReference<LocalMap> recentThreadMapRef;
-        
-        protected SoftReference<LocalMap> initialValue() {
-            return new SoftReference(new LocalMap(),null);
-        }
-
-        public SoftReference<LocalMap> get() {
-            SoftReference<LocalMap> mapRef = recentThreadMapRef;
-            LocalMap recent = null;
-            if (mapRef!=null) recent = mapRef.get();
-            // we don't need to handle myThread.get()==null, because in that
-            // case the thread has been collected, meaning the entry for the
-            // thread is invalid anyway, so it is valid if recent has a 
-            // different value. 
-            if (recent != null && recent.myThread.get() == Thread.currentThread()) {
-                return mapRef;
-            } else {
-                SoftReference<LocalMap> ref = super.get();
-                recentThreadMapRef = ref;
-                return ref;
-            }
-        }
-    }
-    
-    private static final WeakReference<ThreadLocalMapHandler> localMapRef;
-    static {
-        ThreadLocalMapHandler localMap = new ThreadLocalMapHandler();
-        localMapRef = new WeakReference<ThreadLocalMapHandler>(localMap,null);
     }
 
     private static class LazyCachedClassRef extends LazyReference<CachedClass> {

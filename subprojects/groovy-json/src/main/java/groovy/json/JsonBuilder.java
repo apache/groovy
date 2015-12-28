@@ -174,7 +174,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * @param c a closure used to convert the objects of coll
      * @return a list of values
      */
-    public Object call(Collection coll, Closure c) {
+    public Object call(Iterable coll, Closure c) {
         List<Object> listContent = new ArrayList<Object>();
         if (coll != null) {
             for (Object it : coll) {
@@ -184,6 +184,13 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
         content = listContent;
 
         return content;
+    }
+
+    /**
+     * Delegates to {@link #call(Iterable, Closure)}
+     */
+    public Object call(Collection coll, Closure c) {
+        return call((Iterable)coll, c);
     }
 
     /**
@@ -278,19 +285,26 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
                     return setAndGetContent(name, arr[0]);
                 }
             } else if (arr.length == 2) {
-                if (arr[0] instanceof Map && arr[1] instanceof Closure) {
-                    Map subMap = new LinkedHashMap();
-                    subMap.putAll((Map) arr[0]);
-                    subMap.putAll(JsonDelegate.cloneDelegateAndGetContent((Closure) arr[1]));
+                final Object first = arr[0];
+                final Object second = arr[1];
+                if (second instanceof Closure) {
+                    final Closure closure = (Closure)second;
+                    if (first instanceof Map) {
+                        Map subMap = new LinkedHashMap();
+                        subMap.putAll((Map) first);
+                        subMap.putAll(JsonDelegate.cloneDelegateAndGetContent(closure));
 
-                    return setAndGetContent(name, subMap);
-                } else if (arr[0] instanceof Collection && arr[1] instanceof Closure) {
-                    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-                    for (Object it : (Collection) arr[0]) {
-                        list.add(JsonDelegate.curryDelegateAndGetContent((Closure) arr[1], it));
+                        return setAndGetContent(name, subMap);
+                    } else if (first instanceof Iterable) {
+                        List<Map<String, Object>> list = collectContentForEachEntry((Iterable) first, closure);
+
+                        return setAndGetContent(name, list);
+                    } else if (first != null && first.getClass().isArray()) {
+                        final Iterable coll = Arrays.asList((Object[])first);
+                        List<Map<String, Object>> list = collectContentForEachEntry(coll, closure);
+
+                        return setAndGetContent(name, list);
                     }
-
-                    return setAndGetContent(name, list);
                 }
             }
 
@@ -298,6 +312,14 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
         } else {
             return setAndGetContent(name, new HashMap<String, Object>());
         }
+    }
+
+    private List<Map<String, Object>> collectContentForEachEntry(Iterable coll, Closure closure) {
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        for (Object it : coll) {
+            list.add(JsonDelegate.curryDelegateAndGetContent(closure, it));
+        }
+        return list;
     }
 
     private Object setAndGetContent(String name, Object value) {

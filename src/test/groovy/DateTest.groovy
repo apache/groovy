@@ -42,12 +42,14 @@ class DateTest extends GroovyTestCase {
     }
 
     void testDateNextPrevious() {
+        def tz = TimeZone.default
         def x = new Date()
         def y = x + 2
         assert x < y
+        def crossedDaylightSavingBoundary = tz.inDaylightTime(x) ^ tz.inDaylightTime(y)
         ++x
         --y
-        assert x == y
+        if (!crossedDaylightSavingBoundary) assert x == y
         x += 2
         assert x > y
     }

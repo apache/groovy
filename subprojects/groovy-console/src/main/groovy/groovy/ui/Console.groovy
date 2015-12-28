@@ -192,7 +192,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean scriptRunning = false
     boolean stackOverFlowError = false
     Action interruptAction
-    
+
+    Action selectWordAction
+    Action selectPreviousWordAction
+
     static void main(args) {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         MessageSource messages = new MessageSource(Console)
@@ -884,40 +887,62 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         updateFontSize(inputArea.font.size + 2)
     }
 
-    static boolean notifySystemOut(String str) {
+    static boolean notifySystemOut(int consoleId, String str) {
         if (!captureStdOut) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendOutputLines(str, console.outputStyle)
+            } else {
                 consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
             }
+        }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
         }
         return false
     }
 
-    static boolean notifySystemErr(String str) {
+    static boolean notifySystemErr(int consoleId, String str) {
         if (!captureStdErr) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendStacktrace(str)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendStacktrace(str)
+            } else {
                 consoleControllers.each {it.appendStacktrace(str)}
             }
         }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
+        }
         return false
+    }
+
+    int getConsoleId() {
+        return System.identityHashCode(this)
+    }
+
+    private static Console findConsoleById(int consoleId) {
+        return consoleControllers.find { it.consoleId == consoleId }
     }
 
     // actually run the script
@@ -1000,6 +1025,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
             try {
+                systemOutInterceptor.setConsoleId(this.getConsoleId())
                 SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if(beforeExecution) {
@@ -1034,6 +1060,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 runThread = null
                 scriptRunning = false
                 interruptAction.enabled = false
+                systemOutInterceptor.removeConsoleId()
             }
         }
     }
@@ -1064,7 +1091,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         runThread = Thread.start {
             try {
                 SwingUtilities.invokeLater { showCompilingMessage() }
-                shell.parse(record.allText)
+                shell.getClassLoader().parseClass(record.allText)
                 SwingUtilities.invokeLater { compileFinishNormal() }
             } catch (Throwable t) {
                 SwingUtilities.invokeLater { finishException(t, false) }
@@ -1200,6 +1227,74 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 	    }
 	}
 	
+    }
+
+    void selectBlock(EventObject evt = null) {
+        final int startPos = inputArea.getSelectionStart()
+        final int endPos = inputArea.getSelectionEnd()
+        final int startRow = rootElement.getElementIndex(startPos)
+        final int endRow = rootElement.getElementIndex(endPos)
+        final Element rowElement = rootElement.getElement(startRow)
+        final int startRowOffset = rowElement.getStartOffset()
+        final int endRowOffset = rowElement.getEndOffset()
+
+        // Empty line, nothing to do
+        if (startRowOffset == endRowOffset - 1) {
+            return
+        }
+
+        // Nothing is currently selected so select next chunk unless we are at the end of
+        // the line then we select the previous
+        if (startPos == endPos && selectWordAction != null && selectPreviousWordAction != null) {
+            if (endPos == endRowOffset - 1) {
+                selectPreviousWordAction.actionPerformed(evt)
+            } else {
+                selectWordAction.actionPerformed(evt)
+            }
+            return
+        }
+
+        // Partial selection on a single line but not the entire line or word
+        // selection actions are not available so select the entire line
+        if (startRow == endRow && (startPos != startRowOffset || (endPos != endRowOffset - 1))) {
+            inputArea.setSelectionStart(startRowOffset)
+            inputArea.setSelectionEnd(endRowOffset - 1)
+            return
+        }
+
+        // At this point an entire line or multiple lines are selected so
+        // look for a block/paragraph to select
+        String rowText = inputArea.document.getText(startRowOffset, endRowOffset - startRowOffset)
+        if (!rowText?.trim()) {
+            // Selection is empty or all spaces so not part of any block
+            return
+        }
+
+        // Look up for first empty row
+        int startBlockPos = startRowOffset
+        for (int i = startRow - 1; i >= 0; i--) {
+            Element re = rootElement.getElement(i)
+            rowText = inputArea.document.getText(re.getStartOffset(), re.getEndOffset() - re.getStartOffset())
+            if (!rowText?.trim()) {
+                break
+            }
+            startBlockPos = re.getStartOffset()
+        }
+
+        // Look down for first empty row
+        int endBlockPos = endRowOffset
+        int totalRows = rootElement.getElementCount()
+        for (int i = startRow + 1; i < totalRows; i++) {
+            Element re = rootElement.getElement(i)
+            rowText = inputArea.document.getText(re.getStartOffset(), re.getEndOffset() - re.getStartOffset())
+            if (!rowText?.trim()) {
+                break
+            }
+            endBlockPos = re.getEndOffset()
+        }
+
+        inputArea.setSelectionStart(startBlockPos)
+        inputArea.setSelectionEnd(endBlockPos)
     }
 
     void showMessage(String message) {

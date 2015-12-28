@@ -42,6 +42,23 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No matching constructor found: java.awt.Dimension<init>(int)'
     }
 
+    void testWrongNumberOfArgumentsWithDefaultConstructor() {
+        shouldFailWithMessages '''
+            class X {}
+            def foo() {
+              new X("f")
+            }
+            println foo()
+        ''', 'Cannot find matching method X#<init>(java.lang.String)'
+    }
+
+    void testCreateArrayWithDefaultConstructor() {
+        assertScript '''
+            String[] strings = ['a','b','c']
+            int[] ints = new int[2]
+        '''
+    }
+
     void testIncorrectArgumentTypes() {
         // test that wrong number of arguments will fail
         shouldFailWithMessages '''

@@ -63,7 +63,7 @@ public interface GroovyObject {
 ==== invokeMethod
 
 According to the schema in <<core-metaprogramming.adoc#_runtime_metaprogramming,Runtime Metaprogramming>> this method is called when the method you called is not present on a Groovy object.
-Here is a simple example using a overriden `invokeMethod()` method:
+Here is a simple example using a overridden `invokeMethod()` method:
 
 [source,groovy]
 ----
@@ -809,7 +809,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_ignoreNulls,indent=0]
 ----
-|includePackage|False|Use fully qualified class name instead of simple name in toString|
+|includePackage|True|Use fully qualified class name instead of simple name in toString|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
@@ -965,6 +965,22 @@ Set to false to obtain exactly one constructor but with initial value support an
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_false,indent=0]
 ----
 |=======================================================================
+
+Setting the `defaults` annotation attribute to `false` and the `force` annotation attribute to `true` allows
+multiple tuple constructors to be created by using different customization options for the different cases
+(provided each case has a different type signature) as shown in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_multiple,indent=0]
+----
+
+Similarly, here is another example using different options for `includes`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_multipleIncludes,indent=0]
+----
 
 [[xform-MapConstructor]]
 ===== @groovy.transform.MapConstructor
@@ -1755,7 +1771,7 @@ For details
 
 ==== Easier cloning and externalizing
 
-Groovy provides two annotations aimed at facilitating the implementation of `Clonable` and `Externalizable` interfaces,
+Groovy provides two annotations aimed at facilitating the implementation of `Cloneable` and `Externalizable` interfaces,
 respectively named `@AutoClone` and `@AutoExternalize`.
 
 [[xform-AutoClone]]
@@ -2647,7 +2663,7 @@ and such a thing rarely happens.
 
 Classes of the Abstract Syntax Tree belong to the `org.codehaus.groovy.ast` package. It is recommended to the reader
 to use the Groovy Console, in particular the AST browser tool, to gain knowledge about those classes. However, a good
-resource for learning is the https://github.com/apache/incubator-groovy/tree/master/src/test/org/codehaus/groovy/ast/builder[AST Builder]
+resource for learning is the https://github.com/apache/groovy/tree/master/src/test/org/codehaus/groovy/ast/builder[AST Builder]
 test suite.
 
 ==== Testing AST transformations

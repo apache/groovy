@@ -205,10 +205,15 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param coll a collection
      * @param c a closure used to convert the objects of coll
      */
-    public Object call(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
-        StreamingJsonDelegate.writeCollectionWithClosure(writer, coll, c);
+    public Object call(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        return StreamingJsonDelegate.writeCollectionWithClosure(writer, coll, c);
+    }
 
-        return null;
+    /**
+     * Delegates to {@link #call(Iterable, Closure)}
+     */
+    public Object call(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        return call((Iterable)coll, c);
     }
 
     /**
@@ -287,12 +292,19 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param coll a collection
      * @param c a closure used to convert the objects of coll
      */
-    public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+    public void call(String name, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         writer.write(JsonOutput.toJson(name));
         writer.write(JsonOutput.COLON);
         call(coll, c);
         writer.write(JsonOutput.CLOSE_BRACE);
+    }
+
+    /**
+     * Delegates to {@link #call(String, Iterable, Closure)}
+     */
+    public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        call(name, (Iterable)coll, c);
     }
 
     /**
@@ -405,28 +417,46 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
             Object[] arr = (Object[]) args;
             try {
-                if (arr.length == 0) {
-                    call(name);
-                } else if (arr.length == 1) {
-                    if (arr[0] instanceof Closure) {
-                        final Closure callable = (Closure) arr[0];
-                        call(name, callable);
-                    } else if (arr[0] instanceof Map) {
-                        final Map<String, Map> map = Collections.singletonMap(name, (Map) arr[0]);
-                        call(map);
-                    } else {
+                switch(arr.length) {
+                    case 0:
+                        call(name);
+                    break;
+                    case 1:
+                        if (arr[0] instanceof Closure) {
+                            final Closure callable = (Closure) arr[0];
+                            call(name, callable);
+                        } else if (arr[0] instanceof Map) {
+                            final Map<String, Map> map = Collections.singletonMap(name, (Map) arr[0]);
+                            call(map);
+                        } else {
+                            notExpectedArgs = true;
+                        }
+                    break;
+                    case 2:
+                        final Object first = arr[0];
+                        final Object second = arr[1];
+                        final boolean isClosure = second instanceof Closure;
+
+                        if(isClosure && first instanceof Map ) {
+                            final Closure callable = (Closure) second;
+                            call(name, (Map)first, callable);
+                        }
+                        else if(isClosure && first instanceof Iterable) {
+                            final Iterable coll = (Iterable) first;
+                            final Closure callable = (Closure) second;
+                            call(name, coll, callable);
+                        }
+                        else if(isClosure && first.getClass().isArray()) {
+                            final Iterable coll = Arrays.asList((Object[])first);
+                            final Closure callable = (Closure) second;
+                            call(name, coll, callable);
+                        }
+                        else {
+                            notExpectedArgs = true;
+                        }
+                    break;
+                    default:
                         notExpectedArgs = true;
-                    }
-                } else if (arr.length == 2 && arr[0] instanceof Map && arr[1] instanceof Closure) {
-                    Map map = (Map) arr[0];
-                    final Closure callable = (Closure) arr[1];
-                    call(name, map, callable);
-                } else if (StreamingJsonDelegate.isCollectionWithClosure(arr)) {
-                    final Collection coll = (Collection) arr[0];
-                    final Closure callable = (Closure) arr[1];
-                    call(name, coll, callable);
-                } else {
-                    notExpectedArgs = true;
                 }
             } catch (IOException ioe) {
                 throw new JsonException(ioe);
@@ -447,9 +477,9 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      */
     public static class StreamingJsonDelegate extends GroovyObjectSupport {
 
-        private Writer writer;
-        private boolean first;
-        private State state;
+        protected final Writer writer;
+        protected boolean first;
+        protected State state;
 
 
         public StreamingJsonDelegate(Writer w, boolean first) {
@@ -457,21 +487,50 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             this.first = first;
         }
 
+        /**
+         * @return Obtains the current writer
+         */
+        public Writer getWriter() {
+            return writer;
+        }
+
         public Object invokeMethod(String name, Object args) {
             if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
                 try {
                     Object[] arr = (Object[]) args;
 
-                    if (arr.length == 1) {
-                        final Object value = arr[0];
-                        call(name, value);
-                    } else if (isCollectionWithClosure(arr)) {
-                        final Collection coll = (Collection) arr[0];
-                        final Closure callable = (Closure) arr[1];
-                        call(name, coll, callable);
-                    } else {
-                        final List<Object> list = Arrays.asList(arr);
-                        call(name, list);
+                    final int len = arr.length;
+                    switch (len) {
+                        case 1:
+                            final Object value = arr[0];
+                            if(value instanceof Closure) {
+                                call(name, (Closure)value);
+                            }
+                            else {
+                                call(name, value);
+                            }
+                            return null;
+                        case 2:
+                            if(arr[len -1] instanceof Closure) {
+                                final Object obj = arr[0];
+                                final Closure callable = (Closure) arr[1];
+                                if(obj instanceof Iterable) {
+                                    call(name, (Iterable)obj, callable);
+                                    return null;
+                                }
+                                else if(obj.getClass().isArray()) {
+                                    call(name, Arrays.asList( (Object[])obj), callable);
+                                    return null;
+                                }
+                                else {
+                                    call(name, obj, callable);
+                                    return null;
+                                }
+                            }
+                        default:
+                            final List<Object> list = Arrays.asList(arr);
+                            call(name, list);
+
                     }
                 } catch (IOException ioe) {
                     throw new JsonException(ioe);
@@ -528,9 +587,16 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          * @param coll a collection
          * @param c a closure used to convert the objects of coll
          */
-        public void call(String name, Collection coll, Closure c) throws IOException {
+        public void call(String name, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
             writeName(name);
             writeObjects(coll, c);
+        }
+
+        /**
+         * Delegates to {@link #call(String, Iterable, Closure)}
+         */
+        public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+            call(name, (Iterable)coll, c);
         }
 
         /**
@@ -546,6 +612,33 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         }
 
         /**
+         * Writes the name and value of a JSON attribute
+         *
+         * @param name The attribute name
+         * @param value The value
+         * @throws IOException
+         */
+        public void call(String name, Object value, @DelegatesTo(StreamingJsonDelegate.class) Closure callable) throws IOException {
+            writeName(name);
+            verifyValue();
+            writeObject(writer, value, callable);
+        }
+        /**
+         * Writes the name and another JSON object
+         *
+         * @param name The attribute name
+         * @param value The value
+         * @throws IOException
+         */
+        public void call(String name,@DelegatesTo(StreamingJsonDelegate.class) Closure value) throws IOException {
+            writeName(name);
+            verifyValue();
+            writer.write(JsonOutput.OPEN_BRACE);
+            StreamingJsonDelegate.cloneDelegateAndGetContent(writer, value);
+            writer.write(JsonOutput.CLOSE_BRACE);
+
+        }
+        /**
          * Writes an unescaped value. Note: can cause invalid JSON if passed JSON is invalid
          *
          * @param name The attribute name
@@ -554,16 +647,17 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          */
         public void call(String name, JsonOutput.JsonUnescaped json) throws IOException {
             writeName(name);
+            verifyValue();
             writer.write(json.toString());
         }
 
 
-        private void writeObjects(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        private void writeObjects(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
             verifyValue();
             writeCollectionWithClosure(writer, coll, c);
         }
 
-        private void verifyValue() {
+        protected void verifyValue() {
             if(state == State.VALUE) {
                 throw new IllegalStateException("Cannot write value when value has just been written. Write a name first!");
             }
@@ -573,7 +667,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         }
 
 
-        private void writeName(String name) throws IOException {
+        protected void writeName(String name) throws IOException {
             if(state == State.NAME) {
                 throw new IllegalStateException("Cannot write a name when a name has just been written. Write a value first!");
             }
@@ -589,21 +683,25 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(JsonOutput.COLON);
         }
 
-        private void writeValue(Object value) throws IOException {
+        protected void writeValue(Object value) throws IOException {
             verifyValue();
             writer.write(JsonOutput.toJson(value));
         }
 
-        private void writeArray(List<Object> list) throws IOException {
+        protected void writeArray(List<Object> list) throws IOException {
             verifyValue();
             writer.write(JsonOutput.toJson(list));
         }
 
         public static boolean isCollectionWithClosure(Object[] args) {
-            return args.length == 2 && args[0] instanceof Collection && args[1] instanceof Closure;
+            return args.length == 2 && args[0] instanceof Iterable && args[1] instanceof Closure;
         }
 
-        public static Object writeCollectionWithClosure(Writer writer, Collection coll, Closure closure) throws IOException {
+        public static Object writeCollectionWithClosure(Writer writer, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure closure) throws IOException {
+            return writeCollectionWithClosure(writer, (Iterable)coll, closure);
+        }
+
+        public static Object writeCollectionWithClosure(Writer writer, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure closure) throws IOException {
             writer.write(JsonOutput.OPEN_BRACKET);
             boolean first = true;
             for (Object it : coll) {
@@ -613,20 +711,25 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                     first = false;
                 }
 
-                writer.write(JsonOutput.OPEN_BRACE);
-                curryDelegateAndGetContent(writer, closure, it);
-                writer.write(JsonOutput.CLOSE_BRACE);
+                writeObject(writer, it, closure);
             }
             writer.write(JsonOutput.CLOSE_BRACKET);
 
             return writer;
         }
 
-        public static void cloneDelegateAndGetContent(Writer w, Closure c) {
+        private static void writeObject(Writer writer, Object object, Closure closure) throws IOException {
+            writer.write(JsonOutput.OPEN_BRACE);
+            curryDelegateAndGetContent(writer, closure, object);
+            writer.write(JsonOutput.CLOSE_BRACE);
+        }
+
+        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c)
+        {
             cloneDelegateAndGetContent(w, c, true);
         }
 
-        public static void cloneDelegateAndGetContent(Writer w, Closure c, boolean first) {
+        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, boolean first) {
             StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first);
             Closure cloned = (Closure) c.clone();
             cloned.setDelegate(delegate);
@@ -634,11 +737,11 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             cloned.call();
         }
 
-        public static void curryDelegateAndGetContent(Writer w, Closure c, Object o) {
+        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, Object o) {
             curryDelegateAndGetContent(w, c, o, true);
         }
 
-        public static void curryDelegateAndGetContent(Writer w, Closure c, Object o, boolean first) {
+        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, Object o, boolean first) {
             StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first);
             Closure curried = c.curry(o);
             curried.setDelegate(delegate);

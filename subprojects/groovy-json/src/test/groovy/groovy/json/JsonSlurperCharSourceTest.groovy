@@ -26,4 +26,10 @@ class JsonSlurperCharSourceTest extends JsonSlurperTest {
     void setUp() {
         parser = new JsonSlurper().setType(JsonParserType.CHARACTER_SOURCE)
     }
+
+    void testParsingDecimalValue() {
+        def num = parser.parseText('{"num": 123.40}').num
+        assert num instanceof BigDecimal
+        assert 123.40G == num
+    }
 }

@@ -111,4 +111,57 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testCombiningWithInheritConstructors_groovy7524() {
+        assertScript '''
+            import groovy.transform.*
+
+            @TupleConstructor
+            class NameId {
+                String name
+                Integer id
+            }
+
+            @ToString(includeSuperProperties=true, ignoreNulls=true, includeNames=true)
+            @TupleConstructor(force=true, defaults=false)
+            @TupleConstructor(force=true, defaults=false, includeSuperProperties=true)
+            @InheritConstructors
+            class Cat extends NameId {
+                Double age
+            }
+
+            assert new Cat("Felix").toString() == 'Cat(name:Felix)'
+            assert new Cat("Felix", 42).toString() == 'Cat(name:Felix, id:42)'
+            assert new Cat("Felix", 42, 3.5d).toString() == 'Cat(age:3.5, name:Felix, id:42)'
+            assert new Cat(3.5d).toString() == 'Cat(age:3.5)'
+            assert new Cat().toString() == 'Cat()'
+        '''
+    }
+
+    void testMultipleUsages_groovy7672() {
+        assertScript '''
+            import groovy.transform.*
+            import java.awt.Color
+
+            class Named {
+                String name
+            }
+
+            @ToString(includeSuperProperties=true, ignoreNulls=true, includeNames=true, includeFields=true)
+            @TupleConstructor(force=true, defaults=false)
+            @TupleConstructor(force=true, defaults=false, includeFields=true)
+            @TupleConstructor(force=true, defaults=false, includeSuperProperties=true)
+            class Cat extends Named {
+                int age
+                private Color color
+                Cat() {}
+            }
+
+            assert new Cat("Felix", 3).toString() == 'Cat(age:3, name:Felix)'
+            assert new Cat(3, Color.BLACK).toString() == 'Cat(age:3, color:java.awt.Color[r=0,g=0,b=0])'
+            assert new Cat(3).toString() == 'Cat(age:3)'
+            assert new Cat().toString() == 'Cat(age:0)'
+            assert Cat.constructors.size() == 4
+        '''
+    }
+
 }

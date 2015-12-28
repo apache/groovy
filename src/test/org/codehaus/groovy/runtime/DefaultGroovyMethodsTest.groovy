@@ -62,6 +62,27 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.round(d, 6), 1000.123456);
     }
 
+    public void testBigDecimalRounding() throws Exception {
+        BigDecimal bd = new BigDecimal('1000.123456')
+
+        assertEquals(DefaultGroovyMethods.round(bd), new BigDecimal('1000'));
+        assertEquals(DefaultGroovyMethods.round(bd, 0), new BigDecimal('1000.0'));
+        assertEquals(DefaultGroovyMethods.round(bd, 1), new BigDecimal('1000.1'));
+        assertEquals(DefaultGroovyMethods.round(bd, 2), new BigDecimal('1000.12'));
+        assertEquals(DefaultGroovyMethods.round(bd, 3), new BigDecimal('1000.123'));
+        assertEquals(DefaultGroovyMethods.round(bd, 4), new BigDecimal('1000.1235'));
+        assertEquals(DefaultGroovyMethods.round(bd, 5), new BigDecimal('1000.12346'));
+        assertEquals(DefaultGroovyMethods.round(bd, 6), new BigDecimal('1000.123456'));
+
+        BigDecimal bd2 = new BigDecimal('-123.739')
+
+        assertEquals(DefaultGroovyMethods.round(bd2), new BigDecimal('-124'));
+        assertEquals(DefaultGroovyMethods.round(bd2, 0), new BigDecimal('-124.0'));
+        assertEquals(DefaultGroovyMethods.round(bd2, 1), new BigDecimal('-123.7'));
+        assertEquals(DefaultGroovyMethods.round(bd2, 2), new BigDecimal('-123.74'));
+        assertEquals(DefaultGroovyMethods.round(bd2, 3), new BigDecimal('-123.739'));
+    }
+
     public void testFloatTruncate() throws Exception {
         Float f = 1000.123456f;
 
@@ -73,6 +94,13 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(f, 4), 1000.1234f);
         assertEquals(DefaultGroovyMethods.trunc(f, 5), 1000.12345f);
         assertEquals(DefaultGroovyMethods.trunc(f, 6), 1000.123456f);
+
+        Float f2 = -123.739f
+
+        assertEquals(DefaultGroovyMethods.trunc(f2), -123.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 0), -123.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 1), -123.7f)
+        assertEquals(DefaultGroovyMethods.trunc(f2, 2), -123.73f)
     }
 
     public void testDoubleTruncate() throws Exception {
@@ -86,6 +114,33 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(d, 4), 1000.1234);
         assertEquals(DefaultGroovyMethods.trunc(d, 5), 1000.12345);
         assertEquals(DefaultGroovyMethods.trunc(d, 6), 1000.123456);
+
+        Double d2 = -123.739d
+
+        assertEquals(DefaultGroovyMethods.trunc(d2), -123.0d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 0), -123.0d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 1), -123.7d)
+        assertEquals(DefaultGroovyMethods.trunc(d2, 2), -123.73d)
+    }
+
+    public void testBigDecimalTruncate() throws Exception {
+        BigDecimal bd = new BigDecimal('1000.123456')
+
+        assertEquals(DefaultGroovyMethods.trunc(bd), new BigDecimal('1000.0'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 0), new BigDecimal('1000.0'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 1), new BigDecimal('1000.1'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 2), new BigDecimal('1000.12'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 3), new BigDecimal('1000.123'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 4), new BigDecimal('1000.1234'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 5), new BigDecimal('1000.12345'))
+        assertEquals(DefaultGroovyMethods.trunc(bd, 6), new BigDecimal('1000.123456'))
+
+        BigDecimal bd2 = new BigDecimal('-123.739')
+
+        assertEquals(DefaultGroovyMethods.trunc(bd2), new BigDecimal('-123.0'))
+        assertEquals(DefaultGroovyMethods.trunc(bd2, 0), new BigDecimal('-123.0'))
+        assertEquals(DefaultGroovyMethods.trunc(bd2, 1), new BigDecimal('-123.7'))
+        assertEquals(DefaultGroovyMethods.trunc(bd2, 2), new BigDecimal('-123.73'))
     }
 
     // GROOVY-6626

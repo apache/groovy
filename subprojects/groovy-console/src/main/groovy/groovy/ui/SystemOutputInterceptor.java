@@ -32,10 +32,18 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     private Closure callback;
     private boolean output;
 
+    private static final ThreadLocal<Integer> consoleId = new InheritableThreadLocal<Integer>() {
+        @Override
+        protected Integer initialValue() {
+            return Integer.valueOf(0);
+        }
+    };
+
     /**
      * Constructor
      *
-     * @param callback accepts a string to be sent to std out and returns a Boolean.
+     * @param callback accepts the id of the target Console instance and a
+     *                 string to be sent to std out and returns a Boolean.
      *                 If the return value is true, output will be sent to
      *                 System.out, otherwise it will not.
      */
@@ -46,7 +54,8 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     /**
      * Constructor
      *
-     * @param callback accepts a string to be sent to std out and returns a Boolean.
+     * @param callback accepts the id of the target Console instance and a
+     *                 string to be sent to std out and returns a Boolean.
      *                 If the return value is true, output will be sent to
      *                 System.out/System.err, otherwise it will not.
      * @param output   flag that tells whether System.out needs capturing ot System.err
@@ -84,10 +93,10 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     }
 
     /**
-     * Intercepts output - moret common case of byte[]
+     * Intercepts output - more common case of byte[]
      */
     public void write(byte[] b, int off, int len) throws IOException {
-        Boolean result = (Boolean) callback.call(new String(b, off, len));
+        Boolean result = (Boolean) callback.call(consoleId.get().intValue(), new String(b, off, len));
         if (result) {
             out.write(b, off, len);
         }
@@ -97,9 +106,29 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      * Intercepts output - single characters
      */
     public void write(int b) throws IOException {
-        Boolean result = (Boolean) callback.call(String.valueOf((char) b));
+        Boolean result = (Boolean) callback.call(consoleId.get().intValue(), String.valueOf((char) b));
         if (result) {
             out.write(b);
         }
+    }
+
+    /**
+     * Threads executing a script should call this method at the start of execution
+     * in order to set the id of the console that is hosting the thread of execution.  This
+     * should be called prior to any output that is generated.  The consoleId will
+     * be passed to the callback.
+     *
+     * @param consoleId id of the Console instance executing the script
+     */
+    public void setConsoleId(int consoleId) {
+        this.consoleId.set(Integer.valueOf(consoleId));
+    }
+
+    /**
+     * Threads executing a script should call this method after
+     * execution completes in order to unregister the consoleId.
+     */
+    public void removeConsoleId() {
+        this.consoleId.remove();
     }
 }

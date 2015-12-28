@@ -281,6 +281,8 @@ public class GenericsType extends ASTNode {
                     // but with reversed arguments
                     return implementsInterfaceOrIsSubclassOf(lowerBound, classNode) && checkGenerics(classNode);
                 }
+                // If there are no bounds, the generic type is basically Object, and everything is compatible.
+                return true;
             }
             // if this is not a generics placeholder, first compare that types represent the same type
             if ((type!=null && !type.equals(classNode))) {

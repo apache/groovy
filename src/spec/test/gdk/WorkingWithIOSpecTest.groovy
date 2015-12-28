@@ -23,14 +23,24 @@ package gdk
 import groovy.io.FileType
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+import static org.junit.Assume.assumeTrue
+
+@RunWith(JUnit4)
 class WorkingWithIOSpecTest extends GroovyTestCase {
 
     private final static boolean unixlike =
             System.getProperty('os.name').contains('Linux') ||
                     System.getProperty('os.name').contains('Mac OS')
-   private final static boolean windoz =
+    private final static boolean windoz =
             System.getProperty('os.name').contains('Windows')
+
+    private assumeUnixLikeSystem() {
+        assumeTrue('Test requires unix like system.', unixlike)
+    }
 
     @CompileStatic
     private void doInTmpDir(Closure cl) {
@@ -42,6 +52,7 @@ class WorkingWithIOSpecTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testFileIntro() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -73,16 +84,10 @@ Le bruit de l'eau.''')
             // tag::file_bytes[]
             byte[] contents = file.bytes
             // end::file_bytes[]
-            def expectedLength = 64
-            // e with acute accent won't be encoded on some systems -23 vs -61, -87
-            if (System.getProperty('file.encoding').endsWith('1252')) {
-                expectedLength = 63
-            }
-            assert contents.length == expectedLength
-
         }
     }
 
+    @Test
     void testWithReader() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -108,6 +113,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testWithWriter() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -121,6 +127,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testLeftShift() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -132,6 +139,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testSetBytes() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -142,6 +150,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testEachFile() {
         doInTmpDir { builder ->
             File dir = builder {
@@ -160,6 +169,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testEachFileRecurse() {
         doInTmpDir { builder ->
             File dir = builder {
@@ -181,6 +191,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testTraverse() {
         doInTmpDir { builder ->
             File dir = builder {
@@ -204,6 +215,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testGetInputStreamFromFile() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -225,6 +237,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testFileOutputStream() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -242,6 +255,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testDataInputOutput() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -264,6 +278,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testObjectInputOutput() {
         doInTmpDir { dir ->
             File baseDir = dir.baseDir
@@ -285,6 +300,7 @@ Fin.''')
         }
     }
 
+    @Test
     void testProcess1() {
         if (unixlike) {
             // tag::process_list_files[]
@@ -310,72 +326,74 @@ Fin.''')
         }
     }
 
-   void testProcess2() {
-        if (unixlike) {
-            // tag::process_list_files_line_by_line[]
-            def process = "ls -l".execute()             // <1>
-            process.in.eachLine { line ->               // <2>
-                println line                            // <3>
-            }
-            // end::process_list_files_line_by_line[]
-            assert process instanceof Process
+    @Test
+    void testProcess2() {
+       assumeUnixLikeSystem()
+
+        // tag::process_list_files_line_by_line[]
+        def process = "ls -l".execute()             // <1>
+        process.in.eachLine { line ->               // <2>
+            println line                            // <3>
         }
+        // end::process_list_files_line_by_line[]
+        assert process instanceof Process
     }
 
+    @Test
     void testProcessConsumeOutput() {
-        if (unixlike) {
-            doInTmpDir { b ->
-                File file = null
-                def tmpDir = b.tmp {
-                    file = 'foo.tmp'('foo')
-                }
-                assert file.exists()
-                // tag::consumeoutput[]
-                def p = "rm -f foo.tmp".execute([], tmpDir)
-                p.consumeProcessOutput()
-                p.waitFor()
-                // end::consumeoutput[]
-                assert !file.exists()
-            }
+        assumeUnixLikeSystem()
 
+        doInTmpDir { b ->
+            File file = null
+            def tmpDir = b.tmp {
+                file = 'foo.tmp'('foo')
+            }
+            assert file.exists()
+            // tag::consumeoutput[]
+            def p = "rm -f foo.tmp".execute([], tmpDir)
+            p.consumeProcessOutput()
+            p.waitFor()
+            // end::consumeoutput[]
+            assert !file.exists()
         }
     }
 
+    @Test
     void testProcessPipe() {
-        if (unixlike) {
-            doInTmpDir { b ->
-                def proc1, proc2, proc3, proc4
-                // tag::pipe_example_1[]
-                proc1 = 'ls'.execute()
-                proc2 = 'tr -d o'.execute()
-                proc3 = 'tr -d e'.execute()
-                proc4 = 'tr -d i'.execute()
-                proc1 | proc2 | proc3 | proc4
-                proc4.waitFor()
-                if (proc4.exitValue()) {
-                    println proc4.err.text
-                } else {
-                    println proc4.text
-                }
-                // end::pipe_example_1[]
+        assumeUnixLikeSystem()
 
-                // tag::pipe_example_2[]
-                def sout = new StringBuilder()
-                def serr = new StringBuilder()
-                proc2 = 'tr -d o'.execute()
-                proc3 = 'tr -d e'.execute()
-                proc4 = 'tr -d i'.execute()
-                proc4.consumeProcessOutput(sout, serr)
-                proc2 | proc3 | proc4
-                [proc2, proc3].each { it.consumeProcessErrorStream(serr) }
-                proc2.withWriter { writer ->
-                    writer << 'testfile.groovy'
-                }
-                proc4.waitForOrKill(1000)
-                println "Standard output: $sout"
-                println "Standard error: $serr"
-                // end::pipe_example_2[]
+        doInTmpDir { b ->
+            def proc1, proc2, proc3, proc4
+            // tag::pipe_example_1[]
+            proc1 = 'ls'.execute()
+            proc2 = 'tr -d o'.execute()
+            proc3 = 'tr -d e'.execute()
+            proc4 = 'tr -d i'.execute()
+            proc1 | proc2 | proc3 | proc4
+            proc4.waitFor()
+            if (proc4.exitValue()) {
+                println proc4.err.text
+            } else {
+                println proc4.text
             }
+            // end::pipe_example_1[]
+
+            // tag::pipe_example_2[]
+            def sout = new StringBuilder()
+            def serr = new StringBuilder()
+            proc2 = 'tr -d o'.execute()
+            proc3 = 'tr -d e'.execute()
+            proc4 = 'tr -d i'.execute()
+            proc4.consumeProcessOutput(sout, serr)
+            proc2 | proc3 | proc4
+            [proc2, proc3].each { it.consumeProcessErrorStream(serr) }
+            proc2.withWriter { writer ->
+                writer << 'testfile.groovy'
+            }
+            proc4.waitForOrKill(1000)
+            println "Standard output: $sout"
+            println "Standard error: $serr"
+            // end::pipe_example_2[]
         }
     }
 

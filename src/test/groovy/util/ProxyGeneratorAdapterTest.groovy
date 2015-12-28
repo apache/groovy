@@ -29,6 +29,11 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         assert obj.toString() == 'HELLO'
     }
 
+    void testShouldCreateProxyWithArrayDelegate() {
+        def adapter = new ProxyGeneratorAdapter([:], Map$Entry, [Map$Entry] as Class[], null, false, String[])
+        assert adapter.proxyName() =~ /String_array\d+_groovyProxy/
+    }
+
     void testImplementSingleAbstractMethod() {
         def map = ['m': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
@@ -36,7 +41,6 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         assert obj instanceof GroovyObject
         assert obj instanceof Foo
         assert obj.m() == 'HELLO'
-
     }
     
     void testImplementSingleAbstractMethodReturningVoid() {
@@ -46,7 +50,6 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         assert obj instanceof GroovyObject
         assert obj instanceof Bar
         obj.bar()
-
     }
 
     void testImplementSingleAbstractMethodReturningVoidAndSharedVariable() {

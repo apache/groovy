@@ -200,7 +200,7 @@ public class JsonSlurper {
      */
     public Object parseText(String text) {
         if (text == null || "".equals(text)) {
-            throw new IllegalArgumentException("Text must not be null");
+            throw new IllegalArgumentException("Text must not be null or empty");
         }
         return createParser().parse(text);
     }

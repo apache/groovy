@@ -151,6 +151,68 @@ class JsonBuilderTest extends GroovyTestCase {
         assert json.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
     }
 
+    void testIterableAndClosure() {
+        Iterable authorIterable = [iterator:{->
+            [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")].iterator()
+        }] as Iterable
+        def json = new JsonBuilder()
+        json authorIterable, { Author author ->
+            name author.name
+        }
+
+        assert json.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+    }
+
+    void testMethodWithIterableAndClosure() {
+        Iterable authorIterable = [iterator:{->
+            [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")].iterator()
+        }] as Iterable
+
+        def json = new JsonBuilder()
+        json.authors authorIterable, { Author author ->
+            name author.name
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
+    void testNestedMethodWithIterableAndClosure() {
+        Iterable authorIterable = [iterator:{->
+            [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")].iterator()
+        }] as Iterable
+
+        def json = new JsonBuilder()
+        json {
+            authors authorIterable, { Author author ->
+                name author.name
+            }
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
+    void testMethodWithArrayAndClosure() {
+        def authorArray = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")] as Author[]
+        def json = new JsonBuilder()
+        json.authors authorArray, { Author author ->
+            name author.name
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
+    void testNestedMethodWithArrayAndClosure() {
+        Author[] authorArray = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")] as Author[]
+        def json = new JsonBuilder()
+        json {
+            authors authorArray, { Author author ->
+                name author.name
+            }
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
     void testMethodWithCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 

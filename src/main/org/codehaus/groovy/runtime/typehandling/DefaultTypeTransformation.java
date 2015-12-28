@@ -599,7 +599,8 @@ public class DefaultTypeTransformation {
 
     public static boolean compareEqual(Object left, Object right) {
         if (left == right) return true;
-        if (left == null || right == null) return false;
+        if (left == null) return right instanceof NullObject;
+        if (right == null) return left instanceof NullObject;
         if (left instanceof Comparable) {
             return compareToWithEqualityCheck(left, right, true) == 0;
         }
