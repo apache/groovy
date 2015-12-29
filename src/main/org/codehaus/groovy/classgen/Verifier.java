@@ -80,6 +80,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public static final String STATIC_METACLASS_BOOL = "__$stMC";
     public static final String SWAP_INIT = "__$swapInit";
     public static final String INITIAL_EXPRESSION = "INITIAL_EXPRESSION";
+    public static final String DEFAULT_PARAMETER_GENERATED = "DEFAULT_PARAMETER_GENERATED";
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here
     // for binary compatibility
@@ -779,6 +780,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
                 addPropertyMethod(newMethod);
                 newMethod.setGenericsTypes(method.getGenericsTypes());
+                newMethod.putNodeMetaData(DEFAULT_PARAMETER_GENERATED, true);
             }
         });
     }
