@@ -142,4 +142,36 @@ def d = new Derived()
         """
         assert message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
+
+    void testOverrideOnMethodWithDefaultParameters() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument = [:]) {
+                    return null
+                }
+            }
+            new TemplatedInterfaceImplementation()
+        '''
+    }
+
+    void testOverrideOnMethodWithDefaultParametersVariant() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument, String foo = null) {
+                    return foo
+                }
+            }
+            new TemplatedInterfaceImplementation()
+        '''
+    }
 }
