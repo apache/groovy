@@ -423,7 +423,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
         List<Expression> argList = new ArrayList<Expression>();
         argList.add(basicArgs);
-        if (grabMapsInit.size() == 0) return;
+        if (grabMapsInit.isEmpty()) return;
         for (Map<String, Object> grabMap : grabMapsInit) {
             // add Grape.grab(excludeArgs, [group:group, module:module, version:version, classifier:classifier])
             // or Grape.grab([group:group, module:module, version:version, classifier:classifier])

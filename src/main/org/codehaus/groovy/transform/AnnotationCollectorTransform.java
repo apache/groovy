@@ -167,7 +167,7 @@ public class AnnotationCollectorTransform {
         }
         ListExpression memberListExp = (ListExpression) memberValue;
         List<Expression> memberList = memberListExp.getExpressions();
-        if (memberList.size()==0) return Collections.EMPTY_LIST;
+        if (memberList.isEmpty()) return Collections.EMPTY_LIST;
         List<AnnotationNode> ret = new ArrayList<AnnotationNode>();
         for (Expression e : memberList) {
             AnnotationNode toAdd = new AnnotationNode(e.getType());
@@ -233,7 +233,7 @@ public class AnnotationCollectorTransform {
 
             @SuppressWarnings("unchecked")
             Map<String,Object> member = (Map<String, Object>) inner[1];
-            if (member.size()==0) continue;
+            if (member.isEmpty()) continue;
             Map<String, Expression> generated = new HashMap<String, Expression>(member.size());
             for (String name : member.keySet()) {
                 Object val = member.get(name);
@@ -312,7 +312,7 @@ public class AnnotationCollectorTransform {
             }
         }
 
-        if (unusedNames.size()>0) {
+        if (!unusedNames.isEmpty()) {
             String message = "Annotation collector got unmapped names "+unusedNames.toString()+".";
             addError(message, aliasAnnotationUsage, source);
         }

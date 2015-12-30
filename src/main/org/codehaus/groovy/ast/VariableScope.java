@@ -98,17 +98,17 @@ public class VariableScope  {
     public VariableScope copy() {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
-        if (declaredVariables.size() > 0) {
+        if (!declaredVariables.isEmpty()) {
           copy.declaredVariables = new HashMap<String, Variable>();
           copy.declaredVariables.putAll(declaredVariables);
         }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
-        if (referencedClassVariables.size() > 0) {
+        if (!referencedClassVariables.isEmpty()) {
             copy.referencedClassVariables = new HashMap<String, Variable>();
             copy.referencedClassVariables.putAll(referencedClassVariables);
         }
-        if (referencedLocalVariables.size() > 0) {
+        if (!referencedLocalVariables.isEmpty()) {
             copy.referencedLocalVariables = new HashMap<String, Variable>();
             copy.referencedLocalVariables.putAll(referencedLocalVariables);
         }

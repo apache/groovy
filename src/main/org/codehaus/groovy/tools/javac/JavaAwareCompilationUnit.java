@@ -65,7 +65,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
-                if (javaSources.size() != 0) {
+                if (!javaSources.isEmpty()) {
                     VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                     scopeVisitor.visitClass(node);
                     new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node, source);
@@ -85,7 +85,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 try {
-                    if (javaSources.size() != 0) stubGenerator.generateClass(classNode);
+                    if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
                 } catch (FileNotFoundException fnfe) {
                     source.addException(fnfe);
                 }
@@ -96,7 +96,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public void gotoPhase(int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
         // compile Java and clean up
-        if (phase == Phases.SEMANTIC_ANALYSIS && javaSources.size() > 0) {
+        if (phase == Phases.SEMANTIC_ANALYSIS && !javaSources.isEmpty()) {
             for (ModuleNode module : getAST().getModules()) {
                 module.setImportsResolved(false);
             }

@@ -58,7 +58,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     private void completeEnum(ClassNode enumClass) {
         boolean isAic = isAnonymousInnerClass(enumClass);
-        if (enumClass.getDeclaredConstructors().size() == 0) {
+        if (enumClass.getDeclaredConstructors().isEmpty()) {
             addImplicitConstructors(enumClass, isAic);
         }
 
@@ -74,7 +74,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         if (aic) {
             ClassNode sn = enumClass.getSuperClass();
             List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
-            if (sctors.size() == 0) {
+            if (sctors.isEmpty()) {
                 addMapConstructors(enumClass, false);
             } else {
                 for (ConstructorNode constructorNode : sctors) {

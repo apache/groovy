@@ -236,7 +236,7 @@ public class ObservableSet<E> implements Set<E> {
                     values.add(element);
                 }
             }
-            if (values.size() > 0) {
+            if (!values.isEmpty()) {
                 fireMultiElementAddedEvent(values);
                 fireSizeChangedEvent(oldSize, size());
             }

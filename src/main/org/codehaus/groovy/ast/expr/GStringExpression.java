@@ -88,7 +88,7 @@ public class GStringExpression extends Expression {
     public void addValue(Expression value) {
         // If the first thing is an value, then we need a dummy empty string in front of it so that when we
         // toString it they come out in the correct order.
-        if (strings.size() == 0)
+        if (strings.isEmpty())
             strings.add(ConstantExpression.EMPTY_STRING);
         values.add(value);
     }
