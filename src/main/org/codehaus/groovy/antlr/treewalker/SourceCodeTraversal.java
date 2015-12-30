@@ -73,7 +73,7 @@ public class SourceCodeTraversal extends TraversalHelper {
     }
 
     protected void accept(GroovySourceAST currentNode) {
-        if (currentNode != null && unvisitedNodes != null && unvisitedNodes.size() > 0) {
+        if (currentNode != null && unvisitedNodes != null && !unvisitedNodes.isEmpty()) {
             GroovySourceAST t = currentNode;
 
             if (!(unvisitedNodes.contains(currentNode))) {

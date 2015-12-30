@@ -113,7 +113,7 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
             buffer.add((norm_seconds == 0 ? (norm_millis < 0 ? "-0" : "0") : norm_seconds) + "." + StringGroovyMethods.padLeft("" + Math.abs(norm_millis), 3, "0") + " seconds");
         }
 
-        if (buffer.size() != 0) {
+        if (!buffer.isEmpty()) {
             return DefaultGroovyMethods.join(buffer.iterator(), ", ");
         } else {
             return "0";

@@ -361,7 +361,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     }
                     args.addExpression(exp);
                 }
-                if (savedMapEntries.size() > 0) {
+                if (!savedMapEntries.isEmpty()) {
                     args.getExpressions().add(2, new MapExpression(savedMapEntries));
                 }
             }

@@ -66,7 +66,7 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
             statements.addAll(((BlockStatement) statement).getStatements());
         }
 
-        if (statements.size() == 0) return;
+        if (statements.isEmpty()) return;
 
         BlockStatement rewrittenMethodCode = new BlockStatement();
 

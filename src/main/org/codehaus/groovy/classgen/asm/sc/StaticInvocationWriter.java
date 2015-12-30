@@ -333,7 +333,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         AsmClassGenerator acg = controller.getAcg();
         TypeChooser typeChooser = controller.getTypeChooser();
         OperandStack operandStack = controller.getOperandStack();
-        ClassNode lastArgType = argumentList.size()>0?
+        ClassNode lastArgType = !argumentList.isEmpty() ?
                 typeChooser.resolveType(argumentList.get(argumentList.size()-1), controller.getClassNode()):null;
         if (lastParaType.isArray()
                 && ((argumentList.size() > para.length)
