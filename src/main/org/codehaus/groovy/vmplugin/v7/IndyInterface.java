@@ -116,9 +116,12 @@ public class IndyInterface {
             if (LOG_ENABLED) {
                  LOG.info("invalidating switch point");
             }
-        	SwitchPoint old = switchPoint;
-            switchPoint = new SwitchPoint();
-            synchronized(IndyInterface.class) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
+
+            synchronized(IndyInterface.class) {
+                SwitchPoint old = switchPoint;
+                switchPoint = new SwitchPoint();
+                SwitchPoint.invalidateAll(new SwitchPoint[]{old});
+            }
         }
 
         /**
