@@ -228,7 +228,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
     @Override
     public void castNonPrimitiveToBool(ClassNode sourceType) {
-        writeIndyCast(sourceType, ClassHelper.boolean_TYPE);;
+        writeIndyCast(sourceType, ClassHelper.boolean_TYPE);
     }
 
 }
