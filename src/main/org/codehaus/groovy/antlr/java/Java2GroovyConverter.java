@@ -214,10 +214,8 @@ public class Java2GroovyConverter extends VisitorAdapter{
             // as groovy AST doesn't expect to have them
             if (t.getType() == GroovyTokenTypes.STRING_LITERAL) {
                 String text = t.getText();
-                if (isSingleQuoted(text)) {
+                if (isSingleQuoted(text) || isDoubleQuoted(text)) {
                     t.setText(text.substring(1, text.length() - 1)); // chop off the single quotes at start and end
-                } else if (isDoubleQuoted(text)) {
-                    t.setText(text.substring(1, text.length() - 1)); // chop off the double quotes at start and end
                 }
             }
         }
