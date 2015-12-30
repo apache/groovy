@@ -1020,9 +1020,7 @@ public class CompilationUnit extends ProcessingUnit {
             int min = -1;
             for (int j = 0; j < unsorted.size(); j++) {
                 if (index[j] == -1) continue;
-                if (min == -1) {
-                    min = j;
-                } else if (index[j] < index[min]) {
+                if (min == -1 || index[j] < index[min]) {
                     min = j;
                 }
             }

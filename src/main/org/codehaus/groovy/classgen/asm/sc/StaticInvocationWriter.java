@@ -602,7 +602,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         boolean isInt = ClassHelper.int_TYPE.equals(type);
         boolean isShort = ClassHelper.short_TYPE.equals(type);
         boolean isByte = ClassHelper.byte_TYPE.equals(type);
-        if (isInt || isShort || isByte) {
+        if (isInt || isShort || isByte || ClassHelper.boolean_TYPE.equals(type)) {
             mv.visitInsn(ICONST_0);
         } else if (ClassHelper.long_TYPE.equals(type)) {
             mv.visitInsn(LCONST_0);
@@ -610,8 +610,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitInsn(FCONST_0);
         } else if (ClassHelper.double_TYPE.equals(type)) {
             mv.visitInsn(DCONST_0);
-        } else if (ClassHelper.boolean_TYPE.equals(type)) {
-            mv.visitInsn(ICONST_0);
         } else {
             mv.visitLdcInsn(0);
         }
