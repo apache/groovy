@@ -44,9 +44,13 @@ public final class Logger {
     private void log(final String level, Object msg, Throwable cause) {
         assert level != null;
         assert msg != null;
-        
+
         if (io == null) {
-            io = new IO();
+            synchronized (Logger.class) {
+                if (io == null) {
+                    io = new IO();
+                }
+            }
         }
 
         // Allow the msg to be a Throwable, and handle it properly if no cause is given

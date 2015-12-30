@@ -412,7 +412,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param includeExtension
      * @return the registry
      */
-    public static MetaClassRegistry getInstance(int includeExtension) {
+    public static synchronized MetaClassRegistry getInstance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {
             if (instanceInclude == null) {
                 instanceInclude = new MetaClassRegistryImpl();
