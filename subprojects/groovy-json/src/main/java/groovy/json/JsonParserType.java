@@ -94,5 +94,5 @@ public enum JsonParserType {
      * INDEX_OVERLAY. It should be on average the fastest known JSON parser on the JVM circa Jan 2014.
      * But not as fast as INDEX_OVERLAY.
      */
-    CHAR_BUFFER;
+    CHAR_BUFFER
 }
