@@ -610,8 +610,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitInsn(FCONST_0);
         } else if (ClassHelper.double_TYPE.equals(type)) {
             mv.visitInsn(DCONST_0);
-        } else if (ClassHelper.boolean_TYPE.equals(type)) {
-            mv.visitInsn(ICONST_0);
         } else {
             mv.visitLdcInsn(0);
         }
