@@ -23,6 +23,6 @@ package groovy.json.internal;
  */
 public enum Type {
 
-    INTEGER, STRING, DOUBLE, TRUE, FALSE, NULL, MAP, LIST;
+    INTEGER, STRING, DOUBLE, TRUE, FALSE, NULL, MAP, LIST
 
 }
