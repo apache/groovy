@@ -169,7 +169,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 createToString(cNode, false, false, null, null, false, true);
             }
             if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) &&
-                pList.size() > 0 &&
+                    !pList.isEmpty() &&
                 !hasDeclaredMethod(cNode, COPY_WITH_METHOD, 1) ) {
                 createCopyWith( cNode, pList ) ;
             }
@@ -335,7 +335,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         // check for missing properties
         body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
         createConstructorMapCommon(cNode, body);
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             createNoArgConstructor(cNode);
         }
     }
@@ -498,7 +498,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             return false;
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
-                fieldType.getAnnotations(MY_TYPE).size() != 0;
+                !fieldType.getAnnotations(MY_TYPE).isEmpty();
     }
 
     private boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {

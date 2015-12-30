@@ -237,7 +237,7 @@ public class DefaultGroovyMethodsSupport {
         for (Collection col : cols) {
             all.addAll(col);
         }
-        if (all.size() == 0)
+        if (all.isEmpty())
             return true;
 
         Object first = all.get(0);

@@ -181,7 +181,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
                 continue;
             } else {
-                if (configEntry instanceof Map && ((Map)configEntry).size() > 0 && value instanceof Map) {
+                if (configEntry instanceof Map && !((Map) configEntry).isEmpty() && value instanceof Map) {
                     // recur
                     doMerge((Map) configEntry, (Map) value);
                 } else {

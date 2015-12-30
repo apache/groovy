@@ -4407,7 +4407,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (arguments instanceof ArgumentListExpression) {
             ArgumentListExpression al = (ArgumentListExpression) arguments;
             List<Expression> list = al.getExpressions();
-            if (list.size()==0) return declaringClass;
+            if (list.isEmpty()) return declaringClass;
             Expression exp = list.get(0);
             ClassNode cn = exp.getNodeMetaData(ExtensionMethodDeclaringClass.class);
             if (cn!=null) return cn;

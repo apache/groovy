@@ -140,7 +140,7 @@ public class GroovyCollections {
      */
     public static List transpose(List lists) {
         List result = new ArrayList();
-        if (lists.isEmpty() || lists.size() == 0) return result;
+        if (lists.isEmpty() || lists.isEmpty()) return result;
         int minSize = Integer.MAX_VALUE;
         for (Object listLike : lists) {
             List list = (List) DefaultTypeTransformation.castToType(listLike, List.class);

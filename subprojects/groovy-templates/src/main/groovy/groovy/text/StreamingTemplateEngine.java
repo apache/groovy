@@ -802,7 +802,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
             ErrorCollector collector = e.getErrorCollector();
             @SuppressWarnings({"unchecked"})
             List<Message> errors = (List<Message>) collector.getErrors();
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 Message firstMessage = errors.get(0);
                 if (firstMessage instanceof SyntaxErrorMessage) {
                     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})

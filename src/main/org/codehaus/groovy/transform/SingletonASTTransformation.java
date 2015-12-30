@@ -116,7 +116,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
             }
         }
 
-        if (isStrict && cNodes.size() != 0) {
+        if (isStrict && !cNodes.isEmpty()) {
             for (ConstructorNode cNode : cNodes) {
                 addError("@Singleton didn't expect to find one or more additional constructors: remove constructor(s) or set strict=false", cNode);
             }

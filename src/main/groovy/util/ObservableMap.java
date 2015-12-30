@@ -240,7 +240,7 @@ public class ObservableMap implements Map {
                     }
                 }
             }
-            if (events.size() > 0) {
+            if (!events.isEmpty()) {
                 fireMultiPropertyEvent(events);
                 fireSizeChangedEvent(oldSize, size());
             }

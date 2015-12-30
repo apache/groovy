@@ -357,7 +357,7 @@ public class JavaStubGenerator {
     }
 
     private void printEnumFields(PrintWriter out, List<FieldNode> fields) {
-        if (fields.size() != 0) {
+        if (!fields.isEmpty()) {
             boolean first = true;
             for (FieldNode field : fields) {
                 if (!first) {
@@ -431,7 +431,7 @@ public class JavaStubGenerator {
 
         BlockStatement block = (BlockStatement) code;
         List stats = block.getStatements();
-        if (stats == null || stats.size() == 0)
+        if (stats == null || stats.isEmpty())
             return null;
 
         Statement stat = (Statement) stats.get(0);

@@ -316,7 +316,7 @@ public class ErrorCollector {
 
 
     private void write(PrintWriter writer, Janitor janitor, List messages, String txt) {
-        if (messages==null || messages.size()==0) return;
+        if (messages==null || messages.isEmpty()) return;
         Iterator iterator = messages.iterator();
         while (iterator.hasNext()) {
             Message message = (Message) iterator.next();

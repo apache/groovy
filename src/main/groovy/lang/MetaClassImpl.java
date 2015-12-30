@@ -3206,7 +3206,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             ParameterTypes paramTypes = (ParameterTypes) method;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
             if (dist == 0) return method;
-            if (matches.size() == 0) {
+            if (matches.isEmpty()) {
                 matches.add(method);
                 matchesDistance = dist;
             } else if (dist < matchesDistance) {
@@ -3221,7 +3221,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (matches.size() == 1) {
             return matches.getFirst();
         }
-        if (matches.size() == 0) {
+        if (matches.isEmpty()) {
             return null;
         }
 

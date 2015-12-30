@@ -1173,7 +1173,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addCovariantMethods(classNode, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
 
         Map<String, MethodNode> declaredMethodsMap = new HashMap<String, MethodNode>();
-        if (methodsToAdd.size() > 0) {
+        if (!methodsToAdd.isEmpty()) {
             for (MethodNode mn : declaredMethods) {
                 declaredMethodsMap.put(mn.getTypeDescriptor(), mn);
             }

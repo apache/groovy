@@ -184,7 +184,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     public boolean hasAnnotation(ClassNode cNode, ClassNode annotation) {
         List annots = cNode.getAnnotations(annotation);
-        return (annots != null && annots.size() > 0);
+        return (annots != null && !annots.isEmpty());
     }
 
     public static List<String> tokenize(String rawExcludes) {

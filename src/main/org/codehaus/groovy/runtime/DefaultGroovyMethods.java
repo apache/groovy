@@ -3051,7 +3051,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
         List<T> selfList = asList(self);
         List<List<T>> answer = new ArrayList<List<T>>();
-        if (size <= 0 || selfList.size() == 0) {
+        if (size <= 0 || selfList.isEmpty()) {
             answer.add(selfList);
         } else {
             for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
@@ -3785,7 +3785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else if (newEntry instanceof List) {
             List list = (List) newEntry;
             // def (key, value) == list
-            Object key = list.size() == 0 ? null : list.get(0);
+            Object key = list.isEmpty() ? null : list.get(0);
             Object value = list.size() <= 1 ? null : list.get(1);
             leftShift(result, new MapEntry(key, value));
         } else {
@@ -11360,7 +11360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K,V> Map<K,V> intersect(Map<K,V> left, Map<K,V> right) {
         final Map<K,V> ansMap = createSimilarMap(left);
-        if (right != null && right.size() > 0) {
+        if (right != null && !right.isEmpty()) {
             for (Map.Entry<K, V> e1 : left.entrySet()) {
                 for (Map.Entry<K, V> e2 : right.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
@@ -11595,7 +11595,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!found) return false;
             otherItems.remove(foundItem);
         }
-        return otherItems.size() == 0;
+        return otherItems.isEmpty();
     }
 
     /**
@@ -11782,7 +11782,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
         Collection<T> ansCollection = createSimilarCollection(self);
-        if (self.size() == 0)
+        if (self.isEmpty())
             return ansCollection;
         T head = self.iterator().next();
 
@@ -11933,7 +11933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
         final Map<K,V> ansMap = createSimilarMap(self);
         ansMap.putAll(self);
-        if (removeMe != null && removeMe.size() > 0) {
+        if (removeMe != null && !removeMe.isEmpty()) {
             for (Map.Entry<K, V> e1 : self.entrySet()) {
                 for (Object e2 : removeMe.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
