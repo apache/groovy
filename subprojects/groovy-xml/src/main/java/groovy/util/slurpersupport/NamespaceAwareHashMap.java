@@ -69,7 +69,7 @@ public class NamespaceAwareHashMap extends HashMap<String, String> {
 
     private Object adjustForNamespaceIfNeeded(Object key) {
         String keyString = key.toString();
-        if (keyString.contains("{") || namespaceTagHints == null || namespaceTagHints.isEmpty() || keyString.contains("{") || !keyString.contains(":")) {
+        if (keyString.contains("{") || namespaceTagHints == null || namespaceTagHints.isEmpty() || !keyString.contains(":")) {
             return key;
         }
         final int i = keyString.indexOf(":");

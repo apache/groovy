@@ -68,7 +68,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         public int compare(final Method o1, final Method o2) {
             int cmp = o1.getName().compareTo(o2.getName());
             if (cmp != 0) return cmp;
-            cmp = o1.getParameterTypes().length - o1.getParameterTypes().length;
+            cmp = o1.getParameterTypes().length - o2.getParameterTypes().length;
             return cmp;
         }
     };
