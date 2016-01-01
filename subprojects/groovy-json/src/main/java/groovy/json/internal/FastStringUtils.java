@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 
 /**
  * @author Rick Hightower
- * @author Stephane Landelle (creator of Gatling and JSONPath and first Boon JSON parser adopter.)
+ * @author Stephane Landelle
  */
 public class FastStringUtils {
 
@@ -37,9 +37,6 @@ public class FastStringUtils {
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.write.to.final.fields", "false"));
     private static final boolean DISABLE = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.disable", "false"));
 
-    /**
-     * @return Unsafe
-     */
     private static Unsafe loadUnsafe() {
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
@@ -56,10 +53,6 @@ public class FastStringUtils {
         ENABLED = UNSAFE != null;
     }
 
-    /**
-     * @param fieldName name of field
-     * @return offset
-     */
     private static long getFieldOffset(String fieldName) {
         if (ENABLED) {
             try {
@@ -77,9 +70,6 @@ public class FastStringUtils {
         STRING_COUNT_FIELD_OFFSET = getFieldOffset("count");
     }
 
-    /**
-     * @author Stéphane Landelle
-     */
     protected enum StringImplementation {
         /**
          * JDK 7 drops offset and count so there is special handling for later version of JDK 7.
@@ -149,9 +139,6 @@ public class FastStringUtils {
 
     public static StringImplementation STRING_IMPLEMENTATION = computeStringImplementation();
 
-    /**
-     * @return correct string implementation
-     */
     private static StringImplementation computeStringImplementation() {
         if (STRING_VALUE_FIELD_OFFSET != -1L) {
             if (STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L) {
@@ -200,11 +187,6 @@ public class FastStringUtils {
      * @return new string with chars copied into it
      */
     public static String noCopyStringFromChars(final char[] chars) {
-        /*
-        J'ai écrit JSON parser du Boon. Sans Stéphane, l'analyseur n'existerait pas. Stéphane est la muse de Boon JSON,
-         et mon entraîneur pour l'open source, github, et plus encore. Stéphane n'est pas le créateur directe, mais il
-         est le maître architecte et je l'appelle mon ami. It is Step-eff-on not Stef-fa-nee.. Ok?
-         */
         return STRING_IMPLEMENTATION.noCopyStringFromChars(chars);
     }
 }
