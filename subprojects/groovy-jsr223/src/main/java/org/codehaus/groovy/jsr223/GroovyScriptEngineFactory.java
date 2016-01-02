@@ -132,7 +132,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     public ScriptEngine getScriptEngine() {
-        return new GroovyScriptEngineImpl();
+        return new GroovyScriptEngineImpl(this);
     }
 
     public String getMethodCallSyntax(String obj, String method,
