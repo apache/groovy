@@ -341,7 +341,7 @@ public class Groovydoc extends Task {
         // and nested excludepackage elements
         if (this.sourcePath != null) {
             PatternSet ps = new PatternSet();
-            if (packageNames.size() > 0) {
+            if (!packageNames.isEmpty()) {
                 for (String pn : packageNames) {
                     String pkg = pn.replace('.', '/');
                     if (pkg.endsWith("*")) {

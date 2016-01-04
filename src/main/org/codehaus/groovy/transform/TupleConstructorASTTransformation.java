@@ -181,7 +181,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
-        if (params.size() > 0 && defaults) {
+        if (!params.isEmpty() && defaults) {
             ClassNode firstParam = params.get(0).getType();
             if (params.size() > 1 || firstParam.equals(ClassHelper.OBJECT_TYPE)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";

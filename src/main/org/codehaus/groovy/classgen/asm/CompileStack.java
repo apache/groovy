@@ -195,7 +195,7 @@ public class CompileStack implements Opcodes {
     }
 
     private void popState() {
-        if (stateStack.size()==0) {
+        if (stateStack.isEmpty()) {
              throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
         }
         StateStackElement element = (StateStackElement) stateStack.removeLast();
@@ -762,7 +762,7 @@ public class CompileStack implements Opcodes {
     }
 
     private void applyBlockRecorder(List<BlockRecorder> blocks) {
-        if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
+        if (blocks.isEmpty() || blocks.size()==visitedBlocks.size()) return;
 
         MethodVisitor mv = controller.getMethodVisitor();
 

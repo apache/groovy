@@ -189,7 +189,7 @@ public class TextUndoManager extends UndoManager {
         }
 
         public boolean canUndo() {
-            return edits.size() > 0;
+            return !edits.isEmpty();
         }
 
         protected long editedTime() {

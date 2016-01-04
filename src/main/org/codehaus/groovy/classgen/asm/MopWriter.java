@@ -84,7 +84,7 @@ public class MopWriter {
     }
 
     private Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
-        if (methods.size()==0) return Collections.EMPTY_SET;
+        if (methods.isEmpty()) return Collections.EMPTY_SET;
         HashSet<MopKey> result = new HashSet<MopKey>(methods.size());
         for (MethodNode mn : methods) {
             MopKey key = new MopKey(mn.getName(), mn.getParameters());

@@ -253,7 +253,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         result.add(this);
         Set<GroovyClassDoc> next = new HashSet<GroovyClassDoc>();
         next.addAll(Arrays.asList(this.interfaces()));
-        while (next.size() > 0) {
+        while (!next.isEmpty()) {
             Set<GroovyClassDoc> temp = next;
             next = new HashSet<GroovyClassDoc>();
             for (GroovyClassDoc t : temp) {

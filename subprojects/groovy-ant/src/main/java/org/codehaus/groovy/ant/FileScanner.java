@@ -54,7 +54,7 @@ public class FileScanner extends Task {
     }
 
     public boolean hasFiles() {
-        return filesets.size() > 0;
+        return !filesets.isEmpty();
     }
 
     /**

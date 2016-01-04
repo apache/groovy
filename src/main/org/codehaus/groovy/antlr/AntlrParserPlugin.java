@@ -290,7 +290,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             ClassNode scriptClassNode = output.getScriptClassDummy();
             if (scriptClassNode != null) {
                 List<Statement> statements = output.getStatementBlock().getStatements();
-                if (statements.size() > 0) {
+                if (!statements.isEmpty()) {
                     Statement firstStatement = statements.get(0);
                     Statement lastStatement = statements.get(statements.size() - 1);
 
@@ -1674,7 +1674,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        if (finallyStatement instanceof EmptyStatement && catches.size() == 0) {
+        if (finallyStatement instanceof EmptyStatement && catches.isEmpty()) {
             throw new ASTRuntimeException(tryStatementNode, "A try statement must have at least one catch or finally block.");
         }
 
@@ -2558,7 +2558,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     private void setTypeArgumentsOnMethodCallExpression(MethodCallExpression expression,
                                                         List<GenericsType> typeArgumentList) {
-        if (typeArgumentList != null && typeArgumentList.size() > 0) {
+        if (typeArgumentList != null && !typeArgumentList.isEmpty()) {
             expression.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
         }
     }
@@ -2607,7 +2607,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (arguments instanceof TupleExpression) {
             TupleExpression te = (TupleExpression) arguments;
             List<Expression> expressions = te.getExpressions();
-            if (expressions.size() == 0) return null;
+            if (expressions.isEmpty()) return null;
             Expression last = expressions.remove(expressions.size() - 1);
             if (last instanceof AnonymousInnerClassCarrier) {
                 AnonymousInnerClassCarrier carrier = (AnonymousInnerClassCarrier) last;
@@ -3011,7 +3011,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             configureAST(bound, boundsNode);
             bounds.add(bound);
         }
-        if (bounds.size() == 0) return null;
+        if (bounds.isEmpty()) return null;
         return (ClassNode[]) bounds.toArray(new ClassNode[bounds.size()]);
     }
 
