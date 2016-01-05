@@ -736,6 +736,24 @@ Thing.run()
         '''
     }
 
+    // GROOVY-6835
+    void testFlowTypingWithInstanceofAndInterfaceTypes() {
+        assertScript '''
+            class ShowUnionTypeBug {
+                Map<String, Object> instanceMap = (Map<String,Object>)['a': 'Hello World']
+                def findInstance(String key) {
+                    Set<? extends CharSequence> allInstances = [] as Set
+                    def instance = instanceMap.get(key)
+                    if(instance instanceof CharSequence) {
+                       allInstances.add(instance)
+                    }
+                    allInstances
+                }
+            }
+            assert new ShowUnionTypeBug().findInstance('a') == ['Hello World'] as Set
+        '''
+    }
+
     void testInferenceWithImplicitClosureCoercionAndGenericTypeAsParameter() {
         assertScript '''
             interface Action<T> { void execute(T t) }
