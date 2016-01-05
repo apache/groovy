@@ -141,6 +141,15 @@ public class DefaultTypeTransformation {
     public static Number castToNumber(Object object, Class type) {
         if (object instanceof Number)
             return (Number) object;
+        
+        //check if class provides toNumber zero args method
+        try {
+            Method asNumberMethod = object.getClass().getMethod("asNumber");
+            if(Number.class.isAssignableFrom( asNumberMethod.getReturnType())) {
+                return (Number) asNumberMethod.invoke(object);
+            }
+        } catch (Exception e) {}
+        
         if (object instanceof Character) {
             return Integer.valueOf(((Character) object).charValue());
         }
@@ -227,6 +236,18 @@ public class DefaultTypeTransformation {
             return ShortTypeHandling.castToClass(object);
         } else if (type.isPrimitive()) {
             return castToPrimitive(object,type);
+        }
+        
+        if(type == Date.class) {
+         
+            //check if class provides toDate zero args method
+            try {
+                Method asDateMethod = object.getClass().getMethod("asDate");
+                if(Date.class.isAssignableFrom( asDateMethod.getReturnType())) {
+                    return (Date) asDateMethod.invoke(object);
+                }
+            } catch (Exception e) {}
+            
         }
 
         return continueCastOnNumber(object,type);
@@ -537,10 +558,26 @@ public class DefaultTypeTransformation {
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public static int compareTo(Object left, Object right) {
-        return compareToWithEqualityCheck(left, right, false);
+        return compareToWithEqualityCheck(left, right, false, true);
+    }
+    
+    /**
+     * Marker interface for classes which should override equality check
+     * @author Derek
+     *
+     */
+    public static interface SemanticEqualityAware {
+        
+        /**
+         * Returns true/false if the equality can be determined, <code>null</code> if it should
+         * fall back to default implementation
+         * @param other
+         * @return
+         */
+        Boolean equalsSemantically(SemanticEqualityAware other);
     }
 
-    private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly) {
+    private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly, boolean semanticEquality) {
         if (left == right) {
             return 0;
         }
@@ -550,14 +587,115 @@ public class DefaultTypeTransformation {
         else if (right == null) {
             return 1;
         }
+        
+        
+        if(equalityCheckOnly && semanticEquality && left instanceof SemanticEqualityAware && right instanceof SemanticEqualityAware) {
+            
+            SemanticEqualityAware a1 = (SemanticEqualityAware) left;
+            SemanticEqualityAware a2 = (SemanticEqualityAware) right;
+            
+            Boolean res = a1.equalsSemantically(a2);
+            
+            if(res != null) {
+                return res.booleanValue() ? 0 : -1;
+            }
+            
+        }
+        
         if (left instanceof Comparable) {
+
+            
+            //a special case for semantic equality, if both
+            boolean leftConverted = false;
+            
+            //try to convert left to number
+            //check if class provides toNumber zero args method
+            try {
+                Method asNumberMethod = left.getClass().getMethod("asNumber");
+                if(Number.class.isAssignableFrom( asNumberMethod.getReturnType())) {
+                    left = (Number) asNumberMethod.invoke(left);
+                    leftConverted = true;
+                }
+            } catch (Exception e) {}
+            
+            Date leftAsDate = (Date) (left instanceof Date ? left : null);
+            
+            if(!leftConverted && leftAsDate == null) {
+                try {
+                    Method asDateMethod = left.getClass().getMethod("asDate");
+                    if(Date.class.isAssignableFrom( asDateMethod.getReturnType())) {
+                        leftAsDate = (Date) asDateMethod.invoke(left);
+                        leftConverted = true;
+                    }                    
+                } catch(Exception e) {}
+            }
+            
+            String leftAsString = null;
+            if(!leftConverted) {
+                try {
+                    Method asStringMethod = left.getClass().getMethod("asString");
+                    if(String.class.isAssignableFrom( asStringMethod.getReturnType())) {
+                        leftAsString = (String) asStringMethod.invoke(left);
+                        leftConverted = true;
+                    }
+                } catch(Exception e) {}
+            }
+            
+            if(leftAsString == null) {
+                if(left instanceof String) {
+                    leftAsString = (String) left;
+                } else if(left instanceof GString) {
+                    leftAsString = ((GString)left).toString();
+                } else if(left instanceof Character) {
+                    leftAsString = left.toString();
+                }
+            }
+            
+            Boolean leftAsBoolean = null;
+            if(!leftConverted) {
+                try {
+                    Method asBooleanMethod = left.getClass().getMethod("asBoolean");
+                    Class<?> returnType = asBooleanMethod.getReturnType();
+                    if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
+                        leftAsBoolean = (Boolean) asBooleanMethod.invoke(left);
+                        leftConverted = true;
+                    }
+                } catch(Exception e) {}
+            }
+
+            if(leftAsBoolean == null) {
+                if(left instanceof Boolean) {
+                    leftAsBoolean = (Boolean) left;
+                }
+            }
+            
             if (left instanceof Number) {
-                if (right instanceof Character || right instanceof Number) {
+                
+                Number castNumber = null;
+                try {
+                    castNumber = castToNumber(right);
+                } catch(GroovyCastException e) {}
+                
+//                if (right instanceof Character || right instanceof Number) {
+                if (castNumber != null) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
                 }
                 if (isValidCharacterString(right)) {
                     return DefaultGroovyMethods.compareTo((Number) left, ShortTypeHandling.castToChar(right));
                 }
+            } 
+            else if(leftAsDate != null) {
+            
+                Date rightAsDate = null;
+                
+                try {
+                    rightAsDate = (Date) castToType(right, Date.class);
+                } catch(GroovyCastException ex) {}
+                
+                if(rightAsDate != null) {
+                    return leftAsDate.compareTo(rightAsDate);
+                }
+                
             }
             else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
@@ -577,6 +715,49 @@ public class DefaultTypeTransformation {
             }
             else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
+            }
+            else if(leftAsString != null) {
+                
+                String rightAsString = null;
+                
+                if(right instanceof String) {
+                    rightAsString = (String) right;
+                } else if(right instanceof GString) {
+                    rightAsString = ((GString) right).toString();
+                } else if(right instanceof Character) {
+                    rightAsString = right.toString();
+                } else {
+                    try {
+                        Method asStringMethod = right.getClass().getMethod("asString");
+                        if(String.class.isAssignableFrom( asStringMethod.getReturnType())) {
+                            rightAsString = (String) asStringMethod.invoke(right);
+                        }
+                    } catch(Exception e) {}
+                }
+                
+                if(rightAsString != null) {
+                    return leftAsString.compareTo(rightAsString);
+                }
+                
+            } else if(leftAsBoolean != null) {
+                
+                Boolean rightAsBoolean = null;
+                if(right instanceof Boolean) {
+                    rightAsBoolean = (Boolean) right;
+                } else {
+                    try {
+                        Method asBooleanMethod = right.getClass().getMethod("asBoolean");
+                        Class<?> returnType = asBooleanMethod.getReturnType();
+                        if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
+                            rightAsBoolean = (Boolean) asBooleanMethod.invoke(right);
+                        }
+                    } catch(Exception e) {}
+                }
+
+                if(rightAsBoolean != null) {
+                    return leftAsBoolean.compareTo(rightAsBoolean);
+                }
+                
             }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
@@ -598,10 +779,14 @@ public class DefaultTypeTransformation {
     }
 
     public static boolean compareEqual(Object left, Object right) {
+        return compareEqual(left, right, true);
+    }
+    
+    public static boolean compareEqual(Object left, Object right, boolean semanticEquality) {
         if (left == right) return true;
         if (left == null || right == null) return false;
         if (left instanceof Comparable) {
-            return compareToWithEqualityCheck(left, right, true) == 0;
+            return compareToWithEqualityCheck(left, right, true, semanticEquality) == 0;
         }
         // handle arrays on both sides as special case for efficiency
         Class leftClass = left.getClass();
