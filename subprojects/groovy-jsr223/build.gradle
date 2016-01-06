@@ -16,22 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-ext.scriptingCapable = {
-    // TODO remove this eventually - will break compiling on JDK 5
-    try {
-        Class.forName('javax.script.ScriptEngine')
-    } catch (e) {
-        return false
-    }
-    true
-}
-
 dependencies {
-    if (!scriptingCapable()) {
-        compile('org.livetribe:livetribe-jsr223:2.0.6') { dep ->
-            provided dep
-        }
-    }
     compile rootProject
     testCompile project(':groovy-test')
 }
