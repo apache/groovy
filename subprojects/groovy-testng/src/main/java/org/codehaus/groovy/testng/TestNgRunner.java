@@ -44,10 +44,6 @@ public class TestNgRunner implements GroovyRunner {
      */
     @SuppressWarnings("unchecked")
     public boolean canRun(Class scriptClass, GroovyClassLoader loader) {
-        char version = System.getProperty("java.version").charAt(2);
-        if (version < '5') {
-            return false;
-        }
         // check if there are appropriate class or method annotations
         // that suggest we have a TestNG test
         boolean isTest = false;
