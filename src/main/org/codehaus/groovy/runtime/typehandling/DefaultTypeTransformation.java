@@ -561,21 +561,21 @@ public class DefaultTypeTransformation {
         return compareToWithEqualityCheck(left, right, false, true);
     }
     
-    /**
-     * Marker interface for classes which should override equality check
-     * @author Derek
-     *
-     */
-    public static interface SemanticEqualityAware {
-        
-        /**
-         * Returns true/false if the equality can be determined, <code>null</code> if it should
-         * fall back to default implementation
-         * @param other
-         * @return
-         */
-        Boolean equalsSemantically(SemanticEqualityAware other);
-    }
+//    /**
+//     * Marker interface for classes which should override equality check
+//     * @author Derek
+//     *
+//     */
+//    public static interface SemanticEqualityAware {
+//        
+//        /**
+//         * Returns true/false if the equality can be determined, <code>null</code> if it should
+//         * fall back to default implementation
+//         * @param other
+//         * @return
+//         */
+//        Boolean equalsSemantically(SemanticEqualityAware other);
+//    }
 
     private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly, boolean semanticEquality) {
         if (left == right) {
@@ -589,15 +589,34 @@ public class DefaultTypeTransformation {
         }
         
         
-        if(equalityCheckOnly && semanticEquality && left instanceof SemanticEqualityAware && right instanceof SemanticEqualityAware) {
+        if(equalityCheckOnly && semanticEquality) {
+
+//          && left instanceof SemanticEqualityAware && right instanceof SemanticEqualityAware)
+//            SemanticEqualityAware a1 = (SemanticEqualityAware) left;
+//            SemanticEqualityAware a2 = (SemanticEqualityAware) right;
+//            Boolean res = a1.equalsSemantically(a2);
+
             
-            SemanticEqualityAware a1 = (SemanticEqualityAware) left;
-            SemanticEqualityAware a2 = (SemanticEqualityAware) right;
+//            public Boolean equalsSemantically(Object other) {
             
-            Boolean res = a1.equalsSemantically(a2);
+            Method m1 = null;
+            try { m1 = left.getClass().getMethod("equalsSemantically", Object.class); } catch(Exception e) {}
+            Method m2 = null;
+            try { m2 = right.getClass().getMethod("equalsSemantically", Object.class); } catch(Exception e) {}
             
-            if(res != null) {
-                return res.booleanValue() ? 0 : -1;
+            if(m1 != null && m2 != null) {
+                
+                Boolean res = null;
+                try {
+                    res = (Boolean) m1.invoke(left, right);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                
+                if(res != null) {
+                    return res.booleanValue() ? 0 : -1;
+                }
+                
             }
             
         }
