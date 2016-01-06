@@ -166,7 +166,13 @@ class DocCommand extends CommandSupport {
     }
 
     private static simpleVersion() {
-        System.getProperty('java.version').split(/\./)[1]
+        String javaVersion = System.getProperty('java.version')
+        if (javaVersion.startsWith('1.')) {
+            javaVersion.split(/\./)[1]
+        } else {
+            // java 9 and above
+            javaVersion.replaceAll(/-.*/, '').split(/\./)[0]
+        }
     }
 
     protected boolean sendHEADRequest(URL url) {
