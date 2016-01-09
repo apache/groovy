@@ -1,0 +1,26 @@
+# Enforce LF for line endings
+* text=auto
+
+# Text files
+*.groovy        text
+*.java          text
+*.html          text
+*.g             text
+*.gradle        text
+*.properties    text
+*.txt           text
+*.adoc          text
+*.xml           text
+*.sh            text
+*.js            text
+
+# Windows files
+*.bat           text eol=crlf 
+
+# Binary files
+*.class         binary
+*.jar           binary
+*.png           binary
+*.jpg           binary
+*.gif           binary
+
