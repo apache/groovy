@@ -16,6 +16,8 @@ user.gradle
 *.classpath
 *.project
 
+/release/
+
 /subprojects/groovy-ant/bin
 /subprojects/groovy-ant/.project
 /subprojects/groovy-ant/.settings
