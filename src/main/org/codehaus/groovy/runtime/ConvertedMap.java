@@ -40,6 +40,7 @@ public class ConvertedMap extends ConversionHandler {
         super(closures);
     }
 
+    @Override
     public Object invokeCustom(Object proxy, Method method, Object[] args)
             throws Throwable {
         Map m = (Map) getDelegate();
@@ -53,10 +54,12 @@ public class ConvertedMap extends ConversionHandler {
         return cl.call(args);
     }
 
+    @Override
     public String toString() {
         return DefaultGroovyMethods.toString(getDelegate());
     }
 
+    @Override
     protected boolean checkMethod(Method method) {
         return isCoreObjectMethod(method);
     }

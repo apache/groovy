@@ -42,11 +42,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
-    private Object delegate;
+    private final Object delegate;
     private static final long serialVersionUID = 1162833717190835227L;
-    private ConcurrentHashMap handleCache;
+    private final ConcurrentHashMap<Method, Object> handleCache;
     {
-        if (VMPluginFactory.getPlugin().getVersion()>=7) handleCache = new ConcurrentHashMap();
+        if (VMPluginFactory.getPlugin().getVersion() >= 7) {
+            handleCache = new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
+        } else {
+            handleCache = null;
+        }
     }
 
     private MetaClass metaClass;
@@ -58,7 +62,9 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @throws IllegalArgumentException if the given delegate is null
      */
     public ConversionHandler(Object delegate) {
-        if (delegate == null) throw new IllegalArgumentException("delegate must not be null");
+        if (delegate == null) {
+            throw new IllegalArgumentException("delegate must not be null");
+        }
         this.delegate = delegate;
     }
 
@@ -96,8 +102,8 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        VMPlugin plugin = VMPluginFactory.getPlugin();
-        if (plugin.getVersion()>=7 && isDefaultMethod(method)) {
+        if (handleCache != null && isDefaultMethod(method)) {
+            VMPlugin plugin = VMPluginFactory.getPlugin();
             Object handle = handleCache.get(method);
             if (handle == null) {
                 handle = plugin.getInvokeSpecialHandle(method, proxy);
