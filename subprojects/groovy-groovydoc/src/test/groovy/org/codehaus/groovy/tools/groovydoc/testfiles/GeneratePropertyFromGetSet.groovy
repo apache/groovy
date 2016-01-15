@@ -46,24 +46,15 @@ public class GeneratePropertyFromGetSet {
     private String get_private_get_private_set() {
     }
 
-    public void setTestBoolean(boolean a)
-    {
-
+    public void setTestBoolean(boolean a) {
     }
 
-    public boolean isTestBoolean()
-    {
-
+    public boolean isTestBoolean() {
     }
 
-    public boolean isTestBoolean2()
-    {
-
+    public boolean isTestBoolean2() {
     }
 
-    public void setTestBoolean2(boolean a)
-    {
-
+    public void setTestBoolean2(boolean a){
     }
-
 }
