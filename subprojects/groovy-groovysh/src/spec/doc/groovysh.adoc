@@ -397,7 +397,7 @@ Set or list preferences.
 === Preferences
 
 Some of aspects of `groovysh` behaviors can be customized by setting
-preferences. Preferences are set using the `set` command or the `\=`
+preferences. Preferences are set using the `set` command or the `:=`
 shortcut.
 
 [[GroovyShell-RecognizedPreferences]]
