@@ -700,7 +700,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
         Factory factory = getProxyBuilder().resolveFactory(name, attributes, value);
         if (factory == null) {
-            LOG.log(Level.WARNING, "Could not find match for name '" + name + "'");
+            //LOG.log(Level.WARNING, "Could not find match for name '" + name + "'");
             throw new MissingMethodExceptionNoStack((String) name, Object.class, new Object[]{attributes, value});
             //return null;
         }
@@ -710,7 +710,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         try {
             node = factory.newInstance(getProxyBuilder().getChildBuilder(), name, value, attributes);
             if (node == null) {
-                LOG.log(Level.WARNING, "Factory for name '" + name + "' returned null");
+                //LOG.log(Level.WARNING, "Factory for name '" + name + "' returned null");
                 return null;
             }
 
