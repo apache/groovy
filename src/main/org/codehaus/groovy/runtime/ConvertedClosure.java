@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
  * Jul 27, 2006 3:50:51 PM
  */
 public class ConvertedClosure extends ConversionHandler implements Serializable {
-    private String methodName;
+    private final String methodName;
     private static final long serialVersionUID = 1162833713450835227L;
 
     /**
@@ -46,7 +46,8 @@ public class ConvertedClosure extends ConversionHandler implements Serializable 
     public ConvertedClosure(Closure closure) {
         this(closure,null);
     }
-    
+
+    @Override
     public Object invokeCustom(Object proxy, Method method, Object[] args)
     throws Throwable {
         if (methodName!=null && !methodName.equals(method.getName())) return null;

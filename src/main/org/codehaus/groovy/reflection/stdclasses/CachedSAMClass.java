@@ -157,6 +157,14 @@ public class CachedSAMClass extends CachedClass {
      * @return null if nothing was found, the method otherwise
      */
     public static Method getSAMMethod(Class<?> c) {
+      try {
+        return getSAMMethodImpl(c);
+      } catch (NoClassDefFoundError ignore) {
+        return null;
+      }
+    }
+
+    private static Method getSAMMethodImpl(Class<?> c) {
         // SAM = single public abstract method
         // if the class is not abstract there is no abstract method
         if (!Modifier.isAbstract(c.getModifiers())) return null;

@@ -42,7 +42,7 @@ import javax.swing.JPanel;
  * @author sky
  */
 public class JCaricature extends JPanel {
-    private static Map/*<String,Image>*/ imageMap;
+    private Map/*<String,Image>*/ imageMap;
     
     private boolean empty;
     private int mouthStyle;

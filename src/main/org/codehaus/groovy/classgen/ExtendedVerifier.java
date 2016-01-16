@@ -172,45 +172,63 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
     private void visitOverride(AnnotatedNode node, AnnotationNode visited) {
         ClassNode annotationClassNode = visited.getClassNode();
         if (annotationClassNode.isResolved() && annotationClassNode.getName().equals("java.lang.Override")) {
-            if (node instanceof MethodNode) {
+            if (node instanceof MethodNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
+                boolean override = false;
                 MethodNode origMethod = (MethodNode) node;
-                ClassNode cNode = node.getDeclaringClass();
-                ClassNode next = cNode;
-                outer:
-                while (next != null) {
-                    Map genericsSpec = createGenericsSpec(next);
-                    MethodNode mn = correctToGenericsSpec(genericsSpec, origMethod);
-                    if (next != cNode) {
-                        ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
-                        MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
-                        if (found != null) break;
-                    }
-                    List<ClassNode> ifaces = new ArrayList<ClassNode>();
-                    ifaces.addAll(Arrays.asList(next.getInterfaces()));
-                    Map updatedGenericsSpec = new HashMap(genericsSpec);
-                    while (!ifaces.isEmpty()) {
-                        ClassNode origInterface = ifaces.remove(0);
-                        if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
-                            updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
-                            ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
-                            MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
-                            if (found2 != null) break outer;
-                            ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
+                ClassNode cNode = origMethod.getDeclaringClass();
+                if (origMethod.hasDefaultValue()) {
+                    List<MethodNode> variants = cNode.getDeclaredMethods(origMethod.getName());
+                    for (MethodNode m : variants) {
+                        if (m.getAnnotations().contains(visited) && isOverrideMethod(m)) {
+                            override = true;
+                            break;
                         }
                     }
-                    ClassNode superClass = next.getUnresolvedSuperClass();
-                    if (superClass!=null) {
-                        next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
-                    } else {
-                        next = null;
-                    }
+                } else {
+                    override = isOverrideMethod(origMethod);
                 }
-                if (next == null) {
+
+                if (!override) {
                     addError("Method '" + origMethod.getName() + "' from class '" + cNode.getName() + "' does not override " +
                             "method from its superclass or interfaces but is annotated with @Override.", visited);
                 }
             }
         }
+    }
+
+    private boolean isOverrideMethod(MethodNode method) {
+        ClassNode cNode = method.getDeclaringClass();
+        ClassNode next = cNode;
+        outer:
+        while (next != null) {
+            Map genericsSpec = createGenericsSpec(next);
+            MethodNode mn = correctToGenericsSpec(genericsSpec, method);
+            if (next != cNode) {
+                ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
+                MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
+                if (found != null) break;
+            }
+            List<ClassNode> ifaces = new ArrayList<ClassNode>();
+            ifaces.addAll(Arrays.asList(next.getInterfaces()));
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!ifaces.isEmpty()) {
+                ClassNode origInterface = ifaces.remove(0);
+                if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
+                    ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
+                    MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
+                    if (found2 != null) break outer;
+                    ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
+                }
+            }
+            ClassNode superClass = next.getUnresolvedSuperClass();
+            if (superClass != null) {
+                next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+            } else {
+                next = null;
+            }
+        }
+        return next != null;
     }
 
     private MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {

@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 
 public class HandleMetaClass extends DelegatingMetaClass {
     private Object object;
-    private static MetaClass myMetaClass;
+    private MetaClass myMetaClass;
     private static final Object NONE = new Object();
 
     public HandleMetaClass(MetaClass mc) {

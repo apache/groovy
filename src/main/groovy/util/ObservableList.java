@@ -185,7 +185,7 @@ public class ObservableList implements List {
                     values.add(element);
                 }
             }
-            if (values.size() > 0) {
+            if (!values.isEmpty()) {
                 fireMultiElementAddedEvent(index, values);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -210,7 +210,7 @@ public class ObservableList implements List {
                     values.add(element);
                 }
             }
-            if (values.size() > 0) {
+            if (!values.isEmpty()) {
                 fireMultiElementAddedEvent(index, values);
                 fireSizeChangedEvent(oldSize, size());
             }

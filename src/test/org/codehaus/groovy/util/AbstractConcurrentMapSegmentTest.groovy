@@ -24,6 +24,11 @@ import org.junit.Test
 class AbstractConcurrentMapSegmentTest {
     private static final Integer INITIAL_SEGMENT_SIZE = 100
     private static final Integer SEGMENT_THRESHOLD = 0.75f * INITIAL_SEGMENT_SIZE
+
+    // Incrementing counter used to generate unique key names for TestEntry objects
+    // across all test methods in this class
+    private static int keyId
+
     TestSegment segment
     List<TestEntry> entries = []
     int rehashCount = 0
@@ -100,7 +105,7 @@ class AbstractConcurrentMapSegmentTest {
 
     private void whenIAddElements(int count) {
         count.times {
-            String key = "k:${System.currentTimeMillis()}-${it}"
+            String key = "k:${++keyId}-${it}"
             segment.put(key, key.hashCode(), "v${it}")
         }
     }
@@ -138,7 +143,7 @@ class AbstractConcurrentMapSegmentTest {
         }
 
         @Override
-        def void rehash() {
+        void rehash() {
             rehashCount++
             super.rehash()
         }

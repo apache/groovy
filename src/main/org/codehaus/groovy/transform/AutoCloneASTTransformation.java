@@ -138,7 +138,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     }
 
     private void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
-        if (cNode.getDeclaredConstructors().size() == 0) {
+        if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             BlockStatement noArgBody = new BlockStatement();
             noArgBody.addStatement(EmptyStatement.INSTANCE);
@@ -199,7 +199,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     }
 
     private void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
-        if (cNode.getDeclaredConstructors().size() == 0) {
+        if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             cNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
         }

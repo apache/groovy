@@ -16,16 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.classgen.asm.sc.bugs
+package groovy.bugs
 
-import groovy.transform.stc.StaticTypeCheckingTestCase
-import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+class Groovy7709Bug extends GroovyTestCase {
 
-class Groovy7363Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testCascadingGenericTypes() {
-        assertScript """import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7363Support
-            Groovy7363Support.ABC a = new Groovy7363Support.ABC()
-            assert ('' + a.b.object.value) == '42'
-        """
+    void testConvertedClosureAsGroovyObject() {
+        def closure = { 43 }
+        def proxy = closure as Groovy7709BugY
+        assert proxy instanceof GroovyObject
+        assert proxy.foo() == 43
     }
+
+    void testConvertedMapAsGroovyObject() {
+        def map = [foo: { 43 }]
+        def proxy = map as Groovy7709BugY
+        assert proxy instanceof GroovyObject
+        assert proxy.foo() == 43
+    }
+
+}
+
+interface Groovy7709BugY extends GroovyObject {
+    int foo()
 }

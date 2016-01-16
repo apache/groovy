@@ -134,7 +134,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_im
 <1> declaration of a normal interface
 <2> add `Named` to the list of implemented interfaces
 <3> declare a class that implements the `Greetable` trait
-<4> implement the missing `greet` method
+<4> implement the missing `name` method
 <5> the `greeting` implementation comes from the trait
 <6> make sure `Person` implements the `Named` interface
 <7> make sure `Person` implements the `Greetable` trait

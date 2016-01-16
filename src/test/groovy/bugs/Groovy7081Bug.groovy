@@ -17,10 +17,7 @@
  *  under the License.
  */
 
-
 package groovy.bugs
-
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class Groovy7081Bug extends GroovyTestCase {
     void testShouldSeeThatMethodIsNotImplemented() {

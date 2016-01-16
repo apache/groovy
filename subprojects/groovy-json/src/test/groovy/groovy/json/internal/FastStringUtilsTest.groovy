@@ -24,7 +24,14 @@ class FastStringUtilsTest extends GroovyTestCase {
         synchronized (FastStringUtils) {
             def str = "some test"
             // FastStringUtils accesses the underlying char array directly
-            assert FastStringUtils.toCharArray(str).is(str.value) : FastStringUtils.STRING_IMPLEMENTATION.toString()
+            if (str.value instanceof char[]) {
+                assert FastStringUtils.toCharArray(str).is(str.value) : FastStringUtils.STRING_IMPLEMENTATION.toString()
+            } else if (str.value instanceof byte[]) {
+                // jdk9
+                assert FastStringUtils.toCharArray(str) == str.toCharArray()
+            } else {
+                fail('unexpected type encountered for String value field')
+            }
         }
     }
 
