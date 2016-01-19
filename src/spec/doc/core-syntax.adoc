@@ -531,6 +531,8 @@ That's why the following assert would actually not compile as it would look like
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
 ----
 
+NOTE: As slashy strings were mostly designed to make regexp easier so few things that are errors in GStrings like `$()` will work with slashy strings.
+
 === Dollar slashy string
 
 Dollar slashy strings are multiline GStrings delimited with an opening `$/` and and a closing `/$`.
