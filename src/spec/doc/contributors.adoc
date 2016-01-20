@@ -24,6 +24,7 @@
 The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
 
 * https://github.com/mojavelinux[Dan Allen]
+* https://github.com/and-dmitry[Dmitry Andreychuk]
 * http://hamletdarcy.blogspot.fr/[Hamlet D'Arcy]
 * https://github.com/anshbansal[Aseem Bansal]
 * https://github.com/bura[Andrey Bloschetsov]
@@ -50,6 +51,5 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * https://twitter.com/asteingr[André Steingreß]
 * https://github.com/EPadronU[Edinson Padrón Urdaneta]
 * https://github.com/keeganwitt[Keegan Witt]
-* https://github.com/and-dmitry[Dmitry Andreychuk]
 
 If you can offer time to improve groovy or our documentation, link:groovy-contributions.html[read this tutorial].
