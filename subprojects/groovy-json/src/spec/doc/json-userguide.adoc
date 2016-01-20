@@ -176,7 +176,7 @@ has support for serialising POGOs, that is, plain-old Groovy objects.
 include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_pogo,indent=0]
 ----
 
-As we saw in previous examples, the JSON output is not pretty printed per default. However, the `prettyPrint` method in `JsonSlurper` comes
+As we saw in previous examples, the JSON output is not pretty printed per default. However, the `prettyPrint` method in `JsonOutput` comes
 to rescue for this task.
 
 [source,groovy]
@@ -184,8 +184,8 @@ to rescue for this task.
 include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=pretty_print,indent=0]
 ----
 
-`prettyPrint` takes a `String` as single parameter. It must not be used in conjunction with the other `JsonOutput` methods,
-it can be applied on arbitrary JSON `String` instances.
+`prettyPrint` takes a `String` as single parameter; therefore, it can be applied on arbitrary JSON `String` instances, not only the result of
+`JsonOutput.toJson`.
 
 Another way to create JSON from Groovy is to use `JsonBuilder` or `StreamingJsonBuilder`. Both builders provide a
 DSL which allows to formulate an object graph which is then converted to JSON.
