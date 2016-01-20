@@ -81,15 +81,12 @@ public class GroovyScriptEngine implements ResourceConnector {
         Map<String, String> precompiledEntries = new HashMap<String, String>();
     }
 
-    private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
-
-    private static synchronized ThreadLocal<LocalData> getLocalData() {
-        ThreadLocal<LocalData> local = localData.get();
-        if (local != null) return local;
-        local = new ThreadLocal<LocalData>();
-        localData = new WeakReference<ThreadLocal<LocalData>>(local);
-        return local;
-    }
+    private static final ThreadLocal<LocalData> localDataCache = new ThreadLocal<LocalData>() {
+        @Override
+        protected LocalData initialValue() {
+            return new LocalData();
+        }
+    };
 
     private URL[] roots;
     private ResourceConnector rc;
@@ -159,7 +156,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         @Override
         protected CompilationUnit createCompilationUnit(CompilerConfiguration configuration, CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(configuration, source);
-            LocalData local = getLocalData().get();
+            LocalData local = localDataCache.get();
             local.cu = cu;
             final StringSetMap cache = local.dependencyCache;
             final Map<String, String> precompiledEntries = local.precompiledEntries;
@@ -245,10 +242,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
 
         private Class<?> doParseClass(GroovyCodeSource codeSource) {
-            // local is kept as hard reference to avoid garbage collection
-            ThreadLocal<LocalData> localTh = getLocalData();
-            LocalData localData = new LocalData();
-            localTh.set(localData);
+            LocalData localData = localDataCache.get();
             StringSetMap cache = localData.dependencyCache;
             Class<?> answer = null;
             try {
@@ -257,7 +251,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 updateScriptCache(localData);
             } finally {
                 cache.clear();
-                localTh.remove();
+                localDataCache.remove();
             }
             return answer;
         }
@@ -311,7 +305,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
 
         private String getPath(Class clazz, Map<String, String> precompiledEntries) {
-            CompilationUnit cu = getLocalData().get().cu;
+            CompilationUnit cu = localDataCache.get().cu;
             String name = clazz.getName();
             ClassNode classNode = cu.getClassNode(name);
             if (classNode == null) {

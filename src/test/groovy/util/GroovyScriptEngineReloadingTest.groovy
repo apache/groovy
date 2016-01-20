@@ -410,7 +410,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     void testThreadLocalCleanup() {
         MapFileSystem.instance.modFile('Groovy4698.groovy', 'x = 7', 0)
         gse.run('Groovy4698.groovy', new Binding())
-        def gseThreadLocal = GroovyScriptEngine.@localData.get()
+        def gseThreadLocal = GroovyScriptEngine.@localDataCache
         def gseThreadLocalEntry = Thread.currentThread().threadLocals.table.find { entry ->
             entry?.get()?.is(gseThreadLocal)
         }
@@ -424,7 +424,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
             gse.run('Groovy4698Bad.groovy', new Binding())
             fail('Groovy4698Bad.groovy script should have failed')
         } catch (ignore) { }
-        def gseThreadLocal = GroovyScriptEngine.@localData.get()
+        def gseThreadLocal = GroovyScriptEngine.@localDataCache
         def gseThreadLocalEntry = Thread.currentThread().threadLocals.table.find { entry ->
             entry?.get()?.is(gseThreadLocal)
         }
