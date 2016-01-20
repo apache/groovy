@@ -244,13 +244,25 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
         }
 
-        private Class doParseClass(GroovyCodeSource codeSource) {
+        private Class<?> doParseClass(GroovyCodeSource codeSource) {
             // local is kept as hard reference to avoid garbage collection
             ThreadLocal<LocalData> localTh = getLocalData();
             LocalData localData = new LocalData();
             localTh.set(localData);
             StringSetMap cache = localData.dependencyCache;
+            Class<?> answer = null;
+            try {
+                updateLocalDependencyCache(codeSource, localData);
+                answer = super.parseClass(codeSource, false);
+                updateScriptCache(localData);
+            } finally {
+                cache.clear();
+                localTh.remove();
+            }
+            return answer;
+        }
 
+        private void updateLocalDependencyCache(GroovyCodeSource codeSource, LocalData localData) {
             // we put the old dependencies into local cache so createCompilationUnit
             // can pick it up. We put that entry under the name "."
             ScriptCacheEntry origEntry = scriptCache.get(codeSource.getName());
@@ -268,11 +280,13 @@ public class GroovyScriptEngine implements ResourceConnector {
 
                     }
                 }
+                StringSetMap cache = localData.dependencyCache;
                 cache.put(".", newDep);
             }
+        }
 
-            Class answer = super.parseClass(codeSource, false);
-
+        private void updateScriptCache(LocalData localData) {
+            StringSetMap cache = localData.dependencyCache;
             cache.makeTransitiveHull();
             long time = getCurrentTime();
             Set<String> entryNames = new HashSet<String>();
@@ -294,9 +308,6 @@ public class GroovyScriptEngine implements ResourceConnector {
                 ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, lastModified, time, value, false);
                 scriptCache.put(entryName, cacheEntry);
             }
-            cache.clear();
-            localTh.set(null);
-            return answer;
         }
 
         private String getPath(Class clazz, Map<String, String> precompiledEntries) {
