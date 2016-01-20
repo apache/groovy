@@ -236,12 +236,6 @@ public class GroovyScriptEngine implements ResourceConnector {
 
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-            synchronized (sourceCache) {
-                return doParseClass(codeSource);
-            }
-        }
-
-        private Class<?> doParseClass(GroovyCodeSource codeSource) {
             LocalData localData = localDataCache.get();
             StringSetMap cache = localData.dependencyCache;
             Class<?> answer = null;
