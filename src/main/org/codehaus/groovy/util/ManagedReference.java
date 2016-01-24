@@ -50,6 +50,6 @@ public class ManagedReference<T> implements Finalizable {
     }
     
     public void finalizeReference(){
-        clear();
+        ref.clear();
     }
 }   
