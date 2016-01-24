@@ -76,9 +76,18 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
             return hash;
         }
 
-        public void finalizeRef() {
-            super.finalizeReference();
+        @Override
+        public void finalizeReference() {
             segment.removeEntry(this);
+            super.finalizeReference();
+        }
+
+        /**
+         * @deprecated use finalizeReference
+         */
+        @Deprecated
+        public void finalizeRef() {
+            finalizeReference();
         }
     }
 
@@ -90,18 +99,20 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
             setValue(value);
         }
 
+        @Override
         public V getValue() {
             return value;
         }
 
+        @Override
         public void setValue(V value) {
             this.value = value;
         }
 
-
-        public void finalizeRef() {
+        @Override
+        public void finalizeReference() {
             value = null;
-            super.finalizeRef();
+            super.finalizeReference();
         }
     }
 }
