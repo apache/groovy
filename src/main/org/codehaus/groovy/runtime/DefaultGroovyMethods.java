@@ -26,6 +26,7 @@ import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.MapEntryOrKeyValue;
 import groovy.transform.stc.SimpleType;
+import groovy.util.BufferedIterator;
 import groovy.util.ClosureComparator;
 import groovy.util.GroovyCollections;
 import groovy.util.MapEntry;
@@ -16042,6 +16043,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterator<T> iterator(Iterator<T> self) {
         return self;
+    }
+
+    /**
+     * Returns a <code>BufferedIterator</code> that allows examining the next element without
+     * consuming it.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3, 4].iterator().buffered().with { [head(), toList()] } == [1, [1, 2, 3, 4]]
+     * </pre>
+     *
+     * @param self an iterator object
+     * @return a BufferedIterator wrapping self
+     * @since 2.5.0
+     */
+    public static <T> BufferedIterator<T> buffered(Iterator<T> self) {
+         return new BufferedIterator<T>(self);
     }
 
     /**
