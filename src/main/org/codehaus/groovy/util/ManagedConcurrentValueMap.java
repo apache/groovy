@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is a basic implementation of a map able to forget its values. This
- * map uses internally a ConcurrentHashMap, thus should be save for concurrency.
+ * map uses internally a ConcurrentHashMap, thus should be safe for concurrency.
  * hashcode and equals are used to find the entries and should thus be implemented
  * properly for the keys. This map does not support null keys.
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
@@ -67,8 +67,8 @@ public class ManagedConcurrentValueMap<K,V> {
         ManagedReference<V> ref = new ManagedReference<V>(bundle, value) {
             @Override
             public void finalizeReference() {
+                internalMap.remove(key, this);
                 super.finalizeReference();
-                internalMap.remove(key, get());
             }
         };
         internalMap.put(key, ref);

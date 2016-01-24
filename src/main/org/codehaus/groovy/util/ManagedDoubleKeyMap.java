@@ -48,8 +48,10 @@ public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap
             this.entry = entry;
         }
 
-        public void finalizeRef() {
+        @Override
+        public void finalizeReference() {
             this.entry.clean();
+            super.finalizeReference();
         }
     }
 
@@ -87,8 +89,6 @@ public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap
 
         public void clean() {
             segment.removeEntry(this);
-            ref1.clear();
-            ref2.clear();
         }
     }
 
@@ -99,17 +99,20 @@ public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap
             super(bundle, key1, key2, hash, segment);
         }
 
+        @Override
         public V getValue() {
             return value;
         }
 
+        @Override
         public void setValue(V value) {
             this.value = value;
         }
 
+        @Override
         public void clean() {
-            super.clean();
             value = null;
+            super.clean();
         }
     }
 }
