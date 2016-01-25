@@ -47,7 +47,7 @@ def javadocSpec = {
         footer = doc.footer
         source = rootProject.useIndy()?'1.7':'1.6'
         links('http://docs.oracle.com/javase/8/docs/api/', 'http://docs.oracle.com/javaee/7/api/',
-                'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'http://junit.org/apidocs/',
+                'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'http://junit.org/javadoc/latest/',
                 'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc/')
     }
 }
@@ -65,7 +65,7 @@ def groovydocSpec = {
     link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'http://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
-    link 'http://junit.org/apidocs/', 'org.junit.', 'junit.'
+    link 'http://junit.org/javadoc/latest/', 'org.junit.', 'junit.'
     link 'http://www.antlr2.org/javadoc/', 'antlr.'
     link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
 }
