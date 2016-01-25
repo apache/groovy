@@ -268,51 +268,61 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
         String methodName = currentMethodDoc.name();
+        int len = methodName.length();
+        String prefix = null;
+        String propName = null;
+        if (len > 3 && methodName.startsWith("get")) {
+            prefix = "get";
+            propName = methodName.substring(3);
+        } else if (len > 3 && methodName.startsWith("set")) {
+            prefix = "set";
+            propName = methodName.substring(3);
+        } else if (len > 2 && methodName.startsWith("is")) {
+            prefix = "is";
+            propName = methodName.substring(2);
+        } else {
+            // Not a (get/set/is) method that contains a property name
+            return;
+        }
+
         SimpleGroovyClassDoc classDoc = getCurrentClassDoc();
+        // TODO: not sure why but groovy.ui.view.BasicContentPane#buildOutputArea classDoc is null
+        if (classDoc == null) {
+            return;
+        }
         GroovyMethodDoc methods[] = classDoc.methods();
 
-        String setOrGet = methodName.substring(0, Math.min(methodName.length(), 3));
-        if (setOrGet.equals("set") || setOrGet.equals("get") || setOrGet.startsWith("is")) {
+        //find expected method name
+        String expectedMethodName = null;
+        if ("set".equals(prefix) && (currentMethodDoc.parameters().length >= 1 && !currentMethodDoc.parameters()[0].typeName().equals("boolean"))) {
+            expectedMethodName = "get" + propName;
+        } else if ("get".equals(prefix) && !currentMethodDoc.returnType().typeName().equals("boolean")) {
+            expectedMethodName = "set" + propName;
+        } else if ("is".equals(prefix)) {
+            expectedMethodName = "set" + propName;
+        } else {
+            expectedMethodName = "is" + propName;
+        }
 
-            //find expected method name
-            String expectedMethodName = null ;
-            if (setOrGet.equals("set") && (currentMethodDoc.parameters().length >= 1 && !currentMethodDoc.parameters()[0].typeName().equals("boolean"))) {
-                expectedMethodName = "get" + methodName.substring(3);
-            } else if (setOrGet.equals("get") && !currentMethodDoc.returnType().typeName().equals("boolean")) {
-                expectedMethodName = "set" + methodName.substring(3);
-            } else if (setOrGet.startsWith("is")) {
-                expectedMethodName = "set" + methodName.substring(2);
-            } else {
-                expectedMethodName = "is" + methodName.substring(3);
-            }
+        for (GroovyMethodDoc methodDoc : methods) {
+            if (methodDoc.name().equals(expectedMethodName)) {
 
-            for (GroovyMethodDoc methodDoc : methods) {
-                if (methodDoc.name().equals(expectedMethodName)) {
+                //extract the field name
+                String fieldName = propName.substring(0, 1).toLowerCase() + propName.substring(1);
+                SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, classDoc);
 
-                    //extract the field name
-                    String fieldName = null;
-                    if (expectedMethodName.startsWith("set") && methodName.startsWith("is")) {
-                        fieldName = methodName.substring(2);
-                    } else {
-                        fieldName = methodName.substring(3);
-                    }
+                //find the type of the field; if it's a setter, need to get the type of the params
+                if(expectedMethodName.startsWith("set") && methodDoc.parameters().length >= 1) {
+                    String typeName = methodDoc.parameters()[0].typeName();
+                    currentFieldDoc.setType(new SimpleGroovyType(typeName));
+                } else {
+                    //if it's not setter, get the type info of the return type of the get* method
+                    currentFieldDoc.setType(methodDoc.returnType());
+                }
 
-                    fieldName = fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1);
-                    SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, classDoc);
-
-                    //find the type of the field; if it's a setter, need to get the type of the params
-                    if(expectedMethodName.startsWith("set") && methodDoc.parameters().length >= 1) {
-                        String typeName = methodDoc.parameters()[0].typeName();
-                        currentFieldDoc.setType(new SimpleGroovyType(typeName));
-                    } else {
-                        //if it's not setter, get the type info of the return type of the get* method
-                        currentFieldDoc.setType(methodDoc.returnType());
-                    }
-
-                    if (methodDoc.isPublic() && currentMethodDoc.isPublic()) {
-                        classDoc.addProperty(currentFieldDoc);
-                        break;
-                    }
+                if (methodDoc.isPublic() && currentMethodDoc.isPublic()) {
+                    classDoc.addProperty(currentFieldDoc);
+                    break;
                 }
             }
         }
