@@ -42,6 +42,7 @@ a number of command line switches:
 | | --temp | Temporary directory for the compiler |
 | | --encoding | Encoding of the source files | groovyc --encoding utf-8 script.groovy
 | | --help | Displays help for the command line groovyc tool | groovyc --help
+| -d | | Specify where to place generated class files. | groovyc -d target Person.groovy 
 | -v | --version | Displays the compiler version | groovyc -v
 | -e | --exception | Displays the stack trace in case of compilation error | groovyc -e script.groovy
 | -j | --jointCompilation* | Enables joint compilation | groovyc -j A.groovy B.java
@@ -51,6 +52,7 @@ a number of command line switches:
 | -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
 | -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
 | -pa | --parameters | Generates metadata for reflection on method parameter names. Requires Java 8+. | groovyc --parameters Person.groovy
+| @argfile | | Read options and source files from specified file. | groovyc @conf/args
 |=======================================================================
 
 *Notes:*
