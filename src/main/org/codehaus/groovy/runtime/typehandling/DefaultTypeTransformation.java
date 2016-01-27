@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -188,6 +189,14 @@ public class DefaultTypeTransformation {
         // equality check is enough and faster than instanceof check, no need to check superclasses since Boolean is final
         if (object.getClass() == Boolean.class) {   
             return ((Boolean)object).booleanValue();
+        }
+        
+        //truth objects may be cast to boolean to (if not unknown)
+        Integer asTruth = asTruth(object);
+        if(asTruth != null) {
+            int i = asTruth.intValue();
+            if(i == 0) throw new RuntimeException("Cannot cast truth UNKNOWN value to boolean");
+            return i == 1;
         }
         
         // if the object is not null and no Boolean, try to call an asBoolean() method on the object
@@ -670,16 +679,27 @@ public class DefaultTypeTransformation {
                 }
             }
             
+            Integer leftAsTruth = null;
+            
+            if(!leftConverted) {
+                
+                leftAsTruth = asTruth(left);
+                
+                if(leftAsTruth != null) {
+                    leftConverted = true;
+                }
+                
+            }
+            
             Boolean leftAsBoolean = null;
             if(!leftConverted) {
-                try {
-                    Method asBooleanMethod = left.getClass().getMethod("asBoolean");
-                    Class<?> returnType = asBooleanMethod.getReturnType();
-                    if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
-                        leftAsBoolean = (Boolean) asBooleanMethod.invoke(left);
-                        leftConverted = true;
-                    }
-                } catch(Exception e) {}
+                
+                leftAsBoolean = asBoolean(left);
+                
+                if(leftAsBoolean != null) { 
+                    leftConverted = true;
+                }
+                
             }
 
             if(leftAsBoolean == null) {
@@ -764,20 +784,57 @@ public class DefaultTypeTransformation {
                 if(right instanceof Boolean) {
                     rightAsBoolean = (Boolean) right;
                 } else {
-                    try {
-                        Method asBooleanMethod = right.getClass().getMethod("asBoolean");
-                        Class<?> returnType = asBooleanMethod.getReturnType();
-                        if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
-                            rightAsBoolean = (Boolean) asBooleanMethod.invoke(right);
-                        }
-                    } catch(Exception e) {}
+                    rightAsBoolean = asBoolean(right);
                 }
 
                 if(rightAsBoolean != null) {
                     return leftAsBoolean.compareTo(rightAsBoolean);
                 }
                 
+                Integer rightAsTruth = asTruth(right);
+                
+                if(rightAsTruth != null) {
+                    
+                    //compare boolean and truth
+                    
+                    if(rightAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare boolean to UNKNOWN truth value");
+                    
+                    leftAsTruth = leftAsBoolean.booleanValue() ? 1 : -1;
+                    
+                    return compareTruth(leftAsTruth, rightAsTruth);
+                    
+                }
+                
+            } else if(leftAsTruth != null) {
+                
+                Integer rightAsTruth = asTruth(right);
+                
+                if(rightAsTruth == null) {
+                    
+                    Boolean rightAsBoolean = null;
+                    
+                    if(right instanceof Boolean) {
+                        rightAsBoolean = (Boolean) right;
+                    } else {
+                        rightAsBoolean = asBoolean(right);
+                    }
+                    
+                    if(rightAsBoolean != null) {
+                        
+                        if(leftAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare UNKNOWN truth value to boolean");
+                        
+                        rightAsTruth = rightAsBoolean.booleanValue() ? 1 : -1;
+                        
+                    }
+                                        
+                }
+
+                if(rightAsTruth != null) {
+                    return compareTruth(leftAsTruth, rightAsTruth);
+                }
+                
             }
+            
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
                     || (left instanceof GString && right instanceof String)) {
@@ -1082,6 +1139,137 @@ public class DefaultTypeTransformation {
             Array.set(newArray, i, convertedValue);
         }
         return newArray;
+    }
+    
+    static Integer asTruth(Object v) {
+        
+        Integer valAsTruth = null; 
+        
+        try {
+            Method asTruthMethod = v.getClass().getMethod("asTruth");
+            Class<?> returnType = asTruthMethod.getReturnType();
+            if(Integer.class.isAssignableFrom(returnType) || int.class.isAssignableFrom(returnType)) { 
+                valAsTruth = (Integer) asTruthMethod.invoke(v);
+                if(valAsTruth == null) throw new RuntimeException("asTruth method must not return null, class: " + v.getClass().getCanonicalName());
+            }
+        } catch(Exception e) {}
+        
+        if(valAsTruth != null) {
+            int i = valAsTruth.intValue();
+            if( ! ( i == 1 || i == 0 || i == -1) ) throw new RuntimeException("asTruth method must return an integer within range [-1, 1]");
+        }
+        
+        return valAsTruth;
+        
+    }
+    
+    static Boolean asBoolean(Object v) {
+
+        Boolean b = null;
+        
+        try {
+            Method asBooleanMethod = v.getClass().getMethod("asBoolean");
+            Class<?> returnType = asBooleanMethod.getReturnType();
+            if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
+                b = (Boolean) asBooleanMethod.invoke(v);
+            }
+        } catch(Exception e) {}
+
+        return b;
+        
+    }
+
+    private static int compareTruth(int leftAsTruth, int rightAsTruth) {
+        return ( (leftAsTruth > 0 && rightAsTruth > 0) || (leftAsTruth < 0 && rightAsTruth < 0) || ( leftAsTruth == 0 && rightAsTruth == 0) ) ? 0 : -1;
+    }
+
+    public static boolean isTruthEnum(Class<? extends Enum> type) {
+        try {
+            Method asTruthMethod = type.getMethod("asTruth");
+            Class<?> returnType = asTruthMethod.getReturnType();
+            if(Integer.class.isAssignableFrom(returnType) || int.class.isAssignableFrom(returnType)) {
+                
+                Method fromBoolean = null;
+                try {
+                    fromBoolean = type.getMethod("fromBoolean", Boolean.class);
+                    if(!Modifier.isStatic(fromBoolean.getModifiers())) {
+                        throw new RuntimeException("Truth enum fromBoolean method must be static: " + type);
+                    }
+                    if( fromBoolean.getReturnType() != type ) {
+                        throw new RuntimeException("Truth enum fromBoolean method must return this enum instance: " + type);
+                    }
+                }catch(Exception e) {
+                    if(fromBoolean == null) throw new RuntimeException("Truth enum must have static fromBoolean method: " + type);
+                    throw new RuntimeException(e);
+                }
+                
+                
+                Method fromInteger = null;
+                try {
+                    fromInteger = type.getMethod("fromInteger", Integer.class);
+                    if(!Modifier.isStatic(fromInteger.getModifiers())) {
+                        throw new RuntimeException("Truth enum fromInteger method must be static: " + type);
+                    }
+                    if( fromInteger.getReturnType() != type ) {
+                        throw new RuntimeException("Truth enum fromInteger method must return this enum instance: " + type);
+                    }
+                } catch(Exception e) {
+                    if(fromInteger == null) throw new RuntimeException("Truth enum must have static fromInteger method: " + type);
+                    throw new RuntimeException(e);
+                }
+                
+                return true;
+            }
+        } catch(Exception e) {}
+        return false;
+    }
+
+    public static Enum truthFromInteger(Class<? extends Enum> type,
+            Integer truth) {
+
+        Method fromInteger = null;
+        try {
+            fromInteger = type.getMethod("fromInteger", Integer.class);
+            if(!Modifier.isStatic(fromInteger.getModifiers())) {
+                throw new RuntimeException("Truth enum fromInteger method must be static: " + type);
+            }
+            if( fromInteger.getReturnType() != type ) {
+                throw new RuntimeException("Truth enum fromInteger method must return this enum instance: " + type);
+            }
+        } catch(Exception e) {
+            if(fromInteger == null) throw new RuntimeException("Truth enum must have static fromInteger method: " + type);
+            throw new RuntimeException(e);
+        }
+        
+        try {
+            return (Enum) fromInteger.invoke(null, truth);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
+    }
+
+    public static Enum truthFromBoolean(Class<? extends Enum> type,
+            Boolean bTruth) {
+        Method fromBoolean = null;
+        try {
+            fromBoolean = type.getMethod("fromBoolean", Boolean.class);
+            if(!Modifier.isStatic(fromBoolean.getModifiers())) {
+                throw new RuntimeException("Truth enum fromBoolean method must be static: " + type);
+            }
+            if( fromBoolean.getReturnType() != type ) {
+                throw new RuntimeException("Truth enum fromBoolean method must return this enum instance: " + type);
+            }
+        }catch(Exception e) {
+            if(fromBoolean == null) throw new RuntimeException("Truth enum must have static fromBoolean method: " + type);
+            throw new RuntimeException(e);
+        }
+        
+        try {
+            return (Enum) fromBoolean.invoke(null, bTruth);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
