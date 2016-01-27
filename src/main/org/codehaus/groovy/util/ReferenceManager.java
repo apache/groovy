@@ -156,21 +156,20 @@ public class ReferenceManager {
     public String toString() {
         return "ReferenceManager(idling)";
     }
-    
-    private static final ReferenceBundle SOFT_BUNDLE, WEAK_BUNDLE;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
-        SOFT_BUNDLE = new ReferenceBundle(manager, ReferenceType.SOFT);
-        WEAK_BUNDLE = new ReferenceBundle(manager, ReferenceType.WEAK);
-    }
-    
+
+    /**
+     * @deprecated use {@link ReferenceBundle#getSoftBundle()}
+     */
+    @Deprecated
     public static ReferenceBundle getDefaultSoftBundle() {
-        return SOFT_BUNDLE;
+        return ReferenceBundle.getSoftBundle();
     }
-    
+
+    /**
+     * @deprecated use {@link ReferenceBundle#getWeakBundle()}
+     */
+    @Deprecated
     public static ReferenceBundle getDefaultWeakBundle() {
-        return WEAK_BUNDLE;
+        return ReferenceBundle.getWeakBundle();
     }
 }
