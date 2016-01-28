@@ -122,4 +122,68 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.isEmpty()
         assert list.@innerMap == null
     }
+
+    public void testRemoveFirstShiftsKeyValuesAndClearsArraySlot() {
+        list.putAll([a: '1', b: '2'])
+        assert list.size() == 2
+        assert list.@innerMap == null
+        list.remove('a')
+        assert list.size() == 1
+        assert list.@listKeys[0] == 'b'
+        assert list.@listValues[0] == '2'
+        assert list.@listKeys[1] == null
+        assert list.@listValues[1] == null
+
+        list.put('c', '3')
+        assert list.size() == 2
+        assert list.@listKeys[0] == 'b'
+        assert list.@listValues[0] == '2'
+        assert list.@listKeys[1] == 'c'
+        assert list.@listValues[1] == '3'
+    }
+
+    public void testRemoveLastClearsLastArraySlot() {
+        list.putAll([a: '1', b: '2'])
+        assert list.size() == 2
+        assert list.@innerMap == null
+        list.remove('b')
+        assert list.size() == 1
+        assert list.@listKeys[0] == 'a'
+        assert list.@listValues[0] == '1'
+        assert list.@listKeys[1] == null
+        assert list.@listValues[1] == null
+
+        list.put('c', '3')
+        assert list.size() == 2
+        assert list.@listKeys[0] == 'a'
+        assert list.@listValues[0] == '1'
+        assert list.@listKeys[1] == 'c'
+        assert list.@listValues[1] == '3'
+    }
+
+    public void testSwitchToInnerMapClearsArrays() {
+        list.putAll([a: '1', b: '2'])
+        assert list.size() == 2
+        assert list.@innerMap == null
+        assert list.@listKeys[0] == 'a'
+        assert list.@listKeys[1] == 'b'
+
+        list.put('c', '3')
+        assert list.size() == 3
+        assert list.@innerMap != null
+        assert list.@listKeys[0] == null
+        assert list.@listKeys[1] == null
+        assert list.@listValues[0] == null
+        assert list.@listValues[1] == null
+    }
+
+    public void testContainsKey() {
+        list.putAll([a: '1', b: '2'])
+        assert list.containsKey('b')
+    }
+
+    public void testContainsValue() {
+        list.putAll([a: '1', b: '2'])
+        assert list.containsValue('2')
+    }
 }
