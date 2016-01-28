@@ -25,7 +25,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This represents a 
+ * This class represents a {@Map} that is optimized for a small number of
+ * entries.  For a number of entries up to {@code listSize} the entries
+ * are stored in arrays.  After {@code listSize} entries are exceeded
+ * storage switches internally to a {@link Map} and converts back
+ * to being array based when its size is less than or equal to {@code listSize}.
+ *
+ * Null keys or values are not supported.
+ *
+ * This class is not thread safe.
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ListHashMap<K,V> implements Map<K,V> {
@@ -47,15 +56,22 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     public void clear() {
         innerMap = null;
+        clearArrays();
+        size = 0;
+    }
+
+    private void clearArrays() {
         for (int i=0; i<maxListFill; i++) {
             listValues[i] = null;
             listKeys[i] = null;
         }
-        size = 0;
     }
 
     public boolean containsKey(Object key) {
-        if (size<maxListFill) {
+        if (size == 0) {
+            return false;
+        }
+        if (innerMap == null) {
             for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) return true;
             }
@@ -66,7 +82,10 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     public boolean containsValue(Object value) {
-        if (size<maxListFill) {
+        if (size == 0) {
+            return false;
+        }
+        if (innerMap == null) {
             for (int i=0; i<size; i++) {
                 if (listValues[i].equals(value)) return true;
             }
@@ -128,6 +147,8 @@ public class ListHashMap<K,V> implements Map<K,V> {
                 return null;
             } else {
                 innerMap = makeMap();
+                // Switched over to Map so need to clear array references
+                clearArrays();
             }
         }
         V val = (V) innerMap.put(key, value);
@@ -147,8 +168,13 @@ public class ListHashMap<K,V> implements Map<K,V> {
                 if (listKeys[i].equals(key)) {
                     V old = (V) listValues[i];
                     size--;
-                    listValues[i] = listValues[size];
-                    listKeys[i] = listKeys[size];
+                    // If last element is not being removed shift the last element into this slot
+                    if (i < size) {
+                        listValues[i] = listValues[size];
+                        listKeys[i] = listKeys[size];
+                    }
+                    listValues[size] = null;
+                    listKeys[size] = null;
                     return old;
                 }
             }
