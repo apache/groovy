@@ -475,6 +475,23 @@ class ReflectionCompletor {
                     'take(', 'takeWhile('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
+        if (instance instanceof File) {
+            [
+                    'append(',
+                    'createTempDir(',
+                    'deleteDir()', 'directorySize()',
+                    'eachByte(', 'eachDir(', 'eachDirMatch(', 'eachDirRecurse(', 'eachFile(', 'eachFileMatch(', 'eachFileRecurse(',
+                    'eachLine(', 'eachObject(',
+                    'filterLine(',
+                    'getBytes()', 'getText()',
+                    'leftShift(',
+                    'newInputStream()', 'newOutputStream()', 'newPrintWriter(', 'newReader(', 'newWriter(',
+                    'readBytes()', 'readLines(', 'renameTo(',
+                    'setBytes(', 'setText(', 'size()', 'splitEachLine(',
+                    'traverse(',
+                    'withInputStream(', 'withOutputStream(', 'withPrintWriter(', 'withReader(', 'withWriter(', 'withWriterAppend(', 'write('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
         if (instance instanceof Number) {
             [
                     'abs()',
@@ -509,10 +526,6 @@ class ReflectionCompletor {
         }
         return candidates
     }
-
-
-
-
 
     private static Collection<ReflectionCompletionCandidate> addClassFieldsAndMethods(final Class clazz,
                                                                             final boolean includeStatic,
