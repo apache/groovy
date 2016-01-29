@@ -447,9 +447,15 @@ class ReflectionCompletor {
                     'retainAll(', 'removeAll(',
                     'unique()', 'unique('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            if (instance instanceof Collection) {
+                [
+                        'grep('
+                ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
+            }
             if (instance instanceof List) {
                 [
                         'collate(',
+                        'execute()', 'execute(',
                         'pop()',
                         'transpose()'
                 ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
@@ -478,17 +484,32 @@ class ReflectionCompletor {
         if (instance instanceof File) {
             [
                     'append(',
-                    'createTempDir(',
+                    'createTempDir()', 'createTempDir(',
                     'deleteDir()', 'directorySize()',
-                    'eachByte(', 'eachDir(', 'eachDirMatch(', 'eachDirRecurse(', 'eachFile(', 'eachFileMatch(', 'eachFileRecurse(',
-                    'eachLine(', 'eachObject(',
+                    'eachByte(', 'eachDir(', 'eachDirMatch(', 'eachDirRecurse(', 'eachFile(', 'eachFileMatch(', 'eachFileRecurse(', 'eachLine(',
                     'filterLine(',
-                    'getBytes()', 'getText()',
-                    'newInputStream()', 'newOutputStream()', 'newPrintWriter(', 'newReader(', 'newWriter(',
+                    'getBytes()', 'getText()', 'getText(',
+                    'newInputStream()', 'newOutputStream()', 'newPrintWriter()', 'newPrintWriter(', 'newReader()', 'newReader(', 'newWriter()', 'newWriter(',
                     'readBytes()', 'readLines(', 'renameTo(',
                     'setBytes(', 'setText(', 'size()', 'splitEachLine(',
                     'traverse(',
                     'withInputStream(', 'withOutputStream(', 'withPrintWriter(', 'withReader(', 'withWriter(', 'withWriterAppend(', 'write('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof String) {
+            [
+                    'capitalize()', 'center(', 'collectReplacements(', 'count(',
+                    'decodeBase64()', 'decodeHex()', 'denormalize()',
+                    'eachLine(', 'eachMatch(', 'execute()', 'execute(',
+                    'find(', 'findAll(',
+                    'isAllWhitespace()', 'isBigDecimal()', 'isBigInteger()', 'isDouble()', 'isFloat()', 'isInteger()', 'isLong()', 'isNumber()',
+                    'normalize()', 
+                    'padLeft(', 'padRight(',
+                    'readLines()', 'reverse()', 
+                    'size()', 'splitEachLine(', 'stripIndent(', 'stripMargin(',
+                    'toBigDecimal()', 'toBigInteger()', 'toBoolean()', 'toCharacter()', 'toDouble()', 'toFloat()', 'toInteger()',
+                    'toList()', 'toLong()', 'toSet()', 'toShort()', 'toURI()', 'toURL()',
+                    'tokenize(', 'tr('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
         if (instance instanceof Number) {
