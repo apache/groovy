@@ -53,6 +53,8 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterator;
+import org.codehaus.groovy.util.ListBufferedIterator;
+import org.codehaus.groovy.util.IteratorBufferedIterator;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -16057,7 +16059,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> BufferedIterator<T> buffered(Iterator<T> self) {
-         return new BufferedIterator<T>(self);
+        return new IteratorBufferedIterator<T>(self);
+    }
+
+    /**
+     * Returns a <code>BufferedIterator</code> that allows examining the next element without
+     * consuming it.
+     * <pre class="groovyTestCase">
+     * assert new LinkedHashSet([1,2,3,4]).bufferedIterator().with { [head(), toList()] } == [1, [1,2,3,4]]
+     * </pre>
+     *
+     * @param self an iterator object
+     * @return a BufferedIterator wrapping an iterator for self
+     * @since 2.5.0
+     */
+    public static <T> BufferedIterator<T> bufferedIterator(Iterable<T> self) {
+        return new IteratorBufferedIterator<T>(self.iterator());
+    }
+
+    /**
+     * Returns a <code>BufferedIterator</code> that allows examining the next element without
+     * consuming it.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3, 4].bufferedIterator().with { [head(), toList()] } == [1, [1, 2, 3, 4]]
+     * </pre>
+     *
+     * @param self an iterator object
+     * @return a ListBufferedIterator wrapping self
+     * @since 2.5.0
+     */
+    public static <T> BufferedIterator<T> bufferedIterator(List<T> self) {
+        return new ListBufferedIterator<T>(self);
     }
 
     /**

@@ -26,44 +26,6 @@ import java.util.Iterator;
  * @author Andrew Taylor
  * @since 2.5.0
  */
-public class BufferedIterator<T> implements Iterator<T> {
-
-    private final Iterator<T> iter;
-    private boolean hasBuffered;
-    private T buffered;
-
-    public BufferedIterator(Iterator<T> iter) {
-        this.iter = iter;
-        this.hasBuffered = false;
-    }
-
-    public boolean hasNext() {
-        return hasBuffered || iter.hasNext();
-    }
-
-    public T next() {
-        if (hasBuffered) {
-            T buffered = this.buffered;
-            this.buffered = null;
-            hasBuffered = false;
-            return buffered;
-        } else {
-            return iter.next();
-        }
-    }
-
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Return the next element to be returned by next() without consuming it.
-     */
-    public T head() {
-        if (!hasBuffered) {
-            buffered = iter.next();
-            hasBuffered = true;
-        }
-        return buffered;
-    }
+public interface BufferedIterator<T> extends Iterator<T> {
+    T head();
 }
