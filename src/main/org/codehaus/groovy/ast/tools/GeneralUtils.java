@@ -48,11 +48,13 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -638,6 +640,14 @@ public class GeneralUtils {
 
     public static VariableExpression varX(String name, ClassNode type) {
         return new VariableExpression(name, type);
+    }
+
+    public static ThrowStatement throwS(Expression expr) {
+        return new ThrowStatement(expr);
+    }
+
+    public static CatchStatement catchS(Parameter variable, Statement code) {
+        return new CatchStatement(variable, code);
     }
 
     /**
