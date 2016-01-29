@@ -196,6 +196,7 @@ public class DefaultTypeTransformation {
         if(asTruth != null) {
             int i = asTruth.intValue();
             if(i == 0) throw new RuntimeException("Cannot cast truth UNKNOWN value to boolean");
+            if(i == 2) throw new RuntimeException("Cannot cast truth MU value to boolean");
             return i == 1;
         }
         
@@ -799,6 +800,8 @@ public class DefaultTypeTransformation {
                     
                     if(rightAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare boolean to UNKNOWN truth value");
                     
+                    if(rightAsTruth.intValue() == 2) throw new RuntimeException("Cannot compare boolean to MU truth value");
+                    
                     leftAsTruth = leftAsBoolean.booleanValue() ? 1 : -1;
                     
                     return compareTruth(leftAsTruth, rightAsTruth);
@@ -822,6 +825,8 @@ public class DefaultTypeTransformation {
                     if(rightAsBoolean != null) {
                         
                         if(leftAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare UNKNOWN truth value to boolean");
+                        
+                        if(leftAsTruth.intValue() == 2) throw new RuntimeException("Cannot compare MU truth value to boolean");
                         
                         rightAsTruth = rightAsBoolean.booleanValue() ? 1 : -1;
                         
@@ -1156,7 +1161,7 @@ public class DefaultTypeTransformation {
         
         if(valAsTruth != null) {
             int i = valAsTruth.intValue();
-            if( ! ( i == 1 || i == 0 || i == -1) ) throw new RuntimeException("asTruth method must return an integer within range [-1, 1]");
+            if( ! ( i == 1 || i == 0 || i == -1 || i == 2) ) throw new RuntimeException("asTruth method must return an integer within range [-1, 1]");
         }
         
         return valAsTruth;
@@ -1180,7 +1185,9 @@ public class DefaultTypeTransformation {
     }
 
     private static int compareTruth(int leftAsTruth, int rightAsTruth) {
-        return ( (leftAsTruth > 0 && rightAsTruth > 0) || (leftAsTruth < 0 && rightAsTruth < 0) || ( leftAsTruth == 0 && rightAsTruth == 0) ) ? 0 : -1;
+        return leftAsTruth == rightAsTruth ? 0 : -1;
+//        if(leftAsTruth == 2 && rightAsTruth == 2) return 0;
+//        return ( (leftAsTruth > 0 && rightAsTruth > 0) || (leftAsTruth < 0 && rightAsTruth < 0) || ( leftAsTruth == 0 && rightAsTruth == 0) ) ? 0 : -1;
     }
 
     public static boolean isTruthEnum(Class<? extends Enum> type) {
