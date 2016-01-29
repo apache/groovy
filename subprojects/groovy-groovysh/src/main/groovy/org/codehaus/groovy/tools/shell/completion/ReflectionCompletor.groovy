@@ -484,7 +484,6 @@ class ReflectionCompletor {
                     'eachLine(', 'eachObject(',
                     'filterLine(',
                     'getBytes()', 'getText()',
-                    'leftShift(',
                     'newInputStream()', 'newOutputStream()', 'newPrintWriter(', 'newReader(', 'newWriter(',
                     'readBytes()', 'readLines(', 'renameTo(',
                     'setBytes(', 'setText(', 'size()', 'splitEachLine(',
