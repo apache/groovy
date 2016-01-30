@@ -146,7 +146,6 @@ public class FileSystemCompiler {
 
         CompilerConfiguration configuration = generateCompilerConfigurationFromOptions(cli);
 
-        //
         // Load the file name list
         String[] filenames = generateFileNamesFromOptions(cli);
         boolean fileNameErrors = filenames == null;
@@ -263,9 +262,7 @@ public class FileSystemCompiler {
     }
 
     public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) throws IOException {
-        //
         // Setup the configuration data
-
         CompilerConfiguration configuration = new CompilerConfiguration();
 
         if (cli.hasOption("classpath")) {
@@ -328,38 +325,31 @@ public class FileSystemCompiler {
 
     @SuppressWarnings({"AccessStaticViaInstance"})
     public static Options createCompilationOptions() {
-        //
-        // Parse the command line
-
         Options options = new Options();
-
         options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
         options.addOption(Option.builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build());
         options.addOption(Option.builder().longOpt("sourcepath").hasArg().argName("path").desc("Specify where to find the source files").build());
         options.addOption(Option.builder().longOpt("temp").hasArg().argName("temp").desc("Specify temporary directory").build());
         options.addOption(Option.builder().longOpt("encoding").hasArg().argName("encoding").desc("Specify the encoding of the user class files").build());
         options.addOption(Option.builder("d").hasArg().desc("Specify where to place generated class files").build());
-//            options.addOption(Option.builder("s").longOpt("strict").desc("Turn on strict type safety.").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Print a synopsis of standard options").build());
         options.addOption(Option.builder("v").longOpt("version").desc("Print the version").build());
         options.addOption(Option.builder("e").longOpt("exception").desc("Print stack trace on error").build());
         options.addOption(Option.builder("pa").longOpt("parameters").desc("Generate metadata for reflection on method parameter names (jdk8+ only)").build());
         options.addOption(Option.builder("j").longOpt("jointCompilation").desc("Attach javac compiler to compile .java files").build());
         options.addOption(Option.builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
-
         options.addOption(
                 Option.builder("J").argName("property=value")
                         .valueSeparator()
                         .numberOfArgs(2)
-                        .desc("name-value pairs to pass to javac")
+                        .desc("Name-value pairs to pass to javac")
                         .build());
         options.addOption(
                 Option.builder("F").argName("flag")
                         .hasArg()
-                        .desc("passed to javac for joint compilation")
+                        .desc("Passed to javac for joint compilation")
                         .build());
-
-        options.addOption(Option.builder().longOpt("indy").desc("enables compilation using invokedynamic").build());
+        options.addOption(Option.builder().longOpt("indy").desc("Enables compilation using invokedynamic").build());
         options.addOption(Option.builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build());
         return options;
     }
