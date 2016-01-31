@@ -414,7 +414,7 @@ class ReflectionCompletor {
 
     /**
      * Offering all DefaultGroovyMethods on any object is too verbose, hiding all
-     * removes user-friendlyness. So here util methods will be added to candidates
+     * removes user-friendliness. So here util methods will be added to candidates
      * if the instance is of a suitable type.
      * This does not need to be strictly complete, only the most useful functions may appear.
      */
@@ -490,7 +490,7 @@ class ReflectionCompletor {
                     'filterLine(',
                     'getBytes()', 'getText()', 'getText(',
                     'newInputStream()', 'newOutputStream()', 'newPrintWriter()', 'newPrintWriter(', 'newReader()', 'newReader(', 'newWriter()', 'newWriter(',
-                    'readBytes()', 'readLines(', 'renameTo(',
+                    'readBytes()', 'readLines(',
                     'setBytes(', 'setText(', 'size()', 'splitEachLine(',
                     'traverse(',
                     'withInputStream(', 'withOutputStream(', 'withPrintWriter(', 'withReader(', 'withWriter(', 'withWriterAppend(', 'write('
@@ -510,6 +510,35 @@ class ReflectionCompletor {
                     'toBigDecimal()', 'toBigInteger()', 'toBoolean()', 'toCharacter()', 'toDouble()', 'toFloat()', 'toInteger()',
                     'toList()', 'toLong()', 'toSet()', 'toShort()', 'toURI()', 'toURL()',
                     'tokenize(', 'tr('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof URL) {
+            [
+                    'eachLine(',
+                    'filterLine(',
+                    'getBytes()', 'getBytes(', 'getText()', 'getText(',
+                    'newInputStream()', 'newInputStream(', 'newReader()', 'newReader(',
+                    'readLines()', 'readLines(',
+                    'splitEachLine(',
+                    'withInputStream(', 'withReader('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof InputStream) {
+            [
+                    'eachLine(',
+                    'filterLine(',
+                    'getBytes()', 'getText()', 'getText(',
+                    'newReader()', 'newReader(',
+                    'readLines()', 'readLines(',
+                    'splitEachLine(',
+                    'withReader(', 'withStream('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof OutputStream) {
+            [
+                    'newPrintWriter()', 'newWriter()', 'newWriter(',
+                    'setBytes(',
+                    'withPrintWriter(', 'withStream(', 'withWriter('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
         if (instance instanceof Number) {
