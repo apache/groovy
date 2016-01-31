@@ -18,6 +18,9 @@
  */
 package groovy
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
 /**
  * Test case for the eachObject method on a file containing
  * zero, one or more objects (object stream).  Also test cases
@@ -161,15 +164,13 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testRunAfter() {
-        boolean modifiedByRunAfter = false
+        CountDownLatch latch = new CountDownLatch(1)
         new Timer().runAfter(50) {
-            modifiedByRunAfter = true
+            latch.countDown()
         }
-        assert modifiedByRunAfter == false
-        for(int i = 0; !modifiedByRunAfter && i < 10; i++) {
-           Thread.sleep 100
-        }
-        assert modifiedByRunAfter
+        assert latch.getCount() == 1
+        latch.await(100L, TimeUnit.MILLISECONDS)
+        assert latch.getCount() == 0
     }
 
     void testSplitEachLine() {
