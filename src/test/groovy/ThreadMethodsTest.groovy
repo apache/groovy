@@ -18,18 +18,21 @@
  */
 package groovy
 
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
+
 class ThreadMethodsTest extends GroovyTestCase {
+    final CyclicBarrier barrier = new CyclicBarrier(2)
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread") {
-            sleep 3000 // give ourselves time to find the thread
+            barrier.await(3L, TimeUnit.SECONDS) // Signal Thread Start
+            barrier.await(3L, TimeUnit.SECONDS) // Wait for thread stop signal
         }
-        def threadFoundByName = false
-        30.times {
-            if (!threadFoundByName) {
-                sleep 100 // a little bit of time for t to start
-                threadFoundByName = Thread.allStackTraces.keySet().any { thread -> thread.name == 'MyNamedThread' }
-            }
-        }
+
+        barrier.await(3L, TimeUnit.SECONDS) // Wait for thread start signal
+        boolean threadFoundByName = Thread.allStackTraces.keySet().any { thread -> thread.name == 'MyNamedThread' }
+        barrier.await(3L, TimeUnit.SECONDS) // Send thread stop signal
+        t.join(100L)
         assert threadFoundByName
     }
 }
