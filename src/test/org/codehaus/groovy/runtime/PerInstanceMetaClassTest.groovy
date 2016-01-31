@@ -20,35 +20,8 @@ package org.codehaus.groovy.runtime
 
 class PerInstanceMetaClassTest extends GroovyTestCase{
 
-    static Integer [] cache
-
-    static {
-        try {
-            Integer.valueOf(0)
-        }
-        catch (MissingMethodException e) {
-            cache = new Integer[-(-128) + 127 + 1]
-            for(int i = 0; i < cache.length; i++)
-              cache[i] = new Integer(i - 128);
-        }
-    }
-
     protected void setUp() {
         Integer.metaClass = null
-        setValueOfMethod()
-    }
-
-    private def setValueOfMethod() {
-        if (cache != null) {
-            Integer.metaClass.static.valueOf = {
-                Integer i ->
-                final int offset = 128;
-                if (i >= -128 && i <= 127) { // must cache
-                    return cache[i + offset];
-                }
-                return new Integer(i);
-            }
-        }
     }
 
     void testEMC () {
@@ -88,7 +61,6 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
 
         x.metaClass = null
         Integer.metaClass = null
-        setValueOfMethod()
 
         assertEquals 28, x + 6
 
@@ -277,7 +249,6 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
        ExpandoMetaClass.enableGlobally()
 
        Integer.metaClass = null
-       setValueOfMethod()
 
        def foo =  { x ->
            return x._100 
