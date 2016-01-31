@@ -76,15 +76,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
     }
 
     private static String getVMVersion() {
-        try {
-            Class.forName("java.lang.annotation.Annotation");
-            return CompilerConfiguration.POST_JDK5;
-        }
-        catch(Exception ex) {
-            // IGNORE
-        }
-
-        return CompilerConfiguration.PRE_JDK5;
+        return CompilerConfiguration.POST_JDK5;
     }
 
     public void testSetViaSystemProperties() {
