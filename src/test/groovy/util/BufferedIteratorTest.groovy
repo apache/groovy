@@ -108,13 +108,37 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [3,4]
     }
 
-    void testIteratorBufferedIteratorRemoveShouldFail() {
-        def bufferedIterator = new IteratorBufferedIterator([1,2,3,4].iterator())
+    void testIteratorBufferedIteratorSucceedIfHeadNotCalled() {
+        def list = [1,2,3,4]
+        def bufferedIterator = new IteratorBufferedIterator(list.iterator())
 
-        shouldFail(UnsupportedOperationException) {
+        bufferedIterator.next()
+        bufferedIterator.remove()
+
+        assert list == [2,3,4]
+    }
+
+    void testIteratorBufferedIteratorRemoveShouldFailIfHeadCalled() {
+        def list = [1,2,3,4]
+        def bufferedIterator = new IteratorBufferedIterator(list.iterator())
+
+        shouldFail(IllegalStateException) {
             bufferedIterator.next()
+            bufferedIterator.head()
             bufferedIterator.remove()
         }
+    }
+
+    void testIteratorBufferedIteratorRemoveShouldSucceedIfNextCalledAfterHead() {
+        def list = [1,2,3,4]
+        def bufferedIterator = new IteratorBufferedIterator(list.iterator())
+
+        bufferedIterator.next()
+        bufferedIterator.head()
+        bufferedIterator.next()
+        bufferedIterator.remove()
+
+        assert list == [1,3,4]
     }
 
     void testListBufferedIteratorRemoveShouldRemoveLastReturnedByNext() {

@@ -16059,7 +16059,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> BufferedIterator<T> buffered(Iterator<T> self) {
-        return new IteratorBufferedIterator<T>(self);
+        if (self instanceof BufferedIterator) {
+            return (BufferedIterator<T>) self;
+        } else {
+            return new IteratorBufferedIterator<T>(self);
+        }
     }
 
     /**
@@ -16069,8 +16073,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert new LinkedHashSet([1,2,3,4]).bufferedIterator().with { [head(), toList()] } == [1, [1,2,3,4]]
      * </pre>
      *
-     * @param self an iterator object
-     * @return a BufferedIterator wrapping an iterator for self
+     * @param self an iterable object
+     * @return a BufferedIterator for traversing self
      * @since 2.5.0
      */
     public static <T> BufferedIterator<T> bufferedIterator(Iterable<T> self) {
@@ -16084,8 +16088,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert [1, 2, 3, 4].bufferedIterator().with { [head(), toList()] } == [1, [1, 2, 3, 4]]
      * </pre>
      *
-     * @param self an iterator object
-     * @return a ListBufferedIterator wrapping self
+     * @param self a list
+     * @return a BufferedIterator for traversing self
      * @since 2.5.0
      */
     public static <T> BufferedIterator<T> bufferedIterator(List<T> self) {

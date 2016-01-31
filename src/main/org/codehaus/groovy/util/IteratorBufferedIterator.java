@@ -54,7 +54,11 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
     }
 
     public void remove() {
-        throw new UnsupportedOperationException();
+        if (hasBuffered) {
+            throw new IllegalStateException("Can't remove from " + this + " when an item is buffered.");
+        } else {
+            iter.remove();
+        }
     }
 
     /**
