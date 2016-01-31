@@ -24,14 +24,6 @@ import org.codehaus.groovy.control.*
 class GenericsGenTest extends GroovyTestCase {
 
     void testCompile() {
-        try {
-            Class.forName("java.lang.annotation.Annotation");
-        }
-        catch (Exception ex) {
-            return
-        }
-
-
         File dir = createTempDir("groovy-src-", "-src")
         assertNotNull dir
 
