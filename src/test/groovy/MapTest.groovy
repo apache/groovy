@@ -146,6 +146,26 @@ class MapTest extends GroovyTestCase {
         assert map1 == control
     }
 
+    void testRemoveAll() {
+        // given:
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+
+        // when: 'two parameters = key,value'
+        map1.removeAll { k,v ->
+            k == 'a'
+        }
+        // then:
+        assert map1 == [b:2]
+
+        // when: 'one parameter = entry'
+        map2.removeAll { e ->
+            e.value == 3
+        }
+        // then:
+        assert map2 == [d:4]
+    }
+
     void testPlusCollectionMapEntry() {
         def map1 = [a:1, b:2]
         def map2 = [c:3, d:4]
