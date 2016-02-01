@@ -4433,6 +4433,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Modifies this map by removing the elements that are matched according to the
+     * specified closure condition. If the closure takes one parameter then it will be
+     * passed the Map.Entry. Otherwise the closure should take two parameters, which
+     * will be the key and the value.
+     *
+     * See also <code>findAll</code> when wanting to produce a new map containing items
+     * which don't match some criteria while leaving the original map unchanged.
+     *
+     * @param self a Map to be modified
+     * @param condition a 1 or 2 arg Closure condition applying on the entries
+     * @return <tt>true</tt> if this map changed as a result of the call
+     * @since 2.5
+     */
+    public static <K, V> boolean removeAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure condition) {
+        Iterator<Map.Entry<K, V>> iter = self.entrySet().iterator();
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        boolean result = false;
+        while (iter.hasNext()) {
+            Map.Entry<K, V> entry = iter.next();
+            if (bcw.callForMap(entry)) {
+                iter.remove();
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Modifies the collection by adding all of the elements in the specified array to the collection.
      * The behavior of this operation is undefined if
      * the specified array is modified while the operation is in progress.
