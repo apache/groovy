@@ -19,15 +19,37 @@
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.LoopingStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 
 /**
  * Base class for AST Transformations which will automatically throw an {@link InterruptedException} when
@@ -163,15 +185,10 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
      * @return Returns the interruption check statement.
      */
     protected Statement createInterruptStatement() {
-        return new IfStatement(
-                new BooleanExpression(
-                        createCondition()
-                ),
-                new ThrowStatement(
-                        new ConstructorCallExpression(thrownExceptionType,
-                                new ArgumentListExpression(new ConstantExpression(getErrorMessage())))
-                ),
-                EmptyStatement.INSTANCE
+        return ifS(createCondition(),
+                throwS(
+                        ctorX(thrownExceptionType, args(constX(getErrorMessage())))
+                )
         );
     }
 
