@@ -24,9 +24,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -38,8 +36,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 
 /**
@@ -90,8 +91,10 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
     }
 
     private TryCatchStatement tryCatchAssertionFailedError(AnnotationNode annotationNode, MethodNode methodNode, ArrayList<Statement> statements) {
-        TryCatchStatement tryCatchStatement = new TryCatchStatement(new BlockStatement(statements, methodNode.getVariableScope()), EmptyStatement.INSTANCE);
-        tryCatchStatement.addCatch(new CatchStatement(new Parameter(CATCHED_THROWABLE_TYPE, "ex"), ReturnStatement.RETURN_NULL_OR_VOID));
+        TryCatchStatement tryCatchStatement = new TryCatchStatement(
+                block(methodNode.getVariableScope(), statements),
+                EmptyStatement.INSTANCE);
+        tryCatchStatement.addCatch(catchS(param(CATCHED_THROWABLE_TYPE, "ex"), ReturnStatement.RETURN_NULL_OR_VOID));
         return tryCatchStatement;
     }
 
