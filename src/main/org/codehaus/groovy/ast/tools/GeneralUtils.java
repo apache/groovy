@@ -133,6 +133,13 @@ public class GeneralUtils {
         return block;
     }
 
+    public static BlockStatement block(VariableScope varScope, List<Statement> stmts) {
+        BlockStatement block = new BlockStatement();
+        block.setVariableScope(varScope);
+        for (Statement stmt : stmts) block.addStatement(stmt);
+        return block;
+    }
+
     public static BlockStatement block(Statement... stmts) {
         BlockStatement block = new BlockStatement();
         for (Statement stmt : stmts) block.addStatement(stmt);
