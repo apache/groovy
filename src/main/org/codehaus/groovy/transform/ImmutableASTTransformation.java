@@ -43,7 +43,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -364,7 +363,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         Expression value = findArg(name);
         return ifS(
                 notX(equalsNullX(value)),
-                new ThrowStatement(ctorX(READONLYEXCEPTION_TYPE,
+                throwS(ctorX(READONLYEXCEPTION_TYPE,
                         args(constX(name), constX(cNode.getName()))
                 )));
     }

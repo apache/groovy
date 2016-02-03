@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -61,6 +60,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
@@ -225,8 +225,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     private static BlockStatement illegalArgumentBlock(String message) {
-        return block(
-                new ThrowStatement(ctorX(make(IllegalArgumentException.class), args(constX(message)))));
+        return block(throwS(ctorX(make(IllegalArgumentException.class), args(constX(message)))));
     }
 
     private static BlockStatement processArgsBlock(ClassNode cNode, VariableExpression namedArgs) {
