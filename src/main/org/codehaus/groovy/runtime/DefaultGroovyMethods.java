@@ -4382,6 +4382,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * that are matched according to the specified closure condition.  In other words,
      * removes from this collection all of its elements that don't match.
      *
+     * <pre class="groovyTestCase">def list = ['a', 'b']
+     * list.retainAll { it == 'b' }
+     * assert list == ['b']</pre>
+     *
      * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
      * containing items which match some criteria but leaving the original collection unchanged.
      *
@@ -4408,7 +4412,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Modifies this map so that it retains only its elements that are matched
      * according to the specified closure condition.  In other words, removes from
-     * this map all of its elements that don't match.
+     * this map all of its elements that don't match. If the closure takes one
+     * parameter then it will be passed the Map.Entry. Otherwise the closure should
+     * take two parameters, which will be the key and the value.
      *
      * <pre class="groovyTestCase">def map = [a:1, b:2]
      * map.retainAll { k,v -> k == 'b' }
@@ -4440,6 +4446,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Modifies this collection by removing the elements that are matched according
      * to the specified closure condition.
      *
+     * <pre class="groovyTestCase">def list = ['a', 'b']
+     * list.removeAll { it == 'b' }
+     * assert list == ['a']</pre>
+     *
      * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
      * containing items which match some criteria but leaving the original collection unchanged.
      *
@@ -4468,7 +4478,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * specified closure condition. If the closure takes one parameter then it will be
      * passed the Map.Entry. Otherwise the closure should take two parameters, which
      * will be the key and the value.
-     * 
+     *
      * <pre class="groovyTestCase">def map = [a:1, b:2]
      * map.removeAll { k,v -> k == 'b' }
      * assert map == [a:1]</pre>
