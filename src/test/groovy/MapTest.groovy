@@ -166,6 +166,26 @@ class MapTest extends GroovyTestCase {
         assert map2 == [d:4]
     }
 
+    void testRetainAll() {
+        // given:
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+
+        // when: 'two parameters = key,value'
+        map1.retainAll { k,v ->
+            k == 'a'
+        }
+        // then:
+        assert map1 == [a:1]
+
+        // when: 'one parameter = entry'
+        map2.retainAll { e ->
+            e.value == 3
+        }
+        // then:
+        assert map2 == [c:3]
+    }
+
     void testPlusCollectionMapEntry() {
         def map1 = [a:1, b:2]
         def map2 = [c:3, d:4]
