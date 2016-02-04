@@ -4407,7 +4407,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * to the specified closure condition.
      *
      * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
-     * containing items which don't match some criteria while leaving the original collection unchanged.
+     * containing items which match some criteria but leaving the original collection unchanged.
      *
      * @param  self a Collection to be modified
      * @param  condition a closure condition
@@ -4440,7 +4440,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert map == [a:1]</pre>
      *
      * See also <code>findAll</code> when wanting to produce a new map containing items
-     * which don't match some criteria while leaving the original map unchanged.
+     * which match some criteria but leaving the original map unchanged.
      *
      * @param self a Map to be modified
      * @param condition a 1 or 2 arg Closure condition applying on the entries
