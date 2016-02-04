@@ -4434,6 +4434,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * specified closure condition. If the closure takes one parameter then it will be
      * passed the Map.Entry. Otherwise the closure should take two parameters, which
      * will be the key and the value.
+     * 
+     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * map.removeAll { k,v -> k == 'b' }
+     * assert map == [a:1]</pre>
      *
      * See also <code>findAll</code> when wanting to produce a new map containing items
      * which don't match some criteria while leaving the original map unchanged.
