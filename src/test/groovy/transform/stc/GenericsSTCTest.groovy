@@ -1800,6 +1800,19 @@ assert result == 'ok'
 '''
     }
 
+    // GROOVY-7742
+    void testMethodParamWithDifferentPlaceholderForTypeArgument() {
+        // We use <T> here while List uses <E>
+        assertScript '''
+            class Foo {
+                public <T> Class<T> firstClass(List<Class<T>> classes) {
+                    return classes.first()
+                }
+            }
+            null
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
