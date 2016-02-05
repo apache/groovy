@@ -4413,7 +4413,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Modifies this map so that it retains only its elements that are matched
      * according to the specified closure condition.  In other words, removes from
      * this map all of its elements that don't match. If the closure takes one
-     * parameter then it will be passed the Map.Entry. Otherwise the closure should
+     * parameter then it will be passed the <code>Map.Entry</code>. Otherwise the closure should
      * take two parameters, which will be the key and the value.
      *
      * <pre class="groovyTestCase">def map = [a:1, b:2]
@@ -4476,7 +4476,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Modifies this map by removing the elements that are matched according to the
      * specified closure condition. If the closure takes one parameter then it will be
-     * passed the Map.Entry. Otherwise the closure should take two parameters, which
+     * passed the <code>Map.Entry</code>. Otherwise the closure should take two parameters, which
      * will be the key and the value.
      *
      * <pre class="groovyTestCase">def map = [a:1, b:2]
