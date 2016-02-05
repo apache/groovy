@@ -196,12 +196,12 @@ public class JavaStubGenerator {
             currentModule = classNode.getModule();
 
             boolean isInterface = isInterfaceOrTrait(classNode);
-            boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) != 0;
+            boolean isEnum = classNode.isEnum();
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0)
-                    & ~(isEnum ? Opcodes.ACC_FINAL : 0));
+                    & ~(isEnum ? Opcodes.ACC_FINAL | Opcodes.ACC_ABSTRACT : 0));
 
             if (isInterface) {
                 if (isAnnotationDefinition) {
@@ -598,7 +598,7 @@ public class JavaStubGenerator {
             if (isDefaultTraitImpl(methodNode)) {
                 modifiers ^= Opcodes.ACC_ABSTRACT;
             }
-            printModifiers(out, modifiers);
+            printModifiers(out, modifiers & ~(clazz.isEnum() ? Opcodes.ACC_ABSTRACT : 0));
         }
 
         printGenericsBounds(out, methodNode.getGenericsTypes());
@@ -622,7 +622,7 @@ public class JavaStubGenerator {
 
         if (Traits.isTrait(clazz)) {
             out.println(";");
-        } else if (isAbstract(methodNode)) {
+        } else if (isAbstract(methodNode) && !clazz.isEnum()) {
             if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
                 if (fs instanceof ExpressionStatement) {
