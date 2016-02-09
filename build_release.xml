@@ -1,0 +1,65 @@
+<project name="vital-groovy" default="dist">
+	
+	<fail unless="dist.version" message="dist.version property not set!" />
+	
+	<property name="release.dir" value="${basedir}/release" />
+	
+	<property name="dist.zip" value="${release.dir}/vital-groovy-${dist.version}.zip" />
+	
+	<property name="dist.tar.gz" value="${release.dir}/vital-groovy-${dist.version}.tar.gz" />
+	
+	<property name="dist.javadoc.file" value="${release.dir}/vital-groovy-${dist.version}-javadocs.zip" />
+	
+	<property name="src.jar" value="${basedir}/target/libs/groovy-all-2.5.0-SNAPSHOT.jar" />
+	
+	<property name="src.release.jars.dir" value="${basedir}/release-jars" />
+	
+	
+	<!-- generate distribution -->
+	<target name="dist">
+		
+		
+		<fail message="file ${src.jar} not set or missing">
+		    <condition>
+		        <not>
+		            <available file="${src.jar}" />
+		        </not>
+		    </condition>
+		</fail>
+		
+		
+		<delete dir="${release.dir}" />
+		<mkdir dir="${release.dir}" />
+
+		<mkdir dir="${release.dir}/lib-groovy" />
+		<copy file="${src.jar}" todir="${release.dir}/lib-groovy" />
+		<copy todir="${release.dir}/lib-groovy">
+			<fileset dir="${src.release.jars.dir}" defaultexcludes="false" />
+		</copy>
+		<copy file="${basedir}/vital-README.md" tofile="${release.dir}/README.md" />
+		<copy file="${basedir}/vital-README.md" tofile="${release.dir}/vital-groovy-${dist.version}-readme.txt" />
+		
+		<zip destfile="${dist.javadoc.file}" whenempty="create" basedir="${basedir}" defaultexcludes="true">
+			<include name="xxx-*" />
+		</zip>
+		
+	
+		
+			
+		<fileset id="dist-files" dir="${release.dir}" defaultexcludes="true">
+			<include name="lib-groovy/**"/>
+			<include name="README.md"/>
+		</fileset>
+		
+		
+		<zip destfile="${dist.zip}" compress="yes">
+			<zipfileset refid="dist-files"  prefix="vital-groovy" />
+		</zip>
+		
+		<tar destfile="${dist.tar.gz}" compression="gzip">
+			<tarfileset refid="dist-files" prefix="vital-groovy" />
+		</tar>
+		
+	</target>
+	
+</project>

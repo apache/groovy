@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -141,6 +142,15 @@ public class DefaultTypeTransformation {
     public static Number castToNumber(Object object, Class type) {
         if (object instanceof Number)
             return (Number) object;
+        
+        //check if class provides toNumber zero args method
+        try {
+            Method asNumberMethod = object.getClass().getMethod("asNumber");
+            if(Number.class.isAssignableFrom( asNumberMethod.getReturnType())) {
+                return (Number) asNumberMethod.invoke(object);
+            }
+        } catch (Exception e) {}
+        
         if (object instanceof Character) {
             return Integer.valueOf(((Character) object).charValue());
         }
@@ -179,6 +189,15 @@ public class DefaultTypeTransformation {
         // equality check is enough and faster than instanceof check, no need to check superclasses since Boolean is final
         if (object.getClass() == Boolean.class) {   
             return ((Boolean)object).booleanValue();
+        }
+        
+        //truth objects may be cast to boolean to (if not unknown)
+        Integer asTruth = asTruth(object);
+        if(asTruth != null) {
+            int i = asTruth.intValue();
+            if(i == 0) throw new RuntimeException("Cannot cast truth UNKNOWN value to boolean");
+            if(i == 2) throw new RuntimeException("Cannot cast truth MU value to boolean");
+            return i == 1;
         }
         
         // if the object is not null and no Boolean, try to call an asBoolean() method on the object
@@ -227,6 +246,18 @@ public class DefaultTypeTransformation {
             return ShortTypeHandling.castToClass(object);
         } else if (type.isPrimitive()) {
             return castToPrimitive(object,type);
+        }
+        
+        if(type == Date.class) {
+         
+            //check if class provides toDate zero args method
+            try {
+                Method asDateMethod = object.getClass().getMethod("asDate");
+                if(Date.class.isAssignableFrom( asDateMethod.getReturnType())) {
+                    return (Date) asDateMethod.invoke(object);
+                }
+            } catch (Exception e) {}
+            
         }
 
         return continueCastOnNumber(object,type);
@@ -537,10 +568,26 @@ public class DefaultTypeTransformation {
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public static int compareTo(Object left, Object right) {
-        return compareToWithEqualityCheck(left, right, false);
+        return compareToWithEqualityCheck(left, right, false, true);
     }
+    
+//    /**
+//     * Marker interface for classes which should override equality check
+//     * @author Derek
+//     *
+//     */
+//    public static interface SemanticEqualityAware {
+//        
+//        /**
+//         * Returns true/false if the equality can be determined, <code>null</code> if it should
+//         * fall back to default implementation
+//         * @param other
+//         * @return
+//         */
+//        Boolean equalsSemantically(SemanticEqualityAware other);
+//    }
 
-    private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly) {
+    private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly, boolean semanticEquality) {
         if (left == right) {
             return 0;
         }
@@ -550,14 +597,145 @@ public class DefaultTypeTransformation {
         else if (right == null) {
             return 1;
         }
+        
+        
+        if(equalityCheckOnly && semanticEquality) {
+
+//          && left instanceof SemanticEqualityAware && right instanceof SemanticEqualityAware)
+//            SemanticEqualityAware a1 = (SemanticEqualityAware) left;
+//            SemanticEqualityAware a2 = (SemanticEqualityAware) right;
+//            Boolean res = a1.equalsSemantically(a2);
+
+            
+//            public Boolean equalsSemantically(Object other) {
+            
+            Method m1 = null;
+            try { m1 = left.getClass().getMethod("equalsSemantically", Object.class); } catch(Exception e) {}
+            Method m2 = null;
+            try { m2 = right.getClass().getMethod("equalsSemantically", Object.class); } catch(Exception e) {}
+            
+            if(m1 != null && m2 != null) {
+                
+                Boolean res = null;
+                try {
+                    res = (Boolean) m1.invoke(left, right);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                
+                if(res != null) {
+                    return res.booleanValue() ? 0 : -1;
+                }
+                
+            }
+            
+        }
+        
         if (left instanceof Comparable) {
+
+            
+            //a special case for semantic equality, if both
+            boolean leftConverted = false;
+            
+            //try to convert left to number
+            //check if class provides toNumber zero args method
+            try {
+                Method asNumberMethod = left.getClass().getMethod("asNumber");
+                if(Number.class.isAssignableFrom( asNumberMethod.getReturnType())) {
+                    left = (Number) asNumberMethod.invoke(left);
+                    leftConverted = true;
+                }
+            } catch (Exception e) {}
+            
+            Date leftAsDate = (Date) (left instanceof Date ? left : null);
+            
+            if(!leftConverted && leftAsDate == null) {
+                try {
+                    Method asDateMethod = left.getClass().getMethod("asDate");
+                    if(Date.class.isAssignableFrom( asDateMethod.getReturnType())) {
+                        leftAsDate = (Date) asDateMethod.invoke(left);
+                        leftConverted = true;
+                    }                    
+                } catch(Exception e) {}
+            }
+            
+            String leftAsString = null;
+            if(!leftConverted) {
+                try {
+                    Method asStringMethod = left.getClass().getMethod("asString");
+                    if(String.class.isAssignableFrom( asStringMethod.getReturnType())) {
+                        leftAsString = (String) asStringMethod.invoke(left);
+                        leftConverted = true;
+                    }
+                } catch(Exception e) {}
+            }
+            
+            if(leftAsString == null) {
+                if(left instanceof String) {
+                    leftAsString = (String) left;
+                } else if(left instanceof GString) {
+                    leftAsString = ((GString)left).toString();
+                } else if(left instanceof Character) {
+                    leftAsString = left.toString();
+                }
+            }
+            
+            Integer leftAsTruth = null;
+            
+            if(!leftConverted) {
+                
+                leftAsTruth = asTruth(left);
+                
+                if(leftAsTruth != null) {
+                    leftConverted = true;
+                }
+                
+            }
+            
+            Boolean leftAsBoolean = null;
+            if(!leftConverted) {
+                
+                leftAsBoolean = asBoolean(left);
+                
+                if(leftAsBoolean != null) { 
+                    leftConverted = true;
+                }
+                
+            }
+
+            if(leftAsBoolean == null) {
+                if(left instanceof Boolean) {
+                    leftAsBoolean = (Boolean) left;
+                }
+            }
+            
             if (left instanceof Number) {
-                if (right instanceof Character || right instanceof Number) {
+                
+                Number castNumber = null;
+                try {
+                    castNumber = castToNumber(right);
+                } catch(GroovyCastException e) {}
+                
+//                if (right instanceof Character || right instanceof Number) {
+                if (castNumber != null) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
                 }
                 if (isValidCharacterString(right)) {
                     return DefaultGroovyMethods.compareTo((Number) left, ShortTypeHandling.castToChar(right));
                 }
+            } 
+            else if(leftAsDate != null) {
+            
+                Date rightAsDate = null;
+                
+                try {
+                    rightAsDate = (Date) castToType(right, Date.class);
+                } catch(GroovyCastException ex) {}
+                
+                if(rightAsDate != null) {
+                    return leftAsDate.compareTo(rightAsDate);
+                }
+                
             }
             else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
@@ -578,6 +756,90 @@ public class DefaultTypeTransformation {
             else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
             }
+            else if(leftAsString != null) {
+                
+                String rightAsString = null;
+                
+                if(right instanceof String) {
+                    rightAsString = (String) right;
+                } else if(right instanceof GString) {
+                    rightAsString = ((GString) right).toString();
+                } else if(right instanceof Character) {
+                    rightAsString = right.toString();
+                } else {
+                    try {
+                        Method asStringMethod = right.getClass().getMethod("asString");
+                        if(String.class.isAssignableFrom( asStringMethod.getReturnType())) {
+                            rightAsString = (String) asStringMethod.invoke(right);
+                        }
+                    } catch(Exception e) {}
+                }
+                
+                if(rightAsString != null) {
+                    return leftAsString.compareTo(rightAsString);
+                }
+                
+            } else if(leftAsBoolean != null) {
+                
+                Boolean rightAsBoolean = null;
+                if(right instanceof Boolean) {
+                    rightAsBoolean = (Boolean) right;
+                } else {
+                    rightAsBoolean = asBoolean(right);
+                }
+
+                if(rightAsBoolean != null) {
+                    return leftAsBoolean.compareTo(rightAsBoolean);
+                }
+                
+                Integer rightAsTruth = asTruth(right);
+                
+                if(rightAsTruth != null) {
+                    
+                    //compare boolean and truth
+                    
+                    if(rightAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare boolean to UNKNOWN truth value");
+                    
+                    if(rightAsTruth.intValue() == 2) throw new RuntimeException("Cannot compare boolean to MU truth value");
+                    
+                    leftAsTruth = leftAsBoolean.booleanValue() ? 1 : -1;
+                    
+                    return compareTruth(leftAsTruth, rightAsTruth);
+                    
+                }
+                
+            } else if(leftAsTruth != null) {
+                
+                Integer rightAsTruth = asTruth(right);
+                
+                if(rightAsTruth == null) {
+                    
+                    Boolean rightAsBoolean = null;
+                    
+                    if(right instanceof Boolean) {
+                        rightAsBoolean = (Boolean) right;
+                    } else {
+                        rightAsBoolean = asBoolean(right);
+                    }
+                    
+                    if(rightAsBoolean != null) {
+                        
+                        if(leftAsTruth.intValue() == 0) throw new RuntimeException("Cannot compare UNKNOWN truth value to boolean");
+                        
+                        if(leftAsTruth.intValue() == 2) throw new RuntimeException("Cannot compare MU truth value to boolean");
+                        
+                        rightAsTruth = rightAsBoolean.booleanValue() ? 1 : -1;
+                        
+                    }
+                                        
+                }
+
+                if(rightAsTruth != null) {
+                    return compareTruth(leftAsTruth, rightAsTruth);
+                }
+                
+            }
+            
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
                     || (left instanceof GString && right instanceof String)) {
@@ -598,11 +860,15 @@ public class DefaultTypeTransformation {
     }
 
     public static boolean compareEqual(Object left, Object right) {
+        return compareEqual(left, right, true);
+    }
+    
+    public static boolean compareEqual(Object left, Object right, boolean semanticEquality) {
         if (left == right) return true;
         if (left == null) return right instanceof NullObject;
         if (right == null) return left instanceof NullObject;
         if (left instanceof Comparable) {
-            return compareToWithEqualityCheck(left, right, true) == 0;
+            return compareToWithEqualityCheck(left, right, true, semanticEquality) == 0;
         }
         // handle arrays on both sides as special case for efficiency
         Class leftClass = left.getClass();
@@ -879,6 +1145,139 @@ public class DefaultTypeTransformation {
             Array.set(newArray, i, convertedValue);
         }
         return newArray;
+    }
+    
+    static Integer asTruth(Object v) {
+        
+        Integer valAsTruth = null; 
+        
+        try {
+            Method asTruthMethod = v.getClass().getMethod("asTruth");
+            Class<?> returnType = asTruthMethod.getReturnType();
+            if(Integer.class.isAssignableFrom(returnType) || int.class.isAssignableFrom(returnType)) { 
+                valAsTruth = (Integer) asTruthMethod.invoke(v);
+                if(valAsTruth == null) throw new RuntimeException("asTruth method must not return null, class: " + v.getClass().getCanonicalName());
+            }
+        } catch(Exception e) {}
+        
+        if(valAsTruth != null) {
+            int i = valAsTruth.intValue();
+            if( ! ( i == 1 || i == 0 || i == -1 || i == 2) ) throw new RuntimeException("asTruth method must return an integer within range [-1, 1]");
+        }
+        
+        return valAsTruth;
+        
+    }
+    
+    static Boolean asBoolean(Object v) {
+
+        Boolean b = null;
+        
+        try {
+            Method asBooleanMethod = v.getClass().getMethod("asBoolean");
+            Class<?> returnType = asBooleanMethod.getReturnType();
+            if(Boolean.class.isAssignableFrom( returnType) || boolean.class.equals(returnType)) {
+                b = (Boolean) asBooleanMethod.invoke(v);
+            }
+        } catch(Exception e) {}
+
+        return b;
+        
+    }
+
+    private static int compareTruth(int leftAsTruth, int rightAsTruth) {
+        return leftAsTruth == rightAsTruth ? 0 : -1;
+//        if(leftAsTruth == 2 && rightAsTruth == 2) return 0;
+//        return ( (leftAsTruth > 0 && rightAsTruth > 0) || (leftAsTruth < 0 && rightAsTruth < 0) || ( leftAsTruth == 0 && rightAsTruth == 0) ) ? 0 : -1;
+    }
+
+    public static boolean isTruthEnum(Class<? extends Enum> type) {
+        try {
+            Method asTruthMethod = type.getMethod("asTruth");
+            Class<?> returnType = asTruthMethod.getReturnType();
+            if(Integer.class.isAssignableFrom(returnType) || int.class.isAssignableFrom(returnType)) {
+                
+                Method fromBoolean = null;
+                try {
+                    fromBoolean = type.getMethod("fromBoolean", Boolean.class);
+                    if(!Modifier.isStatic(fromBoolean.getModifiers())) {
+                        throw new RuntimeException("Truth enum fromBoolean method must be static: " + type);
+                    }
+                    if( fromBoolean.getReturnType() != type ) {
+                        throw new RuntimeException("Truth enum fromBoolean method must return this enum instance: " + type);
+                    }
+                }catch(Exception e) {
+                    if(fromBoolean == null) throw new RuntimeException("Truth enum must have static fromBoolean method: " + type);
+                    throw new RuntimeException(e);
+                }
+                
+                
+                Method fromInteger = null;
+                try {
+                    fromInteger = type.getMethod("fromInteger", Integer.class);
+                    if(!Modifier.isStatic(fromInteger.getModifiers())) {
+                        throw new RuntimeException("Truth enum fromInteger method must be static: " + type);
+                    }
+                    if( fromInteger.getReturnType() != type ) {
+                        throw new RuntimeException("Truth enum fromInteger method must return this enum instance: " + type);
+                    }
+                } catch(Exception e) {
+                    if(fromInteger == null) throw new RuntimeException("Truth enum must have static fromInteger method: " + type);
+                    throw new RuntimeException(e);
+                }
+                
+                return true;
+            }
+        } catch(Exception e) {}
+        return false;
+    }
+
+    public static Enum truthFromInteger(Class<? extends Enum> type,
+            Integer truth) {
+
+        Method fromInteger = null;
+        try {
+            fromInteger = type.getMethod("fromInteger", Integer.class);
+            if(!Modifier.isStatic(fromInteger.getModifiers())) {
+                throw new RuntimeException("Truth enum fromInteger method must be static: " + type);
+            }
+            if( fromInteger.getReturnType() != type ) {
+                throw new RuntimeException("Truth enum fromInteger method must return this enum instance: " + type);
+            }
+        } catch(Exception e) {
+            if(fromInteger == null) throw new RuntimeException("Truth enum must have static fromInteger method: " + type);
+            throw new RuntimeException(e);
+        }
+        
+        try {
+            return (Enum) fromInteger.invoke(null, truth);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
+    }
+
+    public static Enum truthFromBoolean(Class<? extends Enum> type,
+            Boolean bTruth) {
+        Method fromBoolean = null;
+        try {
+            fromBoolean = type.getMethod("fromBoolean", Boolean.class);
+            if(!Modifier.isStatic(fromBoolean.getModifiers())) {
+                throw new RuntimeException("Truth enum fromBoolean method must be static: " + type);
+            }
+            if( fromBoolean.getReturnType() != type ) {
+                throw new RuntimeException("Truth enum fromBoolean method must return this enum instance: " + type);
+            }
+        }catch(Exception e) {
+            if(fromBoolean == null) throw new RuntimeException("Truth enum must have static fromBoolean method: " + type);
+            throw new RuntimeException(e);
+        }
+        
+        try {
+            return (Enum) fromBoolean.invoke(null, bTruth);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

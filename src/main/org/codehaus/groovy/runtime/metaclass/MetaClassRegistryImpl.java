@@ -508,8 +508,12 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 // already registered
                 return;
             } else {
-                throw new GroovyRuntimeException("Conflicting module versions. Module ["+module.getName()+" is loaded in version "+
+                System.err.println("Conflicting module versions. Module ["+module.getName()+" is loaded in version "+
                         loadedModule.getVersion()+" and you are trying to load version "+module.getVersion());
+                System.err.println("This version will be ignored");
+//                throw new GroovyRuntimeException("Conflicting module versions. Module ["+module.getName()+" is loaded in version "+
+//                        loadedModule.getVersion()+" and you are trying to load version "+module.getVersion());
+                return;
             }
         }
             moduleRegistry.addModule(module);

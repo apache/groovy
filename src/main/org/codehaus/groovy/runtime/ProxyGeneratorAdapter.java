@@ -24,6 +24,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Trait;
+
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -145,7 +146,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             final boolean emptyBody,
             final Class delegateClass) {
         super(Opcodes.ASM4, new ClassWriter(0));
-        this.loader = proxyLoader!=null?createInnerLoader(proxyLoader):findClassLoader(superClass);
+        this.loader = proxyLoader!=null?createInnerLoader(proxyLoader, interfaces):findClassLoader(superClass, interfaces);
         this.visitedMethods = new LinkedHashSet<Object>();
         this.delegatedClosures = closureMap.isEmpty()? EMPTY_DELEGATECLOSURE_MAP :new HashMap<String, Boolean>();
         boolean wildcard = false;
@@ -250,18 +251,18 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
     }
 
-    private static InnerLoader createInnerLoader(final ClassLoader parent) {
+    private static InnerLoader createInnerLoader(final ClassLoader parent, final Class[] interfaces) {
         return AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
             public InnerLoader run() {
-                return new InnerLoader(parent);
+                return new InnerLoader(parent, interfaces);
             }
         });
     }
 
-    private InnerLoader findClassLoader(Class clazz) {
+    private InnerLoader findClassLoader(Class clazz, Class[] interfaces) {
         ClassLoader cl = clazz.getClassLoader();
         if (cl==null) cl = this.getClass().getClassLoader();
-        return createInnerLoader(cl);
+        return createInnerLoader(cl, interfaces);
     }
 
     private static Set<String> createDelegateMethodList(Class superClass, Class delegateClass, Class[] interfaces) {
@@ -917,16 +918,87 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         throw new IllegalArgumentException("Unexpected type class [" + type + "]");
     }
 
+
     private static class InnerLoader extends GroovyClassLoader {
-        protected InnerLoader(final ClassLoader parent) {
+
+        List<ClassLoader> internalClassLoaders = null;
+
+        protected InnerLoader(final ClassLoader parent, final Class[] interfaces) {
             super(parent);
+            if(interfaces != null) {
+                for(Class c : interfaces) {
+                    if(c.getClassLoader() != parent) {
+                        if(internalClassLoaders == null) internalClassLoaders = new ArrayList<ClassLoader>(interfaces.length);
+                        if( ! internalClassLoaders.contains(c.getClassLoader()) ) {
+                            internalClassLoaders.add(c.getClassLoader());
+                        }
+                    }
+                }
+            }
         }
 
         public Class defineClass(String name, byte[] data) {
             return super.defineClass(name, data, 0, data.length);
         }
 
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            // First check whether it's already been loaded, if so use it
+            Class loadedClass = findLoadedClass(name);
+            
+            if (loadedClass != null) return loadedClass;
+            
+
+            //check this class loader
+            try {
+                
+                loadedClass = findClass(name);
+                
+            } catch (ClassNotFoundException e) { }
+            
+            if(loadedClass != null) return loadedClass;
+
+            
+            //check parent classloader, keep the exception for future use
+            ClassNotFoundException ex = null;
+            try {
+                loadedClass = super.loadClass(name);
+            } catch(ClassNotFoundException e) {
+                ex = e;
+            }
+            
+            if (loadedClass != null) return loadedClass;
+            
+            
+            // Not loaded, try to load it 
+            if(internalClassLoaders != null) {
+
+                for(ClassLoader i : internalClassLoaders) {
+                    try {
+                        // Ignore parent delegation and just try to load locally
+
+                        loadedClass = i.loadClass(name);
+                        
+                        if(loadedClass != null) return loadedClass;
+                        
+                    } catch (ClassNotFoundException e) {
+                        // Swallow exception - does not exist locally
+                    }
+
+                }
+                
+            }
+
+            
+            //throw parent exception if exists, otherwise create a new exception
+            if(ex != null) throw ex;
+            
+            throw new ClassNotFoundException(name);
+            
+        }
+
     }
+    
+
 
     private static class ReturnValueWrappingClosure<V> extends Closure<V>{
         private final V value;
