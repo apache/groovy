@@ -632,6 +632,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (classNode != null) {
             name = classNode.getNameWithoutPackage() + "$" + name;
             String fullName = dot(classNode.getPackageName(), name);
+            if (classNode.isInterface()) {
+                modifiers |= Opcodes.ACC_STATIC;
+            }
             classNode = new InnerClassNode(classNode, fullName, modifiers, superClass, interfaces, mixins);
         } else {
             classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, mixins);

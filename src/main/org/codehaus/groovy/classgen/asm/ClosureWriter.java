@@ -80,7 +80,11 @@ public class ClosureWriter {
 
         // generate closure as public class to make sure it can be properly invoked by classes of the
         // Groovy runtime without circumventing JVM access checks (see CachedMethod for example).
-        ClassNode closureClass = getOrAddClosureClass(expression, ACC_PUBLIC);
+        int mods = ACC_PUBLIC;
+        if (classNode.isInterface()) {
+            mods |= ACC_STATIC;
+        }
+        ClassNode closureClass = getOrAddClosureClass(expression, mods);
         String closureClassinternalName = BytecodeHelper.getClassInternalName(closureClass);
         List constructors = closureClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
