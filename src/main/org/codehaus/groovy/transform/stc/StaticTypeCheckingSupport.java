@@ -1575,16 +1575,18 @@ public abstract class StaticTypeCheckingSupport {
         if (!equalIncludingGenerics(orig.getType(), copy.getType())) return false;
         ClassNode lower1 = orig.getLowerBound();
         ClassNode lower2 = copy.getLowerBound();
-        if ((lower1==null || lower2 ==null) && lower1!=lower2) return false;
-        if (lower1==lower2) return true;
-        if (!equalIncludingGenerics(lower1,lower2)) return false;
+        if ((lower1 == null) ^ (lower2 ==null)) return false;
+        if (lower1 != lower2) {
+            if (!equalIncludingGenerics(lower1, lower2)) return false;
+        }
         ClassNode[] upper1 = orig.getUpperBounds();
         ClassNode[] upper2 = copy.getUpperBounds();
-        if ((upper1==null || upper2==null) && upper1!=upper2) return false;
-        if (upper1==upper2) return true;
-        if (upper1.length!=upper2.length) return false;
-        for (int i=0; i<upper1.length; i++) {
-            if (!equalIncludingGenerics(upper1[i],upper2[i])) return false;
+        if ((upper1 == null) ^ (upper2 == null)) return false;
+        if (upper1 != upper2) {
+            if (upper1.length != upper2.length) return false;
+            for (int i = 0; i < upper1.length; i++) {
+                if (!equalIncludingGenerics(upper1[i], upper2[i])) return false;
+            }
         }
         return true;
     }
@@ -1596,10 +1598,11 @@ public abstract class StaticTypeCheckingSupport {
         GenericsType[] gt1 = orig.getGenericsTypes();
         GenericsType[] gt2 = copy.getGenericsTypes();
         if ((gt1==null) ^ (gt2==null)) return false;
-        if (gt1==gt2) return true;
-        if (gt1.length!=gt2.length) return false;
-        for (int i=0; i<gt1.length; i++) {
-            if (!equalIncludingGenerics(gt1[i],gt2[i])) return false;
+        if (gt1 != gt2) {
+            if (gt1.length != gt2.length) return false;
+            for (int i = 0; i < gt1.length; i++) {
+                if (!equalIncludingGenerics(gt1[i], gt2[i])) return false;
+            }
         }
         return true;
     }
