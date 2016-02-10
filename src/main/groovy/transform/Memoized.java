@@ -57,7 +57,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *         memoizedSum(n1, n2)
  *     }
  *
- *     private private$method$mzmoizeSum(int n1, int n2) {
+ *     private private$method$memoizedSum(int n1, int n2) {
  *         println "$n1 + $n2 = ${n1 + n2}"
  *         n1 + n2
  *     }
