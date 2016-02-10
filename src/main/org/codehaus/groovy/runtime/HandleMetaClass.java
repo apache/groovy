@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 
 public class HandleMetaClass extends DelegatingMetaClass {
     private Object object;
-    private MetaClass myMetaClass;
     private static final Object NONE = new Object();
 
     public HandleMetaClass(MetaClass mc) {
@@ -39,9 +38,6 @@ public class HandleMetaClass extends DelegatingMetaClass {
             else
               object = NONE; // object already has per instance meta class
         }
-
-        if (myMetaClass == null)
-          myMetaClass = InvokerHelper.getMetaClass(getClass());
     }
 
     public void initialize() {
@@ -83,11 +79,11 @@ public class HandleMetaClass extends DelegatingMetaClass {
         if(ExpandoMetaClass.isValidExpandoProperty(property)) {
             if(property.equals(ExpandoMetaClass.STATIC_QUALIFIER) ||
                property.equals(ExpandoMetaClass.CONSTRUCTOR) ||
-               myMetaClass.hasProperty(this, property) == null) {
+               Holder.META_CLASS.hasProperty(this, property) == null) {
                   return replaceDelegate().getProperty(property);
             }
         }
-        return myMetaClass.getProperty(this, property);
+        return Holder.META_CLASS.getProperty(this, property);
     }
 
     public void setProperty(String property, Object newValue) {
@@ -112,5 +108,10 @@ public class HandleMetaClass extends DelegatingMetaClass {
 
     public boolean equals(Object obj) {
         return super.equals(obj) || getAdaptee().equals(obj) || (obj instanceof HandleMetaClass && equals(((HandleMetaClass)obj).getAdaptee()));
+    }
+
+    // Lazily initialize the single instance of the HandleMetaClass metaClass
+    private static class Holder {
+        static final MetaClass META_CLASS = InvokerHelper.getMetaClass(HandleMetaClass.class);
     }
 }
