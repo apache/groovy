@@ -52,6 +52,10 @@ user.gradle
 /subprojects/groovy-jsr223/.project
 /subprojects/groovy-jsr223/.settings
 /subprojects/groovy-jsr223/.classpath
+/subprojects/groovy-macro/bin
+/subprojects/groovy-macro/.project
+/subprojects/groovy-macro/.settings
+/subprojects/groovy-macro/.classpath
 /subprojects/groovy-nio/bin
 /subprojects/groovy-nio/.project
 /subprojects/groovy-nio/.settings
@@ -84,3 +88,7 @@ user.gradle
 /subprojects/groovy-xml/.project
 /subprojects/groovy-xml/.settings
 /subprojects/groovy-xml/.classpath
+/subprojects/performance/bin
+/subprojects/performance/.project
+/subprojects/performance/.settings
+/subprojects/performance/.classpath
