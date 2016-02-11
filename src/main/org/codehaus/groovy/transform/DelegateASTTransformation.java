@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
@@ -98,90 +99,98 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) parent;
-            final ClassNode type = fieldNode.getType();
-            final ClassNode owner = fieldNode.getOwner();
-            if (type.equals(ClassHelper.OBJECT_TYPE) || type.equals(GROOVYOBJECT_TYPE)) {
-                addError(MY_TYPE_NAME + " field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+
+            DelegateDescription delegate = new DelegateDescription();
+            delegate.delegate = fieldNode;
+            delegate.annotation = node;
+            delegate.delegateName = fieldNode.getName();
+            delegate.type = fieldNode.getType();
+            delegate.owner = fieldNode.getOwner();
+            delegate.getOp = varX(fieldNode);
+
+            if (delegate.type.equals(ClassHelper.OBJECT_TYPE) || delegate.type.equals(GROOVYOBJECT_TYPE)) {
+                addError(MY_TYPE_NAME + " field '" + delegate.delegateName + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;
             }
-            if (type.equals(owner)) {
-                addError(MY_TYPE_NAME + " field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+            if (delegate.type.equals(delegate.owner)) {
+                addError(MY_TYPE_NAME + " field '" + delegate.delegateName + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
-            final List<MethodNode> fieldMethods = getAllMethods(type);
-            for (ClassNode next : type.getAllInterfaces()) {
-                fieldMethods.addAll(getAllMethods(next));
+            final List<MethodNode> delegateMethods = getAllMethods(delegate.type);
+            for (ClassNode next : delegate.type.getAllInterfaces()) {
+                delegateMethods.addAll(getAllMethods(next));
             }
 
             final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
-            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (type.isInterface() && !skipInterfaces);
+            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (delegate.type.isInterface() && !skipInterfaces);
             final boolean allNames = memberHasValue(node, MEMBER_ALL_NAMES, true);
-            List<String> excludes = getMemberStringList(node, MEMBER_EXCLUDES);
-            List<String> includes = getMemberStringList(node, MEMBER_INCLUDES);
-            List<ClassNode> excludeTypes = getMemberClassList(node, MEMBER_EXCLUDE_TYPES);
-            List<ClassNode> includeTypes = getMemberClassList(node, MEMBER_INCLUDE_TYPES);
-            checkIncludeExcludeUndefinedAware(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
+            delegate.excludes = getMemberStringList(node, MEMBER_EXCLUDES);
+            delegate.includes = getMemberStringList(node, MEMBER_INCLUDES);
+            delegate.excludeTypes = getMemberClassList(node, MEMBER_EXCLUDE_TYPES);
+            delegate.includeTypes = getMemberClassList(node, MEMBER_INCLUDE_TYPES);
+            checkIncludeExcludeUndefinedAware(node, delegate.excludes, delegate.includes,
+                                              delegate.excludeTypes, delegate.includeTypes, MY_TYPE_NAME);
 
-            final List<MethodNode> ownerMethods = getAllMethods(owner);
-            for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes, allNames);
+            final List<MethodNode> ownerMethods = getAllMethods(delegate.owner);
+            for (MethodNode mn : delegateMethods) {
+                addDelegateMethod(delegate, ownerMethods, mn, includeDeprecated, allNames);
             }
 
-            for (PropertyNode prop : getAllProperties(type)) {
+            for (PropertyNode prop : getAllProperties(delegate.type)) {
                 if (prop.isStatic() || !prop.isPublic())
                     continue;
                 String name = prop.getName();
-                addGetterIfNeeded(fieldNode, owner, prop, name, includes, excludes, allNames);
-                addSetterIfNeeded(fieldNode, owner, prop, name, includes, excludes, allNames);
+                addGetterIfNeeded(delegate, prop, name, allNames);
+                addSetterIfNeeded(delegate, prop, name, allNames);
             }
 
             if (skipInterfaces) return;
 
-            final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
-            final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
-            Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
-            genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
+            final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
+            final Set<ClassNode> ownerIfaces = delegate.owner.getAllInterfaces();
+            Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);
+            genericsSpec = createGenericsSpec(delegate.type, genericsSpec);
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
-                    final ClassNode[] ifaces = owner.getInterfaces();
+                    final ClassNode[] ifaces = delegate.owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     for (int i = 0; i < ifaces.length; i++) {
                         newIfaces[i] = correctToGenericsSpecRecurse(genericsSpec, ifaces[i]);
                     }
                     newIfaces[ifaces.length] = correctToGenericsSpecRecurse(genericsSpec, iface);
-                    owner.setInterfaces(newIfaces);
+                    delegate.owner.setInterfaces(newIfaces);
                 }
             }
         }
     }
 
-    private static void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes, boolean allNames) {
+    private static void addSetterIfNeeded(DelegateDescription delegate, PropertyNode prop, String name, boolean allNames) {
         String setterName = "set" + Verifier.capitalize(name);
         if ((prop.getModifiers() & ACC_FINAL) == 0
-                && owner.getSetterMethod(setterName) == null
-                && !shouldSkipPropertyMethod(name, setterName, excludes, includes, allNames)) {
-            owner.addMethod(setterName,
+                && delegate.owner.getSetterMethod(setterName) == null
+                && !shouldSkipPropertyMethod(name, setterName, delegate.excludes, delegate.includes, allNames)) {
+            delegate.owner.addMethod(setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
                     params(new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")),
                     null,
-                    assignS(propX(varX(fieldNode), name), varX("value"))
+                    assignS(propX(delegate.getOp, name), varX("value"))
             );
         }
     }
 
-    private static void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes, boolean allNames) {
+    private static void addGetterIfNeeded(DelegateDescription delegate, PropertyNode prop, String name, boolean allNames) {
         String getterName = "get" + Verifier.capitalize(name);
-        if (owner.getGetterMethod(getterName) == null
-                && !shouldSkipPropertyMethod(name, getterName, excludes, includes, allNames)) {
-            owner.addMethod(getterName,
+        if (delegate.owner.getGetterMethod(getterName) == null
+                && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
+            delegate.owner.addMethod(getterName,
                     ACC_PUBLIC,
                     GenericsUtils.nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
-                    returnS(propX(varX(fieldNode), name)));
+                    returnS(propX(delegate.getOp, name)));
         }
     }
     
@@ -191,23 +200,23 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     || (includes != null && !includes.isEmpty() && !includes.contains(propertyName) && !includes.contains(methodName)));
     }
 
-    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes, List<ClassNode> includeTypes, List<ClassNode> excludeTypes, boolean allNames) {
+    private void addDelegateMethod(DelegateDescription delegate, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, boolean allNames) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & ACC_SYNTHETIC))
             return;
 
         if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
             return;
 
-        if (shouldSkip(candidate.getName(), excludes, includes, allNames)) return;
+        if (shouldSkip(candidate.getName(), delegate.excludes, delegate.includes, allNames)) return;
 
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
+        Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);
         genericsSpec = addMethodGenerics(candidate, genericsSpec);
-        extractSuperClassGenerics(fieldNode.getType(), candidate.getDeclaringClass(), genericsSpec);
+        extractSuperClassGenerics(delegate.type, candidate.getDeclaringClass(), genericsSpec);
 
-        if ((excludeTypes != null && !excludeTypes.isEmpty()) || includeTypes != null) {
+        if ((delegate.excludeTypes != null && !delegate.excludeTypes.isEmpty()) || delegate.includeTypes != null) {
             MethodNode correctedMethodNode = correctToGenericsSpec(genericsSpec, candidate);
-            boolean checkReturn = fieldNode.getType().getMethods().contains(candidate);
-            if (shouldSkipOnDescriptorUndefinedAware(checkReturn, genericsSpec, correctedMethodNode, excludeTypes, includeTypes))
+            boolean checkReturn = delegate.type.getMethods().contains(candidate);
+            if (shouldSkipOnDescriptorUndefinedAware(checkReturn, genericsSpec, correctedMethodNode, delegate.excludeTypes, delegate.includeTypes))
                 return;
         }
 
@@ -219,7 +228,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
 
         // ignore methods already in owner
-        for (MethodNode mn : owner.getMethods()) {
+        for (MethodNode mn : delegate.owner.getMethods()) {
             if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
                 return;
             }
@@ -242,26 +251,26 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             List<String> currentMethodGenPlaceholders = genericPlaceholderNames(candidate);
             for (int i = 0; i < newParams.length; i++) {
                 ClassNode newParamType = correctToGenericsSpecRecurse(genericsSpec, params[i].getType(), currentMethodGenPlaceholders);
-                Parameter newParam = new Parameter(newParamType, getParamName(params, i, fieldNode.getName()));
+                Parameter newParam = new Parameter(newParamType, getParamName(params, i, delegate.delegateName));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
-                if (memberHasValue(node, MEMBER_PARAMETER_ANNOTATIONS, true)) {
+                if (memberHasValue(delegate.annotation, MEMBER_PARAMETER_ANNOTATIONS, true)) {
                     newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i], MY_TYPE_NAME));
                 }
 
                 newParams[i] = newParam;
                 args.addExpression(varX(newParam));
             }
-            boolean alsoLazy = !fieldNode.getAnnotations(LAZY_TYPE).isEmpty();
+            boolean alsoLazy = !delegate.delegate.getAnnotations(LAZY_TYPE).isEmpty();
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = callX(
-                    alsoLazy ? propX(varX("this"), fieldNode.getName().substring(1)) :
-                    varX(fieldNode.getName(), correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType())),
+                    alsoLazy ? propX(varX("this"), delegate.delegateName.substring(1)) :
+                    varX(delegate.delegateName, correctToGenericsSpecRecurse(genericsSpec, delegate.type)),
                     candidate.getName(),
                     args);
-            mce.setSourcePosition(fieldNode);
+            mce.setSourcePosition(delegate.delegate);
             ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, candidate.getReturnType(), currentMethodGenPlaceholders);
-            MethodNode newMethod = owner.addMethod(candidate.getName(),
+            MethodNode newMethod = delegate.owner.addMethod(candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     returnType,
                     newParams,
@@ -269,7 +278,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     stmt(mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
-            if (memberHasValue(node, MEMBER_METHOD_ANNOTATIONS, true)) {
+            if (memberHasValue(delegate.annotation, MEMBER_METHOD_ANNOTATIONS, true)) {
                 newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate, MY_TYPE_NAME));
             }
         }
@@ -302,4 +311,16 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
+    static class DelegateDescription {
+        AnnotationNode annotation;
+        AnnotatedNode delegate;
+        String delegateName;
+        ClassNode type;
+        ClassNode owner;
+        Expression getOp;
+        List<String> includes;
+        List<String> excludes;
+        List<ClassNode> includeTypes;
+        List<ClassNode> excludeTypes;
+    }
 }
