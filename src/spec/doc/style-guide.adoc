@@ -494,7 +494,7 @@ assert map['CA'] == 'California'
 assert map.WA == 'Washington'
 
 // matches() strings against patterns
-assert 'foo' =~ pattern
+assert 'foo' ==~ pattern
 ----
 
 == The Groovy Development Kit
