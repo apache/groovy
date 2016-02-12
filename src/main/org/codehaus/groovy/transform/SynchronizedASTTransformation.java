@@ -107,7 +107,7 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
         return "$lock";
     }
 
-    private Expression zeroLengthObjectArray() {
+    private static Expression zeroLengthObjectArray() {
         return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Collections.singletonList((Expression) constX(0)));
     }
 

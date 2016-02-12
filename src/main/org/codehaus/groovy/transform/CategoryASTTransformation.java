@@ -244,7 +244,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         new VariableScopeVisitor(source, true).visitClass(parent);
     }
 
-    private boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
+    private static boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
         boolean valid = true;
         for (FieldNode fieldNode : parent.getFields()) {
             if (!fieldNode.isStatic() && fieldNode.getLineNumber()>0) {
@@ -282,7 +282,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         return node.getText();
     }
 
-    private ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
+    private static ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
         if (value == null || !(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown

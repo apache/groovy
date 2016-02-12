@@ -82,23 +82,23 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         }
     }
 
-    private void addListGetter(FieldNode fNode) {
+    private static void addListGetter(FieldNode fNode) {
         addGetter(fNode, getComponentTypeForList(fNode.getType()));
     }
 
-    private void addListSetter(FieldNode fNode) {
+    private static void addListSetter(FieldNode fNode) {
         addSetter(fNode, getComponentTypeForList(fNode.getType()));
     }
 
-    private void addArrayGetter(FieldNode fNode) {
+    private static void addArrayGetter(FieldNode fNode) {
         addGetter(fNode, fNode.getType().getComponentType());
     }
 
-    private void addArraySetter(FieldNode fNode) {
+    private static void addArraySetter(FieldNode fNode) {
         addSetter(fNode, fNode.getType().getComponentType());
     }
 
-    private void addGetter(FieldNode fNode, ClassNode componentType) {
+    private static void addGetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
@@ -107,7 +107,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         cNode.addMethod(makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
     }
 
-    private void addSetter(FieldNode fNode, ClassNode componentType) {
+    private static void addSetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] theParams = params(
@@ -117,7 +117,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
     }
 
-    private ClassNode getComponentTypeForList(ClassNode fType) {
+    private static ClassNode getComponentTypeForList(ClassNode fType) {
         if (fType.isUsingGenerics() && fType.getGenericsTypes().length == 1) {
             return fType.getGenericsTypes()[0].getType();
         } else {
@@ -125,13 +125,13 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         }
     }
 
-    private int getModifiers(FieldNode fNode) {
+    private static int getModifiers(FieldNode fNode) {
         int mods = ACC_PUBLIC;
         if (fNode.isStatic()) mods |= ACC_STATIC;
         return mods;
     }
 
-    private String makeName(FieldNode fNode, String prefix) {
+    private static String makeName(FieldNode fNode, String prefix) {
         return prefix + MetaClassHelper.capitalize(fNode.getName());
     }
 }

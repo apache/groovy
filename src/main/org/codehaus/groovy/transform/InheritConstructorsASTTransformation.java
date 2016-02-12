@@ -116,7 +116,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         return theArgs;
     }
 
-    private boolean isExisting(ClassNode classNode, Parameter[] params) {
+    private static boolean isExisting(ClassNode classNode, Parameter[] params) {
         for (ConstructorNode consNode : classNode.getDeclaredConstructors()) {
             if (matchingTypes(params, consNode.getParameters())) {
                 return true;
@@ -125,7 +125,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         return false;
     }
 
-    private boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
+    private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
         if (params.length != existingParams.length) return false;
         for (int i = 0; i < params.length; i++) {
             if (!params[i].getType().equals(existingParams[i].getType())) {

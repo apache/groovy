@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
@@ -86,7 +85,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         }
     }
 
-    private void createWriteExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
+    private static void createWriteExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
         Parameter out = param(OBJECTOUTPUT_TYPE, "out");
         for (FieldNode fNode : list) {
@@ -100,7 +99,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(out), exceptions, body);
     }
 
-    private void createReadExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
+    private static void createReadExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
         Parameter oin = param(OBJECTINPUT_TYPE, "oin");
         for (FieldNode fNode : list) {
@@ -114,7 +113,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(oin), ClassNode.EMPTY_ARRAY, body);
     }
 
-    private String suffixForField(FieldNode fNode) {
+    private static String suffixForField(FieldNode fNode) {
         // use primitives for efficiency
         if (fNode.getType() == ClassHelper.int_TYPE) return "Int";
         if (fNode.getType() == ClassHelper.boolean_TYPE) return "Boolean";

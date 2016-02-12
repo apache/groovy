@@ -137,7 +137,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
         return DEFAULT_INSTANCE_LOCKNAME;
     }
 
-    private Expression createLockObject() {
+    private static Expression createLockObject() {
         return ctorX(LOCK_TYPE);
     }
 }
