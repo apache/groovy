@@ -177,13 +177,13 @@ public class AnnotationCollectorTransform {
         return ret;
     }
 
-    private List<AnnotationNode> getStoredTargetList(AnnotationNode aliasAnnotationUsage, SourceUnit source) {
+    private static List<AnnotationNode> getStoredTargetList(AnnotationNode aliasAnnotationUsage, SourceUnit source) {
         ClassNode alias = aliasAnnotationUsage.getClassNode().redirect();
         List<AnnotationNode> ret = getMeta(alias);
         return copy(ret, aliasAnnotationUsage);
     }
 
-    private List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
+    private static List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
         if (orig.isEmpty()) return orig;
         List<AnnotationNode> ret = new ArrayList<AnnotationNode>(orig.size());
         for (AnnotationNode an : orig) {

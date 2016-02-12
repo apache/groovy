@@ -105,7 +105,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void generateMethodsWithDefaultArgs(final ClassNode cNode) {
+    private static void generateMethodsWithDefaultArgs(final ClassNode cNode) {
         DefaultArgsMethodsAdder adder = new DefaultArgsMethodsAdder();
         adder.addDefaultParameterMethods(cNode);
     }
@@ -233,7 +233,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
+    private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
         MethodNode initializer = new MethodNode(
                 isStatic?Traits.STATIC_INIT_METHOD:Traits.INIT_METHOD,
                 ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
@@ -274,7 +274,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
      * @param cNode the trait class node
      * @param helper the helper class node
      */
-    private void copyClassAnnotations(final ClassNode cNode, final ClassNode helper) {
+    private static void copyClassAnnotations(final ClassNode cNode, final ClassNode helper) {
         List<AnnotationNode> annotations = cNode.getAnnotations();
         for (AnnotationNode annotation : annotations) {
             if (!annotation.getClassNode().equals(Traits.TRAIT_CLASSNODE)) {
@@ -293,7 +293,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void generatePropertyMethods(final ClassNode cNode) {
+    private static void generatePropertyMethods(final ClassNode cNode) {
         for (PropertyNode node : cNode.getProperties()) {
             processProperty(cNode, node);
         }
@@ -494,13 +494,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return result;
     }
 
-    private Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
+    private static Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
         final ClassNode rawType = traitClass.getPlainNodeReference();
         ClassNode type = createReceiverType(isStatic, rawType);
         return new Parameter(type, isStatic?Traits.STATIC_THIS_OBJECT:Traits.THIS_OBJECT);
     }
 
-    private ClassNode createReceiverType(final boolean isStatic, final ClassNode rawType) {
+    private static ClassNode createReceiverType(final boolean isStatic, final ClassNode rawType) {
         ClassNode type;
         if (isStatic) {
             // Class<TraitClass>

@@ -121,7 +121,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void mergeCollectedAnnotations(AnnotationCollectorMode mode, Map<Integer, List<AnnotationNode>> existing, List<AnnotationNode> replacements) {
+    private static void mergeCollectedAnnotations(AnnotationCollectorMode mode, Map<Integer, List<AnnotationNode>> existing, List<AnnotationNode> replacements) {
         switch(mode) {
             case PREFER_COLLECTOR:
                 deleteExisting(false, existing, replacements);
@@ -140,7 +140,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void deleteExisting(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
+    private static void deleteExisting(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
         for (AnnotationNode replacement : replacements) {
             for (Integer key : existingMap.keySet()) {
                 List<AnnotationNode> annotationNodes = new ArrayList<AnnotationNode>(existingMap.get(key));
@@ -159,7 +159,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void deleteReplacement(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
+    private static void deleteReplacement(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
         Iterator<AnnotationNode> nodeIterator = replacements.iterator();
         while (nodeIterator.hasNext()) {
             boolean remove = false;
@@ -180,7 +180,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void mergeParameters(AnnotationNode to, AnnotationNode from) {
+    private static void mergeParameters(AnnotationNode to, AnnotationNode from) {
         for (String name : from.getMembers().keySet()) {
             if (to.getMember(name) == null) {
                 to.setMember(name, from.getMember(name));
@@ -241,7 +241,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private AnnotationCollectorMode getMode(AnnotationNode node) {
+    private static AnnotationCollectorMode getMode(AnnotationNode node) {
         final Expression member = node.getMember("mode");
         if (member != null && member instanceof PropertyExpression) {
             PropertyExpression prop = (PropertyExpression) member;

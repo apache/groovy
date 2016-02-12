@@ -81,11 +81,11 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         classNode.addMethod(getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, newClass(classNode), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private Statement nonLazyBody(FieldNode fieldNode) {
+    private static Statement nonLazyBody(FieldNode fieldNode) {
         return returnS(varX(fieldNode));
     }
 
-    private Statement lazyBody(ClassNode classNode, FieldNode fieldNode) {
+    private static Statement lazyBody(ClassNode classNode, FieldNode fieldNode) {
         final Expression instanceExpression = varX(fieldNode);
         return ifElseS(
                 notNullX(instanceExpression),
@@ -101,7 +101,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private String getGetterName(String propertyName) {
+    private static String getGetterName(String propertyName) {
         return "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
     }
 

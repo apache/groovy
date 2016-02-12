@@ -155,7 +155,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
+    private static void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
         String setterName = "set" + Verifier.capitalize(name);
         if ((prop.getModifiers() & ACC_FINAL) == 0
                 && owner.getSetterMethod(setterName) == null
@@ -170,7 +170,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
+    private static void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
         String getterName = "get" + Verifier.capitalize(name);
         if (owner.getGetterMethod(getterName) == null
                 && !shouldSkipPropertyMethod(name, getterName, excludes, includes)) {
@@ -183,7 +183,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
     
-    private boolean shouldSkipPropertyMethod(String propertyName, String methodName, List<String> excludes, List<String> includes) {
+    private static boolean shouldSkipPropertyMethod(String propertyName, String methodName, List<String> excludes, List<String> includes) {
         return (deemedInternalName(propertyName)
                     || excludes != null && (excludes.contains(propertyName) || excludes.contains(methodName)) 
                     || (includes != null && !includes.isEmpty() && !includes.contains(propertyName) && !includes.contains(methodName)));
@@ -273,7 +273,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private List<String> genericPlaceholderNames(MethodNode candidate) {
+    private static List<String> genericPlaceholderNames(MethodNode candidate) {
         GenericsType[] candidateGenericsTypes = candidate.getGenericsTypes();
         List<String> names = new ArrayList<String>();
         if (candidateGenericsTypes != null) {
@@ -284,7 +284,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return names;
     }
 
-    private String getParamName(Parameter[] params, int i, String fieldName) {
+    private static String getParamName(Parameter[] params, int i, String fieldName) {
         String name = params[i].getName();
         while(name.equals(fieldName) || clashesWithOtherParams(name, params, i)) {
             name = "_" + name;
@@ -292,7 +292,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return name;
     }
 
-    private boolean clashesWithOtherParams(String name, Parameter[] params, int i) {
+    private static boolean clashesWithOtherParams(String name, Parameter[] params, int i) {
         for (int j = 0; j < params.length; j++) {
             if (i == j) continue;
             if (params[j].getName().equals(name)) return true;

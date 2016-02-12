@@ -122,7 +122,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         }
     }
 
-    private boolean acceptableTransform(AnnotationNode annotation) {
+    private static boolean acceptableTransform(AnnotationNode annotation) {
         // TODO also check for phase after sourceUnit.getPhase()? but will be ignored anyway?
         // TODO we should only copy those annotations with FIELD_TARGET but haven't visited annotations
         // and gathered target info at this phase, so we can't do this:
@@ -131,7 +131,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         return !annotation.getClassNode().equals(MY_TYPE);
     }
 
-    private boolean notTransform(ClassNode annotationClassNode) {
+    private static boolean notTransform(ClassNode annotationClassNode) {
         return annotationClassNode.getAnnotations(ASTTRANSFORMCLASS_TYPE).isEmpty();
     }
 

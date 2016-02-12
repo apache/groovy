@@ -198,7 +198,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
-    private void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
+    private static void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
         cNode.addConstructor(constructorNode);
         // GROOVY-5814: Immutable is not compatible with @CompileStatic
         Parameter argsParam = null;
@@ -270,7 +270,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return immutables;
     }
 
-    private void makeClassFinal(ClassNode cNode) {
+    private static void makeClassFinal(ClassNode cNode) {
         if ((cNode.getModifiers() & ACC_FINAL) == 0) {
             cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
         }
@@ -298,7 +298,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
+    private static void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -312,12 +312,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
-    private Statement createGetterBodyDefault(FieldNode fNode) {
+    private static Statement createGetterBodyDefault(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         return stmt(fieldExpr);
     }
 
-    private Expression cloneCollectionExpr(Expression fieldExpr, ClassNode type) {
+    private static Expression cloneCollectionExpr(Expression fieldExpr, ClassNode type) {
         return castX(type, createIfInstanceOfAsImmutableS(fieldExpr, SORTEDSET_CLASSNODE,
                 createIfInstanceOfAsImmutableS(fieldExpr, SORTEDMAP_CLASSNODE,
                         createIfInstanceOfAsImmutableS(fieldExpr, SET_CLASSNODE,
@@ -330,15 +330,15 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         ));
     }
 
-    private Expression createIfInstanceOfAsImmutableS(Expression expr, ClassNode type, Expression elseStatement) {
+    private static Expression createIfInstanceOfAsImmutableS(Expression expr, ClassNode type, Expression elseStatement) {
         return ternaryX(isInstanceOfX(expr, type), createAsImmutableX(expr, type), elseStatement);
     }
 
-    private Expression createAsImmutableX(final Expression expr, final ClassNode type) {
+    private static Expression createAsImmutableX(final Expression expr, final ClassNode type) {
         return callX(DGM_TYPE, "asImmutable", castX(type, expr));
     }
 
-    private Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
+    private static Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
         Expression smce = callX(
                 REFLECTION_INVOKER_TYPE,
                 "invoke",
@@ -351,7 +351,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return castX(type, smce);
     }
 
-    private void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list) {
+    private static void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
         createConstructorMapCommon(cNode, body);
@@ -371,12 +371,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createNoArgConstructor(ClassNode cNode) {
+    private static void createNoArgConstructor(ClassNode cNode) {
         Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
+    private static void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
@@ -390,7 +390,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params(new Parameter(HASHMAP_TYPE, "args")), ClassNode.EMPTY_ARRAY, body));
     }
 
-    private Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
+    private static Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
         final String name = fNode.getName();
         Expression value = findArg(name);
         return ifS(
@@ -400,7 +400,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 )));
     }
 
-    private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
+    private static Statement createConstructorStatementMapSpecial(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         final ClassNode fieldType = fieldExpr.getType();
         final Expression initExpr = fNode.getInitialValueExpression();
@@ -437,7 +437,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void addProperty(ClassNode cNode, PropertyNode pNode) {
+    private static void addProperty(ClassNode cNode, PropertyNode pNode) {
         final FieldNode fn = pNode.getField();
         cNode.getFields().remove(fn);
         cNode.addProperty(pNode.getName(), pNode.getModifiers() | ACC_FINAL, pNode.getType(),
@@ -483,7 +483,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return statement;
     }
 
-    private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
+    private static Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
@@ -496,12 +496,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return ifElseS(equalsNullX(unknown), assignInit, assignS(fieldExpr, checkUnresolved(fNode, unknown)));
     }
 
-    private Expression checkUnresolved(FieldNode fNode, Expression value) {
+    private static Expression checkUnresolved(FieldNode fNode, Expression value) {
         Expression args = args(callThisX("getClass"), constX(fNode.getName()), value);
         return callX(SELF_TYPE, "checkImmutable", args);
     }
 
-    private Statement createConstructorStatementCollection(FieldNode fNode) {
+    private static Statement createConstructorStatementCollection(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         ClassNode fieldType = fieldExpr.getType();
         Expression initExpr = fNode.getInitialValueExpression();
@@ -522,7 +522,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
+    private static boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
         if (inImmutableList(fieldType.getName()) || knownImmutableClasses.contains(fieldType.getName()))
             return true;
         if (!fieldType.isResolved())
@@ -532,7 +532,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 !fieldType.getAnnotations(MY_TYPE).isEmpty();
     }
 
-    private boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
+    private static boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
         return knownImmutables.contains(fieldName);
     }
 
@@ -540,7 +540,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return immutableList.contains(typeName);
     }
 
-    private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
+    private static Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         ClassNode fieldType = fNode.getType();
@@ -554,7 +554,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return ifElseS(equalsNullX(array), assignInit, assignS(fieldExpr, cloneArrayOrCloneableExpr(array, fieldType)));
     }
 
-    private Statement createConstructorStatementDate(FieldNode fNode) {
+    private static Statement createConstructorStatementDate(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
@@ -567,23 +567,23 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return ifElseS(equalsNullX(date), assignInit, assignS(fieldExpr, cloneDateExpr(date)));
     }
 
-    private Expression cloneDateExpr(Expression origDate) {
+    private static Expression cloneDateExpr(Expression origDate) {
         return ctorX(DATE_TYPE, callX(origDate, "getTime"));
     }
 
-    private void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes) {
+    private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
         adjustPropertyNode(pNode, createGetterBody(fNode));
         newNodes.add(pNode);
     }
 
-    private void adjustPropertyNode(PropertyNode pNode, Statement getterBody) {
+    private static void adjustPropertyNode(PropertyNode pNode, Statement getterBody) {
         pNode.setSetterBlock(null);
         pNode.setGetterBlock(getterBody);
     }
 
-    private Statement createGetterBody(FieldNode fNode) {
+    private static Statement createGetterBody(FieldNode fNode) {
         BlockStatement body = new BlockStatement();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
@@ -612,19 +612,19 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return name.equals("java.lang.Object") ? name + " or def" : name;
     }
 
-    private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
+    private static Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         final Expression expression = cloneArrayOrCloneableExpr(fieldExpr, fNode.getType());
         return safeExpression(fieldExpr, expression);
     }
 
-    private Statement createGetterBodyDate(FieldNode fNode) {
+    private static Statement createGetterBodyDate(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }
 
-    private Statement createCheckForProperty( final PropertyNode pNode ) {
+    private static Statement createCheckForProperty( final PropertyNode pNode ) {
         return block(
                 new VariableScope(),
                 ifElseS(
@@ -686,7 +686,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
+    private static void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
         BlockStatement body = new BlockStatement();
         body.addStatement(ifS(
                 orX(

@@ -134,7 +134,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void visitFieldNode(FieldNode fNode) {
+    private static void visitFieldNode(FieldNode fNode) {
         final ClassNode cNode = fNode.getDeclaringClass();
         final List<PropertyNode> pList = cNode.getProperties();
         PropertyNode foundProp = null;
@@ -150,19 +150,19 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void revertVisibility(FieldNode fNode) {
+    private static void revertVisibility(FieldNode fNode) {
         fNode.setModifiers(fNode.getModifiers() & ~ACC_PRIVATE);
     }
 
-    private void revertVisibility(MethodNode mNode) {
+    private static void revertVisibility(MethodNode mNode) {
         mNode.setModifiers(mNode.getModifiers() & ~ACC_PUBLIC);
     }
 
-    private void revertVisibility(ClassNode cNode) {
+    private static void revertVisibility(ClassNode cNode) {
         cNode.setModifiers(cNode.getModifiers() & ~ACC_PUBLIC);
     }
 
-    private List<groovy.transform.PackageScopeTarget> determineTargets(Expression expr) {
+    private static List<groovy.transform.PackageScopeTarget> determineTargets(Expression expr) {
         List<groovy.transform.PackageScopeTarget> list = new ArrayList<groovy.transform.PackageScopeTarget>();
         if (expr instanceof PropertyExpression) {
             list.add(extractTarget((PropertyExpression) expr));
@@ -178,7 +178,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         return list;
     }
 
-    private groovy.transform.PackageScopeTarget extractTarget(PropertyExpression expr) {
+    private static groovy.transform.PackageScopeTarget extractTarget(PropertyExpression expr) {
         Expression oe = expr.getObjectExpression();
         if (oe instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) oe;

@@ -113,7 +113,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
+    private static MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
         Statement code = annotatedMethod.getCode();
         int access = ACC_PROTECTED;
         if (annotatedMethod.isStatic()) {
@@ -137,7 +137,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MEMOIZE_AT_LEAST_METHOD_NAME = "memoizeAtLeast";
     private static final String MEMOIZE_BETWEEN_METHOD_NAME = "memoizeBetween";
 
-    private MethodCallExpression buildMemoizeClosureCallExpression(MethodNode privateMethod,
+    private static MethodCallExpression buildMemoizeClosureCallExpression(MethodNode privateMethod,
                                                                    int protectedCacheSize, int maxCacheSize) {
         Parameter[] srcParams = privateMethod.getParameters();
         Parameter[] newParams = cloneParams(srcParams);

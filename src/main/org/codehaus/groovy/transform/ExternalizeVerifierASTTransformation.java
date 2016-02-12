@@ -86,15 +86,15 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
         }
     }
 
-    private boolean implementsExternalizable(ClassNode cNode) {
+    private static boolean implementsExternalizable(ClassNode cNode) {
         return cNode.implementsInterface(EXTERNALIZABLE_TYPE);
     }
 
-    private boolean implementsSerializable(ClassNode cNode) {
+    private static boolean implementsSerializable(ClassNode cNode) {
         return cNode.implementsInterface(SERIALIZABLE_TYPE);
     }
 
-    private boolean hasNoargConstructor(ClassNode cNode) {
+    private static boolean hasNoargConstructor(ClassNode cNode) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         for (ConstructorNode next : constructors) {
             if (next.getParameters().length == 0) {

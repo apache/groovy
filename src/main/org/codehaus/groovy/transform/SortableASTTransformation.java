@@ -106,7 +106,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
-    private void implementComparable(ClassNode classNode) {
+    private static void implementComparable(ClassNode classNode) {
         if (!classNode.implementsInterface(COMPARABLE_TYPE)) {
             classNode.addInterface(makeClassSafeWithGenerics(Comparable.class, classNode));
         }

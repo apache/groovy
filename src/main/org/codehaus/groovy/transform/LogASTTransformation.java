@@ -161,7 +161,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
-    private String lookupLogFieldName(AnnotationNode logAnnotation) {
+    private static String lookupLogFieldName(AnnotationNode logAnnotation) {
         Expression member = logAnnotation.getMember("value");
         if (member != null && member.getText() != null) {
             return member.getText();
@@ -170,7 +170,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         }
     }
 
-    private String lookupCategoryName(AnnotationNode logAnnotation) {
+    private static String lookupCategoryName(AnnotationNode logAnnotation) {
         Expression member = logAnnotation.getMember("category");
         if (member != null && member.getText() != null) {
             return member.getText();
@@ -178,7 +178,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         return DEFAULT_CATEGORY_NAME;
     }
 
-    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation, GroovyClassLoader loader) {
+    private static LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation, GroovyClassLoader loader) {
 
         String annotationName = logAnnotation.getClassNode().getName();
 

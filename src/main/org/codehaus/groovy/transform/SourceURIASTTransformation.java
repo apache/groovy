@@ -108,7 +108,7 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private Expression getExpression(URI uri) {
+    private static Expression getExpression(URI uri) {
         return callX(URI_TYPE, "create", args(constX(uri.toString())));
     }
 

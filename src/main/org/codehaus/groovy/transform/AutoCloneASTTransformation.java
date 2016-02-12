@@ -137,7 +137,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
-    private void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
+    private static void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
         if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             BlockStatement noArgBody = new BlockStatement();
@@ -182,23 +182,23 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
     }
 
-    private boolean isCloneableType(ClassNode fieldType) {
+    private static boolean isCloneableType(ClassNode fieldType) {
         return isOrImplements(fieldType, CLONEABLE_TYPE) || !fieldType.getAnnotations(MY_TYPE).isEmpty();
     }
 
-    private boolean possiblyCloneable(ClassNode type) {
+    private static boolean possiblyCloneable(ClassNode type) {
         return !isPrimitiveType(type) && ((isCloneableType(type) || (type.getModifiers() & ACC_FINAL) == 0));
     }
 
-    private Expression callCloneDynamicX(Expression target) {
+    private static Expression callCloneDynamicX(Expression target) {
         return callX(INVOKER_TYPE, "invokeMethod", args(target, constX("clone"), ConstantExpression.NULL));
     }
 
-    private Expression callCloneDirectX(Expression direct) {
+    private static Expression callCloneDirectX(Expression direct) {
         return ternaryX(equalsNullX(direct), ConstantExpression.NULL, callX(direct, "clone"));
     }
 
-    private void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+    private static void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             cNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
@@ -212,7 +212,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             returnS(result)));
     }
 
-    private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+    private static void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = varX(methodParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
@@ -241,7 +241,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, params(methodParam), exceptions, methodBody);
     }
 
-    private void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+    private static void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         final BlockStatement body = new BlockStatement();
         final Expression result = varX("_result", cNode);
         body.addStatement(declS(result, castX(cNode, callSuperX("clone"))));
@@ -263,7 +263,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
-    private AutoCloneStyle getStyle(AnnotationNode node, String name) {
+    private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof PropertyExpression) {
             PropertyExpression prop = (PropertyExpression) member;
