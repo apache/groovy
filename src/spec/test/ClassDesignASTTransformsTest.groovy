@@ -334,7 +334,7 @@ import groovy.transform.Memoized
 // tag::memoized_long_computation[]
 long longComputation(int seed) {
     // slow computation
-    Thread.sleep(1000*seed)
+    Thread.sleep(100*seed)
     System.nanoTime()
 }
 // end::memoized_long_computation[]
@@ -352,13 +352,13 @@ import groovy.transform.Memoized
 @Memoized
 long longComputation(int seed) {
     // slow computation
-    Thread.sleep(1000*seed)
+    Thread.sleep(100*seed)
     System.nanoTime()
 }
 
-def x = longComputation(1) // returns after 1 second
+def x = longComputation(1) // returns after 100 milliseconds
 def y = longComputation(1) // returns immediatly
-def z = longComputation(2) // returns after 2 seconds
+def z = longComputation(2) // returns after 200 milliseconds
 assert x==y
 assert x!=z
 // end::memoized_long_computation_cached[]
