@@ -171,4 +171,38 @@ class SqlBatchTest extends GroovyTestCase {
         // FINE: Successfully executed batch with 1 command(s)
     }
 
+    void testWithBatchClosesStatement() {
+        // withBatch(int, Closure) should close connection even when statement caching is enabled
+        // since it is not cached because there is no sql text to use as the cache key.
+        BatchingStatementWrapper wrapper = null
+        sql.cacheStatements = true
+        sql.withBatch(1) { stmt ->
+            wrapper = (BatchingStatementWrapper)stmt
+            stmt.addBatch("insert into PERSON (id, firstname, lastname) values (999, 'Test', 'Closes')")
+        }
+        assert wrapper.@delegate.isClosed()
+    }
+
+    void testWithBatchClosureClosesOrCachesStatement() {
+        String sqlText = 'insert into PERSON (id, firstname, lastname) values (?, ?, ?)'
+        BatchingPreparedStatementWrapper wrapper = null
+
+        sql.cacheStatements = false
+        sql.withBatch(20, sqlText) { ps ->
+            wrapper = (BatchingPreparedStatementWrapper)ps
+            ps.addBatch(111, 'Test1', 'Closes1')
+            ps.addBatch(222, 'Test2', 'Closes2')
+        }
+        assert wrapper.@delegate.isClosed()
+
+        sql.cacheStatements = true
+        sql.withBatch(20, sqlText) { ps ->
+            wrapper = (BatchingPreparedStatementWrapper)ps
+            ps.addBatch(333, 'Test3', 'Closes3')
+            ps.addBatch(444, 'Test4', 'Closes4')
+        }
+        assert !wrapper.@delegate.isClosed()
+        assert sql.@statementCache.containsKey(sqlText)
+        assert sql.@statementCache[sqlText].is(wrapper.@delegate)
+    }
 }

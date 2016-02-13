@@ -4223,8 +4223,12 @@ public class Sql {
         closeResources(connection);
     }
 
-    private void closeResources(BatchingStatementWrapper statement) {
+    private void closeResources(BatchingPreparedStatementWrapper statement) {
         if (cacheStatements) return;
+        closeResources((BatchingStatementWrapper) statement);
+    }
+
+    private void closeResources(BatchingStatementWrapper statement) {
         if (statement != null) {
             try {
                 statement.close();
