@@ -217,7 +217,7 @@ import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
  * For advanced usage, the class provides numerous extension points for overriding the
  * facade behavior associated with the various aspects of managing
  * the interaction with the underlying database.
- *
+ * <p>
  * This class is <b>not</b> thread-safe.
  *
  * @author Chris Stevenson
@@ -951,9 +951,10 @@ public class Sql {
      */
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = getStatement(connection, sql);
+        Statement statement = null;
         ResultSet results = null;
         try {
+            statement = getStatement(connection, sql);
             results = statement.executeQuery(sql);
             closure.call(results);
         } catch (SQLException e) {
@@ -1182,9 +1183,10 @@ public class Sql {
      */
     public void eachRow(String sql, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = getStatement(connection, sql);
+        Statement statement = null;
         ResultSet results = null;
         try {
+            statement = getStatement(connection, sql);
             results = statement.executeQuery(sql);
             if (metaClosure != null) metaClosure.call(results.getMetaData());
             boolean cursorAtRow = moveCursor(results, offset);
@@ -3003,9 +3005,10 @@ public class Sql {
      */
     public int call(String sql, List<Object> params) throws Exception {
         Connection connection = createConnection();
-        CallableStatement statement = connection.prepareCall(sql);
+        CallableStatement statement = null;
         try {
             LOG.fine(sql + " | " + params);
+            statement = connection.prepareCall(sql);
             setParameters(params, statement);
             configure(statement);
             return statement.executeUpdate();
