@@ -154,7 +154,7 @@ def counters = new Counters()
 assert counters.get('a') == 0
 assert counters.get('b') == 0
 
-50.times { cpt ->
+10.times { cpt ->
     Thread.start { counters.add('a', 1) }
     def t = Thread.start {
         Thread.sleep(20)
@@ -192,7 +192,7 @@ def counters = new Counters()
 assert counters.get('a') == 0
 assert counters.get('b') == 0
 
-50.times { cpt ->
+10.times { cpt ->
     Thread.start { counters.add('a', 1) }
     def t = Thread.start {
         Thread.sleep(20)
