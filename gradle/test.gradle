@@ -72,7 +72,7 @@ test {
 }
 
 boolean isRunningOnCI() {
-    new File('.').absolutePath =~ /teamcity|jenkins|hudson/
+    new File('.').absolutePath =~ /teamcity|jenkins|hudson|travis/
 }
 
 logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
