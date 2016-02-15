@@ -49,6 +49,7 @@ import java.util.Set;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
@@ -96,25 +97,46 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
+        DelegateDescription delegate = null;
 
         if (parent instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) parent;
 
-            DelegateDescription delegate = new DelegateDescription();
+            delegate = new DelegateDescription();
             delegate.delegate = fieldNode;
             delegate.annotation = node;
-            delegate.delegateName = fieldNode.getName();
+            delegate.name = fieldNode.getName();
             delegate.type = fieldNode.getType();
             delegate.owner = fieldNode.getOwner();
             delegate.getOp = varX(fieldNode);
+        } else if (parent instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode) parent;
 
+            delegate = new DelegateDescription();
+            delegate.delegate = methodNode;
+            delegate.annotation = node;
+            delegate.name = methodNode.getName();
+            delegate.type = methodNode.getReturnType();
+            delegate.owner = methodNode.getDeclaringClass();
+            delegate.getOp = callThisX(delegate.name);
+
+            if (methodNode.getParameters().length > 0) {
+                addError("You can only delegate to methods that take no parameters, but " +
+                         delegate.name + " takes " + methodNode.getParameters().length +
+                         " parameters.", parent);
+                return;
+            }
+        }
+
+        if (delegate != null) {
+            // TODO may also be a method
             if (delegate.type.equals(ClassHelper.OBJECT_TYPE) || delegate.type.equals(GROOVYOBJECT_TYPE)) {
-                addError(MY_TYPE_NAME + " field '" + delegate.delegateName + "' has an inappropriate type: " + delegate.type.getName() +
+                addError(MY_TYPE_NAME + " field '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;
             }
             if (delegate.type.equals(delegate.owner)) {
-                addError(MY_TYPE_NAME + " field '" + delegate.delegateName + "' has an inappropriate type: " + delegate.type.getName() +
+                addError(MY_TYPE_NAME + " field '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
@@ -251,7 +273,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             List<String> currentMethodGenPlaceholders = genericPlaceholderNames(candidate);
             for (int i = 0; i < newParams.length; i++) {
                 ClassNode newParamType = correctToGenericsSpecRecurse(genericsSpec, params[i].getType(), currentMethodGenPlaceholders);
-                Parameter newParam = new Parameter(newParamType, getParamName(params, i, delegate.delegateName));
+                Parameter newParam = new Parameter(newParamType, getParamName(params, i, delegate.name));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
                 if (memberHasValue(delegate.annotation, MEMBER_PARAMETER_ANNOTATIONS, true)) {
@@ -264,8 +286,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             boolean alsoLazy = !delegate.delegate.getAnnotations(LAZY_TYPE).isEmpty();
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = callX(
-                    alsoLazy ? propX(varX("this"), delegate.delegateName.substring(1)) :
-                    varX(delegate.delegateName, correctToGenericsSpecRecurse(genericsSpec, delegate.type)),
+                    // use propX when lazy, because lazy is only allowed on fields
+                    alsoLazy ? propX(varX("this"), delegate.name.substring(1)) : delegate.getOp,
                     candidate.getName(),
                     args);
             mce.setSourcePosition(delegate.delegate);
@@ -314,7 +336,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     static class DelegateDescription {
         AnnotationNode annotation;
         AnnotatedNode delegate;
-        String delegateName;
+        String name;
         ClassNode type;
         ClassNode owner;
         Expression getOp;

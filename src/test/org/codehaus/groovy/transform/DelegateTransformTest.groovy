@@ -745,6 +745,15 @@ assert foo.dm.x == '123'
             assert delegates.respondsTo('set$')
         '''
     }
+
+    void testDelegateToGetterMethod() {
+        // given:
+        def delegate = { new DelegateFooImpl() }
+        // when:
+        def foo = new FooToMethod(delegate)
+        // then:
+        assert foo.foo() == delegate().foo()
+    }
 }
 
 interface DelegateFoo {
@@ -782,6 +791,17 @@ class DelegateBarForcingDeprecated {
 
 class Foo4244 {
     @Delegate Bar4244 bar = new Bar4244()
+}
+
+class FooToMethod {
+    private final Closure<DelegateFoo> strategy
+
+    FooToMethod(Closure<DelegateFoo> strategy) {
+        this.strategy = strategy
+    }
+
+    @Delegate
+    DelegateFoo getStrategy() { strategy() }
 }
 
 class Bar4244 {
