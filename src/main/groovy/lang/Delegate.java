@@ -26,6 +26,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+// TODO update javadoc for use on a getter method
 /**
  * Field annotation to automatically delegate part of the functionality of an owner class to the annotated field.
  * <p>
@@ -128,7 +129,7 @@ import java.lang.annotation.Target;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD})
+@Target({ElementType.FIELD, ElementType.METHOD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.DelegateASTTransformation")
 public @interface Delegate {
     /**
