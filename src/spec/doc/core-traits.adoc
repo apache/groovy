@@ -21,7 +21,7 @@
 
 = Traits
 
-Traits are a a structural construct of the language which allow:
+Traits are a structural construct of the language which allows:
 
 * composition of behaviors
 * runtime implementation of interfaces
