@@ -18,21 +18,24 @@
  */
 package groovy.xml.jaxb
 
-import groovy.transform.EqualsAndHashCode
-
-import javax.xml.bind.annotation.XmlAccessType
-import javax.xml.bind.annotation.XmlAccessorType
-import javax.xml.bind.annotation.XmlRootElement
+import javax.xml.bind.JAXBContext
 
 /**
- * DTO class for {@link JaxbGroovyMethodsTest}
+ * Test cases for {@link JaxbGroovyMethods}
  *
  * @author Dominik Przybysz
  */
-@EqualsAndHashCode
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlRootElement
-public class Person {
-    String name
-    int age
+class JaxbGroovyMethodsTest extends GroovyTestCase {
+    JAXBContext jaxbContext = JAXBContext.newInstance(Person)
+    Person p = new Person(name: 'JT', age: 20)
+
+    void testMarshallAndUnmarshallObjectUsingCategoryOnMarshallerAndUnmarshaller() {
+        String xml = jaxbContext.createMarshaller().marshal(p)
+        assert jaxbContext.createUnmarshaller().unmarshal(xml, Person) == p
+    }
+
+    void testMarshallAndUnmarshallObjectUsingCategoryOnJaxbContext() {
+        String xml = jaxbContext.marshal(p)
+        assert jaxbContext.unmarshal(xml, Person) == p
+    }
 }
