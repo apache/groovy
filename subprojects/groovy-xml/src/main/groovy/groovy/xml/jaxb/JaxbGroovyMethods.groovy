@@ -40,9 +40,7 @@ class JaxbGroovyMethods {
     }
 
     static <T> String marshal(JAXBContext jaxbContext, T o) {
-        StringWriter sw = new StringWriter()
-        jaxbContext.createMarshaller().marshal(o, sw)
-        return sw.toString()
+        return marshal(jaxbContext.createMarshaller(), o)
     }
 
     static <T> T unmarshal(Unmarshaller unmarshaller, String xml, Class<T> dest) {
@@ -51,7 +49,6 @@ class JaxbGroovyMethods {
     }
 
     static <T> T unmarshal(JAXBContext jaxbContext, String xml, Class<T> dest) {
-        StringReader sr = new StringReader(xml)
-        return dest.cast(jaxbContext.createUnmarshaller().unmarshal(sr))
+        return unmarshal(jaxbContext.createUnmarshaller(), xml, dest)
     }
 }
