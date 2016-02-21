@@ -355,4 +355,22 @@ final class MapTest extends GroovyTestCase {
             default: assert true
         }
     }
+
+    void testMapWithDefaultCanBeConfiguredToNotStoreDefaultValue() {
+        def defaultValue = 0
+        def m = [:].withDefault(false, true) { defaultValue }
+        assert m.isEmpty()
+
+        m[1] = defaultValue
+        assert m.isEmpty()
+
+        m[1] = defaultValue + 1
+        assert !m.isEmpty()
+
+        m[1]--
+        assert m.isEmpty()
+
+        m.putAll([a:0, b:1, c:0])
+        assert m.size() == 1
+    }
 }
