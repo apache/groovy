@@ -260,6 +260,21 @@ class MapTest extends GroovyTestCase {
         assert m == [1: 3, 2: 4]
     }
 
+    void testMapWithDefault_DoesNotStore_DefaultValue() {
+        def defaultValue = 0
+        def m = [:].withDefault {defaultValue}
+        assert m.isEmpty()
+        
+        m[1] = defaultValue
+        assert m.isEmpty()
+        
+        m[1] = defaultValue + 1
+        assert !m.isEmpty()
+        
+        m[1]--
+        assert m.isEmpty()
+    }
+
     void testMapIsCaseWithGrep() {
         def predicate = [apple:true, banana:true, lemon:false, orange:false, pear:true]
         def fruitList = ["apple", "apple", "pear", "orange", "pear", "lemon", "banana"]
