@@ -47,10 +47,22 @@ class SimpleGroovyClassDocTests extends GroovyTestCase {
     void testEncodeAngleBracketsInTagBody() {
         def text = 'text with <tag1> outside and {@code <tag2> inside} a @code tag'
         def regex = SimpleGroovyClassDoc.CODE_REGEX
-
         def encodedText = SimpleGroovyClassDoc.encodeAngleBracketsInTagBody(text, regex)
-
         assert encodedText == 'text with <tag1> outside and {@code &lt;tag2&gt; inside} a @code tag'
+    }
+
+    void testEncodeAngleBracketsInTagBodyWithDollar() {
+        def text = 'text with dollar {@code $foo.bar} and dollar with less than {@code $foo < $bar}'
+        def regex = SimpleGroovyClassDoc.CODE_REGEX
+        def encodedText = SimpleGroovyClassDoc.encodeAngleBracketsInTagBody(text, regex)
+        assert encodedText == 'text with dollar {@code $foo.bar} and dollar with less than {@code $foo &lt; $bar}'
+    }
+
+    void testEncodeAngleBracketsInTagBodyLeavesSpecialChars() {
+        def text = 'text with illegal group ref {@code $3 \\$}'
+        def regex = SimpleGroovyClassDoc.CODE_REGEX
+        def encodedText = SimpleGroovyClassDoc.encodeAngleBracketsInTagBody(text, regex)
+        assert encodedText == text
     }
 
     void testEncodeAngleBrackets() {
