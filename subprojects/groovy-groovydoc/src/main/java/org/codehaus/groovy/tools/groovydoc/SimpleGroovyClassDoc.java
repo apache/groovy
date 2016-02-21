@@ -916,7 +916,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             while (matcher.find()) {
                 String tagName = matcher.group(1);
                 String tagBody = matcher.group(2);
-                String encodedBody = encodeAngleBrackets(tagBody);
+                String encodedBody = Matcher.quoteReplacement(encodeAngleBrackets(tagBody));
                 String replacement = "{@" + tagName + " " + encodedBody + "}";
                 matcher.appendReplacement(sb, replacement);
             }
