@@ -260,8 +260,8 @@ method that the compiler will generate and will *not* be visible outside of the 
 a variable will *not* be visible in other methods of the script
 * if the variable is undeclared, it goes into the gapi:groovy.lang.Script#getBinding()[script binding]. The binding is
 visible from the methods, and is especially important if you use a script to interact with an application and need to
-share data between the script and the application. Readers might refer to the link:integrating.html[integration guide]
-for more information.
+share data between the script and the application. Readers might refer to the 
+<<guide-integrating.adoc#_integrating_groovy_in_a_java_application,integration guide>> for more information.
 
 TIP: If you want a variable to become a field of the class without going into the `Binding`, you can use the
 <<core-metaprogramming.adoc#xform-Field,@Field annotation>>.
