@@ -178,7 +178,7 @@ Note: if you get errors running this script, see the **Troubleshooting** section
 
 == OC4J Example
 
-Here is a script to access http://www.oracle.com/technology/products/oc4j[OC4J] and print out some information about the server, its runtime and (as an example) the configured JMS destinations:
+Here is a script to access OC4J and print out some information about the server, its runtime and (as an example) the configured JMS destinations:
 
 [source,groovy]
 ----
