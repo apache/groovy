@@ -109,6 +109,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             delegate.type = fieldNode.getType();
             delegate.owner = fieldNode.getOwner();
             delegate.getOp = varX(fieldNode);
+            delegate.origin = "field";
         } else if (parent instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) parent;
 
@@ -119,6 +120,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             delegate.type = methodNode.getReturnType();
             delegate.owner = methodNode.getDeclaringClass();
             delegate.getOp = callThisX(delegate.name);
+            delegate.origin = "method";
 
             if (methodNode.getParameters().length > 0) {
                 addError("You can only delegate to methods that take no parameters, but " +
@@ -129,14 +131,13 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
 
         if (delegate != null) {
-            // TODO may also be a method
             if (delegate.type.equals(ClassHelper.OBJECT_TYPE) || delegate.type.equals(GROOVYOBJECT_TYPE)) {
-                addError(MY_TYPE_NAME + " field '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
+                addError(MY_TYPE_NAME + " " + delegate.origin + " '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;
             }
             if (delegate.type.equals(delegate.owner)) {
-                addError(MY_TYPE_NAME + " field '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
+                addError(MY_TYPE_NAME + " " + delegate.origin + " '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
@@ -340,6 +341,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         ClassNode type;
         ClassNode owner;
         Expression getOp;
+        String origin;
         List<String> includes;
         List<String> excludes;
         List<ClassNode> includeTypes;

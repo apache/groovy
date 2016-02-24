@@ -26,11 +26,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// TODO update javadoc for use on a getter method
 /**
- * Field annotation to automatically delegate part of the functionality of an owner class to the annotated field.
+ * Annotation to automatically delegate part of the functionality of an owner class to the
+ * annotated delegation target, i. e. a field or getter method's return value.
  * <p>
- * All public instance methods present in the type of the annotated field and not present in the owner class
+ * The delegate type is either the type of the annotated field or the return type of
+ * the annotated getter method.
+ * All public instance methods present in the delegate type and not present in the owner class
  * will be added to owner class at compile time. The implementation of such automatically added
  * methods is code which calls through to the delegate as per the normal delegate pattern.
  * <p>
@@ -63,7 +65,7 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * By default, the owner class will also be modified to implement any interfaces
- * implemented by the field. So, in the example above, because {@code Date}
+ * implemented by the delegate type. So, in the example above, because {@code Date}
  * implements {@code Cloneable} the following will be true:
  *
  * <pre>
@@ -82,9 +84,9 @@ import java.lang.annotation.Target;
  * assert !(gr8conf instanceof Cloneable)
  * </pre>
  *
- * If multiple delegate fields are used and the same method signature occurs
- * in more than one of the respective field types, then the delegate will be
- * made to the first defined field having that signature. If this does occur,
+ * If multiple delegation targets are used and the same method signature occurs
+ * in more than one of the respective delegate types, then the delegate will be
+ * made to the first defined target having that signature. If this does occur,
  * it might be regarded as a smell (or at least poor style) and it might be
  * clearer to do the delegation by long hand.
  * <p>
@@ -112,13 +114,13 @@ import java.lang.annotation.Target;
  * <li>Static methods, synthetic methods or methods from the <code>GroovyObject</code> interface
  * are not candidates for delegation</li>
  * <li>Non-abstract non-static methods defined in the owner class or its superclasses take
- * precedence over methods with identical signatures from a {@code @Delegate} field</li>
+ * precedence over methods with identical signatures from a {@code @Delegate} target</li>
  * <li>All methods defined in the owner class (including static, abstract or private etc.)
- * take precedence over methods with identical signatures from a {@code @Delegate} field</li>
+ * take precedence over methods with identical signatures from a {@code @Delegate} target</li>
  * <li>Recursive delegation to your own class is not allowed</li>
  * <li>Mixing of {@code @Delegate} with default method arguments is known not to work in some cases.
  * We recommend not using these features together.</li>
- * <li>When the type of the delegate field is an interface, the {@code deprecated} attribute will be
+ * <li>When the delegate type is an interface, the {@code deprecated} attribute will be
  * ignored if the owner class implements that interface (i.e. you must set {@code interfaces=false}
  * if you want the {@code deprecated} attribute to be used). Otherwise, the resulting class would
  * not compile anyway without manually adding in any deprecated methods in the interface.</li>
@@ -133,13 +135,13 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.DelegateASTTransformation")
 public @interface Delegate {
     /**
-     * @return true if owner class should implement interfaces implemented by field
+     * @return true if owner class should implement interfaces implemented by delegate type
      */
     boolean interfaces() default true;
 
     /**
      * Whether to apply the delegate pattern to deprecated methods; to avoid compilation
-     * errors, this is ignored if the type of the delegate field is an interface and
+     * errors, this is ignored if the type of the delegate target is an interface and
      * {@code interfaces=true}.
      *
      * @return true if owner class should delegate to methods annotated with @Deprecated
