@@ -56,6 +56,8 @@ import java.lang.annotation.Target;
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>
+ * You can find more examples on <a href="http://mrhaki.blogspot.co.uk/2011/04/groovy-goodness-tuple-constructor.html">MrHaki's Groovy Goodness blog</a>.
+ * <p>
  * Known Limitations:
  * <ul>
  * <li>This AST transform might become a no-op if you are defining your own constructors or
