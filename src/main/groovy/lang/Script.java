@@ -52,11 +52,10 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     public Object getProperty(String property) {
-        try {
-            return binding.getVariable(property);
-        } catch (MissingPropertyException e) {
-            return super.getProperty(property);
-        }
+      if (binding.hasVariable(property)) {
+          return binding.getVariable(property);
+      }
+      return super.getProperty(property);
     }
 
     public void setProperty(String property, Object newValue) {
