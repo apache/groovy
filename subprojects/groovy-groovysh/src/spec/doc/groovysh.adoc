@@ -190,7 +190,7 @@ Available commands:
   :quit      (:q ) Alias to: :exit
   import     (:i ) Import a class into the namespace
   :display   (:d ) Display the current buffer
-  :clear     (:c ) Clear the buffer and reset the prompt counter.
+  :clear     (:c ) Clear the buffer and reset the prompt counter
   :show      (:S ) Show variables, classes or imports
   :inspect   (:n ) Inspect a variable or the last result with the GUI object browser
   :purge     (:p ) Purge variables, classes, imports or preferences
