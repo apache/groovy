@@ -202,8 +202,8 @@ Available commands:
   :history   (:H ) Display, manage and recall edit-line history
   :alias     (:a ) Create an alias
   :set       (:= ) Set (or list) preferences
-  :register  (:rc) Registers a new command with the shell
-  :doc       (:D ) Opens a browser window displaying the doc for the argument
+  :register  (:rc) Register a new command with the shell
+  :doc       (:D ) Open a browser window displaying the doc for the argument
 
 For help on a specific command type:
     :help <command>
