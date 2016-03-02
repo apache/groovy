@@ -84,6 +84,62 @@ import java.lang.annotation.Target;
  * Note that while you can declare arguments for the script body's method, as
  * the AST is currently implemented they are not accessible in the script body code.
  * </p>
+ * <p>More examples:</p>
+ * <pre>
+ * // Simple Car class to save state and distance.
+ * class Car {
+ *     String state
+ *     Long distance = 0
+ * }
+ *
+ * // Custom Script with methods that change the Car's state.
+ * // The Car object is passed via the binding.
+ * abstract class CarScript extends Script {
+ *     def start() {
+ *         this.binding.car.state = 'started'
+ *     }
+ *
+ *     def stop() {
+ *         this.binding.car.state = 'stopped'
+ *     }
+ *
+ *     def drive(distance) {
+ *         this.binding.car.distance += distance
+ *     }
+ * }
+ *
+ *
+ * // Define Car object here, so we can use it in assertions later on.
+ * def car = new Car()
+ * // Add to script binding (CarScript references this.binding.car).
+ * def binding = new Binding(car: car)
+ *
+ * // Configure the GroovyShell.
+ * def shell = new GroovyShell(this.class.classLoader, binding)
+ *
+ * // Simple DSL to start, drive and stop the car.
+ * // The methods are defined in the CarScript class.
+ * def carDsl = '''
+ * start()
+ * drive 20
+ * stop()
+ * '''
+ *
+ *
+ * // Run DSL script.
+ * shell.evaluate """
+ * // Use BaseScript annotation to set script
+ * // for evaluating the DSL.
+ * &#64;groovy.transform.BaseScript CarScript carScript
+ *
+ * $carDsl
+ * """
+ *
+ * // Checks to see that Car object has changed.
+ * assert car.distance == 20
+ * assert car.state == 'stopped'
+ * </pre>
+ * 
  * @author Paul King
  * @author Vladimir Orany
  * @author Jim White

@@ -59,7 +59,7 @@ import java.lang.annotation.Target;
  * //--------------------------------------------------------------------------
  * import groovy.transform.TupleConstructor
  *
- * {@code @TupleConstructor()}
+ * &#64;TupleConstructor()
  * class Person {
  *     String name
  *     List likes
@@ -81,7 +81,7 @@ import java.lang.annotation.Target;
  * // includeFields in the constructor creation.
  * import groovy.transform.TupleConstructor
  *
- * {@code @TupleConstructor(includeFields=true)}
+ * &#64;TupleConstructor(includeFields=true)
  * class Person {
  *     String name
  *     List likes
@@ -102,7 +102,7 @@ import java.lang.annotation.Target;
  * // even if we define our own constructors.
  * import groovy.transform.TupleConstructor
  *
- * {@code @TupleConstructor(force=true)}
+ * &#64;TupleConstructor(force=true)
  * class Person {
  *     String name
  *     List likes
@@ -130,7 +130,7 @@ import java.lang.annotation.Target;
  * // include properties and fields from super class.
  * import groovy.transform.TupleConstructor
  *
- * {@code @TupleConstructor(includeFields=true)}
+ * &#64;TupleConstructor(includeFields=true)
  * class Person {
  *     String name
  *     List likes
@@ -139,7 +139,7 @@ import java.lang.annotation.Target;
  *     boolean isActivated() { active }
  * }
  *
- * {@code @TupleConstructor(callSuper=true, includeSuperProperties=true, includeSuperFields=true)}
+ * &#64;TupleConstructor(callSuper=true, includeSuperProperties=true, includeSuperFields=true)
  * class Student extends Person {
  *     List courses
  * }
