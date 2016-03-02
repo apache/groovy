@@ -73,6 +73,100 @@ import java.lang.annotation.Target;
  * EqualsAndHashCode.
  * If both ways are combined, then the list overwrites annotation usage.
  * NOTE: The aliasing does not support aliasing of aliased annotations. 
+ * <p>More examples:</p>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * &#64;AnnotationCollector([EqualsAndHashCode, ToString])
+ * &#64;interface Simple {}
+ *
+ *
+ * &#64;Simple
+ * class User {
+ *     String username
+ *     int age
+ * }
+ *
+ * def user = new User(username: 'mrhaki', age: 39)
+ * assert user.toString() == 'User(mrhaki, 39)'
+ *
+ * // We still have 2 annotations:
+ * assert User.class.annotations.size() == 2
+ *
+ *
+ * // We can use the attributes from the 
+ * // grouped annotations.
+ * &#64;Simple(excludes = 'street') 
+ * class Address {
+ *     String street, town
+ * }
+ *
+ * def address = new Address(street: 'Evergreen Terrace', town: 'Springfield') 
+ * assert address.toString() == 'Address(Springfield)'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Use a custom processor to handle attributes.
+ * import org.codehaus.groovy.transform.*
+ * import org.codehaus.groovy.ast.*
+ * import org.codehaus.groovy.control.*
+ *
+ * class SimpleProcessor extends AnnotationCollectorTransform {
+ *
+ *     public List&lt;AnnotationNode&gt; visit(AnnotationNode collector, 
+ *                                       AnnotationNode aliasAnnotationUsage, 
+ *                                       AnnotatedNode aliasAnnotated, 
+ *                                       SourceUnit source) {
+ *
+ *         // Get attributes and attribute value for dontUse.
+ *         def attributes = aliasAnnotationUsage.getMembers()
+ *         def dontUse = attributes.get('dontUse')
+ *         attributes.remove('dontUse')
+ *
+ *         if (dontUse) {
+ *             // Assign value of dontUse to excludes attributes.
+ *             aliasAnnotationUsage.addMember("excludes", dontUse)
+ *         }
+ *
+ *         super.visit(collector, aliasAnnotationUsage, aliasAnnotated, source)
+ *     }
+ *
+ * }
+ *
+ * new GroovyShell(this.class.classLoader).evaluate '''
+ * import groovy.transform.*
+ *
+ * &#64;AnnotationCollector(value = [EqualsAndHashCode, ToString], processor = 'SimpleProcessor')
+ * &#64;interface Simple {}
+ *
+ *
+ * &#64;Simple(dontUse = 'age')
+ * class User {
+ *     String username
+ *     int age
+ * }
+ *
+ * def user = new User(username: 'mrhaki', age: 39)
+ * assert user.toString() == 'User(mrhaki)'
+ * '''
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Use AnnotationCollector as last annotation to group the
+ * // previous annotations.
+ * &#64;EqualsAndHashCode
+ * &#64;ToString
+ * &#64;AnnotationCollector
+ * &#64;interface Simple {}
+ *
+ *
+ * &#64;Simple
+ * class User {
+ *     String username
+ * }
+ *
+ * def user = new User(username: 'mrhaki')
+ * assert user.toString() == 'User(mrhaki)'
+ * </pre>
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @see org.codehaus.groovy.transform.AnnotationCollectorTransform

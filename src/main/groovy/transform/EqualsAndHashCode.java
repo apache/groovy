@@ -192,6 +192,31 @@ import java.lang.annotation.Target;
  * infinite recursion but the algorithm used may not suit your scenario, so use with caution if
  * you have such structures.
  * A future version of this transform may better handle some additional recursive scenarios.
+ * <p>More examples:</p>
+ * <pre>
+ * import groovy.transform.EqualsAndHashCode
+ *
+ * &#64;EqualsAndHashCode(includeFields=true)
+ * class User {
+ *     String name
+ *     boolean active
+ *     List likes
+ *     private int age = 37
+ * }
+ *
+ * def user = new User(name: 'mrhaki', active: false, likes: ['Groovy', 'Java'])
+ * def mrhaki = new User(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ * def hubert = new User(name: 'Hubert Klein Ikkink', likes: ['Groovy', 'Java'])
+ *
+ * assert user == mrhaki
+ * assert mrhaki != hubert
+ *
+ * Set users = new HashSet()
+ * users.add user
+ * users.add mrhaki
+ * users.add hubert
+ * assert users.size() == 2
+ * </pre>
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
  * @author Paul King
