@@ -112,6 +112,149 @@ import java.lang.annotation.Target;
  * <pre>
  * my.company.NamedThing(name: Lassie)
  * </pre>
+ * <p>More examples:</p>
+ * <pre>
+ * //--------------------------------------------------------------------------    
+ * // Most simple implementation of toString.
+ * import groovy.transform.ToString
+ *
+ * {@code @ToString}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * def person = new Person(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ *
+ * assert person.toString() == 'Person(mrhaki, [Groovy, Java])'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------    
+ * // includeNames to output the names of the properties.
+ * import groovy.transform.ToString
+ *
+ * {@code @ToString(includeNames=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * def person = new Person(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ *
+ * assert person.toString() == 'Person(name:mrhaki, likes:[Groovy, Java])'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // includeFields to not only output properties, but also field values.
+ * import groovy.transform.ToString
+ *
+ * {@code @ToString(includeNames=true, includeFields=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * def person = new Person(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ *
+ * assert person.toString() == 'Person(name:mrhaki, likes:[Groovy, Java], active:false)'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------    
+ * // Use includeSuper to include properties from super class in output.
+ * import groovy.transform.ToString
+ *
+ * {@code @ToString(includeNames=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * {@code @ToString(includeSuper=true, includeNames=true)}
+ * class Student extends Person {
+ *     List courses
+ * }
+ *
+ * def student = new Student(name: 'mrhaki', likes: ['Groovy', 'Java'], courses: ['IT', 'Business'])
+ *
+ * assert student.toString() == 'Student(courses:[IT, Business], super:Person(name:mrhaki, likes:[Groovy, Java]))'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------    
+ * // excludes active field and likes property from output
+ * import groovy.transform.ToString
+ *
+ * {@code @ToString(includeNames=true, includeFields=true, excludes='active,likes')}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * def person = new Person(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ *
+ * assert person.toString() == 'Person(name:mrhaki)'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Don't include the package name in the output
+ * package com.mrhaki.blog.groovy
+ *
+ * import groovy.transform.*
+ *
+ * {@code @ToString(includePackage=false)}
+ * class Course {
+ *     String title
+ *     Integer maxAttendees
+ * }
+ *
+ * final Course course = new Course(title: 'Groovy 101', maxAttendees: 200)
+ *
+ * assert course.toString() == 'Course(Groovy 101, 200)'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Don't use properties with null value.
+ * package com.mrhaki.blog.groovy
+ *
+ * import groovy.transform.*
+ *
+ * {@code @ToString(ignoreNulls=true)}
+ * class Course {
+ *     String title
+ *     Integer maxAttendees
+ * }
+ *
+ * final Course course = new Course(title: 'Groovy 101')
+ *
+ * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101)'
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Cache toString() result.
+ * package com.mrhaki.blog.groovy
+ *
+ * import groovy.transform.*
+ *
+ * {@code @ToString(cache=true)}
+ * class Course {
+ *     String title
+ *     Integer maxAttendees
+ * }
+ *
+ * Course course = new Course(title: 'Groovy 101', maxAttendees: 200)
+ *
+ * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101, 200)'
+ *
+ * // Value change will not be reflected in toString().
+ * course.title = 'Grails with REST'
+ *
+ * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101, 200)'
+ * assert course.title == 'Grails with REST'
+ * </pre> 
  *
  * @author Paul King
  * @author Andre Steingress
