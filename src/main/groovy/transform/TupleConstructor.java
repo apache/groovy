@@ -54,6 +54,103 @@ import java.lang.annotation.Target;
  * (if {@code includeSuperProperties} is set) followed by the properties of the class followed
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
+ * <p>More examples:</p>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * import groovy.transform.TupleConstructor
+ *
+ * {@code @TupleConstructor()}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ * }
+ *
+ * def person = new Person('mrhaki', ['Groovy', 'Java'])
+ *
+ * assert person.name == 'mrhaki'
+ * assert person.likes == ['Groovy', 'Java']
+ *
+ * person = new Person('mrhaki')
+ *
+ * assert person.name == 'mrhaki'
+ * assert !person.likes
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // includeFields in the constructor creation.
+ * import groovy.transform.TupleConstructor
+ *
+ * {@code @TupleConstructor(includeFields=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ *
+ *     boolean isActivated() { active }
+ * }
+ *
+ * def person = new Person('mrhaki', ['Groovy', 'Java'], true)
+ *
+ * assert person.name == 'mrhaki'
+ * assert person.likes == ['Groovy', 'Java']
+ * assert person.activated
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // use force attribute to force creation of constructor
+ * // even if we define our own constructors.
+ * import groovy.transform.TupleConstructor
+ *
+ * {@code @TupleConstructor(force=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ *
+ *     Person(boolean active) {
+ *         this.active = active
+ *     }
+ *
+ *     boolean isActivated() { active }
+ * }
+ *
+ * def person = new Person('mrhaki', ['Groovy', 'Java'])
+ *
+ * assert person.name == 'mrhaki'
+ * assert person.likes == ['Groovy', 'Java']
+ * assert !person.activated
+ *
+ * person = new Person(true)
+ *
+ * assert person.activated
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // include properties and fields from super class.
+ * import groovy.transform.TupleConstructor
+ *
+ * {@code @TupleConstructor(includeFields=true)}
+ * class Person {
+ *     String name
+ *     List likes
+ *     private boolean active = false
+ *
+ *     boolean isActivated() { active }
+ * }
+ *
+ * {@code @TupleConstructor(callSuper=true, includeSuperProperties=true, includeSuperFields=true)}
+ * class Student extends Person {
+ *     List courses
+ * }
+ *
+ * def student = new Student('mrhaki', ['Groovy', 'Java'], true, ['IT'])
+ *
+ * assert student.name == 'mrhaki'
+ * assert student.likes == ['Groovy', 'Java']
+ * assert student.activated
+ * assert student.courses == ['IT']
+ * </pre>
  * <p>
  * Limitations:
  * <ul>
