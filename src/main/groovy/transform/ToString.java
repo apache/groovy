@@ -134,7 +134,7 @@ import java.lang.annotation.Target;
  * // includeNames to output the names of the properties.
  * import groovy.transform.ToString
  *
- * {@code @ToString(includeNames=true)}
+ * &#64;@ToString(includeNames=true)
  * class Person {
  *     String name
  *     List likes
@@ -150,7 +150,7 @@ import java.lang.annotation.Target;
  * // includeFields to not only output properties, but also field values.
  * import groovy.transform.ToString
  *
- * {@code @ToString(includeNames=true, includeFields=true)}
+ * &#64;ToString(includeNames=true, includeFields=true)
  * class Person {
  *     String name
  *     List likes
@@ -166,14 +166,14 @@ import java.lang.annotation.Target;
  * // Use includeSuper to include properties from super class in output.
  * import groovy.transform.ToString
  *
- * {@code @ToString(includeNames=true)}
+ * &#64;ToString(includeNames=true)
  * class Person {
  *     String name
  *     List likes
  *     private boolean active = false
  * }
  *
- * {@code @ToString(includeSuper=true, includeNames=true)}
+ * &#64;ToString(includeSuper=true, includeNames=true)
  * class Student extends Person {
  *     List courses
  * }
@@ -187,7 +187,7 @@ import java.lang.annotation.Target;
  * // excludes active field and likes property from output
  * import groovy.transform.ToString
  *
- * {@code @ToString(includeNames=true, includeFields=true, excludes='active,likes')}
+ * &#64;ToString(includeNames=true, includeFields=true, excludes='active,likes')
  * class Person {
  *     String name
  *     List likes
@@ -205,7 +205,7 @@ import java.lang.annotation.Target;
  *
  * import groovy.transform.*
  *
- * {@code @ToString(includePackage=false)}
+ * &#64;ToString(includePackage=false)
  * class Course {
  *     String title
  *     Integer maxAttendees
@@ -222,7 +222,7 @@ import java.lang.annotation.Target;
  *
  * import groovy.transform.*
  *
- * {@code @ToString(ignoreNulls=true)}
+ * &#64;ToString(ignoreNulls=true)
  * class Course {
  *     String title
  *     Integer maxAttendees
@@ -239,7 +239,7 @@ import java.lang.annotation.Target;
  *
  * import groovy.transform.*
  *
- * {@code @ToString(cache=true)}
+ * &#64;@ToString(cache=true)
  * class Course {
  *     String title
  *     Integer maxAttendees
