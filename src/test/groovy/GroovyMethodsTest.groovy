@@ -1564,6 +1564,55 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [4, 5] == iterableA.intersect(iterableB)
     }
 
+    // GROOVY-7602
+    void testIntersectForMaps() {
+        def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
+        def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
+        def intersection = list1.intersect(list2)
+        assert intersection == [[language: 'Groovy'], [language: 'Java']]
+    }
+
+    // GROOVY-7602
+    void testIntersectForURL() {
+        def c1 = []
+        def c2 = []
+        c1 << new URL("http://sample.com/")
+        c2 << new URL("http://sample.com/")
+        assert c1.intersect(c2)
+    }
+
+    // GROOVY-7530
+    void testDisjointForMaps() {
+        def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
+        def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
+        assert !list1.disjoint(list2)
+    }
+
+    class Foo {
+        private String name
+
+        Foo(String name) {
+            this.name = name
+        }
+
+        boolean equals(Object o) {
+            if (this.is(o)) return true
+            if (o == null || getClass() != o.getClass()) return false
+            name == o.name
+        }
+
+        int hashCode() {
+            return 13 + 7 * name.hashCode()
+        }
+    }
+
+    // GROOVY-7530
+    void testDisjointForFoo() {
+        def a = [new Foo("foo")]
+        def b = [new Foo("foo")]
+        assert !a.disjoint(b)
+    }
+
     void testDisjointForLists() {
         assert [].disjoint([])
         assert [].disjoint([4, 5, 6, 7, 8])
