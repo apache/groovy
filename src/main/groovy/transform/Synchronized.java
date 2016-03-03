@@ -105,7 +105,7 @@ import java.lang.annotation.Target;
  * a 0-size array is. Therefore, using {@code @Synchronized} will not prevent your
  * object from being serialized.
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.Synchronized
  *
  * class Util {

@@ -112,7 +112,7 @@ import java.lang.annotation.Target;
  * If you get it wrong you will get a compile-time error about the duplication.</li>
  * </ul>
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
  *
@@ -124,7 +124,7 @@ import java.lang.annotation.Target;
  * def e1 = new MyException('message')   // Other constructors are available.
  * assert 'message' == e1.message
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
 

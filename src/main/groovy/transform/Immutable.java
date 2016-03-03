@@ -124,7 +124,7 @@ import java.lang.annotation.Target;
  * </ul>
  * <p>More examples:</p>
  --------------------------------------------------------------------------------
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
  * &#64;Canonical

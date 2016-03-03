@@ -77,7 +77,7 @@ package groovy.transform
  * {@code @}{@link Immutable} annotation.
  * 
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
  * &#64;Canonical

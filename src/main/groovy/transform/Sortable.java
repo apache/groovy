@@ -48,7 +48,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.Sortable
  * import groovy.transform.ToString
@@ -74,20 +74,23 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
  * assert courses.last().title == 'Grails'
  *
- * // Use sort() method to sort
- * final List&lt;Course&gt; sorted = courses.sort(false)
+ * // Use toSorted() method to sort
+ * final List&lt;Course&gt; sorted = courses.toSorted()
  *
  * assert sorted.first().title == 'Grails'
  * assert sorted.last().title == 'Groovy'
  * assert sorted.maxAttendees == [20, 50, 40]
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Order of fields for includes determines priority when sorting
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
  * &#64;Sortable(includes = ['title', 'maxAttendees'])
  * // Or &#64;Sortable(excludes = ['beginDate'])
  * &#64;ToString
- * class CourseSort {
+ * class Course {
  *     String title
  *     Date beginDate
  *     Integer maxAttendees
@@ -103,14 +106,13 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *
  * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
  *
- * // Use sort() method to sort
- * final List&lt;Course&gt; sorted = courses.sort(false)
+ * // Use toSorted() method to sort
+ * final List&lt;Course&gt; sorted = courses.toSorted()
  *
  * assert sorted.first().title == 'Grails'
  * assert sorted.last().title == 'Groovy'
  * assert sorted.maxAttendees == [20, 40, 50]
- * </pre>
- * <pre>
+ *
  * //--------------------------------------------------------------------------
  * // Static methods to create comparators.
  * final Comparator byMaxAttendees = Course.comparatorByMaxAttendees()
@@ -120,7 +122,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * // beginDate is not used for sorting
  * assert sortedByMaxAttendees[2].beginDate &lt; sortedByMaxAttendees[1].beginDate
  *
- * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') } == ['comparatorByTitle', 'comparatorByMaxAttendees']
+ * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') }.toSorted() == ['comparatorByMaxAttendees', 'comparatorByTitle']
  * </pre>
  *
  * @author Andres Almiray

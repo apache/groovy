@@ -56,7 +56,7 @@ import java.lang.annotation.Target;
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.TupleConstructor
  *
@@ -77,7 +77,7 @@ import java.lang.annotation.Target;
  * assert person.name == 'mrhaki'
  * assert !person.likes
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // includeFields in the constructor creation.
  * import groovy.transform.TupleConstructor
@@ -97,7 +97,7 @@ import java.lang.annotation.Target;
  * assert person.likes == ['Groovy', 'Java']
  * assert person.activated
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // use force attribute to force creation of constructor
  * // even if we define our own constructors.
@@ -126,7 +126,7 @@ import java.lang.annotation.Target;
  *
  * assert person.activated
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // include properties and fields from super class.
  * import groovy.transform.TupleConstructor
