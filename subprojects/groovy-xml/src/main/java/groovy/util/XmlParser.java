@@ -57,7 +57,7 @@ import java.util.Map;
  * most simple use cases of processing XML.
  * <p>
  * Example usage:
- * <pre>
+ * <pre class="groovyTestCase">
  * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
  * def rootNode = new XmlParser().parseText(xml)
  * assert rootNode.name() == 'root'
