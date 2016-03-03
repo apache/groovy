@@ -18,11 +18,10 @@
  */
 package groovy.json
 
-import junit.textui.TestRunner
+import org.junit.runners.Suite
+import org.junit.runner.RunWith
 
-class JsonJavadocAssertionTest extends GroovyTestCase {
-    // TODO simplify by having suite directly included rather than via TestRunner
-    void testGroovyDoc() {
-        assert TestRunner.run(JavadocAssertionTestSuite.suite()).wasSuccessful()
-    }
+@RunWith(Suite)
+@Suite.SuiteClasses(JavadocAssertionTestSuite)
+class JsonJavadocAssertionTest {
 }
