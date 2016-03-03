@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  * arguments and error will be given. Is this not wished or if you want a 
  * different mapping a custom processor has to be used. There are two ways of 
  * using the alias. The first way is by providing the annotations as list/array:
- * <pre>
+ * <pre class="groovyTestCase">
  *          import groovy.transform.*
  *          &#64;AnnotationCollector([ToString, EqualsAndHashCode, Immutable])
  *          &#64;interface Alias {}
@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
  * excludes which will be mapped to ToString and EqualsAndHashCode. Immutable 
  * doesn't have excludes, thus nothing will be done there.<br>
  * The other way is to add annotations to the alias:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  * &#64;ToString(excludes=["a"])
  * &#64;EqualsAndHashCode
@@ -74,8 +74,9 @@ import java.lang.annotation.Target;
  * If both ways are combined, then the list overwrites annotation usage.
  * NOTE: The aliasing does not support aliasing of aliased annotations. 
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
+ * import groovy.transform.*
  * &#64;AnnotationCollector([EqualsAndHashCode, ToString])
  * &#64;interface Simple {}
  *
@@ -95,7 +96,7 @@ import java.lang.annotation.Target;
  *
  * // We can use the attributes from the 
  * // grouped annotations.
- * &#64;Simple(excludes = 'street') 
+ * &#64;Simple(excludes = 'street')
  * class Address {
  *     String street, town
  * }
@@ -103,7 +104,7 @@ import java.lang.annotation.Target;
  * def address = new Address(street: 'Evergreen Terrace', town: 'Springfield') 
  * assert address.toString() == 'Address(Springfield)'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Use a custom processor to handle attributes.
  * import org.codehaus.groovy.transform.*
@@ -149,10 +150,11 @@ import java.lang.annotation.Target;
  * assert user.toString() == 'User(mrhaki)'
  * '''
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Use AnnotationCollector as last annotation to group the
  * // previous annotations.
+ * import groovy.transform.*
  * &#64;EqualsAndHashCode
  * &#64;ToString
  * &#64;AnnotationCollector

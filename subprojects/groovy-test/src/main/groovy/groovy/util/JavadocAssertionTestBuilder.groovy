@@ -28,8 +28,8 @@ import java.util.regex.Pattern
  *
  * @author Merlyn Albery-Speyer
  */
-
 class JavadocAssertionTestBuilder {
+    // TODO write tests for this classes functionality
     private static final Pattern javadocPattern =
         Pattern.compile( /(?ims)\/\*\*.*?\*\// )
     private static final Pattern assertionPattern =
@@ -92,10 +92,11 @@ class JavadocAssertionTestBuilder {
         String htmlAssertion = tagInner.replaceAll("(?m)^\\s*\\*", "")
         String assertion = htmlAssertion
         // TODO improve on this
-        [nbsp:' ', gt:'>', lt:'<', quot:'"', apos:"'", at:'@', ndash:'-', amp:'&'].each { key, value ->
+        [nbsp:' ', gt:'>', lt:'<', quot:'"', apos:"'", at:'@', '#64':'@', ndash:'-', amp:'&'].each { key, value ->
             assertion = assertion.replaceAll("(?i)&$key;", value)
         }
-        
+        assertion = assertion.replaceAll(/(?i)\{@code ([^}]*)\}/, '$1')
+
         return assertion
     }
     
