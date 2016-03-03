@@ -48,7 +48,7 @@ import static groovy.json.JsonTokenType.STRING;
  * <p>
  * Example usage:
  * <code><pre class="groovyTestCase">
- * def slurper = new groovy.json.JsonSlurper()
+ * def slurper = new groovy.json.JsonSlurperClassic()
  * def result = slurper.parseText('{"person":{"name":"Guillaume","age":33,"pets":["dog","cat"]}}')
  *
  * assert result.person.name == "Guillaume"
