@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.json
+package groovy.xml
 
 import org.junit.runners.Suite
 import org.junit.runner.RunWith
