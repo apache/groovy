@@ -47,8 +47,8 @@ import static groovy.json.JsonTokenType.STRING;
  * JSON slurper which parses text or reader content into a data structure of lists and maps.
  * <p>
  * Example usage:
- * <code><pre>
- * def slurper = new JsonSlurper()
+ * <code><pre class="groovyTestCase">
+ * def slurper = new groovy.json.JsonSlurper()
  * def result = slurper.parseText('{"person":{"name":"Guillaume","age":33,"pets":["dog","cat"]}}')
  *
  * assert result.person.name == "Guillaume"
