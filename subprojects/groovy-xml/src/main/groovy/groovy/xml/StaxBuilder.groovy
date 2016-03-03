@@ -21,19 +21,20 @@ package groovy.xml
 /**
  * A Groovy builder that works with Stax processors.
  * A typical usage is as follows:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import javax.xml.stream.XMLOutputFactory
  * def factory = XMLOutputFactory.newInstance()
  * def writer = new StringWriter()
- * def builder = new StaxBuilder(factory.createXMLStreamWriter(writer))
+ * def builder = new groovy.xml.StaxBuilder(factory.createXMLStreamWriter(writer))
  * builder.root1(a:5, b:7) {
  *     elem1('hello1')
  *     elem2('hello2')
  *     elem3(x:7)
  * }
- * assert writer.toString() == '<?xml version="1.0" ?><root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>'
+ * assert writer.toString() == '<?xml version="1.0" ?><root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7"></elem3></root1>'
  * </pre>
  * Or an external library such as Jettison can be used as follows:
- * <pre>
+ * <pre class="groovyTestCase">
  * @Grab('org.codehaus.jettison:jettison:1.2')
  * import org.codehaus.jettison.mapped.*
  * import javax.xml.stream.XMLStreamException
