@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import junit.textui.TestRunner
 
-class MainJavadocAssertionTest extends GroovyTestCase {
-    // TODO simplify by having suite directly included rather than via TestRunner
-    void testGroovyDoc() {
-        assert TestRunner.run(JavadocAssertionTestSuite.suite()).wasSuccessful()
-    }
+import org.junit.runners.Suite
+import org.junit.runner.RunWith
+
+@RunWith(Suite.class)
+@Suite.SuiteClasses(JavadocAssertionTestSuite.class)
+class MainJavadocAssertionTest {
 }
