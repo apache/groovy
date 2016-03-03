@@ -193,7 +193,7 @@ import java.lang.annotation.Target;
  * you have such structures.
  * A future version of this transform may better handle some additional recursive scenarios.
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.EqualsAndHashCode
  *
  * &#64;EqualsAndHashCode(includeFields=true)

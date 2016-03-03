@@ -87,7 +87,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * </pre>
  * 
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
  * // Script variable which is changed when increment()

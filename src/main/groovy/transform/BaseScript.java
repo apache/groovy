@@ -85,7 +85,7 @@ import java.lang.annotation.Target;
  * the AST is currently implemented they are not accessible in the script body code.
  * </p>
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * // Simple Car class to save state and distance.
  * class Car {
  *     String state
