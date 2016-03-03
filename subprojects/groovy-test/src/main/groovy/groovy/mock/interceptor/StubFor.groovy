@@ -35,7 +35,7 @@ import java.util.regex.Pattern
  * is left to the user.
  *
  * Typical usage is as follows:
- * <pre>
+ * <<pre class="groovyTestCase">
  * import groovy.mock.interceptor.StubFor
  *
  * class Person {
