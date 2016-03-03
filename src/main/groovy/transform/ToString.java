@@ -113,7 +113,7 @@ import java.lang.annotation.Target;
  * my.company.NamedThing(name: Lassie)
  * </pre>
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------    
  * // Most simple implementation of toString.
  * import groovy.transform.ToString
@@ -129,12 +129,12 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(mrhaki, [Groovy, Java])'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------    
  * // includeNames to output the names of the properties.
  * import groovy.transform.ToString
  *
- * &#64;@ToString(includeNames=true)
+ * &#64;ToString(includeNames=true)
  * class Person {
  *     String name
  *     List likes
@@ -145,7 +145,7 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(name:mrhaki, likes:[Groovy, Java])'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // includeFields to not only output properties, but also field values.
  * import groovy.transform.ToString
@@ -182,7 +182,7 @@ import java.lang.annotation.Target;
  *
  * assert student.toString() == 'Student(courses:[IT, Business], super:Person(name:mrhaki, likes:[Groovy, Java]))'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------    
  * // excludes active field and likes property from output
  * import groovy.transform.ToString
@@ -198,7 +198,7 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(name:mrhaki)'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Don't include the package name in the output
  * package com.mrhaki.blog.groovy
@@ -215,7 +215,7 @@ import java.lang.annotation.Target;
  *
  * assert course.toString() == 'Course(Groovy 101, 200)'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Don't use properties with null value.
  * package com.mrhaki.blog.groovy
@@ -232,14 +232,14 @@ import java.lang.annotation.Target;
  *
  * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101)'
  * </pre>
- * <pre>
+ * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Cache toString() result.
  * package com.mrhaki.blog.groovy
  *
  * import groovy.transform.*
  *
- * &#64;@ToString(cache=true)
+ * &#64;ToString(cache=true)
  * class Course {
  *     String title
  *     Integer maxAttendees

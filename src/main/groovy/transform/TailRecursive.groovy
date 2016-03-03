@@ -59,7 +59,7 @@ import java.lang.annotation.Target
  * </ul>
  * 
  * <p>More examples:</p>
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.TailRecursive
  *
  * &#64;TailRecursive
