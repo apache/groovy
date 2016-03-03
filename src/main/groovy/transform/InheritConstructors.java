@@ -111,6 +111,37 @@ import java.lang.annotation.Target;
  * inherit) the constructors with signatures that Groovy adds later.
  * If you get it wrong you will get a compile-time error about the duplication.</li>
  * </ul>
+ * <p>More examples:</p>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * import groovy.transform.InheritConstructors
+ *
+ * &#64;InheritConstructors
+ * class MyException extends Exception {
+ * }
+ *
+ * def e = new MyException()
+ * def e1 = new MyException('message')   // Other constructors are available.
+ * assert 'message' == e1.message
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * import groovy.transform.InheritConstructors
+
+ * class Person {
+ *     String name
+ *
+ *     Person(String name) {
+ *         this.name = name
+ *     }
+ * }
+ *
+ * &#64;InheritConstructors
+ * class Child extends Person {}
+ *
+ * def child = new Child('Liam')
+ * assert 'Liam' == child.name
+ * </pre>
  *
  * @author Paul King
  * @since 1.7.3

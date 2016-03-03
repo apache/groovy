@@ -47,6 +47,81 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *     {@code comparatorByLast} and {@code comparatorByBorn}</li>
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
+ * <p>More examples:</p>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
+ * &#64;Sortable
+ * &#64;ToString
+ * class Course {
+ *     // Order of properties determines priority when sorting
+ *     String title
+ *     Date beginDate
+ *     Integer maxAttendees  // int doesn't implement Comparable, so use Integer
+ * }
+ *
+ *
+ * final Course groovy = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
+ * final Course groovy2 = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
+ * final Course grails = new Course(
+ *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
+ *
+ *
+ * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ * assert courses.last().title == 'Grails'
+ *
+ * // Use sort() method to sort
+ * final List&lt;Course&gt; sorted = courses.sort(false)
+ *
+ * assert sorted.first().title == 'Grails'
+ * assert sorted.last().title == 'Groovy'
+ * assert sorted.maxAttendees == [20, 50, 40]
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Order of fields for includes determines priority when sorting
+ * &#64;Sortable(includes = ['title', 'maxAttendees'])
+ * // Or &#64;Sortable(excludes = ['beginDate'])
+ * &#64;ToString
+ * class CourseSort {
+ *     String title
+ *     Date beginDate
+ *     Integer maxAttendees
+ * }
+ *
+ * final Course groovy = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
+ * final Course groovy2 = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
+ * final Course grails = new Course(
+ *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
+ *
+ *
+ * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ *
+ * // Use sort() method to sort
+ * final List&lt;Course&gt; sorted = courses.sort(false)
+ *
+ * assert sorted.first().title == 'Grails'
+ * assert sorted.last().title == 'Groovy'
+ * assert sorted.maxAttendees == [20, 40, 50]
+ * </pre>
+ * <pre>
+ * //--------------------------------------------------------------------------
+ * // Static methods to create comparators.
+ * final Comparator byMaxAttendees = Course.comparatorByMaxAttendees()
+ * final List&lt;Course&gt; sortedByMaxAttendees = courses.sort(false, byMaxAttendees)
+ *
+ * assert sortedByMaxAttendees.maxAttendees == [20, 40, 50]
+ * // beginDate is not used for sorting
+ * assert sortedByMaxAttendees[2].beginDate &lt; sortedByMaxAttendees[1].beginDate
+ *
+ * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') } == ['comparatorByTitle', 'comparatorByMaxAttendees']
+ * </pre>
  *
  * @author Andres Almiray
  * @author Paul King

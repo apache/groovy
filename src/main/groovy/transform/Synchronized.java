@@ -104,6 +104,56 @@ import java.lang.annotation.Target;
  * this pattern tend to use. This is because a new <code>Object</code> is NOT serializable, but
  * a 0-size array is. Therefore, using {@code @Synchronized} will not prevent your
  * object from being serialized.
+ * <p>More examples:</p>
+ * <pre>
+ * import groovy.transform.Synchronized
+ *
+ * class Util {
+ *     private counter = 0
+ *
+ *     private def list = ['Groovy']
+ *
+ *     private Object listLock = new Object[0]
+ *
+ *     &#64;Synchronized
+ *     void workOnCounter() {
+ *         assert 0 == counter
+ *         counter++
+ *         assert 1 == counter
+ *         counter --
+ *         assert 0 == counter
+ *     }
+ *
+ *     &#64;Synchronized('listLock')
+ *     void workOnList() {
+ *         assert 'Groovy' == list[0]
+ *         list &lt;&lt; 'Grails'
+ *         assert 2 == list.size()
+ *         list = list - 'Grails'
+ *         assert 'Groovy' == list[0]
+ *     }
+ * }
+ *
+ * def util = new Util()
+ * def tc1 = Thread.start {
+ *     100.times {
+ *         util.workOnCounter()
+ *         sleep 20 
+ *         util.workOnList()
+ *         sleep 10
+ *     }
+ * }
+ * def tc2 = Thread.start {
+ *     100.times {
+ *         util.workOnCounter()
+ *         sleep 10 
+ *         util.workOnList()
+ *         sleep 15
+ *     }
+ * }
+ * tc1.join()
+ * tc2.join()
+ * </pre>
  *
  * @author Paul King
  * @since 1.7.3
