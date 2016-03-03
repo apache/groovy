@@ -35,7 +35,7 @@ import java.util.*;
  * to be able to learn about the various possibilities of usage.
  * <p>
  * Example:
- * <pre><code>
+ * <pre><code class="groovyTestCase">
  *       def builder = new groovy.json.JsonBuilder()
  *       def root = builder.people {
  *           person {
@@ -90,8 +90,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * Named arguments can be passed to the JSON builder instance to create a root JSON object
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json name: "Guillaume", age: 33
      *
      * assert json.toString() == '{"name":"Guillaume","age":33}'
@@ -110,8 +110,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * A list of elements as arguments to the JSON builder creates a root JSON array
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * def result = json([1, 2, 3])
      *
      * assert result instanceof List
@@ -131,8 +131,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * Varargs elements as arguments to the JSON builder create a root JSON array
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * def result = json 1, 2, 3
      *
      * assert result instanceof List
@@ -157,13 +157,13 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * the closure to each object in the collection
      * <p>
      * Example:
-     * <pre><code>
+     * <pre><code class="groovyTestCase">
      * class Author {
      *      String name
      * }
      * def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
      *
-     * def json = new JsonBuilder()
+     * def json = new groovy.json.JsonBuilder()
      * json authors, { Author author ->
      *      name author.name
      * }
@@ -197,8 +197,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * A closure passed to a JSON builder will create a root JSON object
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * def result = json {
      *      name "Guillaume"
      *      age 33
@@ -229,8 +229,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * </ul>
      * <p>
      * Example with a classicala builder-style:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * def result = json.person {
      *      name "Guillaume"
      *      age 33
@@ -241,8 +241,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * </code></pre>
      *
      * Or alternatively with a method call taking named arguments:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json.person name: "Guillaume", age: 33
      *
      * assert json.toString() == '{"person":{"name":"Guillaume","age":33}}'
@@ -254,16 +254,16 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * will be merged together &mdash;
      * the closure properties overriding the map key/values
      * in case the same key is used.
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json.person(name: "Guillaume", age: 33) { town "Paris" }
      *
      * assert json.toString() == '{"person":{"name":"Guillaume","age":33,"town":"Paris"}}'
      * </code></pre>
      *
      * The empty args call will create a key whose value will be an empty JSON object:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json.person()
      *
      * assert json.toString() == '{"person":{}}'
@@ -334,8 +334,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * Serializes the internal data structure built with the builder to a conformant JSON payload string
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json { temperature 37 }
      *
      * assert json.toString() == '{"temperature":37}'
@@ -366,8 +366,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * so that you can have the builder serialize itself the JSON payload to a writer.
      * <p>
      * Example:
-     * <pre><code>
-     * def json = new JsonBuilder()
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
      * json { temperature 37 }
      *
      * def out = new StringWriter()
