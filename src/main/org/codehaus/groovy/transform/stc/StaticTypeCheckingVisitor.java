@@ -170,7 +170,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
-            ClassNode returnType = checkReturnType(returnStatement);
+            checkReturnType(returnStatement);
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
             if (typeCheckingContext.getEnclosingClosure()!=null) {
                 addClosureReturnType(getType(returnStatement.getExpression()));
@@ -2043,7 +2043,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (VariableExpression ve : closureSharedExpressions) {
             // GROOVY-6921: We must force a call to getType in order to update closure shared variable which types are
             // inferred thanks to closure parameter type inference
-            ClassNode cn = getType(ve);
+            getType(ve);
             ListHashMap<StaticTypesMarker, Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
             for (StaticTypesMarker marker : StaticTypesMarker.values()) {
                 Object value = ve.getNodeMetaData(marker);

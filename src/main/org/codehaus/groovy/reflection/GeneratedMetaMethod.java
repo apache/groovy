@@ -162,7 +162,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             out.close();
         }
 
-        public static List<DgmMethodRecord> loadDgmInfo() throws IOException, ClassNotFoundException {
+        public static List<DgmMethodRecord> loadDgmInfo() throws IOException {
 
             ClassLoader loader = DgmMethodRecord.class.getClassLoader();
             DataInputStream in = new DataInputStream(new BufferedInputStream(loader.getResourceAsStream("META-INF/dgminfo")));

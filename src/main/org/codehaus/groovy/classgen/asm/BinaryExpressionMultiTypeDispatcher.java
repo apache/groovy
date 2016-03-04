@@ -154,7 +154,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
         ClassNode current =  getController().getClassNode();
         TypeChooser typeChooser = getController().getTypeChooser();
-        int operation = binExp.getOperation().getType();
         
         Expression leftExp = binExp.getLeftExpression();
         ClassNode leftType = typeChooser.resolveType(leftExp, current);

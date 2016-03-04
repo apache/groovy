@@ -47,8 +47,6 @@ public class StringSetMap extends LinkedHashMap<String,Set<String>> {
 
     public void makeTransitiveHull() {
         Set<String> nameSet = new TreeSet<String>(keySet());
-        // TODO use it or lose it
-        StringSetMap ret = new StringSetMap(this);
         
         for (String k: nameSet) {
             StringSetMap delta = new StringSetMap();

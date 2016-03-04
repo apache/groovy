@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
 
-import java.io.IOException;
-
 import static org.fusesource.jansi.Ansi.ansi;
 import static org.fusesource.jansi.Ansi.Color;
 import static org.fusesource.jansi.Ansi.Color.*;
@@ -72,11 +70,7 @@ public final class Logger {
             cause.printStackTrace(io.out);
         }
 
-        try {
-            io.flush();
-        } catch (IOException io) {
-            throw new RuntimeException(io);
-        }
+        io.flush();
     }
     
     //

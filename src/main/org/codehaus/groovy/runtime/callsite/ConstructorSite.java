@@ -133,8 +133,6 @@ public class ConstructorSite extends MetaClassSite {
     }
     
     public static class NoParamSiteInnerClass extends ConstructorSiteNoUnwrapNoCoerce {
-        private static final Object[] NO_ARGS = new Object[0];
-
         public NoParamSiteInnerClass(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }

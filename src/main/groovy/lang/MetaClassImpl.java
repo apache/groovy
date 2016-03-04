@@ -2896,7 +2896,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         }
                     };
 
-                    final ClassLoader parent = theClass.getClassLoader();
                     CompilationUnit unit = new CompilationUnit();
                     unit.setClassgenCallback(search);
                     unit.addSource(url);
@@ -3274,7 +3273,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void addProperties() {
         BeanInfo info;
-        final Class stopClass;
         //     introspect
         try {
             if (isBeanDerivative(theClass)) {

@@ -270,12 +270,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.addConstructor(constructor);
     }
 
-    private static boolean isInnerClassOf(ClassNode a, ClassNode b) {
-        if (a.redirect()==b) return true;
-        if (b.redirect() instanceof InnerClassNode) return isInnerClassOf(a, b.redirect().getOuterClass());
-        return false;
-    }
-    
     private void addStaticMetaClassField(final ClassNode node, final String classInternalName) {
         String _staticClassInfoFieldName = "$staticClassInfo";
         while (node.getDeclaredField(_staticClassInfoFieldName) != null)

@@ -2326,7 +2326,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else if (leftExpression instanceof ConstantExpression) {
                 throw new ASTRuntimeException(node, "\n[" + ((ConstantExpression) leftExpression).getValue() + "] is a constant expression, but it should be a variable expression");
             } else if (leftExpression instanceof BinaryExpression) {
-                Expression leftexp = ((BinaryExpression) leftExpression).getLeftExpression();
                 int lefttype = ((BinaryExpression) leftExpression).getOperation().getType();
                 if (!Types.ofType(lefttype, Types.ASSIGNMENT_OPERATOR) && lefttype != Types.LEFT_SQUARE_BRACKET) {
                     throw new ASTRuntimeException(node, "\n" + ((BinaryExpression) leftExpression).getText() + " is a binary expression, but it should be a variable expression");
@@ -2425,15 +2424,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ConstructorCallExpression expression = new ConstructorCallExpression(special, arguments);
         configureAST(expression, methodCallNode);
         return expression;
-    }
-
-    private int getTypeInParenthesis(AST node) {
-        if (!isType(EXPR, node)) node = node.getFirstChild();
-        while (node != null && isType(EXPR, node) && node.getNextSibling() == null) {
-            node = node.getFirstChild();
-        }
-        if (node == null) return -1;
-        return node.getType();
     }
 
     protected Expression methodCallExpression(AST methodCallNode) {
@@ -2871,13 +2861,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             return qualifiedNameNode.getText();
         }
-    }
-
-    private static AST getTypeArgumentsNode(AST root) {
-        while (root != null && !isType(TYPE_ARGUMENTS, root)) {
-            root = root.getNextSibling();
-        }
-        return root;
     }
 
     private int getBoundType(AST node) {
