@@ -633,7 +633,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
 
         protected Class resolveClass(FactoryBuilderSupport builder, String classname, Object name, Object value,
-                                  Map properties) throws InstantiationException, IllegalAccessException {
+                                  Map properties) {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             Class klass = ogbuilder.resolvedClasses.get(classname);
             if (klass == null) {

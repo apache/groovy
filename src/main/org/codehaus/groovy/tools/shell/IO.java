@@ -130,7 +130,7 @@ public class IO implements Closeable
     /**
      * Flush both output streams.
      */
-    public void flush() throws IOException {
+    public void flush() {
         out.flush();
         err.flush();
     }

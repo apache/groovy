@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -62,8 +61,8 @@ public class CompareIdentityExpression extends BinaryExpression implements Opcod
         if (visitor instanceof AsmClassGenerator) {
             AsmClassGenerator acg = (AsmClassGenerator) visitor;
             WriterController controller = acg.getController();
-            ClassNode leftType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
-            ClassNode rightType = controller.getTypeChooser().resolveType(rightExpression, controller.getClassNode());
+            controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
+            controller.getTypeChooser().resolveType(rightExpression, controller.getClassNode());
             MethodVisitor mv = controller.getMethodVisitor();
             leftExpression.visit(acg);
             controller.getOperandStack().box();

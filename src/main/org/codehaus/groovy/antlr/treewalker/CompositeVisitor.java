@@ -38,7 +38,6 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 public class CompositeVisitor implements Visitor{
     final List visitors;
     final List backToFrontVisitors;
-    private final Stack stack;
 
     /**
      * A composite of the supplied list of antlr AST visitors.
@@ -46,7 +45,6 @@ public class CompositeVisitor implements Visitor{
      */
     public CompositeVisitor(List visitors) {
         this.visitors = visitors;
-        this.stack = new Stack();
         backToFrontVisitors = new ArrayList();
         backToFrontVisitors.addAll(visitors);
         Collections.reverse(backToFrontVisitors);

@@ -145,13 +145,4 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
         return ret;
     }
-    
-    private void checkBounds(ClassNode[] given, ClassNode[] restrictions) {
-        if (restrictions==null) return;
-        for (int i=0; i<given.length; i++) {
-            for (int j=0; j<restrictions.length; j++) {
-                if (! given[i].isDerivedFrom(restrictions[j])){}
-            }
-        }
-    }
 }

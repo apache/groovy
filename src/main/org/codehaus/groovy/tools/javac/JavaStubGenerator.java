@@ -506,8 +506,6 @@ public class JavaStubGenerator {
         return null;
     }
 
-    final private static ClassNode RUNTIME_EXCEPTION = ClassHelper.make(RuntimeException.class);
-
     private boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
         ClassNode[] superExceptions = fromSuper.getExceptions();
         if (superExceptions==null || superExceptions.length==0) return true;
@@ -751,15 +749,6 @@ public class JavaStubGenerator {
             out.print(type.getGenericsTypes()[0].getName());
         } else {
             printGenericsBounds(out, type, false);
-        }
-    }
-
-    private void printTypeWithoutBounds(PrintWriter out, ClassNode type) {
-        if (type.isArray()) {
-            printTypeWithoutBounds(out, type.getComponentType());
-            out.print("[]");
-        } else {
-            printTypeName(out, type);
         }
     }
 

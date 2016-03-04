@@ -164,7 +164,7 @@ public class GroovyCodeSource {
         this(uri.toURL());
     }
 
-    public GroovyCodeSource(URL url) throws IOException {
+    public GroovyCodeSource(URL url) {
         if (url == null) {
             throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
         }

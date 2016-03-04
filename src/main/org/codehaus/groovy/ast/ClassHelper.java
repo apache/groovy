@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import groovy.lang.*;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;

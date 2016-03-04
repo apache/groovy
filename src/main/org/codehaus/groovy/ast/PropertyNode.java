@@ -34,7 +34,6 @@ public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
     private Statement getterBlock;
     private Statement setterBlock;
     private final int modifiers;
-    private boolean closureShare = false;
 
     public PropertyNode(
             String name, int modifiers, ClassNode type, ClassNode owner,
@@ -127,7 +126,7 @@ public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
       */
     @Deprecated
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;
+        // unused
     }
 
     public ClassNode getOriginType() {

@@ -139,7 +139,7 @@ import java.io.IOException;
  */
 public class ConcurrentReaderHashMap 
   extends AbstractMap 
-  implements Map, Cloneable, Serializable {
+  implements Cloneable, Serializable {
 
 
   /*

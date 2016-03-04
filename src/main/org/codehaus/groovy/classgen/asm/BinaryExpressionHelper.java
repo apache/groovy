@@ -819,10 +819,6 @@ public class BinaryExpressionHelper {
         
     }
 
-    private static boolean isNullConstant(Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
-    }
-
     private void evaluateNormalTernary(TernaryExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();

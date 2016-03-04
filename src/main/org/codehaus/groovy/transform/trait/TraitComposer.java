@@ -486,34 +486,6 @@ public abstract class TraitComposer {
         return false;
     }
 
-    /**
-     * An utility method which tries to find a method with default implementation (in the Java 8 semantics).
-     * @param cNode a class node
-     * @param name the name of the method
-     * @param params the parameters of the method
-     * @return a method node corresponding to a default method if it exists
-     */
-    private static MethodNode findDefaultMethodFromInterface(final ClassNode cNode, final String name, final Parameter[] params) {
-        if (cNode == null) {
-            return null;
-        }
-        if (cNode.isInterface()) {
-            MethodNode method = cNode.getMethod(name, params);
-            if (method!=null && !method.isAbstract()) {
-                // this is a Java 8 only behavior!
-                return method;
-            }
-        }
-        ClassNode[] interfaces = cNode.getInterfaces();
-        for (ClassNode anInterface : interfaces) {
-            MethodNode res = findDefaultMethodFromInterface(anInterface, name, params);
-            if (res!=null) {
-                return res;
-            }
-        }
-        return findDefaultMethodFromInterface(cNode.getSuperClass(), name, params);
-    }
-
     private static boolean isExistingProperty(final String methodName, final ClassNode cNode, final Parameter[] params) {
         String propertyName = methodName;
         boolean getter = false;
