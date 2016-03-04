@@ -108,8 +108,7 @@ import java.lang.annotation.Target;
  * <code>equals</code> and <code>canEqual</code> method. The easiest way to
  * achieve this would be to use the {@code @Canonical} or
  * {@code @EqualsAndHashCode} annotations as shown below:
- * <pre class="groovyTestCase">
- * import groovy.transform.*
+ * <pre>
  * {@code @EqualsAndHashCode}
  * {@code @TupleConstructor(includeSuperProperties=true)}
  * class IntTriple extends IntPair { int z }
