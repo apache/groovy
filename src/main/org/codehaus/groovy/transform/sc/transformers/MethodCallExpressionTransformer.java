@@ -133,7 +133,7 @@ public class MethodCallExpressionTransformer {
         return staticCompilationTransformer.superTransform(expr);
     }
 
-    private MethodCallExpression transformToMopSuperCall(final ClassNode superCallReceiver, final MethodCallExpression expr) {
+    private static MethodCallExpression transformToMopSuperCall(final ClassNode superCallReceiver, final MethodCallExpression expr) {
         MethodNode mn = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         String mopName = MopWriter.getMopMethodName(mn, false);
         MethodNode direct = new MethodNode(
@@ -158,7 +158,7 @@ public class MethodCallExpressionTransformer {
         return result;
     }
 
-    private boolean isCallOnClosure(final MethodCallExpression expr) {
+    private static boolean isCallOnClosure(final MethodCallExpression expr) {
         return expr.isImplicitThis()
                 && expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET) == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS
                 && !"call".equals(expr.getMethodAsString());

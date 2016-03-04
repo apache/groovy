@@ -204,7 +204,7 @@ public class ClassNodeResolver {
     /**
      * Search for classes using class loading
      */
-    private LookupResult findByClassLoading(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
+    private static LookupResult findByClassLoading(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
         Class cls;
         try {
             // NOTE: it's important to do no lookup against script files
@@ -279,7 +279,7 @@ public class ClassNodeResolver {
     /**
      * try to find a script using the compilation unit class loader.
      */
-    private LookupResult tryAsScript(String name, CompilationUnit compilationUnit, ClassNode oldClass) {
+    private static LookupResult tryAsScript(String name, CompilationUnit compilationUnit, ClassNode oldClass) {
         LookupResult lr = null;
         if (oldClass!=null) {
             lr = new LookupResult(null, oldClass);
@@ -308,7 +308,7 @@ public class ClassNodeResolver {
      * get the time stamp of a class
      * NOTE: copied from GroovyClassLoader
      */
-    private long getTimeStamp(ClassNode cls) {
+    private static long getTimeStamp(ClassNode cls) {
         if (!(cls instanceof DecompiledClassNode)) {
             return Verifier.getTimestamp(cls.getTypeClass());
         }
@@ -320,7 +320,7 @@ public class ClassNodeResolver {
      * returns true if the source in URL is newer than the class
      * NOTE: copied from GroovyClassLoader
      */
-    private boolean isSourceNewer(URL source, ClassNode cls) {
+    private static boolean isSourceNewer(URL source, ClassNode cls) {
         try {
             long lastMod;
 

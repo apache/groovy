@@ -171,7 +171,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     }
 
     /* We need to chop up this child container. */
-    private void chopContainer(Value value) {
+    private static void chopContainer(Value value) {
         Object obj = value.toValue();
         if (obj instanceof LazyValueMap) {
             LazyValueMap map = (LazyValueMap) obj;

@@ -185,7 +185,7 @@ class ExtractIndexAndSql {
         return ((index + 1) < sql.length()) ? sql.charAt(index + 1) : '\0';
     }
 
-    private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
+    private static String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
         StringBuilder newSql = new StringBuilder();
         int txtIndex = 0;
 

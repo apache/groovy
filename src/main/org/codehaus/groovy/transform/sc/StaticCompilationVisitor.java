@@ -169,7 +169,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      * Adds special accessors and mutators for private fields so that inner classes can get/set them
      */
     @SuppressWarnings("unchecked")
-    private void addPrivateFieldsAccessors(ClassNode node) {
+    private static void addPrivateFieldsAccessors(ClassNode node) {
         Set<ASTNode> accessedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         Set<ASTNode> mutatedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
         if (accessedFields == null && mutatedFields == null) return;
@@ -224,7 +224,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      * @param node an inner/outer class node for which to generate bridge methods
      */
     @SuppressWarnings("unchecked")
-    private void addPrivateBridgeMethods(final ClassNode node) {
+    private static void addPrivateBridgeMethods(final ClassNode node) {
         Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
         List<MethodNode> methods = new ArrayList<MethodNode>(node.getAllDeclaredMethods());
@@ -299,7 +299,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return genericTypeTokens;
     }
 
-    private void memorizeInitialExpressions(final MethodNode node) {
+    private static void memorizeInitialExpressions(final MethodNode node) {
         // add node metadata for default parameters because they are erased by the Verifier
         if (node.getParameters()!=null) {
             for (Parameter parameter : node.getParameters()) {

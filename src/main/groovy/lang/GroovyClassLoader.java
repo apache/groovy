@@ -309,7 +309,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return answer;
     }
 
-    private void validate(GroovyCodeSource codeSource) {
+    private static void validate(GroovyCodeSource codeSource) {
         if (codeSource.getFile() == null) {
             if (codeSource.getScriptText() == null) {
                 throw new IllegalArgumentException("Script text to compile cannot be null!");
@@ -809,7 +809,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * where two scripts were sitting in a directory with spaces in its name.  The code would fail
      * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.
      */
-    private String decodeFileName(String fileName) {
+    private static String decodeFileName(String fileName) {
         String decodedFile = fileName;
         try {
             decodedFile = URLDecoder.decode(fileName, "UTF-8");
@@ -821,11 +821,11 @@ public class GroovyClassLoader extends URLClassLoader {
         return decodedFile;
     }
 
-    private boolean isFile(URL ret) {
+    private static boolean isFile(URL ret) {
         return ret != null && ret.getProtocol().equals("file");
     }
 
-    private File getFileForUrl(URL ret, String filename) {
+    private static File getFileForUrl(URL ret, String filename) {
         String fileWithoutPackage = filename;
         if (fileWithoutPackage.indexOf('/') != -1) {
             int index = fileWithoutPackage.lastIndexOf('/');
@@ -834,7 +834,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return fileReallyExists(ret, fileWithoutPackage);
     }
 
-    private File fileReallyExists(URL ret, String fileWithoutPackage) {
+    private static File fileReallyExists(URL ret, String fileWithoutPackage) {
         File path;
         try {
             /* fix for GROOVY-5809 */ 

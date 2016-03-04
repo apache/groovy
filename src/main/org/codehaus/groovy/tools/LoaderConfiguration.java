@@ -144,7 +144,7 @@ public class LoaderConfiguration {
     /*
     * Expands the properties inside the given string to it's values.
     */
-    private String assignProperties(String str) {
+    private static String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
         boolean requireProperty;
         String result = "";
@@ -196,7 +196,7 @@ public class LoaderConfiguration {
     }
 
 
-    private String correctDoubleSlash(String propertyValue, int propertyIndexEnd, String str) {
+    private static String correctDoubleSlash(String propertyValue, int propertyIndexEnd, String str) {
         int index = propertyIndexEnd + 1;
         if (index < str.length() && str.charAt(index) == '/' &&
                 propertyValue.endsWith("/") &&
@@ -255,7 +255,7 @@ public class LoaderConfiguration {
 
     // change path representation to something more system independent.
     // This solution is based on an absolute path
-    private String getSlashyPath(final String path) {
+    private static String getSlashyPath(final String path) {
         String changedPath = path;
         if (File.separatorChar != '/')
             changedPath = changedPath.replace(File.separatorChar, '/');

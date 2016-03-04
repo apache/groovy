@@ -134,7 +134,7 @@ public class GroovyRootDocBuilder {
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();
     }
 
-    private JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
+    private static JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         JavaLexer lexer = new JavaLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -143,7 +143,7 @@ public class GroovyRootDocBuilder {
         return parser;
     }
 
-    private GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
+    private static GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -280,7 +280,7 @@ public class GroovyRootDocBuilder {
         return SimpleGroovyClassDoc.replaceAllTags(self, s1, s2, regex, links, relPath, rootDoc, null);
     }
 
-    private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
+    private static void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
         packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
     }
 
@@ -289,13 +289,13 @@ public class GroovyRootDocBuilder {
         rootDoc.setDescription(description);
     }
 
-    private String trimPackageAndComments(String src) {
+    private static String trimPackageAndComments(String src) {
         return src.replaceFirst("(?sm)^package.*", "")
                 .replaceFirst("(?sm)/.*\\*\\*(.*)\\*/", "$1")
                 .replaceAll("(?m)^\\s*\\*", "");
     }
 
-    private String scrubOffExcessiveTags(String src) {
+    private static String scrubOffExcessiveTags(String src) {
         String description = pruneTagFromFront(src, "html");
         description = pruneTagFromFront(description, "/head");
         description = pruneTagFromFront(description, "body");
@@ -303,20 +303,20 @@ public class GroovyRootDocBuilder {
         return pruneTagFromEnd(description, "/body");
     }
 
-    private String pruneTagFromFront(String description, String tag) {
+    private static String pruneTagFromFront(String description, String tag) {
         int index = Math.max(indexOfTag(description, tag.toLowerCase()), indexOfTag(description, tag.toUpperCase()));
         if (index < 0) return description;
         return description.substring(index);
     }
 
-    private String pruneTagFromEnd(String description, String tag) {
+    private static String pruneTagFromEnd(String description, String tag) {
         int index = Math.max(description.lastIndexOf("<" + tag.toLowerCase() + ">"),
                 description.lastIndexOf("<" + tag.toUpperCase() + ">"));
         if (index < 0) return description;
         return description.substring(0, index);
     }
 
-    private int indexOfTag(String text, String tag) {
+    private static int indexOfTag(String text, String tag) {
         int pos = text.indexOf("<" + tag + ">");
         if (pos > 0) pos += tag.length() + 2;
         return pos;

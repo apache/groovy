@@ -130,7 +130,7 @@ public class XmlParser implements ContentHandler {
         reader = parser.getXMLReader();
     }
 
-    private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
+    private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
         }

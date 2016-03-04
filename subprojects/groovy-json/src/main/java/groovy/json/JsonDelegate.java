@@ -65,7 +65,7 @@ public class JsonDelegate extends GroovyObjectSupport {
         return val;
     }
 
-    private boolean isIterableOrArrayAndClosure(Object[] args) {
+    private static boolean isIterableOrArrayAndClosure(Object[] args) {
         if (args.length != 2 || !(args[1] instanceof Closure)) {
             return false;
         }

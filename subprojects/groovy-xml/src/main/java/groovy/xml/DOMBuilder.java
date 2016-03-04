@@ -233,7 +233,7 @@ public class DOMBuilder extends BuilderSupport {
         }
     }
 
-    private void setStringNS(Element element, Object key, Object value) {
+    private static void setStringNS(Element element, Object key, Object value) {
         String prefix = (String) key;
         element.setAttributeNS("http://www.w3.org/2000/xmlns/", "".equals(prefix) ? "xmlns" : "xmlns:" + prefix, value.toString());
     }

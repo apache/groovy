@@ -152,7 +152,7 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
-    private final char[] EMPTY_CHARS = new char[0];
+    private static final char[] EMPTY_CHARS = new char[0];
 
     public char[] findNextChar(int match, int esc) {
         try {

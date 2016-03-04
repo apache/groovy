@@ -142,7 +142,7 @@ public class XmlSlurper extends DefaultHandler {
         this(parser.getXMLReader());
     }
     
-    private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
+    private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
         }

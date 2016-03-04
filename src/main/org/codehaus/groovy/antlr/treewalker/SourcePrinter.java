@@ -900,7 +900,7 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
-    private String escape(String literal) {
+    private static String escape(String literal) {
         literal = literal.replaceAll("\n","\\\\<<REMOVE>>n"); // can't seem to do \n in one go with Java regex
         literal = literal.replaceAll("<<REMOVE>>","");
         return literal;

@@ -207,15 +207,15 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         addError("The " + getDescription(node) + " has an incorrect modifier " + modifierName + ".", node);
     }
 
-    private String getDescription(ClassNode node) {
+    private static String getDescription(ClassNode node) {
         return (node.isInterface() ? (Traits.isTrait(node)?"trait":"interface") : "class") + " '" + node.getName() + "'";
     }
 
-    private String getDescription(MethodNode node) {
+    private static String getDescription(MethodNode node) {
         return "method '" + node.getTypeDescriptor() + "'";
     }
 
-    private String getDescription(FieldNode node) {
+    private static String getDescription(FieldNode node) {
         return "field '" + node.getName() + "'";
     }
 
@@ -271,7 +271,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private boolean isConstructor(MethodNode method) {
+    private static boolean isConstructor(MethodNode method) {
         return method.getName().equals("<clinit>");
     }
 
@@ -330,7 +330,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         addError(msg.toString(), method);
     }
 
-    private boolean hasEqualParameterTypes(Parameter[] first, Parameter[] second) {
+    private static boolean hasEqualParameterTypes(Parameter[] first, Parameter[] second) {
         if (first.length != second.length) return false;
         for (int i = 0; i < first.length; i++) {
             String ft = first[i].getType().getName();
@@ -636,7 +636,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private String getRefDescriptor(ASTNode ref) {
+    private static String getRefDescriptor(ASTNode ref) {
         if (ref instanceof FieldNode) {
             FieldNode f = (FieldNode) ref;
             return "the field "+f.getName()+" ";

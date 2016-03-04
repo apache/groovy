@@ -337,7 +337,7 @@ public class XmlNodePrinter {
         }
     }
 
-    private boolean isEmptyElement(Node node) {
+    private static boolean isEmptyElement(Node node) {
         if (node == null) {
             throw new IllegalArgumentException("Node must not be null!");
         }

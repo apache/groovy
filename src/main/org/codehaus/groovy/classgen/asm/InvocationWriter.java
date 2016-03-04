@@ -632,7 +632,7 @@ public class InvocationWriter {
         }
     }
 
-    private List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
+    private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
         List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
         Comparator comp = new Comparator() {

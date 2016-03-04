@@ -140,7 +140,7 @@ public class Node implements Serializable, Cloneable {
         }
     }
 
-    private List getParentList(Node parent) {
+    private static List getParentList(Node parent) {
         Object parentValue = parent.value();
         List parentList;
         if (parentValue instanceof List) {
@@ -281,7 +281,7 @@ public class Node implements Serializable, Cloneable {
         parent().children().addAll(tail);
     }
 
-    private List<Node> buildChildrenFromClosure(Closure c) {
+    private static List<Node> buildChildrenFromClosure(Closure c) {
         NodeBuilder b = new NodeBuilder();
         Node newNode = (Node) b.invokeMethod("dummyNode", c);
         return newNode.children();

@@ -1033,7 +1033,7 @@ public class Sql {
         query(sql, singletonList(map), closure);
     }
 
-    private ArrayList<Object> singletonList(Object item) {
+    private static ArrayList<Object> singletonList(Object item) {
         ArrayList<Object> params = new ArrayList<Object>();
         params.add(item);
         return params;
@@ -1205,7 +1205,7 @@ public class Sql {
         }
     }
 
-    private boolean moveCursor(ResultSet results, int offset) throws SQLException {
+    private static boolean moveCursor(ResultSet results, int offset) throws SQLException {
         boolean cursorAtRow = true;
         if (results.getType() == ResultSet.TYPE_FORWARD_ONLY) {
             int i = 1;
@@ -4228,7 +4228,7 @@ public class Sql {
         closeResources((BatchingStatementWrapper) statement);
     }
 
-    private void closeResources(BatchingStatementWrapper statement) {
+    private static void closeResources(BatchingStatementWrapper statement) {
         if (statement != null) {
             try {
                 statement.close();
@@ -4273,7 +4273,7 @@ public class Sql {
     // private implementation methods
     //-------------------------------------------------------------------------
 
-    private List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
+    private static List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
         // Prepare a list to contain the auto-generated column
         // values, and then fetch them from the statement.
         List<List<Object>> autoKeys = new ArrayList<List<Object>>();
@@ -4298,14 +4298,14 @@ public class Sql {
         return connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
-    private void handleError(Connection connection, Throwable t) throws SQLException {
+    private static void handleError(Connection connection, Throwable t) throws SQLException {
         if (connection != null) {
             LOG.warning("Rolling back due to: " + t.getMessage());
             connection.rollback();
         }
     }
 
-    private void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
+    private static void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
         if (closure.getMaximumNumberOfParameters() == 1) {
             closure.call(connection);
         } else {
