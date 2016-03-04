@@ -186,7 +186,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
      * @param toSet resulting node
      * @param origNode original node
      */
-    private void setSourcePosition(Expression toSet, Expression origNode) {
+    private static void setSourcePosition(Expression toSet, Expression origNode) {
         toSet.setSourcePosition(origNode);
         if (toSet instanceof PropertyExpression) {
             ((PropertyExpression) toSet).getProperty().setSourcePosition(origNode);
@@ -217,7 +217,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return exp;
     }
 
-    private Expression findConstant(FieldNode fn) {
+    private static Expression findConstant(FieldNode fn) {
         if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()) {
             if (fn.getInitialValueExpression() instanceof ConstantExpression) {
                 return fn.getInitialValueExpression();
@@ -469,18 +469,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private String prefix(String name) {
+    private static String prefix(String name) {
         return name.startsWith("is") ? "is" : name.substring(0, 3);
     }
 
-    private String getPropNameForAccessor(String fieldName) {
+    private static String getPropNameForAccessor(String fieldName) {
         int prefixLength = fieldName.startsWith("is") ? 2 : 3;
         if (fieldName.length() < prefixLength + 1) return fieldName;
         if (!validPropName(fieldName)) return fieldName;
         return String.valueOf(fieldName.charAt(prefixLength)).toLowerCase() + fieldName.substring(prefixLength + 1);
     }
 
-    private boolean validPropName(String propName) {
+    private static boolean validPropName(String propName) {
         return propName.startsWith("get") || propName.startsWith("is") || propName.startsWith("set");
     }
 
@@ -509,7 +509,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return accessor;
     }
 
-    private boolean hasStaticProperty(ClassNode staticImportType, String propName) {
+    private static boolean hasStaticProperty(ClassNode staticImportType, String propName) {
         ClassNode classNode = staticImportType;
         while (classNode != null) {
             for (PropertyNode pn : classNode.getProperties()) {
@@ -527,7 +527,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return findStaticMethod(staticImportType, accessorMethodName, (inLeftExpression ? dummyArgs : ArgumentListExpression.EMPTY_ARGUMENTS));
     }
 
-    private Expression findStaticField(ClassNode staticImportType, String fieldName) {
+    private static Expression findStaticField(ClassNode staticImportType, String fieldName) {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             FieldNode field = staticImportType.getField(fieldName);
             if (field != null && field.isStatic())
@@ -536,7 +536,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private Expression findStaticMethod(ClassNode staticImportType, String methodName, Expression args) {
+    private static Expression findStaticMethod(ClassNode staticImportType, String methodName, Expression args) {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             if (staticImportType.hasPossibleStaticMethod(methodName, args)) {
                 return new StaticMethodCallExpression(staticImportType, methodName, args);

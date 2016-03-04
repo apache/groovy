@@ -389,7 +389,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private String replaceLastPoint(String name) {
+    private static String replaceLastPoint(String name) {
         int lastPoint = name.lastIndexOf('.');
         name = new StringBuffer()
                 .append(name.substring(0, lastPoint))
@@ -714,7 +714,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private String lookupClassName(PropertyExpression pe) {
+    private static String lookupClassName(PropertyExpression pe) {
         boolean doInitialClassTest=true;
         String name = "";
         // this loop builds a name from right to left each name part
@@ -776,7 +776,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // this check will ignore a .class property, for Example Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property
-    private Expression correctClassClassChain(PropertyExpression pe) {
+    private static Expression correctClassClassChain(PropertyExpression pe) {
         LinkedList<Expression> stack = new LinkedList<Expression>();
         ClassExpression found = null;
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
@@ -945,12 +945,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ve;
     }
 
-    private boolean testVanillaNameForClass(String name) {
+    private static boolean testVanillaNameForClass(String name) {
         if (name==null || name.length()==0) return false;
         return !Character.isLowerCase(name.charAt(0));
     }
 
-    private boolean isLeftSquareBracket(int op) {
+    private static boolean isLeftSquareBracket(int op) {
         return op == Types.ARRAY_EXPRESSION
                 || op == Types.LEFT_SQUARE_BRACKET
                 || op == Types.SYNTH_LIST
@@ -1053,7 +1053,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private String getDescription(ClassNode node) {
+    private static String getDescription(ClassNode node) {
         return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
     }
     

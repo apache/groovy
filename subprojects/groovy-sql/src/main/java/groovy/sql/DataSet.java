@@ -423,7 +423,7 @@ public class DataSet extends Sql {
         return sortVisitor;
     }
 
-    private void visit(Closure closure, CodeVisitorSupport visitor) {
+    private static void visit(Closure closure, CodeVisitorSupport visitor) {
         if (closure != null) {
             ClassNode classNode = closure.getMetaClass().getClassNode();
             if (classNode == null) {

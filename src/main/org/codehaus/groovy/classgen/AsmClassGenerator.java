@@ -350,7 +350,7 @@ public class AsmClassGenerator extends ClassGenerator {
         genericParameterNames.put(type.getName(), genericsType);
     }
 
-    private String[] buildExceptions(ClassNode[] exceptions) {
+    private static String[] buildExceptions(ClassNode[] exceptions) {
         if (exceptions == null) return null;
         String[] ret = new String[exceptions.length];
         for (int i = 0; i < exceptions.length; i++) {
@@ -1785,7 +1785,7 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.LIST_TYPE);
     }
 
-    private boolean containsOnlyConstants(ListExpression list) {
+    private static boolean containsOnlyConstants(ListExpression list) {
         for (Expression exp : list.getExpressions()) {
             if (exp instanceof ConstantExpression) continue;
             return false;
@@ -1939,7 +1939,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private int determineCommonArrayType(List values) {
+    private static int determineCommonArrayType(List values) {
         Expression expr = (Expression) values.get(0);
         int arrayElementType = -1;
         if (expr instanceof AnnotationConstantExpression) {

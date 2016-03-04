@@ -529,7 +529,7 @@ public class MarkupBuilder extends BuilderSupport {
         state = next;
     }
 
-    private Object getName(Object name) {
+    private static Object getName(Object name) {
         if (name instanceof QName) {
             return ((QName) name).getQualifiedName();
         }

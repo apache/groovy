@@ -89,15 +89,15 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         super.visitConstructor(node);
     }
 
-    private String getTypeDescriptor(ClassNode node, boolean isStatic) {
+    private static String getTypeDescriptor(ClassNode node, boolean isStatic) {
         return BytecodeHelper.getTypeDescription(getClassNode(node, isStatic));
     }
 
-    private String getInternalName(ClassNode node, boolean isStatic) {
+    private static String getInternalName(ClassNode node, boolean isStatic) {
         return BytecodeHelper.getClassInternalName(getClassNode(node, isStatic));
     }
 
-    private void addDispatcherMethods(ClassNode classNode) {
+    private static void addDispatcherMethods(ClassNode classNode) {
         final int objectDistance = getObjectDistance(classNode);
 
         // since we added an anonymous inner class we should also
@@ -302,7 +302,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
     }
 
-    private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+    private static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
         if (cn.isEnum() || cn.isInterface()) return false;
         if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
         if (!(cn instanceof InnerClassNode)) return false;
@@ -393,7 +393,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         return namePrefix;
     }
 
-    private ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
+    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
         if (code == null) return null;
 
         final List<Statement> statementList = code.getStatements();

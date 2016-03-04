@@ -64,7 +64,7 @@ public class MethodSelectionException extends GroovyRuntimeException {
     }
     
     
-    private void appendClassNames(StringBuilder argBuf, Class[] classes) {
+    private static void appendClassNames(StringBuilder argBuf, Class[] classes) {
         argBuf.append("(");
         for (int i = 0; i < classes.length; i++) {
             if (i > 0) {

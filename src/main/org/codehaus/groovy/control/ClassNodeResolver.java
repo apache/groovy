@@ -213,7 +213,7 @@ public class ClassNodeResolver {
     /**
      * try to find a script using the compilation unit class loader.
      */
-    private LookupResult tryAsScript(String name, CompilationUnit compilationUnit, Class oldClass) {
+    private static LookupResult tryAsScript(String name, CompilationUnit compilationUnit, Class oldClass) {
         LookupResult lr = null;
         if (oldClass!=null) {
             ClassNode cn = ClassHelper.make(oldClass);
@@ -243,7 +243,7 @@ public class ClassNodeResolver {
      * get the time stamp of a class
      * NOTE: copied from GroovyClassLoader
      */
-    private long getTimeStamp(Class cls) {
+    private static long getTimeStamp(Class cls) {
         return Verifier.getTimestamp(cls);
     }
 
@@ -251,7 +251,7 @@ public class ClassNodeResolver {
      * returns true if the source in URL is newer than the class
      * NOTE: copied from GroovyClassLoader
      */
-    private boolean isSourceNewer(URL source, Class cls) {
+    private static boolean isSourceNewer(URL source, Class cls) {
         try {
             long lastMod;
 

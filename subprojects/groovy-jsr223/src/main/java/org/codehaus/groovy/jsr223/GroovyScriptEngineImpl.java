@@ -416,7 +416,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // generate a unique name for top-level Script classes
-    private synchronized String generateScriptName() {
+    private static synchronized String generateScriptName() {
         return "Script" + (++counter) + ".groovy";
     }
 
@@ -454,7 +454,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return Script.class.getClassLoader();
     }
 
-    private String readFully(Reader reader) throws ScriptException {
+    private static String readFully(Reader reader) throws ScriptException {
         char[] arr = new char[8 * 1024]; // 8K at a time
         StringBuilder buf = new StringBuilder();
         int numChars;

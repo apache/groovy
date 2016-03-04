@@ -228,7 +228,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
-    private void saveAsXML(String name, AST ast) {
+    private static void saveAsXML(String name, AST ast) {
         XStream xstream = new XStream();
         try {
             xstream.toXML(ast, new FileWriter(name + ".antlr.xml"));
@@ -879,7 +879,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         methodNode = oldNode;
     }
 
-    private void checkNoInvalidModifier(AST node, String nodeType, int modifiers, int modifier, String modifierText) {
+    private static void checkNoInvalidModifier(AST node, String nodeType, int modifiers, int modifier, String modifierText) {
         if ((modifiers & modifier) != 0) {
             throw new ASTRuntimeException(node, nodeType + " has an incorrect modifier '" + modifierText + "'.");
         }
@@ -2503,7 +2503,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return ret;
     }
 
-    private void setTypeArgumentsOnMethodCallExpression(MethodCallExpression expression,
+    private static void setTypeArgumentsOnMethodCallExpression(MethodCallExpression expression,
                                                         List<GenericsType> typeArgumentList) {
         if (typeArgumentList != null && !typeArgumentList.isEmpty()) {
             expression.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
@@ -2550,7 +2550,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return ret;
     }
 
-    private ClassNode getAnonymousInnerClassNode(Expression arguments) {
+    private static ClassNode getAnonymousInnerClassNode(Expression arguments) {
         if (arguments instanceof TupleExpression) {
             TupleExpression te = (TupleExpression) arguments;
             List<Expression> expressions = te.getExpressions();
@@ -2650,7 +2650,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
-    private void checkDuplicateNamedParams(AST elist, List expressionList) {
+    private static void checkDuplicateNamedParams(AST elist, List expressionList) {
         if (expressionList.isEmpty()) return;
 
         Set<String> namedArgumentNames = new HashSet<String>();

@@ -143,7 +143,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         });
    }
 
-    private void refreshMopMethods(final Map<CachedClass, List<MetaMethod>> map) {
+    private static void refreshMopMethods(final Map<CachedClass, List<MetaMethod>> map) {
         for (Map.Entry<CachedClass, List<MetaMethod>> e : map.entrySet()) {
             CachedClass cls = e.getKey();
             cls.setNewMopMethods(e.getValue());

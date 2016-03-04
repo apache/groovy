@@ -100,7 +100,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         processingObjInitStatements = false;
     }
 
-    private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+    private static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
         if (cn.isEnum() || cn.isInterface()) return false;
         if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
 

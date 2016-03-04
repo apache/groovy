@@ -185,11 +185,11 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         }
     }
 
-    private String getBuilderClassName(ClassNode buildee, AnnotationNode anno) {
+    private static String getBuilderClassName(ClassNode buildee, AnnotationNode anno) {
         return getMemberStringValue(anno, "builderClassName", buildee.getNameWithoutPackage() + "Initializer");
     }
 
-    private void addFields(ClassNode buildee, List<FieldNode> filteredFields, ClassNode builder) {
+    private static void addFields(ClassNode buildee, List<FieldNode> filteredFields, ClassNode builder) {
         for (FieldNode filteredField : filteredFields) {
             builder.addField(createFieldCopy(buildee, filteredField));
         }
@@ -208,7 +208,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addMethod(createBuildMethod(builder, buildMethodName, fieldNodes));
     }
 
-    private List<FieldNode> convertParamsToFields(ClassNode builder, Parameter[] parameters) {
+    private static List<FieldNode> convertParamsToFields(ClassNode builder, Parameter[] parameters) {
         List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
         for(Parameter parameter: parameters) {
             Map<String,ClassNode> genericsSpec = createGenericsSpec(builder);
@@ -220,7 +220,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return fieldNodes;
     }
 
-    private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldsSize) {
+    private static ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldsSize) {
         final String fullName = buildee.getName() + "$" + builderClassName;
         ClassNode builder = new InnerClassNode(buildee, fullName, PUBLIC_STATIC, OBJECT_TYPE);
         GenericsType[] gtypes = new GenericsType[fieldsSize];
@@ -340,7 +340,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         ));
     }
 
-    private GenericsType makePlaceholder(int i) {
+    private static GenericsType makePlaceholder(int i) {
         ClassNode type = ClassHelper.makeWithoutCaching("T" + i);
         type.setRedirect(OBJECT_TYPE);
         type.setGenericsPlaceHolder(true);

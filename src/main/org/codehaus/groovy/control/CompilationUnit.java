@@ -965,7 +965,7 @@ public class CompilationUnit extends ProcessingUnit {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 
-    private int getSuperClassCount(ClassNode element) {
+    private static int getSuperClassCount(ClassNode element) {
         int count = 0;
         while (element != null) {
             count++;
@@ -1014,7 +1014,7 @@ public class CompilationUnit extends ProcessingUnit {
         return sorted;
     }
 
-    private List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
+    private static List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
         List<ClassNode> sorted = new ArrayList<ClassNode>(unsorted.size());
         for (int i = 0; i < unsorted.size(); i++) {
             int min = -1;

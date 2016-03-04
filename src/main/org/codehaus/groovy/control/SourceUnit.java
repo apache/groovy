@@ -292,7 +292,7 @@ public class SourceUnit extends ProcessingUnit {
         }
     }
 
-    private void saveAsXML(String name, ModuleNode ast) {
+    private static void saveAsXML(String name, ModuleNode ast) {
         XStream xstream = new XStream();
         try {
             xstream.toXML(ast, new FileWriter(name + ".xml"));

@@ -54,7 +54,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
         emc.addMixinClass(this);
     }
 
-    private CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
+    private static CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
         for (CachedConstructor constr : mixinClass.getConstructors()) {
             if (!Modifier.isPublic(constr.getModifiers()))
                 continue;

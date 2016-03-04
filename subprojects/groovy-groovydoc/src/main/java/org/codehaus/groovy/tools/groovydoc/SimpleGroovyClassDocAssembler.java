@@ -210,7 +210,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
-    private List<GroovySourceAST> findTypeNames(GroovySourceAST t) {
+    private static List<GroovySourceAST> findTypeNames(GroovySourceAST t) {
         List<GroovySourceAST> types = new ArrayList<GroovySourceAST>();
         for (AST child = t.getFirstChild(); child != null; child = child.getNextSibling()) {
             GroovySourceAST groovySourceAST = (GroovySourceAST) child;
@@ -277,7 +277,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return currentMethodDoc;
     }
 
-    private GroovyMethodDoc createMainMethod(SimpleGroovyClassDoc currentClassDoc) {
+    private static GroovyMethodDoc createMainMethod(SimpleGroovyClassDoc currentClassDoc) {
         SimpleGroovyMethodDoc mainMethod = new SimpleGroovyMethodDoc("main", currentClassDoc);
         mainMethod.setPublic(true);
         mainMethod.setStatic(true);
@@ -402,13 +402,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return getCurrentClassDoc() != null;
     }
 
-    private boolean isTopLevelConstruct(GroovySourceAST node) {
+    private static boolean isTopLevelConstruct(GroovySourceAST node) {
         if (node == null) return false;
         int type = node.getType();
         return type == CLASS_DEF || type == INTERFACE_DEF || type == TRAIT_DEF || type == ANNOTATION_DEF || type == ENUM_DEF;
     }
 
-    private void adjustForAutomaticEnumMethods(SimpleGroovyClassDoc currentClassDoc) {
+    private static void adjustForAutomaticEnumMethods(SimpleGroovyClassDoc currentClassDoc) {
         SimpleGroovyMethodDoc valueOf = new SimpleGroovyMethodDoc("valueOf", currentClassDoc);
         valueOf.setRawCommentText("Returns the enum constant of this type with the specified name.");
         SimpleGroovyParameter parameter = new SimpleGroovyParameter("name");
@@ -427,7 +427,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return recurseDownImportBranch(getImportPathDotType(t));
     }
 
-    private GroovySourceAST getImportPathDotType(GroovySourceAST t) {
+    private static GroovySourceAST getImportPathDotType(GroovySourceAST t) {
         GroovySourceAST child = t.childOfType(DOT);
         if (child == null) {
             child = t.childOfType(IDENT);
@@ -630,14 +630,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return result;
     }
 
-    private boolean isMajorType(GroovySourceAST t) {
+    private static boolean isMajorType(GroovySourceAST t) {
         if (t == null) return false;
         int tt = t.getType();
         return tt == CLASS_DEF || tt == TRAIT_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF || tt == ENUM_DEF ||
                 tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF || tt == CTOR_IDENT;
     }
 
-    private String getText(GroovySourceAST node) {
+    private static String getText(GroovySourceAST node) {
         String returnValue = null;
         if (node != null) {
             returnValue = node.getText();
@@ -887,7 +887,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return result;
     }
 
-    private String getIdentFor(GroovySourceAST gpn) {
+    private static String getIdentFor(GroovySourceAST gpn) {
         return gpn.childOfType(IDENT).getText();
     }
 

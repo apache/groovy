@@ -314,7 +314,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
         }
     }
 
-    private List<Map<String, Object>> collectContentForEachEntry(Iterable coll, Closure closure) {
+    private static List<Map<String, Object>> collectContentForEachEntry(Iterable coll, Closure closure) {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         for (Object it : coll) {
             list.add(JsonDelegate.curryDelegateAndGetContent(closure, it));

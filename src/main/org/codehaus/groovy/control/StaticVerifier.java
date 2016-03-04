@@ -163,7 +163,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                 "' but left out brackets in a place not allowed by the grammar.", ve);
     }
 
-    private FieldNode getDeclaredOrInheritedField(ClassNode cn, String fieldName) {
+    private static FieldNode getDeclaredOrInheritedField(ClassNode cn, String fieldName) {
         ClassNode node = cn;
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);

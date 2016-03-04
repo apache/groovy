@@ -444,7 +444,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         classNode.addStaticInitializerStatements(grabInitializers, true);
     }
 
-    private void addGrabResolverAsStaticInitIfNeeded(ClassNode grapeClassNode, AnnotationNode node,
+    private static void addGrabResolverAsStaticInitIfNeeded(ClassNode grapeClassNode, AnnotationNode node,
                                                       List<Statement> grabResolverInitializers, Map<String, Object> grabResolverMap) {
         if ((node.getMember("initClass") == null)
             || (node.getMember("initClass") == ConstantExpression.TRUE))
@@ -515,7 +515,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    private void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
+    private static void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
         Object val = node.getMember("value");
         if (val == null || !(val instanceof ConstantExpression)) return;
         Object allParts = ((ConstantExpression)val).getValue();

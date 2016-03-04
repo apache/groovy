@@ -216,7 +216,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return cachedMethod.toString();
     }
     
-    private Constructor getConstructor(SoftReference<Constructor> ref) {
+    private static Constructor getConstructor(SoftReference<Constructor> ref) {
         if (ref==null) return null;
         return ref.get();
     }

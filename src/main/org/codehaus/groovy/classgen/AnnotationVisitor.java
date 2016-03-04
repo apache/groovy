@@ -177,7 +177,7 @@ public class AnnotationVisitor {
         return method.getReturnType();
     }
 
-    private boolean isValidAnnotationClass(ClassNode node) {
+    private static boolean isValidAnnotationClass(ClassNode node) {
         return node.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
@@ -283,7 +283,7 @@ public class AnnotationVisitor {
         }
     }
 
-    private boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
+    private static boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
         return wrapperType.isDerivedFrom(ClassHelper.getWrapper(attrType));
     }
 

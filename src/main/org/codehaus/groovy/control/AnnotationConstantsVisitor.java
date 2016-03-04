@@ -54,7 +54,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         visitStatement(node.getFirstStatement(), node.getReturnType());
     }
 
-    private void visitStatement(Statement statement, ClassNode returnType) {
+    private static void visitStatement(Statement statement, ClassNode returnType) {
         if (statement instanceof ReturnStatement) {
             // normal path
             ReturnStatement rs = (ReturnStatement) statement;
@@ -66,7 +66,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private Expression transformConstantExpression(Expression val, ClassNode returnType) {
+    private static Expression transformConstantExpression(Expression val, ClassNode returnType) {
         ClassNode returnWrapperType = ClassHelper.getWrapper(returnType);
         if (val instanceof ConstantExpression) {
             Expression result = revertType(val, returnWrapperType);
@@ -92,7 +92,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         return val;
     }
 
-    private Expression revertType(Expression val, ClassNode returnWrapperType) {
+    private static Expression revertType(Expression val, ClassNode returnWrapperType) {
         ConstantExpression ce = (ConstantExpression) val;
         if (ClassHelper.Character_TYPE.equals(returnWrapperType) && ClassHelper.STRING_TYPE.equals(val.getType())) {
             return configure(val, Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) val));
@@ -122,7 +122,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private Expression configure(Expression orig, Expression result) {
+    private static Expression configure(Expression orig, Expression result) {
         result.setSourcePosition(orig);
         return result;
     }

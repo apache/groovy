@@ -76,7 +76,7 @@ public class JavaStubGenerator {
         this(outputPath, false, false, Charset.defaultCharset().name());
     }
 
-    private void mkdirs(File parent, String relativeFile) {
+    private static void mkdirs(File parent, String relativeFile) {
         int index = relativeFile.lastIndexOf('/');
         if (index == -1) return;
         File dir = new File(parent, relativeFile.substring(0, index));
@@ -356,7 +356,7 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printEnumFields(PrintWriter out, List<FieldNode> fields) {
+    private static void printEnumFields(PrintWriter out, List<FieldNode> fields) {
         if (!fields.isEmpty()) {
             boolean first = true;
             for (FieldNode field : fields) {
@@ -416,15 +416,15 @@ public class JavaStubGenerator {
         out.println(";");
     }
 
-    private String formatChar(String ch) {
+    private static String formatChar(String ch) {
         return "'" + escapeSpecialChars("" + ch.charAt(0)) + "'";
     }
 
-    private String formatString(String s) {
+    private static String formatString(String s) {
         return "\"" + escapeSpecialChars(s) + "\"";
     }
 
-    private ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
+    private static ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
         Statement code = constructorNode.getCode();
         if (!(code instanceof BlockStatement))
             return null;
@@ -467,7 +467,7 @@ public class JavaStubGenerator {
         }
     }
 
-    private Parameter[] selectAccessibleConstructorFromSuper(ConstructorNode node) {
+    private static Parameter[] selectAccessibleConstructorFromSuper(ConstructorNode node) {
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getUnresolvedSuperClass();
 
@@ -495,7 +495,7 @@ public class JavaStubGenerator {
         return null;
     }
 
-    private boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
+    private static boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
         ClassNode[] superExceptions = fromSuper.getExceptions();
         if (superExceptions==null || superExceptions.length==0) return true;
 
@@ -573,7 +573,7 @@ public class JavaStubGenerator {
         out.println(");");
     }
 
-    private ClassNode getConstructorArgumentType(Expression arg, ConstructorNode node) {
+    private static ClassNode getConstructorArgumentType(Expression arg, ConstructorNode node) {
         if (!(arg instanceof VariableExpression)) return arg.getType();
         VariableExpression vexp = (VariableExpression) arg;
         String name = vexp.getName();
@@ -653,7 +653,7 @@ public class JavaStubGenerator {
         }
     }
 
-    private boolean isAbstract(final MethodNode methodNode) {
+    private static boolean isAbstract(final MethodNode methodNode) {
         if (isDefaultTraitImpl(methodNode)) {
             return false;
         }
@@ -663,11 +663,11 @@ public class JavaStubGenerator {
         return false;
     }
 
-    private boolean isDefaultTraitImpl(final MethodNode methodNode) {
+    private static boolean isDefaultTraitImpl(final MethodNode methodNode) {
         return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
     }
 
-    private void printValue(PrintWriter out, Expression re, boolean assumeClass) {
+    private static void printValue(PrintWriter out, Expression re, boolean assumeClass) {
         if (assumeClass) {
             if (re.getType().getName().equals("groovy.lang.Closure")) {
                 out.print("groovy.lang.Closure.class");
@@ -779,7 +779,7 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
+    private static void printGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
         if (genericsTypes == null || genericsTypes.length == 0) return;
         out.print('<');
         for (int i = 0; i < genericsTypes.length; i++) {
@@ -876,7 +876,7 @@ public class JavaStubGenerator {
         return val;
     }
 
-    private void printModifiers(PrintWriter out, int modifiers) {
+    private static void printModifiers(PrintWriter out, int modifiers) {
         if ((modifiers & Opcodes.ACC_PUBLIC) != 0)
             out.print("public ");
 
@@ -899,7 +899,7 @@ public class JavaStubGenerator {
             out.print("abstract ");
     }
 
-    private void printImports(PrintWriter out, ClassNode classNode) {
+    private static void printImports(PrintWriter out, ClassNode classNode) {
         List<String> imports = new ArrayList<String>();
 
         ModuleNode moduleNode = classNode.getModule();

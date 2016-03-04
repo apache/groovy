@@ -76,7 +76,7 @@ public class OperandStack {
     /**
      * returns true for long and double
      */
-    private boolean isTwoSlotType(ClassNode type) {
+    private static boolean isTwoSlotType(ClassNode type) {
         return type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE;
     }
 
@@ -122,7 +122,7 @@ public class OperandStack {
      * convert primitive (not boolean) to boolean or byte.
      * type needs to be a primitive type (not checked) 
      */
-    private void primitive2b(MethodVisitor mv, ClassNode type) {
+    private static void primitive2b(MethodVisitor mv, ClassNode type) {
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         // for the various types we make first a 
@@ -505,7 +505,7 @@ public class OperandStack {
         if (boxing) box(); 
     }
 
-    private void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
+    private static void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
         boolean isInt = ClassHelper.int_TYPE.equals(type);
         boolean isShort = ClassHelper.short_TYPE.equals(type);
         boolean isByte = ClassHelper.byte_TYPE.equals(type);

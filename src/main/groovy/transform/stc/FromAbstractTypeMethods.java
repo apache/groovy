@@ -45,7 +45,7 @@ public class FromAbstractTypeMethods extends ClosureSignatureHint {
         return extractSignaturesFromMethods(cn);
     }
 
-    private List<ClassNode[]> extractSignaturesFromMethods(final ClassNode cn) {
+    private static List<ClassNode[]> extractSignaturesFromMethods(final ClassNode cn) {
         List<MethodNode> methods = cn.getAllDeclaredMethods();
         List<ClassNode[]> signatures = new LinkedList<ClassNode[]>();
         for (MethodNode method : methods) {
@@ -56,7 +56,7 @@ public class FromAbstractTypeMethods extends ClosureSignatureHint {
         return signatures;
     }
 
-    private void extractParametersFromMethod(final List<ClassNode[]> signatures, final MethodNode method) {
+    private static void extractParametersFromMethod(final List<ClassNode[]> signatures, final MethodNode method) {
         if (Traits.hasDefaultImplementation(method)) return;
         Parameter[] parameters = method.getParameters();
         ClassNode[] typeParams = new ClassNode[parameters.length];

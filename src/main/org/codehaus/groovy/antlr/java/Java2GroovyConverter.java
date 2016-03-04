@@ -219,12 +219,12 @@ public class Java2GroovyConverter extends VisitorAdapter{
         }
     }
 
-    private boolean isSingleQuoted(String text) {
+    private static boolean isSingleQuoted(String text) {
         return text != null && text.length() > 2
                 && text.charAt(0) == '\''
                 && text.charAt(text.length() - 1) == '\'';
     }
-    private boolean isDoubleQuoted(String text) {
+    private static boolean isDoubleQuoted(String text) {
         return text != null && text.length() > 2
                 && text.charAt(0) == '"'
                 && text.charAt(text.length() - 1) == '"';

@@ -225,7 +225,7 @@ public class AstBuilderTransformation implements ASTTransformation {
             }
         }
 
-        private List<Expression> getNonClosureArguments(MethodCallExpression call) {
+        private static List<Expression> getNonClosureArguments(MethodCallExpression call) {
             List<Expression> result = new ArrayList<Expression>();
             if (call.getArguments() instanceof TupleExpression) {
                 for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
@@ -237,7 +237,7 @@ public class AstBuilderTransformation implements ASTTransformation {
             return result;
         }
 
-        private ClosureExpression getClosureArgument(MethodCallExpression call) {
+        private static ClosureExpression getClosureArgument(MethodCallExpression call) {
 
             if (call.getArguments() instanceof TupleExpression) {
                 for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
