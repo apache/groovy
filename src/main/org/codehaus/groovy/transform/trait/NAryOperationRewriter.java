@@ -127,7 +127,7 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         return result;
     }
 
-    private int getOperationWithoutEqual(final int op) {
+    private static int getOperationWithoutEqual(final int op) {
         int token = -1;
         switch (op) {
             case LOGICAL_OR_EQUAL:

@@ -202,7 +202,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return match;
     }
 
-    private boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
+    private static boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
         final boolean match;
         ClassNode type = ClassHelper.make(aClass);
         if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveType(argType)) {

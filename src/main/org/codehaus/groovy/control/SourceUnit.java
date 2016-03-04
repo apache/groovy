@@ -288,7 +288,7 @@ public class SourceUnit extends ProcessingUnit {
         }
     }
 
-    private void saveAsXML(String name, ModuleNode ast) {
+    private static void saveAsXML(String name, ModuleNode ast) {
         XStreamUtils.serialize(name, ast);
     }
 

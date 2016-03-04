@@ -104,7 +104,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         super(wc);
     }
 
-    private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
+    private static int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
         if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
         if (isLongCategory(leftType) && isLongCategory(rightType)) return 2;
         if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) return 0;
@@ -231,13 +231,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return isNumberCategory(type);
     }
 
-    private boolean isShiftOperation(int operation) {
+    private static boolean isShiftOperation(int operation) {
         return  operation==LEFT_SHIFT   || 
                 operation==RIGHT_SHIFT  ||
                 operation==RIGHT_SHIFT_UNSIGNED;
     }
 
-    private boolean isAssignmentToArray(BinaryExpression binExp) {
+    private static boolean isAssignmentToArray(BinaryExpression binExp) {
         Expression leftExpression = binExp.getLeftExpression();
         if (!(leftExpression instanceof BinaryExpression)) return false;
         BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
@@ -245,7 +245,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return true;
     }
     
-    private int removeAssignment(int op) {
+    private static int removeAssignment(int op) {
         switch (op) {
             case PLUS_EQUAL: return PLUS;
             case MINUS_EQUAL: return MINUS;

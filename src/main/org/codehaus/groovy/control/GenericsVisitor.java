@@ -115,7 +115,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
     }
     
-    private String getPrintName(GenericsType gt) {
+    private static String getPrintName(GenericsType gt) {
         String ret = gt.getName();
         ClassNode[] upperBounds = gt.getUpperBounds();
         ClassNode lowerBound = gt.getLowerBound();
@@ -132,7 +132,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     }
     
-    private String getPrintName(ClassNode cn) {
+    private static String getPrintName(ClassNode cn) {
         String ret = cn.getName();
         GenericsType[] gts = cn.getGenericsTypes();
         if (gts!=null) {

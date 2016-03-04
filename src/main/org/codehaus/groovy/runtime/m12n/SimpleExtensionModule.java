@@ -115,7 +115,7 @@ public abstract class SimpleExtensionModule extends ExtensionModule {
         return metaMethods;
     }
 
-    private void createMetaMethods(final Class extensionClass, final List<MetaMethod> metaMethods, final boolean isStatic) {
+    private static void createMetaMethods(final Class extensionClass, final List<MetaMethod> metaMethods, final boolean isStatic) {
         CachedClass cachedClass = ReflectionCache.getCachedClass(extensionClass);
         CachedMethod[] methods = cachedClass.getMethods();
         for (CachedMethod method : methods) {

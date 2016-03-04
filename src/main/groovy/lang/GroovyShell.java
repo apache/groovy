@@ -324,7 +324,7 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
-    private Object runRunnable(Class scriptClass, String[] args) {
+    private static Object runRunnable(Class scriptClass, String[] args) {
         Constructor constructor = null;
         Runnable runnable = null;
         Throwable reason = null;
@@ -369,7 +369,7 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private Object runJUnit3Test(Class scriptClass) {
+    private static Object runJUnit3Test(Class scriptClass) {
         try {
             Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite", new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
@@ -386,7 +386,7 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private Object runJUnit3TestSuite(Class scriptClass) {
+    private static Object runJUnit3TestSuite(Class scriptClass) {
         try {
             Object testSuite = InvokerHelper.invokeStaticMethod(scriptClass, "suite", new Object[]{});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});

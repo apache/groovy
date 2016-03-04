@@ -632,7 +632,7 @@ public class CompileStack implements Opcodes {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 
-    private void pushInitValue(ClassNode type, MethodVisitor mv) {
+    private static void pushInitValue(ClassNode type, MethodVisitor mv) {
         if (ClassHelper.isPrimitiveType(type)) {
             if (type==ClassHelper.long_TYPE) {
                 mv.visitInsn(LCONST_0);

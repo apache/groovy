@@ -279,7 +279,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
+    private static void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
         if (isStatic) {
             mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
         }
@@ -307,7 +307,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 transform(rightExpression));
     }
 
-    private FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
+    private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
         FieldNode fn = weavedType.getDeclaredField(fieldName);
         if (fn == null && ClassHelper.CLASS_Type.equals(weavedType)) {
             GenericsType[] genericsTypes = weavedType.getGenericsTypes();

@@ -82,7 +82,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
     }
 
-    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+    private static void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
         if (msg != null) {
             header = header + "\n" + msg.getBuffer().toString();
         } else {

@@ -100,11 +100,11 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         return NOTFOUND;
     }
 
-    private boolean isStaticTraitReceiver(final ClassNode receiver, final VariableExpression var) {
+    private static boolean isStaticTraitReceiver(final ClassNode receiver, final VariableExpression var) {
         return Traits.STATIC_THIS_OBJECT.equals(var.getName()) && isClassClassNodeWrappingConcreteType(receiver);
     }
 
-    private boolean isThisTraitReceiver(final VariableExpression var) {
+    private static boolean isThisTraitReceiver(final VariableExpression var) {
         return Traits.THIS_OBJECT.equals(var.getName());
     }
 

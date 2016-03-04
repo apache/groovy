@@ -233,7 +233,7 @@ public class ClassInfo {
         return answer;
     }
     
-    private boolean isValidWeakMetaClass(MetaClass metaClass) {
+    private static boolean isValidWeakMetaClass(MetaClass metaClass) {
         return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
     }
 
@@ -241,7 +241,7 @@ public class ClassInfo {
      * if EMC.enableGlobally() is OFF, return whatever the cached answer is.
      * but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
      */
-    private boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
+    private static boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
         if(metaClass==null) return false;
         boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
         boolean cachedAnswerIsEMC = (metaClass instanceof ExpandoMetaClass);

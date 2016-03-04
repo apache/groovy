@@ -74,7 +74,7 @@ public class DeclarationExpression extends BinaryExpression {
         check(left);
     }
     
-    private void check(Expression left) {
+    private static void check(Expression left) {
         if (left instanceof VariableExpression) {
             //nothing
         } else if (left instanceof TupleExpression) {

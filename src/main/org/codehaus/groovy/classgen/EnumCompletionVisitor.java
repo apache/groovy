@@ -70,7 +70,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     /**
      * Add map and no-arg constructor or mirror those of the superclass (i.e. base enum).
      */
-    private void addImplicitConstructors(ClassNode enumClass, boolean aic) {
+    private static void addImplicitConstructors(ClassNode enumClass, boolean aic) {
         if (aic) {
             ClassNode sn = enumClass.getSuperClass();
             List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
@@ -154,7 +154,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         return name;
     }
 
-    private boolean isAnonymousInnerClass(ClassNode enumClass) {
+    private static boolean isAnonymousInnerClass(ClassNode enumClass) {
         if (!(enumClass instanceof EnumConstantClassNode)) return false;
         InnerClassNode ic = (InnerClassNode) enumClass;
         return ic.getVariableScope() == null;

@@ -218,14 +218,14 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return cachedMethod.toString();
     }
     
-    private Constructor getConstrcutor(SoftReference<Constructor> ref) {
+    private static Constructor getConstructor(SoftReference<Constructor> ref) {
         if (ref==null) return null;
         return ref.get();
     }
 
     public CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(pogoCallSiteConstructor);
+            Constructor constr = getConstructor(pogoCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compilePogoMethod(this);
@@ -254,7 +254,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(pojoCallSiteConstructor);
+            Constructor constr = getConstructor(pojoCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compilePojoMethod(this);
@@ -282,7 +282,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public CallSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(staticCallSiteConstructor);
+            Constructor constr = getConstructor(staticCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compileStaticMethod(this);

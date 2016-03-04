@@ -107,7 +107,7 @@ public class ComplexKeyHashMap
       threshold = (6 * newLength) / 8;
   }
 
-  private int capacity(int expectedMaxSize) {
+  private static int capacity(int expectedMaxSize) {
       // Compute min capacity for expectedMaxSize given a load factor of 3/4
       int minCapacity = (8 * expectedMaxSize)/6;
 

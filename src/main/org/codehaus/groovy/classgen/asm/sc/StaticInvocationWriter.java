@@ -415,7 +415,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
     }
 
-    private boolean isNullConstant(final Expression expression) {
+    private static boolean isNullConstant(final Expression expression) {
         return (expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null);
     }
 

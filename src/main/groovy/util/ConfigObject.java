@@ -255,7 +255,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         }
     }
 
-    private void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
+    private static void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
 //        key = key.indexOf('.') > -1 ? InvokerHelper.inspect(key) : key;
         boolean isKeyword = KEYWORDS.contains(key);
         key = isKeyword ? InvokerHelper.inspect(key) : key;
@@ -274,7 +274,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         out.newLine();
     }
 
-    private Properties convertValuesToString(Map props) {
+    private static Properties convertValuesToString(Map props) {
         Properties newProps = new Properties();
 
         for (Object o : props.entrySet()) {
