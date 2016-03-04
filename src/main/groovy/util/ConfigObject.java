@@ -372,7 +372,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
     /**
      * Checks if a config option is set. Example usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def config = new ConfigSlurper().parse("foo { password='' }")
      * assert config.foo.isSet('password')
      * assert config.foo.isSet('username') == false

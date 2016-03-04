@@ -24,7 +24,8 @@ package groovy.transform
  * which add positional constructors, equals, hashCode and a pretty print toString to your class.
  * <p>
  * You can write classes in this shortened form:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.Canonical
  * {@code @Canonical} class Customer {
  *     String first, last
  *     int age

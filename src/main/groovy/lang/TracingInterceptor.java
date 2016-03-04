@@ -32,7 +32,7 @@ import java.io.Writer;
  * of two spaces is written.
  * <p>
  * Here is an example usage on the ArrayList object: <br>
- * <pre>
+ * <pre class="groovyTestCase">
  * def proxy = ProxyMetaClass.getInstance(ArrayList.class)
  * proxy.interceptor = new TracingInterceptor()
  * proxy.use {

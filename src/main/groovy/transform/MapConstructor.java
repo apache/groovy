@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in the creation of map constructors in classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @TupleConstructor}

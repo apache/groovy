@@ -210,7 +210,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Any method invoked inside the closure will first be invoked on the
      * self reference. For instance, the following method calls to the append()
      * method are invoked on the StringBuilder instance:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')

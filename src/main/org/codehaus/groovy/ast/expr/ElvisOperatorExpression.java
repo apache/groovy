@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * </pre>
  * Even if x is no atomic expression, x will be evaluated only 
  * once. Example:
- * <pre>
+ * <pre class="groovyTestCase">
  * class Foo { 
  *   def index=0 
  *   def getX(){ index++; return index }

@@ -25,7 +25,7 @@ import groovy.lang.Closure;
  * Normally used only internally through the <code>curry()</code>, <code>rcurry()</code> or
  * <code>ncurry()</code> methods on <code>Closure</code>.
  * Typical usages:
- * <pre>
+ * <pre class="groovyTestCase">
  * // normal usage
  * def unitAdder = { first, second, unit -> "${first + second} $unit" }
  * assert unitAdder(10, 15, "minutes") == "25 minutes"
