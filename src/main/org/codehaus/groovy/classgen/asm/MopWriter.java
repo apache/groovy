@@ -83,7 +83,7 @@ public class MopWriter {
         visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures);
     }
 
-    private Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
+    private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
         if (methods.isEmpty()) return Collections.EMPTY_SET;
         HashSet<MopKey> result = new HashSet<MopKey>(methods.size());
         for (MethodNode mn : methods) {

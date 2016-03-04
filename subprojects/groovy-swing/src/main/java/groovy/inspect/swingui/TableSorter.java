@@ -107,7 +107,7 @@ space and avoid unnecessary heap allocation.
         return compareObjects(data, row1, column, row2);
     }
 
-    private int compareObjects(TableModel data, int row1, int column, int row2) {
+    private static int compareObjects(TableModel data, int row1, int column, int row2) {
         Object v1 = data.getValueAt(row1, column);
         String s1 = v1.toString();
         Object v2 = data.getValueAt(row2, column);
@@ -121,7 +121,7 @@ space and avoid unnecessary heap allocation.
         return 0;
     }
 
-    private int compareBooleans(TableModel data, int row1, int column, int row2) {
+    private static int compareBooleans(TableModel data, int row1, int column, int row2) {
         Boolean bool1 = (Boolean) data.getValueAt(row1, column);
         boolean b1 = bool1.booleanValue();
         Boolean bool2 = (Boolean) data.getValueAt(row2, column);
@@ -134,7 +134,7 @@ space and avoid unnecessary heap allocation.
         return -1;
     }
 
-    private int compareStrings(TableModel data, int row1, int column, int row2) {
+    private static int compareStrings(TableModel data, int row1, int column, int row2) {
         String s1 = (String) data.getValueAt(row1, column);
         String s2 = (String) data.getValueAt(row2, column);
         int result = s1.compareTo(s2);
@@ -146,7 +146,7 @@ space and avoid unnecessary heap allocation.
         return 0;
     }
 
-    private int compareDates(TableModel data, int row1, int column, int row2) {
+    private static int compareDates(TableModel data, int row1, int column, int row2) {
         Date d1 = (Date) data.getValueAt(row1, column);
         long n1 = d1.getTime();
         Date d2 = (Date) data.getValueAt(row2, column);
@@ -159,7 +159,7 @@ space and avoid unnecessary heap allocation.
         return 0;
     }
 
-    private int compareNumbers(TableModel data, int row1, int column, int row2) {
+    private static int compareNumbers(TableModel data, int row1, int column, int row2) {
         Number n1 = (Number) data.getValueAt(row1, column);
         double d1 = n1.doubleValue();
         Number n2 = (Number) data.getValueAt(row2, column);

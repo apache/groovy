@@ -48,7 +48,7 @@ public class GroovyEngine extends BSFEngineImpl {
      * The method simply replaces any invalid characters
      * with "_".
      */
-    private String convertToValidJavaClassname(String inName) {
+    private static String convertToValidJavaClassname(String inName) {
         if (inName == null) return "_";
         if (inName.startsWith("scriptdef_")) inName = inName.substring(10);
         if (inName.equals("")) return "_";

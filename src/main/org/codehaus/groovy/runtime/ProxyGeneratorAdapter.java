@@ -235,7 +235,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return result;
     }
 
-    private void collectTraits(final Class clazz, final Set<ClassNode> traits) {
+    private static void collectTraits(final Class clazz, final Set<ClassNode> traits) {
         Annotation annotation = clazz.getAnnotation(Trait.class);
         if (annotation!=null) {
             ClassNode trait = ClassHelper.make(clazz);
@@ -631,7 +631,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return null;
     }
 
-    private int registerLen(Type[] args) {
+    private static int registerLen(Type[] args) {
         int i = 0;
         for (Type arg : args) {
             i += registerLen(arg);
@@ -639,7 +639,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return i;
     }
 
-    private int registerLen(final Type arg) {
+    private static int registerLen(final Type arg) {
         return arg== Type.DOUBLE_TYPE||arg==Type.LONG_TYPE?2:1;
     }
 
@@ -695,7 +695,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         mv.visitFieldInsn(PUTFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
     }
 
-    private int getTypeArgsRegisterLength(Type[] args)  {
+    private static int getTypeArgsRegisterLength(Type[] args)  {
         int length = 0;
         for (Type type : args)  { length += registerLen(type); }
         return length;
@@ -800,7 +800,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return null;
     }
 
-    private void unwrapResult(final MethodVisitor mv, final String desc) {
+    private static void unwrapResult(final MethodVisitor mv, final String desc) {
         Type returnType = Type.getReturnType(desc);
         if (returnType==Type.VOID_TYPE) {
             mv.visitInsn(POP);
@@ -894,7 +894,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return ARETURN;
     }
 
-    private boolean isPrimitive(final Type arg) {
+    private static boolean isPrimitive(final Type arg) {
         return arg == Type.BOOLEAN_TYPE
                 || arg == Type.BYTE_TYPE
                 || arg == Type.CHAR_TYPE
@@ -905,7 +905,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 || arg == Type.SHORT_TYPE;
     }
 
-    private String getWrappedClassDescriptor(Type type) {
+    private static String getWrappedClassDescriptor(Type type) {
         if (type == Type.BOOLEAN_TYPE) return "java/lang/Boolean";
         if (type == Type.BYTE_TYPE) return "java/lang/Byte";
         if (type == Type.CHAR_TYPE) return "java/lang/Character";

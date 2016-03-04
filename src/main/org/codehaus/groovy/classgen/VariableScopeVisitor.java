@@ -179,7 +179,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return findClassMember(cn.getOuterClass(), name);
     }
 
-    private String getPropertyName(MethodNode m) {
+    private static String getPropertyName(MethodNode m) {
         String name = m.getName();
         if (!(name.startsWith("set") || name.startsWith("get"))) return null;
         String pname = name.substring(3);

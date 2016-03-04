@@ -73,7 +73,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         return closureClass;
     }
 
-    private void createDirectCallMethod(final ClassNode closureClass, final MethodNode doCallMethod) {
+    private static void createDirectCallMethod(final ClassNode closureClass, final MethodNode doCallMethod) {
         // in case there is no "call" method on the closure, we can create a "fast invocation" paths
         // to avoid going through ClosureMetaClass by call(Object...) method
 

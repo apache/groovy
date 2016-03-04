@@ -45,7 +45,7 @@ public class VariableExpressionTransformer {
         return expr;
     }
 
-    private Expression tryTransformDelegateToProperty(VariableExpression expr) {
+    private static Expression tryTransformDelegateToProperty(VariableExpression expr) {
         // we need to transform variable expressions that go to a delegate
         // to a property expression, as ACG would loose the information
         // in processClassVariable before it reaches any makeCall, that could
@@ -64,7 +64,7 @@ public class VariableExpressionTransformer {
         return pexp;
     }
 
-    private Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
+    private static Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
         FieldNode field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         if (field == null) {
             field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);

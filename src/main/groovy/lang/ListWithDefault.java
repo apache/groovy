@@ -198,7 +198,7 @@ public final class ListWithDefault<T> implements List<T> {
         return (T) initClosure.call(new Object[]{idx});
     }
 
-    private int normaliseIndex(int index, int size) {
+    private static int normaliseIndex(int index, int size) {
         if (index < 0) {
             index += size;
         }

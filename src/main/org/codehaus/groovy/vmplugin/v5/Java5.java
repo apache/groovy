@@ -129,7 +129,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private ClassNode configureClass(Class c) {
+    private static ClassNode configureClass(Class c) {
         if (c.isPrimitive()) {
             return ClassHelper.make(c);
         } else {
@@ -341,7 +341,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private void setMethodDefaultValue(MethodNode mn, Method m) {
+    private static void setMethodDefaultValue(MethodNode mn, Method m) {
         Object defaultValue = m.getDefaultValue();
         ConstantExpression cExp = ConstantExpression.NULL;
         if (defaultValue!=null) cExp = new ConstantExpression(defaultValue);

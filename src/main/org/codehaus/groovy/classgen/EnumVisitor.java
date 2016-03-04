@@ -90,7 +90,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         addInit(enumClass, minValue, maxValue, values, isAic);
     }
 
-    private void checkForAbstractMethods(ClassNode enumClass) {
+    private static void checkForAbstractMethods(ClassNode enumClass) {
         List<MethodNode> methods = enumClass.getMethods();
         for (MethodNode m : methods) {
             if (m.isAbstract()) {
@@ -101,7 +101,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addMethods(ClassNode enumClass, FieldNode values) {
+    private static void addMethods(ClassNode enumClass, FieldNode values) {
         List<MethodNode> methods = enumClass.getMethods();
 
         boolean hasNext = false;
@@ -419,7 +419,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         );
     }
 
-    private boolean isAnonymousInnerClass(ClassNode enumClass) {
+    private static boolean isAnonymousInnerClass(ClassNode enumClass) {
         if (!(enumClass instanceof EnumConstantClassNode)) return false;
         InnerClassNode ic = (InnerClassNode) enumClass;
         return ic.getVariableScope() == null;

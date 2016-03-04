@@ -90,7 +90,7 @@ public class MindMapPrinter extends VisitorAdapter {
         return "";
     }
 
-    private String getColour(GroovySourceAST t) {
+    private static String getColour(GroovySourceAST t) {
         String colour = "";
         String black = " COLOR=\"#000000\"";
         String cyan = " COLOR=\"#006699\"";
@@ -362,7 +362,7 @@ public class MindMapPrinter extends VisitorAdapter {
         return name;
     }
 
-    private String escape(String name) {
+    private static String escape(String name) {
         if (name == null) return null;
         // remove middle of large bits of text
         if (name.length() > 200) {

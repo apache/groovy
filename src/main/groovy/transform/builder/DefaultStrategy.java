@@ -211,31 +211,31 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         builder.addMethod(createBuildMethod(anno, buildee, filteredFields));
     }
 
-    private ClassNode getCorrectedType(ClassNode buildee, FieldNode fieldNode) {
+    private static ClassNode getCorrectedType(ClassNode buildee, FieldNode fieldNode) {
         Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
         extractSuperClassGenerics(fieldNode.getType(), buildee, genericsSpec);
         return correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType());
     }
 
-    private void createBuilderFactoryMethod(AnnotationNode anno, ClassNode buildee, ClassNode builder) {
+    private static void createBuilderFactoryMethod(AnnotationNode anno, ClassNode buildee, ClassNode builder) {
         buildee.getModule().addClass(builder);
         buildee.addMethod(createBuilderMethod(anno, builder));
     }
 
-    private ClassNode createBuilder(AnnotationNode anno, ClassNode buildee) {
+    private static ClassNode createBuilder(AnnotationNode anno, ClassNode buildee) {
         return new InnerClassNode(buildee, getFullName(anno, buildee), PUBLIC_STATIC, OBJECT_TYPE);
     }
 
-    private String getFullName(AnnotationNode anno, ClassNode buildee) {
+    private static String getFullName(AnnotationNode anno, ClassNode buildee) {
         String builderClassName = getMemberStringValue(anno, "builderClassName", buildee.getNameWithoutPackage() + "Builder");
         return buildee.getName() + "$" + builderClassName;
     }
 
-    private String getPrefix(AnnotationNode anno) {
+    private static String getPrefix(AnnotationNode anno) {
         return getMemberStringValue(anno, "prefix", "");
     }
 
-    private MethodNode createBuildMethodForMethod(AnnotationNode anno, ClassNode buildee, MethodNode mNode, Parameter[] params) {
+    private static MethodNode createBuildMethodForMethod(AnnotationNode anno, ClassNode buildee, MethodNode mNode, Parameter[] params) {
         String buildMethodName = getMemberStringValue(anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         ClassNode returnType;

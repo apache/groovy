@@ -89,7 +89,7 @@ public enum MacroBuilder {
         return null;
     }
 
-    private void performSubstitutions(final int linesOffset, final int columnsOffset, final Map<MacroSubstitutionKey, Closure<Expression>> context, final ASTNode astNode) {
+    private static void performSubstitutions(final int linesOffset, final int columnsOffset, final Map<MacroSubstitutionKey, Closure<Expression>> context, final ASTNode astNode) {
         ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
             public Expression transform(Expression expression) {
                 if (!(expression instanceof MethodCallExpression)) {

@@ -58,7 +58,7 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
         }
     }
 
-    private String quote(String tokenName) {
+    private static String quote(String tokenName) {
         if (tokenName.length() > 0 && tokenName.charAt(0) != '\'')
             return "'" + tokenName + "'";
         else
@@ -69,7 +69,7 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
         out.println("</pre></body></html>");
     }
 
-    private String colour(GroovySourceAST t) {
+    private static String colour(GroovySourceAST t) {
         String black = "000000";
         String blue = "17178B";
         String green = "008000";

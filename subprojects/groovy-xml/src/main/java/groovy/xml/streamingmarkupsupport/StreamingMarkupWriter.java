@@ -112,7 +112,7 @@ public class StreamingMarkupWriter extends Writer {
         this.encoder = Charset.forName(this.encoding).newEncoder();
     }
 
-    private String getNormalizedEncoding(String unnormalized) {
+    private static String getNormalizedEncoding(String unnormalized) {
         return Charset.forName(unnormalized).name();
     }
 

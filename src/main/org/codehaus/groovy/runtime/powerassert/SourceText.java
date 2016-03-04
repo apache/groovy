@@ -109,7 +109,7 @@ public class SourceText {
         return textOffsets.get(deltaLine) + deltaColumn;
     }
 
-    private boolean hasPlausibleSourcePosition(ASTNode node) {
+    private static boolean hasPlausibleSourcePosition(ASTNode node) {
         return node.getLineNumber() > 0
                 && node.getColumnNumber() > 0
                 && node.getLastLineNumber() >= node.getLineNumber()
@@ -117,7 +117,7 @@ public class SourceText {
                 (node.getLineNumber() == node.getLastLineNumber() ? node.getColumnNumber() : 0);
     }
 
-    private int countLeadingWhitespace(String lineText) {
+    private static int countLeadingWhitespace(String lineText) {
         int result = 0;
         while (result < lineText.length() && Character.isWhitespace(lineText.charAt(result)))
             result++;

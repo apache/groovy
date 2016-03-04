@@ -153,7 +153,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
+    private static void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
         if (visited.getClassNode().isResolved() && visited.getClassNode().getName().equals("java.lang.Deprecated")) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
@@ -196,7 +196,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private boolean isOverrideMethod(MethodNode method) {
+    private static boolean isOverrideMethod(MethodNode method) {
         ClassNode cNode = method.getDeclaringClass();
         ClassNode next = cNode;
         outer:
@@ -231,7 +231,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         return next != null;
     }
 
-    private MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
+    private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
         for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
             if (parametersEqual(method.getParameters(), mn.getParameters())) {

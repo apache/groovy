@@ -49,7 +49,7 @@ public class ValueList extends AbstractList<Object> {
         return obj;
     }
 
-    private Object convert(Value value) {
+    private static Object convert(Value value) {
         return value.toValue();
     }
 
@@ -106,7 +106,7 @@ public class ValueList extends AbstractList<Object> {
         }
     }
 
-    void chopContainer(Value value) {
+    static void chopContainer(Value value) {
         Object obj = value.toValue();
         if (obj instanceof LazyValueMap) {
             LazyValueMap map = (LazyValueMap) obj;

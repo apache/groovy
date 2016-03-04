@@ -102,7 +102,7 @@ public class GroovyDocTool {
         }
     }
 
-    String getPath(String filename) {
+    static String getPath(String filename) {
         String path = new File(filename).getParent();
         // path length of 1 indicates that probably is 'default package' i.e. "/"
         if (path == null || (path.length() == 1 && !Character.isJavaIdentifierStart(path.charAt(0)))) {
@@ -111,7 +111,7 @@ public class GroovyDocTool {
         return path;
     }
 
-    String getFile(String filename) {
+    static String getFile(String filename) {
         return new File(filename).getName();
     }
 
