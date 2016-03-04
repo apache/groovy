@@ -2238,6 +2238,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param callArguments
      * @param receiver
      */
+    @Deprecated
     protected void checkClosureParameters(final Expression callArguments, final ClassNode receiver) {
         if (callArguments instanceof ArgumentListExpression) {
             ArgumentListExpression argList = (ArgumentListExpression) callArguments;

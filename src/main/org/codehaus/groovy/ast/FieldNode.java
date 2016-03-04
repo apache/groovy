@@ -167,13 +167,15 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     /**
      * @deprecated
      */
+    @Deprecated
     public boolean isClosureSharedVariable() {
         return false;
     }
     /**
      * @deprecated
      */
-    public void setClosureSharedVariable(boolean inClosure) {                
+    @Deprecated
+    public void setClosureSharedVariable(boolean inClosure) {
     }
 
     public ClassNode getOriginType() {

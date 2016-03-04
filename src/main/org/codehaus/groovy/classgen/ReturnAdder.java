@@ -62,6 +62,7 @@ public class ReturnAdder {
      * @param node the method node where to add return statements
      * @deprecated Use {@link #visitMethod(org.codehaus.groovy.ast.MethodNode)} instead
      */
+    @Deprecated
     public static void addReturnIfNeeded(MethodNode node) {
         ReturnAdder adder = new ReturnAdder();
         adder.visitMethod(node);

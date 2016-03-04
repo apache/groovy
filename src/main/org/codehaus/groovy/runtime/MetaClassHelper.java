@@ -502,6 +502,7 @@ public class MetaClassHelper {
      *         object (e.g. Object) ignoring primitive types
      * @deprecated
      */
+    @Deprecated
     public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
         // let's look for methods with 1 argument which matches the type of the
         // arguments
