@@ -75,11 +75,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     private static class ConstructedNestedClass extends ClassNode {
         ClassNode knownEnclosingType;
-        String nestClassName;
         public ConstructedNestedClass(ClassNode outer, String inner) {
             super(outer.getName()+"$"+(inner=replacePoints(inner)), Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
-            this.nestClassName = inner;
             this.isPrimaryNode = false;
         }
         public boolean hasPackageName() {

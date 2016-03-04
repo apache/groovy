@@ -270,7 +270,8 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * protection against calls from Groovy
      */
-    private void setSize(int size) {
+    @Deprecated
+    void setSize(int size) {
         throw new UnsupportedOperationException("size must not be changed");
     }
 

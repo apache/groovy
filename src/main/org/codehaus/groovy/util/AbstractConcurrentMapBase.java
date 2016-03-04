@@ -124,7 +124,6 @@ public abstract class AbstractConcurrentMapBase {
 
     public Collection values() {
         Collection result = new LinkedList();
-        int count = 0;
         for (int i = 0; i < segments.length; i++) {
             segments[i].lock();
             try {

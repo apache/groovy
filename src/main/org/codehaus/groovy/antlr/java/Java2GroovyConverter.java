@@ -23,11 +23,9 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
 public class Java2GroovyConverter extends VisitorAdapter{
-    private String[] tokenNames;
     private int[] typeMapping;
 
     public Java2GroovyConverter(String[] tokenNames) {
-        this.tokenNames = tokenNames;
         typeMapping = new int[400]; // magic number, much greater than current number of java tokens
         typeMapping[JavaTokenTypes.ABSTRACT] = GroovyTokenTypes.ABSTRACT;
 

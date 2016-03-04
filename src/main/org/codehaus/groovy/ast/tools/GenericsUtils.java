@@ -48,9 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
-
 /**
  * Utility methods to deal with generic types.
  *

@@ -165,7 +165,6 @@ public class MetaMethodIndex {
         return new EntryIterator() {
             Entry next;    // next entry to return
             int index;        // current slot
-            Entry current;    // current entry
 
             {
                 Entry[] t = table;
@@ -199,7 +198,7 @@ public class MetaMethodIndex {
                     n = t[--i];
                 index = i;
                 next = n;
-                return current = e;
+                return e;
             }
         };
     }

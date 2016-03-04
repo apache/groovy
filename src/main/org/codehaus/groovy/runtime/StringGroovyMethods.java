@@ -430,16 +430,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return count((CharSequence) self, (CharSequence) text);
     }
 
-    private static StringBufferWriter createStringBufferWriter(StringBuffer self) {
-        return new StringBufferWriter(self);
-    }
-
-    private static StringWriter createStringWriter(String self) {
-        StringWriter answer = new StringWriter();
-        answer.write(self);
-        return answer;
-    }
-
     /**
      * Return a CharSequence with lines (separated by LF, CR/LF, or CR)
      * terminated by the platform specific line separator.
@@ -596,19 +586,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return dropWhile(self.toString(), condition);
     }
 
-    private static final class CharacterIterable implements Iterable<Character> {
-        private final CharSequence delegate;
-
-        public CharacterIterable(CharSequence delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Iterator<Character> iterator() {
-            return new CharacterIterator(delegate);
-        }
-    }
-
     private static final class CharacterIterator implements Iterator<Character> {
         private final CharSequence delegate;
         private int length;
@@ -629,19 +606,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         public void remove() {
             throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
-        }
-    }
-
-    private static final class StringIterable implements Iterable<String> {
-        private final CharSequence delegate;
-
-        public StringIterable(CharSequence delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Iterator<String> iterator() {
-            return new StringIterator(delegate);
         }
     }
 

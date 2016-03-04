@@ -24,11 +24,9 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -60,16 +58,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
-    }
-
-    private int incValue(Token token) {
-        switch (token.getType()) {
-            case Types.PLUS_PLUS:
-                return 1;
-            case Types.MINUS_MINUS:
-                return -1;
-        }
-        return 0;
     }
 
     @Override
@@ -365,7 +353,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode arrayComponentType = arrayType.getComponentType();
         int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
-        AsmClassGenerator acg = getController().getAcg();
 
         if (bew.arraySet(true) && arrayType.isArray()) {
             super.assignToArray(parent, receiver, index, rhsValueLoader);
@@ -384,7 +371,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             ArgumentListExpression ae = new ArgumentListExpression(index, rhsValueLoader);
             if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
                 // GROOVY-6061
-                Expression right = ((BinaryExpression) parent).getRightExpression();
                 rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
                         controller.getTypeChooser().resolveType(parent, controller.getClassNode()));
             }

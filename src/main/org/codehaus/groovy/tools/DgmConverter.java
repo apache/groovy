@@ -37,7 +37,7 @@ import java.util.List;
 
 public class DgmConverter implements Opcodes {
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException {
         String targetDirectory = "target/classes/";
         boolean info = (args.length == 1 && args[0].equals("--info"))
                 || (args.length==2 && args[0].equals("--info"));

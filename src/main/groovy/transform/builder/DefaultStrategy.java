@@ -55,7 +55,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
-import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkip;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkipUndefinedAware;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;

@@ -96,29 +96,6 @@ public class IndyArrayAccess {
         return handle;
     }
 
-    private static int getLength(Object array) {
-        if (array instanceof Object[]) return ((Object[])array).length;
-        if (array instanceof boolean[]) return ((boolean[])array).length;
-        if (array instanceof byte[]) return ((byte[])array).length;
-        if (array instanceof char[]) return ((char[])array).length;
-        if (array instanceof short[]) return ((short[])array).length;
-        if (array instanceof int[]) return ((int[])array).length;
-        if (array instanceof long[]) return ((long[])array).length;
-        if (array instanceof float[]) return ((float[])array).length;
-        if (array instanceof double[]) return ((double[])array).length;
-        return 0;
-    }
-
-    private static int normalizeIndex(Object array, int i) {
-        int temp = i;
-        int size = getLength(array);
-        i += size;
-        if (i < 0) {
-            throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
-        }
-        return i;
-    }
-
     public static boolean notNegative(int index) {
         return index>=0;
     }

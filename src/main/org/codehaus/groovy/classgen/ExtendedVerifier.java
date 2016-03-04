@@ -49,7 +49,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
  *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
-public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyClassVisitor {
+public class ExtendedVerifier extends ClassCodeVisitorSupport {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
     private SourceUnit source;

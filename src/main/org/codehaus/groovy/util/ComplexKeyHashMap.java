@@ -137,7 +137,6 @@ public class ComplexKeyHashMap
         return new EntryIterator() {
             Entry next;       // next entry to return
             int index;        // current slot
-            Entry current;    // current entry
 
             {
                 Entry[] t = table;
@@ -170,7 +169,7 @@ public class ComplexKeyHashMap
                     n = t[--i];
                 index = i;
                 next = n;
-                return current = e;
+                return e;
             }
         };
   }

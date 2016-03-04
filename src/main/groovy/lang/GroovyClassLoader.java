@@ -43,7 +43,6 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
