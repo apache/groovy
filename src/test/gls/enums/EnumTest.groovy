@@ -577,6 +577,21 @@ class EnumTest extends CompilableTestSupport {
             println Foonum.Y
         '''
     }
+
+    void testEnumWithPropertiesAndDanglingComma_GROOVY_7773() {
+        assertScript '''
+            enum UsState {
+                ID('Idaho'),
+                IL('Illinois'),
+                IN('Indiana'),
+                ;
+                UsState( String value ) { this.value = value }
+                private final String value
+                String toString() { value }
+            }
+            assert UsState.ID.toString() == 'Idaho'
+        '''
+    }
 }
 
 enum UsCoin {

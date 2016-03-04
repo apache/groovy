@@ -1230,12 +1230,12 @@ enumConstants
     :
         enumConstant
         (    options {generateAmbigWarnings=false;} :
-            (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
+            (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
         |   nls! COMMA!
             (
                 (nls annotationsOpt IDENT) => nls! enumConstant
             |
-                (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
+                (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
             )
         )*
     ;
