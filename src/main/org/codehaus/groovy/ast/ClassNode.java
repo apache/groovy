@@ -91,7 +91,7 @@ import java.util.*;
  * @author Jochen Theodorou
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
-    private static class MapOfLists {
+    static class MapOfLists {
         private Map<Object, List<MethodNode>> map = new HashMap<Object, List<MethodNode>>();
         public List<MethodNode> get(Object key) {
             return map.get(key);

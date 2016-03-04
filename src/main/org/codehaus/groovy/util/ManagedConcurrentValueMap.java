@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <V> the value type
  */
 public class ManagedConcurrentValueMap<K,V> {
-    private final ConcurrentHashMap<K,ManagedReference<V>> internalMap;
+    final ConcurrentHashMap<K,ManagedReference<V>> internalMap;
     private ReferenceBundle bundle;
     public ManagedConcurrentValueMap(ReferenceBundle bundle){
         this.bundle = bundle;

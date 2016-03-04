@@ -44,15 +44,15 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
  */
 public class OptimizingStatementWriter extends StatementWriter {
     
-    private static class FastPathData {
-        private Label pathStart = new Label();
-        private Label afterPath = new Label();
+    static class FastPathData {
+        Label pathStart = new Label();
+        Label afterPath = new Label();
     }
     
     public static class ClassNodeSkip{}
     
     public static class StatementMeta {
-        private boolean optimize=false;
+        boolean optimize=false;
         protected MethodNode target;
         protected ClassNode type;
         protected boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
@@ -402,7 +402,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         new OptVisitor(chooser).visitClass(classNode);
     }
     
-    private static StatementMeta addMeta(ASTNode node) {
+    static StatementMeta addMeta(ASTNode node) {
         StatementMeta metaOld = (StatementMeta) node.getNodeMetaData(StatementMeta.class);
         StatementMeta meta = metaOld;
         if (meta==null) meta = new StatementMeta();
@@ -411,19 +411,19 @@ public class OptimizingStatementWriter extends StatementWriter {
         return meta;
     }
     
-    private static StatementMeta addMeta(ASTNode node, OptimizeFlagsCollector opt) {
+    static StatementMeta addMeta(ASTNode node, OptimizeFlagsCollector opt) {
         StatementMeta meta = addMeta(node);
         meta.chainInvolvedTypes(opt);
         return meta;
     }
     
-    private static class OptimizeFlagsCollector {
-        private static class OptimizeFlagsEntry {
-            private boolean canOptimize = false;
-            private boolean shouldOptimize = false;
-            private boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
+    static class OptimizeFlagsCollector {
+        static class OptimizeFlagsEntry {
+            boolean canOptimize = false;
+            boolean shouldOptimize = false;
+            boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
         }
-        private OptimizeFlagsEntry current = new OptimizeFlagsEntry();
+        OptimizeFlagsEntry current = new OptimizeFlagsEntry();
         private LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
         public void push() {
             olderEntries.addLast(current);
@@ -456,13 +456,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         /**
          * @return true iff we should Optimize - this is almost seen as must
          */
-        private boolean shouldOptimize() {
+        boolean shouldOptimize() {
             return current.shouldOptimize;
         }
         /**
          * @return true iff we can optimize, but not have to
          */
-        private boolean canOptimize() {
+        boolean canOptimize() {
             return current.canOptimize || current.shouldOptimize;
         }
         /**

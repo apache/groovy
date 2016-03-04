@@ -149,7 +149,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected MetaMethod invokeMethodMethod;
     protected MetaMethod setPropertyMethod;
     protected MetaClassRegistry registry;
-    private ClassNode classNode;
+    ClassNode classNode;
     private FastArray constructors;
     private boolean initialized;
     private MetaMethod genericGetMethod;
@@ -1649,7 +1649,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public static final class MetaConstructor extends MetaMethod {
         private final CachedConstructor cc;
         private final boolean beanConstructor;
-        private MetaConstructor(CachedConstructor cc, boolean bean) {
+        MetaConstructor(CachedConstructor cc, boolean bean) {
             super(cc.getNativeParameterTypes());
             this.setParametersTypes(cc.getParameterTypes());
             this.cc = cc;
@@ -3068,7 +3068,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         list.add(method);
     }
 
-    private int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {
+    static int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {
         for (int j = from; j <= to; ++j) {
             CachedMethod aMethod = data[j];
             CachedClass[] params1 = aMethod.getParameterTypes();
@@ -3687,7 +3687,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return null;
     }
 
-    private abstract class MethodIndexAction {
+    abstract class MethodIndexAction {
         public void iterate() {
             final ComplexKeyHashMap.Entry[] table = metaMethodIndex.methodHeaders.getTable();
             int len = table.length;
@@ -3805,7 +3805,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex.clearCaches ();
     }
 
-    private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = new SingleKeyHashMap.Copier() {
+    static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = new SingleKeyHashMap.Copier() {
         public Object copy(Object value) {
             if (value instanceof FastArray)
               return ((FastArray) value).copy();
@@ -3814,7 +3814,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     };
 
-    private static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = new SingleKeyHashMap.Copier() {
+    static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = new SingleKeyHashMap.Copier() {
         public Object copy(Object value) {
             return SingleKeyHashMap.copy(new SingleKeyHashMap(false), (SingleKeyHashMap) value, NAME_INDEX_COPIER);
         }
@@ -3875,7 +3875,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static class DummyMetaMethod extends MetaMethod {
+    static class DummyMetaMethod extends MetaMethod {
 
         public int getModifiers() {
             return 0;

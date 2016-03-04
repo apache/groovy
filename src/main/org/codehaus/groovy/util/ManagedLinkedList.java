@@ -85,8 +85,8 @@ public class ManagedLinkedList<T> {
         }
     }
 
-    private Element<T> tail;
-    private Element<T> head;
+    Element<T> tail;
+    Element<T> head;
     private ReferenceBundle bundle;
 
     public ManagedLinkedList(ReferenceBundle bundle) {

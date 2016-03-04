@@ -4784,7 +4784,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final String name;
         final List<MethodNode> setters;
 
-        private SetterInfo(final ClassNode receiverType, final String name, final List<MethodNode> setters) {
+        SetterInfo(final ClassNode receiverType, final String name, final List<MethodNode> setters) {
             this.receiverType = receiverType;
             this.setters = setters;
             this.name = name;

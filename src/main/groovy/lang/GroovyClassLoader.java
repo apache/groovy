@@ -73,7 +73,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * to bypass compilation.
      */
     protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
-    private final CompilerConfiguration config;
+    final CompilerConfiguration config;
     private Boolean recompile;
     // use 1000000 as offset to avoid conflicts with names form the GroovyShell
     private static int scriptNameCounter = 1000000;
@@ -473,7 +473,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
-        private Class generatedClass;
+        Class generatedClass;
         private final GroovyClassLoader cl;
         private final SourceUnit su;
         private final CompilationUnit unit;
@@ -858,7 +858,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return null;
     }
 
-    private URL getSourceFile(String name, String extension) {
+    URL getSourceFile(String name, String extension) {
         String filename = name.replace('.', '/') + "." + extension;
         URL ret = getResource(filename);
         if (isFile(ret) && getFileForUrl(ret, filename) == null) return null;
@@ -977,7 +977,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private static class TimestampAdder extends CompilationUnit.PrimaryClassNodeOperation implements Opcodes {
-        private final static TimestampAdder INSTANCE = new TimestampAdder();
+        final static TimestampAdder INSTANCE = new TimestampAdder();
 
         private TimestampAdder() {}
 

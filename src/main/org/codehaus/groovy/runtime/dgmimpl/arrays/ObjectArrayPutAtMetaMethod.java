@@ -47,7 +47,7 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         return null;
     }
 
-    private static Object adjustNewValue(Object[] objects, Object newValue) {
+    static Object adjustNewValue(Object[] objects, Object newValue) {
         Class arrayComponentClass = objects.getClass().getComponentType();
         Object adjustedNewVal = newValue;
         if (newValue instanceof Number) {

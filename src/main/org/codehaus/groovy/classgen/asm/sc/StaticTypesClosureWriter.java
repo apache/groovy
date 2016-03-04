@@ -114,7 +114,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
 
         private final MethodNode doCallMethod;
 
-        private MethodTargetCompletionVisitor(final MethodNode doCallMethod) {
+        MethodTargetCompletionVisitor(final MethodNode doCallMethod) {
             this.doCallMethod = doCallMethod;
         }
 

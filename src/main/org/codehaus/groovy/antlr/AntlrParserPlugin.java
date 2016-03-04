@@ -101,7 +101,7 @@ import java.util.Set;
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
-    private static class AnonymousInnerClassCarrier extends Expression {
+    static class AnonymousInnerClassCarrier extends Expression {
         ClassNode innerClass;
 
         public Expression transformExpression(ExpressionTransformer transformer) {
@@ -211,7 +211,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return null; //new Reduction(Tpken.EOF);
     }
 
-    private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit, SourceBuffer sourceBuffer) {
+    void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit, SourceBuffer sourceBuffer) {
         // straight xstream output of AST
         String formatProp = System.getProperty("ANTLR.AST".toLowerCase()); // uppercase to hide from jarjar
 

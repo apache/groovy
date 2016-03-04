@@ -113,7 +113,7 @@ public abstract class Selector {
      * always 2, the returned Object[] will have a size of 1+n, where n is the
      * number arguments.
      */
-    private static Object[] spread(Object[] args, boolean spreadCall) {
+    static Object[] spread(Object[] args, boolean spreadCall) {
         if (!spreadCall) return args;
         Object[] normalArguments = (Object[]) args[1];
         Object[] ret = new Object[normalArguments.length+1];
@@ -641,7 +641,7 @@ public abstract class Selector {
         /**
          * Helper method to manipulate the given type to replace Wrapper with Object.
          */
-        private MethodType removeWrapper(MethodType targetType) {
+        private static MethodType removeWrapper(MethodType targetType) {
             Class[] types = targetType.parameterArray();
             for (int i=0; i<types.length; i++) {
                 if (types[i]==Wrapper.class) {
@@ -841,7 +841,7 @@ public abstract class Selector {
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
-                MetaClass mc = (MetaClass) go.getMetaClass();
+                MetaClass mc = go.getMetaClass();
                 MethodHandle test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
@@ -974,7 +974,7 @@ public abstract class Selector {
      * Unwraps the given object from a {@link Wrapper}. If not
      * wrapped, the given object is returned.
      */
-    private static Object unwrapIfWrapped(Object object) {
+    static Object unwrapIfWrapped(Object object) {
         if (object instanceof Wrapper) return unwrap(object);
         return object;
     }
@@ -996,7 +996,7 @@ public abstract class Selector {
     /**
      * Returns if a method is static
      */
-    private static boolean isStatic(Method m) {
+    static boolean isStatic(Method m) {
         int mods = m.getModifiers();
         return (mods & Modifier.STATIC) != 0;
     }
@@ -1006,7 +1006,7 @@ public abstract class Selector {
      * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
      * none of these cases matches, this method returns null.
      */
-    private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
+    static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
         Class mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||
                          mcc == AdaptingMetaClass.class ||
@@ -1024,7 +1024,7 @@ public abstract class Selector {
      * Helper method to remove the receiver from the argument array
      * by producing a new array.
      */
-    private static Object[] removeRealReceiver(Object[] args) {
+    static Object[] removeRealReceiver(Object[] args) {
         Object[] ar = new Object[args.length-1];
         System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;

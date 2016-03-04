@@ -189,7 +189,7 @@ public class SocketGroovyMethods extends DefaultGroovyMethodsSupport {
         return socket;
     }
 
-    private static void invokeClosureWithSocket(Socket socket, Closure closure) {
+    static void invokeClosureWithSocket(Socket socket, Closure closure) {
         try {
             closure.call(socket);
         } finally {

@@ -37,13 +37,13 @@ import java.util.Set;
 public class GenericsType extends ASTNode {
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
     
-    private final ClassNode[] upperBounds;
-    private final ClassNode lowerBound;
-    private ClassNode type;
-    private String name;
-    private boolean placeholder;
+    final ClassNode[] upperBounds;
+    final ClassNode lowerBound;
+    ClassNode type;
+    String name;
+    boolean placeholder;
     private boolean resolved;
-    private boolean wildcard;
+    boolean wildcard;
 
     public GenericsType(ClassNode type, ClassNode[] upperBounds, ClassNode lowerBound) {
         this.type = type;
@@ -201,7 +201,7 @@ public class GenericsType extends ASTNode {
     /**
      * Implements generics type comparison.
      */
-    private class GenericsTypeMatcher {
+    class GenericsTypeMatcher {
 
         public boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
             boolean result = type.equals(superOrInterface)
@@ -477,7 +477,7 @@ public class GenericsType extends ASTNode {
      * @param classNode the class for which we want to return the parameterized superclass
      * @return the parameterized superclass
      */
-    private static ClassNode getParameterizedSuperClass(ClassNode classNode) {
+    static ClassNode getParameterizedSuperClass(ClassNode classNode) {
         if (ClassHelper.OBJECT_TYPE.equals(classNode)) return null;
         ClassNode superClass = classNode.getUnresolvedSuperClass();
         if (superClass==null) {

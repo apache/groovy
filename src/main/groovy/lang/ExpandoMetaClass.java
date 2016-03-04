@@ -283,18 +283,18 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final boolean allowChangesAfterInit;
     public boolean inRegistry;
     
-    private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
+    final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
     private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
     private final Map<String, MetaProperty> staticBeanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
-    private final Map<MethodKey, MetaMethod> expandoMethods = new ConcurrentHashMap<MethodKey, MetaMethod>(16, 0.75f, 1);
+    final Map<MethodKey, MetaMethod> expandoMethods = new ConcurrentHashMap<MethodKey, MetaMethod>(16, 0.75f, 1);
 
     public Collection getExpandoSubclassMethods() {
         return expandoSubclassMethods.values();
     }
 
     private final ConcurrentHashMap expandoSubclassMethods = new ConcurrentHashMap(16, 0.75f, 1);
-    private final Map<String, MetaProperty> expandoProperties = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
-    private ClosureStaticMetaMethod invokeStaticMethodMethod;
+    final Map<String, MetaProperty> expandoProperties = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
+    ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
@@ -932,7 +932,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
 
-    private void performRegistryCallbacks() {
+    void performRegistryCallbacks() {
         MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
         incVersion();
         if (!modified) {
@@ -953,7 +953,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    private void registerBeanPropertyForMethod(MetaMethod metaMethod, String propertyName, boolean getter, boolean isStatic) {
+    void registerBeanPropertyForMethod(MetaMethod metaMethod, String propertyName, boolean getter, boolean isStatic) {
         Map<String, MetaProperty> propertyCache = isStatic ? staticBeanPropertyCache : beanPropertyCache;
         MetaBeanProperty beanProperty = (MetaBeanProperty) propertyCache.get(propertyName);
         if (beanProperty==null) {
@@ -1233,7 +1233,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param args The arguments
      * @return True if it is a javabean property method
      */
-    private boolean isGetter(String name, CachedClass[] args) {
+    boolean isGetter(String name, CachedClass[] args) {
         if (name == null || name.length() == 0 || args == null) return false;
         if (args.length != 0) return false;
 
@@ -1253,7 +1253,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param getterName The getter name
      * @return The property name equivalent
      */
-    private String getPropertyForGetter(String getterName) {
+    String getPropertyForGetter(String getterName) {
         if (getterName == null || getterName.length() == 0) return null;
 
         if (getterName.startsWith("get")) {
@@ -1362,7 +1362,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    private class DefiningClosure extends GroovyObjectSupport {
+    class DefiningClosure extends GroovyObjectSupport {
         boolean definition = true;
 
         public void mixin(Class category) {
@@ -1447,7 +1447,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     private static class MixedInAccessor {
-        private final Object object;
+        final Object object;
         private final Set<MixinInMetaClass> mixinClasses;
 
         public MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {

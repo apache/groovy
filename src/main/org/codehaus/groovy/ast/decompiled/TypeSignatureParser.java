@@ -93,7 +93,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         };
     }
 
-    private static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
+    static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         base.setRedirect(ClassHelper.OBJECT_TYPE);
         GenericsType t = new GenericsType(base, upper, lower);

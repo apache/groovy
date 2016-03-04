@@ -101,7 +101,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             new Parameter(ClassHelper.METACLASS_TYPE, "mc")
     };
 
-    private ClassNode classNode;
+    ClassNode classNode;
     private MethodNode methodNode;
 
     public ClassNode getClassNode() {
@@ -1514,7 +1514,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static class SwapInitStatement extends BytecodeSequence {
 
-        private WriterController controller;
+        WriterController controller;
 
         public SwapInitStatement() {
             super(new SwapInitInstruction());
@@ -1530,7 +1530,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             super.visit(visitor);
         }
 
-        private static class SwapInitInstruction extends BytecodeInstruction {
+        static class SwapInitInstruction extends BytecodeInstruction {
             SwapInitStatement statement;
 
             @Override

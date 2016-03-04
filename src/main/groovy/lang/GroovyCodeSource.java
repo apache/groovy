@@ -58,7 +58,7 @@ public class GroovyCodeSource {
     /**
      * The groovy source to be compiled and turned into a class
      */
-    private String scriptText;
+    String scriptText;
 
     /**
      * The certificates used to sign the items from the codesource

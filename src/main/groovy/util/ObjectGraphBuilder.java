@@ -53,21 +53,21 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String CLASSNAME_RESOLVER_REFLECTION_ROOT = "root";
 
     // Regular expression pattern used to identify words ending in 'y' preceded by a consonant
-    private static final Pattern PLURAL_IES_PATTERN = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
+    static final Pattern PLURAL_IES_PATTERN = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
 
-    private ChildPropertySetter childPropertySetter;
-    private ClassNameResolver classNameResolver;
-    private IdentifierResolver identifierResolver;
-    private NewInstanceResolver newInstanceResolver;
+    ChildPropertySetter childPropertySetter;
+    ClassNameResolver classNameResolver;
+    IdentifierResolver identifierResolver;
+    NewInstanceResolver newInstanceResolver;
     private ObjectFactory objectFactory = new ObjectFactory();
     private ObjectBeanFactory objectBeanFactory = new ObjectBeanFactory();
     private ObjectRefFactory objectRefFactory = new ObjectRefFactory();
-    private ReferenceResolver referenceResolver;
-    private RelationNameResolver relationNameResolver;
-    private Map<String, Class> resolvedClasses = new HashMap<String, Class>();
-    private ClassLoader classLoader;
+    ReferenceResolver referenceResolver;
+    RelationNameResolver relationNameResolver;
+    Map<String, Class> resolvedClasses = new HashMap<String, Class>();
+    ClassLoader classLoader;
     private boolean lazyReferencesAllowed = true;
-    private List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
+    List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
     private String beanFactoryName = "bean";
 
     public ObjectGraphBuilder() {
@@ -584,7 +584,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                                          Object child);
     }
 
-    private void resolveLazyReferences() {
+    void resolveLazyReferences() {
         if (!lazyReferencesAllowed) return;
         for (NodeReference ref : lazyReferences) {
             if (ref.parent == null) continue;
@@ -616,11 +616,11 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    private static String makeClassName(String root, String name) {
+    static String makeClassName(String root, String name) {
         return root + "." + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
-    private static class ObjectFactory extends AbstractFactory {
+    static class ObjectFactory extends AbstractFactory {
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
@@ -726,7 +726,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    private static class ObjectBeanFactory extends ObjectFactory {
+    static class ObjectBeanFactory extends ObjectFactory {
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             if(value == null) return super.newInstance(builder, name, value, properties);
@@ -761,7 +761,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    private static class ObjectRefFactory extends ObjectFactory {
+    static class ObjectRefFactory extends ObjectFactory {
         public boolean isLeaf() {
             return true;
         }
@@ -836,12 +836,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static final class NodeReference {
-        private final Object parent;
-        private final String parentName;
-        private final String childName;
-        private final String refId;
+        final Object parent;
+        final String parentName;
+        final String childName;
+        final String refId;
 
-        private NodeReference(Object parent, String parentName, String childName, String refId) {
+        NodeReference(Object parent, String parentName, String childName, String refId) {
             this.parent = parent;
             this.parentName = parentName;
             this.childName = childName;

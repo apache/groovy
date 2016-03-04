@@ -71,7 +71,7 @@ public abstract class AsmDecompiler {
 
     private static class DecompilingVisitor extends ClassVisitor {
         private static final String[] EMPTY_STRING_ARRAY = new String[0];
-        private ClassStub result;
+        ClassStub result;
 
         public DecompilingVisitor() {
             super(Opcodes.ASM5);
@@ -144,7 +144,7 @@ public abstract class AsmDecompiler {
         }
     }
 
-    private static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
+    static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
         return new AnnotationReader() {
             @Override
             void visitAttribute(String name, Object value) {

@@ -75,7 +75,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     };
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
-    private static class LocalData {
+    static class LocalData {
         CompilationUnit cu;
         StringSetMap dependencyCache = new StringSetMap();
         Map<String, String> precompiledEntries = new HashMap<String, String>();
@@ -83,7 +83,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
 
-    private static synchronized ThreadLocal<LocalData> getLocalData() {
+    static synchronized ThreadLocal<LocalData> getLocalData() {
         ThreadLocal<LocalData> local = localData.get();
         if (local != null) return local;
         local = new ThreadLocal<LocalData>();
@@ -92,11 +92,11 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     private URL[] roots;
-    private ResourceConnector rc;
-    private final ClassLoader parentLoader;
+    ResourceConnector rc;
+    final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
-    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
-    private CompilerConfiguration config;
+    final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
+    CompilerConfiguration config;
 
     {
         config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
@@ -107,10 +107,11 @@ public class GroovyScriptEngine implements ResourceConnector {
     //TODO: more finals?
 
     private static class ScriptCacheEntry {
-        private final Class scriptClass;
-        private final long lastModified, lastCheck;
-        private final Set<String> dependencies;
-        private final boolean sourceNewer;
+        final Class scriptClass;
+        final long lastModified;
+		final long lastCheck;
+        final Set<String> dependencies;
+        final boolean sourceNewer;
 
         public ScriptCacheEntry(Class clazz, long modified, long lastCheck, Set<String> depend, boolean sourceNewer) {
             this.scriptClass = clazz;
@@ -440,7 +441,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      *
      * @param urlConnection the {@link URLConnection} to be "closed" to close the underlying file descriptors.
      */
-    private static void forceClose(URLConnection urlConnection) {
+    static void forceClose(URLConnection urlConnection) {
         if (urlConnection != null) {
             // We need to get the input stream and close it to force the open
             // file descriptor to be released. Otherwise, we will reach the limit
@@ -616,7 +617,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         return InvokerHelper.createScript(loadScriptByName(scriptName), binding);
     }
 
-    private long getLastModified(String scriptName) throws ResourceException {
+    long getLastModified(String scriptName) throws ResourceException {
         URLConnection conn = rc.getResourceConnection(scriptName);
         long lastMod = 0;
         try {

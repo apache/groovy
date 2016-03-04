@@ -60,9 +60,9 @@ public class JavaStubGenerator {
     private boolean requireSuperResolved = false;
     private File outputPath;
     private List<String> toCompile = new ArrayList<String>();
-    private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
-    private Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
-    private ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
+    Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
+    ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
     private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {

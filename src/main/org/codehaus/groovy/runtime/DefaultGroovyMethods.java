@@ -1524,13 +1524,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 : new ClosureComparator<T>(condition));
     }
 
-    private static final class UniqueIterator<E> implements Iterator<E> {
+    static final class UniqueIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final Set<E> seen;
         private boolean exhausted;
         private E next;
 
-        private UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
+        UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
             this.delegate = delegate;
             seen = new TreeSet<E>(comparator);
             advance();
@@ -8107,11 +8107,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new ZipPreIterator<E>(self, offset);
     }
 
-    private static final class ZipPostIterator<E> implements Iterator<Tuple2<E, Integer>> {
+    static final class ZipPostIterator<E> implements Iterator<Tuple2<E, Integer>> {
         private final Iterator<E> delegate;
         private int index;
 
-        private ZipPostIterator(Iterator<E> delegate, int offset) {
+        ZipPostIterator(Iterator<E> delegate, int offset) {
             this.delegate = delegate;
             this.index = offset;
         }
@@ -8130,11 +8130,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static final class ZipPreIterator<E> implements Iterator<Tuple2<Integer, E>> {
+    static final class ZipPreIterator<E> implements Iterator<Tuple2<Integer, E>> {
         private final Iterator<E> delegate;
         private int index;
 
-        private ZipPreIterator(Iterator<E> delegate, int offset) {
+        ZipPreIterator(Iterator<E> delegate, int offset) {
             this.delegate = delegate;
             this.index = offset;
         }
@@ -8795,7 +8795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return toSorted(self, new NumberAwareValueComparator<K, V>());
     }
 
-    private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
+    static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
         private Comparator<V> delegate = new NumberAwareComparator<V>();
 
         @Override
@@ -9337,12 +9337,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new InitIterator<T>(self);
     }
 
-    private static final class InitIterator<E> implements Iterator<E> {
+    static final class InitIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private boolean exhausted;
         private E next;
 
-        private InitIterator(Iterator<E> delegate) {
+        InitIterator(Iterator<E> delegate) {
             this.delegate = delegate;
             advance();
         }
@@ -9576,11 +9576,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new TakeIterator<T>(self, num);
     }
 
-    private static final class TakeIterator<E> implements Iterator<E> {
+    static final class TakeIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private Integer num;
 
-        private TakeIterator(Iterator<E> delegate, Integer num) {
+        TakeIterator(Iterator<E> delegate, Integer num) {
             this.delegate = delegate;
             this.num = num;
         }
@@ -10174,13 +10174,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new TakeWhileIterator<T>(self, condition);
     }
 
-    private static final class TakeWhileIterator<E> implements Iterator<E> {
+    static final class TakeWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final BooleanClosureWrapper condition;
         private boolean exhausted;
         private E next;
 
-        private TakeWhileIterator(Iterator<E> delegate, Closure condition) {
+        TakeWhileIterator(Iterator<E> delegate, Closure condition) {
             this.delegate = delegate;
             this.condition = new BooleanClosureWrapper(condition);
             advance();
@@ -10382,13 +10382,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new DropWhileIterator<T>(self, condition);
     }
 
-    private static final class DropWhileIterator<E> implements Iterator<E> {
+    static final class DropWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final Closure condition;
         private boolean buffering = false;
         private E buffer = null;
 
-        private DropWhileIterator(Iterator<E> delegate, Closure condition) {
+        DropWhileIterator(Iterator<E> delegate, Closure condition) {
             this.delegate = delegate;
             this.condition = condition;
             prepare();

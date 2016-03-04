@@ -89,7 +89,7 @@ public class ImportCustomizerFactory extends AbstractFactory {
     private static class ImportHelper {
         private final ImportCustomizer customizer;
 
-        private ImportHelper(final ImportCustomizer customizer) {
+        ImportHelper(final ImportCustomizer customizer) {
             this.customizer = customizer;
         }
 

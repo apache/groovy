@@ -107,7 +107,7 @@ public class LexerFrame extends JFrame implements ActionListener{
         }
     };
 
-    private void scanScript(File file) throws Exception{
+    void scanScript(File file) throws Exception{
         scriptPane.read(new FileReader(file), null);
 
         // create lexer

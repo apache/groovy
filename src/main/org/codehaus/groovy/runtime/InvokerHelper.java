@@ -56,7 +56,7 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokerHelper {
-    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
+    static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
     public static final Object[] EMPTY_ARGS = {};
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;

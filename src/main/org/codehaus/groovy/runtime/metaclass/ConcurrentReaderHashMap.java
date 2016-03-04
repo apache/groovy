@@ -849,7 +849,7 @@ public class ConcurrentReaderHashMap
     return (ks != null)? ks : (keySet = new KeySet());
   }
   
-  private class KeySet extends AbstractSet {
+  class KeySet extends AbstractSet {
     public Iterator iterator() {
       return new KeyIterator();
     }
@@ -895,7 +895,7 @@ public class ConcurrentReaderHashMap
     return (vs != null)? vs : (values = new Values());
   }
   
-  private class Values extends AbstractCollection {
+  class Values extends AbstractCollection {
     public Iterator iterator() {
       return new ValueIterator();
     }
@@ -939,7 +939,7 @@ public class ConcurrentReaderHashMap
     return (es != null) ? es : (entrySet = new EntrySet());
   }
 
-  private class EntrySet extends AbstractSet {
+  class EntrySet extends AbstractSet {
     public Iterator iterator() {
       return new HashIterator();
     }

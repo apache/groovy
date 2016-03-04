@@ -1897,7 +1897,7 @@ public abstract class StaticTypeCheckingSupport {
      * A DGM-like method which adds support for method calls which are handled
      * specifically by the Groovy compiler.
      */
-    private static class ObjectArrayStaticTypesHelper {
+    static class ObjectArrayStaticTypesHelper {
         public static <T> T getAt(T[] arr, int index) { return null;} 
         public static <T,U extends T> void putAt(T[] arr, int index, U object) { }
     }
@@ -1908,7 +1908,7 @@ public abstract class StaticTypeCheckingSupport {
      * extension modules has changed. It avoids recomputing the whole list each time we perform
      * a method lookup.
      */
-    private static class ExtensionMethodCache {
+    static class ExtensionMethodCache {
 
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private Map<String, List<MethodNode>> cachedMethods = null;

@@ -42,7 +42,7 @@ public class AssertionWriter {
     // assert
     private static final MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
     
-    private static class AssertionTracker {
+    static class AssertionTracker {
         int recorderIndex;
         SourceText sourceText;
     }

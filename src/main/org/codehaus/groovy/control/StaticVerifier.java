@@ -154,7 +154,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         addVariableError(ve);
     }
 
-    private void addVariableError(VariableExpression ve) {
+    void addVariableError(VariableExpression ve) {
         addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
                 " to a local variable, static field or class. Possible causes:\n" +
                 "You attempted to reference a variable in the binding or an instance variable from a static context.\n" +

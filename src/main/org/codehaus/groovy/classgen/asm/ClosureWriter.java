@@ -59,7 +59,7 @@ public class ClosureWriter {
     protected interface UseExistingReference {}
 
     private final Map<Expression,ClassNode> closureClassMap;
-    private final WriterController controller;
+    final WriterController controller;
     private final WriterControllerFactory factory;
 
     public ClosureWriter(WriterController wc) {

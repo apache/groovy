@@ -52,7 +52,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private Binding context;
     private int counter;
     private CompilerConfiguration config;
-    private GroovyClassLoader loader;
+    GroovyClassLoader loader;
 
     public static void main(String[] args) {
         GroovyMain.main(args);

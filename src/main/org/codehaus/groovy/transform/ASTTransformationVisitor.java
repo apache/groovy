@@ -58,7 +58,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
     private final ASTTransformationsContext context;
     private final CompilePhase phase;
-    private SourceUnit source;
+    SourceUnit source;
     private List<ASTNode[]> targetNodes;
     private Map<ASTNode, List<ASTTransformation>> transforms;
 

@@ -325,7 +325,7 @@ public class DefaultMetaClassInfo {
     //         GlobalMetaClassVersioning
     //---------------------------------------------
     public static class ConstantMetaClassVersioning {
-        private boolean valid = true; 
+        boolean valid = true; 
         public boolean isValid(){return valid;}
     }
     private static ConstantMetaClassVersioning constantMetaClassVersioning = new ConstantMetaClassVersioning();

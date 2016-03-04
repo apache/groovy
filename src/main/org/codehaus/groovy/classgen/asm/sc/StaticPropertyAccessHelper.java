@@ -101,7 +101,7 @@ public abstract class StaticPropertyAccessHelper {
     private static class PoppingMethodCallExpression extends MethodCallExpression {
         private final Expression receiver;
         private final MethodNode setter;
-        private final TemporaryVariableExpression tmp;
+        final TemporaryVariableExpression tmp;
 
         public PoppingMethodCallExpression(final Expression receiver, final MethodNode setterMethod, final TemporaryVariableExpression tmp) {
             super(receiver, setterMethod.getName(), tmp);

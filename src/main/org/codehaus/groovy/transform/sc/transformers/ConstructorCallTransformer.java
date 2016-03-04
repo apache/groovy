@@ -95,7 +95,7 @@ public class ConstructorCallTransformer {
     private static class MapStyleConstructorCall extends BytecodeExpression implements Opcodes {
         private StaticCompilationTransformer staticCompilationTransformer;
         private AsmClassGenerator acg;
-        private ClassNode declaringClass;
+        ClassNode declaringClass;
         private MapExpression map;
         private ConstructorCallExpression orginalCall;
 

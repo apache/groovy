@@ -59,7 +59,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         is_final(true),
         is_var(false);
 
-        private final boolean isFinal;
+        final boolean isFinal;
 
         VariableState(final boolean isFinal) {
             this.isFinal = isFinal;
@@ -98,7 +98,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         return state;
     }
 
-    private static Variable getTarget(Variable v) {
+    static Variable getTarget(Variable v) {
         if (v instanceof VariableExpression) {
             Variable t = ((VariableExpression) v).getAccessedVariable();
             if (t==v) return t;
@@ -342,7 +342,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         void variableNotAlwaysInitialized(VariableExpression var);
     }
 
-    private static class StateMap extends HashMap<Variable, VariableState> {
+    static class StateMap extends HashMap<Variable, VariableState> {
         @Override
         public VariableState get(final Object key) {
             return super.get(getTarget((Variable)key));

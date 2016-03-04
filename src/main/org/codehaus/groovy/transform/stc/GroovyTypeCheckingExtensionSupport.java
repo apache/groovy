@@ -64,7 +64,7 @@ import java.util.Map;
 public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExtension {
 
     // method name to DSL name
-    private static final Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
+    static final Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
             new HashMap<String, String>() {{
                 put("onMethodSelection", "onMethodSelection");
                 put("afterMethodCall", "afterMethodCall");
@@ -86,7 +86,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
     );
 
     // the following fields are closures executed in event-based methods
-    private final Map<String, List<Closure>> eventHandlers = new HashMap<String, List<Closure>>();
+    final Map<String, List<Closure>> eventHandlers = new HashMap<String, List<Closure>>();
 
     private final String scriptPath;
 
@@ -406,7 +406,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
     // --------------------------------------------
 
     public abstract static class TypeCheckingDSL extends Script {
-        private GroovyTypeCheckingExtensionSupport extension;
+        GroovyTypeCheckingExtensionSupport extension;
 
         @Override
         public Object getProperty(final String property) {

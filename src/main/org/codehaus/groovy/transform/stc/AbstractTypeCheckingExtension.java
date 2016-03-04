@@ -438,7 +438,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
     private class TypeCheckingScope extends LinkedHashMap<String, Object> {
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
-        private TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
+        TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
             this.parent = parentScope;
         }
 
