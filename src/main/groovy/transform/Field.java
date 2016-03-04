@@ -31,7 +31,8 @@ import java.lang.annotation.Target;
  * <p>
  * The annotated variable will become a private field of the script class.
  * The type of the field will be the same as the type of the variable. Example usage:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.Field
  * {@code @Field} List awe = [1, 2, 3]
  * def awesum() { awe.sum() }
  * assert awesum() == 6

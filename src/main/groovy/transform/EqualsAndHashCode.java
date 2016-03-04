@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in creating appropriate {@code equals()} and {@code hashCode()} methods.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.EqualsAndHashCode
  * {@code @EqualsAndHashCode}
  * class Person {
@@ -83,7 +83,8 @@ import java.lang.annotation.Target;
  * to be used in limited cases where its purpose is for overriding implementation details rather than
  * creating a derived type with different behavior. This is useful when using JPA Proxies for example or
  * as shown in the following examples:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.*
  * {@code @Canonical} class IntPair { int x, y }
  * def p1 = new IntPair(1, 2)
  *
@@ -107,7 +108,8 @@ import java.lang.annotation.Target;
  * <code>equals</code> and <code>canEqual</code> method. The easiest way to
  * achieve this would be to use the {@code @Canonical} or
  * {@code @EqualsAndHashCode} annotations as shown below:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.*
  * {@code @EqualsAndHashCode}
  * {@code @TupleConstructor(includeSuperProperties=true)}
  * class IntTriple extends IntPair { int z }
@@ -159,7 +161,7 @@ import java.lang.annotation.Target;
  * </pre>
  * There is also support for including or excluding fields/properties by name when constructing
  * the equals and hashCode methods as shown here:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  * {@code @EqualsAndHashCode}(excludes="z")
  * {@code @TupleConstructor}
@@ -172,7 +174,7 @@ import java.lang.annotation.Target;
  *
  * {@code @EqualsAndHashCode}(excludes=["y", "z"])
  * {@code @TupleConstructor}
- * public class Point2D {
+ * public class Point1D {
  *     int x, y, z
  * }
  *

@@ -2634,12 +2634,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
      * <p>
      * For example (with some replaceAll variants thrown in for comparison purposes),
-     * <pre>
-     * assert "hellO world" == "hello world".replaceFirst("(o)") { it[0].toUpperCase() } // first match
-     * assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }   // all matches
+     * <pre class="groovyTestCase">
+     * assert "hello world".replaceFirst("(o)") { it[0].toUpperCase() } == "hellO world" // first match
+     * assert "hello world".replaceAll("(o)") { it[0].toUpperCase() } == "hellO wOrld" // all matches
      *
-     * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
-     * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+     * assert "one fish, two fish".replaceFirst(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() } == '1-FISH, two fish'
+     * assert "one fish, two fish".replaceAll(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() } == '1-FISH, 2-FISH'
      * </pre>
      *
      * @param self    a CharSequence

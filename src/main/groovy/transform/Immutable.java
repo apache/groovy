@@ -29,8 +29,8 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in the creation of immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
- * {@code @Immutable} class Customer {
+ * <pre class="groovyTestCase">
+ * {@code @groovy.transform.Immutable} class Customer {
  *     String first, last
  *     int age
  *     Date since
@@ -224,7 +224,7 @@ public @interface Immutable {
      * new property values and returns a new instance of the Immutable class with
      * these values set.
      * Example:
-     * <pre>
+     * <pre class="groovyTestCase">
      * {@code @groovy.transform.Immutable}(copyWith = true)
      * class Person {
      *     String first, last

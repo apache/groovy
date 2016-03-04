@@ -30,7 +30,8 @@ import java.lang.annotation.Target
  * since the JVM cannot do this itself. This works for both static and non-static methods.
  * <p/>
  * It allows you to write a method like this:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.TailRecursive
  * class Target {
  *      {@code @TailRecursive}
  *      long sumUp(long number, long sum = 0) {
