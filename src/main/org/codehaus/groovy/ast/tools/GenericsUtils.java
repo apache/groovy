@@ -195,6 +195,7 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      * @deprecated Use #parameterizeType instead
      */
+    @Deprecated
     public static ClassNode parameterizeInterfaceGenerics(final ClassNode hint, final ClassNode target) {
         return parameterizeType(hint, target);
     }

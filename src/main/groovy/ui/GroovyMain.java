@@ -366,6 +366,7 @@ public class GroovyMain {
      * @throws IOException
      * @deprecated
      */
+    @Deprecated
     public String getText(String uriOrFilename) throws IOException {
         if (uriPattern.matcher(uriOrFilename).matches()) {
             try {

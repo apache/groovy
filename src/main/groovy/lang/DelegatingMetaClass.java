@@ -193,6 +193,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /**
      * @deprecated
      */
+    @Deprecated
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return delegate.pickMethod(methodName, arguments);
     }

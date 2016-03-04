@@ -231,6 +231,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
+    @Deprecated
     public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
         // For generic input streams, provide a catch-all codebase of GroovyScript
         // Security for these classes can be administered via policy grants with
