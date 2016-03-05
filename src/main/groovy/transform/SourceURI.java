@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * </p>
  *
  * Example usage:
- * <pre>
+ * <pre class="groovyTestCase">
  * {@code @groovy.transform.SourceURI} def sourceURI
  *
  * assert sourceURI instanceof java.net.URI
