@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * {@code @InheritConstructors} saves you typing some boilerplate code.
  * <p>
  * <em>Example usage:</em>
- * <pre>
+ * <pre class="groovyTestCase">
  * class Person {
  *     String first, last
  *     Person(String first, String last) {
@@ -42,15 +42,15 @@ import java.lang.annotation.Target;
  *     }
  * }
  *
- * {@code @InheritConstructors}
+ * {@code @groovy.transform.InheritConstructors}
  * class PersonAge extends Person {
  *     int age
  * }
  *
  * def js = new PersonAge('John', 'Smith')
  * js.age = 25
- * println "$js.last, $js.first is $js.age years old"
- * // => SMITH, John is 25 years old
+ * 
+ * assert "$js.last, $js.first is $js.age years old" == 'SMITH, John is 25 years old'
  * </pre>
  * for this case, the <code>PersonAge</code> class will be
  * equivalent to the following code:

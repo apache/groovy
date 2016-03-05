@@ -31,8 +31,8 @@ import java.lang.annotation.Target;
  * AST transformation which adds the necessary toString() method.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
- * {@code @ToString}
+ * <pre class="groovyTestCase">
+ * {@code @groovy.transform.ToString}
  * class Customer {
  *     String first, last
  *     int age
@@ -40,11 +40,8 @@ import java.lang.annotation.Target;
  *     Collection favItems
  *     private answer = 42
  * }
- * println new Customer(first:'Tom', last:'Jones', age:21, favItems:['Books', 'Games'])
- * </pre>
- * Which will have this output:
- * <pre>
- * Customer(Tom, Jones, 21, Wed Jul 14 23:57:14 EST 2010, [Books, Games])
+ * String customerAsString = new Customer(first:'Tom', last:'Jones', age:21, favItems:['Books', 'Games']).toString()
+ * assert customerAsString == 'Customer(Tom, Jones, 21, Wed Jul 14 23:57:14 EST 2010, [Books, Games])'
  * </pre>
  * There are numerous options to customize the format of the generated output.
  * E.g. if you change the first annotation to:
@@ -64,7 +61,7 @@ import java.lang.annotation.Target;
  * Customer(first:Tom, last:Jones, age:21, answer:42)
  * </pre>
  * If you have this example:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.ToString
  * {@code @ToString} class NamedThing {
  *     String name
@@ -73,25 +70,18 @@ import java.lang.annotation.Target;
  * class AgedThing extends NamedThing {
  *     int age
  * }
- * println new AgedThing(name:'Lassie', age:5)
- * </pre>
- * Then the output will be:
- * <pre>
- * AgedThing(age:5, super:NamedThing(Lassie))
+ * String agedThingAsString = new AgedThing(name:'Lassie', age:5).toString()
+ * assert agedThingAsString == 'AgedThing(age:5, super:NamedThing(Lassie))'
  * </pre>
  * {@code @ToString} can also be used in conjunction with {@code @Canonical} and {@code @Immutable}.
  * <p>
  * If you want to omit fields or properties referring to <tt>null</tt>, you can use the <tt>ignoreNulls</tt> flag:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.ToString
  * {@code @ToString(ignoreNulls = true)} class NamedThing {
  *     String name
  * }
- * println new NamedThing(name: null)
- * </pre>
- * Which results in:
- * <pre>
- * NamedThing()
+ * assert new NamedThing(name: null).toString() == 'NamedThing()'
  * </pre>
  * <p>
  * By default the fully-qualified class name is used as part of the generated toString.

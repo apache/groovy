@@ -66,7 +66,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will attempt to resolve property references and methods to the
      * owner first, then the delegate (<b>this is the default strategy</b>).
      *
-     * For example the following code :
+     * For example the following code:
      * <pre>
      * class Test {
      *     def x = 30
@@ -77,21 +77,15 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *         def cl = { y = x + y }
      *         cl.delegate = data
      *         cl()
-     *         println x
-     *         println y
-     *         println data
+     *         assert x == 30
+     *         assert y == 70
+     *         assert data == [x:10, y:20]
      *     }
      * }
      *
      * new Test().run()
      * </pre>
-     * will output :
-     * <pre>
-     * 30
-     * 70
-     * [x:10, y:20]
-     * </pre>
-     * because the x and y fields declared in the Test class shadow the variables in the delegate.<p>
+     * Will succeed, because the x and y fields declared in the Test class shadow the variables in the delegate.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int OWNER_FIRST = 0;
@@ -100,8 +94,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will attempt to resolve property references and methods to the
      * delegate first then the owner.
      *
-     * For example the following code :
-     * <pre>
+     * For example the following code:
+     * <pre class="groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -112,21 +106,15 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *         cl.delegate = data
      *         cl.resolveStrategy = Closure.DELEGATE_FIRST
      *         cl()
-     *         println x
-     *         println y
-     *         println data
+     *         assert x == 30
+     *         assert y == 40
+     *         assert data == [x:10, y:30]
      *     }
      * }
      *
      * new Test().run()
      * </pre>
-     * will output :
-     * <pre>
-     * 30
-     * 40
-     * [x:10, y:30]
-     * </pre>
-     * because the x and y variables declared in the delegate shadow the fields in the owner class.<p>
+     * This will succeed, because the x and y variables declared in the delegate shadow the fields in the owner class.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int DELEGATE_FIRST = 1;
