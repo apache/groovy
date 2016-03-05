@@ -31,8 +31,8 @@ import java.lang.annotation.Target;
  * AST transformation which adds the necessary toString() method.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
- * {@code @groovy.transform.ToString}
+ * <pre>
+ * {@code @ToString}
  * class Customer {
  *     String first, last
  *     int age
@@ -40,8 +40,11 @@ import java.lang.annotation.Target;
  *     Collection favItems
  *     private answer = 42
  * }
- * String customerAsString = new Customer(first:'Tom', last:'Jones', age:21, favItems:['Books', 'Games']).toString()
- * assert customerAsString == 'Customer(Tom, Jones, 21, Wed Jul 14 23:57:14 EST 2010, [Books, Games])'
+ * println new Customer(first:'Tom', last:'Jones', age:21, favItems:['Books', 'Games'])
+ * </pre>
+ * Which will have this output:
+ * <pre>
+ * Customer(Tom, Jones, 21, Wed Jul 14 23:57:14 EST 2010, [Books, Games])
  * </pre>
  * There are numerous options to customize the format of the generated output.
  * E.g. if you change the first annotation to:
