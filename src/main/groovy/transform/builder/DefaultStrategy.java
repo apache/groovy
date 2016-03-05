@@ -85,8 +85,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * </pre>
  * The {@code prefix} annotation attribute can be used to create setters with a different naming convention. The default is the
  * empty string but you could change that to "set" as follows:
- * <pre>
- * {@code @Builder}(prefix='set')
+ * <pre class="groovyTestCase">
+ * {@code @groovy.transform.builder.Builder}(prefix='set')
  * class Person {
  *     String firstName
  *     String lastName
