@@ -30,8 +30,8 @@ import java.lang.annotation.Target;
  * Do not use with {@link InheritConstructors}.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
- * {@code @TupleConstructor} class Customer {
+ * <pre class="groovyTestCase">
+ * {@code @groovy.transform.TupleConstructor} class Customer {
  *     String first, last
  *     int age
  *     Date since

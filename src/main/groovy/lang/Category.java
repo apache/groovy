@@ -61,7 +61,7 @@ import java.lang.annotation.Target;
  * <p>
  * An example showing a {@code use} statement (allowing fine-grained application of
  * the category methods):
- * <pre>
+ * <pre class="groovyTestCase">
  * {@code @Category}(Integer)
  * class IntegerOps {
  *     def triple() {
@@ -74,7 +74,7 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * Or, "mixing in" your methods at runtime:
- * <pre>
+ * <pre class="groovyTestCase">
  * {@code @Category}(List)
  * class Shuffler {
  *     def shuffle() {
