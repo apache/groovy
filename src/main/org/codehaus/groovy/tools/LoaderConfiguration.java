@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 
 /**
  * Class used to configure a RootLoader from a stream or by using
- * it's methods.
+ * its methods.
  * <p>
  * The stream can be for example a FileInputStream from a file with
  * the following format:
