@@ -30,7 +30,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class FileReaderSource extends AbstractReaderSource {
-    private File file;  // The File from which we produce Readers.
+    private final File file;  // The File from which we produce Readers.
     private final Charset UTF8 = Charset.forName("UTF-8");
 
    /**

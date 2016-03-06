@@ -68,7 +68,7 @@ public class StackTraceUtils {
                             "gjdk.groovy.,"
             ).split("(\\s|,)+");
 
-    private static List<Closure> tests = new ArrayList<Closure>();
+    private static final List<Closure> tests = new ArrayList<Closure>();
 
     /**
      * Adds a groovy.lang.Closure to test whether the stack trace

@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GroovyCategorySupport {
 
     static int categoriesInUse = 0;
-    static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
+    static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -294,7 +294,7 @@ public class GroovyCategorySupport {
 
     static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
-        ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
+        final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
         public ThreadCategoryInfo getInfo() {
             final SoftReference reference = get();

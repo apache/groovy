@@ -29,9 +29,9 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class TernaryExpression extends Expression {
 
-    private BooleanExpression booleanExpression;
-    private Expression trueExpression;
-    private Expression falseExpression;
+    private final BooleanExpression booleanExpression;
+    private final Expression trueExpression;
+    private final Expression falseExpression;
 
     public TernaryExpression(
         BooleanExpression booleanExpression,

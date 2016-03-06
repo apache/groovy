@@ -23,7 +23,7 @@ import java.util.Iterator;
 
 public class ArrayIterator<T> implements Iterator<T> {
     private final T[] array;
-    private int length;
+    private final int length;
     private int index;
 
     public ArrayIterator(T[] array) {

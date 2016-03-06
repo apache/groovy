@@ -52,7 +52,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 public class ExtendedVerifier extends ClassCodeVisitorSupport {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
-    private SourceUnit source;
+    private final SourceUnit source;
     private ClassNode currentClass;
 
     public ExtendedVerifier(SourceUnit sourceUnit) {

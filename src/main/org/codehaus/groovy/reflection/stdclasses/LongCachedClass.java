@@ -24,7 +24,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class LongCachedClass extends NumberCachedClass {
-    private boolean allowNull;
+    private final boolean allowNull;
 
     public LongCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);

@@ -25,7 +25,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class CharacterCachedClass extends CachedClass {
-    private boolean allowNull;
+    private final boolean allowNull;
 
     public CharacterCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);

@@ -65,9 +65,9 @@ import java.util.ListIterator;
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableList implements List {
-    private List delegate;
-    private PropertyChangeSupport pcs;
-    private Closure test;
+    private final List delegate;
+    private final PropertyChangeSupport pcs;
+    private final Closure test;
 
     public static final String SIZE_PROPERTY = "size";
     public static final String CONTENT_PROPERTY = "content";
@@ -375,7 +375,7 @@ public class ObservableList implements List {
     }
 
     protected class ObservableIterator implements Iterator {
-        private Iterator iterDelegate;
+        private final Iterator iterDelegate;
         protected int cursor = -1 ;
 
         public ObservableIterator(Iterator iterDelegate) {
@@ -545,7 +545,7 @@ public class ObservableList implements List {
     }
 
     public static class ElementClearedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.CLEARED);
@@ -560,7 +560,7 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, int index, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, index, ChangeType.MULTI_ADD);
@@ -575,7 +575,7 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_REMOVE);

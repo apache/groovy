@@ -65,9 +65,9 @@ import java.util.regex.Pattern;
  */
 public class GroovySocketServer implements Runnable {
     private URL url;
-    private GroovyShell groovy;
-    private GroovyCodeSource source;
-    private boolean autoOutput;
+    private final GroovyShell groovy;
+    private final GroovyCodeSource source;
+    private final boolean autoOutput;
     private static int counter;
 
     /**

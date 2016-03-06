@@ -92,7 +92,7 @@ import java.util.*;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
     static class MapOfLists {
-        private Map<Object, List<MethodNode>> map = new HashMap<Object, List<MethodNode>>();
+        private final Map<Object, List<MethodNode>> map = new HashMap<Object, List<MethodNode>>();
         public List<MethodNode> get(Object key) {
             return map.get(key);
         }

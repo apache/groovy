@@ -68,7 +68,7 @@ public class BinaryExpressionHelper {
     // isCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
 
-    private WriterController controller;
+    private final WriterController controller;
     
     public BinaryExpressionHelper(WriterController wc) {
         this.controller = wc;

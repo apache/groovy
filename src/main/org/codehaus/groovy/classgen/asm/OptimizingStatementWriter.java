@@ -72,7 +72,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
-    private static MethodCaller[] guards = {
+    private static final MethodCaller[] guards = {
         null,
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigInt"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigL"),
@@ -86,7 +86,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
     private boolean fastPathBlocked = false;
-    private WriterController controller;
+    private final WriterController controller;
 
     public OptimizingStatementWriter(WriterController controller) {
         super(controller);
@@ -424,7 +424,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
         }
         OptimizeFlagsEntry current = new OptimizeFlagsEntry();
-        private LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
+        private final LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
         public void push() {
             olderEntries.addLast(current);
             current = new OptimizeFlagsEntry();

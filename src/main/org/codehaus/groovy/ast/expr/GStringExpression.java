@@ -32,13 +32,15 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class GStringExpression extends Expression {
 
-    private String verbatimText;
-    private List<ConstantExpression> strings = new ArrayList<ConstantExpression>();
-    private List<Expression> values = new ArrayList<Expression>();
+    private final String verbatimText;
+    private final List<ConstantExpression> strings;
+    private final List<Expression> values;
     
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
         super.setType(ClassHelper.GSTRING_TYPE);
+        this.strings = new ArrayList<ConstantExpression>();
+        this.values = new ArrayList<Expression>();
     }
 
     public GStringExpression(String verbatimText, List<ConstantExpression> strings, List<Expression> values) {

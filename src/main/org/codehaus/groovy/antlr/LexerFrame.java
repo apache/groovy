@@ -44,7 +44,7 @@ public class LexerFrame extends JFrame implements ActionListener{
     Border border1;
     Border border2;
 
-    Class lexerClass;
+    final Class lexerClass;
 
     public LexerFrame(Class lexerClass, Class tokenTypesClass){
         super("Token Steam Viewer");
@@ -70,7 +70,7 @@ public class LexerFrame extends JFrame implements ActionListener{
         }
     }
 
-    Hashtable tokens = new Hashtable();
+    final Hashtable tokens = new Hashtable();
 
     private void listTokens(Class tokenTypes) throws Exception{
         Field field[] = tokenTypes.getDeclaredFields();

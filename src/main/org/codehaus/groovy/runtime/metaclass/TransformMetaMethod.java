@@ -29,7 +29,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 
 public class TransformMetaMethod extends MetaMethod {
     
-    private MetaMethod metaMethod;
+    private final MetaMethod metaMethod;
 
     public TransformMetaMethod(MetaMethod metaMethod) {
         this.metaMethod = metaMethod;

@@ -49,10 +49,11 @@ public class GroovyShell extends GroovyObjectSupport {
 
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
 
-    private Binding context;
+    private final Binding context;
     private int counter;
-    private CompilerConfiguration config;
-    GroovyClassLoader loader;
+    private final CompilerConfiguration config;
+    // loader must not be final, it is set by AbstractBytecodeTestCase
+    protected GroovyClassLoader loader;
 
     public static void main(String[] args) {
         GroovyMain.main(args);

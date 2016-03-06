@@ -8796,7 +8796,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
-        private Comparator<V> delegate = new NumberAwareComparator<V>();
+        private final Comparator<V> delegate = new NumberAwareComparator<V>();
 
         @Override
         public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {

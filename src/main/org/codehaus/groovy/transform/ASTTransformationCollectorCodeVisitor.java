@@ -62,9 +62,9 @@ import java.util.TreeMap;
  * @author Jochen Theodorou (blackdrag)
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
-    private SourceUnit source;
+    private final SourceUnit source;
     private ClassNode classNode;
-    private GroovyClassLoader transformLoader;
+    private final GroovyClassLoader transformLoader;
 
     public ASTTransformationCollectorCodeVisitor(SourceUnit source, GroovyClassLoader transformLoader) {
         this.source = source;

@@ -87,7 +87,7 @@ public class ManagedLinkedList<T> {
 
     Element<T> tail;
     Element<T> head;
-    private ReferenceBundle bundle;
+    private final ReferenceBundle bundle;
 
     public ManagedLinkedList(ReferenceBundle bundle) {
         this.bundle = bundle;

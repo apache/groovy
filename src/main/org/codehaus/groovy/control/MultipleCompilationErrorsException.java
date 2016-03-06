@@ -27,7 +27,7 @@ import java.io.StringWriter;
 public class MultipleCompilationErrorsException extends
         CompilationFailedException {
     
-    protected ErrorCollector collector;
+    protected final ErrorCollector collector;
     
     public MultipleCompilationErrorsException(ErrorCollector ec) {
         super(0, null);

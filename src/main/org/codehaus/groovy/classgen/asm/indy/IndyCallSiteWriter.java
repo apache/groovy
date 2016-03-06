@@ -29,7 +29,7 @@ import org.codehaus.groovy.classgen.asm.*;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyCallSiteWriter extends CallSiteWriter {
-    private WriterController controller;
+    private final WriterController controller;
     public IndyCallSiteWriter(WriterController controller) {
         super(controller);
         this.controller = controller;

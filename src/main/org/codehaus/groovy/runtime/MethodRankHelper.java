@@ -55,8 +55,8 @@ public class MethodRankHelper{
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private static final class Pair<U,V> {
-        U u;
-        V v;
+        final U u;
+        final V v;
         public Pair(U u, V v){
             this.u = u;
             this.v = v;

@@ -25,7 +25,7 @@ package groovy.lang;
  */
 public class ParameterArray {
 
-    private Object parameters;
+    private final Object parameters;
 
     public ParameterArray(Object data) {
         parameters = packArray(data);

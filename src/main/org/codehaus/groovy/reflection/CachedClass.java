@@ -69,7 +69,7 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+    private final LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
@@ -84,7 +84,7 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
+    private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
@@ -138,7 +138,7 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
+    private final LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());

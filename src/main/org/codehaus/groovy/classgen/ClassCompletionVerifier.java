@@ -49,7 +49,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private ClassNode currentClass;
-    private SourceUnit source;
+    private final SourceUnit source;
     private boolean inConstructor = false;
     private boolean inStaticConstructor = false;
 

@@ -52,7 +52,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     // note: BigInteger and BigDecimal are also imported by default
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
-    private CompilationUnit compilationUnit;
+    private final CompilationUnit compilationUnit;
     private SourceUnit source;
     private VariableScope currentScope;
 
@@ -61,7 +61,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inClosure = false;
 
     private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
-    private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
+    private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
     private ImportNode currImportNode = null;
     private MethodNode currentMethod;
@@ -74,7 +74,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * the outer class we know is already resolved.
      */
     private static class ConstructedNestedClass extends ClassNode {
-        ClassNode knownEnclosingType;
+        final ClassNode knownEnclosingType;
         public ConstructedNestedClass(ClassNode outer, String inner) {
             super(outer.getName()+"$"+(inner=replacePoints(inner)), Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
@@ -107,7 +107,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * can't be done in these cases...
      */
     private static class ConstructedClassWithPackage extends ClassNode {
-        String prefix;
+        final String prefix;
         String className;
         public ConstructedClassWithPackage(String pkg, String name) {
             super(pkg+name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
@@ -143,7 +143,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * for an alias for this name which is much faster.
      */
     private static class LowerCaseClass extends ClassNode {
-        String className;
+        final String className;
         public LowerCaseClass(String name) {
             super(name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;

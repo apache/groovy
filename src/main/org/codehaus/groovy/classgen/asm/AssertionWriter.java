@@ -47,7 +47,7 @@ public class AssertionWriter {
         SourceText sourceText;
     }
 
-    private WriterController controller;
+    private final WriterController controller;
     private AssertionTracker assertionTracker;
     private AssertionTracker disabledTracker;
     

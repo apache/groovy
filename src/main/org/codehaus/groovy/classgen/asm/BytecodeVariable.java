@@ -33,7 +33,7 @@ public class BytecodeVariable {
     public static final BytecodeVariable THIS_VARIABLE = new BytecodeVariable();
     public static final BytecodeVariable SUPER_VARIABLE = new BytecodeVariable();
 
-    private int index;
+    private final int index;
     private ClassNode type;
     private String name;
     private final int prevCurrent;

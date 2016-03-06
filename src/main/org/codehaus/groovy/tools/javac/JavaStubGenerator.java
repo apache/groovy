@@ -55,21 +55,21 @@ import java.util.List;
 import java.util.Map;
 
 public class JavaStubGenerator {
-    private boolean java5 = false;
-	private String encoding;
-    private boolean requireSuperResolved = false;
-    private File outputPath;
-    private List<String> toCompile = new ArrayList<String>();
-    ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
-    Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
-    ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final boolean java5;
+    private final String encoding;
+    private final boolean requireSuperResolved;
+    private final File outputPath;
+    private final List<String> toCompile = new ArrayList<String>();
+    final ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
+    final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
+    final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
     private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
         this.outputPath = outputPath;
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
-		this.encoding = encoding;
+        this.encoding = encoding;
         outputPath.mkdirs();
     }
 

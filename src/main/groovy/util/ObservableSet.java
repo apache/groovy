@@ -61,9 +61,9 @@ import java.util.*;
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableSet<E> implements Set<E> {
-    private Set<E> delegate;
-    private PropertyChangeSupport pcs;
-    private Closure test;
+    private final Set<E> delegate;
+    private final PropertyChangeSupport pcs;
+    private final Closure test;
 
     public static final String SIZE_PROPERTY = "size";
     public static final String CONTENT_PROPERTY = "content";
@@ -301,7 +301,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     protected class ObservableIterator<E> implements Iterator<E> {
-        private Iterator<E> iterDelegate;
+        private final Iterator<E> iterDelegate;
         private final Stack<E> stack = new Stack<E>();
 
         public ObservableIterator(Iterator<E> iterDelegate) {
@@ -370,7 +370,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class ElementClearedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.CLEARED);
@@ -385,7 +385,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_ADD);
@@ -400,7 +400,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_REMOVE);
