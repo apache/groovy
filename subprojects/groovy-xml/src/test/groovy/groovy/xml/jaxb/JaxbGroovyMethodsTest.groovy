@@ -29,12 +29,12 @@ class JaxbGroovyMethodsTest extends GroovyTestCase {
     JAXBContext jaxbContext = JAXBContext.newInstance(Person)
     Person p = new Person(name: 'JT', age: 20)
 
-    void testMarshallAndUnmarshallObjectUsingCategoryOnMarshallerAndUnmarshaller() {
+    void testMarshallAndUnmarshallObjectUsingExtensionOnMarshallerAndUnmarshaller() {
         String xml = jaxbContext.createMarshaller().marshal(p)
         assert jaxbContext.createUnmarshaller().unmarshal(xml, Person) == p
     }
 
-    void testMarshallAndUnmarshallObjectUsingCategoryOnJaxbContext() {
+    void testMarshallAndUnmarshallObjectUsingExtenstionOnJaxbContext() {
         String xml = jaxbContext.marshal(p)
         assert jaxbContext.unmarshal(xml, Person) == p
     }
