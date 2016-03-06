@@ -336,14 +336,12 @@ public class OperandStack {
                 return;
             }
             box();
-        } else if (primTop) {
-            // top is primitive, target is not
-            // so box and do groovy cast
-            controller.getInvocationWriter().castToNonPrimitiveIfNecessary(top, targetType);
         } else if (primTarget) {
             // top is not primitive so unbox
             // leave that BH#doCast later
         } else {
+            // top is primitive, target is not
+            // so box and do groovy cast
             controller.getInvocationWriter().castToNonPrimitiveIfNecessary(top, targetType);
         }
 

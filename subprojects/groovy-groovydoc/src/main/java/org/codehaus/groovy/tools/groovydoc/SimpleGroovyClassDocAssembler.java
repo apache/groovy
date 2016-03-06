@@ -812,10 +812,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 StringBuilder dot = new StringBuilder();
                 GroovySourceAST dotChild = (GroovySourceAST) node.getFirstChild();
                 while (dotChild != null) {
-                    if (dotChild.getType() == IDENT) {
-                        if (dot.length() > 0) dot.append("/");
-                        dot.append(getAsTextCurrent(dotChild, defaultText));
-                    } else if (dotChild.getType() == DOT) {
+                    if (dotChild.getType() == IDENT || dotChild.getType() == DOT) {
                         if (dot.length() > 0) dot.append("/");
                         dot.append(getAsTextCurrent(dotChild, defaultText));
                     } else if (dotChild.getType() == TYPE_ARGUMENTS) {
