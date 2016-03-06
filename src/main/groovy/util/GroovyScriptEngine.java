@@ -109,7 +109,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static class ScriptCacheEntry {
         final Class scriptClass;
         final long lastModified;
-		final long lastCheck;
+        final long lastCheck;
         final Set<String> dependencies;
         final boolean sourceNewer;
 

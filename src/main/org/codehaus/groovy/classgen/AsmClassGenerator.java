@@ -361,7 +361,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         controller.resetLineNumber();
-    	Parameter[] parameters = node.getParameters();
+        Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
         String signature = BytecodeHelper.getGenericsMethodSignature(node);
         int modifiers = node.getModifiers();
@@ -875,7 +875,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         privateSuperField = true;
                     }
                 } else {
-                	if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
+                    if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
                         field = classNode.getDeclaredField(name);
                         if (field==null && classNode instanceof InnerClassNode) {
                             ClassNode outer = classNode.getOuterClass();
@@ -911,7 +911,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                 return;
                             }
                         }
-                	}
+                    }
                 }
                 if (field != null && !privateSuperField) {//GROOVY-4497: don't visit super field if it is private
                     visitFieldExpression(new FieldExpression(field));

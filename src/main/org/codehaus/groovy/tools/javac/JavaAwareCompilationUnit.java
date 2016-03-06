@@ -59,7 +59,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
-		String encoding = configuration.getSourceEncoding();
+        String encoding = configuration.getSourceEncoding();
         stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
         keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 

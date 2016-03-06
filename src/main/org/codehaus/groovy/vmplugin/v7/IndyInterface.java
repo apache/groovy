@@ -104,7 +104,7 @@ public class IndyInterface {
         static {
             GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener() {
                 public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                	invalidateSwitchPoints();
+                    invalidateSwitchPoints();
                 }
             });
         }

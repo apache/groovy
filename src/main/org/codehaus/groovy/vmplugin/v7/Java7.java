@@ -67,7 +67,7 @@ public class Java7 extends Java6 {
 
     @Override
     public void invalidateCallSites() {
-    	IndyInterface.invalidateSwitchPoints();
+        IndyInterface.invalidateSwitchPoints();
     }
 
     @Override

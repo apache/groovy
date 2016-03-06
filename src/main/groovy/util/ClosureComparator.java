@@ -29,7 +29,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  */
 public class ClosureComparator<T> implements Comparator<T> {
 
-	final Closure closure;
+    final Closure closure;
 
     public ClosureComparator(Closure closure) {
         this.closure = closure;

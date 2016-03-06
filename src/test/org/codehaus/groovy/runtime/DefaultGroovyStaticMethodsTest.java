@@ -29,7 +29,7 @@ public class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
      *Tests System.currentTimeSeconds()
      */
     public void testCurrentTimeSeconds() {
-	long timeMillis = System.currentTimeMillis();
+    long timeMillis = System.currentTimeMillis();
         long timeSeconds = DefaultGroovyStaticMethods.currentTimeSeconds(null);
         long timeMillis2 = System.currentTimeMillis();
         assertTrue(timeMillis/1000 <= timeSeconds);

@@ -390,7 +390,7 @@ public class ObservableMap implements Map {
                 this.events = new PropertyEvent[events.length];
                 System.arraycopy(events, 0, this.events, 0, events.length);
             } else {
-            	this.events = EMPTY_PROPERTY_EVENTS;
+                this.events = EMPTY_PROPERTY_EVENTS;
             }
         }
 

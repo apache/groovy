@@ -54,7 +54,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private final LinkedList stateStack = new LinkedList();
 
     private class StateStackElement {
-    	final VariableScope scope;
+        final VariableScope scope;
         final ClassNode clazz;
         final boolean inConstructor;
 

@@ -46,7 +46,7 @@ import org.codehaus.groovy.transform.trait.Traits;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class TypeTransformers {
-	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle 
         TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
         TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY,
