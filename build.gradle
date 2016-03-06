@@ -391,7 +391,7 @@ task bootstrapJar {
         )
     }
     inputs.property('indy', useIndy())
-    inputs.files fileTree('src')
+    inputs.files sourceSets.main.allJava
     outputs.file archivePath
 }
 
