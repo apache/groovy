@@ -135,4 +135,9 @@ public @interface Builder {
      * made null-safe wrt the parameter.
      */
     boolean useSetters() default false;
+
+    /**
+     * Generate builder methods for properties from super classes.
+     */
+    boolean includeSuperProperties() default false;
 }

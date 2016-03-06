@@ -92,6 +92,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         if (unsupportedAttribute(transform, anno, "buildMethodName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
         if (unsupportedAttribute(transform, anno, "forClass")) return;
+        if (unsupportedAttribute(transform, anno, "includeSuperProperties")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
 
         List<String> excludes = new ArrayList<String>();
@@ -100,7 +101,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         String prefix = getMemberStringValue(anno, "prefix", "set");
-        List<FieldNode> fields = getInstancePropertyFields(buildee);
+        List<FieldNode> fields = getFields(transform, anno, buildee);
         if (includes != null) {
             for (String name : includes) {
                 checkKnownField(transform, anno, name, fields);
@@ -120,5 +121,10 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
                 );
             }
         }
+    }
+
+    @Override
+    protected List<FieldNode> getFields(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee) {
+        return getInstancePropertyFields(buildee);
     }
 }

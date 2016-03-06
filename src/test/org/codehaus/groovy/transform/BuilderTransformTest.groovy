@@ -78,6 +78,15 @@ class BuilderTransformTest extends CompilableTestSupport {
         assert message.contains("Annotation attribute 'buildMethodName' not supported")
     }
 
+    void testSimpleBuilderInvalidUseOfIncludeSuperProperties() {
+        def message = shouldNotCompile """
+            import groovy.transform.builder.*
+            @Builder(builderStrategy=SimpleStrategy, includeSuperProperties=true)
+            class Person { }
+        """
+        assert message.contains("Annotation attribute 'includeSuperProperties' not supported")
+    }
+
     void testSimpleBuilderCustomPrefix() {
         assertScript """
             import groovy.transform.builder.*
@@ -147,31 +156,6 @@ class BuilderTransformTest extends CompilableTestSupport {
             // normal Groovy non-chained version
             assert Person.getMethod("setAge", Integer.TYPE).returnType.name == 'void'
         '''
-    }
-
-    void testSimpleBuilderShouldInheritFromParent() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
-            class Mamal {
-                int age
-            }
-            @Builder(builderStrategy=SimpleStrategy)
-            class Person extends Mamal {
-                String firstName
-                String lastName
-            }
-
-            @CompileStatic
-            def parentBuilder() {
-                def person = new Person().setAge(21).setFirstName("Robert").setLastName("Lewandowski")
-                assert person.firstName == "Robert"
-                assert person.lastName == "Lewandowski"
-                assert person.age == 21
-            }
-            parentBuilder()
-         """
     }
 
     void testDefaultBuilder() {
@@ -328,7 +312,7 @@ class BuilderTransformTest extends CompilableTestSupport {
         assert message.contains("includes/excludes only allowed on classes")
     }
 
-    void testDefaultBuilderShoulInheritFromParent() {
+    void testDefaultBuilderIncludeSuperProperties() {
         assertScript """
             import groovy.transform.builder.*
             import groovy.transform.*
@@ -337,7 +321,7 @@ class BuilderTransformTest extends CompilableTestSupport {
             class Mamal {
                 int age
             }
-            @Builder
+            @Builder(includeSuperProperties=true)
             class Person extends Mamal {
                 String firstName
                 String lastName
@@ -479,7 +463,7 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
-    void testExternalBuilderInheritsFromParent() {
+    void testExternalBuilderIncludeSuperProperties() {
         assertScript """
             import groovy.transform.builder.*
             import groovy.transform.*
@@ -492,7 +476,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 String lastName
             }
 
-            @Builder(builderStrategy=ExternalStrategy, forClass = Person)
+            @Builder(builderStrategy=ExternalStrategy, forClass=Person, includeSuperProperties=true)
             class PersonBuilder { }
 
             @CompileStatic
@@ -634,7 +618,7 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
-    void testInitializerStrategyInheritsFromParent() {
+    void testInitializerStrategyIncludeSuperProperties() {
         assertScript '''
             import groovy.transform.builder.*
             import groovy.transform.*
@@ -643,8 +627,8 @@ class BuilderTransformTest extends CompilableTestSupport {
                 int age
             }
 
-            @ToString(includeSuperProperties = true)
-            @Builder(builderStrategy=InitializerStrategy)
+            @ToString(includeSuperProperties=true)
+            @Builder(builderStrategy=InitializerStrategy, includeSuperProperties=true)
             class Person extends Mamal {
                 String firstName
                 String lastName
@@ -668,7 +652,7 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
 
             @ToString
-            @Builder(builderStrategy=InitializerStrategy)
+            @Builder(builderStrategy=InitializerStrategy, includeSuperProperties=true)
             class Person extends Mamal {
                 String firstName
                 String lastName

@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static groovy.transform.Undefined.isUndefined;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 
 /**
@@ -78,7 +79,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes) {
             List<PropertyInfo> props = new ArrayList<PropertyInfo>();
-            for (FieldNode fNode : getSuperPropertyFields(cNode)) {
+            for (FieldNode fNode : getInstancePropertyFields(cNode)) {
                 if (shouldSkip(fNode.getName(), excludes, includes)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
@@ -154,6 +155,11 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             }
             List<String> includesToCheck = includes.size() == 1 && isUndefined(includes.get(0)) ? null : includes;
             return transform.checkIncludeExcludeUndefinedAware(anno, excludes, includesToCheck, MY_TYPE_NAME);
+        }
+
+        protected List<FieldNode> getFields(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee) {
+           boolean includeSuperProperties = transform.memberHasValue(anno, "includeSuperProperties", true);
+           return includeSuperProperties ? getSuperPropertyFields(buildee) : getInstancePropertyFields(buildee);
         }
 
         protected static class PropertyInfo {

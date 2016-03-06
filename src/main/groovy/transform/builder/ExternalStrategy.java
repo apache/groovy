@@ -49,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
+import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkip;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.MY_TYPE_NAME;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
@@ -122,7 +123,7 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
         if (buildee.getModule() == null) {
             props = getPropertyInfoFromBeanInfo(buildee, includes, excludes);
         } else {
-            props = getPropertyInfoFromClassNode(buildee, includes, excludes);
+            props = getPropertyInfoFromClassNode(transform, anno, buildee, includes, excludes);
         }
         if (includes != null) {
             for (String name : includes) {
@@ -171,6 +172,15 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
         } catch (IntrospectionException ignore) {
         }
         return result;
+    }
+
+    private List<PropertyInfo> getPropertyInfoFromClassNode(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> includes, List<String> excludes) {
+        List<PropertyInfo> props = new ArrayList<PropertyInfo>();
+        for (FieldNode fNode : getFields(transform, anno, cNode)) {
+            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
+            props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
+        }
+        return props;
     }
 
     private static Expression initializeInstance(ClassNode sourceClass, List<PropertyInfo> props, BlockStatement body) {

@@ -43,7 +43,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -201,7 +200,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         ClassNode builder = createBuilder(anno, buildee);
         createBuilderFactoryMethod(anno, buildee, builder);
-        List<FieldNode> fields = getSuperPropertyFields(buildee);
+        List<FieldNode> fields = getFields(transform, anno, buildee);
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         for (FieldNode fieldNode : filteredFields) {
             ClassNode correctedType = getCorrectedType(buildee, fieldNode);

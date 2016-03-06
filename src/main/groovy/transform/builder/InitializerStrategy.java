@@ -50,7 +50,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -147,7 +146,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
-        List<FieldNode> fields = getSuperPropertyFields(buildee);
+        List<FieldNode> fields = getFields(transform, anno, buildee);
         List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
         if (filteredFields.isEmpty()) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
