@@ -169,7 +169,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
             latch.countDown()
         }
         assert latch.getCount() == 1
-        latch.await(1000L, TimeUnit.MILLISECONDS)
+        latch.await(2000L, TimeUnit.MILLISECONDS)
         assert latch.getCount() == 0
     }
 
