@@ -37,4 +37,28 @@ class NodeBuilderTest extends GroovyTestCase {
         assert userlist.user.find { it.@lastname == 'Smith' }.address.size() == 2
         // end::node_builder_gpath_assert[]
     }
+
+    // GROOVY-7044
+    void testNodeCloning() {
+        def node = new NodeBuilder().a {
+            b()
+        }
+        def clonedNode = node.clone()
+        node.appendNode('c')
+
+        // clonedNode should not contain node c
+        assert !clonedNode.children().any { it.name() == 'c' }
+    }
+
+    // GROOVY-7044
+    void testNodeCloningWithAttributes() {
+        def node = new NodeBuilder().a(foo: 'bar') {
+            b()
+        }
+        def clonedNode = node.clone()
+        node.appendNode('c')
+
+        // clonedNode should not contain node c
+        assert !clonedNode.children().any { it.name() == 'c' }
+    }
 }
