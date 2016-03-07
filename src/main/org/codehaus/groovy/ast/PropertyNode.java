@@ -122,6 +122,9 @@ public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
         return false;
     }
 
+    /**
+      * @deprecated not used anymore, has no effect
+      */
     @Deprecated
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;
