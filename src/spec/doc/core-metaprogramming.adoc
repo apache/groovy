@@ -1224,11 +1224,11 @@ strategy class. The following table lists the available strategies that are bund
 configuration options each strategy supports.
 
 |================================
-| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes
-| `SimpleStrategy` | chained setters | n/a | n/a | n/a | yes, default "set" | yes
-| `ExternalStrategy` | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes
-| `DefaultStrategy` | creates a nested helper class | yes, default __<TypeName>__Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes
-| `InitializerStrategy` | creates a nested helper class providing type-safe fluent creation | yes, default __<TypeName>__Initializer | yes, default "createInitializer" | yes, default "create" but usually only used internally | yes, default "" | yes
+| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes | includeSuperProperties
+| `SimpleStrategy` | chained setters | n/a | n/a | n/a | yes, default "set" | yes | n/a
+| `ExternalStrategy` | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes | yes, default `false`
+| `DefaultStrategy` | creates a nested helper class | yes, default __<TypeName>__Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes | yes, default `false`
+| `InitializerStrategy` | creates a nested helper class providing type-safe fluent creation | yes, default __<TypeName>__Initializer | yes, default "createInitializer" | yes, default "create" but usually only used internally | yes, default "" | yes | yes, default `false`
 |================================
 
 .SimpleStrategy
@@ -1275,7 +1275,7 @@ annotation aliases which combine `@TupleConstructor` such as `@Canonical`.
 The annotation attribute `useSetters` can be used if you have a setter which you want called as part of the
 construction process. See the JavaDoc for details.
 
-The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName` and `forClass` are not supported for this strategy.
+The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName`, `forClass` and `includeSuperProperties` are not supported for this strategy.
 
 NOTE: Groovy already has built-in building mechanisms. Don't rush to using `@Builder` if the built-in mechanisms meet your needs. Some examples:
 [source,groovy]
