@@ -18,7 +18,6 @@
  */
 package groovy.util;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -37,7 +36,7 @@ public class NodeBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name) {
-        return new Node(getCurrentNode(), name, new ArrayList());
+        return new Node(getCurrentNode(), name);
     }
 
     protected Object createNode(Object name, Object value) {
@@ -45,7 +44,7 @@ public class NodeBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name, Map attributes) {
-        return new Node(getCurrentNode(), name, attributes, new ArrayList());
+        return new Node(getCurrentNode(), name, attributes);
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
