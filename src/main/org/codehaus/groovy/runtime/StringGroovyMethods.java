@@ -55,9 +55,8 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
 /**
  * This class defines new groovy methods which appear on String-related JDK
  * classes (String, CharSequence, Matcher) inside the Groovy environment.
- * Static methods are used with the
- * first parameter being the destination class,
- * e.g.. <code>public static String reverse(String self)</code>
+ * Static methods are used with the first parameter being the destination class,
+ * e.g. <code>public static String reverse(String self)</code>
  * provides a <code>reverse()</code> method for <code>String</code>.
  * <p>
  * NOTE: While this class contains many 'public' static methods, it is
@@ -3463,7 +3462,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts the given CharSequence into a Set of unique String of one character.
+     * Converts the given CharSequence into a Set of unique Strings of one character.
      *
      * @param self a CharSequence
      * @return a Set of unique characters (each a 1-character String)
