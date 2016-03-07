@@ -25,8 +25,9 @@ import javax.xml.bind.Marshaller
 import javax.xml.bind.Unmarshaller
 
 /**
- * This class defines methods which simplifies marshalling object to
- * {@link String} containing xml and unmarshalling xml in {@link String} to object.
+ * This class defines new groovy methods which appear on Jaxb-related JDK
+ * classes ({@code JAXBContext}, {@code Marshaller}) inside the Groovy environment.
+ * Static methods are used with the first parameter being the destination class.
  *
  * @author Dominik Przybysz
  */
@@ -34,53 +35,51 @@ import javax.xml.bind.Unmarshaller
 class JaxbGroovyMethods {
 
     /**
-     * Marshall object to xml using given marshaller
+     * Marshall an object to a xml {@code String}.
      *
-     * @param marshaller Marshaller, which know class of o. Could be obtained from {@link JAXBContext}
-     * using method {@link JAXBContext#createMarshaller()}
-     * @param o object to marshall to xml
-     * @return String representing object as xml
+     * @param self a Marshaller which can marshall the type of the given object
+     * @param jaxbElement object to marshall to a {@code String}
+     * @return {@code String} representing the object as xml
      */
-    static <T> String marshal(Marshaller marshaller, T o) {
+    static <T> String marshal(Marshaller self, T jaxbElement) {
         StringWriter sw = new StringWriter()
-        marshaller.marshal(o, sw)
-        return sw.toString()
+        self.marshal(jaxbElement, sw)
+        sw.toString()
     }
 
     /**
-     * Marshall object to xml using given {@link JAXBContext}
+     * Marshall an object to a xml {@code String}.
      *
-     * @param jaxbContext JaxbContext, which know class of o. Could be created using {@link JAXBContext#newInstance(java.lang.Class[])}
-     * @param o object to marshall to xml
-     * @return String representing object as xml
+     * @param self a JaxbContext, which recognizes the type of the given object
+     * @param jaxbElement object to marshall to a {@code String}
+     * @return String representing the object as xml
      */
-    static <T> String marshal(JAXBContext jaxbContext, T o) {
-        return marshal(jaxbContext.createMarshaller(), o)
+    static <T> String marshal(JAXBContext self, T jaxbElement) {
+        marshal(self.createMarshaller(), jaxbElement)
     }
 
     /**
-     * Unmarshall xml (given as String) to object of given class using {@link Unmarshaller}
+     * Unmarshal xml data from the given {@code String} to object of the given type.
      *
-     * @param unmarshaller Unmarshaller, which know given class. Could be obtained from {@link JAXBContext}
-     * using method {@link JAXBContext#createUnmarshaller()}
-     * @param xml xml as {@link String}
-     * @param dest Class representing given xml
+     * @param self Unmarshaller, a Unmarshaller which can unmarshall the type of the given object
+     * @param xml xml data as a {@link String}
+     * @param declaredType appropriate JAXB mapped class to hold node's xml data
      * @return instance of destination class unmarshalled from xml
      */
-    static <T> T unmarshal(Unmarshaller unmarshaller, String xml, Class<T> dest) {
+    static <T> T unmarshal(Unmarshaller self, String xml, Class<T> declaredType) {
         StringReader sr = new StringReader(xml)
-        return dest.cast(unmarshaller.unmarshal(sr))
+        declaredType.cast(self.unmarshal(sr))
     }
 
     /**
-     * Unmarshall xml (given as String) to object of given class using {@link JAXBContext}
+     * Unmarshal xml data from the given {@code String} to object of the given type.
      *
-     * @param jaxbContext JaxbContext, which know destination class. Could be created using {@link JAXBContext#newInstance(java.lang.Class[])}
-     * @param xml xml as {@link String}
-     * @param dest Class representing given xml
+     * @param self a JaxbContext, which recognizes the type of the given object
+     * @param xml xml data as a {@link String}
+     * @param declaredType appropriate JAXB mapped class to hold node's xml data
      * @return instance of destination class unmarshalled from xml
      */
-    static <T> T unmarshal(JAXBContext jaxbContext, String xml, Class<T> dest) {
-        return unmarshal(jaxbContext.createUnmarshaller(), xml, dest)
+    static <T> T unmarshal(JAXBContext self, String xml, Class<T> declaredType) {
+        unmarshal(self.createUnmarshaller(), xml, declaredType)
     }
 }
