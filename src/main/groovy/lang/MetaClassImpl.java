@@ -1073,6 +1073,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     methodName = mc.getMethod();
                     final Class ownerClass = owner instanceof Class ? (Class) owner : owner.getClass();
                     final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+                    if (owner instanceof Class && !((Boolean)((MethodClosure)object).getProperty("staticMethod")).booleanValue()) {
+                        Object newOwner = arguments[0];
+                        Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+                        return ownerMetaClass.invokeMethod(ownerClass, newOwner, methodName, newArguments, false, false);
+                    }
+
                     return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
                 } else if (objectClass == CurriedClosure.class) {
                     final CurriedClosure cc = (CurriedClosure) object;

@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 
 import java.util.List;
+import java.util.Arrays;
 
 
 /**
@@ -36,6 +37,7 @@ public class MethodClosure extends Closure {
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private String method;
+    private boolean isStaticMethod;
 
     public MethodClosure(Object owner, String method) {
         super(owner);
@@ -53,7 +55,16 @@ public class MethodClosure extends Closure {
                 Class[] pt = m.getNativeParameterTypes();
                 maximumNumberOfParameters = pt.length;
                 parameterTypes = pt;
+                isStaticMethod = m.isStatic();
             }
+        }
+
+        if (owner instanceof Class && !isStaticMethod) {
+            maximumNumberOfParameters++;
+            Class[] newParameterTypes = new Class[parameterTypes.length+1];
+            System.arraycopy(parameterTypes, 0, newParameterTypes, 1, parameterTypes.length);
+            newParameterTypes[0] = (Class)owner;
+            parameterTypes = newParameterTypes;
         }
     }
     
@@ -62,8 +73,30 @@ public class MethodClosure extends Closure {
     }
 
     protected Object doCall(Object arguments) {
+        if (getOwner() instanceof Class && !isStaticMethod) {
+            if (arguments instanceof Object[]) {
+                Object[] args = (Object[])arguments;
+                Object insertedReceiver = args[0];
+                Object[] newArgs = Arrays.copyOfRange(args, 1, args.length);
+                return InvokerHelper.invokeMethod(insertedReceiver, method, newArgs);
+            }
+            return InvokerHelper.invokeMethod(arguments, method, new Object[]{});
+        }
         return InvokerHelper.invokeMethod(getOwner(), method, arguments);
     }
+
+    @SuppressWarnings("unchecked")
+    public Object call(Object... args) {
+        try {
+            return doCall(args);
+        } catch (InvokerInvocationException e) {
+            ExceptionUtils.sneakyThrow(e.getCause());
+            return null; // unreachable statement
+        }  catch (Exception e) {
+            return throwRuntimeException(e);
+        }
+    }
+
 
     private Object readResolve() {
         if (ALLOW_RESOLVE) {
@@ -75,6 +108,10 @@ public class MethodClosure extends Closure {
     public Object getProperty(String property) {
         if ("method".equals(property)) {
             return getMethod();
-        } else  return super.getProperty(property);        
+        }
+        else if ("staticMethod".equals(property)) {
+            return isStaticMethod;
+        }
+        else  return super.getProperty(property);
     }
 }

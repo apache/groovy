@@ -214,7 +214,7 @@ boolean doFilter(String s) { s.contains('G') }
 Predicate filter = this.&doFilter
 assert filter.accept('Groovy') == true
 
-Greeter greeter = GroovySystem.&getVersion
+Greeter greeter = new GroovySystem().&getVersion
 greeter.greet()
 // end::assertions_implicit_closure_to_sam_and_method_pointer[]
 
