@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
+import groovy.lang.MissingMethodException;
 
 import java.util.List;
 import java.util.Arrays;
@@ -76,6 +77,9 @@ public class MethodClosure extends Closure {
         if (getOwner() instanceof Class && !isStaticMethod) {
             if (arguments instanceof Object[]) {
                 Object[] args = (Object[])arguments;
+                if (args.length <= 0) {
+                    throw new MissingMethodException(method, (Class)getOwner(), args);
+                }
                 Object insertedReceiver = args[0];
                 Object[] newArgs = Arrays.copyOfRange(args, 1, args.length);
                 return InvokerHelper.invokeMethod(insertedReceiver, method, newArgs);
