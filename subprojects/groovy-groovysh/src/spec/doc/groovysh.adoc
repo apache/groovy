@@ -202,6 +202,7 @@ Available commands:
   :history   (:H ) Display, manage and recall edit-line history
   :alias     (:a ) Create an alias
   :set       (:= ) Set (or list) preferences
+  :grab      (:g ) Add a dependency to the shell environment
   :register  (:rc) Register a new command with the shell
   :doc       (:D ) Open a browser window displaying the doc for the argument
 
@@ -238,6 +239,20 @@ but the shell will complain about an abnormal shutdown of the JVM.
 Add a custom import which will be included for all shell evaluations.
 
 This command can be given at any time to add new imports.
+
+[[GroovyShell-grab]]
+===== `grab`
+
+Grab a dependency (Maven, Ivy, etc.) from Internet sources or cache,
+and add it to the Groovy Shell environment.
+
+----
+groovy:000> :grab 'com.google.guava:guava:19.0'
+groovy:000> import com.google.common.collect.BiMap 
+===> com.google.common.collect.BiMap
+----
+
+This command can be given at any time to add new dependencies.
 
 [[GroovyShell-display]]
 ===== `display`
