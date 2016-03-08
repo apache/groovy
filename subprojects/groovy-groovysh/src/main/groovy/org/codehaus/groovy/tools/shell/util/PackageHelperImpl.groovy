@@ -44,10 +44,18 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
 
     PackageHelperImpl(final ClassLoader groovyClassLoader=null) {
         this.groovyClassLoader = groovyClassLoader
-        if (! Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
-            rootPackages = initializePackages(groovyClassLoader)
-        }
+        initializePackages()
         Preferences.addChangeListener(this)
+    }
+
+    void reset() {
+        initializePackages()
+    }
+
+    private void initializePackages() {
+        if (! Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
+            rootPackages = getPackages(this.groovyClassLoader)
+        }
     }
 
     @Override
@@ -56,12 +64,12 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
             if (Boolean.valueOf(evt.getNewValue())) {
                 rootPackages = null
             } else if (rootPackages == null) {
-                rootPackages = initializePackages(groovyClassLoader)
+                initializePackages()
             }
         }
     }
 
-    static Map<String, CachedPackage> initializePackages(final ClassLoader groovyClassLoader) throws IOException {
+    private static Map<String, CachedPackage> getPackages(final ClassLoader groovyClassLoader) throws IOException {
         Map<String, CachedPackage> rootPackages = new HashMap()
         Set<URL> urls = new HashSet<URL>()
 
