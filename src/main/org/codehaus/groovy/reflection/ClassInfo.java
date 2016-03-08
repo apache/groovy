@@ -37,11 +37,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClassInfo {
 
-    final LazyCachedClassRef cachedClassRef;
-    final LazyClassLoaderRef artifactClassLoader;
+    private final LazyCachedClassRef cachedClassRef;
+    private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
     public final int hash = -1;
-    final Class klazz;
+    private final Class klazz;
 
     private final AtomicInteger version = new AtomicInteger();
 
@@ -51,8 +51,8 @@ public class ClassInfo {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
     
-    static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
-    static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
     
     private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
 
@@ -65,7 +65,7 @@ public class ClassInfo {
 		}
 	});
     
-    static final GlobalClassSet globalClassSet = new GlobalClassSet();
+    private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
     	this.klazz = klazz;
@@ -275,7 +275,7 @@ public class ClassInfo {
         return globalClassSet.fullSize();
     }
 
-    static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
+    private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
         if (klazz == Object.class)
             return new ObjectCachedClass(classInfo);
 
@@ -425,7 +425,7 @@ public class ClassInfo {
         }
     }
     
-    static class GlobalClassSet {
+    private static class GlobalClassSet {
     	
     	private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
     	

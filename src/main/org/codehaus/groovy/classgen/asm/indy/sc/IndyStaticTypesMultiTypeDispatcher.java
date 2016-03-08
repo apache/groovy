@@ -46,7 +46,7 @@ public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpress
             MethodType.methodType(
                     CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class
             ).toMethodDescriptorString();
-    static final Handle BSM =
+    private static final Handle BSM =
             new Handle(
                     H_INVOKESTATIC,
                     INDY_INTERFACE_NAME,

@@ -28,7 +28,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
  * @param <T>
  */
 class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
-	static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+	private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
 
 	private class EntryWithValue extends ManagedConcurrentMap.EntryWithValue<Class<?>,T>{
 
@@ -70,7 +70,7 @@ class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
 
 	}
 
-	final ComputeValue<T> computeValue;
+	private final ComputeValue<T> computeValue;
 
 	private final GroovyClassValuePreJava7Map map = new GroovyClassValuePreJava7Map();
 

@@ -40,9 +40,9 @@ import java.util.Map;
  * @author Guillaume Laforge
  */
 public class JavaStubCompilationUnit extends CompilationUnit {
-    final JavaStubGenerator stubGenerator;
+    private final JavaStubGenerator stubGenerator;
 
-    int stubCount;
+    private int stubCount;
 
     public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl, File destDir) {
         super(config, null, gcl);

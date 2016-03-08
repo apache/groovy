@@ -38,8 +38,8 @@ import java.util.Map;
  * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    final List<String> javaSources;
-    final JavaStubGenerator stubGenerator;
+    private final List<String> javaSources;
+    private final JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private final File generationGoal;
     private final boolean keepStubs;

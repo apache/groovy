@@ -72,7 +72,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = MapConstructor.class;
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
+    private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
 //    private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {

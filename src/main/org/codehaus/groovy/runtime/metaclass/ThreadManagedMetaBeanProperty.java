@@ -43,9 +43,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private static final ConcurrentHashMap<String,ManagedConcurrentMap> PROPNAME_TO_MAP = new ConcurrentHashMap<String, ManagedConcurrentMap>();
 
-    final ManagedConcurrentMap instance2Prop;
+    private final ManagedConcurrentMap instance2Prop;
 
-    final Class declaringClass;
+    private final Class declaringClass;
     private final ThreadBoundGetter getter;
     private final ThreadBoundSetter setter;
     private Object initialValue;

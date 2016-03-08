@@ -122,7 +122,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
     private boolean isPackageAllowed = true;
     private boolean isMethodDefinitionAllowed = true;
-    boolean isClosuresAllowed = true;
+    private boolean isClosuresAllowed = true;
 
     // imports
     private List<String> importsWhitelist;
@@ -144,29 +144,29 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     // indirect import checks
     // if set to true, then security rules on imports will also be applied on classnodes.
     // Direct instantiation of classes without imports will therefore also fail if this option is enabled
-    boolean isIndirectImportCheckEnabled;
+    private boolean isIndirectImportCheckEnabled;
 
     // statements
-    List<Class<? extends Statement>> statementsWhitelist;
-    List<Class<? extends Statement>> statementsBlacklist;
-    final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
+    private List<Class<? extends Statement>> statementsWhitelist;
+    private List<Class<? extends Statement>> statementsBlacklist;
+    private final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
 
     // expressions
-    List<Class<? extends Expression>> expressionsWhitelist;
-    List<Class<? extends Expression>> expressionsBlacklist;
-    final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
+    private List<Class<? extends Expression>> expressionsWhitelist;
+    private List<Class<? extends Expression>> expressionsBlacklist;
+    private final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
 
     // tokens from Types
-    List<Integer> tokensWhitelist;
-    List<Integer> tokensBlacklist;
+    private List<Integer> tokensWhitelist;
+    private List<Integer> tokensBlacklist;
 
     // constant types
-    List<String> constantTypesWhiteList;
-    List<String> constantTypesBlackList;
+    private List<String> constantTypesWhiteList;
+    private List<String> constantTypesBlackList;
 
     // receivers
-    List<String> receiversWhiteList;
-    List<String> receiversBlackList;
+    private List<String> receiversWhiteList;
+    private List<String> receiversBlackList;
 
     public SecureASTCustomizer() {
         super(CompilePhase.CANONICALIZATION);
@@ -598,7 +598,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
-    void assertImportIsAllowed(final String className) {
+    private void assertImportIsAllowed(final String className) {
         if (importsWhitelist != null && !importsWhitelist.contains(className)) {
             if (starImportsWhitelist != null) {
                 // we should now check if the import is in the star imports
@@ -624,7 +624,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
-    void assertStaticImportIsAllowed(final String member, final String className) {
+    private void assertStaticImportIsAllowed(final String member, final String className) {
         final String fqn = member.equals(className) ? member : className + "." + member;
         if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
             if (staticStarImportsWhitelist != null) {
@@ -652,7 +652,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * CodeVisitorSupport} class to make sure that future features of the language gets managed by this visitor. Thus,
      * adding a new feature would result in a compilation error if this visitor is not updated.
      */
-    class SecuringCodeVisitor implements GroovyCodeVisitor {
+    private class SecuringCodeVisitor implements GroovyCodeVisitor {
 
         /**
          * Checks that a given statement is either in the whitelist or not in the blacklist.

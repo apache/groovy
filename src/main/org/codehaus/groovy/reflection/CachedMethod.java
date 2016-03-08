@@ -309,7 +309,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
-    static class MyComparator implements Comparator {
+    private static class MyComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
                 return ((CachedMethod)o1).compareTo(o2);

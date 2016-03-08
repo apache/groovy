@@ -131,7 +131,7 @@ public class ReflectionUtils {
                           || extraIgnoredPackages.contains(c.getPackage().getName())))));
     }
 
-    static class ClassContextHelper extends SecurityManager {
+    private static class ClassContextHelper extends SecurityManager {
         @Override
         public Class[] getClassContext() {
             return super.getClassContext();

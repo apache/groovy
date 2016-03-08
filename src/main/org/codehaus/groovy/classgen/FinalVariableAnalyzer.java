@@ -98,7 +98,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         return state;
     }
 
-    static Variable getTarget(Variable v) {
+    private static Variable getTarget(Variable v) {
         if (v instanceof VariableExpression) {
             Variable t = ((VariableExpression) v).getAccessedVariable();
             if (t==v) return t;
@@ -342,7 +342,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         void variableNotAlwaysInitialized(VariableExpression var);
     }
 
-    static class StateMap extends HashMap<Variable, VariableState> {
+    private static class StateMap extends HashMap<Variable, VariableState> {
         @Override
         public VariableState get(final Object key) {
             return super.get(getTarget((Variable)key));

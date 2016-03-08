@@ -75,7 +75,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     };
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
-    static class LocalData {
+    private static class LocalData {
         CompilationUnit cu;
         final StringSetMap dependencyCache = new StringSetMap();
         final Map<String, String> precompiledEntries = new HashMap<String, String>();
@@ -83,7 +83,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
 
-    static synchronized ThreadLocal<LocalData> getLocalData() {
+    private static synchronized ThreadLocal<LocalData> getLocalData() {
         ThreadLocal<LocalData> local = localData.get();
         if (local != null) return local;
         local = new ThreadLocal<LocalData>();
@@ -92,11 +92,11 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     private final URL[] roots;
-    final ResourceConnector rc;
-    final ClassLoader parentLoader;
+    private final ResourceConnector rc;
+    private final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
-    final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
-    CompilerConfiguration config;
+    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
+    private CompilerConfiguration config;
 
     {
         config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
@@ -441,7 +441,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      *
      * @param urlConnection the {@link URLConnection} to be "closed" to close the underlying file descriptors.
      */
-    static void forceClose(URLConnection urlConnection) {
+    private static void forceClose(URLConnection urlConnection) {
         if (urlConnection != null) {
             // We need to get the input stream and close it to force the open
             // file descriptor to be released. Otherwise, we will reach the limit
@@ -617,7 +617,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         return InvokerHelper.createScript(loadScriptByName(scriptName), binding);
     }
 
-    long getLastModified(String scriptName) throws ResourceException {
+    private long getLastModified(String scriptName) throws ResourceException {
         URLConnection conn = rc.getResourceConnection(scriptName);
         long lastMod = 0;
         try {

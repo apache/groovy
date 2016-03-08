@@ -38,7 +38,7 @@ public abstract class Memoize {
     /**
      * A place-holder for null values in cache
      */
-    static final MemoizeNullValue MEMOIZE_NULL = new MemoizeNullValue();
+    private static final MemoizeNullValue MEMOIZE_NULL = new MemoizeNullValue();
 
     /**
      * Creates a new closure delegating to the supplied one and memoizing all return values by the arguments.
@@ -93,7 +93,7 @@ public abstract class Memoize {
      *
      * @return The key - a list holding all arguments
      */
-    static Object generateKey(final Object[] args) {
+    private static Object generateKey(final Object[] args) {
         if (args == null) return Collections.emptyList();
         Object[] copyOfArgs = copyOf(args, args.length);
         return asList(copyOfArgs);
@@ -102,7 +102,7 @@ public abstract class Memoize {
     /**
      * A place-holder for cached null values
      */
-    static class MemoizeNullValue {
+    private static class MemoizeNullValue {
 
         @Override
         public boolean equals(final Object obj) {
@@ -115,7 +115,7 @@ public abstract class Memoize {
         }
     }
 
-    static class MemoizeFunction<V> extends Closure<V> {
+    private static class MemoizeFunction<V> extends Closure<V> {
         final MemoizeCache<Object, Object> cache;
         final Closure<V> closure;
         
@@ -137,7 +137,7 @@ public abstract class Memoize {
         }
     }
     
-    static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
+    private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
         final ProtectionStorage lruProtectionStorage;
         final ReferenceQueue queue;
         

@@ -39,8 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GroovyCategorySupport {
 
-    static int categoriesInUse = 0;
-    static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
+    private static int categoriesInUse = 0;
+    private static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -103,7 +103,7 @@ public class GroovyCategorySupport {
             }
         }
 
-        <T> T use(Class categoryClass, Closure<T> closure) {
+        private <T> T use(Class categoryClass, Closure<T> closure) {
             newScope();
             try {
                 use(categoryClass);
@@ -196,7 +196,7 @@ public class GroovyCategorySupport {
         }
     }
 
-    static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
+    private static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
 
     public static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
@@ -292,7 +292,7 @@ public class GroovyCategorySupport {
          return categoryInfo == null ? null : categoryInfo.getPropertyCategorySetterName(propertyName);
    }
 
-    static class MyThreadLocal extends ThreadLocal<SoftReference> {
+    private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
         final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 

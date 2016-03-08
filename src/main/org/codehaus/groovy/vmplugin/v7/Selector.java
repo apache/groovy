@@ -113,7 +113,7 @@ public abstract class Selector {
      * always 2, the returned Object[] will have a size of 1+n, where n is the
      * number arguments.
      */
-    static Object[] spread(Object[] args, boolean spreadCall) {
+    private static Object[] spread(Object[] args, boolean spreadCall) {
         if (!spreadCall) return args;
         Object[] normalArguments = (Object[]) args[1];
         Object[] ret = new Object[normalArguments.length+1];
@@ -630,7 +630,7 @@ public abstract class Selector {
             }
         }
 
-        private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
+        MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
             if (m.getDeclaringClass()==Class.class && m.getName().equals("forName") && m.getParameterTypes().length==1) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
             } else {
@@ -974,7 +974,7 @@ public abstract class Selector {
      * Unwraps the given object from a {@link Wrapper}. If not
      * wrapped, the given object is returned.
      */
-    static Object unwrapIfWrapped(Object object) {
+    private static Object unwrapIfWrapped(Object object) {
         if (object instanceof Wrapper) return unwrap(object);
         return object;
     }
@@ -996,7 +996,7 @@ public abstract class Selector {
     /**
      * Returns if a method is static
      */
-    static boolean isStatic(Method m) {
+    private static boolean isStatic(Method m) {
         int mods = m.getModifiers();
         return (mods & Modifier.STATIC) != 0;
     }
@@ -1006,7 +1006,7 @@ public abstract class Selector {
      * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
      * none of these cases matches, this method returns null.
      */
-    static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
+    private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
         Class mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||
                          mcc == AdaptingMetaClass.class ||
@@ -1024,7 +1024,7 @@ public abstract class Selector {
      * Helper method to remove the receiver from the argument array
      * by producing a new array.
      */
-    static Object[] removeRealReceiver(Object[] args) {
+    private static Object[] removeRealReceiver(Object[] args) {
         Object[] ar = new Object[args.length-1];
         System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;

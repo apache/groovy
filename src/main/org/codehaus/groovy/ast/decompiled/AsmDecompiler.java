@@ -144,7 +144,7 @@ public abstract class AsmDecompiler {
         }
     }
 
-    static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
+    private static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
         return new AnnotationReader() {
             @Override
             void visitAttribute(String name, Object value) {

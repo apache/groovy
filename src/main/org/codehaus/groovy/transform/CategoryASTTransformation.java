@@ -68,7 +68,7 @@ import java.util.Set;
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
     // should not use a static variable because of possible changes to node metadata
     // which would be visible to other compilation units
-    final VariableExpression thisExpression = createThisExpression();
+    private final VariableExpression thisExpression = createThisExpression();
 
     private static VariableExpression createThisExpression() {
         VariableExpression expr = new VariableExpression("$this");

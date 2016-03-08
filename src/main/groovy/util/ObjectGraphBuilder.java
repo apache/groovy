@@ -53,21 +53,21 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String CLASSNAME_RESOLVER_REFLECTION_ROOT = "root";
 
     // Regular expression pattern used to identify words ending in 'y' preceded by a consonant
-    static final Pattern PLURAL_IES_PATTERN = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PLURAL_IES_PATTERN = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
 
-    ChildPropertySetter childPropertySetter;
-    ClassNameResolver classNameResolver;
-    IdentifierResolver identifierResolver;
-    NewInstanceResolver newInstanceResolver;
+    private ChildPropertySetter childPropertySetter;
+    private ClassNameResolver classNameResolver;
+    private IdentifierResolver identifierResolver;
+    private NewInstanceResolver newInstanceResolver;
     private final ObjectFactory objectFactory = new ObjectFactory();
     private final ObjectBeanFactory objectBeanFactory = new ObjectBeanFactory();
     private final ObjectRefFactory objectRefFactory = new ObjectRefFactory();
-    ReferenceResolver referenceResolver;
-    RelationNameResolver relationNameResolver;
-    final Map<String, Class> resolvedClasses = new HashMap<String, Class>();
-    ClassLoader classLoader;
+    private ReferenceResolver referenceResolver;
+    private RelationNameResolver relationNameResolver;
+    private final Map<String, Class> resolvedClasses = new HashMap<String, Class>();
+    private ClassLoader classLoader;
     private boolean lazyReferencesAllowed = true;
-    final List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
+    private final List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
     private String beanFactoryName = "bean";
 
     public ObjectGraphBuilder() {
@@ -584,7 +584,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                                          Object child);
     }
 
-    void resolveLazyReferences() {
+    private void resolveLazyReferences() {
         if (!lazyReferencesAllowed) return;
         for (NodeReference ref : lazyReferences) {
             if (ref.parent == null) continue;
@@ -616,11 +616,11 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    static String makeClassName(String root, String name) {
+    private static String makeClassName(String root, String name) {
         return root + "." + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
-    static class ObjectFactory extends AbstractFactory {
+    private static class ObjectFactory extends AbstractFactory {
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
@@ -726,7 +726,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    static class ObjectBeanFactory extends ObjectFactory {
+    private static class ObjectBeanFactory extends ObjectFactory {
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             if(value == null) return super.newInstance(builder, name, value, properties);
@@ -761,7 +761,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    static class ObjectRefFactory extends ObjectFactory {
+    private static class ObjectRefFactory extends ObjectFactory {
         public boolean isLeaf() {
             return true;
         }

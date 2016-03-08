@@ -126,7 +126,7 @@ class MemberSignatureParser {
         return result;
     }
 
-    static ClassNode applyErasure(ClassNode genericType, ClassNode erasure) {
+    private static ClassNode applyErasure(ClassNode genericType, ClassNode erasure) {
         if (genericType.isGenericsPlaceHolder()) {
             genericType.setRedirect(erasure);
         }

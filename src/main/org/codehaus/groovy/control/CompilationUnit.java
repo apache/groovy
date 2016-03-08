@@ -755,7 +755,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs classgen() on a single ClassNode.
      */
-    final PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
+    private final PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
         public boolean needSortedInput() {
             return true;
         }

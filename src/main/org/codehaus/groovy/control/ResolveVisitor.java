@@ -94,7 +94,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
 
-    static String replacePoints(String name) {
+    private static String replacePoints(String name) {
         return name.replace('.','$');
     }
 

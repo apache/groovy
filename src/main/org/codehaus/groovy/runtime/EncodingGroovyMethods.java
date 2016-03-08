@@ -34,7 +34,7 @@ import java.io.Writer;
  */
 public class EncodingGroovyMethods {
 
-    static final char[] T_TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
+    private static final char[] T_TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
 
     private static final String CHUNK_SEPARATOR = "\r\n";
 

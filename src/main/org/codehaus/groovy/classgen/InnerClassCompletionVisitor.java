@@ -157,7 +157,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         method.setCode(block);
     }
 
-    void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
+    private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
         mv.visitVarInsn(ALOAD, 0);
         if (CLOSURE_TYPE.equals(thisField.getType())) {
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", CLOSURE_DESCRIPTOR);

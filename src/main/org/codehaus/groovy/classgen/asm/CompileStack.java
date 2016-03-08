@@ -72,13 +72,13 @@ public class CompileStack implements Opcodes {
     // state flag
     private boolean clear=true;
     // current scope
-    VariableScope scope;
+    private VariableScope scope;
     // current label for continue
-    Label continueLabel;
+    private Label continueLabel;
     // current label for break
-    Label breakLabel;
+    private Label breakLabel;
     // available variables on stack
-    Map stackVariables = new HashMap();
+    private Map stackVariables = new HashMap();
     // index of the last variable on stack
     private int currentVariableIndex = 1;
     // index for the next variable on stack
@@ -90,11 +90,11 @@ public class CompileStack implements Opcodes {
     // map containing named labels of parenting blocks
     private Map superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
-    Map currentBlockNamedLabels = new HashMap();
+    private Map currentBlockNamedLabels = new HashMap();
     // list containing finally blocks
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
-    LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
+    private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
     private final LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
 
     private Label thisStartLabel, thisEndLabel;
@@ -130,7 +130,7 @@ public class CompileStack implements Opcodes {
     // stores if implicit or explicit this is used.
     private boolean implicitThis;
     private final WriterController controller;
-    boolean inSpecialConstructallCall;
+    private boolean inSpecialConstructallCall;
 
     protected static class LabelRange {
         public Label start;
@@ -138,7 +138,7 @@ public class CompileStack implements Opcodes {
     }
 
     public static class BlockRecorder {
-        boolean isEmpty = true;
+        private boolean isEmpty = true;
         public Runnable excludedStatement;
         public final LinkedList<LabelRange> ranges;
         public BlockRecorder() {
@@ -159,7 +159,7 @@ public class CompileStack implements Opcodes {
         }
     }
 
-    class ExceptionTableEntry {
+    private class ExceptionTableEntry {
         Label start,end,goal;
         String sig;
     }

@@ -43,12 +43,12 @@ import static java.lang.reflect.Modifier.isFinal;
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
-    VariableScope currentScope = null;
+    private VariableScope currentScope = null;
     private final VariableScope headScope = new VariableScope();
-    ClassNode currentClass = null;
+    private ClassNode currentClass = null;
     private final SourceUnit source;
     private boolean isSpecialConstructorCall = false;
-    boolean inConstructor = false;
+    private boolean inConstructor = false;
     private final boolean recurseInnerClasses;
 
     private final LinkedList stateStack = new LinkedList();

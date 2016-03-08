@@ -42,12 +42,12 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * The first value in the range.
      */
-    final Comparable from;
+    private final Comparable from;
 
     /**
      * The last value in the range.
      */
-    final Comparable to;
+    private final Comparable to;
 
     /**
      * The cached size, or -1 if not yet computed
@@ -57,7 +57,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * <code>true</code> if the range counts backwards from <code>to</code> to <code>from</code>.
      */
-    final boolean reverse;
+    private final boolean reverse;
 
     /**
      * Creates a new {@link ObjectRange}. Creates a reversed range if

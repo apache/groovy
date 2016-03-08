@@ -573,7 +573,7 @@ public class WideningCategories {
             }
         };
         private final ClassNode compileTimeClassNode;
-        final String name;
+        private final String name;
         private final String text;
 
         private final ClassNode upper;

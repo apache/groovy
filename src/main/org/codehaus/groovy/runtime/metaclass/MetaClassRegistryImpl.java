@@ -57,13 +57,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     private final boolean useAccessible;
 
-    final FastArray instanceMethods = new FastArray();
-    final FastArray staticMethods = new FastArray();
+    private final FastArray instanceMethods = new FastArray();
+    private final FastArray staticMethods = new FastArray();
 
     private final LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
     private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
-    final ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
-    final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
+    private final ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
+    private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -267,7 +267,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * if oldMc is not null, then newMc will be used only if he stored mc is
      * the same as oldMc
      */
-    void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {
+    private void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
         
         MetaClass mc = null;

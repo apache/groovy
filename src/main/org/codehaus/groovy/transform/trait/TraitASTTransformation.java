@@ -530,7 +530,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         this.compilationUnit = unit;
     }
 
-    static class DefaultArgsMethodsAdder extends Verifier {
+    private static class DefaultArgsMethodsAdder extends Verifier {
 
         @Override
         public void addDefaultParameterMethods(final ClassNode node) {
@@ -539,7 +539,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
+    private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
         private final SourceUnit sourceUnit;
 
         PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {

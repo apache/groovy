@@ -39,8 +39,8 @@ import java.util.*;
  * @author Alex.Tkachman
  */
 public class CachedClass {
-    static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
-    final Class cachedClass;
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
+    private final Class cachedClass;
     public ClassInfo classInfo;
     
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();

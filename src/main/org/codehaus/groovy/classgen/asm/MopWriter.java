@@ -201,7 +201,7 @@ public class MopWriter {
         }
     }
 
-    static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+    private static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
         if (p1.length!=p2.length) return false;
         for (int i=0; i<p1.length; i++) {
             if (!p1[i].getType().equals(p2[i].getType())) return false;

@@ -44,7 +44,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
  */
 public class OptimizingStatementWriter extends StatementWriter {
     
-    static class FastPathData {
+    private static class FastPathData {
         Label pathStart = new Label();
         Label afterPath = new Label();
     }
@@ -52,7 +52,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     public static class ClassNodeSkip{}
     
     public static class StatementMeta {
-        boolean optimize=false;
+        private boolean optimize=false;
         protected MethodNode target;
         protected ClassNode type;
         protected boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
@@ -402,7 +402,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         new OptVisitor(chooser).visitClass(classNode);
     }
     
-    static StatementMeta addMeta(ASTNode node) {
+    private static StatementMeta addMeta(ASTNode node) {
         StatementMeta metaOld = (StatementMeta) node.getNodeMetaData(StatementMeta.class);
         StatementMeta meta = metaOld;
         if (meta==null) meta = new StatementMeta();
@@ -411,13 +411,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         return meta;
     }
     
-    static StatementMeta addMeta(ASTNode node, OptimizeFlagsCollector opt) {
+    private static StatementMeta addMeta(ASTNode node, OptimizeFlagsCollector opt) {
         StatementMeta meta = addMeta(node);
         meta.chainInvolvedTypes(opt);
         return meta;
     }
     
-    static class OptimizeFlagsCollector {
+    private static class OptimizeFlagsCollector {
         static class OptimizeFlagsEntry {
             boolean canOptimize = false;
             boolean shouldOptimize = false;
@@ -456,13 +456,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         /**
          * @return true iff we should Optimize - this is almost seen as must
          */
-        boolean shouldOptimize() {
+        private boolean shouldOptimize() {
             return current.shouldOptimize;
         }
         /**
          * @return true iff we can optimize, but not have to
          */
-        boolean canOptimize() {
+        private boolean canOptimize() {
             return current.canOptimize || current.shouldOptimize;
         }
         /**

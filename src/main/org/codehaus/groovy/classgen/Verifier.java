@@ -101,7 +101,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             new Parameter(ClassHelper.METACLASS_TYPE, "mc")
     };
 
-    ClassNode classNode;
+    private ClassNode classNode;
     private MethodNode methodNode;
 
     public ClassNode getClassNode() {

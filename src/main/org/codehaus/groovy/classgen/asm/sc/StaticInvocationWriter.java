@@ -78,7 +78,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
-    final WriterController controller;
+    private final WriterController controller;
 
     private MethodCallExpression currentCall;
 

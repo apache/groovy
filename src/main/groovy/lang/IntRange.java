@@ -54,7 +54,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * Iterates through each number in an <code>IntRange</code>.
      */
-    class IntRangeIterator implements Iterator<Integer> {
+    private class IntRangeIterator implements Iterator<Integer> {
         /**
          * Counts from 0 up to size - 1.
          */

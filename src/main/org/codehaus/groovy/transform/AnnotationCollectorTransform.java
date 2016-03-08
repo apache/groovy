@@ -42,7 +42,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class AnnotationCollectorTransform {
 
-    static List<AnnotationNode> getMeta(ClassNode cn) {
+    private static List<AnnotationNode> getMeta(ClassNode cn) {
         List<AnnotationNode> meta = cn.getNodeMetaData(AnnotationCollector.class);
         if (meta == null) {
             if (cn.isPrimaryClassNode()) {
