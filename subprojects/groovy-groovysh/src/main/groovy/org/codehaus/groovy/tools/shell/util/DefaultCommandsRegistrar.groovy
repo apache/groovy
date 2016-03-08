@@ -26,6 +26,7 @@ import org.codehaus.groovy.tools.shell.commands.DisplayCommand
 import org.codehaus.groovy.tools.shell.commands.DocCommand
 import org.codehaus.groovy.tools.shell.commands.EditCommand
 import org.codehaus.groovy.tools.shell.commands.ExitCommand
+import org.codehaus.groovy.tools.shell.commands.GrabCommand
 import org.codehaus.groovy.tools.shell.commands.HelpCommand
 import org.codehaus.groovy.tools.shell.commands.HistoryCommand
 import org.codehaus.groovy.tools.shell.commands.ImportCommand
@@ -76,6 +77,7 @@ class DefaultCommandsRegistrar
                 new HistoryCommand(shell),
                 new AliasCommand(shell),
                 new SetCommand(shell),
+                new GrabCommand(shell),
                 // does not do anything
                 //new ShadowCommand(shell),
                 new RegisterCommand(shell),
