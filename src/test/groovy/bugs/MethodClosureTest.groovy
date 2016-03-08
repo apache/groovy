@@ -29,26 +29,41 @@ class MethodClosureTest extends GroovyTestCase {
     static bb(it) { it}
 
     void testMethodClosure() {
+        def cl2 = String.&toUpperCase // Class.instanceMethod
+        assert cl2 instanceof Closure
+        assert cl2 instanceof MethodClosure
+
+        assert ["xx", "yy"].collect(cl2) == ["XX","YY"]
+
         Class[] c1 = [ Exception.class, Throwable.class ]
         Class[] c2 = [ IllegalStateException.class ]
 
-        def cl = this.&aa
+        def cl = this.&aa // instance.instanceMethod
 
         assert cl instanceof Closure
         assert cl instanceof MethodClosure
 
         assert [c1, c2].collect(cl) == [c1,c2]
+
     }
     
     void testStaticMethodAccess() {
        def list = [1].collect (this.&bb)
        assert list == [1]
-       list = [1].collect (MethodClosureTest.&bb)
+       list = [1].collect (MethodClosureTest.&bb) // Class.staticMethod
        assert list == [1]
        def mct = new MethodClosureTest()
-       list = [1].collect (mct.&bb)
+       list = [1].collect (mct.&bb) // instance.staticMethod
        assert list == [1]
     }
-}
 
+
+    void testShellVariable() {
+        def shell = new GroovyShell()
+        assert shell.evaluate("x = String.&toUpperCase; x('abc')") == "ABC"
+        assert shell.evaluate("x = 'abc'.&toUpperCase; x()") == "ABC"
+        assert shell.evaluate("x = Integer.&parseInt; x('123')") == 123
+        assert shell.evaluate("x = 3.&parseInt; x('123')") == 123
+    }
+}
 
