@@ -23,4 +23,7 @@ interface PackageHelper {
     public static final String IMPORT_COMPLETION_PREFERENCE_KEY = 'disable-import-completion'
 
     Set<String> getContents(final String packagename)
+
+    void reset()
+
 }
