@@ -28,7 +28,7 @@ import org.apache.commons.cli.*
 
 @Field install = {arg, cmd ->
     if (arg.size() > 5 || arg.size() < 3) {
-        println 'install requires two to four arguments: <group> <module> [<version>] [<classifier>]'
+        println 'install requires two to four arguments: <group> <module> [<version> [<classifier>]]'
         return
     }
     def ver = '*'
