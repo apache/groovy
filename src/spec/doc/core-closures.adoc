@@ -302,7 +302,7 @@ At this point, the behavior is not different from having a `target` variable def
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_alernative,indent=0]
 ----
 
-However there is are major differences:
+However, there are major differences:
 
 * in the last example, _target_ is a local variable referenced from within the closure
 * the delegate can be used transparently, that is to say without prefixing method calls with `delegate.` as explained
