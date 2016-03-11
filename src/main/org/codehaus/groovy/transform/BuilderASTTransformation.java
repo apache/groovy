@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static groovy.transform.Undefined.isUndefined;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 
 /**
  * Handles generation of code for the {@link Builder} annotation.
@@ -78,7 +78,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes) {
             List<PropertyInfo> props = new ArrayList<PropertyInfo>();
-            for (FieldNode fNode : getInstancePropertyFields(cNode)) {
+            for (FieldNode fNode : getSuperPropertyFields(cNode)) {
                 if (shouldSkip(fNode.getName(), excludes, includes)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
