@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class represents a {@Map} that is optimized for a small number of
+ * This class represents a {@link Map} that is optimized for a small number of
  * entries.  For a number of entries up to {@code listSize} the entries
  * are stored in arrays.  After {@code listSize} entries are exceeded
  * storage switches internally to a {@link Map} and converts back
