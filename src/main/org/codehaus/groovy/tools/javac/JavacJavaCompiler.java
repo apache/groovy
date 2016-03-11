@@ -62,7 +62,6 @@ public class JavacJavaCompiler implements JavaCompiler {
                 Object ret = method.invoke(null, new Object[]{javacParameters});
                 javacReturnValue = (Integer) ret;
             }
-            cu.getConfiguration().getOutput();
         } catch (InvocationTargetException ite) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
         } catch (Exception e) {
