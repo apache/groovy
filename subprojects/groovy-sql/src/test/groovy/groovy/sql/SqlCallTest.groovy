@@ -19,6 +19,7 @@
 package groovy.sql
 
 import javax.sql.DataSource
+import java.sql.CallableStatement
 
 import static groovy.sql.SqlTestConstants.*
 
@@ -293,6 +294,44 @@ class SqlCallTest extends GroovyTestCase {
         assert lastRows[0].id == 5
         assert lastRows[0].firstname == 'Lino'
         assert lastRows[0].lastname == 'Ventura'
+    }
+
+    void testCallWithStatementCaching() {
+        String sqlText = '{call FindByFirst(?, ?)}'
+        CallableStatement statement = null
+        sql.withStatement { statement = (CallableStatement)it }
+
+        sql.cacheStatements = false
+        sql.call sqlText, ['James', Sql.VARCHAR]
+        assert statement.isClosed()
+        assert sql.@statementCache.isEmpty()
+
+        sql.cacheStatements = true
+        sql.call sqlText, ['James', Sql.VARCHAR]
+        assert !statement.isClosed()
+        assert sql.@statementCache.containsKey(sqlText)
+        assert sql.@statementCache[sqlText].is(statement)
+    }
+
+    void testCallWithRowsStatementCaching() {
+        String sqlText = '{call FindByFirst(?, ?)}'
+        CallableStatement statement = null
+        sql.withStatement { statement = (CallableStatement)it }
+
+        sql.cacheStatements = false
+        sql.call sqlText, ['James', Sql.VARCHAR], { ans ->
+            // no-op
+        }
+        assert statement.isClosed()
+        assert sql.@statementCache.isEmpty()
+
+        sql.cacheStatements = true
+        sql.call sqlText, ['James', Sql.VARCHAR], { ans ->
+            // no-op
+        }
+        assert !statement.isClosed()
+        assert sql.@statementCache.containsKey(sqlText)
+        assert sql.@statementCache[sqlText].is(statement)
     }
 
 }
