@@ -83,8 +83,12 @@ public class CompilerConfiguration {
     /**
      * Encoding for source files
      */
-
     private String sourceEncoding;
+    
+    /**
+      * The <code>PrintWriter</code> does nothing.
+      */
+     private PrintWriter output;
 
     /**
      * Directory into which to write classes
@@ -547,11 +551,10 @@ public class CompilerConfiguration {
     /**
      * Gets the currently configured output writer.
      * @deprecated not used anymore
-     * @return PrintWriter always <code>null</code>
      */
     @Deprecated 
     public PrintWriter getOutput() {
-        return null;
+        return this.output;
     }
 
     /**
@@ -560,6 +563,12 @@ public class CompilerConfiguration {
      */
     @Deprecated
     public void setOutput(PrintWriter output) {
+        if (output == null) {
+            this.output = new PrintWriter(NullWriter.DEFAULT);
+        }
+        else {
+            this.output = output;
+        }
     }
 
     /**
