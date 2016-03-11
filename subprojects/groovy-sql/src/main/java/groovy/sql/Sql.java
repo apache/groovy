@@ -3007,10 +3007,7 @@ public class Sql {
         Connection connection = createConnection();
         CallableStatement statement = null;
         try {
-            LOG.fine(sql + " | " + params);
-            statement = connection.prepareCall(sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getCallableStatement(connection, sql, params);
             return statement.executeUpdate();
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -3302,10 +3299,7 @@ public class Sql {
         CallableStatement statement = null;
         List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
         try {
-            statement = connection.prepareCall(sql);
-
-            LOG.fine(sql + " | " + params);
-            setParameters(params, statement);
+            statement = getCallableStatement(connection, sql, params);
             boolean hasResultSet = statement.execute();
             List<Object> results = new ArrayList<Object>();
             int indx = 0;
@@ -4364,6 +4358,14 @@ public class Sql {
         return statement;
     }
 
+    private CallableStatement getCallableStatement(Connection connection, String sql, List<Object> params) throws SQLException {
+        LOG.fine(sql + " | " + params);
+        CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, sql);
+        setParameters(params, statement);
+        configure(statement);
+        return statement;
+    }
+
     public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
         SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         if (preCheck == null) {
@@ -4499,6 +4501,7 @@ public class Sql {
             this.returnGeneratedKeys = returnGeneratedKeys;
         }
 
+        @Override
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys == USE_COLUMN_NAMES && keyColumnNames != null) {
                 return connection.prepareStatement(sql, keyColumnNames.toArray(new String[keyColumnNames.size()]));
@@ -4520,6 +4523,13 @@ public class Sql {
 
         private boolean appearsLikeStoredProc(String sql) {
             return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
+        }
+    }
+
+    private class CreateCallableStatementCommand extends AbstractStatementCommand {
+        @Override
+        protected CallableStatement execute(Connection connection, String sql) throws SQLException {
+            return connection.prepareCall(sql);
         }
     }
 
