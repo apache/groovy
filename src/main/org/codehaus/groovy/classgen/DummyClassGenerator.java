@@ -37,9 +37,9 @@ import java.util.Iterator;
  */
 public class DummyClassGenerator extends ClassGenerator {
 
-    private ClassVisitor cv;
+    private final ClassVisitor cv;
     private MethodVisitor mv;
-    private GeneratorContext context;
+    private final GeneratorContext context;
 
     // current class details
     private ClassNode classNode;

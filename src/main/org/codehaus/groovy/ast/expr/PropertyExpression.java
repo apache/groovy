@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class PropertyExpression extends Expression {
 
     private Expression objectExpression;
-    private Expression property;
+    private final Expression property;
     private boolean spreadSafe = false;
     private boolean safe = false;
     private boolean isStatic = false;

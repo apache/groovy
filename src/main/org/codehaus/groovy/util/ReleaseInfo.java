@@ -35,9 +35,6 @@ public class ReleaseInfo {
     private static final Properties RELEASE_INFO = new Properties();
     private static final String RELEASE_INFO_FILE = "META-INF/groovy-release-info.properties";
     private static final String KEY_IMPLEMENTATION_VERSION = "ImplementationVersion";
-    private static final String KEY_BUNDLE_VERSION = "BundleVersion";
-    private static final String KEY_BUILD_DATE = "BuildDate";
-    private static final String KEY_BUILD_TIME = "BuildTime";
 
     static {
         URL url = null;

@@ -41,7 +41,7 @@ public abstract class AsmDecompiler {
          * It's synchronized "just in case". Occasional misses are expected if several threads attempt to load the same class,
          * but this shouldn't result in serious memory issues.
          */
-        static Map<URL, SoftReference<ClassStub>> map = Collections.synchronizedMap(new HashMap<URL, SoftReference<ClassStub>>());
+        static final Map<URL, SoftReference<ClassStub>> map = Collections.synchronizedMap(new HashMap<URL, SoftReference<ClassStub>>());
     }
 
     /**
@@ -71,7 +71,7 @@ public abstract class AsmDecompiler {
 
     private static class DecompilingVisitor extends ClassVisitor {
         private static final String[] EMPTY_STRING_ARRAY = new String[0];
-        private ClassStub result;
+        ClassStub result;
 
         public DecompilingVisitor() {
             super(Opcodes.ASM5);

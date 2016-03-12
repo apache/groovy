@@ -430,16 +430,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return count((CharSequence) self, (CharSequence) text);
     }
 
-    private static StringBufferWriter createStringBufferWriter(StringBuffer self) {
-        return new StringBufferWriter(self);
-    }
-
-    private static StringWriter createStringWriter(String self) {
-        StringWriter answer = new StringWriter();
-        answer.write(self);
-        return answer;
-    }
-
     /**
      * Return a CharSequence with lines (separated by LF, CR/LF, or CR)
      * terminated by the platform specific line separator.
@@ -596,22 +586,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return dropWhile(self.toString(), condition);
     }
 
-    private static final class CharacterIterable implements Iterable<Character> {
-        private final CharSequence delegate;
-
-        public CharacterIterable(CharSequence delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Iterator<Character> iterator() {
-            return new CharacterIterator(delegate);
-        }
-    }
-
     private static final class CharacterIterator implements Iterator<Character> {
         private final CharSequence delegate;
-        private int length;
+        private final int length;
         private int index;
 
         public CharacterIterator(CharSequence delegate) {
@@ -632,22 +609,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static final class StringIterable implements Iterable<String> {
-        private final CharSequence delegate;
-
-        public StringIterable(CharSequence delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Iterator<String> iterator() {
-            return new StringIterator(delegate);
-        }
-    }
-
     private static final class StringIterator implements Iterator<String> {
         private final CharSequence delegate;
-        private int length;
+        private final int length;
         private int index;
 
         public StringIterator(CharSequence delegate) {
@@ -2844,8 +2808,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int tempIndex = -1;
         int replaceIndex = -1;
         int start = -1;
-        boolean[] noMoreMatches;
-        private List<Map.Entry<CharSequence, CharSequence>> replacementsList;
+        final boolean[] noMoreMatches;
+        private final List<Map.Entry<CharSequence, CharSequence>> replacementsList;
 
         CharSequence key(int i) {
             return replacementsList.get(i).getKey();

@@ -33,10 +33,10 @@ import java.util.List;
  * Kenneth H. Rosen, Discrete Mathematics and Its Applications, 2nd edition (NY: McGraw-Hill, 1991), pp. 282-284
  */
 public class PermutationGenerator<E> implements Iterator<List<E>> {
-    private int[] a;
+    private final int[] a;
     private BigInteger numLeft;
-    private BigInteger total;
-    private List<E> items;
+    private final BigInteger total;
+    private final List<E> items;
 
     /**
      * WARNING: Don't make n too large.

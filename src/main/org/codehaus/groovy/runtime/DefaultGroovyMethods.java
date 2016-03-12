@@ -1530,7 +1530,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean exhausted;
         private E next;
 
-        private UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
+        UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
             this.delegate = delegate;
             seen = new TreeSet<E>(comparator);
             advance();
@@ -8111,7 +8111,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private final Iterator<E> delegate;
         private int index;
 
-        private ZipPostIterator(Iterator<E> delegate, int offset) {
+        ZipPostIterator(Iterator<E> delegate, int offset) {
             this.delegate = delegate;
             this.index = offset;
         }
@@ -8134,7 +8134,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private final Iterator<E> delegate;
         private int index;
 
-        private ZipPreIterator(Iterator<E> delegate, int offset) {
+        ZipPreIterator(Iterator<E> delegate, int offset) {
             this.delegate = delegate;
             this.index = offset;
         }
@@ -8796,7 +8796,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
-        private Comparator<V> delegate = new NumberAwareComparator<V>();
+        private final Comparator<V> delegate = new NumberAwareComparator<V>();
 
         @Override
         public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
@@ -9342,7 +9342,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean exhausted;
         private E next;
 
-        private InitIterator(Iterator<E> delegate) {
+        InitIterator(Iterator<E> delegate) {
             this.delegate = delegate;
             advance();
         }
@@ -9580,7 +9580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private final Iterator<E> delegate;
         private Integer num;
 
-        private TakeIterator(Iterator<E> delegate, Integer num) {
+        TakeIterator(Iterator<E> delegate, Integer num) {
             this.delegate = delegate;
             this.num = num;
         }
@@ -10180,7 +10180,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean exhausted;
         private E next;
 
-        private TakeWhileIterator(Iterator<E> delegate, Closure condition) {
+        TakeWhileIterator(Iterator<E> delegate, Closure condition) {
             this.delegate = delegate;
             this.condition = new BooleanClosureWrapper(condition);
             advance();
@@ -10388,7 +10388,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean buffering = false;
         private E buffer = null;
 
-        private DropWhileIterator(Iterator<E> delegate, Closure condition) {
+        DropWhileIterator(Iterator<E> delegate, Closure condition) {
             this.delegate = delegate;
             this.condition = condition;
             prepare();

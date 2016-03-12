@@ -182,7 +182,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     /*
      * Wrap an existing setter.
      */
-    private void wrapSetterMethod(ClassNode classNode, String propertyName) {
+    private static void wrapSetterMethod(ClassNode classNode, String propertyName) {
         String getterName = "get" + MetaClassHelper.capitalize(propertyName);
         MethodNode setter = classNode.getSetterMethod("set" + MetaClassHelper.capitalize(propertyName));
 

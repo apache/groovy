@@ -200,7 +200,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return CLOSURE_METACLASS.getMetaProperty(name);
     }
 
-    private void unwrap(Object[] arguments) {
+    private static void unwrap(Object[] arguments) {
         for (int i = 0; i != arguments.length; i++) {
             if (arguments[i] instanceof Wrapper) {
                 arguments[i] = ((Wrapper) arguments[i]).unwrap();
@@ -402,12 +402,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw new MissingMethodException(methodName, theClass, arguments, false);
     }
 
-    private boolean isInternalMethod(String methodName) {
+    private static boolean isInternalMethod(String methodName) {
         return methodName.equals("curry") || methodName.equals("ncurry") || methodName.equals("rcurry") ||
                 methodName.equals("leftShift") || methodName.equals("rightShift");
     }
 
-    private Object[] makeArguments(Object[] arguments, String methodName) {
+    private static Object[] makeArguments(Object[] arguments, String methodName) {
         if (arguments == null) return EMPTY_ARGUMENTS;
         return arguments;
     }
@@ -419,7 +419,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return th;
     }
 
-    private Object invokeOnDelegationObjects(
+    private static Object invokeOnDelegationObjects(
             boolean invoke1, Object o1,
             boolean invoke2, Object o2,
             String methodName, Object[] args) {

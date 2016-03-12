@@ -40,8 +40,8 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationVisitor {
-    private SourceUnit source;
-    private ErrorCollector errorCollector;
+    private final SourceUnit source;
+    private final ErrorCollector errorCollector;
     private AnnotationNode annotation;
     private ClassNode reportClass;
 
@@ -177,7 +177,7 @@ public class AnnotationVisitor {
         return method.getReturnType();
     }
 
-    private boolean isValidAnnotationClass(ClassNode node) {
+    private static boolean isValidAnnotationClass(ClassNode node) {
         return node.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
@@ -283,7 +283,7 @@ public class AnnotationVisitor {
         }
     }
 
-    private boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
+    private static boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
         return wrapperType.isDerivedFrom(ClassHelper.getWrapper(attrType));
     }
 

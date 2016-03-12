@@ -44,7 +44,6 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -62,8 +61,6 @@ import java.util.List;
  * @since 2.3.0
  */
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
-
-    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
     private final VariableExpression weaved;
     private final SourceUnit unit;
@@ -279,7 +276,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
+    private static void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
         if (isStatic) {
             mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
         }
@@ -307,7 +304,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 transform(rightExpression));
     }
 
-    private FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
+    private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
         FieldNode fn = weavedType.getDeclaredField(fieldName);
         if (fn == null && ClassHelper.CLASS_Type.equals(weavedType)) {
             GenericsType[] genericsTypes = weavedType.getGenericsTypes();

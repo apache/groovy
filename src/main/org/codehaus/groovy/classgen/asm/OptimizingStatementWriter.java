@@ -45,8 +45,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 public class OptimizingStatementWriter extends StatementWriter {
     
     private static class FastPathData {
-        private Label pathStart = new Label();
-        private Label afterPath = new Label();
+        Label pathStart = new Label();
+        Label afterPath = new Label();
     }
     
     public static class ClassNodeSkip{}
@@ -72,7 +72,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
-    private static MethodCaller[] guards = {
+    private static final MethodCaller[] guards = {
         null,
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigInt"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigL"),
@@ -86,7 +86,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
     private boolean fastPathBlocked = false;
-    private WriterController controller;
+    private final WriterController controller;
 
     public OptimizingStatementWriter(WriterController controller) {
         super(controller);
@@ -418,13 +418,13 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
     
     private static class OptimizeFlagsCollector {
-        private static class OptimizeFlagsEntry {
-            private boolean canOptimize = false;
-            private boolean shouldOptimize = false;
-            private boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
+        static class OptimizeFlagsEntry {
+            boolean canOptimize = false;
+            boolean shouldOptimize = false;
+            boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
         }
-        private OptimizeFlagsEntry current = new OptimizeFlagsEntry();
-        private LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
+        OptimizeFlagsEntry current = new OptimizeFlagsEntry();
+        private final LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
         public void push() {
             olderEntries.addLast(current);
             current = new OptimizeFlagsEntry();

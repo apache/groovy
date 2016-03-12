@@ -31,7 +31,7 @@ public class MetaMethodIndex {
 
     public static class Header {
         public Entry head;
-        Class cls;
+        final Class cls;
         public int clsHashCode31;
         public Class subclass;
 
@@ -165,7 +165,6 @@ public class MetaMethodIndex {
         return new EntryIterator() {
             Entry next;    // next entry to return
             int index;        // current slot
-            Entry current;    // current entry
 
             {
                 Entry[] t = table;
@@ -199,7 +198,7 @@ public class MetaMethodIndex {
                     n = t[--i];
                 index = i;
                 next = n;
-                return current = e;
+                return e;
             }
         };
     }
@@ -438,7 +437,7 @@ public class MetaMethodIndex {
         return o;
     }
 
-    private boolean isNonRealMethod(MetaMethod method) {
+    private static boolean isNonRealMethod(MetaMethod method) {
         return method instanceof NewInstanceMetaMethod ||
                 method instanceof NewStaticMetaMethod ||
                 method instanceof ClosureMetaMethod ||
@@ -448,7 +447,7 @@ public class MetaMethodIndex {
                 method instanceof ClosureMetaMethod.AnonymousMetaMethod;
     }
 
-    private boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
+    private static boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
         if (aMethod==method) return true;
         CachedClass[] params1 = aMethod.getParameterTypes();
         CachedClass[] params2 = method.getParameterTypes();
@@ -466,7 +465,7 @@ public class MetaMethodIndex {
         return matches;
     }
 
-    private int findMatchingMethod(FastArray list, MetaMethod method) {
+    private static int findMatchingMethod(FastArray list, MetaMethod method) {
         int len = list.size();
         Object data[] = list.getArray();
         for (int j = 0; j != len; ++j) {

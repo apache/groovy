@@ -76,11 +76,11 @@ class GrapeIvy implements GrapeEngine {
     Set<String> resolvedDependencies
     Set<String> downloadedArtifacts
     // weak hash map so we don't leak loaders directly
-    Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
+    final Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
     // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call
-    Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
+    final Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
     // we keep the settings so that addResolver can add to the resolver chain
-    IvySettings settings
+    final IvySettings settings
 
     public GrapeIvy() {
         // if we are already initialized, quit

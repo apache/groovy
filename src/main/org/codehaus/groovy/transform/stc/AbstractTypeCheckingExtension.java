@@ -202,7 +202,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return match;
     }
 
-    private boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
+    private static boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
         final boolean match;
         ClassNode type = ClassHelper.make(aClass);
         if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveType(argType)) {
@@ -438,7 +438,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
     private class TypeCheckingScope extends LinkedHashMap<String, Object> {
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
-        private TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
+        TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
             this.parent = parentScope;
         }
 

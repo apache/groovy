@@ -77,7 +77,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
                 "bootstrap",
                 BSM_METHOD_TYPE_DESCRIPTOR);
 
-    private WriterController controller;
+    private final WriterController controller;
 
     public InvokeDynamicWriter(WriterController wc) {
         super(wc);
@@ -157,7 +157,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
     }
     
-    private int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
+    private static int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
         int ret = 0;
         if (safe)                           ret |= SAFE_NAVIGATION;
         if (adapter==invokeMethodOnCurrent) ret |= THIS_CALL;
@@ -170,7 +170,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeIndyCall(invokeMethod, receiver, false, false, message, arguments);
     }
 
-    private int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
+    private static int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
         int flags = 0;
         if (implicitThis)   flags |= IMPLICIT_THIS;
         if (groovyObject)   flags |= GROOVY_OBJECT;

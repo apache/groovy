@@ -29,9 +29,9 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class RangeExpression extends Expression {
 
-    private Expression from;
-    private Expression to;
-    private boolean inclusive;
+    private final Expression from;
+    private final Expression to;
+    private final boolean inclusive;
 
     public RangeExpression(Expression from, Expression to, boolean inclusive) {
         this.from = from;

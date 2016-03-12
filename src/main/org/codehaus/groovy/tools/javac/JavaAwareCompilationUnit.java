@@ -38,11 +38,11 @@ import java.util.Map;
  * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    private List<String> javaSources;
-    private JavaStubGenerator stubGenerator;
+    private final List<String> javaSources;
+    private final JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
-    private File generationGoal;
-    private boolean keepStubs;
+    private final File generationGoal;
+    private final boolean keepStubs;
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration, null, null);
@@ -59,7 +59,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
-		String encoding = configuration.getSourceEncoding();
+        String encoding = configuration.getSourceEncoding();
         stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
         keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 

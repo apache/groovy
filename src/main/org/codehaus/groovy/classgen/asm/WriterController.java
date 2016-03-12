@@ -396,12 +396,12 @@ public class WriterController {
     }
     
     public void setLineNumber(int n) {
-    	lineNumber = n;
+        lineNumber = n;
     }
 
-	public void resetLineNumber() {
-		setLineNumber(-1);
-	}
+    public void resetLineNumber() {
+        setLineNumber(-1);
+    }
 
     public int getNextHelperMethodIndex() {
         return helperMethodIndex++;

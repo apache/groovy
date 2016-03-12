@@ -1447,7 +1447,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     private static class MixedInAccessor {
-        private final Object object;
+        final Object object;
         private final Set<MixinInMetaClass> mixinClasses;
 
         public MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {

@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ReferenceManager {
     private static class ThreadedReferenceManager extends ReferenceManager {
         private final Thread thread;
-        private volatile boolean shouldRun = true; 
+        volatile boolean shouldRun = true; 
         public ThreadedReferenceManager(ReferenceQueue queue) {
             super(queue);
             thread = new Thread() {

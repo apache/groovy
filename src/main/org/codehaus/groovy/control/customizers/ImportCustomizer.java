@@ -134,7 +134,7 @@ public class ImportCustomizer extends CompilationCustomizer {
         final String field;
         final String star; // only used for star imports
 
-        private Import(final ImportType type, final String alias, final ClassNode classNode, final String field) {
+        Import(final ImportType type, final String alias, final ClassNode classNode, final String field) {
             this.alias = alias;
             this.classNode = classNode;
             this.field = field;
@@ -142,7 +142,7 @@ public class ImportCustomizer extends CompilationCustomizer {
             this.star = null;
         }
 
-        private Import(final ImportType type, final String alias, final ClassNode classNode) {
+        Import(final ImportType type, final String alias, final ClassNode classNode) {
             this.alias = alias;
             this.classNode = classNode;
             this.type = type;
@@ -150,7 +150,7 @@ public class ImportCustomizer extends CompilationCustomizer {
             this.star = null;
         }
 
-        private Import(final ImportType type, final String star) {
+        Import(final ImportType type, final String star) {
             this.type = type;
             this.star = star;
             this.alias = null;

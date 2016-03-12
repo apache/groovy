@@ -68,7 +68,7 @@ public class CastExpressionOptimizer {
         return transformer.superTransform(cast);
     }
 
-    private boolean isOptimizable(final ClassNode exprInferredType, final ClassNode castType) {
+    private static boolean isOptimizable(final ClassNode exprInferredType, final ClassNode castType) {
         if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(exprInferredType, castType)) {
             return true;
         }

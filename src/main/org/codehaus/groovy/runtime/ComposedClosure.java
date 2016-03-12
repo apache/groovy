@@ -59,8 +59,8 @@ import java.util.List;
  */
 public final class ComposedClosure<V> extends Closure<V> {
 
-    private Closure first;
-    private Closure<V> second;
+    private final Closure first;
+    private final Closure<V> second;
 
     public ComposedClosure(Closure first, Closure<V> second) {
         super(first.clone());

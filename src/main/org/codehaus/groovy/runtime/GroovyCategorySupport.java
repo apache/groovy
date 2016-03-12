@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
-    private static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
+    private static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -160,7 +160,7 @@ public class GroovyCategorySupport {
         }
 
         // Precondition: accessorName.length() > prefixLength
-        private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
+        private static Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
             if (map == null) {
               map = new HashMap<String, String>();
             }
@@ -223,7 +223,7 @@ public class GroovyCategorySupport {
             return 0;
         }
 
-        private boolean isChildOfParent(Class candidateChild, Class candidateParent) {
+        private static boolean isChildOfParent(Class candidateChild, Class candidateParent) {
             Class loop = candidateChild;
             while(loop != null && loop != Object.class) {
                 loop = loop.getSuperclass();
@@ -294,7 +294,7 @@ public class GroovyCategorySupport {
 
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
-        ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
+        final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
         public ThreadCategoryInfo getInfo() {
             final SoftReference reference = get();

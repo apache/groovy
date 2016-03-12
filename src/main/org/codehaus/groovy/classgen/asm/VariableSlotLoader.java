@@ -24,8 +24,8 @@ import org.objectweb.asm.MethodVisitor;
 
 public class VariableSlotLoader extends BytecodeExpression {
 
-    private int idx;
-    private OperandStack operandStack;
+    private final int idx;
+    private final OperandStack operandStack;
     
     public VariableSlotLoader(ClassNode type, int index, OperandStack os) {
         super(type);

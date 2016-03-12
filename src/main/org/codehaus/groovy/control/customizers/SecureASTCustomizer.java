@@ -577,7 +577,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (!methods.isEmpty()) throw new SecurityException("Method definitions are not allowed");
     }
     
-    private List<MethodNode> filterMethods(ClassNode owner) {
+    private static List<MethodNode> filterMethods(ClassNode owner) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {

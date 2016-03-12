@@ -654,7 +654,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-    private PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
+    private final PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             staticImportVisitor.visitClass(classNode, source);
         }
@@ -663,7 +663,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs convert() on a single SourceUnit.
      */
-    private SourceUnitOperation convert = new SourceUnitOperation() {
+    private final SourceUnitOperation convert = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             source.convert();
             CompilationUnit.this.ast.addModule(source.getAST());
@@ -675,7 +675,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-    private GroovyClassOperation output = new GroovyClassOperation() {
+    private final GroovyClassOperation output = new GroovyClassOperation() {
         public void call(GroovyClass gclass) throws CompilationFailedException {
             String name = gclass.getName().replace('.', File.separatorChar) + ".class";
             File path = new File(configuration.getTargetDirectory(), name);
@@ -712,7 +712,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     /* checks if all needed classes are compiled before generating the bytecode */
-    private SourceUnitOperation compileCompleteCheck = new SourceUnitOperation() {
+    private final SourceUnitOperation compileCompleteCheck = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             List<ClassNode> classes = source.ast.getClasses();
             for (ClassNode node : classes) {
@@ -755,7 +755,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs classgen() on a single ClassNode.
      */
-    private PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
+    private final PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
         public boolean needSortedInput() {
             return true;
         }
@@ -894,7 +894,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Marks a single SourceUnit with the current phase,
      * if it isn't already there yet.
      */
-    private SourceUnitOperation mark = new SourceUnitOperation() {
+    private final SourceUnitOperation mark = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             if (source.phase < phase) {
                 source.gotoPhase(phase);
@@ -965,7 +965,7 @@ public class CompilationUnit extends ProcessingUnit {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 
-    private int getSuperClassCount(ClassNode element) {
+    private static int getSuperClassCount(ClassNode element) {
         int count = 0;
         while (element != null) {
             count++;
@@ -1014,7 +1014,7 @@ public class CompilationUnit extends ProcessingUnit {
         return sorted;
     }
 
-    private List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
+    private static List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
         List<ClassNode> sorted = new ArrayList<ClassNode>(unsorted.size());
         for (int i = 0; i < unsorted.size(); i++) {
             int min = -1;

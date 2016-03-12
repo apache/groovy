@@ -59,7 +59,7 @@ public class StatementWriter {
     private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
     
-    private WriterController controller;
+    private final WriterController controller;
     public StatementWriter(WriterController controller) {
         this.controller = controller;
     }

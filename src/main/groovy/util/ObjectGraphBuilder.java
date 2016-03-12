@@ -59,15 +59,15 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private ClassNameResolver classNameResolver;
     private IdentifierResolver identifierResolver;
     private NewInstanceResolver newInstanceResolver;
-    private ObjectFactory objectFactory = new ObjectFactory();
-    private ObjectBeanFactory objectBeanFactory = new ObjectBeanFactory();
-    private ObjectRefFactory objectRefFactory = new ObjectRefFactory();
+    private final ObjectFactory objectFactory = new ObjectFactory();
+    private final ObjectBeanFactory objectBeanFactory = new ObjectBeanFactory();
+    private final ObjectRefFactory objectRefFactory = new ObjectRefFactory();
     private ReferenceResolver referenceResolver;
     private RelationNameResolver relationNameResolver;
-    private Map<String, Class> resolvedClasses = new HashMap<String, Class>();
+    private final Map<String, Class> resolvedClasses = new HashMap<String, Class>();
     private ClassLoader classLoader;
     private boolean lazyReferencesAllowed = true;
-    private List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
+    private final List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
     private String beanFactoryName = "bean";
 
     public ObjectGraphBuilder() {
@@ -633,7 +633,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
 
         protected Class resolveClass(FactoryBuilderSupport builder, String classname, Object name, Object value,
-                                  Map properties) throws InstantiationException, IllegalAccessException {
+                                  Map properties) {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             Class klass = ogbuilder.resolvedClasses.get(classname);
             if (klass == null) {
@@ -836,12 +836,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static final class NodeReference {
-        private final Object parent;
-        private final String parentName;
-        private final String childName;
-        private final String refId;
+        final Object parent;
+        final String parentName;
+        final String childName;
+        final String refId;
 
-        private NodeReference(Object parent, String parentName, String childName, String refId) {
+        NodeReference(Object parent, String parentName, String childName, String refId) {
             this.parent = parent;
             this.parentName = parentName;
             this.childName = childName;

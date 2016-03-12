@@ -40,7 +40,7 @@ import org.objectweb.asm.Opcodes;
  */
 public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
 
-    private Verifier verifier;
+    private final Verifier verifier;
 
     VerifierCodeVisitor(Verifier verifier) {
         this.verifier = verifier;

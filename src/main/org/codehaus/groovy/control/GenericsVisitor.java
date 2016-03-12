@@ -31,7 +31,7 @@ import org.codehaus.groovy.ast.Parameter;
  * @author Jochen Theodorou
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
-    private SourceUnit source;
+    private final SourceUnit source;
     
     public GenericsVisitor(SourceUnit source) {
         this.source = source;
@@ -115,7 +115,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
     }
     
-    private String getPrintName(GenericsType gt) {
+    private static String getPrintName(GenericsType gt) {
         String ret = gt.getName();
         ClassNode[] upperBounds = gt.getUpperBounds();
         ClassNode lowerBound = gt.getLowerBound();
@@ -132,7 +132,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     }
     
-    private String getPrintName(ClassNode cn) {
+    private static String getPrintName(ClassNode cn) {
         String ret = cn.getName();
         GenericsType[] gts = cn.getGenericsTypes();
         if (gts!=null) {
@@ -144,14 +144,5 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             ret+=">";
         }
         return ret;
-    }
-    
-    private void checkBounds(ClassNode[] given, ClassNode[] restrictions) {
-        if (restrictions==null) return;
-        for (int i=0; i<given.length; i++) {
-            for (int j=0; j<restrictions.length; j++) {
-                if (! given[i].isDerivedFrom(restrictions[j])){}
-            }
-        }
     }
 }

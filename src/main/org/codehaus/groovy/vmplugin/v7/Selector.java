@@ -123,7 +123,7 @@ public abstract class Selector {
     }
 
     private static class CastSelector extends MethodSelector {
-        private Class<?> staticSourceType, staticTargetType;
+        private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
             super(callSite, Selector.class, "", CALL_TYPES.CAST, false, false, false, arguments);
@@ -630,7 +630,7 @@ public abstract class Selector {
             }
         }
 
-        private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
+        MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
             if (m.getDeclaringClass()==Class.class && m.getName().equals("forName") && m.getParameterTypes().length==1) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
             } else {
@@ -641,7 +641,7 @@ public abstract class Selector {
         /**
          * Helper method to manipulate the given type to replace Wrapper with Object.
          */
-        private MethodType removeWrapper(MethodType targetType) {
+        private static MethodType removeWrapper(MethodType targetType) {
             Class[] types = targetType.parameterArray();
             for (int i=0; i<types.length; i++) {
                 if (types[i]==Wrapper.class) {
@@ -841,7 +841,7 @@ public abstract class Selector {
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
-                MetaClass mc = (MetaClass) go.getMetaClass();
+                MetaClass mc = go.getMetaClass();
                 MethodHandle test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));

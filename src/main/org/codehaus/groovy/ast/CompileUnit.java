@@ -46,13 +46,13 @@ import org.codehaus.groovy.syntax.SyntaxException;
 public class CompileUnit {
 
     private final List<ModuleNode> modules = new ArrayList<ModuleNode>();
-    private Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
-    private CompilerConfiguration config;
-    private GroovyClassLoader classLoader;
-    private CodeSource codeSource;
-    private Map<String, ClassNode> classesToCompile = new HashMap<String, ClassNode>();
-    private Map<String, SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
-    private Map<String, InnerClassNode> generatedInnerClasses = new HashMap();
+    private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
+    private final CompilerConfiguration config;
+    private final GroovyClassLoader classLoader;
+    private final CodeSource codeSource;
+    private final Map<String, ClassNode> classesToCompile = new HashMap<String, ClassNode>();
+    private final Map<String, SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
+    private final Map<String, InnerClassNode> generatedInnerClasses = new HashMap();
 
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
         this(classLoader, null, config);

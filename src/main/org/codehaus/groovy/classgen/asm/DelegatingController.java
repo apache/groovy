@@ -33,7 +33,7 @@ import org.objectweb.asm.MethodVisitor;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class DelegatingController extends WriterController {
-    private WriterController delegationController;
+    private final WriterController delegationController;
     
     public DelegatingController(WriterController normalController) {
         this.delegationController = normalController;

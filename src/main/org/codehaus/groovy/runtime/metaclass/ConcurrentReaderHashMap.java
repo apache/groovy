@@ -139,7 +139,7 @@ import java.io.IOException;
  */
 public class ConcurrentReaderHashMap 
   extends AbstractMap 
-  implements Map, Cloneable, Serializable {
+  implements Cloneable, Serializable {
 
 
   /*
@@ -260,7 +260,7 @@ public class ConcurrentReaderHashMap
    * Returns the appropriate capacity (power of two) for the specified 
    * initial capacity argument.
    */
-  private int p2capacity(int initialCapacity) {
+  private static int p2capacity(int initialCapacity) {
     int cap = initialCapacity;
     
     // Compute the appropriate capacity

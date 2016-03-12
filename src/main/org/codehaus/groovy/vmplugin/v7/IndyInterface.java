@@ -104,7 +104,7 @@ public class IndyInterface {
         static {
             GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener() {
                 public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                	invalidateSwitchPoints();
+                    invalidateSwitchPoints();
                 }
             });
         }
@@ -236,7 +236,6 @@ public class IndyInterface {
          * @since 2.5.0
          */
          public static CallSite staticArrayAccess(MethodHandles.Lookup lookup, String name, MethodType type) {
-            MethodHandle handle;
             if (type.parameterCount()==2) {
                 return new ConstantCallSite(IndyArrayAccess.arrayGet(type));
             } else {

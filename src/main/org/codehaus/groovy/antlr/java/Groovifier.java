@@ -23,16 +23,14 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
 public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
-    private String[] tokenNames;
     private String currentClassName = "";
-    private boolean cleanRedundantPublic;
+    private final boolean cleanRedundantPublic;
 
     public Groovifier(String[] tokenNames) {
         this(tokenNames, true);
     }
 
     public Groovifier(String[] tokenNames, boolean cleanRedundantPublic) {
-        this.tokenNames = tokenNames;
         this.cleanRedundantPublic = cleanRedundantPublic;
     }
 

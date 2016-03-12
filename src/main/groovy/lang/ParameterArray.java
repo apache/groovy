@@ -25,13 +25,13 @@ package groovy.lang;
  */
 public class ParameterArray {
 
-    private Object parameters;
+    private final Object parameters;
 
     public ParameterArray(Object data) {
         parameters = packArray(data);
     }
 
-    private Object packArray(Object object) {
+    private static Object packArray(Object object) {
         if (object instanceof Object[])
             return (Object[]) object;
         else

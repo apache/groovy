@@ -32,7 +32,7 @@ import org.objectweb.asm.MethodVisitor;
  */
 public abstract class BinaryExpressionWriter {
     
-    private WriterController controller;
+    private final WriterController controller;
     private MethodCaller arraySet, arrayGet;
 
     public BinaryExpressionWriter(WriterController controller, MethodCaller arraySet, MethodCaller arrayGet) {

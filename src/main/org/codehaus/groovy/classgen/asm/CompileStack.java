@@ -95,7 +95,7 @@ public class CompileStack implements Opcodes {
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
     private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
-    private LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
+    private final LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
 
     private Label thisStartLabel, thisEndLabel;
 
@@ -105,9 +105,9 @@ public class CompileStack implements Opcodes {
     private final LinkedList stateStack = new LinkedList();
 
     // handle different states for the implicit "this"
-    private LinkedList<Boolean> implicitThisStack = new LinkedList();
+    private final LinkedList<Boolean> implicitThisStack = new LinkedList();
     // handle different states for being on the left hand side
-    private LinkedList<Boolean> lhsStack = new LinkedList();
+    private final LinkedList<Boolean> lhsStack = new LinkedList();
     {
         implicitThisStack.add(false);
         lhsStack.add(false);
@@ -123,13 +123,13 @@ public class CompileStack implements Opcodes {
     // in a loop where foo is a label.
     private final Map namedLoopContinueLabel = new HashMap();
     private String className;
-    private LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
-    private LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
+    private final LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
+    private final LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
     // stores if on left-hand-side during compilation
     private boolean lhs;
     // stores if implicit or explicit this is used.
     private boolean implicitThis;
-    private WriterController controller;
+    private final WriterController controller;
     private boolean inSpecialConstructallCall;
 
     protected static class LabelRange {
@@ -140,7 +140,7 @@ public class CompileStack implements Opcodes {
     public static class BlockRecorder {
         private boolean isEmpty = true;
         public Runnable excludedStatement;
-        public LinkedList<LabelRange> ranges;
+        public final LinkedList<LabelRange> ranges;
         public BlockRecorder() {
             ranges = new LinkedList<LabelRange>();
         }
@@ -632,7 +632,7 @@ public class CompileStack implements Opcodes {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 
-    private void pushInitValue(ClassNode type, MethodVisitor mv) {
+    private static void pushInitValue(ClassNode type, MethodVisitor mv) {
         if (ClassHelper.isPrimitiveType(type)) {
             if (type==ClassHelper.long_TYPE) {
                 mv.visitInsn(LCONST_0);

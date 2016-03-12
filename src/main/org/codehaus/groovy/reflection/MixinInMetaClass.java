@@ -43,7 +43,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
     final CachedClass mixinClass;
     final CachedConstructor constructor;
 
-    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
         super(softBundle);
@@ -54,7 +54,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
         emc.addMixinClass(this);
     }
 
-    private CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
+    private static CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
         for (CachedConstructor constr : mixinClass.getConstructors()) {
             if (!Modifier.isPublic(constr.getModifiers()))
                 continue;

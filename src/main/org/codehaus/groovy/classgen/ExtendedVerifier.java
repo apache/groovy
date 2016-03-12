@@ -49,10 +49,10 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
  *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
-public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyClassVisitor {
+public class ExtendedVerifier extends ClassCodeVisitorSupport {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
-    private SourceUnit source;
+    private final SourceUnit source;
     private ClassNode currentClass;
 
     public ExtendedVerifier(SourceUnit sourceUnit) {
@@ -153,7 +153,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         }
     }
 
-    private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
+    private static void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
         if (visited.getClassNode().isResolved() && visited.getClassNode().getName().equals("java.lang.Deprecated")) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
@@ -196,7 +196,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         }
     }
 
-    private boolean isOverrideMethod(MethodNode method) {
+    private static boolean isOverrideMethod(MethodNode method) {
         ClassNode cNode = method.getDeclaringClass();
         ClassNode next = cNode;
         outer:
@@ -231,7 +231,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         return next != null;
     }
 
-    private MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
+    private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
         for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
             if (parametersEqual(method.getParameters(), mn.getParameters())) {

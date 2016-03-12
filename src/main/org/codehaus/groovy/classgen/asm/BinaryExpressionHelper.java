@@ -68,7 +68,7 @@ public class BinaryExpressionHelper {
     // isCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
 
-    private WriterController controller;
+    private final WriterController controller;
     
     public BinaryExpressionHelper(WriterController wc) {
         this.controller = wc;
@@ -817,10 +817,6 @@ public class BinaryExpressionHelper {
         compileStack.removeVar(retValueId);
         controller.getOperandStack().replace(common, 2);        
         
-    }
-
-    private static boolean isNullConstant(Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
     }
 
     private void evaluateNormalTernary(TernaryExpression expression) {

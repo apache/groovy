@@ -34,7 +34,6 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.sc.TemporaryVariableExpression;
@@ -344,7 +343,6 @@ public class StaticInvocationWriter extends InvocationWriter {
                 ) {
             int stackLen = operandStack.getStackLength() + argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
-            MethodVisitor orig = mv;
             //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
@@ -415,7 +413,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
     }
 
-    private boolean isNullConstant(final Expression expression) {
+    private static boolean isNullConstant(final Expression expression) {
         return (expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null);
     }
 
@@ -596,23 +594,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             return true;
         }
         return false;
-    }
-
-    private static void pushZero(final MethodVisitor mv, final ClassNode type) {
-        boolean isInt = ClassHelper.int_TYPE.equals(type);
-        boolean isShort = ClassHelper.short_TYPE.equals(type);
-        boolean isByte = ClassHelper.byte_TYPE.equals(type);
-        if (isInt || isShort || isByte) {
-            mv.visitInsn(ICONST_0);
-        } else if (ClassHelper.long_TYPE.equals(type)) {
-            mv.visitInsn(LCONST_0);
-        } else if (ClassHelper.float_TYPE.equals(type)) {
-            mv.visitInsn(FCONST_0);
-        } else if (ClassHelper.double_TYPE.equals(type)) {
-            mv.visitInsn(DCONST_0);
-        } else {
-            mv.visitLdcInsn(0);
-        }
     }
 
     private class CheckcastReceiverExpression extends Expression {

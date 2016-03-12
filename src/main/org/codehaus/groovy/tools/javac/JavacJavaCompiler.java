@@ -37,7 +37,7 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class JavacJavaCompiler implements JavaCompiler {
-    private CompilerConfiguration config;
+    private final CompilerConfiguration config;
 
     public JavacJavaCompiler(CompilerConfiguration config) {
         this.config = config;
@@ -81,7 +81,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
     }
 
-    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+    private static void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
         if (msg != null) {
             header = header + "\n" + msg.getBuffer().toString();
         } else {

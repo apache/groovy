@@ -107,7 +107,7 @@ public class ComplexKeyHashMap
       threshold = (6 * newLength) / 8;
   }
 
-  private int capacity(int expectedMaxSize) {
+  private static int capacity(int expectedMaxSize) {
       // Compute min capacity for expectedMaxSize given a load factor of 3/4
       int minCapacity = (8 * expectedMaxSize)/6;
 
@@ -137,7 +137,6 @@ public class ComplexKeyHashMap
         return new EntryIterator() {
             Entry next;       // next entry to return
             int index;        // current slot
-            Entry current;    // current entry
 
             {
                 Entry[] t = table;
@@ -170,7 +169,7 @@ public class ComplexKeyHashMap
                     n = t[--i];
                 index = i;
                 next = n;
-                return current = e;
+                return e;
             }
         };
   }

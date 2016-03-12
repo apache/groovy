@@ -52,7 +52,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     // note: BigInteger and BigDecimal are also imported by default
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
-    private CompilationUnit compilationUnit;
+    private final CompilationUnit compilationUnit;
     private SourceUnit source;
     private VariableScope currentScope;
 
@@ -61,7 +61,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inClosure = false;
 
     private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
-    private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
+    private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
     private ImportNode currImportNode = null;
     private MethodNode currentMethod;
@@ -74,12 +74,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * the outer class we know is already resolved.
      */
     private static class ConstructedNestedClass extends ClassNode {
-        ClassNode knownEnclosingType;
-        String nestClassName;
+        final ClassNode knownEnclosingType;
         public ConstructedNestedClass(ClassNode outer, String inner) {
             super(outer.getName()+"$"+(inner=replacePoints(inner)), Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
-            this.nestClassName = inner;
             this.isPrimaryNode = false;
         }
         public boolean hasPackageName() {
@@ -109,7 +107,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * can't be done in these cases...
      */
     private static class ConstructedClassWithPackage extends ClassNode {
-        String prefix;
+        final String prefix;
         String className;
         public ConstructedClassWithPackage(String pkg, String name) {
             super(pkg+name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
@@ -145,7 +143,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * for an alias for this name which is much faster.
      */
     private static class LowerCaseClass extends ClassNode {
-        String className;
+        final String className;
         public LowerCaseClass(String name) {
             super(name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -391,7 +389,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private String replaceLastPoint(String name) {
+    private static String replaceLastPoint(String name) {
         int lastPoint = name.lastIndexOf('.');
         name = new StringBuffer()
                 .append(name.substring(0, lastPoint))
@@ -716,7 +714,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private String lookupClassName(PropertyExpression pe) {
+    private static String lookupClassName(PropertyExpression pe) {
         boolean doInitialClassTest=true;
         String name = "";
         // this loop builds a name from right to left each name part
@@ -778,7 +776,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // this check will ignore a .class property, for Example Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property
-    private Expression correctClassClassChain(PropertyExpression pe) {
+    private static Expression correctClassClassChain(PropertyExpression pe) {
         LinkedList<Expression> stack = new LinkedList<Expression>();
         ClassExpression found = null;
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
@@ -947,12 +945,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ve;
     }
 
-    private boolean testVanillaNameForClass(String name) {
+    private static boolean testVanillaNameForClass(String name) {
         if (name==null || name.length()==0) return false;
         return !Character.isLowerCase(name.charAt(0));
     }
 
-    private boolean isLeftSquareBracket(int op) {
+    private static boolean isLeftSquareBracket(int op) {
         return op == Types.ARRAY_EXPRESSION
                 || op == Types.LEFT_SQUARE_BRACKET
                 || op == Types.SYNTH_LIST
@@ -1062,7 +1060,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private String getDescription(ClassNode node) {
+    private static String getDescription(ClassNode node) {
         return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
     }
     

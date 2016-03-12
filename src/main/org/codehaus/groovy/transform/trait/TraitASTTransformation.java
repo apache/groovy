@@ -542,7 +542,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
         private final SourceUnit sourceUnit;
 
-        private PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {
+        PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {
             this.sourceUnit = sourceUnit;
         }
 

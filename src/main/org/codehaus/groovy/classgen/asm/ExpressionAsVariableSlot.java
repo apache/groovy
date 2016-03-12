@@ -33,9 +33,9 @@ import org.objectweb.asm.MethodVisitor;
  */
 public class ExpressionAsVariableSlot extends BytecodeExpression {
     private int index = -1;
-    private Expression exp;
-    private WriterController controller;
-    private String name;
+    private final Expression exp;
+    private final WriterController controller;
+    private final String name;
 
     public ExpressionAsVariableSlot(WriterController controller, Expression expression, String name) {
         this.exp = expression;

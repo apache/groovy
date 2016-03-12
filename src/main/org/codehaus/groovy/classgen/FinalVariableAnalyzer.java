@@ -59,7 +59,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         is_final(true),
         is_var(false);
 
-        private final boolean isFinal;
+        final boolean isFinal;
 
         VariableState(final boolean isFinal) {
             this.isFinal = isFinal;

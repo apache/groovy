@@ -44,7 +44,7 @@ public class AnnotationNode extends ASTNode {
         | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET | PACKAGE_TARGET;
     
     private final ClassNode classNode;
-    private Map<String, Expression> members = new HashMap<String, Expression>();
+    private final Map<String, Expression> members = new HashMap<String, Expression>();
     private boolean runtimeRetention= false, sourceRetention= false, classRetention = false;
     private int allowedTargets = ALL_TARGETS;
 

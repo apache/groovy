@@ -30,7 +30,7 @@ public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap
     }
 
     static class Segment<K1,K2,V> extends AbstractConcurrentDoubleKeyMap.Segment<K1,K2,V>{
-        private ReferenceBundle bundle;
+        private final ReferenceBundle bundle;
         public Segment(ReferenceBundle bundle, int cap) {
             super(cap);
             this.bundle = bundle;

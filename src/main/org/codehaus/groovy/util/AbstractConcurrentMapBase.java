@@ -124,7 +124,6 @@ public abstract class AbstractConcurrentMapBase {
 
     public Collection values() {
         Collection result = new LinkedList();
-        int count = 0;
         for (int i = 0; i < segments.length; i++) {
             segments[i].lock();
             try {
@@ -292,7 +291,7 @@ public abstract class AbstractConcurrentMapBase {
             count = newCount;
         }
 
-        private void put(Entry ee, int index, Object[] tab) {
+        private static void put(Entry ee, int index, Object[] tab) {
             Object o = tab[index];
             if (o != null) {
                 if (o instanceof Entry) {
@@ -314,7 +313,7 @@ public abstract class AbstractConcurrentMapBase {
             tab[index] = ee;
         }
 
-        private Object put(Entry ee, Object o) {
+        private static Object put(Entry ee, Object o) {
             if (o != null) {
                 if (o instanceof Entry) {
                     Object arr [] = new Object [2];

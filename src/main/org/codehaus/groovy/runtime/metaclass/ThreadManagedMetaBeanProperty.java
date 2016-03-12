@@ -45,9 +45,9 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
     private final ManagedConcurrentMap instance2Prop;
 
-    private Class declaringClass;
-    private ThreadBoundGetter getter;
-    private ThreadBoundSetter setter;
+    private final Class declaringClass;
+    private final ThreadBoundGetter getter;
+    private final ThreadBoundSetter setter;
     private Object initialValue;
     private Closure initialValueCreator;
     

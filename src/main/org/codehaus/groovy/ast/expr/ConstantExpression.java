@@ -42,7 +42,7 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
     
-    private Object value;
+    private final Object value;
     private String constantName;
 
     public ConstantExpression(Object value) {

@@ -96,8 +96,8 @@ import java.util.Map;
 public class AsmClassGenerator extends ClassGenerator {
 
     private final ClassVisitor cv;
-    private GeneratorContext context;
-    private String sourceFile;
+    private final GeneratorContext context;
+    private final String sourceFile;
 
     // fields and properties
     static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
@@ -130,7 +130,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
     // exception blocks list
-    private Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
+    private final Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
     private boolean passingParams;
 
     public static final boolean CREATE_DEBUG_INFO = true;
@@ -138,8 +138,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
 
     private ASTNode currentASTNode = null;
-    private Map genericParameterNames = null;
-    private SourceUnit source;
+    private final Map genericParameterNames;
+    private final SourceUnit source;
     private WriterController controller;
     
     public AsmClassGenerator(
@@ -350,7 +350,7 @@ public class AsmClassGenerator extends ClassGenerator {
         genericParameterNames.put(type.getName(), genericsType);
     }
 
-    private String[] buildExceptions(ClassNode[] exceptions) {
+    private static String[] buildExceptions(ClassNode[] exceptions) {
         if (exceptions == null) return null;
         String[] ret = new String[exceptions.length];
         for (int i = 0; i < exceptions.length; i++) {
@@ -361,7 +361,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         controller.resetLineNumber();
-    	Parameter[] parameters = node.getParameters();
+        Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
         String signature = BytecodeHelper.getGenericsMethodSignature(node);
         int modifiers = node.getModifiers();
@@ -875,7 +875,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         privateSuperField = true;
                     }
                 } else {
-                	if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
+                    if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
                         field = classNode.getDeclaredField(name);
                         if (field==null && classNode instanceof InnerClassNode) {
                             ClassNode outer = classNode.getOuterClass();
@@ -911,7 +911,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                 return;
                             }
                         }
-                	}
+                    }
                 }
                 if (field != null && !privateSuperField) {//GROOVY-4497: don't visit super field if it is private
                     visitFieldExpression(new FieldExpression(field));
@@ -1797,7 +1797,7 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.LIST_TYPE);
     }
 
-    private boolean containsOnlyConstants(ListExpression list) {
+    private static boolean containsOnlyConstants(ListExpression list) {
         for (Expression exp : list.getExpressions()) {
             if (exp instanceof ConstantExpression) continue;
             return false;
@@ -1951,7 +1951,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private int determineCommonArrayType(List values) {
+    private static int determineCommonArrayType(List values) {
         Expression expr = (Expression) values.get(0);
         int arrayElementType = -1;
         if (expr instanceof AnnotationConstantExpression) {

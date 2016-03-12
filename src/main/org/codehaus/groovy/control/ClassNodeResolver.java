@@ -63,8 +63,8 @@ public class ClassNodeResolver {
      * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */
     public static class LookupResult {
-        private SourceUnit su;
-        private ClassNode cn;
+        private final SourceUnit su;
+        private final ClassNode cn;
         /**
          * creates a new LookupResult. You are not supposed to supply
          * a SourceUnit and a ClassNode at the same time
@@ -94,7 +94,7 @@ public class ClassNodeResolver {
     }
 
     // Map to store cached classes
-    private Map<String,ClassNode> cachedClasses = new HashMap();
+    private final Map<String,ClassNode> cachedClasses = new HashMap();
     /**
      * Internal helper used to indicate a cache hit for a class that does not exist. 
      * This way further lookups through a slow {@link #findClassNode(String, CompilationUnit)} 
@@ -204,7 +204,7 @@ public class ClassNodeResolver {
     /**
      * Search for classes using class loading
      */
-    private LookupResult findByClassLoading(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
+    private static LookupResult findByClassLoading(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
         Class cls;
         try {
             // NOTE: it's important to do no lookup against script files
@@ -279,7 +279,7 @@ public class ClassNodeResolver {
     /**
      * try to find a script using the compilation unit class loader.
      */
-    private LookupResult tryAsScript(String name, CompilationUnit compilationUnit, ClassNode oldClass) {
+    private static LookupResult tryAsScript(String name, CompilationUnit compilationUnit, ClassNode oldClass) {
         LookupResult lr = null;
         if (oldClass!=null) {
             lr = new LookupResult(null, oldClass);
@@ -308,7 +308,7 @@ public class ClassNodeResolver {
      * get the time stamp of a class
      * NOTE: copied from GroovyClassLoader
      */
-    private long getTimeStamp(ClassNode cls) {
+    private static long getTimeStamp(ClassNode cls) {
         if (!(cls instanceof DecompiledClassNode)) {
             return Verifier.getTimestamp(cls.getTypeClass());
         }
@@ -320,7 +320,7 @@ public class ClassNodeResolver {
      * returns true if the source in URL is newer than the class
      * NOTE: copied from GroovyClassLoader
      */
-    private boolean isSourceNewer(URL source, ClassNode cls) {
+    private static boolean isSourceNewer(URL source, ClassNode cls) {
         try {
             long lastMod;
 

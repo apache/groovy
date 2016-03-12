@@ -35,7 +35,7 @@ public class VariableExpression extends Expression implements Variable {
     public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", ClassHelper.DYNAMIC_TYPE);
     public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", ClassHelper.DYNAMIC_TYPE);
 
-    private String variable;
+    private final String variable;
     private int modifiers;
     private boolean inStaticContext;
     private boolean isDynamicTyped=false;

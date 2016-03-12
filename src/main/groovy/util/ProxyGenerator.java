@@ -255,7 +255,7 @@ public class ProxyGenerator {
         private final ClassReference baseClass;
         private final ClassReference[] interfaces;
 
-        private CacheKey(final Class baseClass, final Class delegateClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods, final boolean useDelegate) {
+        CacheKey(final Class baseClass, final Class delegateClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods, final boolean useDelegate) {
             this.useDelegate = useDelegate;
             this.baseClass = new ClassReference(baseClass);
             this.delegateClass = new ClassReference(delegateClass);

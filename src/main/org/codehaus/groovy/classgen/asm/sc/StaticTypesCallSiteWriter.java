@@ -59,7 +59,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[] { new Parameter(OBJECT_TYPE, "key")});
 
 
-    private StaticTypesWriterController controller;
+    private final StaticTypesWriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
         super(controller);
@@ -532,7 +532,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode replacementType = field.getOriginType();
-            ClassNode boxedReplacementType = ClassHelper.getWrapper(replacementType);
             OperandStack operandStack = controller.getOperandStack();
             if (field.isStatic()) {
                 mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));

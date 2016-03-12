@@ -47,9 +47,9 @@ public class MopWriter {
     };
 
     private static class MopKey {
-        int hash = 0;
-        String name;
-        Parameter[] params;
+        final int hash;
+        final String name;
+        final Parameter[] params;
 
         MopKey(String name, Parameter[] params) {
             this.name = name;
@@ -67,7 +67,7 @@ public class MopWriter {
         }
     }
     
-    private WriterController controller;
+    private final WriterController controller;
     
     public MopWriter(WriterController wc) {
         controller = wc;
@@ -83,7 +83,7 @@ public class MopWriter {
         visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures);
     }
 
-    private Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
+    private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
         if (methods.isEmpty()) return Collections.EMPTY_SET;
         HashSet<MopKey> result = new HashSet<MopKey>(methods.size());
         for (MethodNode mn : methods) {
