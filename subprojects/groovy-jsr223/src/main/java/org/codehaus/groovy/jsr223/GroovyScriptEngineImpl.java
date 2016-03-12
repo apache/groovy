@@ -58,7 +58,6 @@ import groovy.lang.Tuple;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.util.ManagedConcurrentValueMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -151,9 +150,6 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
             Class clazz = getScriptClass(script);
             if (clazz == null) throw new ScriptException("Script class is null");
             return eval(clazz, ctx);
-        } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(),
-                    e.getSourceLocator(), e.getLine());
         } catch (Exception e) {
             if (debug) e.printStackTrace();
             throw new ScriptException(e);
@@ -180,11 +176,6 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         try {
             return new GroovyCompiledScript(this,
                     getScriptClass(scriptSource));
-        } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(),
-                    e.getSourceLocator(), e.getLine());
-        } catch (IOException e) {
-            throw new ScriptException(e);
         } catch (CompilationFailedException ee) {
             throw new ScriptException(ee);
         }
@@ -363,9 +354,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     Class getScriptClass(String script)
-            throws SyntaxException,
-            CompilationFailedException,
-            IOException {
+            throws CompilationFailedException {
         Class clazz = classMap.get(script);
         if (clazz != null) {
             return clazz;

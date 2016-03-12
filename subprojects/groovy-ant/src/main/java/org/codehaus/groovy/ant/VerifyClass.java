@@ -27,7 +27,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
-import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.SimpleVerifier;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceMethodVisitor;
@@ -115,7 +114,6 @@ public class VerifyClass extends MatchingTask {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                final Frame[] frames = a.getFrames();
 
                 if (!failed) {
                     failed = true;

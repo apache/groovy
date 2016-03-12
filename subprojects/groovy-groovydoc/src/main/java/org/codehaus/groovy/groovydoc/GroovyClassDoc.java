@@ -66,9 +66,6 @@ public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc {
     GroovyClassDoc superclass();
 
     GroovyType superclassType();
-//    GroovyTypeVariable[] typeParameters(); // not supported in groovy
-//    GroovyParamTag[] typeParamTags(); // not supported in groovy
-
 
     String getFullPathName(); // not in Java Doclet API
 

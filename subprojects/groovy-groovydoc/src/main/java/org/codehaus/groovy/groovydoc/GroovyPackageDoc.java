@@ -36,10 +36,6 @@ public interface GroovyPackageDoc extends GroovyDoc {
      */
     GroovyClassDoc[] allClasses(boolean filter);
 
-//    GroovyAnnotationTypeDoc[] annotationTypes();
-
-//    GroovyAnnotationDesc[] annotations();
-
     /**
      * Included enum types in this package.
      *

@@ -20,9 +20,6 @@ package org.codehaus.groovy.groovydoc;
 
 public interface GroovyDocErrorReporter{
     void printError(String arg0);
-//    void printError(GroovySourcePosition arg0, String arg1);
     void printNotice(String arg0);
-//    void printNotice(GroovySourcePosition arg0, String arg1);
     void printWarning(String arg0);
-//    void printWarning(GroovySourcePosition arg0, String arg1);
 }

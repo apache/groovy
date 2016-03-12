@@ -105,12 +105,9 @@ public class NumberValue extends java.lang.Number implements Value {
                 return bigDecimalValue();
             case INTEGER:
                 int sign = 1;
-                boolean negative = false;
                 if (buffer[startIndex] == '-') {
                     startIndex++;
                     sign = -1;
-                    negative = true;
-
                 }
 
                 if (isInteger(buffer, startIndex, endIndex - startIndex)) {
@@ -195,19 +192,6 @@ public class NumberValue extends java.lang.Number implements Value {
     public short shortValue() {
         return (short) intValue();
     }
-
-    private static float fpowersOf10[] = {
-            1.0f,
-            10.0f,
-            100.0f,
-            1000.0f,
-            10000.0f,
-            100000.0f,
-            1000000.0f,
-            10000000.0f,
-            100000000.0f,
-            1000000000.0f,
-    };
 
     public double doubleValue() {
         return CharScanner.parseDouble(this.buffer, startIndex, endIndex);

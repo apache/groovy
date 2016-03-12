@@ -137,8 +137,6 @@ public abstract class BaseJsonParser implements JsonParser {
         }
     }
 
-    private final CharBuf builder = CharBuf.create(20);
-
     public Object parse(File file, String charset) {
         Reader reader = null;
         try {

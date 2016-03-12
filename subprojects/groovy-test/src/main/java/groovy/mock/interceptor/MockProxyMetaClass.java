@@ -20,8 +20,6 @@ package groovy.mock.interceptor;
 
 import groovy.lang.*;
 
-import java.beans.IntrospectionException;
-
 /**
  * The ProxyMetaClass for the MockInterceptor.
  * Instance and class methods are intercepted, but constructors are not to allow mocking of aggregated objects.
@@ -44,14 +42,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
-    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) throws IntrospectionException {
+    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) {
         this(registry, theClass, adaptee, false);
     }
 
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
-    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee, boolean interceptConstruction) throws IntrospectionException {
+    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee, boolean interceptConstruction) {
         super(registry, theClass, adaptee);
         this.interceptConstruction = interceptConstruction;
     }
@@ -59,14 +57,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     /**
      * convenience factory method for the most usual case.
      */
-    public static MockProxyMetaClass make(Class theClass) throws IntrospectionException {
+    public static MockProxyMetaClass make(Class theClass) {
         return make(theClass, false);
     }
 
     /**
      * convenience factory method allowing interceptConstruction to be set.
      */
-    public static MockProxyMetaClass make(Class theClass, boolean interceptConstruction) throws IntrospectionException {
+    public static MockProxyMetaClass make(Class theClass, boolean interceptConstruction) {
         MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new MockProxyMetaClass(metaRegistry, theClass, meta, interceptConstruction);
