@@ -25,7 +25,6 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline;
@@ -297,15 +296,6 @@ public class Groovy extends Java {
 
         if (srcFile != null && !srcFile.exists()) {
             throw new BuildException("Source file does not exist!", getLocation());
-        }
-
-        // TODO: any of this used?
-        // deal with the filesets
-        for (int i = 0; i < filesets.size(); i++) {
-            FileSet fs = filesets.elementAt(i);
-            DirectoryScanner ds = fs.getDirectoryScanner(getProject());
-            File srcDir = fs.getDir(getProject());
-            String[] srcFiles = ds.getIncludedFiles();
         }
 
         try {

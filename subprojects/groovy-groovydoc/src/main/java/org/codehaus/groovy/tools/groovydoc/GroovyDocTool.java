@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
@@ -76,7 +74,7 @@ public class GroovyDocTool {
         }
     }
 
-    public void add(List<String> filenames) throws RecognitionException, TokenStreamException, IOException {
+    public void add(List<String> filenames) throws IOException {
         if (templateEngine != null) {
             // only print out if we are being used for template generation
             log.debug("Loading source files for " + filenames);

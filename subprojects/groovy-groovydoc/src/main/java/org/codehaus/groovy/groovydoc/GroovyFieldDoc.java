@@ -24,6 +24,5 @@ public interface GroovyFieldDoc extends GroovyMemberDoc {
     String constantValueExpression();
     boolean isTransient();
     boolean isVolatile();
-//    GroovySerialFieldTag[] serialFieldTags();
     GroovyType type();
 }

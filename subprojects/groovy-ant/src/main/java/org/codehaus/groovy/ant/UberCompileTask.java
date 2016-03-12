@@ -43,8 +43,6 @@ import java.io.IOException;
 public class UberCompileTask
     extends Task
 {
-    private final LoggingHelper log = new LoggingHelper(this);
-
     private Path src;
 
     private File destdir;

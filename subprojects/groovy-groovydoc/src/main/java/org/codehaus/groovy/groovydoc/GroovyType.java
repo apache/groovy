@@ -19,17 +19,6 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyType {
-//    GroovyAnnotationTypeDoc asAnnotationTypeDoc();
-//
-//    GroovyClassDoc asClassDoc();
-//
-//    GroovyParameterizedType asParameterizedType();
-//
-//    GroovyTypeVariable asTypeVariable();
-//
-//    GroovyWildcardType asWildcardType();
-//
-//    String dimension();
 
     boolean isPrimitive();
 

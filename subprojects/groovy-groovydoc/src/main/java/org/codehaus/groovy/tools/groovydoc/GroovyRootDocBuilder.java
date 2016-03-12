@@ -152,7 +152,7 @@ public class GroovyRootDocBuilder {
         return parser;
     }
 
-    public void buildTree(List<String> filenames) throws IOException, RecognitionException, TokenStreamException {
+    public void buildTree(List<String> filenames) throws IOException {
         setOverview();
 
         List<File> sourcepathFiles = new ArrayList<File>();

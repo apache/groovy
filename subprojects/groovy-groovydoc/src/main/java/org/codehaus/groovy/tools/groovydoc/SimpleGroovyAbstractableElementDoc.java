@@ -18,9 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.GroovyProgramElementDoc;
-
-public class SimpleGroovyAbstractableElementDoc extends SimpleGroovyProgramElementDoc implements GroovyProgramElementDoc {
+public class SimpleGroovyAbstractableElementDoc extends SimpleGroovyProgramElementDoc {
     private boolean abstractElement;
 
     public SimpleGroovyAbstractableElementDoc(String name) {

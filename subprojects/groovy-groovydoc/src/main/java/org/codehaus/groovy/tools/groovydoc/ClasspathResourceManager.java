@@ -33,7 +33,7 @@ public class ClasspathResourceManager implements ResourceManager {
         this.classLoader = classLoader;
     }
 
-    public InputStream getInputStream(String resourceName) throws IOException {
+    public InputStream getInputStream(String resourceName) {
         return classLoader.getResourceAsStream(resourceName);
     }
 
