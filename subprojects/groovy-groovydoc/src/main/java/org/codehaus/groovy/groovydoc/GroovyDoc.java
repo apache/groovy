@@ -22,10 +22,8 @@ public interface GroovyDoc extends Comparable {
 
     String commentText();
 
-    //    GroovyTag[] firstSentenceTags();
     String getRawCommentText();
 
-    //    GroovyTag[] inlineTags();
     boolean isAnnotationType();
 
     boolean isAnnotationTypeElement();
@@ -55,12 +53,8 @@ public interface GroovyDoc extends Comparable {
     boolean isOrdinaryClass();
 
     String name();
-//    GroovySourcePosition position();
 
-    //    GroovySeeTag[] seeTags();
     void setRawCommentText(String arg0);
-//    GroovyTag[] tags();
-//    GroovyTag[] tags(String arg0);
 
     String firstSentenceCommentText();
 }

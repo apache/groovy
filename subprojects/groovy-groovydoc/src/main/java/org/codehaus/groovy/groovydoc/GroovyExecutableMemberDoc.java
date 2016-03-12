@@ -24,11 +24,7 @@ public interface GroovyExecutableMemberDoc extends GroovyMemberDoc {
     boolean isSynchronized();
     boolean isVarArgs();
     GroovyParameter[] parameters();
-//    GroovyParamTag[] paramTags();
     String signature();
     GroovyClassDoc[] thrownExceptions();
     GroovyType[] thrownExceptionTypes();
-//    GroovyThrowsTag[] throwsTags();
-//    GroovyTypeVariable[] typeParameters();
-//    GroovyParamTag[] typeParamTags();
 }

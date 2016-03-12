@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.macro.transform;
 
-import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodInvocationTrap;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;

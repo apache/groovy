@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * @author Rick Hightower
  */
-public class ValueList extends AbstractList<Object> implements List<Object> {
+public class ValueList extends AbstractList<Object> {
 
     List<Object> list = new ArrayList<Object>(5);
 
