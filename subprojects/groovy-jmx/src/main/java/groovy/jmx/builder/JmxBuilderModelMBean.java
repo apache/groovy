@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Vladimir Vivien
  */
 public class JmxBuilderModelMBean extends RequiredModelMBean implements NotificationListener {
-    private List<String> methodListeners = new ArrayList<String>(0);
+    private final List<String> methodListeners = new ArrayList<String>(0);
     private Object managedObject;
 
     public JmxBuilderModelMBean(Object objectRef) throws MBeanException, RuntimeOperationsException, InstanceNotFoundException, InvalidTargetObjectTypeException {
@@ -153,11 +153,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
 
 
     private static class NumberSequencer {
-        private static AtomicLong num;
-
-        static {
-            num = new AtomicLong(0);
-        }
+        private static final AtomicLong num = new AtomicLong(0);
 
         public static long getNextSequence() {
             return num.incrementAndGet();

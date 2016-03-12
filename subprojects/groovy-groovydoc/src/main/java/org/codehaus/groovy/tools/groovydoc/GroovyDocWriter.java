@@ -32,11 +32,11 @@ import org.codehaus.groovy.tools.shell.util.Logger;
  */
 public class GroovyDocWriter {
     private final Logger log = Logger.create(GroovyDocWriter.class);
-    private GroovyDocTool tool;
-    private OutputTool output;
-    private GroovyDocTemplateEngine templateEngine;
+    private final GroovyDocTool tool;
+    private final OutputTool output;
+    private final GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
-    private Properties properties;
+    private final Properties properties;
 
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
         this.tool = tool;

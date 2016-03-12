@@ -61,9 +61,9 @@ public class Node implements Serializable, Cloneable {
 
     private Node parent;
 
-    private Object name;
+    private final Object name;
 
-    private Map attributes;
+    private final Map attributes;
 
     private Object value;
 

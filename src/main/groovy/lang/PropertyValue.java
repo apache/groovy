@@ -20,10 +20,10 @@ package groovy.lang;
 
 public class PropertyValue {
     // the owner of the property
-    private Object bean;
+    private final Object bean;
 
     // the description of the property
-    private MetaProperty mp;
+    private final MetaProperty mp;
 
     public PropertyValue(Object bean, MetaProperty mp) {
         this.bean = bean;

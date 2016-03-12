@@ -23,7 +23,7 @@ import java.util.*;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
-    List parameters;
+    final List parameters;
     
     public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);

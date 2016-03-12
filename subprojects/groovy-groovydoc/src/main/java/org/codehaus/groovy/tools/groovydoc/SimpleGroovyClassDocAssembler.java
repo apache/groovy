@@ -36,20 +36,20 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private static final String FS = "/";
     private static final Pattern PREV_JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
     private final Stack<GroovySourceAST> stack;
-    private Map<String, GroovyClassDoc> classDocs;
-    private List<String> importedClassesAndPackages;
-    private Map<String, String> aliases;
-    private List<LinkArgument> links;
-    private Properties properties;
+    private final Map<String, GroovyClassDoc> classDocs;
+    private final List<String> importedClassesAndPackages;
+    private final Map<String, String> aliases;
+    private final List<LinkArgument> links;
+    private final Properties properties;
     private SimpleGroovyFieldDoc currentFieldDoc;
-    private SourceBuffer sourceBuffer;
+    private final SourceBuffer sourceBuffer;
     private String packagePath;
     private LineColumn lastLineCol;
     private boolean insideEnum;
     private Map<String, SimpleGroovyClassDoc> foundClasses;
-    private boolean isGroovy;
-    private boolean deferSetup;
-    private String className;
+    private final boolean isGroovy;
+    private final boolean deferSetup;
+    private final String className;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
@@ -60,11 +60,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
         stack = new Stack<GroovySourceAST>();
         classDocs = new HashMap<String, GroovyClassDoc>();
-        className = file;
         if (file != null) {
             // todo: replace this simple idea of default class name
             int idx = file.lastIndexOf(".");
             className = file.substring(0, idx);
+        } else {
+            className = file;
         }
 
         deferSetup = packagePath.equals("DefaultPackage");

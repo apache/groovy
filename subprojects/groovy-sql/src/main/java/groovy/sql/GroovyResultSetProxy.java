@@ -43,7 +43,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public final class GroovyResultSetProxy implements InvocationHandler {
 
-    private GroovyResultSetExtension extension;
+    private final GroovyResultSetExtension extension;
 
     /**
      * Creates a new proxy instance.

@@ -31,7 +31,7 @@ public class MetaMethodIndex {
 
     public static class Header {
         public Entry head;
-        Class cls;
+        final Class cls;
         public int clsHashCode31;
         public Class subclass;
 

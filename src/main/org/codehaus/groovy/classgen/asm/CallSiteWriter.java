@@ -85,7 +85,7 @@ public class CallSiteWriter {
     
     private final List callSites = new ArrayList(32);
     private int callSiteArrayVarIndex = -1;
-    private WriterController controller;
+    private final WriterController controller;
 
     public CallSiteWriter(WriterController wc) {
         this.controller = wc;

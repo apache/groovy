@@ -32,7 +32,7 @@ import java.util.Iterator;
  */
 public class AntProjectPropertiesDelegate extends Hashtable {
 
-    private Project project;
+    private final Project project;
 
     public AntProjectPropertiesDelegate(Project project) {
         super();
@@ -96,6 +96,7 @@ public class AntProjectPropertiesDelegate extends Hashtable {
 
     public AntProjectPropertiesDelegate(Map t) {
         super(t);
+        project = null;
     }
 
     public synchronized void putAll(Map t) {

@@ -24,7 +24,7 @@ package org.codehaus.groovy.ast;
  * @author Paul King
  */
 public class PackageNode extends AnnotatedNode {
-    private String name;
+    private final String name;
 
     public PackageNode(String name) {
         this.name = name;

@@ -29,7 +29,7 @@ import org.codehaus.groovy.syntax.Token;
  */
 public class PostfixExpression extends Expression {
 
-    private Token operation;
+    private final Token operation;
     private Expression expression;
 
     public PostfixExpression(Expression expression, Token operation) {

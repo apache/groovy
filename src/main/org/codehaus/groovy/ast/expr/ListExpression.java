@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ListExpression extends Expression {
-    private List<Expression> expressions;
+    private final List<Expression> expressions;
     private boolean wrapped = false;
 
     public ListExpression() {

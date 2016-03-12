@@ -24,9 +24,9 @@ import org.codehaus.groovy.groovydoc.GroovyTag;
  * Stores info about GroovyDoc tags.
  */
 public class SimpleGroovyTag implements GroovyTag {
-    private String name;
-    private String param;
-    private String text;
+    private final String name;
+    private final String param;
+    private final String text;
 
     public SimpleGroovyTag(String name, String param, String text) {
         this.name = name;

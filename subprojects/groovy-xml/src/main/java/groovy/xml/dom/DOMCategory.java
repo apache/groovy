@@ -536,7 +536,7 @@ public class DOMCategory {
     }
 
     private static final class NodeListsHolder implements NodeList {
-        private List<NodeList> nodeLists;
+        private final List<NodeList> nodeLists;
 
         private NodeListsHolder(List<NodeList> nodeLists) {
             this.nodeLists = nodeLists;
@@ -567,7 +567,7 @@ public class DOMCategory {
     }
 
     private static final class NodesHolder implements NodeList {
-        private List<Node> nodes;
+        private final List<Node> nodes;
 
         private NodesHolder(List<Node> nodes) {
             this.nodes = nodes;

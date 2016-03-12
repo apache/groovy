@@ -76,7 +76,7 @@ import java.util.Map;
 public class RootLoader extends URLClassLoader {
 
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
-    private Map<String, Class> customClasses = new HashMap<String, Class>();
+    private final Map<String, Class> customClasses = new HashMap<String, Class>();
 
     /**
      * constructs a new RootLoader without classpath

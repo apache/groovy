@@ -59,7 +59,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[] { new Parameter(OBJECT_TYPE, "key")});
 
 
-    private StaticTypesWriterController controller;
+    private final StaticTypesWriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
         super(controller);

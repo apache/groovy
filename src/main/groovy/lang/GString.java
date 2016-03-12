@@ -56,7 +56,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     };
 
-    private Object[] values;
+    private final Object[] values;
 
     public GString(Object values) {
         this.values = (Object[]) values;

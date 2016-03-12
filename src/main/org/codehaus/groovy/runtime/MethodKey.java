@@ -32,9 +32,9 @@ import java.util.List;
 public abstract class MethodKey {
 
     private int hash;
-    private String name;
-    private Class sender;
-    private boolean isCallToSuper;
+    private final String name;
+    private final Class sender;
+    private final boolean isCallToSuper;
     
     public MethodKey(Class sender, String name, boolean isCallToSuper) {
         this.sender = sender;

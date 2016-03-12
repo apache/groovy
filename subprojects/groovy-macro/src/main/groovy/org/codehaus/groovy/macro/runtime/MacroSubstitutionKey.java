@@ -30,10 +30,10 @@ import org.codehaus.groovy.ast.expr.Expression;
  */
 public class MacroSubstitutionKey {
 
-    private int startLine;
-    private int startColumn;
-    private int endLine;
-    private int endColumn;
+    private final int startLine;
+    private final int startColumn;
+    private final int endLine;
+    private final int endColumn;
 
     public MacroSubstitutionKey(int startLine, int startColumn, int endLine, int endColumn) {
         this.startLine = startLine;

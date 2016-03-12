@@ -25,7 +25,7 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
 /** This class mutates the Java AST, whilst it is still a Java AST, in readiness for conversion to Groovy, yippee-ky-a ! */
 public class PreJava2GroovyConverter extends VisitorAdapter{
-    private Stack stack;
+    private final Stack stack;
 
     public PreJava2GroovyConverter(String[] tokenNames) {
         this.stack = new Stack();

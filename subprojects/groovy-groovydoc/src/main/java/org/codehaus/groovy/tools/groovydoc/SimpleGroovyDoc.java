@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
-    private String name;
+    private final String name;
     private String commentText = null;
     private String rawCommentText = "";
     private String firstSentenceCommentText = null;

@@ -32,7 +32,7 @@ import java.util.*;
  */
 public class JsonDelegate extends GroovyObjectSupport {
 
-    private Map<String, Object> content = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> content = new LinkedHashMap<String, Object>();
 
     /**
      * Intercepts calls for setting a key and value for a JSON object

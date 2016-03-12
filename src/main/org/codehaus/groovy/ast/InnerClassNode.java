@@ -29,7 +29,7 @@ import java.util.LinkedList;
  */
 public class InnerClassNode extends ClassNode {
 
-    private ClassNode outerClass;
+    private final ClassNode outerClass;
     private VariableScope scope;
     private boolean anonymous;
 

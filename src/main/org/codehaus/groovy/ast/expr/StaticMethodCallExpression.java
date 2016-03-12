@@ -32,8 +32,8 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class StaticMethodCallExpression extends Expression implements MethodCall {
 
     private ClassNode ownerType;
-    private String method;
-    private Expression arguments;
+    private final String method;
+    private final Expression arguments;
     private MetaMethod metaMethod = null;
 
     public StaticMethodCallExpression(ClassNode type, String method, Expression arguments) {

@@ -30,7 +30,7 @@ import java.io.Writer;
  */
 public class StringBufferWriter extends Writer {
 
-    private StringBuffer buffer;
+    private final StringBuffer buffer;
 
     /**
      * Create a new string writer which will append the text to the given StringBuffer

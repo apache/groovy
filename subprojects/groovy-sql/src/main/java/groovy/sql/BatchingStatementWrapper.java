@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * automatically. If batchSize is zero, then no batching is performed.
  */
 public class BatchingStatementWrapper extends GroovyObjectSupport {
-    private Statement delegate;
+    private final Statement delegate;
     protected int batchSize;
     protected int batchCount;
     protected Logger log;

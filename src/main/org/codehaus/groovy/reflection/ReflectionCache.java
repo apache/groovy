@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ReflectionCache {
-    private static Map primitiveTypesMap = new HashMap();
+    private static final Map primitiveTypesMap = new HashMap();
 
     static {
         primitiveTypesMap.put(byte.class, Byte.class);

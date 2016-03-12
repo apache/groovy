@@ -77,8 +77,8 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     private static class LocalData {
         CompilationUnit cu;
-        StringSetMap dependencyCache = new StringSetMap();
-        Map<String, String> precompiledEntries = new HashMap<String, String>();
+        final StringSetMap dependencyCache = new StringSetMap();
+        final Map<String, String> precompiledEntries = new HashMap<String, String>();
     }
 
     private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
@@ -91,8 +91,8 @@ public class GroovyScriptEngine implements ResourceConnector {
         return local;
     }
 
-    private URL[] roots;
-    private ResourceConnector rc;
+    private final URL[] roots;
+    private final ResourceConnector rc;
     private final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();

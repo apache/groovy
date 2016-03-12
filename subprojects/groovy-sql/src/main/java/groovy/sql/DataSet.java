@@ -76,14 +76,14 @@ public class DataSet extends Sql {
     private Closure sort;
     private boolean reversed = false;
     private DataSet parent;
-    private String table;
+    private final String table;
     private SqlWhereVisitor visitor;
     private SqlOrderByVisitor sortVisitor;
     private String sql;
     private List<Object> params;
     private List<Object> batchData;
     private Set<String> batchKeys;
-    private Sql delegate;
+    private final Sql delegate;
     private boolean withinDataSetBatch = false;
 
     public DataSet(Sql sql, Class type) {

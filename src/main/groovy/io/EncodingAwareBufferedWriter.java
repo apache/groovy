@@ -29,7 +29,7 @@ import java.nio.charset.Charset;
  */
 
 public class EncodingAwareBufferedWriter extends BufferedWriter {
-    private OutputStreamWriter out;
+    private final OutputStreamWriter out;
     public EncodingAwareBufferedWriter(OutputStreamWriter out) {
         super(out);
         this.out = out;

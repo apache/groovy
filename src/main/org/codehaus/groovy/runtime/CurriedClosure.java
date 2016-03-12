@@ -44,7 +44,7 @@ import groovy.lang.Closure;
  */
 public final class CurriedClosure<V> extends Closure<V> {
 
-    private Object[] curriedParams;
+    private final Object[] curriedParams;
     private int index;
     private Class varargType = null;
 

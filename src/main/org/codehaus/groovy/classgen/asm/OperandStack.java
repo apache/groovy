@@ -36,8 +36,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class OperandStack {
 
-    private WriterController controller;
-    private ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
+    private final WriterController controller;
+    private final ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
 
     public OperandStack(WriterController wc) {
         this.controller = wc;        

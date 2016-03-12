@@ -162,7 +162,7 @@ public class CompilerConfiguration {
      */
     private Map<String, Boolean> optimizationOptions;
 
-    private List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
+    private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
 
     /**
      * Sets a list of global AST transformations which should not be loaded even if they are

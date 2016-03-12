@@ -69,7 +69,7 @@ public class WarningMessage extends LocatedMessage
   //---------------------------------------------------------------------------
   // CONSTRUCTION AND DATA ACCESS
 
-    private int importance;  // The warning level, for filtering
+    private final int importance;  // The warning level, for filtering
     
     
    /**

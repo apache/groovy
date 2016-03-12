@@ -43,7 +43,7 @@ public class JsonLexer implements Iterator<JsonToken> {
     private static final char ZERO     = '0';
     private static final char NINE     = '9';
 
-    private LineColumnReader reader;
+    private final LineColumnReader reader;
 
     /**
      * Underlying reader from which to read the JSON tokens.
