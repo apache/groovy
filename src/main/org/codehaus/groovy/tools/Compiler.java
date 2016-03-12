@@ -36,7 +36,7 @@ public class Compiler {
     // TODO: delete this constant?
     public static final Compiler DEFAULT = new Compiler();
     
-    private CompilerConfiguration configuration = null;  // Optional configuration data
+    private final CompilerConfiguration configuration;  // Optional configuration data
     
    /**
     *  Initializes the Compiler with default configuration.

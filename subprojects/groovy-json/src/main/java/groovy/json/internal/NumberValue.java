@@ -38,7 +38,7 @@ public class NumberValue extends java.lang.Number implements Value {
     private boolean chopped;
     private int startIndex;
     private int endIndex;
-    private Type type;
+    private final Type type;
     private Object value;
 
     public NumberValue(Type type) {
@@ -46,7 +46,7 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
     public NumberValue() {
-
+        this.type = null;
     }
 
     public NumberValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer) {

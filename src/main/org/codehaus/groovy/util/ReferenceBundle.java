@@ -21,8 +21,8 @@ package org.codehaus.groovy.util;
 import java.lang.ref.ReferenceQueue;
 
 public class ReferenceBundle{
-    private ReferenceManager manager;
-    private ReferenceType type;
+    private final ReferenceManager manager;
+    private final ReferenceType type;
     public ReferenceBundle(ReferenceManager manager, ReferenceType type){
         this.manager = manager;
         this.type = type;

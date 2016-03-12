@@ -57,9 +57,9 @@ import java.util.*;
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableMap implements Map {
-    private Map delegate;
-    private PropertyChangeSupport pcs;
-    private Closure test;
+    private final Map delegate;
+    private final PropertyChangeSupport pcs;
+    private final Closure test;
 
     public static final String SIZE_PROPERTY = "size";
     public static final String CONTENT_PROPERTY = "content";
@@ -325,7 +325,7 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
-        private ChangeType type;
+        private final ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
             super(source, propertyName, oldValue, newValue);
@@ -364,7 +364,7 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
-        private Map values = new HashMap();
+        private final Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
             super(source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED);
@@ -382,13 +382,15 @@ public class ObservableMap implements Map {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
         private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
 
-        private PropertyEvent[] events = EMPTY_PROPERTY_EVENTS;
+        private final PropertyEvent[] events;
 
         public MultiPropertyEvent(Object source, PropertyEvent[] events) {
             super(source, MULTI_PROPERTY, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI);
             if (events != null && events.length > 0) {
                 this.events = new PropertyEvent[events.length];
                 System.arraycopy(events, 0, this.events, 0, events.length);
+            } else {
+            	this.events = EMPTY_PROPERTY_EVENTS;
             }
         }
 

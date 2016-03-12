@@ -556,7 +556,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final class CharacterIterator implements Iterator<Character> {
         private final CharSequence delegate;
-        private int length;
+        private final int length;
         private int index;
 
         public CharacterIterator(CharSequence delegate) {
@@ -579,7 +579,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final class StringIterator implements Iterator<String> {
         private final CharSequence delegate;
-        private int length;
+        private final int length;
         private int index;
 
         public StringIterator(CharSequence delegate) {
@@ -2780,8 +2780,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int tempIndex = -1;
         int replaceIndex = -1;
         int start = -1;
-        boolean[] noMoreMatches;
-        private List<Map.Entry<CharSequence, CharSequence>> replacementsList;
+        final boolean[] noMoreMatches;
+        private final List<Map.Entry<CharSequence, CharSequence>> replacementsList;
 
         CharSequence key(int i) {
             return replacementsList.get(i).getKey();

@@ -30,7 +30,7 @@ import groovy.lang.GString;
  * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
-    private String[] strings;
+    private final String[] strings;
 
     /**
      * Create a new GString with values and strings.

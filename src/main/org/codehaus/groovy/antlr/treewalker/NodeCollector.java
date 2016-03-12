@@ -30,7 +30,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  */
 
 public class NodeCollector extends VisitorAdapter {
-    private List nodes;
+    private final List nodes;
     public NodeCollector() {
         nodes = new ArrayList();
     }

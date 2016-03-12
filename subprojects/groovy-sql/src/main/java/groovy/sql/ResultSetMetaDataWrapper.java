@@ -44,8 +44,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
 
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-    private ResultSetMetaData target;
-    private int index;
+    private final ResultSetMetaData target;
+    private final int index;
 
     public ResultSetMetaDataWrapper(ResultSetMetaData target, int index) {
         this.target = target;

@@ -472,8 +472,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static class TextDumper implements Runnable {
-        InputStream in;
-        Appendable app;
+        final InputStream in;
+        final Appendable app;
 
         public TextDumper(InputStream in, Appendable app) {
             this.in = in;
@@ -498,8 +498,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static class ByteDumper implements Runnable {
-        InputStream in;
-        OutputStream out;
+        final InputStream in;
+        final OutputStream out;
 
         public ByteDumper(InputStream in, OutputStream out) {
             this.in = new BufferedInputStream(in);

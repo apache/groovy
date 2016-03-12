@@ -98,7 +98,7 @@ public class SqlGroovyMethods {
     }
 
     private static class ResultSetMetaDataIterator implements Iterator<ResultSetMetaDataWrapper> {
-        private ResultSetMetaData target;
+        private final ResultSetMetaData target;
         private int index = 1;
 
         public ResultSetMetaDataIterator(ResultSetMetaData target) {

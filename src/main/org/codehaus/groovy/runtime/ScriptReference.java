@@ -28,8 +28,8 @@ import groovy.lang.Script;
  */
 public class ScriptReference extends Reference {
 
-    private Script script;
-    private String variable;
+    private final Script script;
+    private final String variable;
 
     public ScriptReference(Script script, String variable) {
         this.script = script;

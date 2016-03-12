@@ -41,7 +41,7 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class JavacJavaCompiler implements JavaCompiler {
-    private CompilerConfiguration config;
+    private final CompilerConfiguration config;
 
     public JavacJavaCompiler(CompilerConfiguration config) {
         this.config = config;

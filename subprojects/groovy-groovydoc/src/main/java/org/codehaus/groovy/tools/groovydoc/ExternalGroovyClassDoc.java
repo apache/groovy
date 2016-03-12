@@ -27,7 +27,7 @@ import java.util.List;
  * Represents a class not in the codebase being processed.
  */
 public class ExternalGroovyClassDoc implements GroovyClassDoc {
-    private Class externalClass;
+    private final Class externalClass;
     private final List<GroovyAnnotationRef> annotationRefs;
 
     public ExternalGroovyClassDoc(Class externalClass) {

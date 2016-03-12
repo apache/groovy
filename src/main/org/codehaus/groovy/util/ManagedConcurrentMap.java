@@ -49,7 +49,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
 
     public static class Entry<K,V> extends ManagedReference<K> implements AbstractConcurrentMap.Entry<K,V> {
         private final Segment segment;
-        private int hash;
+        private final int hash;
 
         public Entry(ReferenceBundle bundle, Segment segment, K key, int hash) {
             super(bundle, key);

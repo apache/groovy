@@ -42,15 +42,15 @@ import java.util.Properties;
  * Process Groovydoc templates.
  */
 public class GroovyDocTemplateEngine {
-    private TemplateEngine engine;
-    private ResourceManager resourceManager;
-    private Properties properties;
-    private Map<String, Template> docTemplates; // cache
-    private List<String> docTemplatePaths; // once per documentation set
-    private Map<String, Template> packageTemplates; // cache
-    private List<String> packageTemplatePaths; // once per package
-    private Map<String, Template> classTemplates; // cache
-    private List<String> classTemplatePaths; // once per class
+    private final TemplateEngine engine;
+    private final ResourceManager resourceManager;
+    private final Properties properties;
+    private final Map<String, Template> docTemplates; // cache
+    private final List<String> docTemplatePaths; // once per documentation set
+    private final Map<String, Template> packageTemplates; // cache
+    private final List<String> packageTemplatePaths; // once per package
+    private final Map<String, Template> classTemplates; // cache
+    private final List<String> classTemplatePaths; // once per class
 
     public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager, String classTemplate) {
         this(tool, resourceManager, new String[]{}, new String[]{}, new String[]{classTemplate}, new Properties());

@@ -117,11 +117,11 @@ public class TemplateServlet extends AbstractHttpServlet {
      */
     private static class TemplateCacheEntry {
 
-        Date date;
+        final Date date;
         long hit;
         long lastModified;
         long length;
-        Template template;
+        final Template template;
 
         public TemplateCacheEntry(File file, Template template, boolean timestamp) {
             if (template == null) {

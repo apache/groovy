@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 // declaration, or the "it" argument to a closure.
 public class DynamicVariable implements Variable {
 
-    private String name;
+    private final String name;
     private boolean closureShare = false;
     private boolean staticContext = false;
 

@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 public class Sequence extends ArrayList implements GroovyObject {
 
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
-    private Class type;
+    private final Class type;
     private int hashCode;
 
     public Sequence() {

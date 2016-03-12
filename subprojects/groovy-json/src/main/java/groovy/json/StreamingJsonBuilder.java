@@ -74,7 +74,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     private static final String DOUBLE_CLOSE_BRACKET = "}}";
     private static final String COLON_WITH_OPEN_BRACE = ":{";
 
-    private Writer writer;
+    private final Writer writer;
 
     /**
      * Instantiates a JSON builder.

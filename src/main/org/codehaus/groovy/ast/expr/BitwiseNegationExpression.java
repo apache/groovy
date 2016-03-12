@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class BitwiseNegationExpression extends Expression {
 
-    private Expression expression;
+    private final Expression expression;
 
     public BitwiseNegationExpression(Expression expression) {
         this.expression = expression;

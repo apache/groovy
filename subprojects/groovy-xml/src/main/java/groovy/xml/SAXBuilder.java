@@ -35,7 +35,7 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class SAXBuilder extends BuilderSupport {
 
-    private ContentHandler handler;
+    private final ContentHandler handler;
     private Attributes emptyAttributes = new AttributesImpl();
 
     public SAXBuilder(ContentHandler handler) {

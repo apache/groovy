@@ -32,7 +32,7 @@ import java.util.ListIterator;
  * @author Mike Dillon
  */
 public class ReverseListIterator<T> implements Iterator<T> {
-    private ListIterator<T> delegate;
+    private final ListIterator<T> delegate;
 
     /**
      * Constructs a new <code>ReverseListIterator</code> for the provided list.

@@ -52,7 +52,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
     private static final MethodCaller ENUMERATION_NEXT_METHOD = MethodCaller.newInterface(Enumeration.class, "nextElement");
     private static final MethodCaller ENUMERATION_HASMORE_METHOD = MethodCaller.newInterface(Enumeration.class, "hasMoreElements");
 
-    private StaticTypesWriterController controller;
+    private final StaticTypesWriterController controller;
 
     public StaticTypesStatementWriter(StaticTypesWriterController controller) {
         super(controller);

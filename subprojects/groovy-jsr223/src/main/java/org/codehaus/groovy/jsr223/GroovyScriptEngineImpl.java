@@ -99,10 +99,10 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private ManagedConcurrentValueMap<String, Class> classMap = new ManagedConcurrentValueMap<String, Class>(ReferenceBundle.getSoftBundle());
+    private final ManagedConcurrentValueMap<String, Class> classMap = new ManagedConcurrentValueMap<String, Class>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
+    private final ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory

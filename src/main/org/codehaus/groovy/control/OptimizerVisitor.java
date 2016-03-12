@@ -38,8 +38,8 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private SourceUnit source;
 
-    private Map const2Var = new HashMap();
-    private List<FieldNode> missingFields = new LinkedList<FieldNode>();
+    private final Map const2Var = new HashMap();
+    private final List<FieldNode> missingFields = new LinkedList<FieldNode>();
 
     public OptimizerVisitor(CompilationUnit cu) {
     }

@@ -29,7 +29,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class SpreadMapExpression extends Expression {
 
-    private Expression expression;
+    private final Expression expression;
 
     public SpreadMapExpression(Expression expression) {
         this.expression = expression;

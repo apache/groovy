@@ -33,7 +33,7 @@ import java.io.IOException;
  * @author Paul King
  */
 public class PlatformLineWriter extends Writer {
-    private BufferedWriter writer;
+    private final BufferedWriter writer;
 
     public PlatformLineWriter(Writer out) {
         writer = new BufferedWriter(out);

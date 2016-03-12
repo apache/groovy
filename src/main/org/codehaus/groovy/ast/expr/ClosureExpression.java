@@ -31,7 +31,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class ClosureExpression extends Expression {
     
-    private Parameter[] parameters;
+    private final Parameter[] parameters;
     private Statement code;
     private VariableScope variableScope;
     

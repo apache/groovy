@@ -52,7 +52,7 @@ import java.util.Collection;
  * @author Guillaume Laforge
  */
 public class CharsetToolkit {
-    private byte[] buffer;
+    private final byte[] buffer;
     private Charset defaultCharset;
     private Charset charset;
     private boolean enforce8Bit = true;

@@ -29,7 +29,7 @@ import org.codehaus.groovy.syntax.Token;
  */
 public class PrefixExpression extends Expression {
 
-    private Token operation;
+    private final Token operation;
     private Expression expression;
 
     public PrefixExpression(Token operation, Expression expression) {

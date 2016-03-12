@@ -55,13 +55,13 @@ import java.util.Map;
  */
 public class ModuleNode extends ASTNode implements Opcodes {
 
-    private BlockStatement statementBlock = new BlockStatement();
+    private final BlockStatement statementBlock = new BlockStatement();
     List<ClassNode> classes = new LinkedList<ClassNode>();
-    private List<MethodNode> methods = new ArrayList<MethodNode>();
-    private Map<String, ImportNode> imports = new HashMap<String, ImportNode>();
-    private List<ImportNode> starImports = new ArrayList<ImportNode>();
-    private Map<String, ImportNode> staticImports = new LinkedHashMap<String, ImportNode>();
-    private Map<String, ImportNode> staticStarImports = new LinkedHashMap<String, ImportNode>();
+    private final List<MethodNode> methods = new ArrayList<MethodNode>();
+    private final Map<String, ImportNode> imports = new HashMap<String, ImportNode>();
+    private final List<ImportNode> starImports = new ArrayList<ImportNode>();
+    private final Map<String, ImportNode> staticImports = new LinkedHashMap<String, ImportNode>();
+    private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<String, ImportNode>();
     private CompileUnit unit;
     private PackageNode packageNode;
     private String description;

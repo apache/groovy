@@ -42,7 +42,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     private final Method cachedMethod;
     private int hashCode;
 
-    private static MyComparator comparator = new MyComparator();
+    private static final MyComparator comparator = new MyComparator();
 
     private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 

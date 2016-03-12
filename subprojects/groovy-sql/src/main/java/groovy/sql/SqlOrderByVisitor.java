@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
  */
 public class SqlOrderByVisitor extends CodeVisitorSupport {
 
-    private StringBuffer buffer = new StringBuffer();
+    private final StringBuffer buffer = new StringBuffer();
 
     public String getOrderBy() {
         return buffer.toString();

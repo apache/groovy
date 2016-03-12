@@ -38,9 +38,9 @@ import java.util.logging.Logger;
  */
 public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
 
-    private PreparedStatement delegate;
-    private List<Tuple> indexPropList;
-    private Sql sql;
+    private final PreparedStatement delegate;
+    private final List<Tuple> indexPropList;
+    private final Sql sql;
 
     public BatchingPreparedStatementWrapper(PreparedStatement delegate, List<Tuple> indexPropList, int batchSize, Logger log, Sql sql) {
         super(delegate, batchSize, log);

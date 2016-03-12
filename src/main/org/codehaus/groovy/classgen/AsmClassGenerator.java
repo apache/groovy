@@ -96,8 +96,8 @@ import java.util.Map;
 public class AsmClassGenerator extends ClassGenerator {
 
     private final ClassVisitor cv;
-    private GeneratorContext context;
-    private String sourceFile;
+    private final GeneratorContext context;
+    private final String sourceFile;
 
     // fields and properties
     static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
@@ -130,7 +130,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
     // exception blocks list
-    private Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
+    private final Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
     private boolean passingParams;
 
     public static final boolean CREATE_DEBUG_INFO = true;
@@ -138,8 +138,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
 
     private ASTNode currentASTNode = null;
-    private Map genericParameterNames = null;
-    private SourceUnit source;
+    private final Map genericParameterNames;
+    private final SourceUnit source;
     private WriterController controller;
     
     public AsmClassGenerator(

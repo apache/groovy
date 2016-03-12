@@ -131,12 +131,12 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
-    private ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
+    private final ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
     protected LinkedList<Closure> attributeDelegates = new LinkedList<Closure>(); //
-    private List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
-    private Map<String, Factory> factories = new HashMap<String, Factory>();
+    private final List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
+    private final Map<String, Factory> factories = new HashMap<String, Factory>();
     private Closure nameMappingClosure;
-    private ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
+    private final ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
     private FactoryBuilderSupport globalProxyBuilder;
     protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();

@@ -35,7 +35,7 @@ public class MethodClosure extends Closure {
     public static boolean ALLOW_RESOLVE = false;
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    private String method;
+    private final String method;
 
     public MethodClosure(Object owner, String method) {
         super(owner);

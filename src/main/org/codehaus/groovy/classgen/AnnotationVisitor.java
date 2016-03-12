@@ -40,8 +40,8 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationVisitor {
-    private SourceUnit source;
-    private ErrorCollector errorCollector;
+    private final SourceUnit source;
+    private final ErrorCollector errorCollector;
     private AnnotationNode annotation;
     private ClassNode reportClass;
 

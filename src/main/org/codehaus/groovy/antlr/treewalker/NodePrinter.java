@@ -29,8 +29,8 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  */
 
 public class NodePrinter extends VisitorAdapter {
-    private String[] tokenNames;
-    private PrintStream out;
+    private final String[] tokenNames;
+    private final PrintStream out;
 
     /**
      * A visitor that prints a pseudo xml output to the supplied PrintStream

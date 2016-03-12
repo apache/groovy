@@ -35,10 +35,10 @@ import java.util.NoSuchElementException;
 public class FileIterator implements Iterator {
 
     /* The iterator over the FileSet objects */
-    private Iterator<FileSet> fileSetIterator;
+    private final Iterator<FileSet> fileSetIterator;
 
     /* The Ant project */
-    private Project project;
+    private final Project project;
 
     /* The directory scanner */
     private DirectoryScanner ds;
@@ -56,7 +56,7 @@ public class FileIterator implements Iterator {
     private boolean nextObjectSet = false;
 
     /* Return only directories? */
-    private boolean iterateDirectories = false;
+    private final boolean iterateDirectories;
 
     public FileIterator(Project project, Iterator<FileSet> fileSetIterator) {
         this(project, fileSetIterator, false);

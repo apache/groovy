@@ -123,7 +123,7 @@ public class ServletBinding extends Binding {
      * @author Jochen Theodorou
      */
     private static class ServletOutput {
-        private HttpServletResponse response;
+        private final HttpServletResponse response;
         private ServletOutputStream outputStream;
         private PrintWriter writer;
         

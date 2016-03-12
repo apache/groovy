@@ -30,12 +30,12 @@ public class ReaderCharacterSource implements CharacterSource {
     private static final int MAX_TOKEN_SIZE = 5;
 
     private final Reader reader;
-    private int readAheadSize;
+    private final int readAheadSize;
     private int ch = -2;
 
     private boolean foundEscape;
 
-    private char[] readBuf;
+    private final char[] readBuf;
 
     private int index;
 

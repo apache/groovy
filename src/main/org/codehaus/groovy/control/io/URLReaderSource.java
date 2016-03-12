@@ -34,7 +34,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class URLReaderSource extends AbstractReaderSource {
-    private URL url;  // The URL from which we produce Readers.
+    private final URL url;  // The URL from which we produce Readers.
     
    /**
     *  Creates the ReaderSource from a File descriptor.

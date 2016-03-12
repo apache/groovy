@@ -27,7 +27,7 @@ import org.apache.tools.ant.Task;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class LoggingHelper {
-    private Task owner;
+    private final Task owner;
 
     public LoggingHelper(final Task owner) {
         assert owner != null;
