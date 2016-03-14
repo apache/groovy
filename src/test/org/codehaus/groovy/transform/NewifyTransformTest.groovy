@@ -157,4 +157,22 @@ class NewifyTransformTest extends GroovyShellTestCase {
         '''
         assert test == 'ABC'
     }
+
+
+    void testNewifyClosureCompileStatic_Groovy7758() {
+        assertScript '''
+            class A {
+                String foo() { 'abc' }
+            }
+
+            @groovy.transform.CompileStatic
+            @Newify
+            String test(A arg) {
+                Closure<String> cl = { A it -> it.foo() }
+                cl.call(arg)
+            }
+
+            assert test(new A()) == 'abc'
+        '''
+    }
 }
