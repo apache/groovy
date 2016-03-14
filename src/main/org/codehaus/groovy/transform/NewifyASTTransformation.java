@@ -166,6 +166,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             Expression method = transform(mce.getMethod());
             Expression object = transform(mce.getObjectExpression());
             MethodCallExpression transformed = callX(object, method, args);
+            transformed.setImplicitThis(mce.isImplicitThis());
             transformed.setSourcePosition(mce);
             return transformed;
         } else if (expr instanceof ClosureExpression) {
