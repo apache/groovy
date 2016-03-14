@@ -296,7 +296,7 @@ public class SourceUnit extends ProcessingUnit {
 
     /**
      * Returns a sampling of the source at the specified line and column,
-     * of null if it is unavailable.
+     * or null if it is unavailable.
      */
     public String getSample(int line, int column, Janitor janitor) {
         String sample = null;
