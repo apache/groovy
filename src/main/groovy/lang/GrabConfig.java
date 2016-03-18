@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * </pre>
  * Another example involving XStream:
  * <pre>
- * {@code @Grab}('com.thoughtworks.xstream:xstream:1.4.8'),
+ * {@code @Grab}('com.thoughtworks.xstream:xstream:1.4.9'),
  * {@code @Grab}('xpp3:xpp3_min:1.1.4c'),
  * {@code @GrabConfig}(systemClassLoader=true, initContextClassLoader=true)
  * import com.thoughtworks.xstream.*
