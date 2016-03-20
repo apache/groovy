@@ -159,7 +159,7 @@ subprojects { sp ->
     }
     rat {
         inputDir = sp.projectDir.absolutePath
-        excludes = [ 'target/**', '.gradle/**', '*.iml' , *extras]
+        excludes = [ 'target/**', '.gradle/**', '*.iml', '.classpath', '.project', '.settings/**', 'bin/**' , *extras]
     }
 }
 
@@ -174,6 +174,7 @@ rat {
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
                  '**/style.css', // MIT license as per NOTICE/LICENSE files
                  '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
+                 '.classpath', '.project', '.settings/**', 'bin/**', // Eclipse files
     ]
 }
 
