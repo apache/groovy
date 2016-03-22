@@ -20,3 +20,5 @@ task downloadWrapper(type: Wrapper) {
     description = "Download the gradle wrapper and requisite files. Overwrites any existing wrapper files."
     gradleVersion = project.gradleVersion
 }
+
+defaultTasks 'downloadWrapper'
