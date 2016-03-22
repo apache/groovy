@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,23 +17,5 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
 
-/**
- * Tests for the {@link LoadCommand} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
-class LoadCommandTest
-    extends CommandTestSupport
-{
-    void testLoad() {
-        shell.execute(LoadCommand.COMMAND_NAME)
-    }
-
-    void testLoadScriptWithShebang() {
-        def script = getClass().getResource('/groovy7777script')
-        shell.execute("${LoadCommand.COMMAND_NAME} ${script}")
-        assert lastResult == 42
-    }
-}
+myvar = 42
