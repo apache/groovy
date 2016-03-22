@@ -81,7 +81,10 @@ class LoadCommand
             io.out.println("Loading: $url")
         }
 
-        url.eachLine { String it ->
+        url.eachLine { String it, int lineNumber ->
+            if (lineNumber == 1 && it.startsWith('#!')) {
+                return
+            }
             shell << it as String
         }
     }
