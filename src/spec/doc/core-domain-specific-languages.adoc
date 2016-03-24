@@ -1083,8 +1083,72 @@ include::{projectdir}/subprojects/groovy-ant/{specfolder}/ant-builder.adoc[level
 
 ==== CliBuilder
 
-(TBD)
+`CliBuilder` provides a compact way to specify the available parameters for a command-line application and then
+automatically parse the application's parameters according to that specification. Here is a simple example
+`Greeter.groovy` script illustrating usage:
 
+[source,groovy]
+---------------------------
+// specify parameters
+def cli = new CliBuilder(usage: 'groovy Greeter [option]') <1>
+cli.a(longOpt: 'audience', args: 1, 'greeting audience')   <2>
+cli.h(longOpt: 'help', 'display usage')                    <3>
+
+// parse and process parameters
+def options = cli.parse(args)                              <4>
+if (options.h) cli.usage()                                 <5>
+else println "Hello ${options.a ? options.a : 'World'}"    <6>
+---------------------------
+<1> define a new `CliBuilder` instance specifying an optional usage string
+<2> specify a `-a` parameter taking a single argument with an optional long variant `--audience`
+<3> specify a `-h` parameter taking no arguments with an optional long variant `--help`
+<4> parse the arguments supplied to the script
+<5> if the `h` argument is found display a usage message
+<6> display a standard greeting or if the `a` argument is found a customized greeting
+
+Running this script with no arguments, i.e.:
+
+[source,shell]
+----
+> groovy Greeter
+----
+
+results in the following output:
+
+[source,shell]
+----
+Hello World
+----
+
+Running this script with `-h` as the arguments, i.e.:
+
+[source,shell]
+----
+> groovy Greeter -h
+----
+
+results in the following output:
+
+[source,shell]
+----
+usage: groovy Greeter [option]
+ -a,--audience <arg>   greeting audience
+ -h,--help             display usage
+----
+
+Running this script with `--audience Groovologist` as the arguments, i.e.:
+
+[source,shell]
+----
+> groovy Greeter --audience Groovologist
+----
+
+results in the following output:
+
+[source,shell]
+----
+Hello Groovologist
+----
 
 ==== ObjectGraphBuilder
 
