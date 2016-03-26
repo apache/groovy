@@ -74,7 +74,7 @@ If obtaining the source from this distribution and you intend to build from sour
 you also need to https://gradle.org/downloads/[download] and install http://gradle.org/[Gradle] and execute one bootstrap step.
 At the top directory of your unpacked source, you need to run the command:
 
-    gradle
+    gradle wrapper
 
 This sets up the Gradle wrapper and from then on you just need the `gradlew` command instead of `gradle`.
 
