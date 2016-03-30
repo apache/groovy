@@ -750,7 +750,7 @@ the code you have to write is left clean and concise and the chance of introduci
 boilerplate code incorrect is reduced.
 
 [[xform-ToString]]
-===== @groovy.transform.ToString
+===== `@groovy.transform.ToString`
 The `@ToString` AST transformation generates a human readable `toString` representation of the class. For example,
 annotating the `Person` class like below will automatically generate the `toString` method for you:
 
@@ -828,7 +828,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 |=======================================================================
 
 [[xform-EqualsAndHashCode]]
-===== @groovy.transform.EqualsAndHashCode
+===== `@groovy.transform.EqualsAndHashCode`
 
 The `@EqualsAndHashCode` AST transformation aims at generating `equals` and `hashCode` methods for you. The generated
 hashcode follows the best practices as described in _Effective Java_ by _Josh Bloch_:
@@ -861,18 +861,18 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 |includeFields|False|Should fields be included in equals/hashCode, in addition to properties|
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_includeFields,indent=0]
 ----
 |cache|False|Cache the hashCode computation. Should only be set to true if the class is immutable.|
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_cache,indent=0]
 ----
 |useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
 |=======================================================================
 
 [[xform-TupleConstructor]]
-===== @groovy.transform.TupleConstructor
+===== `@groovy.transform.TupleConstructor`
 
 The `@TupleConstructor` annotation aims at eliminating boilerplate code by generating constructors for you. A tuple
 constructor is created having a parameter for each property (and possibly fields). Each parameter has a default value
@@ -983,7 +983,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 [[xform-MapConstructor]]
-===== @groovy.transform.MapConstructor
+===== `@groovy.transform.MapConstructor`
 
 The `@MapConstructor` annotation aims at eliminating boilerplate code by generating a map constructor for you. A map
 constructor is created such that each property in the class is set based on the value in the supplied map
@@ -1002,7 +1002,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 [[xform-Canonical]]
-===== @groovy.transform.Canonical
+===== `@groovy.transform.Canonical`
 
 The `@Canonical` meta-annotation combines the <<xform-ToString,@ToString>>,
 <<xform-EqualsAndHashCode,@EqualsAndHashCode>> and <<xform-TupleConstructor,@TupleConstructor>>
@@ -1034,7 +1034,7 @@ Any applicable annotation attributes from `@Caonical` are passed along to the ex
 attributes already existing in the explicit annotation take precedence.
 
 [[xform-InheritConstructors]]
-===== @groovy.transform.InheritConstructors
+===== `@groovy.transform.InheritConstructors`
 
 The `@InheritConstructor` AST transformation aims at generating constructors matching super constructors for you. This
 is in particular useful when overriding exception classes:
@@ -1062,7 +1062,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 |=======================================================================
 
 [[xform-Category]]
-===== @groovy.lang.Category
+===== `@groovy.lang.Category`
 
 The `@Category` AST transformation simplifies the creation of Groovy categories. Historically, a Groovy category was
 written like this:
@@ -1085,7 +1085,7 @@ Note that the mixed in class can be referenced using `this` instead. It's also w
 in a category class is inherently unsafe: categories are not stateful (like traits).
 
 [[xform-IndexedProperty]]
-===== @groovy.transform.IndexedProperty
+===== `@groovy.transform.IndexedProperty`
 
 The `@IndexedProperty` annotation aims at generating indexed getters/setters for properties of list/array types.
 This is in particular useful if you want to use a Groovy class from Java. While Groovy supports GPath to access properties,
@@ -1098,7 +1098,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 [[xform-Lazy]]
-===== @groovy.lang.Lazy
+===== `@groovy.lang.Lazy`
 
 The `@Lazy` AST transformation implements lazy initialization of fields. For example, the following code:
 
@@ -1136,7 +1136,7 @@ implement caching. In that case, if the garbage collector decides to collect the
 the next time the field is accessed.
 
 [[xform-Newify]]
-===== @groovy.lang.Newify
+===== `@groovy.lang.Newify`
 
 The `@Newify` AST transformation is used to bring alternative syntaxes to construct objects:
 
@@ -1153,7 +1153,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 The `Ruby` version can be disabled by setting the `auto` flag to `false`.
 
 [[xform-Sortable]]
-===== @groovy.transform.Sortable
+===== `@groovy.transform.Sortable`
 
 The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted by
 numerous properties. It is easy to use as shown in the following example where we annotate the `Person` class:
@@ -1215,7 +1215,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 [[xform-Builder]]
-===== @groovy.transform.builder.Builder
+===== `@groovy.transform.builder.Builder`
 
 The `@Builder` AST transformation is used to help write classes that can be created using _fluent_ api calls.
 The transform supports multiple building strategies to cover a range of cases and there are a number
@@ -1409,7 +1409,7 @@ This category of annotations are aimed at simplifying the implementation of well
 singleton, ...) by using a declarative style.
 
 [[xform-Delegate]]
-===== @groovy.lang.Delegate
+===== `@groovy.lang.Delegate`
 
 The `@Delegate` AST transformation aims at implementing the delegation design pattern. In the following class:
 
@@ -1488,7 +1488,7 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 |=======================================================================
 
 [[xform-Immutable]]
-===== @groovy.transform.Immutable
+===== `@groovy.transform.Immutable`
 
 The `@Immutable` AST transformation simplifies the creation of immutable classes, that is to say classes for which
 members are deemed immutable. For that, all you have to do is annotating the class like in the following example:
@@ -1531,7 +1531,7 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=imm
 |=======================================================================
 
 [[xform-Memoized]]
-===== @groovy.transform.Memoized
+===== `@groovy.transform.Memoized`
 
 The `@Memoized` AST transformations simplifies the implementation of caching by allowing the result of method calls
 to be cached just by annotating the method with `@Memoized`. Let's imagine the following method:
@@ -1567,7 +1567,7 @@ _protectedCacheSize>0_ would create an unlimited cache with some results protect
  protected cache.
 
 [[xform-Singleton]]
-===== @groovy.lang.Singleton
+===== `@groovy.lang.Singleton`
 
 The `@Singleton` annotation can be used to implement the singleton design pattern on a class. The singleton instance
 is defined eagerly by default, using class initialization, or lazily, in which case the field is initialized using
@@ -1596,7 +1596,7 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=sin
 In this example, we also set the `strict` parameter to false, which allows us to define our own constructor.
 
 [[xform-Mixin]]
-===== @groovy.transform.Mixin
+===== `@groovy.transform.Mixin`
 
 Deprecated. Consider using traits instead.
 
@@ -1617,7 +1617,7 @@ Those transformations support two parameters:
 * `category` (defaults to the class name) is the name of the logger category
 
 [[xform-Log]]
-===== @groovy.util.logging.Log
+===== `@groovy.util.logging.Log`
 
 The first logging AST transformation available is the `@Log` annotation which relies on the JDK logging framework. Writing:
 
@@ -1634,7 +1634,7 @@ include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags
 ----
 
 [[xform-Commons]]
-===== @groovy.util.logging.Commons
+===== `@groovy.util.logging.Commons`
 
 Groovy supports the http://commons.apache.org/proper/commons-logging/[Apache Commons Logging] framework using to the
 `@Commons` annotation. Writing:
@@ -1652,7 +1652,7 @@ include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags
 ----
 
 [[xform-Log4j]]
-===== @groovy.util.logging.Log4j
+===== `@groovy.util.logging.Log4j`
 
 Groovy supports the http://logging.apache.org/log4j/1.2/[Apache Log4j 1.x] framework using to the
 `@Log4j` annotation. Writing:
@@ -1670,7 +1670,7 @@ include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags
 ----
 
 [[xform-Log4j2]]
-===== @groovy.util.logging.Log4j2
+===== `@groovy.util.logging.Log4j2`
 
 Groovy supports the http://logging.apache.org/log4j/2.x/[Apache Log4j 2.x] framework using to the
 `@Log4j2` annotation. Writing:
@@ -1688,7 +1688,7 @@ include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags
 ----
 
 [[xform-Slf4j]]
-===== @groovy.util.logging.Slf4j
+===== `@groovy.util.logging.Slf4j`
 
 Groovy supports the http://www.slf4j.org/[Simple Logging Facade for Java (SLF4J)] framework using to the
 `@Slf4j` annotation. Writing:
@@ -1711,7 +1711,7 @@ The Groovy language provides a set of annotations aimed at simplifying common co
 approach.
 
 [[xform-Synchronized]]
-===== @groovy.transform.Synchronized
+===== `@groovy.transform.Synchronized`
 
 The `@Synchronized` AST transformations works in a similar way to the `synchronized` keyword but locks on different
 objects for safer concurrency. It can be applied on any method or static method:
@@ -1737,7 +1737,7 @@ include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groo
 ----
 
 [[xform-WithReadLock]]
-===== @groovy.transform.WithReadLock and @groovy.transform.WithWriteLock
+===== `@groovy.transform.WithReadLock` and `@groovy.transform.WithWriteLock`
 
 The `@WithReadLock` AST transformation works in conjunction with the `@WithWriteLock` transformation
 to provide read/write synchronization using the `ReentrantReadWriteLock` facility that the JDK provides. The annotation
@@ -1775,7 +1775,7 @@ Groovy provides two annotations aimed at facilitating the implementation of `Clo
 respectively named `@AutoClone` and `@AutoExternalize`.
 
 [[xform-AutoClone]]
-===== @groovy.transform.AutoClone
+===== `@groovy.transform.AutoClone`
 
 The `@AutoClone` annotation is aimed at implementing the `@java.lang.Cloneable` interface using various strategies, thanks to the `style` parameter:
 
@@ -1821,7 +1821,7 @@ include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example
 |=======================================================================
 
 [[xform-AutoExternalize]]
-===== @groovy.transform.AutoExternalize
+===== `@groovy.transform.AutoExternalize`
 
 The `@AutoExternalize` AST transformation will assist in the creation of `java.io.Externalizable` classes. It will
 automatically add the interface to the class and generate the `writeExternal` and `readExternal` methods. For example, this
@@ -1866,7 +1866,7 @@ all available threads of a thread pool? Groovy provides several annotations whic
 generating code which will for example allow you to interrupt execution automatically.
 
 [[xform-ThreadInterrupt]]
-===== @groovy.transform.ThreadInterrupt
+===== `@groovy.transform.ThreadInterrupt`
 
 One complicated situation in the JVM world is when a thread can't be stopped. The `Thread#stop` method exists but is
 deprecated (and isn't reliable) so your only chance relies in `Thread#interrupt`. Calling the latter will set the
@@ -1951,7 +1951,7 @@ class A {
 |=======================================================================
 
 [[xform-TimedInterrupt]]
-===== @groovy.transform.TimedInterrupt
+===== `@groovy.transform.TimedInterrupt`
 
 The `@TimedInterrupt` AST transformation tries to solve a slightly different problem from <<xform-ThreadInterrupt>>: instead of checking the `interrupt` flag of the thread, it will automatically
 throw an exception if the thread has been running for too long.
@@ -2032,7 +2032,7 @@ class A {
 WARNING: `@TimedInterrupt` is currently not compatible with static methods!
 
 [[xform-ConditionalInterrupt]]
-===== @groovy.transform.ConditionalInterrupt
+===== `@groovy.transform.ConditionalInterrupt`
 
 The last annotation for safer scripting is the base annotation when you want to interrupt a script using a custom strategy. In particular, this is the annotation of choice if you
 want to use resource management (limit the number of calls to an API, ...). In the following example, user code is using an infinite loop, but `@ConditionalInterrupt` will allow us
@@ -2110,7 +2110,7 @@ than focusing on code generation. With that regards, they can be seen as compile
 behavior of a program at compile time or runtime.
 
 [[xform-Field]]
-===== @groovy.transform.Field
+===== `@groovy.transform.Field`
 
 The `@Field` annotation only makes sense in the context of a script and aims at solving a common scoping error with
 scripts. The following example will for example fail at runtime:
@@ -2145,7 +2145,7 @@ include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[t
 ----
 
 [[xform-PackageScope]]
-===== @groovy.transform.PackageScope
+===== `@groovy.transform.PackageScope`
 
 By default, Groovy visibility rules imply that if you create a field without specifying a modifier, then the field is interpreted as a property:
 
@@ -2176,27 +2176,27 @@ for factory methods that should be visible internally within a package or for me
 for testing purposes, or when integrating with third-party libraries which require such visibility conventions.
 
 [[xform-AnnotationCollector]]
-===== @groovy.transform.AnnotationCollector
+===== `@groovy.transform.AnnotationCollector`
 
 `@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<meta-annotations,dedicated section>>.
 
 [[xform-TypeChecked]]
-===== @groovy.transform.TypeChecked
+===== `@groovy.transform.TypeChecked`
 
 `@TypeChecked` activates compile-time type checking on your Groovy code. See <<section-typechecked,section on type checking>> for details.
 
 [[xform-CompileStatic]]
-===== @groovy.transform.CompileStatic
+===== `@groovy.transform.CompileStatic`
 
 `@CompileStatic` activates static compilation on your Groovy code. See <<section-typechecked,section on type checking>> for details.
 
 [[xform-CompileDynamic]]
-===== @groovy.transform.CompileDynamic
+===== `@groovy.transform.CompileDynamic`
 
 `@CompileDynamic` disables static compilation on parts of your Groovy code. See <<section-typechecked,section on type checking>> for details.
 
 [[xform-DelegatesTo]]
-===== @groovy.lang.DelegatesTo
+===== `@groovy.lang.DelegatesTo`
 
 `@DelegatesTo` is not, technically speaking, an AST transformation. It is aimed at documenting code and helping the compiler in case you are
 using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described thoroughly in the
@@ -2205,7 +2205,7 @@ using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compi
 ==== Swing patterns
 
 [[xform-Bindable]]
-===== @groovy.beans.Bindable
+===== `@groovy.beans.Bindable`
 
 `@Bindable` is an AST transformation that transforms a regular property into a bound property (according to the http://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/[JavaBeans specification]).
 The `@Bindable` annotation can be placed on a property or a class. To convert all properties of a class into bound properties, on can annotate the class like in this example:
@@ -2230,7 +2230,7 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=bindable_
 ----
 
 [[xform-ListenerList]]
-===== @groovy.beans.ListenerList
+===== `@groovy.beans.ListenerList`
 
 The `@ListenerList` AST transformation generates code for adding, removing and getting the list of listeners to a class, just by annotating a collection property:
 
@@ -2264,7 +2264,7 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=listenerl
 |=======================================================================
 
 [[xform-Vetoable]]
-===== @groovy.beans.Vetoable
+===== `@groovy.beans.Vetoable`
 
 The `@Vetoable` annotation works in a similar manner to `@Bindable` but generates constrained property according to the JavaBeans specification, instead of bound properties. The annotation
 can be placed on a class, meaning that all properties will be converted to constrained properties, or on a single property. For example, annotating this class with `@Vetoable`:
@@ -2290,7 +2290,7 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_
 
 ==== Test assistance
 [[xform-NotYetImplemented]]
-===== @groovy.lang.NotYetImplemented
+===== `@groovy.lang.NotYetImplemented`
 
 `@NotYetImplemented` is used to invert the result of a JUnit 3/4 test case. It is in particular useful if a feature is not yet implemented but the test is. In that case, it is expected
 that the test fails. Marking it with `@NotYetImplemented` will inverse the result of the test, like in this example:
@@ -2304,7 +2304,7 @@ Another advantage of using this technique is that you can write test cases for b
 you'll be notified because a test which was expected to fail passed.
 
 [[xform-ASTTest]]
-===== @groovy.transform.ASTTest
+===== `@groovy.transform.ASTTest`
 
 `@ASTTest` is a special AST transformation meant to help debugging other AST transformations or the Groovy compiler itself. It will let the developer "explore" the AST during compilation and
 perform assertions on the AST rather than on the result of compilation. This means that this AST transformations gives access to the AST before the bytecode is produced. `@ASTTest` can be
@@ -2385,15 +2385,15 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memoriz
 
 ==== Grape handling
 [[xform-Grab]]
-===== @groovy.lang.Grab
+===== `@groovy.lang.Grab`
 [[xform-GrabConfig]]
-===== @groovy.lang.GrabConfig
+===== `@groovy.lang.GrabConfig`
 [[xform-GrabExclude]]
-===== @groovy.lang.GrabExclude
+===== `@groovy.lang.GrabExclude`
 [[xform-GrabResolver]]
-===== @groovy.lang.GrabResolver
+===== `@groovy.lang.GrabResolver`
 [[xform-Grapes]]
-===== @groovy.lang.Grapes
+===== `@groovy.lang.Grapes`
 
 `Grape` is a dependency management engine embedded into Groovy, relying on several annotations which are described
 thoroughly in this <<section-grape,section of the guide>>.
