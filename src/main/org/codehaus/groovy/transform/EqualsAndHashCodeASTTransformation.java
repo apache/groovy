@@ -73,15 +73,20 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
+            final boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
-            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
-            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
+            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes, allNames);
+            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames);
         }
     }
 
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
+        createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, false);
+    }
+
+    public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, "hashCode", 0);
         if (hasExistingHashCode && hasDeclaredMethod(cNode, "_hashCode", 0)) return;
@@ -93,11 +98,11 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             final Expression hash = varX(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
-                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes)
+                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes, allNames)
             ));
             body.addStatement(returnS(hash));
         } else {
-            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes));
+            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames));
         }
 
         cNode.addMethod(new MethodNode(
@@ -109,7 +114,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 body));
     }
 
-    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
+    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames) {
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         final List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -121,7 +126,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
-            if (shouldSkip(pNode.getName(), excludes, includes)) continue;
+            if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
             Expression getter = getterThisX(cNode, pNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
@@ -131,7 +136,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
+            if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
             final Expression fieldExpr = varX(fNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, fieldExpr));
@@ -171,6 +176,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
+        createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, false);
+    }
+
+    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, "equals", 1);
@@ -200,7 +209,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            if (shouldSkip(pNode.getName(), excludes, includes)) continue;
+            if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
             boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(
                     pNode.getOriginType(), cNode
             );
@@ -223,7 +232,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
+            if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
             body.addStatement(
                     ifS(notX(hasSameFieldX(fNode, otherTyped)),
                             ifElseS(differentSelfRecursiveFieldX(fNode, otherTyped),

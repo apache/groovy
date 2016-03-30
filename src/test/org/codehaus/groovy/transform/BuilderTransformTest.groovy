@@ -703,4 +703,58 @@ class BuilderTransformTest extends CompilableTestSupport {
         assert message.contains('at least one parameter is required for this strategy')
     }
 
+    void testInternalFieldsAreIncludedIfRequestedForSimpleStrategy_GROOVY6454() {
+        assertScript '''
+            import groovy.transform.builder.*
+
+            @Builder(builderStrategy = SimpleStrategy, allNames = true)
+            class HasInternalPropertyWithSimpleStrategy {
+                String $internal
+            }
+            assert new HasInternalPropertyWithSimpleStrategy().set$internal("foo").$internal == "foo"
+         '''
+    }
+
+    void testInternalFieldsAreIncludedIfRequestedForExternalStrategy_GROOVY6454() {
+        assertScript '''
+            import groovy.transform.builder.*
+
+            class HasInternalProperty {
+                String $internal
+            }
+
+            @Builder(builderStrategy = ExternalStrategy, forClass = HasInternalProperty, allNames = true)
+            class HasInternalPropertyBuilder { }
+
+            assert new HasInternalPropertyBuilder().$internal("foo").build().$internal == "foo"
+         '''
+    }
+
+    void testInternalFieldsAreIncludedIfRequestedForDefaultStrategy_GROOVY6454() {
+        assertScript '''
+            import groovy.transform.builder.*
+
+            @Builder(allNames = true)
+            class HasInternalProperty {
+                String $internal
+            }
+
+            assert HasInternalProperty.builder().$internal("foo").$internal == "foo"
+         '''
+    }
+
+    void testInternalFieldsAreIncludedIfRequestedForInitializerStrategyStrategy_GROOVY6454() {
+        assertScript '''
+            import groovy.transform.builder.*
+
+            @Builder(builderStrategy = InitializerStrategy, allNames = true)
+            class HasInternalProperty {
+                String $internal
+            }
+
+            def initializer = HasInternalProperty.createInitializer()
+            assert new HasInternalProperty(initializer.$internal("foo")).$internal == "foo"
+         '''
+    }
+
 }

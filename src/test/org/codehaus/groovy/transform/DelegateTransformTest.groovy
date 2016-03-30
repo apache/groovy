@@ -694,6 +694,57 @@ assert foo.dm.x == '123'
             assert f.internalDelegate == ['bar', 'baz']
         '''
     }
+
+    // GROOVY-6454
+    void testMethodsWithInternalNameShouldNotBeDelegatedTo() {
+        assertScript '''
+            class HasMethodWithInternalName {
+                void $() {
+                }
+            }
+
+            class DelegatesToHasMethodWithInternalName {
+                @Delegate
+                HasMethodWithInternalName hasMethodWithInternalName
+            }
+
+            assert !new DelegatesToHasMethodWithInternalName().respondsTo('$')
+        '''
+    }
+
+    // GROOVY-6454
+    void testMethodsWithInternalNameShouldBeDelegatedToIfRequested() {
+        assertScript '''
+            interface HasMethodWithInternalName {
+                void $()
+            }
+
+            class DelegatesToHasMethodWithInternalName {
+                @Delegate(allNames = true)
+                HasMethodWithInternalName hasMethodWithInternalName
+            }
+
+            assert new DelegatesToHasMethodWithInternalName().respondsTo('$')
+        '''
+    }
+
+    // GROOVY-6454
+    void testProperitesWithInternalNameShouldBeDelegatedToIfRequested() {
+        assertScript '''
+            class HasPropertyWithInternalName {
+                def $
+            }
+
+            class DelegatesToHasPropertyWithInternalName {
+                @Delegate(allNames = true)
+                HasPropertyWithInternalName hasPropertyWithInternalName
+            }
+
+            def delegates = new DelegatesToHasPropertyWithInternalName()
+            assert delegates.respondsTo('get$')
+            assert delegates.respondsTo('set$')
+        '''
+    }
 }
 
 interface DelegateFoo {

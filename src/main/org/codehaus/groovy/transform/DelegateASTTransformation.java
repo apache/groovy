@@ -88,6 +88,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private static final String MEMBER_EXCLUDE_TYPES = "excludeTypes";
     private static final String MEMBER_PARAMETER_ANNOTATIONS = "parameterAnnotations";
     private static final String MEMBER_METHOD_ANNOTATIONS = "methodAnnotations";
+    private static final String MEMBER_ALL_NAMES = "allNames";
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -116,6 +117,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
             final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (type.isInterface() && !skipInterfaces);
+            final boolean allNames = memberHasValue(node, MEMBER_ALL_NAMES, true);
             List<String> excludes = getMemberStringList(node, MEMBER_EXCLUDES);
             List<String> includes = getMemberStringList(node, MEMBER_INCLUDES);
             List<ClassNode> excludeTypes = getMemberClassList(node, MEMBER_EXCLUDE_TYPES);
@@ -124,15 +126,15 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes);
+                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes, allNames);
             }
 
             for (PropertyNode prop : getAllProperties(type)) {
                 if (prop.isStatic() || !prop.isPublic())
                     continue;
                 String name = prop.getName();
-                addGetterIfNeeded(fieldNode, owner, prop, name, includes, excludes);
-                addSetterIfNeeded(fieldNode, owner, prop, name, includes, excludes);
+                addGetterIfNeeded(fieldNode, owner, prop, name, includes, excludes, allNames);
+                addSetterIfNeeded(fieldNode, owner, prop, name, includes, excludes, allNames);
             }
 
             if (skipInterfaces) return;
@@ -155,11 +157,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
+    private static void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes, boolean allNames) {
         String setterName = "set" + Verifier.capitalize(name);
         if ((prop.getModifiers() & ACC_FINAL) == 0
                 && owner.getSetterMethod(setterName) == null
-                && !shouldSkipPropertyMethod(name, setterName, excludes, includes)) {
+                && !shouldSkipPropertyMethod(name, setterName, excludes, includes, allNames)) {
             owner.addMethod(setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
@@ -170,10 +172,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
+    private static void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes, boolean allNames) {
         String getterName = "get" + Verifier.capitalize(name);
         if (owner.getGetterMethod(getterName) == null
-                && !shouldSkipPropertyMethod(name, getterName, excludes, includes)) {
+                && !shouldSkipPropertyMethod(name, getterName, excludes, includes, allNames)) {
             owner.addMethod(getterName,
                     ACC_PUBLIC,
                     GenericsUtils.nonGeneric(prop.getType()),
@@ -183,20 +185,20 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
     
-    private static boolean shouldSkipPropertyMethod(String propertyName, String methodName, List<String> excludes, List<String> includes) {
-        return (deemedInternalName(propertyName)
+    private static boolean shouldSkipPropertyMethod(String propertyName, String methodName, List<String> excludes, List<String> includes, boolean allNames) {
+        return ((!allNames && deemedInternalName(propertyName))
                     || excludes != null && (excludes.contains(propertyName) || excludes.contains(methodName)) 
                     || (includes != null && !includes.isEmpty() && !includes.contains(propertyName) && !includes.contains(methodName)));
     }
 
-    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes, List<ClassNode> includeTypes, List<ClassNode> excludeTypes) {
+    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes, List<ClassNode> includeTypes, List<ClassNode> excludeTypes, boolean allNames) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & ACC_SYNTHETIC))
             return;
 
         if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
             return;
 
-        if (shouldSkip(candidate.getName(), excludes, includes)) return;
+        if (shouldSkip(candidate.getName(), excludes, includes, allNames)) return;
 
         Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
         genericsSpec = addMethodGenerics(candidate, genericsSpec);

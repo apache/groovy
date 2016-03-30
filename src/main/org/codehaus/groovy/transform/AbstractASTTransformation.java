@@ -260,11 +260,23 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.contains(name));
+        return shouldSkipUndefinedAware(name, excludes, includes, false);
+    }
+
+    public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes, boolean allNames) {
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternalName(name)) ||
+            (includes != null && !includes.contains(name));
     }
 
     public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
+        return shouldSkip(name, excludes, includes, false);
+    }
+
+    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes, boolean allNames) {
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternalName(name)) ||
+            (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     @Deprecated

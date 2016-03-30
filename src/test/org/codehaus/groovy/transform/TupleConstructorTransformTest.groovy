@@ -164,4 +164,17 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testInternalFieldsAreIncludedIfRequested_groovy6454() {
+        assertScript '''
+            import groovy.transform.*
+
+            @TupleConstructor(allNames = true)
+            class HasInternalName {
+                String $internal
+            }
+
+            assert new HasInternalName("foo").$internal == "foo"
+        '''
+    }
+
 }
