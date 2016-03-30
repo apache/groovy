@@ -90,6 +90,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
+            boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
@@ -107,7 +108,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
                 return;
             }
 
-            createConstructor(cNode, includeFields, includeProperties, includeSuperProperties, useSetters, excludes, includes, (ClosureExpression) pre, (ClosureExpression) post, source);
+            createConstructor(cNode, includeFields, includeProperties, includeSuperProperties, useSetters, excludes, includes, (ClosureExpression) pre, (ClosureExpression) post, source, allNames);
             if (pre != null) {
                 anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
             }
@@ -117,7 +118,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperProperties, boolean useSetters, List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source) {
+    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperProperties, boolean useSetters, List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source, boolean allNames) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         boolean foundEmpty = constructors.size() == 1 && constructors.get(0).getFirstStatement() == null;
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
@@ -145,12 +146,12 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
-            if (shouldSkip(name, excludes, includes)) continue;
+            if (shouldSkip(name, excludes, includes, allNames)) continue;
             assignField(useSetters, map, body, name);
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
-            if (shouldSkip(name, excludes, includes)) continue;
+            if (shouldSkip(name, excludes, includes, allNames)) continue;
             assignField(useSetters, map, body, name);
         }
         if (post != null) {

@@ -214,6 +214,20 @@ assert p.toString() == 'acme.Person(firstName:Jack, lastName:Nicholson)'
 
 '''
 
+        assertScript '''package acme
+import groovy.transform.ToString
+
+// tag::tostring_example_allNames[]
+@ToString(allNames=true)
+class Person {
+    String $firstName
+}
+
+def p = new Person($firstName: "Jack")
+assert p.toString() == 'acme.Person(Jack)'
+// end::tostring_example_allNames[]
+
+'''
     }
 
 
@@ -296,6 +310,24 @@ def p2 = new Person(race: 'Human beeing', firstName: 'Jack', lastName: 'Nicholso
 assert p1!=p2
 assert p1.hashCode() != p2.hashCode()
 // end::equalshashcode_example_super[]
+
+'''
+
+        assertScript '''
+// tag::equalshashcode_example_allNames[]
+import groovy.transform.EqualsAndHashCode
+
+@EqualsAndHashCode(allNames=true)
+class Person {
+    String $firstName
+}
+
+def p1 = new Person($firstName: 'Jack')
+def p2 = new Person($firstName: 'Bob')
+
+assert p1 != p2
+assert p1.hashCode() != p2.hashCode()
+// end::equalshashcode_example_allNames[]
 
 '''
 
@@ -673,6 +705,21 @@ assert new Book(2015, false).toString() == 'Book(year:2015, fiction:false)'
 assert new Book("Regina", false).toString() == 'Book(name:Regina, fiction:false)'
 assert Book.constructors.size() == 3
 // end::tupleconstructor_example_defaults_multipleIncludes[]
+'''
+
+        assertScript '''
+// tag::tupleconstructor_example_allNames[]
+import groovy.transform.TupleConstructor
+
+@TupleConstructor(allNames=true)
+class Person {
+    String $firstName
+}
+
+def p = new Person('Jack')
+
+assert p.$firstName == 'Jack'
+// end::tupleconstructor_example_allNames[]
 '''
     }
 

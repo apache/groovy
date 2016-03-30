@@ -265,4 +265,12 @@ public @interface EqualsAndHashCode {
      * Generate a canEqual method to be used by equals.
      */
     boolean useCanEqual() default true;
+
+    /**
+     * Whether to include all fields and/or properties in equals and hashCode calculations, including those
+     * with names that are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }

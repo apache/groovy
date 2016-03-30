@@ -826,6 +826,10 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
 ----
+|allNames|False|Should fields and/or properties with internal names be included in the generated toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_allNames,indent=0]
 
 |=======================================================================
 
@@ -871,6 +875,11 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_cache,indent=0]
 ----
 |useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
+|allNames|False|Should fileds and/or properties with internal names be included in equals and hashCode calculations|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_allNames,indent=0]
+----
 |=======================================================================
 
 [[xform-TupleConstructor]]
@@ -965,6 +974,11 @@ Set to false to obtain exactly one constructor but with initial value support an
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_false,indent=0]
+----
+|allNames|False|Should fields and/or properties with internal names be included within the constructor|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_allNames,indent=0]
 ----
 |=======================================================================
 
@@ -1226,11 +1240,11 @@ strategy class. The following table lists the available strategies that are bund
 configuration options each strategy supports.
 
 |================================
-| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes | includeSuperProperties
-| `SimpleStrategy` | chained setters | n/a | n/a | n/a | yes, default "set" | yes | n/a
-| `ExternalStrategy` | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes | yes, default `false`
-| `DefaultStrategy` | creates a nested helper class | yes, default __<TypeName>__Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes | yes, default `false`
-| `InitializerStrategy` | creates a nested helper class providing type-safe fluent creation | yes, default __<TypeName>__Initializer | yes, default "createInitializer" | yes, default "create" but usually only used internally | yes, default "" | yes | yes, default `false`
+| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes | includeSuperProperties | allNames
+| `SimpleStrategy` | chained setters | n/a | n/a | n/a | yes, default "set" | yes | n/a | yes, default `false`
+| `ExternalStrategy` | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes | yes, default `false`| yes, default `false`
+| `DefaultStrategy` | creates a nested helper class | yes, default __<TypeName>__Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes | yes, default `false`| yes, default `false`
+| `InitializerStrategy` | creates a nested helper class providing type-safe fluent creation | yes, default __<TypeName>__Initializer | yes, default "createInitializer" | yes, default "create" but usually only used internally | yes, default "" | yes | yes, default `false`| yes, default `false`
 |================================
 
 .SimpleStrategy
@@ -1486,6 +1500,11 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includeTypes_header,indent=0]
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includeTypes_footer,indent=0]
+----
+|allNames|False|Should the delegate pattern be also applied to methods with internal names|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_allNames,indent=0]
 ----
 |=======================================================================
 

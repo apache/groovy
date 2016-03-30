@@ -140,4 +140,11 @@ public @interface Builder {
      * Generate builder methods for properties from super classes.
      */
     boolean includeSuperProperties() default false;
+
+    /**
+     * Whether the generated builder should support all properties, including those with names that are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }

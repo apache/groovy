@@ -436,4 +436,16 @@ class ToStringTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testInternalFieldsAreIncludedIfRequested() {
+        evaluate '''
+            import groovy.transform.*
+
+            @ToString(allNames = true)
+            class HasInternalProperty {
+                String $
+            }
+            assert new HasInternalProperty($: "foo").toString() == 'HasInternalProperty(foo)'
+        '''
+    }
+
 }

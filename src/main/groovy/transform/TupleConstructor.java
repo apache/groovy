@@ -251,4 +251,12 @@ public @interface TupleConstructor {
      * made null-safe wrt the parameter.
      */
     boolean useSetters() default false;
+
+    /**
+     * Whether to include all fields and/or properties within the constructor, including those with names that are
+     * considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }
