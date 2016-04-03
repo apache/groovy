@@ -192,6 +192,10 @@ public class Numbers
                 length -= 2;
             } else {
                 radix = 8;
+                if ( c == 'O' || c == 'o' ){
+                    text = text.substring(2, length);
+                    length -= 2;
+                }
             }
         }
 
