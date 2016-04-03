@@ -1102,7 +1102,7 @@ annotationDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                           first.setLine(modifiers.getLine());
                                           first.setColumn(modifiers.getColumn());
                                       }}
-    :   AT "interface" IDENT
+    :   AT "interface" IDENT nls!
         // now parse the body of the annotation
         ab:annotationBlock
         {#annotationDefinition = #(create(ANNOTATION_DEF,"ANNOTATION_DEF",first,LT(1)),

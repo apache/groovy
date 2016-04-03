@@ -670,6 +670,15 @@ class AnnotationTest extends CompilableTestSupport {
         shouldCompile codeWithMetaAnnotationWithTarget("ANNOTATION_TYPE")
     }
 
+    // GROOVY-7806
+    void testNewlinesAllowedBeforeBlock() {
+        shouldCompile '''
+            @interface ANNOTATION_A
+            {
+            }
+        '''
+    }
+
     //Parametrized tests in Spock would allow to make it much more readable
     private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
         """
