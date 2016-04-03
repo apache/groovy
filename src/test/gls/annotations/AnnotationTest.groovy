@@ -650,4 +650,13 @@ class AnnotationTest extends CompilableTestSupport {
             assert GroovyEnum.class.getField('BAD').isAnnotationPresent(XmlEnumValue)
         '''
     }
+
+    // GROOVY-7806
+    void testNewlinesAllowedBeforeBlock() {
+        shouldCompile '''
+            @interface ANNOTATION_A
+            {
+            }
+        '''
+    }
 }
