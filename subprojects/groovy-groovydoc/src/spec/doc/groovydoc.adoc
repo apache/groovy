@@ -148,7 +148,7 @@ Create link to groovydoc/javadoc output at the given URL.
            private      = "false">
         <link packages="java.,org.xml.,javax.,org.xml." href="http://docs.oracle.com/javase/8/docs/api/"/>
         <link packages="org.apache.tools.ant."          href="http://docs.groovy-lang.org/docs/ant/api/"/>
-        <link packages="org.junit.,junit.framework."    href="http://junit.org/javadoc/latest/"/>
+        <link packages="org.junit.,junit.framework."    href="http://junit.org/junit4/javadoc/latest/"/>
         <link packages="groovy.,org.codehaus.groovy."   href="http://docs.groovy-lang.org/latest/html/api/"/>
         <link packages="org.codehaus.gmaven."           href="http://groovy.github.io/gmaven/apidocs/"/>
 </groovydoc>
@@ -175,7 +175,7 @@ ant.groovydoc(
         link(packages:"java.,org.xml.,javax.,org.xml.",href:"http://docs.oracle.com/javase/8/docs/api/")
         link(packages:"groovy.,org.codehaus.groovy.",  href:"http://docs.groovy-lang.org/latest/html/api/")
         link(packages:"org.apache.tools.ant.",         href:"http://docs.groovy-lang.org/docs/ant/api/")
-        link(packages:"org.junit.,junit.framework.",   href:"http://junit.org/javadoc/latest/")
+        link(packages:"org.junit.,junit.framework.",   href:"http://junit.org/junit4/javadoc/latest/")
         link(packages:"org.codehaus.gmaven.",          href:"http://groovy.github.io/gmaven/apidocs/")
 }
 --------------------------------------------------------------------------------------------------------------
