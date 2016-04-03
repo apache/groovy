@@ -182,16 +182,14 @@ public class Numbers
         int radix = 10;
         if( text.charAt(0) == '0' && length > 1 ) {
             c = text.charAt(1);
-            if( c == 'X' || c == 'x' ) {
+            if( c == 'X' || c == 'x' ) { // hex
                 radix = 16;
-                text = text.substring( 2, length);
+                text = text.substring(2, length);
                 length -= 2;
-            } else if ( c == 'B' || c == 'b' ) { 
+            } else if ( c == 'B' || c == 'b' ) { // binary 
                 radix = 2;
                 text = text.substring(2, length);
                 length -= 2;
-            } else {
-                radix = 8;
             }
         }
 
