@@ -944,7 +944,7 @@ public class Sql {
      * after the closure is called.
      *
      * @param sql     the sql statement
-     * @param closure called for each row with a GroovyResultSet
+     * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      */
     public void query(String sql, Closure closure) throws SQLException {
@@ -984,7 +984,7 @@ public class Sql {
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
-     * @param closure called for each row with a GroovyResultSet
+     * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      */
     public void query(String sql, List<Object> params, Closure closure) throws SQLException {
@@ -1009,7 +1009,7 @@ public class Sql {
      *
      * @param sql     the sql statement
      * @param map     a map containing the named parameters
-     * @param closure called for each row with a GroovyResultSet
+     * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
@@ -1023,7 +1023,7 @@ public class Sql {
      *
      * @param map     a map containing the named parameters
      * @param sql     the sql statement
-     * @param closure called for each row with a GroovyResultSet
+     * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
@@ -1055,7 +1055,7 @@ public class Sql {
      * after the closure is called.
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @param closure called for each row with a GroovyResultSet
+     * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
