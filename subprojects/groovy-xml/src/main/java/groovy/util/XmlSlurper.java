@@ -92,7 +92,7 @@ public class XmlSlurper extends DefaultHandler {
     private boolean namespaceAware = false;
 
     /**
-     * Creates a non-validating and non-namespace-aware <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
+     * Creates a non-validating and namespace-aware <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
      *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
