@@ -1797,7 +1797,20 @@ assert result == 'ok'
                 }
             }
             assert new LongWrapper<Long>(42L).value == 42L
-'''
+        '''
+    }
+
+    //GROOVY-7804
+    void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
+        assertScript '''
+            interface Supplier<T> {
+                public <T> T get()
+            }
+
+            static <T> T doGet(Supplier<T> supplier) { supplier.get() }
+
+            assert doGet { -> 'foo' } == 'foo'
+        '''
     }
 
     static class MyList extends LinkedList<String> {}
