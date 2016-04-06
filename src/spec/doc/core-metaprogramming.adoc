@@ -381,8 +381,10 @@ Once the `ExpandoMetaClass` is accessed by calling the `metaClass` property, met
 `<<` or the `=` operator.
 
 [NOTE]
-Note that the left shift operator is used to _append_ a new method. If the method already exists
-an exception will be thrown. If you want to _replace_ a method you can use the `=` operator.
+Note that the left shift operator is used to _append_ a new method. If a public method with the same name and
+parameter types is declared by the class or interface, including those inherited from superclasses and superinterfaces
+but excluding those added to the `metaClass` at runtime, an exception will be thrown. If you want to _replace_ a
+method declared by the class or interface you can use the `=` operator.
 
 The operators are applied on a non-existent property of `metaClass` passing an instance of a `Closure` code block.
 
