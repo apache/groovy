@@ -18,11 +18,18 @@
  */
 package groovy.util
 
+import groovy.cli.Option
+import groovy.cli.Unparsed
+import groovy.transform.ToString
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.GnuParser
-import org.apache.commons.cli.Option
 import org.codehaus.groovy.cli.GroovyPosixParser
+
+import java.math.RoundingMode
+
+import static org.apache.commons.cli.Option.UNLIMITED_VALUES
+import static org.apache.commons.cli.Option.builder
 
 /**
  * Test class for the CliBuilder.
@@ -143,7 +150,8 @@ usage: groovy
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
-            def anOption = Option.builder().longOpt('anOption').hasArg().desc('An option.').build()
+            def anOption = builder().longOpt('anOption').hasArg().desc('An option.')
+                    .build()
             cli.options.addOption(anOption)
             def options = cli.parse(['-v', '--anOption', 'something'])
             // no options should be found
@@ -158,7 +166,7 @@ usage: groovy
     void testLongAndShortOpts_allOptionsValid() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
-            def anOption = Option.builder().longOpt('anOption').hasArg().desc('An option.').build()
+            def anOption = builder().longOpt('anOption').hasArg().desc('An option.').build()
             cli.options.addOption(anOption)
             cli.v(longOpt: 'verbose', 'verbose mode')
             def options = cli.parse(['-v', '--anOption', 'something'])
@@ -181,7 +189,7 @@ usage: groovy
     void testMultipleOccurrencesSeparateSeparate() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
-            cli.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, 'arguments')
+            cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, 'arguments')
             def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
             assertEquals('1', options.a)
             assertEquals(['1', '2', '3'], options.as)
@@ -194,7 +202,7 @@ usage: groovy
     void testMultipleOccurrencesSeparateJuxtaposed() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
-            //cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
+            //cli.a ( longOpt : 'arg' , args : UNLIMITED_VALUES , 'arguments' )
             cli.a(longOpt: 'arg', args: 1, 'arguments')
             def options = cli.parse(['-a1', '-a2', '-a3'])
             assertEquals('1', options.a)
@@ -208,7 +216,7 @@ usage: groovy
     void testMultipleOccurrencesTogetherSeparate() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
-            cli.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+            cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
             def options = cli.parse(['-a 1,2,3'])
             assertEquals(' 1', options.a)
             assertEquals([' 1', '2', '3'], options.as)
@@ -221,7 +229,7 @@ usage: groovy
     void testMultipleOccurrencesTogetherJuxtaposed() {
         [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
             def cli1 = new CliBuilder(parser: parser)
-            cli1.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+            cli1.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
             def options = cli1.parse(['-a1,2,3'])
             assertEquals('1', options.a)
             assertEquals(['1', '2', '3'], options.as)
@@ -423,5 +431,136 @@ usage: groovy
         assert !options.c
         assert options.d
         assert options.arguments() == ['foo']
+    }
+
+    interface PersonI {
+        @Option String first()
+        @Option String last()
+        @Option boolean flag1()
+        @Option Boolean flag2()
+        @Option(longName = 'specialFlag') Boolean flag3()
+        @Option flag4()
+        @Option int age()
+        @Option Integer born()
+        @Option float discount()
+        @Option BigDecimal pi()
+        @Option File biography()
+        @Option RoundingMode roundingMode()
+        @Unparsed List remaining()
+    }
+
+    def argz = "--first John --last Smith --flag1 --flag2 --specialFlag --age  21 --born 1980 --discount 3.5 --pi 3.14159 --biography cv.txt --roundingMode DOWN and some more".split()
+
+    void testParseFromSpec() {
+        def builder1 = new CliBuilder()
+        def p1 = builder1.parseFromSpec(PersonI, argz)
+        assert p1.first() == 'John'
+        assert p1.last() == 'Smith'
+        assert p1.flag1()
+        assert p1.flag2()
+        assert p1.flag3()
+        assert !p1.flag4()
+        assert p1.born() == 1980
+        assert p1.age() == 21
+        assert p1.discount() == 3.5f
+        assert p1.pi() == 3.14159
+        assert p1.biography() == new File('cv.txt')
+        assert p1.roundingMode() == RoundingMode.DOWN
+        assert p1.remaining() == ['and', 'some', 'more']
+    }
+
+    @ToString(includeFields=true, excludes='metaClass', includePackage=false)
+    class PersonC {
+        @Option String first
+        private String last
+        @Option boolean flag1
+        private Boolean flag2
+        private Boolean flag3
+        private Boolean flag4
+        private int age
+        private Integer born
+        private float discount
+        private BigDecimal pi
+        private File biography
+        private RoundingMode roundingMode
+        private List remaining
+
+        @Option void setLast(String last) {
+            this.last = last
+        }
+        @Option void setFlag2(boolean flag2) {
+            this.flag2 = flag2
+        }
+        @Option(longName = 'specialFlag') void setFlag3(boolean flag3) {
+            this.flag3 = flag3
+        }
+        @Option void setFlag4(boolean flag4) {
+            this.flag4 = flag4
+        }
+        @Option void setAge(int age) {
+            this.age = age
+        }
+        @Option void setBorn(Integer born) {
+            this.born = born
+        }
+        @Option void setDiscount(float discount) {
+            this.discount = discount
+        }
+        @Option void setPi(BigDecimal pi) {
+            this.pi = pi
+        }
+        @Option void setBiography(File biography) {
+            this.biography = biography
+        }
+        @Option void setRoundingMode(RoundingMode roundingMode) {
+            this.roundingMode = roundingMode
+        }
+        @Unparsed void setRemaining(List remaining) {
+            this.remaining = remaining
+        }
+    }
+
+    void testParseFromInstance() {
+        def p2 = new PersonC()
+        def builder2 = new CliBuilder()
+        builder2.parseFromInstance(p2, argz)
+        // properties show first in toString()
+        assert p2.toString() == 'CliBuilderTest$PersonC(John, true, Smith, true, true, false, 21, 1980, 3.5, 3.14159,' +
+                ' cv.txt, DOWN, [and, some, more])'
+    }
+
+    void testParseScript() {
+        new GroovyShell().run('''
+            import groovy.cli.OptionField
+            import groovy.cli.UnparsedField
+            import java.math.RoundingMode
+            @OptionField String first
+            @OptionField String last
+            @OptionField boolean flag1
+            @OptionField Boolean flag2
+            @OptionField(longName = 'specialFlag') Boolean flag3
+            @OptionField Boolean flag4
+            @OptionField int age
+            @OptionField Integer born
+            @OptionField float discount
+            @OptionField BigDecimal pi
+            @OptionField File biography
+            @OptionField RoundingMode roundingMode
+            @UnparsedField List remaining
+            new CliBuilder().parseFromInstance(this, args)
+            assert first == 'John'
+            assert last == 'Smith'
+            assert flag1
+            assert flag2
+            assert flag3
+            assert !flag4
+            assert born == 1980
+            assert age == 21
+            assert discount == 3.5f
+            assert pi == 3.14159
+            assert biography == new File('cv.txt')
+            assert roundingMode == RoundingMode.DOWN
+            assert remaining == ['and', 'some', 'more']
+        ''', 'CliBuilderTestScript.groovy', argz)
     }
 }

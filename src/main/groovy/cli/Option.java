@@ -18,13 +18,16 @@
  */
 package groovy.cli;
 
+import groovy.transform.Undefined;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+// TODO: why setter methods?
 /**
- * Indicates that a method is a CLI option.
+ * Indicates that a method or field can be used to set a CLI option.
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -38,30 +41,66 @@ public @interface Option {
     String description() default "";
 
     /**
-     * The short name of this option
+     * The short name of this option. Defaults to the name of member being annotated.
      *
      * @return the short name of this option
      */
     String shortName() default "";
+    // TODO: default to '_' or at least support this?
 
     /**
-     * The long name of this option
+     * The long name of this option. Defaults to the name of member being annotated.
      *
      * @return the long name of this option
      */
     String longName() default "";
 
     /**
-     * The value separator for this multi-valued option
+     * The value separator for this multi-valued option. Only allowed for array-typed arguments.
      *
      * @return the value separator for this multi-valued option
      */
     char valueSeparator() default 0;
 
     /**
-     * The default value for this option
+     * Whether this option can have an optional argument.
+     * Only supported for array-typed arguments to indicate that the array may be empty.
+     *
+     * @return true if this array-typed option can have an optional argument (i.e. could be empty)
+     */
+    boolean optionalArg() default false;
+
+    /**
+     * How many arguments this option has.
+     * A value greater than 1 is only allowed for array-typed arguments.
+     * Ignored for boolean options or if {@code numberOfArgumentsString} is set.
+     *
+     * @return the number of arguments
+     */
+    int numberOfArguments() default 1;
+    // TODO: 0 checked for boolean? What about def - Object as flag?
+
+    /**
+     * How many arguments this option has represented as a String.
+     * Only allowed for array-typed arguments.
+     * Overrides {@code numberOfArguments} if set.
+     * The special values of '+' means one or more and '*' as 0 or more.
+     *
+     * @return the number of arguments (as a String)
+     */
+    String numberOfArgumentsString() default "";
+
+    /**
+     * The default value for this option as a String; subject to type conversion and 'convert'.
      *
      * @return the default value for this option
      */
     String defaultValue() default "";
+
+    /**
+     * A conversion closure to convert the incoming String into the desired object
+     *
+     * @return the closure to convert this option's argument(s)
+     */
+    Class convert() default Undefined.CLASS.class; // TODO rename convert to handler?
 }
