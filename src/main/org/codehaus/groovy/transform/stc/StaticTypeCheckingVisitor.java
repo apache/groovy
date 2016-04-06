@@ -4381,7 +4381,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
            }
 
            // now repeat the same for each parameter given in the ClosureExpression
-           if (expression instanceof ClosureExpression) {
+           if (expression instanceof ClosureExpression && sam.getParameters().length > 0) {
                List<ClassNode[]> genericsToConnect = new LinkedList<ClassNode[]>();
                Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
                ClassNode[] closureParamTypes = extractTypesFromParameters(closureParams);
