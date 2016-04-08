@@ -60,7 +60,7 @@ public @interface Option {
      *
      * @return the value separator for this multi-valued option
      */
-    char valueSeparator() default 0;
+    String valueSeparator() default "";
 
     /**
      * Whether this option can have an optional argument.
@@ -73,12 +73,12 @@ public @interface Option {
     /**
      * How many arguments this option has.
      * A value greater than 1 is only allowed for array-typed arguments.
-     * Ignored for boolean options or if {@code numberOfArgumentsString} is set.
+     * Ignored for boolean options which are assumed to have a default of 0
+     * or if {@code numberOfArgumentsString} is set.
      *
      * @return the number of arguments
      */
     int numberOfArguments() default 1;
-    // TODO: 0 checked for boolean? What about def - Object as flag?
 
     /**
      * How many arguments this option has represented as a String.

@@ -174,10 +174,45 @@ class CliBuilderTest extends GroovyTestCase {
         // end::multipleArgs[]
     }
 
+    // tag::multipleArgsInterfaceSpec[]
+    interface ValSepI {
+        @Option(numberOfArguments=2) String[] a()
+        @Option(numberOfArgumentsString='2', valueSeparator=',') String[] b()
+        @Option(numberOfArgumentsString='+', valueSeparator=',') String[] c()
+        @Unparsed remaining()
+    }
+    // end::multipleArgsInterfaceSpec[]
+
+    void testMultipleArgsAndOptionalValueSeparatorInterface() {
+        // tag::multipleArgsInterface[]
+        def cli = new CliBuilder()
+
+        def options = cli.parseFromSpec(ValSepI, '-a 1 2 3 4'.split())
+        assert options.a() == ['1', '2']
+        assert options.remaining() == ['3', '4']
+
+        options = cli.parseFromSpec(ValSepI, '-a1 -a2 3'.split())
+        assert options.a() == ['1', '2']
+        assert options.remaining() == ['3']
+
+        options = cli.parseFromSpec(ValSepI, ['-b1,2'] as String[])
+        assert options.b() == ['1', '2']
+
+        options = cli.parseFromSpec(ValSepI, ['-c', '1'] as String[])
+        assert options.c() == ['1']
+
+        options = cli.parseFromSpec(ValSepI, ['-c1'] as String[])
+        assert options.c() == ['1']
+
+        options = cli.parseFromSpec(ValSepI, ['-c1,2,3'] as String[])
+        assert options.c() == ['1', '2', '3']
+        // end::multipleArgsInterface[]
+    }
+
     void testType() {
         // tag::withType[]
         def argz = '''-a John -b -d 21 -e 1980 -f 3.5 -g 3.14159
-            -h cv.txt -i DOWN -j 3 4 5 -k1.5,2.5,3.5 and some more'''.split()
+            -h cv.txt -i DOWN and some more'''.split()
         def cli = new CliBuilder()
         cli.a(type: String, 'a-arg')
         cli.b(type: boolean, 'b-arg')
@@ -188,8 +223,6 @@ class CliBuilderTest extends GroovyTestCase {
         cli.g(type: BigDecimal, 'g-arg')
         cli.h(type: File, 'h-arg')
         cli.i(type: RoundingMode, 'i-arg')
-        cli.j(args: 3, type: int[], 'j-arg')
-        cli.k(args: '+', valueSeparator: ',', type: BigDecimal[], 'k-arg')
         def options = cli.parse(argz)
         assert options.a == 'John'
         assert options.b
@@ -200,11 +233,22 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.g == 3.14159
         assert options.h == new File('cv.txt')
         assert options.i == RoundingMode.DOWN
+        assert options.arguments() == ['and', 'some', 'more']
+        // end::withType[]
+    }
+
+    void testTypeMultiple() {
+        // tag::withTypeMultiple[]
+        def argz = '''-j 3 4 5 -k1.5,2.5,3.5 and some more'''.split()
+        def cli = new CliBuilder()
+        cli.j(args: 3, type: int[], 'j-arg')
+        cli.k(args: '+', valueSeparator: ',', type: BigDecimal[], 'k-arg')
+        def options = cli.parse(argz)
         assert options.js == [3, 4, 5] // <1>
         assert options.j == [3, 4, 5]  // <1>
         assert options.k == [1.5, 2.5, 3.5]
         assert options.arguments() == ['and', 'some', 'more']
-        // end::withType[]
+        // end::withTypeMultiple[]
     }
 
     void testConvert() {
@@ -234,7 +278,7 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testConvertInterface() {
         // tag::withConvertInterface[]
-        def newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
+        Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(WithConvertI, argz)

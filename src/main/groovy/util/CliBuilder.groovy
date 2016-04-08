@@ -373,7 +373,8 @@ class CliBuilder {
         String shortName = annotation.shortName()
         String description = annotation.description()
         String defaultValue = annotation.defaultValue()
-        char valueSeparator = annotation.valueSeparator()
+        char valueSeparator = 0
+        if (annotation.valueSeparator()) valueSeparator = annotation.valueSeparator() as char
         boolean optionalArg = annotation.optionalArg()
         Integer numberOfArguments = annotation.numberOfArguments()
         String numberOfArgumentsString = annotation.numberOfArgumentsString()
@@ -381,31 +382,39 @@ class CliBuilder {
         if (convert == Undefined.CLASS) {
             convert = null
         }
-        String longName = adjustLongName(annotation.longName(), m, namesAreSetters)
-        def builder = shortName && !shortName.isEmpty() ? CliOption.builder(shortName) : CliOption.builder()
-        builder.longOpt(longName)
+        Map names = calculateNames(annotation.longName(), annotation.shortName(), m, namesAreSetters)
+        def builder = names.short ? CliOption.builder(names.short) : CliOption.builder()
+        if (names.long) {
+            builder.longOpt(names.long)
+        }
         if (numberOfArguments != 1) {
             if (numberOfArgumentsString) {
                 throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString'")
             }
         }
         def details = [:]
+        Class type = namesAreSetters ? (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : null) : m.returnType
+        if (optionalArg && (!type || !type.isArray())) {
+            throw new CliBuilderException("Attempted to set optional argument for non array type")
+        }
+        def isFlag = type.simpleName.toLowerCase() == 'boolean'
         if (numberOfArgumentsString) {
             details.args = numberOfArgumentsString
             details = adjustDetails(details)
             if (details.optionalArg) optionalArg = true
         } else {
-            details.args = numberOfArguments
+            details.args = isFlag ? 0 : numberOfArguments
+        }
+        if (details?.args == 0 && !(isFlag || type.name == 'java.lang.Object')) {
+            throw new CliBuilderException("Flag '${names.long ?: names.short}' must be Boolean or Object")
         }
         if (description) builder.desc(description)
         if (valueSeparator) builder.valueSeparator(valueSeparator)
-        Class type = namesAreSetters ? (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : null) : m.returnType
-        if (optionalArg && (!type || !type.isArray())) {
-            throw new CliBuilderException("Attempted to set optional argument for non array type")
-        }
         if (type) {
-            def simpleNameLower = type.simpleName.toLowerCase()
-            def isFlag = simpleNameLower == 'boolean'
+            if (isFlag && details.args == 1) {
+                // special flag: treat like normal not boolean expecting explicit 'true' or 'false' param
+                isFlag = false
+            }
             if (!isFlag) {
                 builder.hasArg(true)
                 if (details.containsKey('args')) builder.numberOfArgs(details.args)
@@ -444,15 +453,15 @@ class CliBuilder {
     def setOptionsFromAnnotations(def cli, Class optionClass, Object t, boolean namesAreSetters) {
         optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
             Annotation annotation = m.getAnnotation(Option)
-            String longName = adjustLongName(annotation.longName(), m, namesAreSetters)
-            processSetAnnotation(m, t, longName, cli, namesAreSetters)
+            Map names = calculateNames(annotation.longName(), annotation.shortName(), m, namesAreSetters)
+            processSetAnnotation(m, t, names.long ?: names.short, cli, namesAreSetters)
         }
         optionClass.declaredFields.findAll { it.getAnnotation(Option) }.each { Field f ->
             Annotation annotation = f.getAnnotation(Option)
             String setterName = "set" + MetaClassHelper.capitalize(f.getName());
             Method m = optionClass.getMethod(setterName, f.getType())
-            String longName = adjustLongName(annotation.longName(), m, true)
-            processSetAnnotation(m, t, longName, cli, true)
+            Map names = calculateNames(annotation.longName(), annotation.shortName(), m, true)
+            processSetAnnotation(m, t, names.long ?: names.short, cli, true)
         }
         def remaining = cli.arguments()
         optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
@@ -469,8 +478,8 @@ class CliBuilder {
         if (namesAreSetters) {
             m.invoke(t, remaining.toList())
         } else {
-            String longName = adjustLongName("", m, namesAreSetters)
-            t.put(longName, { -> remaining.toList() })
+            Map names = calculateNames("", "", m, namesAreSetters)
+            t.put(names.long, { -> remaining.toList() })
         }
     }
 
@@ -479,13 +488,17 @@ class CliBuilder {
         if (conv && conv instanceof Class) {
             savedTypeOptions[name].convert = conv.newInstance(t, t)
         }
+        boolean hasArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 1
+        boolean noArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 0
         if (namesAreSetters) {
-            boolean isFlag = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
+            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
+            boolean isFlag = (isBoolArg && !hasArg) || noArg
             if (cli.hasOption(name) || isFlag) {
                 m.invoke(t, [isFlag ? cli.hasOption(name) : optionValue(cli, name)] as Object[])
             }
         } else {
-            boolean isFlag = m.returnType.simpleName.toLowerCase() == 'boolean'
+            def isBoolRetType = m.returnType.simpleName.toLowerCase() == 'boolean'
+            boolean isFlag = (isBoolRetType && !hasArg) || noArg
             t.put(m.getName(), cli.hasOption(name) ?
                     { -> isFlag ? true : optionValue(cli, name) } :
                     { -> isFlag ? false : null })
@@ -499,14 +512,17 @@ class CliBuilder {
         cli[name]
     }
 
-    private String adjustLongName(String longName, Method m, boolean namesAreSetters) {
-        if (!longName || longName.isEmpty()) {
-            longName = m.getName()
-            if (namesAreSetters && longName.startsWith("set")) {
-                longName = MetaClassHelper.convertPropertyName(longName.substring(3))
+    private Map calculateNames(String longName, String shortName, Method m, boolean namesAreSetters) {
+        boolean useShort = longName == '_'
+        if (longName == '_') longName = ""
+        def result = longName
+        if (!longName) {
+            result = m.getName()
+            if (namesAreSetters && result.startsWith("set")) {
+                result = MetaClassHelper.convertPropertyName(result.substring(3))
             }
         }
-        longName
+        [long: useShort ? "" : result, short: (useShort && !shortName) ? result : shortName]
     }
 
     // implementation details -------------------------------------
@@ -645,6 +661,9 @@ class OptionAccessor {
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
         if (Closure.isAssignableFrom(type) && savedTypeOptions[optionName]?.convert) {
             return (T) savedTypeOptions[optionName].convert(optionValue)
+        }
+        if (savedTypeOptions[optionName]?.cliOption?.numberOfArgs == 0) {
+            return (T) commandLine.hasOption(optionName)
         }
         if (type?.simpleName?.toLowerCase() == 'boolean') {
             return (T) Boolean.parseBoolean(optionValue)

@@ -1083,11 +1083,19 @@ include::{projectdir}/subprojects/groovy-ant/{specfolder}/ant-builder.adoc[level
 
 ==== CliBuilder
 
-`CliBuilder` provides a compact way to specify the available parameters for a command-line application and then
-automatically parse the application's parameters according to that specification.
-Even though the details of each command-line you create could be quite different, the same main steps are
-followed each time. First, a `CliBuilder` instance is created. Then, allowed command-line parameters are defined.
-The arguments are then parsed according to the parameter specification resulting in a
+`CliBuilder` provides a compact way to specify the available options for a commandline application and then
+automatically parse the application's commandline parameters according to that specification. By convention,
+a distinction is made between _option_ commandline parameters and any remaining parameters which are passed
+to an application as its arguments. Typically, several types of options might be supported such as `-V` or
+`--tabsize=4`. `CliBuilder` removes the burden of developing lots of code for commandline processing.
+Instead, it supports a somewhat declarative approach to declaring your options and then provides a single call
+to parse the commandline parameters with a simple mechanism to interrogate the options (you can think of this
+as a simple model for your options).
+
+Even though the details of each commandline you create could be quite different, the same main steps are
+followed each time. First, a `CliBuilder` instance is created. Then, allowed commandline options are defined.
+This can be done using a _dynamic api_ style or an _annotation_ style.
+The commandline parameters are then parsed according to the options specification resulting in a
 collection of options which are then interrogated.
 
 Here is a simple example `Greeter.groovy` script illustrating usage:
@@ -1105,13 +1113,13 @@ if (options.h) cli.usage()                                 <5>
 else println "Hello ${options.a ? options.a : 'World'}"    <6>
 ---------------------------
 <1> define a new `CliBuilder` instance specifying an optional usage string
-<2> specify a `-a` parameter taking a single argument with an optional long variant `--audience`
-<3> specify a `-h` parameter taking no arguments with an optional long variant `--help`
-<4> parse the arguments supplied to the script
-<5> if the `h` argument is found display a usage message
-<6> display a standard greeting or if the `a` argument is found a customized greeting
+<2> specify a `-a` option taking a single argument with an optional long variant `--audience`
+<3> specify a `-h` option taking no arguments with an optional long variant `--help`
+<4> parse the commandline parameters supplied to the script
+<5> if the `h` option is found display a usage message
+<6> display a standard greeting or, if the `a` option is found, a customized greeting
 
-Running this script with no arguments, i.e.:
+Running this script with no commandline parameters, i.e.:
 
 [source,shell]
 ----
@@ -1124,7 +1132,7 @@ results in the following output:
 Hello World
 ----
 
-Running this script with `-h` as the arguments, i.e.:
+Running this script with `-h` as the single commandline parameter, i.e.:
 
 [source,shell]
 ----
@@ -1139,7 +1147,7 @@ usage: groovy Greeter [option]
  -h,--help             display usage
 ----
 
-Running this script with `--audience Groovologist` as the arguments, i.e.:
+Running this script with `--audience Groovologist` as the commandline parameters, i.e.:
 
 [source,shell]
 ----
@@ -1152,28 +1160,31 @@ results in the following output:
 Hello Groovologist
 ----
 
-When creating the `CliBuilder` instance in the above example, we used the optional `usage` named
-parameter to the constructor. This follows Groovy's normal ability to set additional properties
+When creating the `CliBuilder` instance in the above example, we set the optional `usage` property
+within the constructor call. This follows Groovy's normal ability to set additional properties
 of the instance during construction. There are numerous other properties which can be set
 such as `header` and `footer`. For the complete set of available properties, see the
 available properties for the gapi:groovy.util.CliBuilder[CliBuilder] class.
 
-When defining an allowed command-line parameter, a short description must be supplied, e.g.
-"display usage" for the `help` option shown previously. In our example above, we also used some
-additional named parameters such as `longOpt` and `args`. The following additional named
-parameters are supported when specifying an allowed command-line parameter:
+When defining an allowed commandline option, both a short name (e.g. "h" for the `help` option shown previously)
+and a short description (e.g. "display usage" for the `help` option) must be supplied.
+In our example above, we also set some
+additional properties such as `longOpt` and `args`. The following additional
+properties are supported when specifying an allowed commandline option:
 
 [options="header"]
 |======================
 | Name           | Description | Type
-| argName        | the name of the argument for this option used in output | String
-| longOpt        | the long representation of the option | String
-| args           | the number of argument values | int
-| optionalArg    | whether the argument value is optional | boolean
-| required       | whether the option is mandatory | boolean
-| type           | the type of this option | Class
-| valueSeparator | the character that is the value separator | char
+| argName        | the name of the argument for this option used in output | `String`
+| longOpt        | the long representation or long name of the option | `String`
+| args           | the number of argument values | `int` or `String`<1>
+| optionalArg    | whether the argument value is optional | `boolean`
+| required       | whether the option is mandatory | `boolean`
+| type           | the type of this option | `Class`
+| valueSeparator | the character that is the value separator | `char`<2>
 |======================
+<1> More details later
+<2> Single character Strings are coerced to chars in special cases in Groovy
 
 If you have an option with only a `longOpt` variant, you can use the special shortname of 'pass:[_]'
 to specify the option, e.g. : `cli.pass:[_](longOpt: 'verbose', 'enable verbose logging')`.
@@ -1183,10 +1194,10 @@ a bit more explanation. But before further explanations, let's look at ways of u
 
 ===== Using Annotations and an interface
 
-Rather than making a series of method calls to specify the allowable options, you can
-provide an interface specification of the allowable options where annotations are used
-to indicate and provide details for the allowable options and for how un-processed
-arguments are handled. Two annotations are used: gapi:groovy.cli.Option[] and gapi:groovy.cli.Unparsed[]
+Rather than making a series of method calls (albeit in a very declarative mini-DSL form)
+to specify the allowable options, you can provide an interface specification of the allowable options where
+annotations are used to indicate and provide details for those options and for how unprocessed
+parameters are handled. Two annotations are used: gapi:groovy.cli.Option[] and gapi:groovy.cli.Unparsed[].
 
 Here is how such a specification can be defined:
 
@@ -1196,11 +1207,12 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotatio
 ----
 <1> Specify a Boolean option set using `-h` or `--help`
 <2> Specify a String option set using `-a` or `--audience`
-<3> Specify where any remaining args will be stored
+<3> Specify where any remaining parameters will be stored
 
 Note how the long name is automatically determined from the interface method name.
 You can use the `longName` annotation attribute to override that behavior and specify
-a custom long name if you wish.
+a custom long name if you wish or use a longName of 'pass:[_]' to indicate that no long name
+is to be provided. You will need to specify a shortName in such a case.
 
 Here is how you could use the interface specification:
 
@@ -1208,11 +1220,11 @@ Here is how you could use the interface specification:
 ----
 include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationInterface,indent=0]
 ----
-<1> Create a `CliBuilder` instance as before with optional parameters
-<2> Parse arguments using the interface specification
+<1> Create a `CliBuilder` instance as before with optional properties
+<2> Parse parameters using the interface specification
 <3> Interrogate options using the methods from the interface
-<4> Parse a different set of arguments
-<5> Interrogate the remaining arguments
+<4> Parse a different set of parameters
+<5> Interrogate the remaining parameters
 
 When `parseFromSpec` is called, `CliBuilder` automatically creates an instance implementing the interface
 and populates it. You simply call the interface methods to interrogate the option values.
@@ -1246,7 +1258,8 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotatio
 <5> Interrogate the remaining arguments property
 
 When `parseFromInstance` is called, `CliBuilder` automatically populates your instance.
-You simply interrogate the instance properties to access the option values.
+You simply interrogate the instance properties (or whatever accessor methods you have provided
+in your domain object) to access the option values.
 
 ===== Using Annotations and a script
 
@@ -1281,10 +1294,11 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgum
 <5> An example using this spec where no argument is supplied to the 'c' option; it's just a flag
 
 Note: when an option with an optional argument is encountered, it will (somewhat) greedily consume the
-next argument on the commandline. If however, the next argument matches a known long or short
+next parameter from the supplied commandline parameters. If however, the next parameter matches a known long or short
 option (with leading single or double hyphens), that will take precedence, e.g. `-b` in the above example.
 
-Arguments may also be specified using the annotation style. Here is an interface option specification:
+Option arguments may also be specified using the annotation style. Here is an interface option specification
+illustrating such a definition:
 
 [source,groovy]
 ----
@@ -1298,8 +1312,54 @@ And here is how it is used:
 include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgumentInterface,indent=0]
 ----
 
-This example makes use of an array-typed option specification. We cover this in more detail next when we discuss
+This example makes use of an array-typed option specification. We cover this in more detail shortly when we discuss
 multiple arguments.
+
+===== Specifying a type
+
+Arguments on the commandline are by nature Strings (or arguably can be considered Booleans for flags) but can be
+converted to richer types automatically by supplying additional typing information. For the
+annotation-based argument definition style, these types are supplied using the field types for annotation
+properties or return types of annotated methods (are the setter argument type for setter methods).
+For the dynamic method style of argument definition a special 'type' property is supported
+which allows you to specify a Class name.
+
+When an explicit type is defined, the `args` named-parameter is assumed to be 1 (except for Boolean-typed
+options where it is 0 by default). An explicit `args` parameter can still be provided if needed.
+Here is an example using types with the dynamic api argument definition style:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withType,indent=0]
+----
+
+Primitives, numeric types, files, enums and arrays thereof, are supported (they are converted using
+gapi:org.codehaus.groovy.runtime.StringGroovyMethods#asType[StringGroovyMethods#asType(String, Class)]).
+
+===== Custom parsing of the argument String
+
+If the supported types aren't sufficient, you can supply a closure to handle the String to rich type conversion
+for you. Here is a sample using the dynamic api style:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvert,indent=0]
+----
+
+Alternatively, you can use the annotation style by supplying the conversion closure as an annotation parameter.
+Here is an example specification:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterfaceSpec,indent=0]
+----
+
+And an example using that specification:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterface,indent=0]
+----
 
 ===== Options with multiple arguments
 
@@ -1337,24 +1397,32 @@ As an alternative to obtaining multiple arguments is to use an array-based type 
 option. In this case, all options will always be returned via the array. We'll see an example
 of this next when discussing types. It is also the only approach to use when using the annotation style.
 
-===== Specifying a type
-
-When an explicit type is defined, the `args` named-parameter is assumed to be 1 (except for Boolean-typed
-options where it is 0 by default). An explicit `args` parameter can still be provided if needed.
-Here is an example using types:
+Multiple arguments are also supported using the annotation style of option definition by using an array type for the
+annotated class member (method or property) as this example shows:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withType,indent=0]
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterfaceSpec,indent=0]
+----
+
+And used as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterface,indent=0]
+----
+
+===== Types and multiple arguments
+
+Here is an example using types and multiple arguments with the dynamic api argument definition style:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeMultiple,indent=0]
 ----
 <1> For an array type, the trailing 's' can be used but isn't needed
 
-Primitives, numeric types, files, enums and arrays thereof, are supported (they are converted using
-gapi:org.codehaus.groovy.runtime.StringGroovyMethods#asType[StringGroovyMethods#asType(String, Class)]).
-
 ===== Setting a default value
-
-===== Custom parsing of the argument String
 
 ===== Advanced CLI Usage
 
