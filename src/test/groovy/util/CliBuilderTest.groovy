@@ -529,7 +529,32 @@ usage: groovy
                 ' cv.txt, DOWN, [and, some, more])'
     }
 
-    void testParseScript() {
+    interface FlagEdgeCasesI {
+        @Option boolean abc()
+        @Option(numberOfArgumentsString='1') boolean efg()
+        @Option(numberOfArguments=1) ijk()
+        @Option(numberOfArguments=0) lmn()
+        @Unparsed List remaining()
+    }
+
+    void testParseFromInstanceFlagEdgeCases() {
+        def cli = new CliBuilder()
+        def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true --ijk foo --lmn bar baz'.split())
+
+        assert options.abc() && options.efg()
+        assert options.ijk() == 'foo'
+        assert options.lmn() == true
+        assert options.remaining() == ['bar', 'baz']
+
+        options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -ijk cat -efg false bar baz'.split())
+        assert options.abc()
+        assert options.ijk() == 'cat'
+        assert !options.efg()
+        assert options.lmn() == false
+        assert options.remaining() == ['bar', 'baz']
+    }
+
+        void testParseScript() {
         new GroovyShell().run('''
             import groovy.cli.OptionField
             import groovy.cli.UnparsedField
