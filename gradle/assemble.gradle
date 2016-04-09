@@ -168,7 +168,6 @@ allprojects {
                     'org/codehaus/groovy/cli/GroovyPosixParser*.class',
                     'groovy/util/CliBuilder*.class',
                     'groovy/util/OptionAccessor*.class',
-                    'groovy/cli/EnhancedCommandLine*.class',
                     'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
             ].join(',')
             boolean isRoot = project == rootProject
