@@ -2897,27 +2897,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
                 for (Receiver<String> currentReceiver : receivers) {
-                    mn = findMethod(currentReceiver.getType(), name, args);
+                    ClassNode receiverType = currentReceiver.getType();
+                    mn = findMethod(receiverType, name, args);
 
                     // if the receiver is "this" or "implicit this", then we must make sure that the compatible
                     // methods are only static if we are in a static context
-                    if (!mn.isEmpty() && typeCheckingContext.isInStaticContext && (call.isImplicitThis()
-                            || (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()))) {
-                        // we create a separate method list just to be able to print out
+                    // if we are not in a static context but the the current receiver is a static class, we must
+                    // ensure that all methods are either static or declared by the current receiver or a superclass
+                    if (!mn.isEmpty()
+                            && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)
+                            && (call.isImplicitThis() || (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()))) {
+                        // we create separate method lists just to be able to print out
                         // a nice error message to the user
-                        List<MethodNode> staticMethods = new LinkedList<MethodNode>();
-                        List<MethodNode> nonStaticMethods = new LinkedList<MethodNode>();
+                        // a method is accessible if it is static, or if we are not in a static context and it is
+                        // declared by the current receiver or a superclass
+                        List<MethodNode> accessibleMethods = new LinkedList<MethodNode>();
+                        List<MethodNode> inaccessibleMethods = new LinkedList<MethodNode>();
                         for (final MethodNode node : mn) {
-                            if (node.isStatic()) {
-                                staticMethods.add(node);
+                            if (node.isStatic()
+                                    || (!typeCheckingContext.isInStaticContext && implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))) {
+                                accessibleMethods.add(node);
                             } else {
-                                nonStaticMethods.add(node);
+                                inaccessibleMethods.add(node);
                             }
                         }
-                        mn = staticMethods;
-                        if (staticMethods.isEmpty()) {
+                        mn = accessibleMethods;
+                        if (accessibleMethods.isEmpty()) {
                             // choose an arbitrary method to display an error message
-                            MethodNode node = nonStaticMethods.get(0);
+                            MethodNode node = inaccessibleMethods.get(0);
                             ClassNode owner = node.getDeclaringClass();
                             addStaticTypeError("Non static method " + owner.getName() + "#" + node.getName() + " cannot be called from static context", call);
                         }

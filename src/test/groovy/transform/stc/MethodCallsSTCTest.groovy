@@ -1040,6 +1040,52 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             '''
     }
 
+    //GROOVY-7813
+    void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
+        shouldFailWithMessages '''
+            class Foo {
+                def bar() { 2 }
+
+                static class Baz {
+                    def doBar() { bar() }
+                }
+            }
+            null
+        ''', 'Non static method Foo#bar cannot be called from static context'
+    }
+
+    void testStaticOuterMethodCanBeCalledFromStaticClass() {
+        assertScript '''
+            class Foo {
+                static def bar() { 2 }
+
+                static class Baz {
+                    def doBar() {
+                        bar()
+                    }
+                }
+            }
+            assert new Foo.Baz().doBar() == 2
+        '''
+    }
+
+    void testInheritedMethodCanBeCalledFromStaticClass() {
+        assertScript '''
+            class Bar {
+                def bar() { 1 }
+            }
+
+            class Foo {
+                static class Baz extends Bar {
+                    def doBar() {
+                        bar()
+                    }
+                }
+            }
+            assert new Foo.Baz().doBar() == 1
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
