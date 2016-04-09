@@ -260,6 +260,10 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the namespace of the prefix
      */
     public String lookupNamespace(final String prefix) {
+        Object namespace = namespaceMap.get(prefix);
+        if (namespace != null) {
+            return namespace.toString();
+        }
         return this.namespaceTagHints.isEmpty() ? prefix : this.namespaceTagHints.get(prefix);
     }
 

@@ -75,7 +75,7 @@ public class Attribute extends GPathResult {
      * @return the namespace of this Attribute
      */
     public String namespaceURI() {
-        if (namespacePrefix == null) return "";
+        if (namespacePrefix == null || namespacePrefix.isEmpty()) return "";
         String uri = namespaceTagHints.get(namespacePrefix);
         return uri == null ? "" : uri;
     }
