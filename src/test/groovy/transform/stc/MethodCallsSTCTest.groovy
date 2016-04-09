@@ -1040,6 +1040,20 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             '''
     }
 
+    //GROOVY-7813
+    void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
+        shouldFailWithMessages '''
+            class Foo {
+                def bar() { 2 }
+
+                static class Baz {
+                    def doBar() { bar() }
+                }
+            }
+            null
+        ''', 'Cannot find matching method Foo$Baz#bar()'
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

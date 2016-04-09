@@ -3809,7 +3809,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (typeCheckingContext.getEnclosingClosure() == null) {
                 // not in a closure
                 ClassNode parent = receiver;
-                while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
+                while (parent instanceof InnerClassNode && !parent.isStaticClass() && (parent.getModifiers() & Opcodes.ACC_STATIC) == 0) {
                     parent = parent.getOuterClass();
                     methods.addAll(findMethodsWithGenerated(parent,name));
                 }
