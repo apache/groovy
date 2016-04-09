@@ -75,6 +75,28 @@ class PropertyMissingTest extends GroovyTestCase {
         assertEquals "FOO", PMTest1.FOO
     }
 
+    // GROOVY-7723
+    void testPropertyMissingSetterWithNoGetter() {
+        def t = new PMTest3()
+
+        assert t.foo == 'bar'
+
+        shouldFail(MissingPropertyException) {
+            t.notfound
+        }
+
+        assert t.foo == 'bar'
+
+        t.notfound = 'baz'
+        assert t.foo == 'notfound-baz'
+
+        t.metaClass.propertyMissing = { String name ->
+            "get-${foo}"
+        }
+        assert t.notfound == 'get-notfound-baz'
+
+    }
+
 }
 
 class PMTest1 {
@@ -90,4 +112,11 @@ class PMTest1 {
 
 class PMTest2 {
     String foo = "bar"
+}
+
+class PMTest3 {
+    String foo = 'bar'
+    void propertyMissing(String name, value) {
+        foo = "${name}-${value}"
+    }
 }
