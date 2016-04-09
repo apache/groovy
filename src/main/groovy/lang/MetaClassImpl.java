@@ -872,11 +872,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         try {
             if (!(instance instanceof Class)) {
-                if (isGetter && propertyMissingGet != null) {
-                    return propertyMissingGet.invoke(instance, new Object[]{propertyName});
+                if (isGetter) {
+                    if (propertyMissingGet != null) {
+                        return propertyMissingGet.invoke(instance, new Object[]{propertyName});
+                    }
                 } else {
-                    if (propertyMissingSet != null)
+                    if (propertyMissingSet != null) {
                         return propertyMissingSet.invoke(instance, new Object[]{propertyName, optionalValue});
+                    }
                 }
             }
         } catch (InvokerInvocationException iie) {
