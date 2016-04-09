@@ -25,7 +25,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// TODO: why setter methods?
 /**
  * Indicates that a method or field can be used to set a CLI option.
  */
@@ -46,7 +45,6 @@ public @interface Option {
      * @return the short name of this option
      */
     String shortName() default "";
-    // TODO: default to '_' or at least support this?
 
     /**
      * The long name of this option. Defaults to the name of member being annotated.
@@ -92,6 +90,7 @@ public @interface Option {
 
     /**
      * The default value for this option as a String; subject to type conversion and 'convert'.
+     * Ignored for Boolean options.
      *
      * @return the default value for this option
      */
@@ -102,5 +101,5 @@ public @interface Option {
      *
      * @return the closure to convert this option's argument(s)
      */
-    Class convert() default Undefined.CLASS.class; // TODO rename convert to handler?
+    Class convert() default Undefined.CLASS.class;
 }

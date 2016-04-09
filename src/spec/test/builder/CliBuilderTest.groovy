@@ -19,7 +19,9 @@
 package builder
 
 import groovy.cli.Option
+import groovy.cli.TypedOption
 import groovy.cli.Unparsed
+import groovy.transform.TypeChecked
 
 import java.math.RoundingMode
 
@@ -288,4 +290,81 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.remaining() == ['and', 'some', 'more']
         // end::withConvertInterface[]
     }
+
+    void testDefaultValue() {
+        // tag::withDefaultValue[]
+        def cli = new CliBuilder()
+        cli.f longOpt: 'from', type: String, args: 1, defaultValue: 'one', 'f option'
+        cli.t longOpt: 'to', type: int, defaultValue: '35', 't option'
+
+        def options = cli.parse('-f two'.split())
+        assert options.hasOption('f')
+        assert options.f == 'two'
+        assert !options.hasOption('t')
+        assert options.t == 35
+
+        options = cli.parse('-t 45'.split())
+        assert !options.hasOption('from')
+        assert options.from == 'one'
+        assert options.hasOption('to')
+        assert options.to == 45
+        // end::withDefaultValue[]
+    }
+
+    // tag::withDefaultValueInterfaceSpec[]
+    interface WithDefaultValueI {
+        @Option(shortName='f', defaultValue='one') String from()
+        @Option(shortName='t', defaultValue='35') int to()
+    }
+    // end::withDefaultValueInterfaceSpec[]
+
+    void testDefaultValueInterface() {
+        // tag::withDefaultValueInterface[]
+        def cli = new CliBuilder()
+
+        def options = cli.parseFromSpec(WithDefaultValueI, '-f two'.split())
+        assert options.from() == 'two'
+        assert options.to() == 35
+
+        options = cli.parseFromSpec(WithDefaultValueI, '-t 45'.split())
+        assert options.from() == 'one'
+        assert options.to() == 45
+        // end::withDefaultValueInterface[]
+    }
+
+    // tag::withTypeCheckedInterfaceSpec[]
+    interface TypeCheckedI{
+        @Option String name()
+        @Option int age()
+        @Unparsed List remaining()
+    }
+    // end::withTypeCheckedInterfaceSpec[]
+
+    // tag::withTypeCheckedInterface[]
+    @TypeChecked
+    void testTypeCheckedInterface() {
+        def argz = "--name John --age 21 and some more".split()
+        def cli = new CliBuilder()
+        def options = cli.parseFromSpec(TypeCheckedI, argz)
+        String n = options.name()
+        int a = options.age()
+        assert n == 'John' && a == 21
+        assert options.remaining() == ['and', 'some', 'more']
+    }
+    // end::withTypeCheckedInterface[]
+
+    // tag::withTypeChecked[]
+    @TypeChecked
+    void testTypeChecked() {
+        def cli = new CliBuilder()
+        TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
+        TypedOption<Integer> age = cli.option(Integer, longOpt: 'age', 'age option')
+        def argz = "--name John -age 21 and some more".split()
+        def options = cli.parse(argz)
+        String n = options[name]
+        int a = options[age]
+        assert n == 'John' && a == 21
+        assert options.arguments() == ['and', 'some', 'more']
+    }
+    // end::withTypeChecked[]
 }
