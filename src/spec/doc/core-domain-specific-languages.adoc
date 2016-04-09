@@ -1393,12 +1393,13 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleA
 <6> An alternative syntax for specifying two arguments for the 'a' option
 <7> The arguments to the 'b' option supplied as a comma-separated value
 
-As an alternative to obtaining multiple arguments is to use an array-based type for the
-option. In this case, all options will always be returned via the array. We'll see an example
-of this next when discussing types. It is also the only approach to use when using the annotation style.
+As an alternative to accessing multiple arguments using the _plural name_ approach, you can use an
+array-based type for the option. In this case, all options will always be returned via the array
+which is accessed via the normal singular name. We'll see an example of this next when discussing
+types.
 
-Multiple arguments are also supported using the annotation style of option definition by using an array type for the
-annotated class member (method or property) as this example shows:
+Multiple arguments are also supported using the annotation style of option definition by using an
+array type for the annotated class member (method or property) as this example shows:
 
 [source,groovy]
 ----
@@ -1424,13 +1425,91 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeM
 
 ===== Setting a default value
 
+Groovy makes it easy using the Elvis operator to provide a default value at the point of usage of some variable,
+e.g. `String x = someVariable ?: 'some default'`. But sometimes you wish to make such a default part of the
+options specification to minimise the interrogators work in later stages. `CliBuilder` supports the `defaultValue`
+property to cater for this scenario.
+
+Here is how you could use it using the deynamic api style:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValue,indent=0]
+----
+
+Similarly, you might want such a specification using the annotation style. Here is an example using an interface
+specification:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterfaceSpec,indent=0]
+----
+
+Which would be used like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterface,indent=0]
+----
+
+===== Use with `TypeChecked`
+
+The dynamic api style of using `CliBuilder` is inherently dynamic but you have a few options
+should you want to make use of Groovy's static type checking capabilities. Firstly, consider using the
+annotation style, for example, here is an interface option specification:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterfaceSpec,indent=0]
+----
+
+And it can be used  in combination with `@TypeChecked` as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterface,indent=0]
+----
+
+Secondly, there is a feature of the dynamic api style which offers some support. The definition statements
+are inherently dynamic but actually return a value which we have ignored in earlier examples.
+The returned value is in fact a `TypedOption<Type>` and special `getAt` support allows the options
+to be interrogated using the typed option, e.g. `options[savedTypeOption]`. So, if you have statements
+similar to these in a non type checked part of your code:
+
+[source,groovy]
+----
+def cli = new CliBuilder()
+TypedOption<Integer> age = cli.a(longOpt: 'age', type: Integer, 'some age option')
+----
+
+Then, the following statements can be in a separate part of your code which is type checked:
+
+[source,groovy]
+----
+def args = '--age 21'.split()
+def options = cli.parse(args)
+int age = options[age]
+assert age == 21
+----
+
+Finally, there is one additional convenience method offered by `CliBuilder` to even allow the
+definition part to be type checked. It is a slightly more verbose method call. Instead of using
+the short name (the _opt_ name) in the method call, you use a fixed named of `option` and
+supply the `opt` value as a property. You must also specify the type directly as shown in
+the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeChecked,indent=0]
+----
+
 ===== Advanced CLI Usage
 
 [NOTE]
 ===============================
 *NOTE* Advanced CLI features
 
-`CliBuilder` can be thought of a Groovy friendly wrapper on top of (currently) Apache Commons CLI.
+`CliBuilder` can be thought of as a Groovy friendly wrapper on top of (currently) Apache Commons CLI.
 If there is a feature not provided by `CliBuilder` that you know is supported in the underlying
 library, the current `CliBuilder` implementation (and various Groovy language features) make it easy for you
 to call the underlying library methods directly. Doing so is a pragmatic way to leverage the Groovy-friendly
@@ -1439,8 +1518,24 @@ A word of caution however; future versions of `CliBuilder` could potentially use
 and in that event, some porting work may be required for your Groovy classes and/or scripts.
 ===============================
 
+As an example, here is some code for making use of Apache Commons CLI's grouping mechanism:
 
-===== Use with `TypeChecked` and `CompileStatic`
+[source,groovy]
+----
+import org.apache.commons.cli.*
+
+def cli = new CliBuilder()
+cli.f longOpt: 'from', 'f option'
+cli.u longOpt: 'until', 'u option'
+def optionGroup = new OptionGroup()
+optionGroup.with {
+  addOption cli.option('o', [longOpt: 'output'], 'o option')
+  addOption cli.option('d', [longOpt: 'directory'], 'd option')
+}
+cli.options.addOptionGroup optionGroup
+assert !cli.parse('-d -o'.split()) // <1>
+----
+<1> The parse will fail since only one option from a group can be used at a time.
 
 ==== ObjectGraphBuilder
 

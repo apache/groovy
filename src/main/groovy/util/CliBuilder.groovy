@@ -255,6 +255,13 @@ class CliBuilder {
     if (type != null) option.setType(type);
      */
 
+    public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
+        def name = args.opt ?: '_'
+        args.type = type
+        args.remove('opt')
+        "$name"(args, description)
+    }
+
     /**
      * Internal method: Detect option specification method calls.
      */
@@ -274,6 +281,7 @@ class CliBuilder {
             if (args.size() == 2 && args[0] instanceof Map) {
                 def convert = args[0].remove('convert')
                 def type = args[0].remove('type')
+                def defaultValue = args[0].remove('defaultValue')
                 if (type && !(type instanceof Class)) {
                     throw new CliBuilderException("'type' must be a Class")
                 }
@@ -283,7 +291,7 @@ class CliBuilder {
                 }
                 def option = option(name, args[0], args[1])
                 options.addOption(option)
-                return create(option, type, null, convert)
+                return create(option, type, defaultValue, convert)
             }
         }
         return InvokerHelper.getMetaClass(this).invokeMethod(this, name, args)
@@ -382,7 +390,7 @@ class CliBuilder {
         if (convert == Undefined.CLASS) {
             convert = null
         }
-        Map names = calculateNames(annotation.longName(), annotation.shortName(), m, namesAreSetters)
+        Map names = calculateNames(annotation.longName(), shortName, m, namesAreSetters)
         def builder = names.short ? CliOption.builder(names.short) : CliOption.builder()
         if (names.long) {
             builder.longOpt(names.long)
@@ -433,7 +441,7 @@ class CliBuilder {
             if (opt != null) result.put("opt", opt)
             result.put("longOpt", longOpt)
             result.put("cliOption", o)
-            if (defaultValue && !defaultValue.isEmpty()) {
+            if (defaultValue) {
                 result.put("defaultValue", defaultValue)
             }
             if (convert) {
@@ -501,7 +509,7 @@ class CliBuilder {
             boolean isFlag = (isBoolRetType && !hasArg) || noArg
             t.put(m.getName(), cli.hasOption(name) ?
                     { -> isFlag ? true : optionValue(cli, name) } :
-                    { -> isFlag ? false : null })
+                    { -> isFlag ? false : cli.defaultValue(name) })
         }
     }
 
@@ -605,6 +613,12 @@ class OptionAccessor {
         commandLine.hasOption(typedOption.longOpt ?: typedOption.opt)
     }
 
+    public <T> T defaultValue(String name) {
+        Class<T> type = savedTypeOptions[name]?.type
+        String value = savedTypeOptions[name]?.defaultValue() ? savedTypeOptions[name].defaultValue() : null
+        return (T) value ? getTypedValue(type, name, value) : null
+    }
+
     public <T> T getOptionValue(TypedOption<T> typedOption) {
         getOptionValue(typedOption, null)
     }
@@ -659,6 +673,9 @@ class OptionAccessor {
     }
 
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
+        if (!type) {
+            return (T) optionValue
+        }
         if (Closure.isAssignableFrom(type) && savedTypeOptions[optionName]?.convert) {
             return (T) savedTypeOptions[optionName].convert(optionValue)
         }
@@ -676,6 +693,10 @@ class OptionAccessor {
     }
 
     def getProperty(String name) {
+        if (!savedTypeOptions.containsKey(name)) {
+            def alt = savedTypeOptions.find{ it.value.opt == name }
+            if (alt) name = alt.key
+        }
         def methodname = 'getOptionValue'
         Class type = savedTypeOptions[name]?.type
         def foundArray = type?.isArray()
@@ -698,6 +719,8 @@ class OptionAccessor {
             } else {
                 if (type) result = getTypedValue(type, name, result)
             }
+        } else if (type?.simpleName != 'boolean' && savedTypeOptions[name]?.defaultValue) {
+            result = getTypedValue(type, name, savedTypeOptions[name].defaultValue)
         } else {
             result = commandLine.hasOption(name)
         }
