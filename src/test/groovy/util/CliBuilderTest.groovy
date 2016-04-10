@@ -21,6 +21,7 @@ package groovy.util
 import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.transform.ToString
+import groovy.transform.TypeChecked
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.GnuParser
@@ -518,6 +519,100 @@ usage: groovy
         @Unparsed void setRemaining(List remaining) {
             this.remaining = remaining
         }
+    }
+    class DefaultValueC {
+        @Option(shortName='f', defaultValue='one') String from
+        @Option(shortName='t', defaultValue='35') int to
+        @Option(shortName='b') int by = 1
+    }
+
+    void testDefaultValueClass() {
+        def cli = new CliBuilder()
+        def options = new DefaultValueC()
+        cli.parseFromInstance(options, '-f two'.split())
+        assert options.from == 'two'
+        assert options.to == 35
+        assert options.by == 1
+
+        options = new DefaultValueC()
+        cli.parseFromInstance(options, '-t 45 --by 2'.split())
+        assert options.from == 'one'
+        assert options.to == 45
+        assert options.by == 2
+    }
+
+    class ValSepC {
+        @Option(numberOfArguments=2) String[] a
+        @Option(numberOfArgumentsString='2', valueSeparator=',') String[] b
+        @Option(numberOfArgumentsString='+', valueSeparator=',') String[] c
+        @Unparsed remaining
+    }
+
+    void testValSepClass() {
+        def cli = new CliBuilder()
+
+        def options = new ValSepC()
+        cli.parseFromInstance(options, '-a 1 2 3 4'.split())
+        assert options.a == ['1', '2']
+        assert options.remaining == ['3', '4']
+
+        options = new ValSepC()
+        cli.parseFromInstance(options, '-a1 -a2 3'.split())
+        assert options.a == ['1', '2']
+        assert options.remaining == ['3']
+
+        options = new ValSepC()
+        cli.parseFromInstance(options, ['-b1,2'] as String[])
+        assert options.b == ['1', '2']
+
+        options = new ValSepC()
+        cli.parseFromInstance(options, ['-c', '1'] as String[])
+        assert options.c == ['1']
+
+        options = new ValSepC()
+        cli.parseFromInstance(options, ['-c1'] as String[])
+        assert options.c == ['1']
+
+        options = new ValSepC()
+        cli.parseFromInstance(options, ['-c1,2,3'] as String[])
+        assert options.c == ['1', '2', '3']
+    }
+
+    class WithConvertC {
+        @Option(convert={ it.toLowerCase() }) String a
+        @Option(convert={ it.toUpperCase() }) String b
+        @Option(convert={ Date.parse("yyyy-MM-dd", it) }) Date d
+        @Unparsed List remaining
+    }
+
+    void testConvertClass() {
+        Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
+        def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
+        def cli = new CliBuilder()
+        def options = new WithConvertC()
+        cli.parseFromInstance(options, argz)
+        assert options.a == 'john'
+        assert options.b == 'MARY'
+        assert options.d == newYears
+        assert options.remaining == ['and', 'some', 'more']
+    }
+
+    class TypeCheckedC {
+        @Option String name
+        @Option int age
+        @Unparsed List remaining
+    }
+
+    @TypeChecked
+    void testTypeCheckedClass() {
+        def argz = "--name John --age 21 and some more".split()
+        def cli = new CliBuilder()
+        def options = new TypeCheckedC()
+        cli.parseFromInstance(options, argz)
+        String n = options.name
+        int a = options.age
+        assert n == 'John' && a == 21
+        assert options.remaining == ['and', 'some', 'more']
     }
 
     void testParseFromInstance() {

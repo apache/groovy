@@ -1233,7 +1233,8 @@ and populates it. You simply call the interface methods to interrogate the optio
 
 Alternatively, perhaps you already have a domain class containing the option information.
 You can simply annotate properties or setters from that class to enable `CliBuilder` to appropriately
-populate your domain object.
+populate your domain object. Each annotation both describes that option's properties through the annotation
+attributes and indicates the setter the `CliBuilder` will use to populate that option in your domain object.
 
 Here is how such a specification can be defined:
 
@@ -1430,7 +1431,7 @@ e.g. `String x = someVariable ?: 'some default'`. But sometimes you wish to make
 options specification to minimise the interrogators work in later stages. `CliBuilder` supports the `defaultValue`
 property to cater for this scenario.
 
-Here is how you could use it using the deynamic api style:
+Here is how you could use it using the dynamic api style:
 
 [source,groovy]
 ----
@@ -1451,6 +1452,9 @@ Which would be used like this:
 ----
 include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterface,indent=0]
 ----
+
+You can also use the `defaultValue` annotation attribute when using annotations with an instance,
+though it's probably just as easy to provide an initial value for the property (or backing field).
 
 ===== Use with `TypeChecked`
 
