@@ -164,4 +164,33 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testAnnotationsOnConstructor() {
+        assertScript """
+            import groovy.transform.TupleConstructor
+
+            import java.lang.annotation.ElementType
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+            import java.lang.annotation.Target
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.CONSTRUCTOR)
+            public @interface Example1 {}
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.CONSTRUCTOR)
+            public @interface Example2 {}
+
+            @TupleConstructor(annotations = [Example1, Example2], defaults = false)
+            class Person {
+                String firstName
+                String lastName
+            }
+
+            Person.declaredConstructors.each {
+                assert it.declaredAnnotations[0].annotationType() == Example1
+                assert it.declaredAnnotations[1].annotationType() == Example2
+            }
+        """
+    }
 }

@@ -251,4 +251,11 @@ public @interface TupleConstructor {
      * made null-safe wrt the parameter.
      */
     boolean useSetters() default false;
+
+    /**
+     * Add annotations to generated constructor, but only if {@code defaults=false}
+     * It is particularly helpful for generating constructor with all arguments and Spring {@code @Autowired}
+     * or CDI {@code @Inject} annotation.
+     */
+    Class<?>[] annotations() default {};
 }

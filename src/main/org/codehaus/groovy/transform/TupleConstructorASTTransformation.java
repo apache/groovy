@@ -48,8 +48,8 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
@@ -112,12 +112,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
+            List<ClassNode> annotations = defaults ? null : getMemberClassList(anno, "annotations");
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
-            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults);
+            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, annotations);
         }
     }
 
@@ -126,6 +127,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults) {
+        createConstructor(null, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, null);
+    }
+
+    public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults, List<ClassNode> annotations) {
         // no processing if existing constructors found
         if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
@@ -178,7 +183,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 body.addStatement(assignS(propX(varX("this"), name), varX(nextParam)));
             }
         }
-        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
+        ConstructorNode constructorNode = new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body);
+        addAnnotationsToConstructor(annotations, constructorNode);
+        cNode.addConstructor(constructorNode);
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
         if (!params.isEmpty() && defaults) {
@@ -201,13 +208,21 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
+    private static void addAnnotationsToConstructor(List<ClassNode> annotations, ConstructorNode constructorNode) {
+        if (annotations != null) {
+            for (ClassNode annotation : annotations) {
+                constructorNode.addAnnotation(new AnnotationNode(annotation));
+            }
+        }
+    }
+
     private static String getSetterName(String name) {
         return "set" + Verifier.capitalize(name);
     }
 
     private static Parameter createParam(FieldNode fNode, String name, boolean defaults, AbstractASTTransformation xform) {
         Parameter param = new Parameter(fNode.getType(), name);
-        if (defaults){
+        if (defaults) {
             param.setInitialExpression(providedOrDefaultInitialValue(fNode));
         } else {
             if (fNode.getInitialExpression() != null) {
