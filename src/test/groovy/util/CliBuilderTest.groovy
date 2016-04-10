@@ -39,10 +39,6 @@ import static org.apache.commons.cli.Option.builder
  * In nearly all cases, we now recommend using DefaultParser. In case you have very unique circumstances
  * and really need behavior that can only be supplied by one of the legacy parsers, we also include
  * some test case runs against some of the legacy parsers.
- *
- * @author Dierk König
- * @author Russel Winder
- * @author Paul King
  */
 
 class CliBuilderTest extends GroovyTestCase {

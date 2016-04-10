@@ -42,6 +42,10 @@ import java.lang.reflect.Method
 
 /**
  * Provides a builder to assist the processing of command line arguments.
+ * Two styles are supported: dynamic api style (declarative method calls provide a mini DSL for describing options)
+ * and annotation style (annotations on an interface or class describe options).
+ * <p>
+ * <b>Dynamic api style</b>
  * <p>
  * Typical usage (emulate partial arg processing of unix command: ls -alt *.groovy):
  * <pre>
@@ -182,10 +186,61 @@ import java.lang.reflect.Method
  *   type:           Class
  *   valueSeparator: char
  *   convert:        Closure
+ *   defaultValue:   String
  * </pre>
  * See {@link org.apache.commons.cli.Option} for the meaning of most of these properties
  * and {@link CliBuilderTest} for further examples.
  * <p>
+ * <b>Annotation style with an interface</b>
+ * <p>
+ * With this style an interface is defined containing an annotated method for each option.
+ * It might look like this (following roughly the earlier 'ls' example):
+ * <pre>
+ * import groovy.cli.Option
+ * import groovy.cli.Unparsed
+ *
+ * interface OptionInterface {
+ *     @{@link groovy.cli.Option}(shortName='a', description='display all files') boolean all()
+ *     @{@link groovy.cli.Option}(shortName='l', description='use a long listing format') boolean longFormat()
+ *     @{@link groovy.cli.Option}(shortName='t', description='sort by modification time') boolean time()
+ *     @{@link groovy.cli.Unparsed} List remaining()
+ * }
+ * </pre>
+ * Then this description is supplied to CliBuilder during parsing, e.g.:
+ * <pre>
+ * def args = '-alt *.groovy'.split() // normally from commandline itself
+ * def cli = new CliBuilder(usage:'ls')
+ * def options = cli.parseFromSpec(OptionInterface, args)
+ * assert options.remaining() == ['*.groovy']
+ * assert options.all() && options.longFormat() && options.time()
+ * </pre>
+ * <p>
+ * <b>Annotation style with a class</b>
+ * <p>
+ * With this style a user-supplied instance is used. Annotations on that instance's class
+ * members (properties and setter methods) indicate how to set options and provide the option details
+ * using annotation attributes.
+ * It might look like this (again using the earlier 'ls' example):
+ * <pre>
+ * import groovy.cli.Option
+ * import groovy.cli.Unparsed
+ *
+ * class OptionClass {
+ *     @{@link groovy.cli.Option}(shortName='a', description='display all files') boolean all
+ *     @{@link groovy.cli.Option}(shortName='l', description='use a long listing format') boolean longFormat
+ *     @{@link groovy.cli.Option}(shortName='t', description='sort by modification time') boolean time
+ *     @{@link groovy.cli.Unparsed} List remaining
+ * }
+ * </pre>
+ * Then this description is supplied to CliBuilder during parsing, e.g.:
+ * <pre>
+ * def args = '-alt *.groovy'.split() // normally from commandline itself
+ * def cli = new CliBuilder(usage:'ls')
+ * def options = new OptionClass()
+ * cli.parseFromInstance(options, args)
+ * assert options.remaining == ['*.groovy']
+ * assert options.all && options.longFormat && options.time
+ * </pre>
  */
 class CliBuilder {
 
