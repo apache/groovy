@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that a method will contain the remaining arguments.
+ * Indicates that a method or property will contain the remaining arguments.
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)

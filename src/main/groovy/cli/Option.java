@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that a method or field can be used to set a CLI option.
+ * Indicates that a method or property can be used to set a CLI option.
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,7 +40,7 @@ public @interface Option {
     String description() default "";
 
     /**
-     * The short name of this option. Defaults to the name of member being annotated.
+     * The short name of this option. Defaults to the name of member being annotated if the longName is empty.
      *
      * @return the short name of this option
      */

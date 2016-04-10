@@ -501,8 +501,9 @@ class CliBuilder {
         if (namesAreSetters) {
             def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
             boolean isFlag = (isBoolArg && !hasArg) || noArg
-            if (cli.hasOption(name) || isFlag) {
-                m.invoke(t, [isFlag ? cli.hasOption(name) : optionValue(cli, name)] as Object[])
+            if (cli.hasOption(name) || isFlag || cli.defaultValue(name)) {
+                m.invoke(t, [isFlag ? cli.hasOption(name) :
+                                     cli.hasOption(name) ? optionValue(cli, name) : cli.defaultValue(name)] as Object[])
             }
         } else {
             def isBoolRetType = m.returnType.simpleName.toLowerCase() == 'boolean'
