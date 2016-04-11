@@ -620,6 +620,31 @@ usage: groovy
                 ' cv.txt, DOWN, [and, some, more])'
     }
 
+    interface RetTypeI {
+        @Unparsed Integer[] nums()
+    }
+
+    // this feature is incubating
+    void testTypedUnparsedFromSpec() {
+        def argz = '12 34 56'.split()
+        def cli = new CliBuilder()
+        def options = cli.parseFromSpec(RetTypeI, argz)
+        assert options.nums() == [12, 34, 56]
+    }
+
+    class RetTypeC {
+        @Unparsed Integer[] nums
+    }
+
+    // this feature is incubating
+    void testTypedUnparsedFromInstance() {
+        def argz = '12 34 56'.split()
+        def cli = new CliBuilder()
+        def options = new RetTypeC()
+        cli.parseFromInstance(options, argz)
+        assert options.nums == [12, 34, 56]
+    }
+
     interface FlagEdgeCasesI {
         @Option boolean abc()
         @Option(numberOfArgumentsString='1') boolean efg()

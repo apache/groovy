@@ -303,12 +303,6 @@ class CliBuilder {
     Options options = new Options()
 
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
-    /*
-    Object defaultValue = map.get("defaultValue");
-    defaultValues.put(makeDefaultValueKey(option), defaultValue);
-    Class type = (Class) map.get("type");
-    if (type != null) option.setType(type);
-     */
 
     public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
         def name = args.opt ?: '_'
@@ -528,21 +522,31 @@ class CliBuilder {
         }
         def remaining = cli.arguments()
         optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
-            processSetRemaining(m, remaining, t, namesAreSetters)
+            processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }
         optionClass.declaredFields.findAll{ it.getAnnotation(Unparsed) }.each { Field f ->
             String setterName = "set" + MetaClassHelper.capitalize(f.getName());
             Method m = optionClass.getMethod(setterName, f.getType())
-            processSetRemaining(m, remaining, t, namesAreSetters)
+            processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }
     }
 
-    private void processSetRemaining(Method m, remaining, Object t, boolean namesAreSetters) {
+    private void processSetRemaining(Method m, remaining, Object t, cli, boolean namesAreSetters) {
+        def resultType = namesAreSetters ? m.parameterTypes[0] : m.returnType
+        def isTyped = resultType?.isArray()
+        def result
+        def type = null
+        if (isTyped) {
+            type = resultType.componentType
+            result = remaining.collect{ cli.getValue(type, it, null) }
+        } else {
+            result = remaining.toList()
+        }
         if (namesAreSetters) {
-            m.invoke(t, remaining.toList())
+            m.invoke(t, isTyped ? [result.toArray(Array.newInstance(type, result.size()))] as Object[] : result)
         } else {
             Map names = calculateNames("", "", m, namesAreSetters)
-            t.put(names.long, { -> remaining.toList() })
+            t.put(names.long, { -> result })
         }
     }
 
@@ -729,14 +733,19 @@ class OptionAccessor {
     }
 
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
+        if (savedTypeOptions[optionName]?.cliOption?.numberOfArgs == 0) {
+            return (T) commandLine.hasOption(optionName)
+        }
+        def convert = savedTypeOptions[optionName]?.convert
+        return getValue(type, optionValue, convert)
+    }
+
+    private <T> T getValue(Class<T> type, String optionValue, Closure convert) {
         if (!type) {
             return (T) optionValue
         }
-        if (Closure.isAssignableFrom(type) && savedTypeOptions[optionName]?.convert) {
-            return (T) savedTypeOptions[optionName].convert(optionValue)
-        }
-        if (savedTypeOptions[optionName]?.cliOption?.numberOfArgs == 0) {
-            return (T) commandLine.hasOption(optionName)
+        if (Closure.isAssignableFrom(type) && convert) {
+            return (T) convert(optionValue)
         }
         if (type?.simpleName?.toLowerCase() == 'boolean') {
             return (T) Boolean.parseBoolean(optionValue)
