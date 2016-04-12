@@ -200,7 +200,8 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         ClassNode builder = createBuilder(anno, buildee);
         createBuilderFactoryMethod(anno, buildee, builder);
         List<FieldNode> fields = getFields(transform, anno, buildee);
-        List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
+        boolean allNames = transform.memberHasValue(anno, "allNames", true);
+        List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes, allNames);
         for (FieldNode fieldNode : filteredFields) {
             ClassNode correctedType = getCorrectedType(buildee, fieldNode);
             String fieldName = fieldNode.getName();
@@ -283,10 +284,10 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         return new FieldNode(fieldName, ACC_PRIVATE, fieldType, buildee, DEFAULT_INITIAL_VALUE);
     }
 
-    private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
+    private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes, boolean allNames) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
             fields.add(fNode);
         }
         return fields;

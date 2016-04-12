@@ -120,4 +120,11 @@ public @interface MapConstructor {
      * A Closure containing statements which will be appended to the end of the generated constructor. Useful for validation steps or tweaking the populated fields/properties.
      */
     Class post();
+
+    /**
+     * Whether to include all fields and/or properties within the constructor, including those with names that are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }

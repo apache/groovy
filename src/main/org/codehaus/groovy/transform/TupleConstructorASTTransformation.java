@@ -112,12 +112,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
+            boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
-            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults);
+            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames);
         }
     }
 
@@ -126,6 +127,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults) {
+        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, false);
+    }
+
+    public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults, boolean allNames) {
         // no processing if existing constructors found
         if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
@@ -150,7 +155,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         final BlockStatement body = new BlockStatement();
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
-            if (shouldSkipUndefinedAware(name, excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             params.add(createParam(fNode, name, defaults, xform));
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
@@ -168,7 +173,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
-            if (shouldSkipUndefinedAware(name, excludes, includes)) continue;
+            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             Parameter nextParam = createParam(fNode, name, defaults, xform);
             params.add(nextParam);
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();

@@ -133,21 +133,22 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
+        boolean allNames = transform.memberHasValue(anno, "allNames", true);
         if (annotatedNode instanceof ClassNode) {
-            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno, useSetters);
+            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno, useSetters, allNames);
         } else if (annotatedNode instanceof MethodNode) {
             createBuilderForAnnotatedMethod(transform, (MethodNode) annotatedNode, anno, useSetters);
         }
     }
 
-    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters) {
+    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters, boolean allNames) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         List<FieldNode> fields = getFields(transform, anno, buildee);
-        List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
+        List<FieldNode> filteredFields = filterFields(fields, includes, excludes, allNames);
         if (filteredFields.isEmpty()) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
                     " processing: at least one property is required for this strategy", anno);
@@ -359,10 +360,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return new FieldNode(fNode.getName(), fNode.getModifiers(), correctedType, buildee, DEFAULT_INITIAL_VALUE);
     }
 
-    private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
+    private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes, boolean allNames) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
-            if (AbstractASTTransformation.shouldSkipUndefinedAware(fNode.getName(), excludes, includes)) continue;
+            if (AbstractASTTransformation.shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
             fields.add(fNode);
         }
         return fields;

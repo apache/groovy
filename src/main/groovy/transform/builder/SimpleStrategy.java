@@ -94,6 +94,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (unsupportedAttribute(transform, anno, "includeSuperProperties")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
+        boolean allNames = transform.memberHasValue(anno, "allNames", true);
 
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
@@ -109,7 +110,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         }
         for (FieldNode field : fields) {
             String fieldName = field.getName();
-            if (!AbstractASTTransformation.shouldSkipUndefinedAware(fieldName, excludes, includes)) {
+            if (!AbstractASTTransformation.shouldSkipUndefinedAware(fieldName, excludes, includes, allNames)) {
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
                 buildee.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(

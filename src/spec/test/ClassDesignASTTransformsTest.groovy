@@ -189,14 +189,14 @@ class NumberBooleanBuilder {
     StringBuilder nums = new StringBuilder()
     @Delegate(includeTypes=[AppendFloatSelector], interfaces=false)
     StringBuilder bools = new StringBuilder()
-    String result() { "${nums.toString()} | ${bools.toString()}" }
+    String result() { "${nums.toString()} ~ ${bools.toString()}" }
 }
 def b = new NumberBooleanBuilder()
 b.append(true)
 b.append(3.14f)
 b.append(false)
 b.append(0.0f)
-assert b.result() == "truefalse | 3.140.0"
+assert b.result() == "truefalse ~ 3.140.0"
 // end::delegate_example_includeTypes_header[]
 groovy.test.GroovyAssert.shouldFail {
 // tag::delegate_example_includeTypes_footer[]
@@ -224,6 +224,19 @@ usb.append('hello')
 usb.append(true)
 assert usb.toString() == '3.5trueHELLO'
 // end::delegate_example_excludeTypes[]
+'''
+
+        assertScript '''
+// tag::delegate_example_allNames[]
+class Worker {
+    void task$() {}
+}
+class Delegating {
+    @Delegate(allNames=true) Worker worker = new Worker()
+}
+def d = new Delegating()
+d.task$() //passes
+// end::delegate_example_allNames[]
 '''
     }
 

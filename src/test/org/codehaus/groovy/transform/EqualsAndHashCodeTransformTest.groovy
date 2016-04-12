@@ -87,4 +87,20 @@ class EqualsAndHashCodeTransformTest extends GroovyShellTestCase {
         assert message.contains("Error during @EqualsAndHashCode processing: 'excludes' property 'sirName' does not exist.")
     }
 
+    void testIncludesInternalPropertyNamesIfRequested() {
+        assertScript '''
+            import groovy.transform.EqualsAndHashCode
+
+            @EqualsAndHashCode(allNames = true)
+            class HasInternalNameProperty {
+                String $
+            }
+
+            def a = new HasInternalNameProperty($: "a")
+            def b = new HasInternalNameProperty($: "b")
+            assert a != b
+            assert a.hashCode() != b.hashCode()
+        '''
+    }
+
 }

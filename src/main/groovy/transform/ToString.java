@@ -328,4 +328,11 @@ public @interface ToString {
      */
     boolean cache() default false;
 
+    /**
+     * Whether to include all fields and/or properties in the generated toString, including those with names that
+     * are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }
