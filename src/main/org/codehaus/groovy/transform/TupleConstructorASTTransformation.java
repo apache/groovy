@@ -212,7 +212,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
     private static Parameter createParam(FieldNode fNode, String name, boolean defaults, AbstractASTTransformation xform) {
         Parameter param = new Parameter(fNode.getType(), name);
-        if (defaults){
+        if (defaults) {
             param.setInitialExpression(providedOrDefaultInitialValue(fNode));
         } else {
             if (fNode.getInitialExpression() != null) {
