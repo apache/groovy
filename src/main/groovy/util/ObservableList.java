@@ -137,6 +137,19 @@ public class ObservableList implements List {
     public void add(int index, Object element) {
         int oldSize = size();
         delegate.add(index, element);
+        fireAddWithTest(element, index, oldSize);
+    }
+
+    public boolean add(Object o) {
+        int oldSize = size();
+        boolean success = delegate.add(o);
+        if (success) {
+            fireAddWithTest(o, oldSize, oldSize);
+        }
+        return success;
+    }
+
+    private void fireAddWithTest(Object element, int index, int oldSize) {
         if (test != null) {
             Object result = test.call(element);
             if (result != null && result instanceof Boolean && (Boolean) result) {
@@ -147,24 +160,6 @@ public class ObservableList implements List {
             fireElementAddedEvent(index, element);
             fireSizeChangedEvent(oldSize, size());
         }
-    }
-
-    public boolean add(Object o) {
-        int oldSize = size();
-        boolean success = delegate.add(o);
-        if (success) {
-            if (test != null) {
-                Object result = test.call(o);
-                if (result != null && result instanceof Boolean && (Boolean) result) {
-                    fireElementAddedEvent(size() - 1, o);
-                    fireSizeChangedEvent(oldSize, size());
-                }
-            } else {
-                fireElementAddedEvent(size() - 1, o);
-                fireSizeChangedEvent(oldSize, size());
-            }
-        }
-        return success;
     }
 
     public boolean addAll(Collection c) {
@@ -276,11 +271,9 @@ public class ObservableList implements List {
         }
 
         List values = new ArrayList();
-        if (c != null) {
-            for (Object element : c) {
-                if (delegate.contains(element)) {
-                    values.add(element);
-                }
+        for (Object element : c) {
+            if (delegate.contains(element)) {
+                values.add(element);
             }
         }
 
@@ -300,11 +293,9 @@ public class ObservableList implements List {
         }
 
         List values = new ArrayList();
-        if (c != null) {
-            for (Object element : delegate) {
-                if (!c.contains(element)) {
-                    values.add(element);
-                }
+        for (Object element : delegate) {
+            if (!c.contains(element)) {
+                values.add(element);
             }
         }
 
