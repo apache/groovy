@@ -168,30 +168,7 @@ public class ObservableList implements List {
     }
 
     public boolean addAll(Collection c) {
-        int oldSize = size();
-        int index = size() - 1;
-        index = index < 0 ? 0 : index;
-
-        boolean success = delegate.addAll(c);
-        if (success && c != null) {
-            List values = new ArrayList();
-            for (Object element : c) {
-                if (test != null) {
-                    Object result = test.call(element);
-                    if (result != null && result instanceof Boolean && (Boolean) result) {
-                        values.add(element);
-                    }
-                } else {
-                    values.add(element);
-                }
-            }
-            if (!values.isEmpty()) {
-                fireMultiElementAddedEvent(index, values);
-                fireSizeChangedEvent(oldSize, size());
-            }
-        }
-
-        return success;
+        return addAll(size(), c);
     }
 
     public boolean addAll(int index, Collection c) {
