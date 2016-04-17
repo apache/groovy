@@ -158,15 +158,16 @@ class ObservableListTest extends GroovyTestCase {
         list.addPropertyChangeListener(ObservableList.SIZE_PROPERTY, sizeListener)
 
         def value1 = 'value1'
-        def value2 = 'value2'
         list << value1
 
         assertNotNull(sizeListener.event)
         assertEquals(list, contentListener.event.source)
         assertEquals(0i, sizeListener.event.oldValue)
         assertEquals(1i, sizeListener.event.newValue)
+        assertEquals(0i, contentListener.event.index)
 
-        list.addAll([value1, value2])
+        def value2 = 'value2'
+        list.addAll([value2, value1])
 
         assertNotNull(contentListener.event)
         assertTrue(contentListener.event instanceof ObservableList.MultiElementAddedEvent)
@@ -174,12 +175,13 @@ class ObservableListTest extends GroovyTestCase {
         def values = contentListener.event.values
         assertNotNull(values)
         assertEquals(2, values.size())
-        assertEquals(value1, values[0])
-        assertEquals(value2, values[1])
+        assertEquals(value2, values[0])
+        assertEquals(value1, values[1])
         assertNotNull(sizeListener.event)
         assertEquals(list, contentListener.event.source)
         assertEquals(1i, sizeListener.event.oldValue)
         assertEquals(3i, sizeListener.event.newValue)
+        assertEquals(1i, contentListener.event.index)
     }
 
     void testFireEvent_removeAll() {
