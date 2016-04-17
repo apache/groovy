@@ -26,9 +26,11 @@ import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 /**
  * List decorator that will trigger PropertyChangeEvents when a value changes.<br>
@@ -271,8 +273,13 @@ public class ObservableList implements List {
         }
 
         List values = new ArrayList();
+        // GROOVY-7783 use Sets for O(1) performance for contains
+        Set delegateSet = new HashSet<Object>(delegate);
+        if (!(c instanceof Set)) {
+            c = new HashSet<Object>(c);
+        }
         for (Object element : c) {
-            if (delegate.contains(element)) {
+            if (delegateSet.contains(element)) {
                 values.add(element);
             }
         }
@@ -293,6 +300,10 @@ public class ObservableList implements List {
         }
 
         List values = new ArrayList();
+        // GROOVY-7783 use Set for O(1) performance for contains
+        if (!(c instanceof Set)) {
+            c = new HashSet<Object>(c);
+        }
         for (Object element : delegate) {
             if (!c.contains(element)) {
                 values.add(element);
