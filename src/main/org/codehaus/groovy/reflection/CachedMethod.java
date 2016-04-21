@@ -167,6 +167,10 @@ public class CachedMethod extends MetaMethod implements Comparable {
                 return nameComp;
         }
 
+        final int classComp = cachedClass.toString().compareTo(other.getDeclaringClass().toString());
+        if (classComp != 0)
+            return classComp;
+
         throw new RuntimeException("Should never happen");
     }
 
