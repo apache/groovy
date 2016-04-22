@@ -66,11 +66,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGener
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
- *
- * @author Alex Tkachman
- * @author Guillaume Laforge
- * @author Paul King
- * @author Andre Steingress
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation extends AbstractASTTransformation {
@@ -287,7 +282,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             boolean alsoLazy = !delegate.delegate.getAnnotations(LAZY_TYPE).isEmpty();
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = callX(
-                    // use propX when lazy, because lazy is only allowed on fields
+                    // use propX when lazy, because lazy is only allowed on fields/properties
                     alsoLazy ? propX(varX("this"), delegate.name.substring(1)) : delegate.getOp,
                     candidate.getName(),
                     args);

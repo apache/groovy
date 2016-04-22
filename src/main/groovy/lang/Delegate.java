@@ -28,10 +28,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to automatically delegate part of the functionality of an owner class to the
- * annotated delegation target, i. e. a field or getter method's return value.
+ * annotated delegation target. The target can be a field (or property) or a method's return value.
  * <p>
- * The delegate type is either the type of the annotated field or the return type of
- * the annotated getter method.
+ * The delegate type is either the type of the annotated field (or property) or the return type of
+ * the annotated method. The method can be thought of as a getter or factory method for the delegate.
  * All public instance methods present in the delegate type and not present in the owner class
  * will be added to owner class at compile time. The implementation of such automatically added
  * methods is code which calls through to the delegate as per the normal delegate pattern.
@@ -124,10 +124,8 @@ import java.lang.annotation.Target;
  * ignored if the owner class implements that interface (i.e. you must set {@code interfaces=false}
  * if you want the {@code deprecated} attribute to be used). Otherwise, the resulting class would
  * not compile anyway without manually adding in any deprecated methods in the interface.</li>
+ * <li>{@code @Delegate} can work in combination with {@code @Lazy} when annotating a field (or property)</li>
  * </ul>
- *
- * @author Alex Tkachman
- * @author Paul King
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -83,6 +83,33 @@ d.bar() // fails because of @Deprecated
 '''
 
         assertScript '''
+// tag::delegate_method[]
+class Test {
+    private int robinCount = 0
+    private List<List> items = [[0], [1], [2]]
+
+    @Delegate
+    List getRoundRobinList() {
+        items[robinCount++ % items.size()]
+    }
+
+    void checkItems(List<List> testValue) {
+        assert items == testValue
+    }
+}
+// end::delegate_method[]
+
+// tag::delegate_method_usage[]
+def t = new Test()
+t << 'fee'
+t << 'fi'
+t << 'fo'
+t << 'fum'
+t.checkItems([[0, 'fee', 'fum'], [1, 'fi'], [2, 'fo']])
+// end::delegate_method_usage[]
+'''
+
+        assertScript '''
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

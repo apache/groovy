@@ -1434,8 +1434,8 @@ The `@Delegate` AST transformation aims at implementing the delegation design pa
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegating_class,indent=0]
 ----
 
-The `when` field is annotated with `@Delegate`, meaning that the `Event` class will delegate calls to `Date` methods
-to the `when` field. In this case, the generated code looks like this:
+The `when` property is annotated with `@Delegate`, meaning that the `Event` class will delegate calls to `Date` methods
+to the `when` property. In this case, the generated code looks like this:
 
 [source,groovy]
 ----
@@ -1448,6 +1448,26 @@ Then you can call the `before` method, for example, directly on the `Event` clas
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegation_assert,indent=0]
 ----
+
+Instead of annotating a property (or field), you can also annotate a method.
+In this case, the method can be thought of as a getter or factory method for the delegate.
+As an example, here is a class which (rather unusually) has a pool of delegates which are
+accessed in a round-robin fashion:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_method,indent=0]
+----
+
+Here is an example usage of that class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_method_usage,indent=0]
+----
+
+Using a standard list in this round-robin fashion would violate many expected properties of lists, so
+don't expect the above class to do anything useful beyond this trivial example.
 
 The behavior of the `@Delegate` AST transformation can be changed using the following parameters:
 
