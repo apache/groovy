@@ -110,7 +110,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     /**
      * Build the map if requested to, it does this lazily.
      */
-    private final void buildIfNeededMap() {
+    private void buildIfNeededMap() {
         if (map == null) {
             map = new HashMap<String, Value>(items.length);
 

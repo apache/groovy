@@ -158,7 +158,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         return decodeValueInternal();
     }
 
-    private final Object decodeValueInternal() {
+    private Object decodeValueInternal() {
         Object value = null;
         skipWhiteSpace();
 
@@ -213,7 +213,7 @@ public class JsonParserCharArray extends BaseJsonParser {
 
     int[] endIndex = new int[1];
 
-    private final Object decodeNumber() {
+    private Object decodeNumber() {
         Number num = CharScanner.parseJsonNumber(charArray, __index, charArray.length, endIndex);
         __index = endIndex[0];
 

@@ -155,7 +155,7 @@ public class JsonFastParser extends JsonParserCharArray {
         }
     }
 
-    private final Value decodeNumberOverlay(final boolean minus) {
+    private Value decodeNumberOverlay(final boolean minus) {
         char[] array = charArray;
 
         final int startIndex = __index;
