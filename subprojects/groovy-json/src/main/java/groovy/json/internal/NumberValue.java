@@ -99,7 +99,7 @@ public class NumberValue extends java.lang.Number implements Value {
         return false;
     }
 
-    private final Object doToValue() {
+    private Object doToValue() {
         switch (type) {
             case DOUBLE:
                 return bigDecimalValue();
