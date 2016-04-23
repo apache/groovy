@@ -108,7 +108,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         throw new JsonException(exceptionDetails(complaint));
     }
 
-    private final Object decodeValue() {
+    private Object decodeValue() {
         CharacterSource characterSource = this.characterSource;
         Object value = null;
         characterSource.skipWhiteSpace();
@@ -163,7 +163,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return value;
     }
 
-    private final Object decodeNumber(boolean negative) {
+    private Object decodeNumber(boolean negative) {
         char[] chars = characterSource.readNumber();
         Object value = null;
 

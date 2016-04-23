@@ -386,7 +386,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     final byte[] charTo = new byte[2];
 
-    private final CharBuf doAddJsonEscapedString(char[] charArray) {
+    private CharBuf doAddJsonEscapedString(char[] charArray) {
         char[] _buffer = buffer;
         int _location = this.location;
 
@@ -558,11 +558,11 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
-    private static final void sysstemarraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
+    private static void sysstemarraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }
 
-    private static final void arraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
+    private static void arraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
         sysstemarraycopy(src, srcPos, dest, destPos, length);
     }
 
