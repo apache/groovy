@@ -162,15 +162,9 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * &lt;/project&gt;
  * </pre>
  * <p>
- * Based heavily on the Javac implementation in Ant.
+ * Based heavily on the implementation of the Javac task in Apache Ant.
  * <p>
  * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hein Meling
- * @author <a href="mailto:russel.winder@concertant.com">Russel Winder</a>
- * @author Danno Ferrin
- * @author Paul King
  */
 public class Groovyc extends MatchingTask {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
@@ -215,7 +209,6 @@ public class Groovyc extends MatchingTask {
     private String configscript;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
-
 
     /**
      * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
@@ -302,6 +295,7 @@ public class Groovyc extends MatchingTask {
         for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
             if (allowedJdk.equals(version)) {
                 this.targetBytecode = version;
+                break;
             }
         }
     }
@@ -1194,7 +1188,7 @@ public class Groovyc extends MatchingTask {
             String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
             boolean fileNameErrors = filenames == null;
 
-            fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
+            fileNameErrors = fileNameErrors || !FileSystemCompiler.validateFiles(filenames);
 
             if (targetBytecode != null) {
                 configuration.setTargetBytecode(targetBytecode);
