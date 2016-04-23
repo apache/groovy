@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -66,7 +67,9 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.internKeys", "false"));
     protected static ConcurrentHashMap<String, String> internedKeysCache;
 
-    protected String charset = Charsets.UTF_8.name();
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    protected String charset = UTF_8.name();
 
     private CharBuf fileInputBuf;
 
