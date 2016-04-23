@@ -258,7 +258,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
                 case 't':
                     if (isTrue()) {
-                        return decodeTrue() == true ? ValueContainer.TRUE : ValueContainer.FALSE;
+                        return decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
                     } else {
                         value = decodeStringLax();
                     }
@@ -266,7 +266,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
                 case 'f':
                     if (isFalse()) {
-                        return decodeFalse() == false ? ValueContainer.FALSE : ValueContainer.TRUE;
+                        return !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
                     } else {
                         value = decodeStringLax();
                     }
@@ -441,9 +441,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         Type type = doubleFloat ? Type.DOUBLE : Type.INTEGER;
 
-        NumberValue value = new NumberValue(chop, type, startIndex, __index, this.charArray);
-
-        return value;
+        return new NumberValue(chop, type, startIndex, __index, this.charArray);
     }
 
     private boolean isNull() {
@@ -530,11 +528,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     }
 
                 case '\\':
-                    if (!escape) {
-                        escape = true;
-                    } else {
-                        escape = false;
-                    }
+                    escape = !escape;
                     encoded = true;
                     continue;
             }

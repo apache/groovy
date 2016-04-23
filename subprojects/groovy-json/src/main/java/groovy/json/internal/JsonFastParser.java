@@ -122,10 +122,10 @@ public class JsonFastParser extends JsonParserCharArray {
                 return decodeJsonObjectLazyFinalParse();
 
             case 't':
-                return decodeTrue() == true ? ValueContainer.TRUE : ValueContainer.FALSE;
+                return decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
 
             case 'f':
-                return decodeFalse() == false ? ValueContainer.FALSE : ValueContainer.TRUE;
+                return !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
 
             case 'n':
                 return decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
@@ -219,9 +219,7 @@ public class JsonFastParser extends JsonParserCharArray {
 
         Type type = doubleFloat ? Type.DOUBLE : Type.INTEGER;
 
-        NumberValue value = new NumberValue(chop, type, startIndex, __index, this.charArray);
-
-        return value;
+        return new NumberValue(chop, type, startIndex, __index, this.charArray);
     }
 
     private Value decodeStringOverlay() {
