@@ -310,7 +310,7 @@ public class CharBuf extends Writer implements CharSequence {
             capacity = buffer.length;
         }
 
-        arraycopy(chars, 0, buffer, location, chars.length);
+        System.arraycopy(chars, 0, buffer, location, chars.length);
         location += chars.length;
         return this;
     }
@@ -328,7 +328,7 @@ public class CharBuf extends Writer implements CharSequence {
         _buffer[_location] = '"';
         _location++;
 
-        arraycopy(chars, 0, _buffer, _location, chars.length);
+        System.arraycopy(chars, 0, _buffer, _location, chars.length);
 
         _location += (chars.length);
         _buffer[_location] = '"';
@@ -556,14 +556,6 @@ public class CharBuf extends Writer implements CharSequence {
         }
         location += chars.length;
         return this;
-    }
-
-    private static void sysstemarraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
-        System.arraycopy(src, srcPos, dest, destPos, length);
-    }
-
-    private static void arraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
-        sysstemarraycopy(src, srcPos, dest, destPos, length);
     }
 
     public CharBuf add(byte[] bytes, int start, int end) {

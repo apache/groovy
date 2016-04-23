@@ -158,9 +158,8 @@ public class CharSequenceValue implements Value, CharSequence {
         if (startIndex != value1.startIndex) return false;
         if (!Arrays.equals(buffer, value1.buffer)) return false;
         if (type != value1.type) return false;
-        if (value != null ? !value.equals(value1.value) : value1.value != null) return false;
+        return value != null ? value.equals(value1.value) : value1.value == null;
 
-        return true;
     }
 
     public int hashCode() {
