@@ -292,20 +292,26 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Sets the bytecode compatibility mode
+     * Sets the bytecode compatibility mode. The parameter can take
+     * one of the values <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
      *
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
-        if (CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
-            this.targetBytecode = version;
+        
+        for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
+            if (allowedJdk.equals(version)) {
+                this.targetBytecode = version;
+            }
         }
     }
 
     /**
      * Retrieves the compiler bytecode compatibility mode.
      *
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * @return bytecode compatibility mode. Can be one of the values
+     *         <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or
+     *         <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
