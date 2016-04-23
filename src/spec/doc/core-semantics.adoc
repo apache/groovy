@@ -2040,7 +2040,7 @@ with `@CompileStatic`:
 ----
 include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_compilestatic,indent=0]
 include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
-run()
+test()
 ----
 
 This is the *only* difference. If we execute this program, this time, there is no runtime error. The `test` method
