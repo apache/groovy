@@ -33,8 +33,7 @@ public class Dates {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(time);
         calendar.setTimeZone(UTC_TIME_ZONE);
-        long utcNow = calendar.getTime().getTime();
-        return utcNow;
+        return calendar.getTime().getTime();
     }
 
     private static Date internalDate(TimeZone tz, int year, int month, int day, int hour,
@@ -72,7 +71,7 @@ public class Dates {
     public static Date fromISO8601(char[] charArray, int from, int to) {
         try {
             if (isISO8601(charArray, from, to)) {
-                int year = CharScanner.parseIntFromTo(charArray, from + 0, from + 4);
+                int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
                 int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
                 int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
                 int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
@@ -85,10 +84,7 @@ public class Dates {
                 if (charArray[from + 19] == 'Z') {
                     tz = TimeZone.getTimeZone("GMT");
                 } else {
-                    StringBuilder builder = new StringBuilder(9);
-                    builder.append("GMT");
-                    builder.append(charArray, from + 19, 6);
-                    String tzStr = builder.toString();
+                    String tzStr = "GMT" + String.valueOf(charArray, from + 19, 6);
                     tz = TimeZone.getTimeZone(tzStr);
                 }
                 return toDate(tz, year, month, day, hour, minute, second);
@@ -103,7 +99,7 @@ public class Dates {
     public static Date fromJsonDate(char[] charArray, int from, int to) {
         try {
             if (isJsonDate(charArray, from, to)) {
-                int year = CharScanner.parseIntFromTo(charArray, from + 0, from + 4);
+                int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
                 int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
                 int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
                 int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
@@ -154,13 +150,9 @@ public class Dates {
         final int length = to - start;
 
         try {
-            if (length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
-                    || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'))
-                    ) {
-                return true;
-            }
+            return length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
+                    || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'));
 
-            return false;
         } catch (Exception ex) {
             ex.printStackTrace();
             return false;

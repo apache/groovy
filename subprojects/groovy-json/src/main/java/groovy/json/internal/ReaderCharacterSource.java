@@ -72,10 +72,8 @@ public class ReaderCharacterSource implements CharacterSource {
         try {
             if (index >= length && !done) {
                 readNextBuffer();
-            } else if (done && index >= length) {
-                more = false;
             } else {
-                more = true;
+                more = !(done && index >= length);
             }
         } catch (Exception ex) {
             String str = CharScanner.errorDetails("ensureBuffer issue", readBuf, index, ch);
