@@ -485,7 +485,8 @@ public class CharBuf extends Writer implements CharSequence {
                                 _location++;
                             }
                         } else {
-                            Byt.charTo(_charTo, c);
+                            _charTo[1] = (byte) (c);
+                            _charTo[0] = (byte) (c >>> 8);
 
                             for (int charByte : _charTo) {
                                 ByteScanner.encodeByteIntoTwoAsciiCharBytes(charByte, _encoded);
