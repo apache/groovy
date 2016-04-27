@@ -148,4 +148,23 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         assert parser.parseText('{"num": 6-}').num == '6-'
     }
 
+    void testGroovy7728() {
+        String jsonString = '''
+            {
+                "enterpriseDomain": "@example.com"
+                ,"enterpriseId": "123456"
+                ,"clientId": "abcdefghijklmnopqrstuvwxyz123456"
+                ,"clientSecret": "abcdefghijklmnopqrstuvwxyz123456"
+                ,"keyId": "12345678"
+                ,"keyFileName": "/etc/PrintToBox/PrintToBox_private_key.pem"
+                ,"keyPassword": "12345678901234567890"
+                // ,"appUserId": "123456789"
+
+                //  Optional parameters with defaults shown
+                // ,"baseFolderName": "PrintToBox"
+            }
+        '''
+        assert !parser.parseText(jsonString).containsKey('appUserId')
+    }
+
 }

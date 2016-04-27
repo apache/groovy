@@ -72,16 +72,6 @@ public class JsonParserLax extends JsonParserCharArray {
             skipWhiteSpace();
 
             switch (__currentChar) {
-                case '/': /* */ //
-                    handleComment();
-                    startIndexOfKey = __index;
-                    break;
-
-                case '#':
-                    handleBashComment();
-                    startIndexOfKey = __index;
-                    break;
-
                 case ':':
                     char startChar = charArray[startIndexOfKey];
                     if (startChar == ',') {
@@ -161,10 +151,22 @@ public class JsonParserLax extends JsonParserCharArray {
                     }
 
                     break;
+            }
 
+            switch (__currentChar) {
                 case '}':
                     __index++;
                     break done;
+
+                case '/': /* */ //
+                    handleComment();
+                    startIndexOfKey = __index;
+                    break;
+
+                case '#':
+                    handleBashComment();
+                    startIndexOfKey = __index;
+                    break;
             }
         }
 
