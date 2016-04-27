@@ -276,7 +276,7 @@ include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=widening_vs_boxing
 == Behaviour of `==`
 
 In Java `==` means equality of primitive types or identity for objects.  In
-Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
+Groovy `==` translates to `a.compareTo(b)==0`, if they are `Comparable`, and
 `a.equals(b)` otherwise.  To check for identity, there is `is`.  E.g.
 `a.is(b)`.
 
