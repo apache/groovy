@@ -56,11 +56,22 @@ class Log4j2Test extends GroovyTestCase {
     protected void setUp() {
         super.setUp()
 
-        PatternLayout layout = PatternLayout.createLayout('%m', null, null, Charset.forName('UTF-8'), true, false, '', '')
+        PatternLayout layout = createLayout('%m', Charset.forName('UTF-8'))
         appender = new Log4j2InterceptingAppender('MyAppender', null, layout)
         logger = LogManager.getLogger('MyClass')
         logger.addAppender(appender)
         logger.setLevel(Level.ALL)
+    }
+
+    private static PatternLayout createLayout(String pattern, Charset charset) {
+        return PatternLayout.newBuilder()
+                .withPattern(pattern)
+                .withCharset(charset)
+                .withAlwaysWriteExceptions(true)
+                .withNoConsoleNoAnsi(false)
+                .withHeader('')
+                .withFooter('')
+                .build();
     }
 
     protected void tearDown() {
@@ -236,7 +247,7 @@ class Log4j2Test extends GroovyTestCase {
     }
 
     void testCustomCategory() {
-        PatternLayout layout = PatternLayout.createLayout('%m', null, null, Charset.forName('UTF-8'), true, false, '', '')
+        PatternLayout layout = createLayout('%m', Charset.forName('UTF-8'))
         Log4j2InterceptingAppender appenderForCustomCategory = new Log4j2InterceptingAppender('Appender4CustomCategory', null, layout)
         def loggerForCustomCategory = LogManager.getLogger('customCategory')
         loggerForCustomCategory.addAppender(appenderForCustomCategory)
