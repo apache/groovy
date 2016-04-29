@@ -144,7 +144,7 @@ ext {
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
     log4jVersion = '1.2.17'
-    log4j2Version = '2.5'
+    log4j2Version = '2.3' // 2.4 requires Java 7
     luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
     openejbVersion = '1.0'
