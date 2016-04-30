@@ -20,7 +20,7 @@ package groovy.lang;
 
 /**
  * As subclass of MetaClass, ProxyMetaClass manages calls from Groovy Objects to POJOs.
- * It enriches MetaClass with the feature of making method invokations interceptable by
+ * It enriches MetaClass with the feature of making method invocations interceptable by
  * an Interceptor. To this end, it acts as a decorator (decorator pattern) allowing
  * to add or withdraw this feature at runtime.
  * See groovy/lang/InterceptorTest.groovy for details.

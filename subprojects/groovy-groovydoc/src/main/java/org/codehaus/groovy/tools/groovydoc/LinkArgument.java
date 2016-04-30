@@ -38,7 +38,7 @@ public class LinkArgument {
     /**
      * Set the packages attribute.
      *
-     * @param packages the comma separated package prefixs corresponding to this link
+     * @param packages the comma separated package prefixes corresponding to this link
      */
     public void setPackages(String packages) {
         this.packages = packages;

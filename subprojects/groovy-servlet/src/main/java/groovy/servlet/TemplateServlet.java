@@ -223,7 +223,7 @@ public class TemplateServlet extends AbstractHttpServlet {
                 template = entry.template;
             } else {
                 if (verbose) {
-                    log("Cached template " + key + " needs recompiliation! " + entry);
+                    log("Cached template " + key + " needs recompilation! " + entry);
                 }
             }
         } else {
@@ -238,7 +238,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     /**
      * Compile the template and store it in the cache.
      * @param key a unique key for the template, such as a file's absolutePath or a URL.
-     * @param reader a reader for the template's source.
+     * @param inputStream an InputStream for the template's source.
      * @param file a file to be used to determine if the cached template is stale. May be null.
      * @return the created template.
      * @throws Exception Any exception when creating the template.

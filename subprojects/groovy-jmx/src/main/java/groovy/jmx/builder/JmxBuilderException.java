@@ -32,7 +32,7 @@ public class JmxBuilderException extends RuntimeException {
     }
 
     /**
-     * Parameterized consructor.
+     * Parameterized constructor.
      *
      * @param ex - exception message.
      */

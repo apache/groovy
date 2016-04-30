@@ -87,8 +87,8 @@ public class BenchmarkInterceptor implements Interceptor {
     }
 
     /**
-     *The call should be invoked seperately
-     *@return true
+     * The call should be invoked separately
+     * @return true
      */
     public boolean doInvoke() {
         return true;

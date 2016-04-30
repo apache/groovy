@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  * Simple server that executes supplied script against a socket.
  * <p>
  * Typically this is used from the groovy command line agent but it can be 
- * invoked programatically. To run this program from the command line please
+ * invoked programmatically. To run this program from the command line please
  * refer to the command line documentation at
  * <a href="http://docs.groovy-lang.org/docs/latest/html/documentation/#_running_groovy_from_the_commandline">
  * Running Groovy from the commandline</a>.

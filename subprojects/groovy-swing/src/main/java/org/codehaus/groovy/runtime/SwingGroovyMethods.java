@@ -272,7 +272,7 @@ public class SwingGroovyMethods {
      * Provide the standard Groovy <code>size()</code> method for <code>JComboBox</code>.
      *
      * @param self a JComboBox
-     * @return the intem count of the comboBox
+     * @return the item count of the comboBox
      * @since 1.6.4
      */
     public static int size(JComboBox self) {

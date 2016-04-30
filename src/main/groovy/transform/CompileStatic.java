@@ -28,7 +28,7 @@ import java.lang.annotation.*;
  * <p>
  * When a class is annotated, all methods, properties, files, inner classes, etc.
  * of the annotated class will be type checked. When a method is annotated, static
- * compilation applies only to items (closures and anonymous inner clsses) within
+ * compilation applies only to items (closures and anonymous inner classes) within
  * the method.
  * <p>
  * By using {@link TypeCheckingMode#SKIP}, static compilation can be skipped on an
