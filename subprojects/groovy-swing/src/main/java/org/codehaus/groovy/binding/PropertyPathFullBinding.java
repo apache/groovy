@@ -34,7 +34,7 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
     Set updateObjects = new HashSet();
 
     /**
-     * The root set of bind paths we are initested in
+     * The root set of bind paths we are interested in
      */
     BindPath[] bindPaths;
 

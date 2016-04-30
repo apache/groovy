@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * able to call methods from the class implementing the trait without having to declare
  * all of them as members of the trait.
  *
- * Self types are particularily useful in combination with {@link groovy.transform.CompileStatic},
+ * Self types are particularly useful in combination with {@link groovy.transform.CompileStatic},
  * if you know that a trait can only be applied to a specific type but that the trait cannot extend
  * that type itself. For example, imagine the following code:
  * <pre><code>

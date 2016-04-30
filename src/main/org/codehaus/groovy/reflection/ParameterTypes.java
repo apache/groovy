@@ -175,7 +175,7 @@ public class ParameterTypes
      * and if the method is a vargs method. This method will then transform the given
      * arguments to make the method callable
      *
-     * @param argumentArray the arguments used to call the method
+     * @param argumentArrayOrig the arguments used to call the method
      * @param paramTypes    the types of the parameters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArrayOrig, CachedClass[] paramTypes) {

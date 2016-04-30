@@ -57,7 +57,6 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
      * @param t the AST node to traverse
      * @param l A list to add line/col info to
      * @param itr An iterator over a list of line/col
-     * @return A decorated AST node
      */
     private void traverse(GroovySourceAST t,List l,Iterator itr) {
          while (t != null) {

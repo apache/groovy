@@ -46,7 +46,7 @@ public interface MetaClassRegistry {
     MetaClass getMetaClass(Class theClass);
     
     /**
-     *Adds a metaclass to the registery for the given class
+     * Adds a metaclass to the registry for the given class
      *
      * @param theClass The class
      * @param theMetaClass The MetaClass for theClass
@@ -173,7 +173,7 @@ public interface MetaClassRegistry {
         }
 
         /**
-         * Returns wether custom metaClasse is disabled.
+         * Returns whether custom meta classes are disabled.
          */
         public boolean isDisableCustomMetaClassLookup() {
             return disableCustomMetaClassLookup;

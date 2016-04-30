@@ -741,8 +741,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Returns wether this metaclassimpl has been modified. Since MetaClassImpl 
-     * is not designed for modificaiton this method always returns false
+     * Returns whether this MetaClassImpl has been modified. Since MetaClassImpl
+     * is not designed for modification this method always returns false
      *
      * @return false
      */
@@ -2786,7 +2786,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender The class of the object that requested the attribute
-     * @param object The instance the attribute is to retrived from
+     * @param object The instance the attribute is to be retrieved from
      * @param attribute The name of the attribute
      * @param useSuper Whether to look-up on the super class or not
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
@@ -3449,7 +3449,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Returns ClasInfo for the contained Class
+     * Returns the ClassInfo for the contained Class
      *
      * @return The ClassInfo for the contained class.
      */
