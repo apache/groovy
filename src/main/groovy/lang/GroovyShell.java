@@ -515,7 +515,11 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object run(GroovyCodeSource source, String[] args) throws CompilationFailedException {
         Class scriptClass = parseClass(source);
-        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
+        try {
+            return runScriptOrMainOrTestOrRunnable(scriptClass, args);
+        } finally {
+            InvokerHelper.removeClass(scriptClass);
+        }
     }
 
     /**
@@ -563,7 +567,11 @@ public class GroovyShell extends GroovyObjectSupport {
                     }
         });
         Class scriptClass = parseClass(gcs);
-        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
+        try {
+            return runScriptOrMainOrTestOrRunnable(scriptClass, args);
+        } finally {
+            InvokerHelper.removeClass(scriptClass);
+        }
     }
 
     public Object getVariable(String name) {
@@ -582,7 +590,11 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
-        return script.run();
+        try {
+            return script.run();
+        } finally {
+            InvokerHelper.removeClass(script.getClass());
+        }
     }
 
     /**
