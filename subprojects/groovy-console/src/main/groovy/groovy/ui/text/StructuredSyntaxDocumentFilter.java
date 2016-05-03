@@ -269,7 +269,11 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      */    
     public void replace(DocumentFilter.FilterBypass fb, int offset, 
                         int length, String text, AttributeSet attrs)
-        throws BadLocationException {
+        throws BadLocationException
+    {
+        // text might be null and indicates no replacement text
+        if (text == null) text = "";
+        
         // remove problem meta characters returns
         text = replaceMetaCharacters(text);
         
