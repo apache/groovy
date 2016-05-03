@@ -38,4 +38,21 @@ class ManagedDoubleKeyMapTest extends GroovyTestCase {
         assert map.fullSize() == 0
     }
 
+    void testPutForSameHashBucket() {
+        Object obj1 = new Object() { @Override public int hashCode() { return 42; } }
+        Object obj2 = new Object() { @Override public int hashCode() { return 42; } }
+        Object obj3 = new Object() { @Override public int hashCode() { return 42; } }
+
+        map.put(obj1, obj2, 'obj1')
+        map.put(obj2, obj1, 'obj2')
+        map.put(obj3, obj2, 'obj3')
+
+        assert map.size() == 3
+        assert map.fullSize() == 3
+
+        assert map.get(obj1, obj2) == 'obj1'
+        assert map.get(obj2, obj1) == 'obj2'
+        assert map.get(obj3, obj2) == 'obj3'
+    }
+
 }

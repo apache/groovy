@@ -140,9 +140,9 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
                         }
                         final Object[] newArr = new Object[arr.length+1];
                         final Entry<K1,K2,V> res = createEntry(key1,key2, hash);
-                        arr [0] = res;
+                        newArr[0] = res;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
-                        tab[index] = arr;
+                        tab[index] = newArr;
                         count++; // write-volatile
                         return res;
                     }
