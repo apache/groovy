@@ -19,6 +19,7 @@
 package org.codehaus.groovy.util;
 
 import java.lang.ref.ReferenceQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReferenceManager {
@@ -72,33 +73,56 @@ public class ReferenceManager {
         return new ReferenceManager(queue);
     }
     public static ReferenceManager createCallBackedManager(ReferenceQueue queue) {
-        return new ReferenceManager(queue){
-            @Override
-            public void removeStallEntries() {
-                ReferenceQueue queue = getReferenceQueue();
-                for(;;) {
-                    java.lang.ref.Reference r = queue.poll();
-                    if (r==null) break;
-                    
-                    if (r instanceof Reference) {
-                        Reference ref = (Reference) r;
-                        Finalizable holder = ref.getHandler();
-                        if (holder!=null) holder.finalizeReference();
-                    }
-                    r.clear();
-                    r=null;
+        return new CallBackedManager(queue);
+    }
+
+    private static class CallBackedManager extends ReferenceManager {
+
+        private static final ConcurrentHashMap<ReferenceQueue, ReferenceManager> queuesInProcess =
+                new ConcurrentHashMap<ReferenceQueue, ReferenceManager>(4, 0.9f, 2);
+
+        public CallBackedManager(ReferenceQueue queue) {
+            super(queue);
+        }
+
+        @Override
+        public void removeStallEntries() {
+            ReferenceQueue queue = getReferenceQueue();
+            if (queuesInProcess.putIfAbsent(queue, this) == null) {
+                try {
+                    removeStallEntries0(queue);
+                } finally {
+                    queuesInProcess.remove(queue);
                 }
             }
-            @Override
-            public void afterReferenceCreation(Reference r) {
-                removeStallEntries();
+        }
+
+        private static void removeStallEntries0(ReferenceQueue queue) {
+            for(;;) {
+                java.lang.ref.Reference r = queue.poll();
+                if (r==null) break;
+
+                if (r instanceof Reference) {
+                    Reference ref = (Reference) r;
+                    Finalizable holder = ref.getHandler();
+                    if (holder!=null) holder.finalizeReference();
+                }
+                r.clear();
+                r=null;
             }
-            @Override
-            public String toString() {
-                return "ReferenceManager(callback)";
-            }
-        };
+        }
+
+        @Override
+        public void afterReferenceCreation(Reference r) {
+            removeStallEntries();
+        }
+
+        @Override
+        public String toString() {
+            return "ReferenceManager(callback)";
+        }
     }
+
     public static ReferenceManager createThresholdedIdlingManager(final ReferenceQueue queue, final ReferenceManager callback, final int threshold) {
         if (threshold<0) throw new IllegalArgumentException("threshold must not be below 0.");
        

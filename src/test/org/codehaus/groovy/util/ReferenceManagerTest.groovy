@@ -97,6 +97,23 @@ class ReferenceManagerTest extends GroovyTestCase {
         assert finalizeCounter == 4
     }
 
+    void testCallbackManagerGuardsAgainstRecursiveQueueProcessing() {
+        // Populate queue with enough references that call back into removeStallEntries
+        // so that would normally generate a StackOverflowError
+        10000.times {
+            TestReference<Object> ref = new TestReference<Object>(new Object(), new Finalizable() {
+                @Override
+                void finalizeReference() {
+                    callback.removeStallEntries()
+                }
+            })
+            queue.add(ref)
+        }
+        callback.removeStallEntries()
+        // Success if we made it this far with no StackOverflowError
+        assert queue.size() == 0
+    }
+
     private static class TestQueue<T> extends ReferenceQueue<T> {
 
         final List<T> entries = []
