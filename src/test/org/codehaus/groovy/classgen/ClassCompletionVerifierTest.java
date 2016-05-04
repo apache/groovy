@@ -73,11 +73,20 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Method 'prom' is protected but should be public in interface 'zzz'.";
     private static final String EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE =
             "Method 'prim' is private but should be public in interface 'zzz'.";
+    private static final String EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE =
+            "Method 'y' from class 'X' must not be private as it is declared as abstract method.";
 
     protected void setUp() throws Exception {
         super.setUp();
         source = SourceUnit.create("dummy.groovy", "");
         verifier = new ClassCompletionVerifier(source);
+    }
+
+    public void testDetectsAbstractPrivateMethod() throws Exception {
+        ClassNode node = new ClassNode("X", ACC_ABSTRACT, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("y", ACC_PRIVATE | ACC_ABSTRACT, ClassHelper.VOID_TYPE, new Parameter[0], ClassNode.EMPTY_ARRAY, null));
+        verifier.visitClass(node);
+        checkErrorMessage(EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsFinalAbstractClass() throws Exception {
