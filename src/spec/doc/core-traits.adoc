@@ -199,8 +199,7 @@ WARNING: While traits support public fields, it is not recommended to use them a
 
 == Composition of behaviors
 
-Traits can be used to implement multiple inheritance in a controlled way, avoiding the diamond issue. For example, we
-can have the following traits:
+Traits can be used to implement multiple inheritance in a controlled way. For example, we can have the following traits:
 
 [source,groovy]
 ----
