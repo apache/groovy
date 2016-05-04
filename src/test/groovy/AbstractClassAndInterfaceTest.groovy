@@ -260,4 +260,67 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         """
         shouldNotCompile scriptStr
     }
+
+    void testAbstractClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            abstract class X {
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testAbstractClassWithPrivateAbstractMethods() {
+        def msg = shouldNotCompile """
+            abstract class X {
+                private abstract void y()
+                private abstract void z()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Method 'z' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testAbstractNestedClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            class Z {
+                abstract class X {
+                    private abstract void y()
+                }
+            }
+        """
+        assert msg.contains("Method 'y' from class 'Z\$X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            class X {
+                private abstract void y()
+            }
+        """
+        assert !msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Can't have an abstract method in a non-abstract class. The class 'X' must be declared abstract or the method 'void y()' must be implemented.")
+    }
+
+    void testEnumWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            enum X {
+                CONST {
+                    private void y() { }
+                }
+
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testInterfaceWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            interface X {
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' is private but should be public in interface 'X'.")
+    }
 }
