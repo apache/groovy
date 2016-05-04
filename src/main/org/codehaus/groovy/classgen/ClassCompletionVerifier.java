@@ -68,6 +68,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (source != null && !source.getErrorCollector().hasErrors()) {
             checkClassForIncorrectModifiers(node);
             checkInterfaceMethodVisibility(node);
+            checkAbstractMethodVisibility(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForIncorrectModifiers(node);
             checkMethodsForWeakerAccess(node);
@@ -123,6 +124,21 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 addError("Method '" + method.getName() + "' is private but should be public in " + getDescription(currentClass) + ".", method);
             } else if (method.isProtected()) {
                 addError("Method '" + method.getName() + "' is protected but should be public in " + getDescription(currentClass) + ".", method);
+            }
+        }
+    }
+
+    private void checkAbstractMethodVisibility(ClassNode node) {
+        // we only do check abstract classes (including enums), no interfaces or non-abstract classes
+        if (!isAbstract(node.getModifiers()) || isInterface(node.getModifiers())) return;
+
+        List<MethodNode> abstractMethods = node.getAbstractMethods();
+        if (abstractMethods == null || abstractMethods.isEmpty()) return;
+
+        for (MethodNode method : abstractMethods) {
+            if (method.isPrivate()) {
+                addError("Method '" + method.getName() + "' from " + getDescription(node) +
+                        " must not be private as it is declared as an abstract method.", method);
             }
         }
     }
