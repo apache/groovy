@@ -137,6 +137,29 @@ assert new MyConcreteClass() != null"""
         }
     }
 
+    void testGroovyASTDump() {
+
+        def temporaryDirectory = new File("target/tmp/testGroovyXMLAstGeneration/")
+        temporaryDirectory.mkdirs()
+
+        def scriptFile = new File(temporaryDirectory, "Script1.groovy")
+        scriptFile.deleteOnExit()
+
+        scriptFile << "assert 1 + 1 == 2"
+
+        try {
+            System.setProperty('groovy.ast', 'xml')
+
+            GroovyMain.main([scriptFile.absolutePath] as String[])
+
+            assert new File(temporaryDirectory, scriptFile.name + '.xml').exists()
+        } finally {
+            temporaryDirectory.deleteDir()
+
+            System.clearProperty('groovy.ast')
+        }
+    }
+
     // This works for a URL in the classpath, but there isn't a way to do this from the command line.
 //    public void testConfigURIClasspath() {
 //        URI baseURI = new URI("https://raw.github.com/jimwhite/groovy-snippets/master/GROOVY-6451/")
