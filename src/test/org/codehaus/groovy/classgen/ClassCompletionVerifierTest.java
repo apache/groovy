@@ -74,7 +74,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
     private static final String EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE =
             "Method 'prim' is private but should be public in interface 'zzz'.";
     private static final String EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE =
-            "Method 'y' from class 'X' must not be private as it is declared as abstract method.";
+            "Method 'y' from class 'X' must not be private as it is declared as an abstract method.";
 
     protected void setUp() throws Exception {
         super.setUp();

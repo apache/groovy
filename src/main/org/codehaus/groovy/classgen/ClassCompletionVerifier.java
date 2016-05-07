@@ -138,7 +138,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode method : abstractMethods) {
             if (method.isPrivate()) {
                 addError("Method '" + method.getName() + "' from " + getDescription(node) +
-                        " must not be private as it is declared as abstract method.", method);
+                        " must not be private as it is declared as an abstract method.", method);
             }
         }
     }

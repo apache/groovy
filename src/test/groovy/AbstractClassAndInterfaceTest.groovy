@@ -267,7 +267,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 private abstract void y()
             }
         """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as abstract method.")
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
     }
 
     void testAbstractClassWithPrivateAbstractMethods() {
@@ -277,8 +277,8 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 private abstract void z()
             }
         """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as abstract method.")
-        assert msg.contains("Method 'z' from class 'X' must not be private as it is declared as abstract method.")
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Method 'z' from class 'X' must not be private as it is declared as an abstract method.")
     }
 
     void testAbstractNestedClassWithPrivateAbstractMethod() {
@@ -289,7 +289,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 }
             }
         """
-        assert msg.contains("Method 'y' from class 'Z\$X' must not be private as it is declared as abstract method.")
+        assert msg.contains("Method 'y' from class 'Z\$X' must not be private as it is declared as an abstract method.")
     }
 
     void testClassWithPrivateAbstractMethod() {
@@ -298,7 +298,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 private abstract void y()
             }
         """
-        assert !msg.contains("Method 'y' from class 'X' must not be private as it is declared as abstract method.")
+        assert !msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
         assert msg.contains("Can't have an abstract method in a non-abstract class. The class 'X' must be declared abstract or the method 'void y()' must be implemented.")
     }
 
@@ -312,7 +312,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 private abstract void y()
             }
         """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as abstract method.")
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
     }
 
     void testInterfaceWithPrivateAbstractMethod() {
