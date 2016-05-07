@@ -339,7 +339,10 @@ class GrapeIvy implements GrapeEngine {
 
     void processRunners(InputStream is, String name, ClassLoader loader) {
         is.text.readLines().each {
-            GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it.trim()).newInstance()
+            def line = it.trim()
+            if (!line.startsWith("#")) {
+                GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(line).newInstance()
+            }
         }
     }
 
