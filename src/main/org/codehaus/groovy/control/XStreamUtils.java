@@ -21,17 +21,44 @@ package org.codehaus.groovy.control;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
+import java.io.File;
 import java.io.FileWriter;
+import java.net.URI;
 
 public abstract class XStreamUtils {
+
     public static void serialize(final String name, final Object ast) {
+        if (name == null || name.length() == 0) return;
+
         XStream xstream = new XStream(new StaxDriver());
         try {
-            xstream.toXML(ast, new FileWriter(name + ".xml"));
+            File astFile = astFile(name);
+            if (astFile == null) {
+                System.out.println("File-name for writing " + name + " AST could not be determined!");
+                return;
+            }
+
+            xstream.toXML(ast, new FileWriter(astFile, false));
             System.out.println("Written AST to " + name + ".xml");
+
         } catch (Exception e) {
             System.out.println("Couldn't write to " + name + ".xml");
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Takes the incoming file-name and checks whether this is a URI using the <tt>file:</tt> protocol or a non-URI and treats
+     * it accordingly.
+     *
+     * @return a file-name {@link java.io.File} representation or <tt>null</tt> if the file-name was in an invalid URI format
+     */
+    private static File astFile(final String uriOrFileName) {
+        try {
+            final String astFileName = uriOrFileName + ".xml";
+            return uriOrFileName.startsWith("file:") ? new File(URI.create(astFileName)) : new File(astFileName);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 }
