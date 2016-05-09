@@ -185,14 +185,20 @@ class GrapeIvy implements GrapeEngine {
                 throw new RuntimeException("No suitable ClassLoader found for grab")
             }
         }
+        // use the highest available valid loader in hierarchy
+        // (assuming they are all connected), so that
+        // e.g. Groovysh can pick up new classes for import tab completion
+        while (isValidTargetClassLoaderClass(loader.getParent()?.class)) {
+            loader = loader.parent
+        }
         return loader
     }
 
-    private boolean isValidTargetClassLoader(loader) {
+    private static boolean isValidTargetClassLoader(ClassLoader loader) {
         return isValidTargetClassLoaderClass(loader?.class)
     }
 
-    private boolean isValidTargetClassLoaderClass(Class loaderClass) {
+    private static boolean isValidTargetClassLoaderClass(Class loaderClass) {
         return (loaderClass != null) &&
             (
              (loaderClass.name == 'groovy.lang.GroovyClassLoader') ||

@@ -16,13 +16,38 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.codehaus.groovy.tools.shell.commands
 
-interface PackageHelper {
+import jline.console.completer.Completer
+import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 
-    public static final String IMPORT_COMPLETION_PREFERENCE_KEY = 'disable-import-completion'
+/**
+ * The 'rescan' command.
+ *
+ * @author Thibault Kruse
+ */
+class RescanCommand
+    extends CommandSupport
+{
+    public static final String COMMAND_NAME = ':rescan'
 
-    Set<String> getContents(final String packagename)
+    RescanCommand(final Groovysh shell) {
+        super(shell, COMMAND_NAME, ':+')
+    }
 
-    void reset()
+    @Override
+    protected List<Completer> createCompleters() {
+        return []
+    }
+
+    @Override
+    Object execute(final List<String> args) {
+        assert args != null
+
+        if (args.size() > 0) {
+            fail("Command '$COMMAND_NAME' requires no arguments") // TODO: i18n
+        }
+        shell.packageHelper.reset()
+    }
 }

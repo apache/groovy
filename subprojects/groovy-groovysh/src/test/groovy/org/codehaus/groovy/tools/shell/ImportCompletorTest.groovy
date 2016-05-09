@@ -39,6 +39,9 @@ class MockPackageHelper implements PackageHelper {
     Set<String> getContents(String packagename) {
         return mockContents
     }
+
+    void reset() {
+    }
 }
 
 class ImportCompleterUnitTest extends GroovyTestCase {
