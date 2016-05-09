@@ -123,8 +123,6 @@ public @interface MapConstructor {
 
     /**
      * Whether to include all fields and/or properties within the constructor, including those with names that are considered internal.
-     *
-     * @since 2.5.0
      */
     boolean allNames() default false;
 }
