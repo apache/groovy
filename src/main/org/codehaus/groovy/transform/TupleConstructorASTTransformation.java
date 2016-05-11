@@ -28,12 +28,14 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -51,10 +53,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
@@ -118,7 +122,25 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
-            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames);
+            Expression pre = anno.getMember("pre");
+            if (pre != null && !(pre instanceof ClosureExpression)) {
+                addError("Expected closure value for annotation parameter 'pre'. Found " + pre, cNode);
+                return;
+            }
+            Expression post = anno.getMember("post");
+            if (post != null && !(post instanceof ClosureExpression)) {
+                addError("Expected closure value for annotation parameter 'post'. Found " + post, cNode);
+                return;
+            }
+            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
+                    callSuper, force, excludes, includes, useSetters, defaults, allNames, sourceUnit,
+                    (ClosureExpression) pre, (ClosureExpression) post);
+            if (pre != null) {
+                anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+            }
+            if (post != null) {
+                anno.setMember("post", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+            }
         }
     }
 
@@ -131,6 +153,16 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters, boolean defaults, boolean allNames) {
+        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
+                callSuper, force, excludes, includes, useSetters, defaults, false, null, null, null);
+    }
+
+    public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
+                                         boolean includeProperties, boolean includeSuperFields, boolean
+                                                 includeSuperProperties, boolean callSuper, boolean force,
+                                         List<String> excludes, List<String> includes, boolean useSetters, boolean
+                                                 defaults, boolean allNames, SourceUnit sourceUnit, ClosureExpression
+                                                 pre, ClosureExpression post) {
         // no processing if existing constructors found
         if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
@@ -152,6 +184,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         final List<Parameter> params = new ArrayList<Parameter>();
         final List<Expression> superParams = new ArrayList<Expression>();
+        final BlockStatement preBody = new BlockStatement();
+        boolean superInPre = false;
+        if (pre != null) {
+            superInPre = copyStatementsWithSuperAdjustment(pre, preBody);
+            if (superInPre && callSuper) {
+                xform.addError("Error during " + MY_TYPE_NAME + " processing, can't have a super call in 'pre' " +
+                        "closure and also 'callSuper' enabled", cNode);
+            }
+        }
         final BlockStatement body = new BlockStatement();
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
@@ -160,7 +201,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
                 superParams.add(varX(name));
-            } else {
+            } else if (!superInPre) {
                 if (useSetters && hasSetter) {
                     body.addStatement(stmt(callThisX(getSetterName(name), varX(name))));
                 } else {
@@ -170,6 +211,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
         if (callSuper) {
             body.addStatement(stmt(ctorX(ClassNode.SUPER, args(superParams))));
+        }
+        if (!preBody.isEmpty()) {
+            body.addStatements(preBody.getStatements());
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
@@ -183,7 +227,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 body.addStatement(assignS(propX(varX("this"), name), varX(nextParam)));
             }
         }
+        if (post != null) {
+            body.addStatement(post.getCode());
+        }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
+        if (sourceUnit != null && !body.isEmpty()) {
+            VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
+            scopeVisitor.visitClass(cNode);
+        }
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
         if (!params.isEmpty() && defaults) {
@@ -204,10 +255,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 }
             }
         }
-    }
-
-    private static String getSetterName(String name) {
-        return "set" + Verifier.capitalize(name);
     }
 
     private static Parameter createParam(FieldNode fNode, String name, boolean defaults, AbstractASTTransformation xform) {

@@ -213,8 +213,9 @@ public @interface TupleConstructor {
     boolean includeSuperProperties() default false;
 
     /**
-     * Should super properties be called within a call to the parent constructor.
-     * rather than set as properties
+     * Should super properties be called within a call to the parent constructor
+     * rather than set as properties. Typically used in combination with {@code includeSuperProperties}.
+     * Can't be true if using {@code pre} with a {@code super} first statement.
      */
     boolean callSuper() default false;
 
@@ -259,4 +260,19 @@ public @interface TupleConstructor {
      * @since 2.5.0
      */
     boolean allNames() default false;
+
+    /**
+     * A Closure containing statements which will be prepended to the generated constructor. The first statement
+     * within the Closure may be {@code super(someArgs)} in which case the no-arg super constructor won't be called.
+     *
+     * @since 2.5.0
+     */
+    Class pre();
+
+    /**
+     * A Closure containing statements which will be appended to the end of the generated constructor. Useful for validation steps or tweaking the populated fields/properties.
+     *
+     * @since 2.5.0
+     */
+    Class post();
 }

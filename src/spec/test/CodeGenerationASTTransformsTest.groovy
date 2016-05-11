@@ -721,6 +721,38 @@ def p = new Person('Jack')
 assert p.$firstName == 'Jack'
 // end::tupleconstructor_example_allNames[]
 '''
+
+        assertScript '''
+// tag::tupleconstructor_example_pre[]
+import groovy.transform.TupleConstructor
+
+@TupleConstructor(pre={ first = first?.toLowerCase() })
+class Person {
+    String first
+}
+
+def p = new Person('Jack')
+
+assert p.first == 'jack'
+// end::tupleconstructor_example_pre[]
+'''
+
+        assertScript '''
+// tag::tupleconstructor_example_post[]
+import groovy.transform.TupleConstructor
+import static groovy.test.GroovyAssert.shouldFail
+
+@TupleConstructor(post={ assert first })
+class Person {
+    String first
+}
+
+def jack = new Person('Jack')
+shouldFail {
+  def unknown = new Person()
+}
+// end::tupleconstructor_example_post[]
+'''
     }
 
     void testMapConstructor() {
