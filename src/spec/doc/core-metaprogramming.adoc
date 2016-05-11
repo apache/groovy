@@ -980,6 +980,16 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_allNames,indent=0]
 ----
+|pre|empty|A closure containing statements to be inserted at the start of the generated constructor(s)|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_pre,indent=0]
+----
+|post|empty|A closure containing statements to be inserted at the end of the generated constructor(s)|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_post,indent=0]
+----
 |=======================================================================
 
 Setting the `defaults` annotation attribute to `false` and the `force` annotation attribute to `true` allows

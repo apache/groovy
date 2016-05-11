@@ -736,4 +736,35 @@ public class GeneralUtils {
 
         return source;
     }
+
+    public static boolean copyStatementsWithSuperAdjustment(ClosureExpression pre, BlockStatement body) {
+        Statement preCode = pre.getCode();
+        boolean changed = false;
+        if (preCode instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) preCode;
+            List<Statement> statements = block.getStatements();
+            for (int i = 0; i < statements.size(); i++) {
+                Statement statement = statements.get(i);
+                // adjust the first statement if it's a super call
+                if (i == 0 && statement instanceof ExpressionStatement) {
+                    ExpressionStatement es = (ExpressionStatement) statement;
+                    Expression preExp = es.getExpression();
+                    if (preExp instanceof MethodCallExpression) {
+                        MethodCallExpression mce = (MethodCallExpression) preExp;
+                        String name = mce.getMethodAsString();
+                        if ("super".equals(name)) {
+                            es.setExpression(new ConstructorCallExpression(ClassNode.SUPER, mce.getArguments()));
+                            changed = true;
+                        }
+                    }
+                }
+                body.addStatement(statement);
+            }
+        }
+        return changed;
+    }
+
+    public static String getSetterName(String name) {
+        return "set" + Verifier.capitalize(name);
+    }
 }
