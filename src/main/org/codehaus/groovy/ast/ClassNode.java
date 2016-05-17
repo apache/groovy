@@ -1346,6 +1346,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return (getModifiers() & Opcodes.ACC_INTERFACE) > 0;
     }
 
+    public boolean isAbstract(){
+        return (getModifiers() & Opcodes.ACC_ABSTRACT) > 0;
+    }
+
     public boolean isResolved() {
         if (clazz != null) return true;
         if (redirect != null) return redirect.isResolved();
