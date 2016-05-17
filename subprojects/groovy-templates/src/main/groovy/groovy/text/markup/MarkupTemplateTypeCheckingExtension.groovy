@@ -194,7 +194,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         dummyClass.addMethod(dummyMN);
         ResolveVisitor visitor = new ResolveVisitor(ctx.compilationUnit) {
             @Override
-            protected void addError(final String msg, final ASTNode expr) {
+            public void addError(final String msg, final ASTNode expr) {
                 ctx.errorCollector.addErrorAndContinue(new SyntaxErrorMessage(
                         new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
                         ctx.source)

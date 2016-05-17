@@ -118,7 +118,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             for (AnnotationNode annotation : annotations) {
                 // GROOVY-6337 HACK: in case newly created field is @Lazy
                 if (annotation.getClassNode().equals(LAZY_TYPE)) {
-                    LazyASTTransformation.visitField(annotation, fieldNode);
+                    LazyASTTransformation.visitField(this, annotation, fieldNode);
                 }
                 final ClassNode annotationClassNode = annotation.getClassNode();
                 if (notTransform(annotationClassNode) || acceptableTransform(annotation)) {

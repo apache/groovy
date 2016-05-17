@@ -50,7 +50,7 @@ import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyNames;
 
-public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
+public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
 
     protected SourceUnit sourceUnit;

@@ -554,7 +554,7 @@ public class GenericsUtils {
         dummyClass.addMethod(dummyMN);
         ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
             @Override
-            protected void addError(final String msg, final ASTNode expr) {
+            public void addError(final String msg, final ASTNode expr) {
                 sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
             }
         };

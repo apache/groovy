@@ -63,7 +63,7 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
         // do nothing here, leave it to the normal resolving
     }
 
-    protected void addError(String msg, ASTNode expr) {
+    public void addError(String msg, ASTNode expr) {
         // do nothing here, leave it to the normal resolving
     }
 }

@@ -149,6 +149,20 @@ class LazyTransformTest extends GroovyShellTestCase {
         assert Modifier.isVolatile(res.class.getDeclaredField('$val2').modifiers)
     }
 
+    void testAbstractClassShouldNotCompile() {
+        def message = shouldFail {
+            new GroovyShell().run('''
+                abstract class Foo {}
+                class Demo {
+                    @Lazy Foo foo
+                }
+
+                new Demo().foo
+            ''', 'dummyFileName', [])
+        }
+        assert message.contains("You cannot lazily initialize 'foo' from the abstract class 'Foo'")
+    }
+
     void testSoft() {
         def res = evaluate("""
               class X {

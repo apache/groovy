@@ -4603,7 +4603,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    protected void addError(final String msg, final ASTNode expr) {
+    public void addError(final String msg, final ASTNode expr) {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && expr.getLineNumber()<0) || !typeCheckingContext.reportedErrors.contains(err)) {
             typeCheckingContext.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
