@@ -151,6 +151,14 @@ public abstract class NumberMath {
         return number instanceof Integer;
     }
 
+    public static boolean isShort(Number number) {
+        return number instanceof Short;
+    }
+
+    public static boolean isByte(Number number) {
+        return number instanceof Byte;
+    }
+
     public static boolean isLong(Number number) {
         return number instanceof Long;
     }
@@ -188,19 +196,27 @@ public abstract class NumberMath {
      * the result is BigDecimal
      */
     public static NumberMath getMath(Number left, Number right) {
+        // FloatingPointMath wins according to promotion Matrix
         if (isFloatingPoint(left) || isFloatingPoint(right)) {
             return FloatingPointMath.INSTANCE;
         }
-        if (isBigDecimal(left) || isBigDecimal(right)) {
+        NumberMath leftMath = getMath(left);
+        NumberMath rightMath = getMath(right);
+
+        if (leftMath == BigDecimalMath.INSTANCE || rightMath == BigDecimalMath.INSTANCE) {
             return BigDecimalMath.INSTANCE;
         }
-        if (isBigInteger(left) || isBigInteger(right)) {
+        if (leftMath == BigIntegerMath.INSTANCE || rightMath == BigIntegerMath.INSTANCE) {
             return BigIntegerMath.INSTANCE;
         }
-        if (isLong(left) || isLong(right)){
+        if (leftMath == LongMath.INSTANCE || rightMath == LongMath.INSTANCE) {
             return LongMath.INSTANCE;
         }
-        return IntegerMath.INSTANCE;
+        if (leftMath == IntegerMath.INSTANCE || rightMath == IntegerMath.INSTANCE) {
+            return IntegerMath.INSTANCE;
+        }
+        // also for custom Number implementations
+        return BigDecimalMath.INSTANCE;
     }
 
     private static NumberMath getMath(Number number) {
@@ -209,14 +225,18 @@ public abstract class NumberMath {
         }
         if (isFloatingPoint(number)) {
             return FloatingPointMath.INSTANCE;
-        }            
+        }
         if (isBigDecimal(number)) {
             return BigDecimalMath.INSTANCE;
         }
         if (isBigInteger(number)) {
             return BigIntegerMath.INSTANCE;
         }
-        return IntegerMath.INSTANCE;
+        if (isInteger(number) || isShort(number) || isByte(number)) {
+            return IntegerMath.INSTANCE;
+        }
+        // also for custom Number implementations
+        return BigDecimalMath.INSTANCE;
     }
     
     //Subclasses implement according to the type promotion hierarchy rules
