@@ -94,7 +94,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private URL[] roots;
     private ResourceConnector rc;
     private final ClassLoader parentLoader;
-    private final GroovyClassLoader groovyLoader;
+    private GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
     private CompilerConfiguration config;
 
@@ -366,7 +366,8 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @return the parent classloader used to load scripts
      */
     private GroovyClassLoader initGroovyLoader() {
-        return (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+        GroovyClassLoader groovyClassLoader =
+            (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 if (parentLoader instanceof GroovyClassLoader) {
                     return new ScriptClassLoader((GroovyClassLoader) parentLoader);
@@ -375,6 +376,8 @@ public class GroovyScriptEngine implements ResourceConnector {
                 }
             }
         });
+        for (URL root : roots) groovyClassLoader.addURL(root);
+        return groovyClassLoader;
     }
 
     /**
@@ -484,7 +487,6 @@ public class GroovyScriptEngine implements ResourceConnector {
         if (parent == CL_STUB) parent = this.getClass().getClassLoader();
         this.parentLoader = parent;
         this.groovyLoader = initGroovyLoader();
-        for (URL root : roots) this.groovyLoader.addURL(root);
     }
 
     public GroovyScriptEngine(URL[] roots) {
@@ -689,6 +691,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public void setConfig(CompilerConfiguration config) {
         if (config == null) throw new NullPointerException("configuration cannot be null");
         this.config = config;
+        this.groovyLoader = initGroovyLoader();
     }
 
     protected long getCurrentTime() {

@@ -53,7 +53,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
            }
        }
    }
-    
+
     private void sleep(int i) {
         gse.@time += i;
     }
@@ -335,6 +335,22 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
            GroovyScriptEngine gse = new GroovyScriptEngine(emptyScriptRoots)
            gse.run("unknownScriptName", "")
        }
+   }
+
+   /** GROOVY-6203 */
+   void testGSEBaseClass() {
+       CompilerConfiguration cc = new CompilerConfiguration()
+       cc.setScriptBaseClass(CustomBaseClass.name)
+
+       makeGSE(null)
+       gse.setConfig(cc)
+
+       MapFileSystem.instance.modFile(
+               "Groovy6203Helper.groovy",
+               'println "Hello Guillaume, is it a Groovy day?"',0)
+
+       def script = gse.createScript("Groovy6203Helper.groovy", new Binding())
+       assert script instanceof CustomBaseClass
    }
 
    /** GROOVY-4013 */
