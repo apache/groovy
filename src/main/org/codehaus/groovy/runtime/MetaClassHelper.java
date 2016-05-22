@@ -429,14 +429,14 @@ public class MetaClassHelper {
             CachedClass baseType = parameters[noVargsLength]; // case C
             if (!parameters[noVargsLength].isAssignableFrom(arguments[noVargsLength])) {
                 baseType = ReflectionCache.getCachedClass(baseType.getTheClass().getComponentType()); // case D
-                ret += 2l << VARGS_SHIFT; // penalty for vargs
+                ret += 2L << VARGS_SHIFT; // penalty for vargs
             }
             ret += calculateParameterDistance(arguments[noVargsLength], baseType);
         } else if (arguments.length > parameters.length) {
             // case B
             // we give our a vargs penalty for each exceeding argument and iterate
             // by using parameters[noVargsLength].getComponentType()
-            ret += (2l + arguments.length - parameters.length) << VARGS_SHIFT; // penalty for vargs
+            ret += (2L + arguments.length - parameters.length) << VARGS_SHIFT; // penalty for vargs
             CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getTheClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
                 ret += calculateParameterDistance(arguments[i], vargsType);
@@ -445,7 +445,7 @@ public class MetaClassHelper {
             // case A
             // we give a penalty for vargs, since we have no direct
             // match for the last argument
-            ret += 1l << VARGS_SHIFT;
+            ret += 1L << VARGS_SHIFT;
         }
 
         return ret;
