@@ -253,7 +253,7 @@ Example
 groovy:000> class Foo {
 groovy:001> def bar
 groovy:002> def baz() {
-groovy:003> display
+groovy:003> :display
  001> class Foo {
  002> def bar
  003> def baz() {
