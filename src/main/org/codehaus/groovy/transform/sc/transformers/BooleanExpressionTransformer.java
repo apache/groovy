@@ -134,15 +134,19 @@ public class BooleanExpressionTransformer {
                             // int on stack
                         } else if (top.equals(ClassHelper.long_TYPE)) {
                             MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(L2I);
+                            mv.visitInsn(LCONST_0);
+                            mv.visitInsn(LCMP);
                             controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                         } else if (top.equals(ClassHelper.float_TYPE)) {
                             MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(F2I);
+                            mv.visitInsn(F2D);
+                            mv.visitInsn(DCONST_0);
+                            mv.visitInsn(DCMPG);
                             controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                         } else if (top.equals(ClassHelper.double_TYPE)) {
                             MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(D2I);
+                            mv.visitInsn(DCONST_0);
+                            mv.visitInsn(DCMPG);
                             controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                         }
                         return;
