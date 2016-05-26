@@ -2352,10 +2352,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extractGenericsConnections(targetMethodDeclarationClassConnections, receiver, receiver.redirect());
         // then we use the method with the SAM parameter to get more information about the declaration
         Parameter[] parametersOfMethodContainingSAM = methodWithSAMParameter.getParameters();
-        for (int i=0; i<parametersOfMethodContainingSAM.length; i++) {
+        for (int i = 0; i < parametersOfMethodContainingSAM.length; i++) {
+            // potentially skip empty varargs
+            if (i == parametersOfMethodContainingSAM.length - 1
+                    && i == originalMethodCallArguments.getExpressions().size()
+                    && parametersOfMethodContainingSAM[i].getType().isArray())
+                continue;
             Expression callArg = originalMethodCallArguments.getExpression(i);
             // we look at the closure later in detail, so skip it here
-            if (callArg==openBlock) continue;
+            if (callArg == openBlock) continue;
             ClassNode parameterType = parametersOfMethodContainingSAM[i].getType();
             extractGenericsConnections(targetMethodDeclarationClassConnections, getType(callArg), parameterType);
         }
