@@ -1446,5 +1446,22 @@ println someInt
             assert 0.1d
         '''
     }
+
+    // GROOVY-7784
+    void testWithSamAndEmptyVarArgs() {
+        assertScript '''
+            class Foo {
+                static foo(Integer x, Iterable y, String... z) { y.join('-') }
+            }
+
+            class Groovy7784 {
+                static emptyVarArgs() {
+                    Foo.foo(42, { ['foo', 'bar'].iterator() })
+                }
+            }
+
+            assert Groovy7784.emptyVarArgs() == 'foo-bar'
+        '''
+    }
 }
 
