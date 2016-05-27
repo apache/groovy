@@ -1448,19 +1448,21 @@ println someInt
     }
 
     // GROOVY-7784
-    void testWithSamAndEmptyVarArgs() {
+    void testWithSamAndVarArgs() {
         assertScript '''
             class Foo {
-                static foo(Integer x, Iterable y, String... z) { y.join('-') }
+                static foo(Integer x, Iterable y, String... z) { [*y.toList(), *z].join('-') }
             }
 
             class Groovy7784 {
-                static emptyVarArgs() {
-                    Foo.foo(42, { ['foo', 'bar'].iterator() })
-                }
+                static emptyVarArgs() { Foo.foo(42, { ['foo', 'bar'].iterator() }) }
+                static singleVarArgs() { Foo.foo(42, { ['foo', 'bar'].iterator() }, 'baz') }
+                static multiVarArgs() { Foo.foo(42, { ['foo', 'bar'].iterator() }, 'baz1', 'baz2') }
             }
 
             assert Groovy7784.emptyVarArgs() == 'foo-bar'
+            assert Groovy7784.singleVarArgs() == 'foo-bar-baz'
+            assert Groovy7784.multiVarArgs() == 'foo-bar-baz1-baz2'
         '''
     }
 }
