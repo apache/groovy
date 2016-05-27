@@ -62,7 +62,6 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
@@ -282,8 +281,6 @@ public abstract class TraitComposer {
         mce.setImplicitThis(false);
 
         genericsSpec = GenericsUtils.addMethodGenerics(helperMethod,genericsSpec);
-        Map<String,ClassNode> methodSpec = new HashMap<String, ClassNode>();
-        methodSpec = GenericsUtils.addMethodGenerics(helperMethod,methodSpec);
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
@@ -323,6 +320,9 @@ public abstract class TraitComposer {
         else {
             GenericsType[] genericsTypes = helperMethod.getGenericsTypes();
             if(genericsTypes != null) {
+                Map<String,ClassNode> methodSpec = new HashMap<String, ClassNode>();
+                methodSpec = GenericsUtils.addMethodGenerics(helperMethod,methodSpec);
+
                 GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(methodSpec, helperMethod.getGenericsTypes());
                 forwarder.setGenericsTypes(newGt);
             }
