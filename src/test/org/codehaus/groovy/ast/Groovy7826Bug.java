@@ -30,7 +30,7 @@ public class Groovy7826Bug extends GroovyTestCase {
     config.getOptimizationOptions().put("asmResolving", false);
 
     GroovyShell shell = new GroovyShell(config);
-    shell.evaluate(script, "bug7862.groovy");
+    shell.evaluate(script, "bug7826.groovy");
   }
 
   public static class C1<T2 extends C2<T2, T1>, T1 extends C1<T2, T1>> {
