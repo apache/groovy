@@ -253,9 +253,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String capitalize(CharSequence self) {
-        String s = self.toString();
-        if (s == null || s.length() == 0) return s;
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+        if (self.length() == 0) return "";
+        return "" + Character.toUpperCase(self.charAt(0)) + self.subSequence(1, self.length());
     }
 
     /**
@@ -315,20 +314,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String center(CharSequence self, Number numberOfChars, CharSequence padding) {
-        String s = self.toString();
         String padding1 = padding.toString();
         int numChars = numberOfChars.intValue();
-        if (numChars <= s.length()) {
-            return s;
+        if (numChars <= self.length()) {
+            return self.toString();
         } else {
-            int charsToAdd = numChars - s.length();
+            int charsToAdd = numChars - self.length();
             String semiPad = charsToAdd % 2 == 1 ?
                     getPadding(padding1, charsToAdd / 2 + 1) :
                     getPadding(padding1, charsToAdd / 2);
             if (charsToAdd % 2 == 0)
-                return semiPad + s + semiPad;
+                return semiPad + self + semiPad;
             else
-                return semiPad.substring(0, charsToAdd / 2) + s + semiPad;
+                return semiPad.substring(0, charsToAdd / 2) + self + semiPad;
         }
     }
 
@@ -424,7 +422,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String denormalize(final CharSequence self) {
-        final String s = self.toString();
         // Don't do this in static initializer because we may never be needed.
         // TODO: Put this lineSeparator property somewhere everyone can use it.
         if (lineSeparator == null) {
@@ -443,10 +440,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
-        final int len = s.length();
+        final int len = self.length();
 
         if (len < 1) {
-            return s;
+            return self.toString();
         }
 
         final StringBuilder sb = new StringBuilder((110 * len) / 100);
@@ -454,14 +451,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int i = 0;
 
         while (i < len) {
-            final char ch = s.charAt(i++);
+            final char ch = self.charAt(i++);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
 
                     // Eat the following LF if any.
-                    if ((i < len) && (s.charAt(i) == '\n')) {
+                    if ((i < len) && (self.charAt(i) == '\n')) {
                         ++i;
                     }
 
@@ -769,23 +766,22 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String expand(CharSequence self, int tabStop) {
-        String s = self.toString();
-        if (s.length() == 0) return s;
+        if (self.length() == 0) return self.toString();
         try {
             StringBuilder builder = new StringBuilder();
-            for (String line : readLines(s)) {
-                builder.append(expandLine(line, tabStop));
+            for (String line : readLines(self)) {
+                builder.append(expandLine((CharSequence)line, tabStop));
                 builder.append("\n");
             }
             // remove the normalized ending line ending if it was not present
-            if (!s.endsWith("\n")) {
+            if (self.charAt(self.length() - 1) != '\n') {
                 builder.deleteCharAt(builder.length() - 1);
             }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
         }
-        return s;
+        return self.toString();
     }
 
     /**
@@ -1516,11 +1512,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return counter;
     }
 
-    private static String getPadding(String padding, int length) {
+    private static String getPadding(CharSequence padding, int length) {
         if (padding.length() < length) {
             return multiply(padding, length / padding.length() + 1).substring(0, length);
         } else {
-            return padding.substring(0, length);
+            return "" + padding.subSequence(0, length);
         }
     }
 
@@ -1575,9 +1571,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static boolean isAllWhitespace(CharSequence self) {
-        String s = self.toString();
-        for (int i = 0; i < s.length(); i++) {
-            if (!Character.isWhitespace(s.charAt(i)))
+        for (int i = 0; i < self.length(); i++) {
+            if (!Character.isWhitespace(self.charAt(i)))
                 return false;
         }
         return true;
@@ -1663,11 +1658,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static boolean isCase(CharSequence caseValue, Object switchValue) {
-        String s = caseValue.toString();
         if (switchValue == null) {
-            return s == null;
+            return caseValue == null;
         }
-        return s.equals(switchValue.toString());
+        return caseValue.toString().equals(switchValue.toString());
     }
 
     /**
@@ -2039,16 +2033,15 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String multiply(CharSequence self, Number factor) {
-        String s = self.toString();
         int size = factor.intValue();
         if (size == 0)
             return "";
         else if (size < 0) {
             throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
         }
-        StringBuilder answer = new StringBuilder(s);
+        StringBuilder answer = new StringBuilder(self);
         for (int i = 1; i < size; i++) {
-            answer.append(s);
+            answer.append(self);
         }
         return answer.toString();
     }
@@ -2208,12 +2201,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String padLeft(CharSequence self, Number numberOfChars, CharSequence padding) {
-        String s = self.toString();
         int numChars = numberOfChars.intValue();
-        if (numChars <= s.length()) {
-            return s;
+        if (numChars <= self.length()) {
+            return self.toString();
         } else {
-            return getPadding(padding.toString(), numChars - s.length()) + s;
+            return getPadding(padding.toString(), numChars - self.length()) + self;
         }
     }
 
@@ -2286,12 +2278,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String padRight(CharSequence self, Number numberOfChars, CharSequence padding) {
-        String s = self.toString();
         int numChars = numberOfChars.intValue();
-        if (numChars <= s.length()) {
-            return s;
+        if (numChars <= self.length()) {
+            return self.toString();
         } else {
-            return s + getPadding(padding.toString(), numChars - s.length());
+            return self + getPadding(padding.toString(), numChars - self.length());
         }
     }
 
@@ -2940,11 +2931,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String stripIndent(CharSequence self) {
-        String s = self.toString();
-        if (s.length() == 0) return s;
+        if (self.length() == 0) return self.toString();
         int runningCount = -1;
         try {
-            for (String line : readLines((CharSequence) s)) {
+            for (String line : readLines(self)) {
                 // don't take blank lines into account for calculating the indent
                 if (isAllWhitespace((CharSequence) line)) continue;
                 if (runningCount == -1) runningCount = line.length();
@@ -2954,7 +2944,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } catch (IOException e) {
             /* ignore */
         }
-        return stripIndent(s, runningCount == -1 ? 0 : runningCount);
+        return stripIndent(self, runningCount == -1 ? 0 : runningCount);
     }
 
     /**
@@ -2970,11 +2960,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String stripIndent(CharSequence self, int numChars) {
-        String s = self.toString();
-        if (s.length() == 0 || numChars <= 0) return s;
+        if (self.length() == 0 || numChars <= 0) return self.toString();
         try {
             StringBuilder builder = new StringBuilder();
-            for (String line : readLines((CharSequence) s)) {
+            for (String line : readLines(self)) {
                 // normalize an empty or whitespace line to \n
                 // or strip the indent for lines containing non-space characters
                 if (!isAllWhitespace((CharSequence) line)) {
@@ -2983,14 +2972,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 builder.append("\n");
             }
             // remove the normalized ending line ending if it was not present
-            if (!s.endsWith("\n")) {
+            if (self.charAt(self.length() - 1) != '\n') {
                 builder.deleteCharAt(builder.length() - 1);
             }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
         }
-        return s;
+        return self.toString();
     }
 
     /**
@@ -3051,23 +3040,22 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String stripMargin(CharSequence self, char marginChar) {
-        String s = self.toString();
-        if (s.length() == 0) return s;
+        if (self.length() == 0) return self.toString();
         try {
             StringBuilder builder = new StringBuilder();
-            for (String line : readLines((CharSequence) s)) {
+            for (String line : readLines(self)) {
                 builder.append(stripMarginFromLine(line, marginChar));
                 builder.append("\n");
             }
             // remove the normalized ending line ending if it was not present
-            if (!s.endsWith("\n")) {
+            if (self.charAt(self.length() - 1) != '\n') {
                 builder.deleteCharAt(builder.length() - 1);
             }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
         }
-        return s;
+        return self.toString();
     }
 
     /**
@@ -3081,11 +3069,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String stripMargin(CharSequence self, CharSequence marginChar) {
-        String s = self.toString();
         String mc = marginChar.toString();
-        if (mc == null || mc.length() == 0) return stripMargin((CharSequence) s, '|');
+        if (mc.length() == 0) return stripMargin(self, '|');
         // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
-        return stripMargin((CharSequence) s, mc.charAt(0));
+        return stripMargin(self, mc.charAt(0));
     }
 
     /**
@@ -3577,23 +3564,22 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String unexpand(CharSequence self, int tabStop) {
-        String s = self.toString();
-        if (s.length() == 0) return s;
+        if (self.length() == 0) return self.toString();
         try {
             StringBuilder builder = new StringBuilder();
-            for (String line : readLines((CharSequence) s)) {
-                builder.append(unexpandLine(line, tabStop));
+            for (String line : readLines(self)) {
+                builder.append(unexpandLine((CharSequence)line, tabStop));
                 builder.append("\n");
             }
             // remove the normalized ending line ending if it was not present
-            if (!s.endsWith("\n")) {
+            if (self.charAt(self.length() - 1) != '\n') {
                 builder.deleteCharAt(builder.length() - 1);
             }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
         }
-        return s;
+        return self.toString();
     }
 
     /**
