@@ -429,23 +429,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public Map<String, MethodNode> getDeclaredMethodsMap() {
         // Start off with the methods from the superclass.
         ClassNode parent = getSuperClass();
-        Map<String, MethodNode> result = null;
+        Map<String, MethodNode> result;
         if (parent != null) {
             result = parent.getDeclaredMethodsMap();
         } else {
             result = new HashMap<String, MethodNode>();
         }
-
-        // add in unimplemented abstract methods from the interfaces
-        for (ClassNode iface : getInterfaces()) {
-            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (String methSig : ifaceMethodsMap.keySet()) {
-                if (!result.containsKey(methSig)) {
-                    MethodNode methNode = ifaceMethodsMap.get(methSig);
-                    result.put(methSig, methNode);
-                }
-            }
-        }
+        addInterfaceMethods(result);
 
         // And add in the methods implemented in this class.
         for (MethodNode method : getMethods()) {
@@ -453,6 +443,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             result.put(sig, method);
         }
         return result;
+    }
+
+    public void addInterfaceMethods(Map<String, MethodNode> methodsMap) {
+        // add in unimplemented abstract methods from the interfaces
+        for (ClassNode iface : getInterfaces()) {
+            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
+            for (String methSig : ifaceMethodsMap.keySet()) {
+                if (!methodsMap.containsKey(methSig)) {
+                    MethodNode methNode = ifaceMethodsMap.get(methSig);
+                    methodsMap.put(methSig, methNode);
+                }
+            }
+        }
     }
 
     public String getName() {
