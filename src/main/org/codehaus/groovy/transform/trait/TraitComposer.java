@@ -59,15 +59,7 @@ import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 
@@ -292,6 +284,7 @@ public abstract class TraitComposer {
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
+
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
         // we could rely on the first parameter name ($static$self) but that information is not
@@ -323,6 +316,16 @@ public abstract class TraitComposer {
             GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(genericsSpec, originalMethod.getGenericsTypes());
             newGt = removeNonPlaceHolders(newGt);
             forwarder.setGenericsTypes(newGt);
+        }
+        else {
+            GenericsType[] genericsTypes = helperMethod.getGenericsTypes();
+            if(genericsTypes != null) {
+                Map<String,ClassNode> methodSpec = new HashMap<String, ClassNode>();
+                methodSpec = GenericsUtils.addMethodGenerics(helperMethod,methodSpec);
+
+                GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(methodSpec, helperMethod.getGenericsTypes());
+                forwarder.setGenericsTypes(newGt);
+            }
         }
         // add a helper annotation indicating that it is a bridge method
         AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
