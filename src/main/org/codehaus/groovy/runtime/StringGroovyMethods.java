@@ -34,21 +34,18 @@ import org.codehaus.groovy.util.CharSequenceReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -195,25 +192,25 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(String self, Class<T> c) {
         if (c == List.class) {
-            return (T) toList(self);
+            return (T) toList((CharSequence)self);
         } else if (c == BigDecimal.class) {
-            return (T) toBigDecimal(self);
+            return (T) toBigDecimal((CharSequence)self);
         } else if (c == BigInteger.class) {
-            return (T) toBigInteger(self);
+            return (T) toBigInteger((CharSequence)self);
         } else if (c == Long.class || c == Long.TYPE) {
-            return (T) toLong(self);
+            return (T) toLong((CharSequence)self);
         } else if (c == Integer.class || c == Integer.TYPE) {
-            return (T) toInteger(self);
+            return (T) toInteger((CharSequence)self);
         } else if (c == Short.class || c == Short.TYPE) {
-            return (T) toShort(self);
+            return (T) toShort((CharSequence)self);
         } else if (c == Byte.class || c == Byte.TYPE) {
             return (T) Byte.valueOf(self.trim());
         } else if (c == Character.class || c == Character.TYPE) {
             return (T) toCharacter(self);
         } else if (c == Double.class || c == Double.TYPE) {
-            return (T) toDouble(self);
+            return (T) toDouble((CharSequence)self);
         } else if (c == Float.class || c == Float.TYPE) {
-            return (T) toFloat(self);
+            return (T) toFloat((CharSequence)self);
         } else if (c == File.class) {
             return (T) new File(self);
         } else if (c.isEnum()) {
@@ -886,7 +883,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String find(CharSequence self, CharSequence regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure closure) {
-        return find(self.toString(), Pattern.compile(regex.toString()), closure);
+        return find(self, Pattern.compile(regex.toString()), closure);
     }
 
     /**
@@ -1482,7 +1479,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         RangeInfo info = subListBorders(text.length(), range);
         String answer = text.substring(info.from, info.to);
         if (info.reverse) {
-            answer = reverse(answer);
+            answer = reverse((CharSequence)answer);
         }
         return answer;
     }
@@ -2439,11 +2436,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a CharSequence object
      * @return a list of lines
-     * @throws java.io.IOException if an error occurs
      * @since 1.8.2
      */
-    public static List<String> readLines(CharSequence self) throws IOException {
-        return IOGroovyMethods.readLines(new StringReader(self.toString()));
+    public static List<String> readLines(CharSequence self) {
+        return DefaultGroovyMethods.toList(new LineIterable(self));
     }
 
     /**
@@ -2451,7 +2447,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #readLines(CharSequence)
      */
     @Deprecated
-    public static List<String> readLines(String self) throws IOException {
+    public static List<String> readLines(String self) {
         return readLines((CharSequence) self);
     }
 
@@ -2472,9 +2468,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Replaces all occurrences of a captured group by the result of a closure on that text.
+     * Replaces all occurrences of a captured group by the result of calling a closure on that text.
      * <p>
-     * For examples,
+     * Examples:
      * <pre class="groovyTestCase">
      *     assert "hello world".replaceAll("(o)") { it[0].toUpperCase() } == "hellO wOrld"
      *
@@ -2897,13 +2893,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param pattern the regular expression Pattern for the delimiter
      * @param closure a closure
      * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
      * @since 1.8.2
      */
-    public static <T> T splitEachLine(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) {
         final List<String> list = readLines(self);
         T result = null;
-        for (String line : list) {
+        for (String line : new LineIterable(self)) {
             List vals = Arrays.asList(pattern.split(line));
             result = closure.call(vals);
         }
@@ -3563,21 +3558,16 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String unexpand(CharSequence self, int tabStop) {
         if (self.length() == 0) return self.toString();
-        try {
-            StringBuilder builder = new StringBuilder();
-            for (String line : readLines(self)) {
-                builder.append(unexpandLine((CharSequence)line, tabStop));
-                builder.append("\n");
-            }
-            // remove the normalized ending line ending if it was not present
-            if (self.charAt(self.length() - 1) != '\n') {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            /* ignore */
+        StringBuilder builder = new StringBuilder();
+        for (String line : new LineIterable(self)) {
+            builder.append(unexpandLine((CharSequence)line, tabStop));
+            builder.append("\n");
         }
-        return self.toString();
+        // remove the normalized ending line ending if it was not present
+        if (self.charAt(self.length() - 1) != '\n') {
+            builder.deleteCharAt(builder.length() - 1);
+        }
+        return builder.toString();
     }
 
     /**

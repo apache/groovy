@@ -27,14 +27,14 @@ import java.io.Serializable;
  * StringBuilder, CharBuffer or GString.
  * <p>
  * <strong>Note:</strong> Supports {@link #mark(int)} and {@link #reset()}.
+ * <p>
+ * <strong>Note:</strong> This class is mostly a copy from Commons IO and
+ * is intended for internal Groovy usage only. It may be deprecated and
+ * removed from Groovy at a faster pace than other classes. If you need this
+ * functionality in your Groovy programs, we recommend using the Commons IO
+ * equivalent directly.
  */
 public class CharSequenceReader extends Reader implements Serializable {
-    /*
-      NOTE: nearly 100% borrowed from Commons-IO but we don't want to bring
-      in that whole package just yet. We need to consider reworking all of our
-      IO in light of Java 8 streams and decide whether it makes sense to bring
-      in an external package.
-     */
     private static final long serialVersionUID = -6661279371843310693L;
     private final CharSequence charSequence;
     private int idx;
