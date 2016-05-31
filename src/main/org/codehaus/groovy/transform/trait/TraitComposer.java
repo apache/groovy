@@ -59,7 +59,16 @@ import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
@@ -142,7 +151,7 @@ public abstract class TraitComposer {
                 System.arraycopy(methodNode.getParameters(), 1, params, 0, params.length);
                 Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
                 MethodNode originalMethod = trait.getMethod(name, params);
-                // Original method may be null in case of a private method
+                // Original method may be null for the case of private or static methods
                 if (originalMethod!=null) {
                     methodGenericsSpec = GenericsUtils.addMethodGenerics(originalMethod, methodGenericsSpec);
                 }
@@ -282,12 +291,9 @@ public abstract class TraitComposer {
         mce.setImplicitThis(false);
 
         genericsSpec = GenericsUtils.addMethodGenerics(helperMethod,genericsSpec);
-        Map<String,ClassNode> methodSpec = new HashMap<String, ClassNode>();
-        methodSpec = GenericsUtils.addMethodGenerics(helperMethod,methodSpec);
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
-
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
         // we could rely on the first parameter name ($static$self) but that information is not
@@ -315,14 +321,16 @@ public abstract class TraitComposer {
         if (!copied.isEmpty()) {
             forwarder.addAnnotations(copied);
         }
-        if (originalMethod!=null) {
+        if (originalMethod != null) {
             GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(genericsSpec, originalMethod.getGenericsTypes());
             newGt = removeNonPlaceHolders(newGt);
             forwarder.setGenericsTypes(newGt);
-        }
-        else {
+        } else {
+            // null indicates a static method which may still need generics correction
             GenericsType[] genericsTypes = helperMethod.getGenericsTypes();
-            if(genericsTypes != null) {
+            if (genericsTypes != null) {
+                Map<String, ClassNode> methodSpec = new HashMap<String, ClassNode>();
+                methodSpec = GenericsUtils.addMethodGenerics(helperMethod, methodSpec);
                 GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(methodSpec, helperMethod.getGenericsTypes());
                 forwarder.setGenericsTypes(newGt);
             }
