@@ -24,9 +24,11 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.tools.ClassNodeUtils;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -34,8 +36,18 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a class in the AST.
@@ -435,7 +447,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } else {
             result = new HashMap<String, MethodNode>();
         }
-        addInterfaceMethods(result);
+        ClassNodeUtils.addInterfaceMethods(this, result);
 
         // And add in the methods implemented in this class.
         for (MethodNode method : getMethods()) {
@@ -443,19 +455,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             result.put(sig, method);
         }
         return result;
-    }
-
-    public void addInterfaceMethods(Map<String, MethodNode> methodsMap) {
-        // add in unimplemented abstract methods from the interfaces
-        for (ClassNode iface : getInterfaces()) {
-            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (String methSig : ifaceMethodsMap.keySet()) {
-                if (!methodsMap.containsKey(methSig)) {
-                    MethodNode methNode = ifaceMethodsMap.get(methSig);
-                    methodsMap.put(methSig, methNode);
-                }
-            }
-        }
     }
 
     public String getName() {
@@ -1039,17 +1038,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if the two arrays are of the same size and have the same contents
      */
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
-        if (a.length == b.length) {
-            boolean answer = true;
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
-                    answer = false;
-                    break;
-                }
-            }
-            return answer;
-        }
-        return false;
+        return ParameterUtils.parametersEqual(a, b);
     }
 
     /**

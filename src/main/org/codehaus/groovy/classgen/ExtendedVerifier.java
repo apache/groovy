@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -46,8 +47,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
  * <p>
  * Current limitations:
  * - annotations on local variables are not supported
- *
- * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class ExtendedVerifier extends ClassCodeVisitorSupport {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
@@ -234,25 +233,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
         for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
-            if (parametersEqual(method.getParameters(), mn.getParameters())) {
+            if (ParameterUtils.parametersEqual(method.getParameters(), mn.getParameters())) {
                 return method;
             }
         }
         return null;
-    }
-
-    private static boolean parametersEqual(Parameter[] a, Parameter[] b) {
-        if (a.length == b.length) {
-            boolean answer = true;
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
-                    answer = false;
-                    break;
-                }
-            }
-            return answer;
-        }
-        return false;
     }
 
     /**
