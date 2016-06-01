@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ClassNodeUtils;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -431,7 +433,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } else {
             result = new HashMap<String, MethodNode>();
         }
-        addInterfaceMethods(result);
+        ClassNodeUtils.addInterfaceMethods(this, result);
 
         // And add in the methods implemented in this class.
         for (MethodNode method : getMethods()) {
@@ -439,19 +441,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             result.put(sig, method);
         }
         return result;
-    }
-
-    public void addInterfaceMethods(Map<String, MethodNode> methodsMap) {
-        // add in unimplemented abstract methods from the interfaces
-        for (ClassNode iface : getInterfaces()) {
-            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (String methSig : ifaceMethodsMap.keySet()) {
-                if (!methodsMap.containsKey(methSig)) {
-                    MethodNode methNode = ifaceMethodsMap.get(methSig);
-                    methodsMap.put(methSig, methNode);
-                }
-            }
-        }
     }
 
     public String getName() {
@@ -1047,17 +1036,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if the two arrays are of the same size and have the same contents
      */
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
-        if (a.length == b.length) {
-            boolean answer = true;
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
-                    answer = false;
-                    break;
-                }
-            }
-            return answer;
-        }
-        return false;
+        return ParameterUtils.parametersEqual(a, b);
     }
 
     /**
