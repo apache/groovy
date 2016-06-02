@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -161,9 +162,15 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (assignment) {
             if (leftExpression instanceof Variable) {
                 boolean uninitialized =
-                        isDeclaration &&
-                                rightExpression == EmptyExpression.INSTANCE;
+                        isDeclaration && rightExpression == EmptyExpression.INSTANCE;
                 recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
+            } else if (leftExpression instanceof TupleExpression) {
+                TupleExpression te = (TupleExpression) leftExpression;
+                for (Expression next : te.getExpressions()) {
+                    if (next instanceof Variable) {
+                        recordAssignment((Variable) next, isDeclaration, false, false, next);
+                    }
+                }
             }
         }
     }

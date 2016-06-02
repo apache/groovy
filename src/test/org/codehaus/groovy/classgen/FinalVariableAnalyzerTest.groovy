@@ -77,6 +77,13 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    void testReassignedVarShouldNotBeFinalWhenUsingMultiAssigment() {
+        assertFinals x: false, '''
+            def x = 1
+            (x) = [2]
+        '''
+    }
+
     void testUnassignedVarShouldNotBeConsideredFinal() {
         assertFinals x:false, '''def x'''
     }
