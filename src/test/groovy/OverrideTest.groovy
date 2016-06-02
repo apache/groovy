@@ -174,4 +174,22 @@ def d = new Derived()
             new TemplatedInterfaceImplementation()
         '''
     }
+
+    //GROOVY-7849
+    void testArrayReturnTypeCovariance() {
+        assertScript '''
+            interface Base {}
+
+            interface Derived extends Base {}
+
+            interface I {
+                Base[] foo()
+            }
+
+            class C implements I {
+                Derived[] foo() { null }
+            }
+            new C().foo()
+        '''
+    }
 }
