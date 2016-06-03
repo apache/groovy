@@ -20,12 +20,12 @@ package org.codehaus.groovy.runtime.typehandling;
 
 import groovy.lang.GString;
 
+import java.util.Arrays;
+
 /**
  * Class providing various short paths for type conversions. Read the comments
  * to what conditions have to be met to get valid results!
  * Any method here must not depend on the groovy runtime.
- *
- * @author Jochen Theodorou
  */
 public class ShortTypeHandling {
 
@@ -41,6 +41,15 @@ public class ShortTypeHandling {
 
     public static String castToString(Object object) {
         if (object==null) return null;
+        if (object instanceof boolean[]) return Arrays.toString((boolean[])object);
+        if (object instanceof byte[]) return Arrays.toString((byte[])object);
+        if (object instanceof char[]) return new String((char[])object);
+        if (object instanceof double[]) return Arrays.toString((double[])object);
+        if (object instanceof float[]) return Arrays.toString((float[])object);
+        if (object instanceof int[]) return Arrays.toString((int[])object);
+        if (object instanceof long[]) return Arrays.toString((long[])object);
+        if (object instanceof short[]) return Arrays.toString((short[])object);
+        if (object instanceof Object[]) return Arrays.toString((Object[])object);
         return object.toString();
     }
 
