@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
@@ -1172,16 +1173,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Map genericsSpec = new HashMap();
 
         // unimplemented abstract methods from interfaces
-        Map abstractMethods = new HashMap();
-        Map<String, MethodNode> allInterfaceMethods = new HashMap<String, MethodNode>();
-        ClassNode[] interfaces = classNode.getInterfaces();
-        for (ClassNode iface : interfaces) {
-            Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            abstractMethods.putAll(ifaceMethodsMap);
-            allInterfaceMethods.putAll(ifaceMethodsMap);
-        }
-
-        collectSuperInterfaceMethods(classNode, allInterfaceMethods);
+        Map<String, MethodNode> abstractMethods = ClassNodeUtils.getDeclaredMethodMapsFromInterfaces(classNode);
+        Map<String, MethodNode> allInterfaceMethods = new HashMap<String, MethodNode>(abstractMethods);
+        ClassNodeUtils.addDeclaredMethodMapsFromSuperInterfaces(classNode, allInterfaceMethods);
 
         List<MethodNode> declaredMethods = new ArrayList<MethodNode>(classNode.getMethods());
         // remove all static, private and package private methods
@@ -1217,21 +1211,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode mn = declaredMethodsMap.get(entry.getKey());
             if (mn != null && mn.getDeclaringClass().equals(classNode)) continue;
             addPropertyMethod(method);
-        }
-    }
-
-    private static void collectSuperInterfaceMethods(ClassNode cn, Map<String, MethodNode> allInterfaceMethods) {
-        List cnInterfaces = Arrays.asList(cn.getInterfaces());
-        ClassNode sn = cn.getSuperClass();
-        while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
-            ClassNode[] interfaces = sn.getInterfaces();
-            for (ClassNode iface : interfaces) {
-                if (!cnInterfaces.contains(iface)) {
-                    Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-                    allInterfaceMethods.putAll(ifaceMethodsMap);
-                }
-            }
-            sn = sn.getSuperClass();
         }
     }
 

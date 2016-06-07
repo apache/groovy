@@ -20,9 +20,13 @@
 
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ClassNodeUtils {
@@ -36,6 +40,29 @@ public class ClassNodeUtils {
                     methodsMap.put(methSig, methNode);
                 }
             }
+        }
+    }
+
+    public static Map<String, MethodNode> getDeclaredMethodMapsFromInterfaces(ClassNode classNode) {
+        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
+        ClassNode[] interfaces = classNode.getInterfaces();
+        for (ClassNode iface : interfaces) {
+            result.putAll(iface.getDeclaredMethodsMap());
+        }
+        return result;
+    }
+
+    public static void addDeclaredMethodMapsFromSuperInterfaces(ClassNode cn, Map<String, MethodNode> allInterfaceMethods) {
+        List cnInterfaces = Arrays.asList(cn.getInterfaces());
+        ClassNode sn = cn.getSuperClass();
+        while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
+            ClassNode[] interfaces = sn.getInterfaces();
+            for (ClassNode iface : interfaces) {
+                if (!cnInterfaces.contains(iface)) {
+                    allInterfaceMethods.putAll(iface.getDeclaredMethodsMap());
+                }
+            }
+            sn = sn.getSuperClass();
         }
     }
 }
