@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that array covariant return types are compiled successfully.
- *
- * @author Paul King
  */
 class Groovy6617Bug extends StringSourcesStubTestCase {
 
@@ -32,6 +30,7 @@ class Groovy6617Bug extends StringSourcesStubTestCase {
                     import java.util.List;
                     public interface JavaApi {
                         public foo.JavaDataObject[] makeArray ();
+                        public foo.JavaDataObject[] makeArrayFromParams (foo.JavaDataObject[] objects);
                         public List<JavaDataObject> makeList ();
                     }
             ''',
@@ -50,6 +49,9 @@ class Groovy6617Bug extends StringSourcesStubTestCase {
                     class GroovyLangService implements JavaApi {
                         JavaDataObject[] makeArray () {
                             new JavaDataObject[10]
+                        }
+                        JavaDataObject[] makeArrayFromParams (JavaDataObject[] objects) {
+                            objects
                         }
                         List<JavaDataObject> makeList () {
                             new ArrayList<JavaDataObject>(10)
