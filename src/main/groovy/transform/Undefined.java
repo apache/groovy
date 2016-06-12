@@ -28,6 +28,10 @@ public final class Undefined {
     private Undefined() {}
     public static final String STRING = "<DummyUndefinedMarkerString-DoNotUse>";
     public static final class CLASS {}
+    public static final class UNDEFINED_EXCEPTION extends RuntimeException {
+        private static final long serialVersionUID = -3960500360386581172L;
+    }
     public static boolean isUndefined(String other) { return STRING.equals(other); }
     public static boolean isUndefined(ClassNode other) { return CLASS.class.getName().equals(other.getName()); }
+    public static boolean isUndefinedException(ClassNode other) { return UNDEFINED_EXCEPTION.class.getName().equals(other.getName()); }
 }
