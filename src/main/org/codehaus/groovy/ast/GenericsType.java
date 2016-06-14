@@ -441,17 +441,15 @@ public class GenericsType extends ASTNode {
                                                         gt = classNodePlaceholders.get(gt.getName());
                                                     }
                                                 }
-                                                match = match &&
-                                                        (implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
-                                                         || classNodeType.isCompatibleWith(gt.getType())); // workaround for GROOVY-6095
+                                                match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
+                                                         || classNodeType.isCompatibleWith(gt.getType()); // workaround for GROOVY-6095
                                                 if (!match) break;
                                             }
                                         }
                                         return match;
-                                    } else {
+                                    } else if (classNodePlaceholders.containsKey(name)) {
                                         redirectBoundType = classNodePlaceholders.get(name);
                                     }
-
                                 }
                             }
                             match = redirectBoundType.isCompatibleWith(classNodeType.getType());
