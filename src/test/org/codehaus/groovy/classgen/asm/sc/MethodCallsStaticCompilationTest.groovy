@@ -217,6 +217,28 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
         '''
     }
 
+    void testDoublyNestedPrivateMethodAccess() {
+        assertScript '''
+            class A {
+                private int bar() { 123 }
+
+                class B {
+
+                    int testInner() { new C().barInner() }
+
+                    class C {
+                        int barInner() { bar() }
+                    }
+                }
+
+                int test() {
+                    new B().testInner()
+                }
+            }
+            assert new A().test() == 123
+        '''
+    }
+
     public static class Base {
         protected int foo() {
             123
