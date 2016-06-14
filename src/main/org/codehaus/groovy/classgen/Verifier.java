@@ -1337,7 +1337,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private boolean isArrayAssignable(ClassNode node, ClassNode testNode) {
         if (node.isArray() && testNode.isArray()) { return isArrayAssignable(node.getComponentType(), testNode.getComponentType()); }
-        return node.equals(testNode);
+        return isAssignable(node, testNode);
     }
 
     private static Parameter[] cleanParameters(Parameter[] parameters) {
