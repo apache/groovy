@@ -217,6 +217,7 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
         '''
     }
 
+    //GROOVY-7863
     void testDoublyNestedPrivateMethodAccess() {
         assertScript '''
             class A {
@@ -236,6 +237,25 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
                 }
             }
             assert new A().test() == 123
+        '''
+    }
+
+    //GROOVY-7862
+    void testProtectedCallFromInnerClassInSeparatePackage() {
+        assertScript '''
+            import org.codehaus.groovy.classgen.asm.sc.MethodCallsStaticCompilationTest.Base
+            class SubBase extends Base {
+                class Inner {
+                    int test() {
+                        foo()
+                    }
+                }
+
+                int innerTest() {
+                    new Inner().test()
+                }
+            }
+            assert new SubBase().innerTest() == 123
         '''
     }
 

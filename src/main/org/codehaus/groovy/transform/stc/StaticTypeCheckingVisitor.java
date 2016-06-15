@@ -369,9 +369,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (packageName==null) {
                 packageName = "";
             }
-            if ((Modifier.isPrivate(mods) && sameModule)
-                    || (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName()))) {
-                addPrivateFieldOrMethodAccess(source, sameModule? declaringClass : enclosingClassNode, StaticTypesMarker.PV_METHODS_ACCESS, mn);
+            if ((Modifier.isPrivate(mods) && sameModule)) {
+                addPrivateFieldOrMethodAccess(source, declaringClass, StaticTypesMarker.PV_METHODS_ACCESS, mn);
+            } else if (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName())
+                    && !implementsInterfaceOrIsSubclassOf(enclosingClassNode, declaringClass)) {
+                ClassNode cn = enclosingClassNode;
+                while ((cn = cn.getOuterClass()) != null) {
+                    if (implementsInterfaceOrIsSubclassOf(cn, declaringClass)) {
+                        addPrivateFieldOrMethodAccess(source, cn, StaticTypesMarker.PV_METHODS_ACCESS, mn);
+                        break;
+                    }
+                }
             }
         }
     }

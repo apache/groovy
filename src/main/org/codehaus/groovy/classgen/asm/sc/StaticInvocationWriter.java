@@ -177,8 +177,11 @@ public class StaticInvocationWriter extends InvocationWriter {
         ClassNode lookupClassNode;
         if (target.isProtected()) {
             lookupClassNode = controller.getClassNode();
-            if (controller.isInClosure()) {
+            while (lookupClassNode != null && !lookupClassNode.isDerivedFrom(target.getDeclaringClass())) {
                 lookupClassNode = lookupClassNode.getOuterClass();
+            }
+            if (lookupClassNode == null) {
+                return false;
             }
         } else {
             lookupClassNode = target.getDeclaringClass().redirect();
@@ -187,15 +190,8 @@ public class StaticInvocationWriter extends InvocationWriter {
         MethodNode bridge = bridges==null?null:bridges.get(target);
         if (bridge != null) {
             Expression fixedReceiver = receiver;
-            ClassNode declaringClass = bridge.getDeclaringClass();
             if (implicitThis && !controller.isInClosure()) {
-                ClassNode classNode = controller.getClassNode();
-                while (!classNode.isDerivedFrom(declaringClass)
-                        && !classNode.implementsInterface(declaringClass)
-                        && classNode instanceof InnerClassNode) {
-                    classNode = classNode.getOuterClass();
-                }
-                fixedReceiver = new PropertyExpression(new ClassExpression(classNode), "this");
+                fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
             }
             ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):fixedReceiver);
             for (Expression expression : args.getExpressions()) {
@@ -286,6 +282,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                     controller.getSourceUnit().addError(
                             new SyntaxException("Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),
                                     src.getLineNumber(), src.getColumnNumber(), src.getLastLineNumber(), src.getLastColumnNumber()));
+                } else if (!node.isDerivedFrom(target.getDeclaringClass()) && tryBridgeMethod(target, receiver, implicitThis, args)) {
+                    return true;
                 }
             }
             if (receiver != null) {
