@@ -1395,4 +1395,144 @@ createFirstLastBorn()
 // end::builder_initializer_immutable[]
         '''
     }
+
+    void testAutoImplement() {
+        assertScript '''
+// tag::autoimplement_default[]
+import groovy.transform.AutoImplement
+
+@AutoImplement
+class MyNames extends AbstractList<String> implements Closeable { }
+// end::autoimplement_default[]
+
+// tag::autoimplement_default_usage[]
+assert new MyNames().size() == 0
+// end::autoimplement_default_usage[]
+
+/*
+// tag::autoimplement_default_equiv[]
+class MyNames implements Closeable extends AbstractList<String> {
+
+    String get(int param0) {
+        return null
+    }
+
+    boolean addAll(Collection<? extends String> param0) {
+        return false
+    }
+
+    void close() throws Exception {
+    }
+
+    int size() {
+        return 0
+    }
+
+}
+// end::autoimplement_default_equiv[]
+*/
+        '''
+
+        assertScript '''
+import groovy.transform.AutoImplement
+// tag::autoimplement_exception[]
+@AutoImplement(exception=IOException)
+class MyWriter extends Writer { }
+// end::autoimplement_exception[]
+
+// tag::autoimplement_exception_usage[]
+import static groovy.test.GroovyAssert.shouldFail
+
+shouldFail(IOException) {
+  new MyWriter().flush()
+}
+// end::autoimplement_exception_usage[]
+
+/*
+// tag::autoimplement_exception_equiv[]
+class MyWriter extends Writer {
+
+    void flush() throws IOException {
+        throw new IOException()
+    }
+
+    void write(char[] param0, int param1, int param2) throws IOException {
+        throw new IOException()
+    }
+
+    void close() throws Exception {
+        throw new IOException()
+    }
+
+}
+// end::autoimplement_exception_equiv[]
+*/
+        '''
+
+        assertScript '''
+import groovy.transform.AutoImplement
+// tag::autoimplement_exceptionmsg[]
+@AutoImplement(exception=UnsupportedOperationException, message='Not supported by MyIterator')
+class MyIterator implements Iterator<String> { }
+// end::autoimplement_exceptionmsg[]
+
+import static groovy.test.GroovyAssert.shouldFail
+// tag::autoimplement_exceptionmsg_usage[]
+def ex = shouldFail(UnsupportedOperationException) {
+     new MyIterator().hasNext()
+}
+assert ex.message == 'Not supported by MyIterator'
+// end::autoimplement_exceptionmsg_usage[]
+
+/*
+// tag::autoimplement_exceptionmsg_equiv[]
+class MyIterator implements Iterator<String> {
+
+    boolean hasNext() {
+        throw new UnsupportedOperationException('Not supported by MyIterator')
+    }
+
+    String next() {
+        throw new UnsupportedOperationException('Not supported by MyIterator')
+    }
+
+}
+// end::autoimplement_exceptionmsg_equiv[]
+*/
+        '''
+
+        assertScript '''
+import groovy.transform.AutoImplement
+// tag::autoimplement_code[]
+@AutoImplement(code = { throw new UnsupportedOperationException('Should never be called but was called on ' + new Date()) })
+class EmptyIterator implements Iterator<String> {
+    boolean hasNext() { false }
+}
+// end::autoimplement_code[]
+
+import static groovy.test.GroovyAssert.shouldFail
+// tag::autoimplement_code_usage[]
+def ex = shouldFail(UnsupportedOperationException) {
+     new EmptyIterator().next()
+}
+assert ex.message.startsWith('Should never be called but was called on ')
+// end::autoimplement_code_usage[]
+
+/*
+// tag::autoimplement_code_equiv[]
+class EmptyIterator implements java.util.Iterator<String> {
+
+    boolean hasNext() {
+        false
+    }
+
+    String next() {
+        throw new UnsupportedOperationException('Should never be called but was called on ' + new Date())
+    }
+
+}
+// end::autoimplement_code_equiv[]
+*/
+        '''
+    }
 }
