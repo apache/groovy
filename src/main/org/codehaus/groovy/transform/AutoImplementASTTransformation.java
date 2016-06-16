@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.GenericsVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
@@ -48,6 +49,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.makeDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -82,6 +84,16 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                 addError("Expected closure value for annotation parameter 'code'. Found " + code, cNode);
                 return;
             }
+            // TODO generalise this GenericsVisitor usage so that it automatically
+            // occurs (the first time) when GenericsUtils.createGenericsSpec() is used
+            // perhaps make a createGenericsSpecSafe() method which saves result to Node metadata?
+            // or perhaps just split into two and just do preliminary check earlier
+            new GenericsVisitor(source, true).visitClass(cNode);
+            if (source.getErrorCollector().hasErrors()) {
+                addError("Error during " + MY_TYPE_NAME + " processing - bad generics detected, fix other errors " +
+                        "before continuing.", cNode);
+                return;
+            }
             createMethods(cNode, exception, message, (ClosureExpression) code);
             if (code != null) {
                 anno.setMember("code", new ClosureExpression(new Parameter[0], new EmptyStatement()));
@@ -106,7 +118,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private static Map<String, MethodNode> getAllCorrectedMethodsMap(ClassNode cNode) {
         Map<String, MethodNode> result = new HashMap<String, MethodNode>();
         for (MethodNode mn : cNode.getMethods()) {
-            result.put(mn.getTypeDescriptor(), mn);
+            result.put(makeDescriptorWithoutReturnType(mn), mn);
         }
         ClassNode next = cNode;
         while (true) {
@@ -117,7 +129,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     ClassNode correctedClass = correctToGenericsSpecRecurse(genericsSpec, next);
                     MethodNode found = getDeclaredMethodCorrected(genericsSpec, correctedMethod, correctedClass);
                     if (found != null) {
-                        String td = found.getTypeDescriptor();
+                        String td = makeDescriptorWithoutReturnType(found);
                         if (result.containsKey(td) && !result.get(td).isAbstract()) {
                             continue;
                         }
@@ -136,7 +148,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, nextMethod);
                         MethodNode found = getDeclaredMethodCorrected(updatedGenericsSpec, correctedMethod, correctedInterface);
                         if (found != null) {
-                            String td = found.getTypeDescriptor();
+                            String td = makeDescriptorWithoutReturnType(found);
                             if (result.containsKey(td) && !result.get(td).isAbstract()) {
                                 continue;
                             }
