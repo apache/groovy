@@ -771,16 +771,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
         // check if constructor call expression makes use of the diamond operator
         ClassNode node = cce.getType();
-        if (node.isUsingGenerics() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
-            ClassNode[] interfaces = node.getInterfaces();
-            node = interfaces != null && interfaces.length == 1 ? interfaces[0] : node.getUnresolvedSuperClass(false);
-            if ((node.getGenericsTypes() == null || node.getGenericsTypes().length == 0) && lType.isUsingGenerics()) {
-                // InterfaceA<Foo> obj = new InterfaceA<>() { ... }
-                // InterfaceA<Foo> obj = new ClassA<>() { ... }
-                // ClassA<Foo> obj = new ClassA<>() { ... }
-                addStaticTypeError("Cannot use diamond <> with anonymous inner classes", cce);
-            }
-        } else if (node.isUsingGenerics() && node.getGenericsTypes() != null && node.getGenericsTypes().length == 0) {
+        if (node.isUsingGenerics() && node.getGenericsTypes() != null && node.getGenericsTypes().length == 0) {
             ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
             if (argumentListExpression.getExpressions().isEmpty()) {
                 GenericsType[] genericsTypes = lType.getGenericsTypes();

@@ -186,6 +186,16 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                if (!classNode.isSynthetic()) {
+                    GenericsVisitor genericsVisitor = new GenericsVisitor(source);
+                    genericsVisitor.visitClass(classNode);
+                }
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
                 TraitComposer.doExtendTraits(classNode, source, CompilationUnit.this);
@@ -763,11 +773,6 @@ public class CompilationUnit extends ProcessingUnit {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
             optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
-
-            if(!classNode.isSynthetic()) {
-                GenericsVisitor genericsVisitor = new GenericsVisitor(source);
-                genericsVisitor.visitClass(classNode);
-            }
 
             //
             // Run the Verifier on the outer class
