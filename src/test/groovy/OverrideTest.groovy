@@ -196,24 +196,24 @@ def d = new Derived()
     //GROOVY-7185
     void testArrayReturnTypeCovarianceGenericsVariant() {
         assertScript '''
-            public interface A<T> {
+            interface A<T> {
                 T[] process();
             }
 
-            public class B implements A<String> {
+            class B implements A<String> {
                 @Override
                 public String[] process() {
-                    return new String[0];
+                    ['foo']
                 }
             }
 
             class C extends B {
                 @Override
                 String[] process() {
-                    return super.process()
+                    super.process()
                 }
             }
-            new C()
+            assert new C().process()[0] == 'foo'
         '''
     }
 }
