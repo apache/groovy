@@ -229,7 +229,7 @@ public class DefaultTypeTransformation {
         } else if (Collection.class.isAssignableFrom(type)) {
             return continueCastOnCollection(object, type);
         } else if (type == String.class) {
-            return ShortTypeHandling.castToString(object);
+            return InvokerHelper.toString(object);
         } else if (type == Character.class) {
             return ShortTypeHandling.castToChar(object);
         } else if (type == Boolean.class) {

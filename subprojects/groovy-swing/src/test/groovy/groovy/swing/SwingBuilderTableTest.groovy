@@ -314,7 +314,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 t2ses = label(text: bind { table02.selectedElements })
             }
 
-            assert swing.t1e.text == '[{ATHLETEID=1, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}, {ATHLETEID=2, FIRSTNAME=Sam, LASTNAME=Wilson, DATEOFBIRTH=1876-12-15}, {ATHLETEID=3, FIRSTNAME=Jessie, LASTNAME=James, DATEOFBIRTH=1877-06-12}]'
+            assert swing.t1e.text == '[[ATHLETEID:1, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20], [ATHLETEID:2, FIRSTNAME:Sam, LASTNAME:Wilson, DATEOFBIRTH:1876-12-15], [ATHLETEID:3, FIRSTNAME:Jessie, LASTNAME:James, DATEOFBIRTH:1877-06-12]]'
             assert swing.t1se.text == null
             assert swing.t1ses.text == '[]'
 
@@ -323,25 +323,25 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             assert swing.t2ses.text == '[]'
 
             swing.table01.addRowSelectionInterval(0, 0)
-            assert swing.t1se.text == '{ATHLETEID=1, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}'
-            assert swing.t1ses.text == '[{ATHLETEID=1, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}]'
+            assert swing.t1se.text == '[ATHLETEID:1, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20]'
+            assert swing.t1ses.text == '[[ATHLETEID:1, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20]]'
 
             swing.table02.addRowSelectionInterval(0, 0)
-            assert swing.t2se.text == '{Athlete ID=1, First Name=Bob, Last Name=Jones, Date Of Birth=1875-05-20}'
-            assert swing.t2ses.text == '[{Athlete ID=1, First Name=Bob, Last Name=Jones, Date Of Birth=1875-05-20}]'
+            assert swing.t2se.text == '[Athlete ID:1, First Name:Bob, Last Name:Jones, Date Of Birth:1875-05-20]'
+            assert swing.t2ses.text == '[[Athlete ID:1, First Name:Bob, Last Name:Jones, Date Of Birth:1875-05-20]]'
 
             swing.table01.addRowSelectionInterval(2, 2)
-            assert swing.t1se.text == '{ATHLETEID=1, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}'
-            assert swing.t1ses.text == '[{ATHLETEID=1, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}, {ATHLETEID=3, FIRSTNAME=Jessie, LASTNAME=James, DATEOFBIRTH=1877-06-12}]'
+            assert swing.t1se.text == '[ATHLETEID:1, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20]'
+            assert swing.t1ses.text == '[[ATHLETEID:1, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20], [ATHLETEID:3, FIRSTNAME:Jessie, LASTNAME:James, DATEOFBIRTH:1877-06-12]]'
 
             swing.table02.addRowSelectionInterval(2, 2)
-            assert swing.t2se.text == '{Athlete ID=1, First Name=Bob, Last Name=Jones, Date Of Birth=1875-05-20}'
-            assert swing.t2ses.text == '[{Athlete ID=1, First Name=Bob, Last Name=Jones, Date Of Birth=1875-05-20}, {Athlete ID=3, First Name=Jessie, Last Name=James, Date Of Birth=1877-06-12}]'
+            assert swing.t2se.text == '[Athlete ID:1, First Name:Bob, Last Name:Jones, Date Of Birth:1875-05-20]'
+            assert swing.t2ses.text == '[[Athlete ID:1, First Name:Bob, Last Name:Jones, Date Of Birth:1875-05-20], [Athlete ID:3, First Name:Jessie, Last Name:James, Date Of Birth:1877-06-12]]'
 
             swing.table01.model.setValueAt('x', 0, 0,)
             swing.table02.model.setValueAt('x', 0, 0)
-            //FIXME groovy default table model does not fire data cahgne events whe editing throught he model.
-            //assert swing.t1e.text == '[{ATHLETEID=x, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}, {ATHLETEID=2, FIRSTNAME=Sam, LASTNAME=Wilson, DATEOFBIRTH=1876-12-15}, {ATHLETEID=3, FIRSTNAME=Jessie, LASTNAME=James, DATEOFBIRTH=1877-06-12}]'
+            //FIXME groovy default table model does not fire data cahgne events when editing through the model.
+            //assert swing.t1e.text == '[[ATHLETEID:x, FIRSTNAME:Bob, LASTNAME:Jones, DATEOFBIRTH:1875-05-20], [ATHLETEID:2, FIRSTNAME:Sam, LASTNAME:Wilson, DATEOFBIRTH:1876-12-15], [ATHLETEID:3, FIRSTNAME:Jessie, LASTNAME:James, DATEOFBIRTH:1877-06-12]]'
             assert swing.t2e.text == '[[x, Bob, Jones, 1875-05-20], [2, Sam, Wilson, 1876-12-15], [3, Jessie, James, 1877-06-12]]'
         }
     }
