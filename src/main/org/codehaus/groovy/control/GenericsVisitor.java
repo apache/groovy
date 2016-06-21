@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -53,8 +54,8 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         boolean error = checkWildcard(node);
         if (error) return;
-        ClassNode superClass = node.getUnresolvedSuperClass(false);
-        checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass(), prelimCheckOnly);
+        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode)node).isAnonymous();
+        checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass(), isAnon ? true : null);
         ClassNode[] interfaces = node.getInterfaces();
         for (ClassNode anInterface : interfaces) {
             checkGenericsUsage(anInterface, anInterface.redirect());
@@ -72,7 +73,8 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode type = call.getType();
-        checkGenericsUsage(type, type.redirect(), true);
+        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode)type).isAnonymous();
+        checkGenericsUsage(type, type.redirect(), isAnon);
     }
 
     @Override
@@ -103,30 +105,49 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkGenericsUsage(ClassNode n, ClassNode cn) {
-        checkGenericsUsage(n, cn, false);
+        checkGenericsUsage(n, cn, null);
     }
 
-    private void checkGenericsUsage(ClassNode n, ClassNode cn, boolean skipDiamondErrors) {
+    private void checkGenericsUsage(ClassNode n, ClassNode cn, Boolean isAnonInnerClass) {
         if (n.isGenericsPlaceHolder()) return;
         GenericsType[] nTypes = n.getGenericsTypes();
         GenericsType[] cnTypes = cn.getGenericsTypes();
         // raw type usage is always allowed
         if (nTypes == null) return;
-        // parameterize a type by using all of the parameters only
+        if (prelimCheckOnly && nTypes.length == 0) {
+            return; // always allow Diamond during pre-check stage (allow transforms to play)
+        }
+        // you can't parameterize a non-generified type
         if (cnTypes == null) {
-            addError("The class " + n.getName() + " refers to the class " + cn.getName() +
-                    " and uses " + nTypes.length + " parameters, but the referred class takes no parameters", n);
+            String message = "The class " + getPrintName(n) + " (supplied with " + plural("type parameter", nTypes.length) +
+                    ") refers to the class " + getPrintName(cn) + " which takes no parameters";
+            if (nTypes.length == 0) {
+                message += " (invalid Diamond <> usage?)";
+            }
+            addError(message, n);
             return;
         }
-        if (skipDiamondErrors && nTypes.length == 0) {
-            return;
-        }
+        // parameterize a type by using all of the parameters only
         if (nTypes.length != cnTypes.length) {
-            addError("The class " + n.getName() + " refers to the class " + cn.getName() + " and uses " +
-                    nTypes.length + " parameters, but the referred class needs " + cnTypes.length, n);
+            if (Boolean.FALSE.equals(isAnonInnerClass) && nTypes.length == 0) {
+                return; // allow Diamond for non-AIC cases from CCE
+            }
+            String message;
+            if (Boolean.TRUE.equals(isAnonInnerClass)) {
+                message = "Cannot use diamond <> with anonymous inner classes";
+            } else {
+                message = "The class " + getPrintName(n) + " (supplied with " + plural("type parameter", nTypes.length) +
+                        ") refers to the class " + getPrintName(cn) +
+                        " which takes " + plural("parameter", cnTypes.length);
+                if (nTypes.length == 0) {
+                    message += " (invalid Diamond <> usage?)";
+                }
+            }
+            addError(message, n);
             return;
         }
-        // check bounds
+        if (prelimCheckOnly) return;
+        // check bounds when doing full check
         for (int i = 0; i < nTypes.length; i++) {
             ClassNode nType = nTypes[i].getType();
             ClassNode cnType = cnTypes[i].getType();
@@ -139,21 +160,26 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private String plural(String orig, int count) {
+        return "" + count + " " + (count == 1 ? orig : orig + "s");
+    }
+
     private static String getPrintName(GenericsType gt) {
         String ret = gt.getName();
         ClassNode[] upperBounds = gt.getUpperBounds();
         ClassNode lowerBound = gt.getLowerBound();
         if (upperBounds != null) {
-            ret += " extends ";
-            for (int i = 0; i < upperBounds.length; i++) {
-                ret += getPrintName(upperBounds[i]);
-                if (i + 1 < upperBounds.length) ret += " & ";
+            if (upperBounds.length != 1 || !"java.lang.Object".equals(getPrintName(upperBounds[0]))) {
+                ret += " extends ";
+                for (int i = 0; i < upperBounds.length; i++) {
+                    ret += getPrintName(upperBounds[i]);
+                    if (i + 1 < upperBounds.length) ret += " & ";
+                }
             }
         } else if (lowerBound != null) {
             ret += " super " + getPrintName(lowerBound);
         }
         return ret;
-
     }
 
     private static String getPrintName(ClassNode cn) {

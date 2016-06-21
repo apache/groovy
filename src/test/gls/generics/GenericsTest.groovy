@@ -323,7 +323,7 @@ class GenericsTest extends GenericsTestBase {
     }
 
     void testGenericsDiamondShortcutIllegalPosition() {
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithMessages """
             List<> list4 = []
         """, 'unexpected token: <'
     }
@@ -356,55 +356,58 @@ import java.util.concurrent.atomic.AtomicInteger
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             def list1 = new ArrayList<Integer()
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             List<Integer list2 = new ArrayList<Integer>()
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             def c = []
             for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             def m(Class<Integer someParam) {}
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             def List<List<Integer> history = new ArrayList<List<Integer>>()
         """
 
-        assertScriptAndVerifyCompilationError """
+        shouldFailCompilationWithExpectedMessage """
             def List<List<Integer>> history = new ArrayList<List<Integer>()
         """
     }
 
-    private void assertScriptAndVerifyCompilationError(scriptText) {
-        assertScriptAndVerifyCompilationError(scriptText, "Missing closing bracket '>' for generics types")
+    private void shouldFailCompilationWithExpectedMessage(scriptText) {
+        shouldFailCompilationWithMessages(scriptText, "Missing closing bracket '>' for generics types")
     }
 
-    private void assertScriptAndVerifyCompilationError(scriptText, errorMessage) {
+    private void shouldFailCompilationWithMessages(scriptText, errorMessages) {
         try {
             assertScript scriptText
-            fail("The script compilation should have failed as it contains mis-matching generic brackets")
+            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
         } catch (MultipleCompilationErrorsException mcee) {
             def text = mcee.toString();
-            assert text.contains(errorMessage)
+            errorMessages = errorMessages instanceof List ? errorMessages : [errorMessages]
+            errorMessages.each {
+                assert text.contains(it)
+            }
         }
     }
 
@@ -446,5 +449,26 @@ import java.util.concurrent.atomic.AtomicInteger
         // the classes it references should be available as class files to check for ASM resolving
         //  so they're defined in compiled GenericsTestData and not loaded from text in the test
         createClassInfo 'class Bar extends gls.generics.GenericsTestData.Abstract<String> {}'
+    }
+
+    void testFriendlyErrorMessageForGenericsArityErrorsGroovy7865() {
+        shouldFailCompilationWithMessages '''
+            class MyList extends ArrayList<String, String> {}
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        shouldFailCompilationWithMessages '''
+            class MyMap extends HashMap<String> {}
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            class MyList implements List<String, String> {}
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        shouldFailCompilationWithMessages '''
+            class MyMap implements Map<String> {}
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            List<String> ss = new LinkedList<Integer, String>()
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        shouldFailCompilationWithMessages '''
+            List<String> ss = new LinkedList<>(){}
+        ''', 'Cannot use diamond <> with anonymous inner classes'
     }
 }
