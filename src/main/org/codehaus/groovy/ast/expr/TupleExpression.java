@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TupleExpression extends Expression implements Iterable<Expression> {
-    private List<Expression> expressions;
+    private final List<Expression> expressions;
 
     public TupleExpression() {
         this(0);

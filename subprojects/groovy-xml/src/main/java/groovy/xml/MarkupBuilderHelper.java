@@ -27,7 +27,7 @@ import java.util.Map;
  * @author Paul King
  */
 public class MarkupBuilderHelper {
-    private MarkupBuilder builder;
+    private final MarkupBuilder builder;
 
     /**
      * @param builder the builder to delegate to

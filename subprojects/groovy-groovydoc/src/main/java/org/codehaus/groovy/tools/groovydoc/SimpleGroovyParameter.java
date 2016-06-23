@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class SimpleGroovyParameter implements GroovyParameter {
-    private String name;
+    private final String name;
     private String typeName;
     private String defaultValue;
     private GroovyType type;

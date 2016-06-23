@@ -28,8 +28,8 @@ import java.sql.SQLException;
  * @author rfuller
  */
 class CallResultSet extends GroovyResultSetExtension {
-    int indx;
-    CallableStatement call;
+    final int indx;
+    final CallableStatement call;
     ResultSet resultSet;
     boolean firstCall = true;
 

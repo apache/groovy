@@ -31,7 +31,7 @@ import org.codehaus.groovy.ast.Parameter;
  * @author Jochen Theodorou
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
-    private SourceUnit source;
+    private final SourceUnit source;
     
     public GenericsVisitor(SourceUnit source) {
         this.source = source;

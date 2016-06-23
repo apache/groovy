@@ -54,7 +54,7 @@ import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGE
 public class GroovyRootDocBuilder {
     private final Logger log = Logger.create(GroovyRootDocBuilder.class);
     private static final char FS = '/';
-    private List<LinkArgument> links;
+    private final List<LinkArgument> links;
     private final GroovyDocTool tool;
     private final String[] sourcepaths;
     private final SimpleGroovyRootDoc rootDoc;

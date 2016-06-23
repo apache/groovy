@@ -61,7 +61,7 @@ import java.util.List;
  * @author Jochen Theodorou
  */
 public class Java5 implements VMPlugin {
-    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
 
     public void setAdditionalClassInformation(ClassNode cn) {

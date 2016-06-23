@@ -31,10 +31,10 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ArrayExpression extends Expression {
-    private List<Expression> expressions;
-    private List<Expression> sizeExpression;
+    private final List<Expression> expressions;
+    private final List<Expression> sizeExpression;
 
-    private ClassNode elementType;
+    private final ClassNode elementType;
 
     private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpression) {
         ClassNode ret = base.makeArray();

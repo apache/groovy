@@ -88,7 +88,7 @@ public enum CompilePhase {
         FINALIZATION,
     };
 
-    int phaseNumber;
+    final int phaseNumber;
     CompilePhase(int phaseNumber) {
         this.phaseNumber = phaseNumber;
     }

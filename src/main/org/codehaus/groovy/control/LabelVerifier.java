@@ -38,7 +38,7 @@ import java.util.List;
  */
 public class LabelVerifier extends ClassCodeVisitorSupport {
 
-    private SourceUnit source;
+    private final SourceUnit source;
     private LinkedList<String> visitedLabels;
     private LinkedList<ContinueStatement> continueLabels;
     private LinkedList<BreakStatement> breakLabels;

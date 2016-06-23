@@ -72,9 +72,9 @@ import java.util.Map;
 public class XmlParser implements ContentHandler {
 
     private StringBuilder bodyText = new StringBuilder();
-    private List<Node> stack = new ArrayList<Node>();
+    private final List<Node> stack = new ArrayList<Node>();
     private Locator locator;
-    private XMLReader reader;
+    private final XMLReader reader;
     private Node parent;
 
     private boolean trimWhitespace = false;

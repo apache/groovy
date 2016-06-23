@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class MockOutputTool implements OutputTool {
-    Set outputAreas; // dirs
-    Map output;
+    final Set outputAreas; // dirs
+    final Map output;
     
     public MockOutputTool() {
         outputAreas = new HashSet();

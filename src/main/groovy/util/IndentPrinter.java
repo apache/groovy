@@ -63,8 +63,8 @@ import java.io.Writer;
 public class IndentPrinter {
 
     private int indentLevel;
-    private String indent;
-    private Writer out;
+    private final String indent;
+    private final Writer out;
     private final boolean addNewlines;
     private boolean autoIndent;
 

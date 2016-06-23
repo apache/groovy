@@ -36,7 +36,7 @@ import org.codehaus.groovy.classgen.asm.WriterController;
  */
 public class TemporaryVariableExpression extends Expression {
 
-    private Expression expression;
+    private final Expression expression;
 
     private ExpressionAsVariableSlot variable;
 

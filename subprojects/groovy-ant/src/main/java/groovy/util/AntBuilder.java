@@ -59,7 +59,7 @@ import java.util.logging.Logger;
 public class AntBuilder extends BuilderSupport {
 
     private final Logger log = Logger.getLogger(getClass().getName());
-    private Project project;
+    private final Project project;
     private final AntXMLContext antXmlContext;
     private final ProjectHelper2.ElementHandler antElementHandler = new ProjectHelper2.ElementHandler();
     private final ProjectHelper2.TargetHandler antTargetHandler = new ProjectHelper2.TargetHandler();

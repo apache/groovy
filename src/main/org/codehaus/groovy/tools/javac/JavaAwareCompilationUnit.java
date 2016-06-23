@@ -38,11 +38,11 @@ import java.util.Map;
  * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    private List<String> javaSources;
-    private JavaStubGenerator stubGenerator;
+    private final List<String> javaSources;
+    private final JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
-    private File generationGoal;
-    private boolean keepStubs;
+    private final File generationGoal;
+    private final boolean keepStubs;
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration, null, null);

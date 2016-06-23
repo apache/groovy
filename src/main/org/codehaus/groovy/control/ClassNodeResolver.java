@@ -63,8 +63,8 @@ public class ClassNodeResolver {
      * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */
     public static class LookupResult {
-        private SourceUnit su;
-        private ClassNode cn;
+        private final SourceUnit su;
+        private final ClassNode cn;
         /**
          * creates a new LookupResult. You are not supposed to supply
          * a SourceUnit and a ClassNode at the same time
@@ -94,7 +94,7 @@ public class ClassNodeResolver {
     }
 
     // Map to store cached classes
-    private Map<String,ClassNode> cachedClasses = new HashMap();
+    private final Map<String,ClassNode> cachedClasses = new HashMap();
     /**
      * Internal helper used to indicate a cache hit for a class that does not exist. 
      * This way further lookups through a slow {@link #findClassNode(String, CompilationUnit)} 

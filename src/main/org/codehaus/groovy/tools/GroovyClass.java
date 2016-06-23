@@ -22,8 +22,8 @@ public class GroovyClass
 {
     public static final GroovyClass[] EMPTY_ARRAY = new GroovyClass[ 0 ];
 
-    private String name;
-    private byte[] bytes;
+    private final String name;
+    private final byte[] bytes;
 
     public GroovyClass(String name,
                        byte[] bytes)

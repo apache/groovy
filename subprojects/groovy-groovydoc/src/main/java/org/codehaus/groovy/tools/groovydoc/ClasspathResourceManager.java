@@ -24,7 +24,7 @@ import java.io.Reader;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 
 public class ClasspathResourceManager implements ResourceManager {
-    ClassLoader classLoader;
+    final ClassLoader classLoader;
     public ClasspathResourceManager() {
         classLoader = getClass().getClassLoader();
     }

@@ -78,7 +78,7 @@ import java.util.regex.Pattern;
 public class LoaderConfiguration {
 
     private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", GRAB_PREFIX = "grab", PROP_PREFIX = "property";
-    private List<URL> classPath = new ArrayList<URL>();
+    private final List<URL> classPath = new ArrayList<URL>();
     private String main;
     private boolean requireMain;
     private static final char WILDCARD = '*';

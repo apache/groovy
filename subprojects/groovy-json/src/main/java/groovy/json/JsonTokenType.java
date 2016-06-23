@@ -61,12 +61,12 @@ public enum JsonTokenType {
     /**
      * A String constant or a Pattern, serving as a validator for matching tokens.
      */
-    private Object validator;
+    private final Object validator;
 
     /**
      * A label describing the token
      */
-    private String label;
+    private final String label;
 
     /**
      * Construct a token type with a label and a validator

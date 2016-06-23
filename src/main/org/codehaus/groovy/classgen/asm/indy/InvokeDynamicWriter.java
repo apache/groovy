@@ -77,7 +77,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
                 "bootstrap",
                 BSM_METHOD_TYPE_DESCRIPTOR);
 
-    private WriterController controller;
+    private final WriterController controller;
 
     public InvokeDynamicWriter(WriterController wc) {
         super(wc);

@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
-    private Map<String, GroovyPackageDoc> packageDocs;
+    private final Map<String, GroovyPackageDoc> packageDocs;
     private List<GroovyPackageDoc> packageDocValues = null;
-    private Map<String, GroovyClassDoc> classDocs;
+    private final Map<String, GroovyClassDoc> classDocs;
     private List<GroovyClassDoc> classDocValues = null;
     private String description = "";
 

@@ -123,7 +123,7 @@ public abstract class Selector {
     }
 
     private static class CastSelector extends MethodSelector {
-        private Class<?> staticSourceType, staticTargetType;
+        private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
             super(callSite, Selector.class, "", CALL_TYPES.CAST, false, false, false, arguments);

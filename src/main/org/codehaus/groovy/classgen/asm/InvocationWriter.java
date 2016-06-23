@@ -63,7 +63,7 @@ public class InvocationWriter {
     // constructor calls with this() and super()
     static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
-    private WriterController controller;
+    private final WriterController controller;
     
     public InvocationWriter(WriterController wc) {
         this.controller = wc;

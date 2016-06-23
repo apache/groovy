@@ -39,9 +39,9 @@ import org.codehaus.groovy.control.SourceUnit;
 
 public class DependencyTracker extends ClassCodeVisitorSupport {
     private Set<String> current;
-    private Map<String, ?> precompiledDependencies;
-    private SourceUnit source;
-    private StringSetMap cache;
+    private final Map<String, ?> precompiledDependencies;
+    private final SourceUnit source;
+    private final StringSetMap cache;
 
     public DependencyTracker(SourceUnit source, StringSetMap cache) {
         this(source, cache, new HashMap());

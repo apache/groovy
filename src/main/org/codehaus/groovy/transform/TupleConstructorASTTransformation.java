@@ -81,7 +81,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
-    private static Map<Class<?>, Expression> primitivesInitialValues;
+    private static final Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
         final ConstantExpression zero = constX(0);

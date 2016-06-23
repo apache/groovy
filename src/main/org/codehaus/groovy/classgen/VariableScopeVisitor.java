@@ -44,19 +44,19 @@ import static java.lang.reflect.Modifier.isFinal;
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private VariableScope currentScope = null;
-    private VariableScope headScope = new VariableScope();
+    private final VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
-    private SourceUnit source;
+    private final SourceUnit source;
     private boolean isSpecialConstructorCall = false;
     private boolean inConstructor = false;
     private final boolean recurseInnerClasses;
 
-    private LinkedList stateStack = new LinkedList();
+    private final LinkedList stateStack = new LinkedList();
 
     private class StateStackElement {
-        VariableScope scope;
-        ClassNode clazz;
-        boolean inConstructor;
+        final VariableScope scope;
+        final ClassNode clazz;
+        final boolean inConstructor;
 
         StateStackElement() {
             scope = VariableScopeVisitor.this.currentScope;

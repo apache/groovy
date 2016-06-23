@@ -200,7 +200,7 @@ public class Groovyc extends MatchingTask {
     private Javac javac;
     private boolean jointCompilation;
 
-    private List<File> temporaryFiles = new ArrayList<File>(2);
+    private final List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
     private boolean forceLookupUnnamedFiles;

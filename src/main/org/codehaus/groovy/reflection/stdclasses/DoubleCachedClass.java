@@ -27,7 +27,7 @@ import java.math.BigInteger;
  * @author Alex.Tkachman
  */
 public class DoubleCachedClass extends NumberCachedClass { // Double, double
-    private boolean allowNull;
+    private final boolean allowNull;
 
     public DoubleCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);

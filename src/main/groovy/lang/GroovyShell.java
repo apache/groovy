@@ -49,9 +49,9 @@ public class GroovyShell extends GroovyObjectSupport {
 
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
 
-    private Binding context;
+    private final Binding context;
     private int counter;
-    private CompilerConfiguration config;
+    private final CompilerConfiguration config;
     private GroovyClassLoader loader;
 
     public static void main(String[] args) {
