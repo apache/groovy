@@ -22,8 +22,7 @@ import java.lang.ref.SoftReference
 import java.lang.reflect.Modifier
 
 /**
- * @author Alex Tkachman
- * @author Paul King
+ * Tests for the {@code @Lazy} transform.
  */
 class LazyTransformTest extends GroovyShellTestCase {
 
@@ -166,5 +165,27 @@ class LazyTransformTest extends GroovyShellTestCase {
         res.op ()
         assertTrue res.@'$list' instanceof SoftReference
         assertEquals([1,2,3], res.list)
+    }
+
+    void testNestedLazyCalls() {
+        def res = evaluate("""
+            class X {
+              @Lazy def smallSet = [1, 2, 3]
+              @Lazy def biggerSet = (smallSet + [4, 5, 6])
+            }
+            new X().biggerSet
+        """)
+        assertEquals([1,2,3,4,5,6], res)
+    }
+
+    void testNestedStaticLazyCalls() {
+        def res = evaluate("""
+            class X {
+              @Lazy static final SMALL_SET = [10, 20, 30]
+              @Lazy static final BIGGER_SET = (SMALL_SET + [40, 50, 60])
+            }
+            X.BIGGER_SET
+        """)
+        assertEquals([10,20,30,40,50,60], res)
     }
 }
