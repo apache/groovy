@@ -1429,6 +1429,118 @@ documentation.
 
 The annotation attribute `forClass` is not supported for this strategy.
 
+[[xform-AutoImplement]]
+===== `@groovy.transform.AutoImplement`
+
+The `@AutoImplement` AST transformation supplies dummy implementations for any found abstract methods from
+superclasses or interfaces. The dummy implementation is the same for all abstract methods found and can be:
+
+* essentially empty (exactly true for void methods and for methods with a return type, returns the default value for
+that type)
+* a statement that throws a specified exception (with optional message)
+* some user supplied code
+
+The first example illustrates the default case. Our class is annotated with `@AutoImplement`,
+has a superclass and a single interface as can be seen here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_default,indent=0]
+----
+
+A `void close()` method from the
+`Closeable` interface is supplied and left empty. Implementations are also supplied
+for the three abstract methods from the super class. The `get`, `addAll` and `size` methods
+have return types of `String`, `boolean` and `int` respectively with default values
+`null`, `false` and `0`. We can use our class (and check the expected return type for one
+of the methods) using the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_default_usage,indent=0]
+----
+
+It is also worthwhile examining the equivalent generated code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_default_equiv,indent=0]
+----
+
+The second example illustrates the simplest exception case. Our class is annotated with `@AutoImplement`,
+has a superclass and an annotation attribute indicates that an `IOException` should be thrown if any of
+our "dummy" methods are called. Here is the class definition:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exception,indent=0]
+----
+
+We can use the class (and check the expected exception is thrown for one
+of the methods) using the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exception_usage,indent=0]
+----
+
+It is also worthwhile examining the equivalent generated code where three void methods
+have been provided all of which throw the supplied exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exception_equiv,indent=0]
+----
+
+The third example illustrates the exception case with a supplied message. Our class is annotated with `@AutoImplement`,
+implements an interface, and has annotation attributes to indicate that an `UnsupportedOperationException` with
+`Not supported by MyIterator` as the message should be thrown for any supplied methods. Here is the class definition:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exceptionmsg,indent=0]
+----
+
+We can use the class (and check the expected exception is thrown and has the correct message
+for one of the methods) using the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exceptionmsg_usage,indent=0]
+----
+
+It is also worthwhile examining the equivalent generated code where three void methods
+have been provided all of which throw the supplied exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_exceptionmsg_equiv,indent=0]
+----
+
+The fourth example illustrates the case of user supplied code. Our class is annotated with `@AutoImplement`,
+implements an interface, has an explcitly overriden `hasNext` method, and has an annotation attribute containing the
+supplied code for any supplied methods. Here is the class definition:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_code,indent=0]
+----
+
+We can use the class (and check the expected exception is thrown and has a message of the expected form)
+using the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_code_usage,indent=0]
+----
+
+It is also worthwhile examining the equivalent generated code where the `next` method has been supplied:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_code_equiv,indent=0]
+----
+
 ==== Class design annotations
 
 This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,

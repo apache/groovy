@@ -31,12 +31,18 @@ import org.codehaus.groovy.ast.Parameter;
  * @author Jochen Theodorou
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
+    private final boolean preliminaryVisitOnly;
     private SourceUnit source;
     
     public GenericsVisitor(SourceUnit source) {
-        this.source = source;
+        this(source, false);
     }
-    
+
+    public GenericsVisitor(SourceUnit source, boolean preliminaryVisitOnly) {
+        this.source = source;
+        this.preliminaryVisitOnly = preliminaryVisitOnly;
+    }
+
     protected SourceUnit getSourceUnit() {
         return source;
     }
@@ -46,12 +52,14 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         if (error) return;
         checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass());
         ClassNode[] interfaces = node.getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            checkGenericsUsage(interfaces[i], interfaces[i].redirect());
+        for (ClassNode anInterface : interfaces) {
+            checkGenericsUsage(anInterface, anInterface.redirect());
         }
-        node.visitContents(this);
+        if (!preliminaryVisitOnly) {
+            node.visitContents(this);
+        }
     }
-    
+
     public void visitField(FieldNode node) {
         ClassNode type = node.getType();
         checkGenericsUsage(type, type.redirect());

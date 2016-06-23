@@ -1009,23 +1009,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         if (classNode.isInterface() && initialValue == null && type != null) {
-            if (type == ClassHelper.int_TYPE) {
-                initialValue = new ConstantExpression(0);
-            } else if (type == ClassHelper.long_TYPE) {
-                initialValue = new ConstantExpression(0L);
-            } else if (type == ClassHelper.double_TYPE) {
-                initialValue = new ConstantExpression(0.0);
-            } else if (type == ClassHelper.float_TYPE) {
-                initialValue = new ConstantExpression(0.0F);
-            } else if (type == ClassHelper.boolean_TYPE) {
-                initialValue = ConstantExpression.FALSE;
-            } else if (type == ClassHelper.short_TYPE) {
-                initialValue = new ConstantExpression((short) 0);
-            } else if (type == ClassHelper.byte_TYPE) {
-                initialValue = new ConstantExpression((byte) 0);
-            } else if (type == ClassHelper.char_TYPE) {
-                initialValue = new ConstantExpression((char) 0);
-            }
+            initialValue = getDefaultValueForPrimitive(type);
         }
 
 
@@ -1075,6 +1059,34 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
             classNode.addField(fieldNode);
         }
+    }
+
+    public static Expression getDefaultValueForPrimitive(ClassNode type) {
+        if (type == ClassHelper.int_TYPE) {
+            return new ConstantExpression(0);
+        }
+        if (type == ClassHelper.long_TYPE) {
+            return new ConstantExpression(0L);
+        }
+        if (type == ClassHelper.double_TYPE) {
+            return new ConstantExpression(0.0);
+        }
+        if (type == ClassHelper.float_TYPE) {
+            return new ConstantExpression(0.0F);
+        }
+        if (type == ClassHelper.boolean_TYPE) {
+            return ConstantExpression.FALSE;
+        }
+        if (type == ClassHelper.short_TYPE) {
+            return new ConstantExpression((short) 0);
+        }
+        if (type == ClassHelper.byte_TYPE) {
+            return new ConstantExpression((byte) 0);
+        }
+        if (type == ClassHelper.char_TYPE) {
+            return new ConstantExpression((char) 0);
+        }
+        return null;
     }
 
     protected ClassNode[] interfaces(AST node) {
