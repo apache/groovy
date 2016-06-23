@@ -181,4 +181,26 @@ class LazyTransformTest extends GroovyShellTestCase {
         assertTrue res.@'$list' instanceof SoftReference
         assertEquals([1,2,3], res.list)
     }
+
+    void testNestedLazyCalls() {
+        def res = evaluate("""
+            class X {
+              @Lazy def smallSet = [1, 2, 3]
+              @Lazy def biggerSet = (smallSet + [4, 5, 6])
+            }
+            new X().biggerSet
+        """)
+        assertEquals([1,2,3,4,5,6], res)
+    }
+
+    void testNestedStaticLazyCalls() {
+        def res = evaluate("""
+            class X {
+              @Lazy static final SMALL_SET = [1, 2, 3]
+              @Lazy static final BIGGER_SET = (SMALL_SET + [4, 5, 6])
+            }
+            X.BIGGER_SET
+        """)
+        assertEquals([1,2,3,4,5,6], res)
+    }
 }
