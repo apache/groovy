@@ -425,19 +425,19 @@ buildscript {
         jcenter()
     }
     dependencies {
-        // ...
-        classpath 'org.codehaus.groovy:gradle-groovy-android-plugin:0.3.5'
+        classpath 'com.android.tools.build:gradle:2.1.2'
+        classpath 'org.codehaus.groovy:groovy-android-gradle-plugin:1.0.0'
     }
 }
 
-apply plugin: 'groovyx.grooid.groovy-android'
+apply plugin: 'groovyx.android'
 ```
 
 Then you will need to add a dependency on the `grooid` version of the Groovy compiler:
 
 ```groovy
 dependencies {
-    compile 'org.codehaus.groovy:groovy:2.4.0:grooid'
+    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'
 }
 ```
 
@@ -447,7 +447,7 @@ like this:
 
 ```groovy
 dependencies {
-    compile 'org.codehaus.groovy:groovy:2.4.0:grooid'       // requires the grooid classifier
+    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'       // requires the grooid classifier
     compile ('org.codehaus.groovy:groovy-json:2.4.0') {     // no grooid version available
         transitive = false                                  // so do not depend on non-grooid version
     }
