@@ -452,15 +452,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         int i = 0;
 
+        // GROOVY-7873: GString calls toString() on each invocation of CharSequence methods such
+        // as charAt which is very expensive for large GStrings.
+        CharSequence cs = (self instanceof GString) ? self.toString() : self;
         while (i < len) {
-            final char ch = self.charAt(i++);
+            final char ch = cs.charAt(i++);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
 
                     // Eat the following LF if any.
-                    if ((i < len) && (self.charAt(i) == '\n')) {
+                    if ((i < len) && (cs.charAt(i) == '\n')) {
                         ++i;
                     }
 
@@ -581,7 +584,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         private final CharSequence delegate;
 
         public LineIterable(CharSequence cs) {
-            this.delegate = cs;
+            // GROOVY-7873: GString calls toString() on each invocation of CharSequence methods such
+            // as charAt which is very expensive for large GStrings.
+            this.delegate = (cs instanceof GString) ? cs.toString() : cs;
         }
 
         @Override
