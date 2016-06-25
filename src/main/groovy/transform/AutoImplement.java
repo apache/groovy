@@ -113,7 +113,7 @@ public @interface AutoImplement {
      * If defined, all unimplemented methods will throw this exception.
      * Will be ignored if {@code code} is defined.
      */
-    Class<? extends RuntimeException> exception() default Undefined.UNDEFINED_EXCEPTION.class;
+    Class<? extends RuntimeException> exception() default Undefined.EXCEPTION.class;
 
     /**
      * If {@code exception} is defined, {@code message} can be used to specify the exception message.
