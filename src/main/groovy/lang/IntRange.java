@@ -134,12 +134,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
             this.from = from;
             this.to = to;
         }
-
-        // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
-        Long size = 0L + this.to - this.from;
-        if (size >= Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("A range must have no more than " + Integer.MAX_VALUE + " elements but attempted " + size + " elements");
-        }
+        checkSize();
     }
 
     /**
@@ -160,12 +155,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         this.from = from;
         this.to = to;
         this.reverse = reverse;
-
-        // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
-        Long size = 0L + this.to - this.from;
-        if (size >= Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("A range must have no more than " + Integer.MAX_VALUE + " elements but attempted " + size + " elements");
-        }
+        checkSize();
     }
 
     /**
@@ -179,6 +169,16 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
+        this.reverse = false; // range may still be reversed, this value is ignored for inclusive-aware ranges
+        checkSize();
+    }
+
+    private void checkSize() {
+        // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
+        Long size = (long) this.to - this.from + 1;
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("A range must have no more than " + Integer.MAX_VALUE + " elements but attempted " + size + " elements");
+        }
     }
 
     /**
