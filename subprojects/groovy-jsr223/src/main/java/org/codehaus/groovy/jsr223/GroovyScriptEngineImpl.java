@@ -124,6 +124,11 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         this.loader = classLoader;
     }
 
+    GroovyScriptEngineImpl(GroovyScriptEngineFactory factory) {
+        this();
+        this.factory = factory;
+    }
+
     public Object eval(Reader reader, ScriptContext ctx)
             throws ScriptException {
         return eval(readFully(reader), ctx);

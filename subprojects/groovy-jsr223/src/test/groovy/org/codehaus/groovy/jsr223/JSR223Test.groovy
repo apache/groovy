@@ -214,4 +214,10 @@ class JSR223Test extends GroovyTestCase {
         assert engine.eval(code).answer == 'bar'
     }
 
+    void testScriptFactorySameAsEngineFactory() {
+        ScriptEngineFactory factory = new GroovyScriptEngineFactory()
+        ScriptEngine engine = factory.getScriptEngine()
+        assert engine.getFactory() == factory
+    }
+
 }
