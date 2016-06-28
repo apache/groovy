@@ -18,17 +18,15 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.*;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.AbstractList;
-import java.util.Iterator;
-import java.util.List;
+import java.math.*;
+import java.util.*;
+
+import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.*;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus.minus;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply.multiply;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
 
 /**
  * Represents an inclusive list of objects from a value to a value using
@@ -179,9 +177,9 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public boolean equals(ObjectRange that) {
         return that != null
-                && this.reverse == that.reverse
-                && DefaultTypeTransformation.compareEqual(this.from, that.from)
-                && DefaultTypeTransformation.compareEqual(this.to, that.to);
+               && this.reverse == that.reverse
+               && compareEqual(this.from, that.from)
+               && compareEqual(this.to, that.to);
     }
 
     public Comparable getFrom() {
@@ -203,17 +201,17 @@ public class ObjectRange extends AbstractList implements Range {
         if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
         }
-        Object value;
+        Comparable value;
         if (reverse) {
             value = to;
 
             for (int i = 0; i < index; i++) {
-                value = decrement(value);
+                value = decrement(value, 1);
             }
         } else {
             value = from;
             for (int i = 0; i < index; i++) {
-                value = increment(value);
+                value = increment(value, 1);
             }
         }
         return value;
@@ -222,7 +220,7 @@ public class ObjectRange extends AbstractList implements Range {
     public Iterator iterator() {
         return new Iterator() {
             private int index;
-            private Object value = reverse ? to : from;
+            private Comparable value = reverse ? to : from;
 
             public boolean hasNext() {
                 return index < size();
@@ -234,9 +232,9 @@ public class ObjectRange extends AbstractList implements Range {
                         value = null;
                     } else {
                         if (reverse) {
-                            value = decrement(value);
+                            value = decrement(value, 1);
                         } else {
-                            value = increment(value);
+                            value = increment(value, 1);
                         }
                     }
                 }
@@ -257,14 +255,10 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
-            int result = compareTo(from, (Comparable) value);
-            return result == 0 || result < 0 && compareTo(to, (Comparable) value) >= 0;
+            int result = compareTo(from, value);
+            return result == 0 || result < 0 && compareTo(to, value) >= 0;
         }
         return contains(value);
-    }
-
-    protected int compareTo(Comparable first, Comparable second) {
-        return DefaultGroovyMethods.numberAwareCompareTo(first, second);
     }
 
     /**
@@ -297,13 +291,8 @@ public class ObjectRange extends AbstractList implements Range {
             } else {
                 // let's brute-force calculate the size
                 size = 0;
-                Comparable first = from;
-                Comparable value = from;
-                while (compareTo(to, value) >= 0) {
-                    value = (Comparable) increment(value);
+                for (Comparable value = from; (value != null) && compareGreaterThanEqual(to, value); value = increment(value, 1))
                     size++;
-                    if (compareTo(first, value) >= 0) break; // handle back to beginning due to modulo incrementing
-                }
             }
         }
         return size;
@@ -341,11 +330,12 @@ public class ObjectRange extends AbstractList implements Range {
      * Also see containsWithinBounds.
      */
     public boolean contains(Object value) {
-        Iterator it = iterator();
         if (value == null) return false;
-        while (it.hasNext()) {
+
+        for (Object currentValue : this) {
             try {
-                if (DefaultTypeTransformation.compareEqual(value, it.next())) return true;
+                if (compareEqual(value, currentValue))
+                    return true;
             } catch (ClassCastException e) {
                 return false;
             }
@@ -353,66 +343,89 @@ public class ObjectRange extends AbstractList implements Range {
         return false;
     }
 
+    @Override
     public void step(int step, Closure closure) {
-        if (step == 0) {
-            if (compareTo(from, to) != 0) {
-                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-            } else {
-                return; // from == to and step == 0, nothing to do, so return
-            }
-        }
-
-        if (reverse) {
-            step = -step;
-        }
-        if (step > 0) {
-            Comparable first = from;
-            Comparable value = from;
-            while (compareTo(value, to) <= 0) {
-                closure.call(value);
-                for (int i = 0; i < step; i++) {
-                    value = (Comparable) increment(value);
-                    if (compareTo(value, first) <= 0) return;
-                }
-            }
-        } else {
-            step = -step;
-            Comparable first = to;
-            Comparable value = to;
-            while (compareTo(value, from) >= 0) {
-                closure.call(value);
-                for (int i = 0; i < step; i++) {
-                    value = (Comparable) decrement(value);
-                    if (compareTo(value, first) >= 0) return;
-                }
-            }
-        }
+        step((Number) step, closure);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void step(Number step, Closure closure) {
+        if (compareEqual(step, 0))
+            if (compareNotEqual(from, to))
+                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+            else
+                return; // from == to and step == 0, nothing to do, so return
+
+        boolean isAscending = !reverse;
+        if (compareLessThan(step, 0)) {
+            step = multiply(step, -1);
+            isAscending = !isAscending;
+        }
+
+        if (isAscending)
+            for (Comparable value = from; (value != null) && compareLessThanEqual(value, to); value = increment(value, step))
+                closure.call(value);
+        else
+            for (Comparable value = to; (value != null) && compareGreaterThanEqual(value, from); value = decrement(value, step))
+                closure.call(value);
+    }
+
+    @Override
     public List step(int step) {
+        return step((Number) step);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List step(Number step) {
         IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);
         return adapter.asList();
     }
 
     /**
-     * Increments by one
+     * Increments by step size
      *
      * @param value the value to increment
-     * @return the incremented value
+     * @param step  the value to increment by
+     * @return the incremented value or null, if there isn't any
      */
-    protected Object increment(Object value) {
-        return InvokerHelper.invokeMethod(value, "next", null);
+    protected Comparable increment(Comparable value, Number step) {
+        if (value instanceof Number)
+            return (Comparable) plus((Number) value, step);
+
+        for (int i = 0; compareLessThan(i, step); i++) {
+            Comparable next = (Comparable) InvokerHelper.invokeMethod(value, "next", null);
+            if (!compareGreaterThan(next, value)) /* e.g. `next` of the last element */
+                return null;
+            value = next;
+        }
+        return value;
     }
 
     /**
-     * Decrements by one
+     * Decrements by step size
      *
      * @param value the value to decrement
-     * @return the decremented value
+     * @param step  the value to decrement by
+     * @return the decremented value or null, if there isn't any
      */
-    protected Object decrement(Object value) {
-        return InvokerHelper.invokeMethod(value, "previous", null);
+    protected Comparable decrement(Comparable value, Number step) {
+        if (value instanceof Number)
+            return (Comparable) minus((Number) value, step);
+
+        for (int i = 0; compareLessThan(i, step); i++) {
+            Comparable previous = (Comparable) InvokerHelper.invokeMethod(value, "previous", null);
+            if (!compareLessThan(previous, value)) /* e.g. `previous` of the first element */
+                return null;
+            value = previous;
+        }
+        return value;
     }
 
     private static Comparable normaliseStringType(final Comparable operand) {

@@ -384,7 +384,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#step(int,groovy.lang.Closure)}.
+     * Test method for {@link groovy.lang.EmptyRange#step(Number,groovy.lang.Closure)}.
      */
     public void testStepIntClosure() {
         final List callLog = new ArrayList();
@@ -394,7 +394,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#step(int)}.
+     * Test method for {@link groovy.lang.EmptyRange#step(Number)}.
      */
     public void testStepInt() {
         List result = range.step(1);

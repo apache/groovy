@@ -60,12 +60,26 @@ class RangeTest extends GroovyTestCase {
         assertStep(9..0, 3, [9, 6, 3, 0])
         assertStep(9..<0, 3, [9, 6, 3])
     }
-    
+
+    void testNegativeStep() {
+        assertStep(0..8, -3, [8, 5, 2])
+        assertStep(9..0, -3, [0, 3, 6, 9])
+
+        assertStep(0.0..9.0, -3, [9, 6, 3, 0])
+        assertStep(9.0..0.0, -3, [0, 3, 6, 9])
+    }
+
     void testObjectStep() {
         assertStep('a'..'f', 2, ['a', 'c', 'e'])
+        assertStep('f'..'a', 2, ['f', 'd', 'b'])
         assertStep('a'..<'e', 2, ['a', 'c'])
         assertStep('z'..'v', 2, ['z', 'x', 'v'])
         assertStep('z'..<'v', 2, ['z', 'x'])
+    }
+
+    void testNegativeObjectStep() {
+        assertStep('a'..'f', -2, ['f', 'd', 'b'])
+        assertStep('f'..'a', -2, ['a', 'c', 'e'])
     }
     
     void testIterateIntRange() {
@@ -81,25 +95,65 @@ class RangeTest extends GroovyTestCase {
         assertIterate('z'..'x', ['z', 'y', 'x'])
         assertIterate('z'..<'x', ['z', 'y'])
     }
-    
+
+    enum RomanNumber {
+        I, II, III, IV
+    }
+    enum NullableRomanNumber {
+        I, II, III, IV
+
+        def previous() { (ordinal() - 1).with { (it < 0) ? null : values()[it] } }
+        def next() { (ordinal() + 1).with { (it >= values().size()) ? null : values()[it] } }
+    }
+
+    void testStepWithEnumRange() {
+        [RomanNumber, NullableRomanNumber].each { num ->
+            def range = num.II..num.IV
+            assertIterate(range.step(-4), [num.IV])
+            assertIterate(range.step(-3), [num.IV])
+            assertIterate(range.step(-2), [num.IV, num.II])
+            assertIterate(range.step(-1), [num.IV, num.III, num.II])
+            assertIterate(range.toList(), [num.II, num.III, num.IV])
+            assertIterate(range.step(+1), [num.II, num.III, num.IV])
+            assertIterate(range.step(+2), [num.II, num.IV])
+            assertIterate(range.step(+3), [num.II])
+            assertIterate(range.step(+4), [num.II])
+        }
+    }
+
+    void testStepWithReverseEnumRange() {
+        [RomanNumber, NullableRomanNumber].each { num ->
+            def reverseRange = num.IV..num.II
+            assertIterate(reverseRange.step(-4), [num.II])
+            assertIterate(reverseRange.step(-3), [num.II])
+            assertIterate(reverseRange.step(-2), [num.II, num.IV])
+            assertIterate(reverseRange.step(-1), [num.II, num.III, num.IV])
+            assertIterate(reverseRange.toList(), [num.IV, num.III, num.II])
+            assertIterate(reverseRange.step(+1), [num.IV, num.III, num.II])
+            assertIterate(reverseRange.step(+2), [num.IV, num.II])
+            assertIterate(reverseRange.step(+3), [num.IV])
+            assertIterate(reverseRange.step(+4), [num.IV])
+        }
+    }
+
     void testRangeContains() {
         def range = 0..10
-        assert range.contains(0)
-        assert range.contains(10)
+        assert range.contains(0) && 0 in range
+        assert range.contains(10) && 10 in range
         
         range = 0..<5
-        assert range.contains(0)
-        assert ! range.contains(5)
+        assert range.contains(0) && 0 in range
+        assert !range.contains(5) && !(5 in range)
     }
     
     void testBackwardsRangeContains() {
         def range = 10..0
-        assert range.contains(0)
-        assert range.contains(10)
+        assert range.contains(0) && 0 in range
+        assert range.contains(10) && 10 in range
         
         range = 5..<1
-        assert range.contains(5)
-        assert ! range.contains(1)
+        assert range.contains(5) && 5 in range
+        assert !range.contains(1) && !(1 in range)
     }
     
     void testObjectRangeContains() {
@@ -208,28 +262,48 @@ class RangeTest extends GroovyTestCase {
         assert (0..<upper2).size() == 4
     }
 
-    protected void assertIterate(range, expected) {
+    void testDecimalRanges() {
+        def decimalRange = (0.1..1.0).step(0.1)
+        assertIterate(decimalRange, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    }
+
+    void testNegativeDecimalRanges() {
+        def decimalRange = (1.0..0.1).step(-0.15)
+        assertIterate(decimalRange, [0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0])
+    }
+
+    void testEmptyDecimalRanges() {
+        def decimalRange = (0.1..0.1).step(0)
+        assertIterate(decimalRange, [])
+    }
+
+    protected static void assertIterate(List range, List expected) {
+        assert range.size() == expected.size(), "size() on ${range}"
+
         def list = []
         for (it in range) {
             list << it
         }
-        assert list == expected , "for loop on ${range}"
+        assert list == expected, "for loop on ${range}"
         
         list = []
         range.each { list << it}
-        assert list == expected , "each() on ${range}"
+        assert list == expected, "each() on ${range}"
+
+        list = range.collect()
+        assert list == expected, "collect() on ${range}"
     }
     
     protected void assertSize(range, expected) {
         def size = range.size()
         assert size == expected , range
     }
-    
+
     protected void assertToString(range, expected) {
         def text = range.toString()
-        assert text == expected , "toString() for ${range}"
+        assert text == expected, "toString() for ${range}"
         text = range.inspect()
-        assert text == expected , "inspect() for ${range}"
+        assert text == expected, "inspect() for ${range}"
     }
     
     protected void assertToString(range, expectedString, expectedInspect) {

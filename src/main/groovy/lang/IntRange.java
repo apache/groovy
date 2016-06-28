@@ -27,6 +27,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.*;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus.*;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply.multiply;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.*;
 /**
  * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
  * to and potentially including a given {@code to} value.
@@ -355,40 +359,50 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return super.containsAll(other);
     }
 
+    @Override
     public void step(int step, Closure closure) {
-        if (step == 0) {
-            if (!getFrom().equals(getTo())) {
-                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-            } else {
-                return; // from == to and step == 0, nothing to do, so return
-            }
-        }
-
-        if (isReverse()) {
-            step = -step;
-        }
-        if (step > 0) {
-            int value = getFrom();
-            while (value <= getTo()) {
-                closure.call(Integer.valueOf(value));
-                if ((0L + value + step) >= Integer.MAX_VALUE) {
-                    break;
-                }
-                value = value + step;
-            }
-        } else {
-            int value = getTo();
-            while (value >= getFrom()) {
-                closure.call(Integer.valueOf(value));
-                if ((0L + value + step) <= Integer.MIN_VALUE) {
-                    break;
-                }
-                value = value + step;
-            }
-        }
+        step((Number) step, closure);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void step(Number step, Closure closure) {
+        Long from = getFrom().longValue();
+        Long to = getTo().longValue();
+
+        if (compareEqual(step, 0))
+            if (compareNotEqual(from, to))
+                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+            else
+                return; // from == to and step == 0, nothing to do, so return
+
+        boolean isAscending = !isReverse();
+        if (compareLessThan(step, 0)) {
+            step = multiply(step, -1);
+            isAscending = !isAscending;
+        }
+
+        if (isAscending)
+            for (Long value = from; value <= to; value = (Long) plus(value, step))
+                closure.call(value);
+        else
+            for (Long value = to; value >= from; value = (Long) minus(value, step))
+                closure.call(value);
+    }
+
+
+    @Override
     public List<Integer> step(int step) {
+        return step((Number) step);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Integer> step(Number step) {
         IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
         step(step, adapter);
         return adapter.asList();

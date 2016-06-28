@@ -73,23 +73,32 @@ public interface Range<T extends Comparable> extends List<T> {
     boolean containsWithinBounds(Object o);
 
     /**
-     * Steps through the range, calling a closure for each number.
-     *
-     * @param step    the amount by which to step. If negative, steps through the
-     *                range backwards.
-     * @param closure the {@link Closure} to call
+     * Replaced by <code>step(Number, Closure)</code>
      */
     void step(int step, Closure closure);
 
     /**
-     * Forms a list by stepping through the range by the indicated interval.
+     * Steps through the range, calling a closure for each number.
      *
-     * @param step the amount by which to step. If negative, steps through the
-     *             range backwards.
-     * @return the list formed by stepping through the range by the indicated
-     *         interval.
+     * @param step    the amount by which to step.
+     *                If negative, steps through the range backwards.
+     * @param closure the {@link Closure} to call
+     */
+    void step(Number step, Closure closure);
+
+    /**
+     * Replaced by <code>step(Number)</code>
      */
     List<T> step(int step);
+
+    /**
+     * Forms a list by stepping through the range by the indicated interval.
+     *
+     * @param step the amount by which to step.
+     *             If negative, steps through the range backwards.
+     * @return the list formed by stepping through the range by the indicated interval.
+     */
+    List<T> step(Number step);
 
     /**
      * @return the verbose {@link String} representation of this {@link Range} as would be typed into a console
