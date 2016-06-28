@@ -125,16 +125,16 @@ public class ObjectRange extends AbstractList implements Range {
         }
 
         /*
-        areReversed() already does an implicit type compatibility check
-        based on DefaultTypeTransformation.compareToWithEqualityCheck() for mixed classes
-        but it is only invoked if reverse == null.
-        So Object Range has to perform those type checks for consistency even when not calling
-        compareToWithEqualityCheck(), and ObjectRange has
-        to use the normalized value used in a successful comparison in
-        compareToWithEqualityCheck(). Currently that means Chars and single-char Strings
-        are evaluated as the char's charValue (an integer) when compared to numbers.
-        So '7'..'9' should produce ['7', '8', '9'], whereas ['7'..9] and [7..'9'] should produce [55, 56, 57].
-        if classes match, or both numericals, no checks possible / necessary
+            areReversed() already does an implicit type compatibility check
+            based on DefaultTypeTransformation.compareToWithEqualityCheck() for mixed classes
+            but it is only invoked if reverse == null.
+            So Object Range has to perform those type checks for consistency even when not calling
+            compareToWithEqualityCheck(), and ObjectRange has
+            to use the normalized value used in a successful comparison in
+            compareToWithEqualityCheck(). Currently that means Chars and single-char Strings
+            are evaluated as the char's charValue (an integer) when compared to numbers.
+            So '7'..'9' should produce ['7', '8', '9'], whereas ['7'..9] and [7..'9'] should produce [55, 56, 57].
+            if classes match, or both numerical, no checks possible / necessary
         */
         if (smaller.getClass() == larger.getClass() ||
                 (smaller instanceof Number && larger instanceof Number)) {
@@ -449,9 +449,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     /**
-     * if operand is a Character or a String with one character, return that characters int value.
-     * @param operand
-     * @return
+     * if operand is a Character or a String with one character, return that character's int value.
      */
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {

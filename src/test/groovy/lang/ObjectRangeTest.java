@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author James Strachan
+ * Provides unit tests for the <code>ObjectRange</code> class.
  */
 public class ObjectRangeTest extends TestCase {
 
@@ -181,12 +181,14 @@ public class ObjectRangeTest extends TestCase {
         } catch (IllegalArgumentException e) {
             // pass
         }
+
         try {
             createRange("11", 11);
             fail();
         } catch (IllegalArgumentException e) {
             // pass
         }
+
         try {
             createRange(11, "11");
             fail();
@@ -202,7 +204,6 @@ public class ObjectRangeTest extends TestCase {
         assertEquals(5, mixed.size());
         assertEquals(Arrays.asList(55, 56, 57, 58, 59), mixed.step(1));
     }
-
 
     public void testContains() {
         Range r = createRange(10, 20);
@@ -288,7 +289,6 @@ public class ObjectRangeTest extends TestCase {
         assertTrue("contains 4.5", sr.contains(new BigDecimal("4.5")));
         assertFalse("contains 5.5", sr.contains(new BigDecimal("5.5")));
         assertEquals("size", 3, sr.size());
-
     }
 
     public void testHashCodeAndEquals() {
@@ -364,7 +364,6 @@ public class ObjectRangeTest extends TestCase {
     protected Range createRange(Comparable from, Comparable to) {
         return new ObjectRange(from, to);
     }
-
 
     protected void assertEquals(String msg, int expected, Object value) {
         assertEquals(msg, new Integer(expected), value);
