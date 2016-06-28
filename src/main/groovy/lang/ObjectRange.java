@@ -158,7 +158,7 @@ public class ObjectRange extends AbstractList implements Range {
                     // starting with number will never reach a non-number, same for string
                     throw new IllegalArgumentException("Incompatible Argument classes for ObjectRange " + smaller.getClass() + ", " + larger.getClass());
                 }
-                // Since normalizing did not help, use original values at users risk
+                // Since normalizing did not help, use original values at user's risk
                 this.from = smaller;
                 this.to = larger;
             }
