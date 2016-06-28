@@ -124,13 +124,44 @@ public class ObjectRange extends AbstractList implements Range {
             larger = ((Integer) larger).longValue();
         }
 
-        // TODO: should we care about different types here?
-        if (smaller.getClass() == larger.getClass()) {
+        /*
+        areReversed() already does an implicit type compatibility check
+        based on DefaultTypeTransformation.compareToWithEqualityCheck() for mixed classes
+        but it is only invoked if reverse == null.
+        So Object Range has to perform those type checks for consistency even when not calling
+        compareToWithEqualityCheck(), and ObjectRange has
+        to use the normalized value used in a successful comparison in
+        compareToWithEqualityCheck(). Currently that means Chars and single-char Strings
+        are evaluated as the char's charValue (an integer) when compared to numbers.
+        So '7'..'9' should produce ['7', '8', '9'], whereas ['7'..9] and [7..'9'] should produce [55, 56, 57].
+        if classes match, or both numericals, no checks possible / necessary
+        */
+        if (smaller.getClass() == larger.getClass() ||
+                (smaller instanceof Number && larger instanceof Number)) {
             this.from = smaller;
             this.to = larger;
         } else {
-            this.from = normaliseStringType(smaller);
-            this.to = normaliseStringType(larger);
+            // Convenience hack: try convert single-char strings to ints
+            Comparable tempfrom = normaliseStringType(smaller);
+            Comparable tempto = normaliseStringType(larger);
+            // if after normalizing both are numbers, assume intended range was numbers
+            if (tempfrom instanceof Number && tempto instanceof Number) {
+                this.from = tempfrom;
+                this.to = tempto;
+            } else {
+                // if convenience hack did not make classes match,
+                // throw exception when starting with known class, and thus "from" cannot be advanced over "to".
+                // Note if start is an unusual Object, it could have a next() method
+                // that yields a Number or String to close the range
+                Comparable start = this.reverse ? larger : smaller;
+                if (start instanceof String || start instanceof Number) {
+                    // starting with number will never reach a non-number, same for string
+                    throw new IllegalArgumentException("Incompatible Argument classes for ObjectRange " + smaller.getClass() + ", " + larger.getClass());
+                }
+                // Since normalizing did not help, use original values at users risk
+                this.from = smaller;
+                this.to = larger;
+            }
         }
         checkBoundaryCompatibility();
     }
@@ -140,19 +171,20 @@ public class ObjectRange extends AbstractList implements Range {
      * Called at construction time, subclasses may override cautiously (using only members to and from).
      */
     protected void checkBoundaryCompatibility() {
-        if (from instanceof String || to instanceof String) {
+        if (from instanceof String && to instanceof String) {
             // this test depends deeply on the String.next implementation
             // 009.next is 00:, not 010
             String start = from.toString();
             String end = to.toString();
-            if (start.length() > end.length()) {
-                throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
+            if (start.length() != end.length()) {
+                throw new IllegalArgumentException("Incompatible Strings for Range: different length");
             }
-            int length = Math.min(start.length(), end.length());
+            int length = start.length();
             int i;
             for (i = 0; i < length; i++) {
                 if (start.charAt(i) != end.charAt(i)) break;
             }
+            // strings must be equal except for the last character
             if (i < length - 1) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
             }
@@ -287,8 +319,8 @@ public class ObjectRange extends AbstractList implements Range {
                 char fromNum = (Character) from;
                 char toNum = (Character) to;
                 size = toNum - fromNum + 1;
-            } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
-                    from instanceof BigInteger || to instanceof BigInteger) {
+            } else if (((from instanceof BigDecimal || from instanceof BigInteger ) && to instanceof Number) ||
+                    ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal(from.toString());
                 BigDecimal toNum = new BigDecimal(to.toString());
@@ -302,7 +334,8 @@ public class ObjectRange extends AbstractList implements Range {
                 while (compareTo(to, value) >= 0) {
                     value = (Comparable) increment(value);
                     size++;
-                    if (compareTo(first, value) >= 0) break; // handle back to beginning due to modulo incrementing
+                    // handle back to beginning due to modulo incrementing
+                    if (compareTo(first, value) >= 0) break;
                 }
             }
         }
@@ -415,6 +448,11 @@ public class ObjectRange extends AbstractList implements Range {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
 
+    /**
+     * if operand is a Character or a String with one character, return that characters int value.
+     * @param operand
+     * @return
+     */
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
             return (int) (Character) operand;
