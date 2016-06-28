@@ -212,48 +212,6 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
 
     // package-privates
     Object eval(Class scriptClass, final ScriptContext ctx) throws ScriptException {
-        // Bindings so script has access to this environment.
-        // Only initialize once.
-        if (null == ctx.getAttribute("context", ScriptContext.ENGINE_SCOPE)) {
-            // add context to bindings
-            ctx.setAttribute("context", ctx, ScriptContext.ENGINE_SCOPE);
-
-            // direct output to ctx.getWriter
-            // If we're wrapping with a PrintWriter here,
-            // enable autoFlush because otherwise it might not get done!
-            final Writer writer = ctx.getWriter();
-            ctx.setAttribute("out", (writer instanceof PrintWriter) ?
-                            writer :
-                            new PrintWriter(writer, true),
-                    ScriptContext.ENGINE_SCOPE);
-
-// Not going to do this after all (at least for now).
-// Scripts can use context.{reader, writer, errorWriter}.
-// That is a modern version of System.{in, out, err} or Console.{reader, writer}().
-//
-//            // New I/O names consistent with ScriptContext and java.io.Console.
-//
-//            ctx.setAttribute("writer", writer, ScriptContext.ENGINE_SCOPE);
-//
-//            // Direct errors to ctx.getErrorWriter
-//            final Writer errorWriter = ctx.getErrorWriter();
-//            ctx.setAttribute("errorWriter", (errorWriter instanceof PrintWriter) ?
-//                                    errorWriter :
-//                                    new PrintWriter(errorWriter),
-//                                    ScriptContext.ENGINE_SCOPE);
-//
-//            // Get input from ctx.getReader
-//            // We don't wrap with BufferedReader here because we expect that if
-//            // the host wants that they do it.  Either way Groovy scripts will
-//            // always have readLine because the GDK supplies it for Reader.
-//            ctx.setAttribute("reader", ctx.getReader(), ScriptContext.ENGINE_SCOPE);
-        }
-
-        // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for differents groovy script
-        if (ctx.getWriter() != null) {
-            ctx.setAttribute("out", new PrintWriter(ctx.getWriter(), true), ScriptContext.ENGINE_SCOPE);
-        }
-
         /*
          * We use the following Binding instance so that global variable lookup
          * will be done in the current ScriptContext instance.
@@ -265,6 +223,19 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                     int scope = ctx.getAttributesScope(name);
                     if (scope != -1) {
                         return ctx.getAttribute(name, scope);
+                    }
+                    // Redirect script output to context writer, if out var is not already provided
+                    if ("out".equals(name)) {
+                        Writer writer = ctx.getWriter();
+                        if (writer != null) {
+                            return (writer instanceof PrintWriter) ?
+                                    (PrintWriter) writer :
+                                    new PrintWriter(writer, true);
+                        }
+                    }
+                    // Provide access to engine context, if context var is not already provided
+                    if ("context".equals(name)) {
+                        return ctx;
                     }
                 }
                 throw new MissingPropertyException(name, getClass());
@@ -344,12 +315,6 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
             }
         } catch (Exception e) {
             throw new ScriptException(e);
-        } finally {
-            // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for different groovy script
-            // Groovy's scripting engine implementation adds those two variables in the binding
-            // but should clean up afterwards
-            ctx.removeAttribute("context", ScriptContext.ENGINE_SCOPE);
-            ctx.removeAttribute("out", ScriptContext.ENGINE_SCOPE);
         }
     }
 
