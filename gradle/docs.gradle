@@ -61,7 +61,7 @@ def groovydocSpec = {
     ext.doctitle = doc.title
     header = doc.title
     footer = doc.footer
-    overview = rootProject.file('src/main/overview.html')
+    overviewText = rootProject.resources.text.fromFile('src/main/overview.html')
     includePrivate = false
     link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
