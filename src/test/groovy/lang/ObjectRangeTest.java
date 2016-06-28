@@ -21,28 +21,67 @@ package groovy.lang;
 import junit.framework.TestCase;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author James Strachan
  */
-public class RangeTest extends TestCase {
+public class ObjectRangeTest extends TestCase {
 
     public void testSize() {
         Range r = createRange(0, 10);
         assertEquals("Size of " + r, 11, r.size());
         r = createRange(0, 1);
         assertEquals("Size of " + r, 2, r.size());
+        r = createRange(1, 0);
+        assertEquals("Size of " + r, 2, r.size());
         r = createRange(0, 0);
         assertEquals("Size of " + r, 1, r.size());
 
         r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
         assertEquals("Size of " + r, 8, r.size());
+        r = createRange(new BigDecimal("10"), new BigDecimal("2.1"));
+        assertEquals("Size of " + r, 8, r.size());
+
+        r = createRange("a", "d");
+        assertEquals("Size of " + r, 4, r.size());
+        r = createRange("d", "a");
+        assertEquals("Size of " + r, 4, r.size());
+
+        r = createRange("aa1", "aa4");
+        assertEquals("Size of " + r, 4, r.size());
+        r = createRange("aa4", "aa1");
+        assertEquals("Size of " + r, 4, r.size());
+        r = createRange('7',  ';');
+        assertEquals(5, r.size());
+
+        // '7', '8', '9', ':', ';'
+        Range mixed = createRange('7',  ';');
+        assertEquals(5, mixed.size());
+        mixed = createRange('7',  59.5);
+        assertEquals(5, mixed.size());
+        mixed = createRange('7',  59);
+        assertEquals(5, mixed.size());
+        mixed = createRange('7',  new BigInteger("59"));
+        assertEquals(5, mixed.size());
+        mixed = createRange('7',  new BigDecimal("59.5"));
+        assertEquals(5, mixed.size());
+
+        // integer overflow
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(0L, Integer.MAX_VALUE + 1L).size());
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(Long.MIN_VALUE, Long.MAX_VALUE).size());
+        assertEquals(Integer.MAX_VALUE, new ObjectRange(new BigInteger("-10"), new BigInteger(Long.toString((long) Integer.MAX_VALUE) + 1L)).size());
     }
 
     public void testProperties() {
         Range r = createRange(0, 10);
+        assertEquals("from", 0, r.getFrom());
+        assertEquals("to", 10, r.getTo());
+
+        r = createRange(10, 0);
         assertEquals("from", 0, r.getFrom());
         assertEquals("to", 10, r.getTo());
     }
@@ -59,6 +98,18 @@ public class RangeTest extends TestCase {
             BigDecimal value = (BigDecimal) r.get(i);
             assertEquals("Item at index: " + i, new BigDecimal("3.2").add(new BigDecimal("" + i)), value);
         }
+
+        r = new ObjectRange(10, 20, false);
+        for (int i = 0; i < 10; i++) {
+            Integer value = (Integer) r.get(i);
+            assertEquals("Item at index: " + i, i + 10, value.intValue());
+        }
+
+        r = new ObjectRange(10, 20, true);
+        for (int i = 0; i < 10; i++) {
+            Integer value = (Integer) r.get(i);
+            assertEquals("Item at index: " + i, 20 - i, value.intValue());
+        }
     }
 
     public void testNullForFromOrToIsIllegal() {
@@ -73,7 +124,26 @@ public class RangeTest extends TestCase {
     }
 
     public void testGetOutOfRange() {
-        Range r = createRange(10, 20);
+        Range r = createRange(1, 1);
+        assertEquals("Item at index: 0", 1, r.get(0));
+
+        try {
+            r.get(-1);
+            fail("Should have thrown IndexOutOfBoundsException");
+        }
+        catch (IndexOutOfBoundsException e) {
+            // worked
+        }
+
+        try {
+            r.get(1);
+            fail("Should have thrown IndexOutOfBoundsException");
+        }
+        catch (IndexOutOfBoundsException e) {
+            // worked
+        }
+
+        r = createRange(10, 20);
 
         try {
             r.get(-1);
@@ -149,6 +219,9 @@ public class RangeTest extends TestCase {
 
     public void testSubList() {
         Range r = createRange(10, 20);
+        assertEquals("from", 10, r.getFrom());
+        assertEquals("to", 20, r.getTo());
+        assertEquals("size", 11, r.size());
 
         List s = r.subList(2, 4);
 
@@ -157,6 +230,28 @@ public class RangeTest extends TestCase {
         assertEquals("from", 12, sr.getFrom());
         assertEquals("to", 13, sr.getTo());
         assertEquals("size", 2, sr.size());
+
+        s = r.subList(0, 11);
+
+        sr = (Range) s;
+
+        assertEquals("from", 10, sr.getFrom());
+        assertEquals("to", 20, sr.getTo());
+        assertEquals("size", 11, sr.size());
+
+        try {
+            r.subList(-2, 4);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // pass
+        }
+
+        try {
+            r.subList(5, 12);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // pass
+        }
 
         r = createRange(new BigDecimal("0.5"), new BigDecimal("8.5"));
         assertEquals("size", 9, r.size());
@@ -183,14 +278,22 @@ public class RangeTest extends TestCase {
         assertFalse("a != c", a.equals(c));
     }
 
-    public void testIterator() {
+    public void testIteratorAndStep1() {
         Range r = createRange(5, 11);
 
-        int i = 5;
+        int i = 4;
         for (Iterator it = r.iterator(); it.hasNext();) {
-            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
             i++;
+            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
         }
+        assertEquals(11, i);
+
+        i = 4;
+        for (Iterator it = r.step(1).iterator(); it.hasNext();) {
+            i++;
+            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
+        }
+        assertEquals(11, i);
 
         r = createRange(new BigDecimal("5.0"), new BigDecimal("11.0"));
         BigDecimal one = new BigDecimal("1.0");
@@ -200,15 +303,43 @@ public class RangeTest extends TestCase {
             assertEquals("equals to " + val, val, (BigDecimal) (it.next()));
             val = val.add(one);
         }
+        assertEquals(11, i);
+
+        val = new BigDecimal("5.0");
+        for (Iterator it = r.step(1).iterator(); it.hasNext();) {
+            assertEquals("equals to " + val, val, (BigDecimal) (it.next()));
+            val = val.add(one);
+        }
+        assertEquals(11, i);
+
+        r = createRange(new Character('a'), new Character('z'));
+        char valChar = 'a';
+        for (Iterator it = r.iterator(); it.hasNext();) {
+            assertEquals("equals to " + valChar, valChar, ((Character) it.next()).charValue());
+            if (it.hasNext()) {
+                valChar = (char) (((int) valChar) + 1);
+            }
+        }
+        assertEquals('z', valChar);
+
+        valChar = 'a';
+        for (Iterator it = r.step(1).iterator(); it.hasNext();) {
+            assertEquals("equals to " + valChar, valChar, ((Character) it.next()).charValue());
+            if (it.hasNext()) {
+                valChar = (char) (((int) valChar) + 1);
+            }
+        }
+        assertEquals('z', valChar);
     }
 
     protected Range createRange(int from, int to) {
         return new ObjectRange(new Integer(from), new Integer(to));
     }
 
-    protected Range createRange(BigDecimal from, BigDecimal to) {
+    protected Range createRange(Comparable from, Comparable to) {
         return new ObjectRange(from, to);
     }
+
 
     protected void assertEquals(String msg, int expected, Object value) {
         assertEquals(msg, new Integer(expected), value);
