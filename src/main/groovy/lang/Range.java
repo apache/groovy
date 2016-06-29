@@ -23,10 +23,21 @@ import java.util.List;
 /**
  * A Range represents the list of all items obtained by starting from a
  * <code>from</code> value and calling <code>next()</code> successively
+<<<<<<< HEAD
  * until you reach the <code>to</code> value. For a reverse range,
  * the list is obtained by starting at the <code>to</code> value and
  * successively calling <code>previous()</code> until the <code>from</code>
  * value is reached.
+=======
+ * until another call to <code>next()</code> would be higher than the <code>to</code> value.
+ * For a reverse range, the list is obtained by starting at the <code>to</code> value and
+ * successively calling <code>previous()</code> until another call to
+ * <code>previous()</code> would be lower than the <code>from</code>value.
+ * <p>
+ * This means in odd cases the second boundary may not be contained in the range,
+ * and a..b may produce a different set of elements than (b..a).reversed().
+ * E.g.  1..2.5 == [1, 2]; but 2.5..1 == [2.5, 1.5]
+>>>>>>> a8413d3... Refactor: unified the style of Range related classes
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
@@ -56,6 +67,12 @@ public interface Range<T extends Comparable> extends List<T> {
     /**
      * Indicates whether an object is greater than or equal to the <code>from</code>
      * value for the range and less than or equal to the <code>to</code> value.
+     * <p>
+     * This may be true even for values not contained in the range.
+     * <p>
+     * Example:   from = 1.5 , to = 3, next() increments by 1
+     * containsWithinBounds(2) == true
+     * contains(2) == false
      *
      * @param o the object to check against the boundaries of the range
      * @return <code>true</code> if the object is between the from and to values
@@ -76,14 +93,12 @@ public interface Range<T extends Comparable> extends List<T> {
      *
      * @param step the amount by which to step. If negative, steps through the
      *             range backwards.
-     * @return the list formed by stepping through the range by the indicated
-     *         interval.
+     * @return the list formed by stepping through the range by the indicated interval.
      */
     List<T> step(int step);
 
     /**
-     * @return the verbose {@link String} representation of this {@link Range} as would be typed into a console
-     *         to create the {@link Range} instance
+     * @return the verbose {@link String} representation of this {@link Range} as would be typed into a console to create the {@link Range} instance
      */
     String inspect();
 }
