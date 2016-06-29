@@ -237,16 +237,16 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        final StepIterator iter = new StepIterator(this, 1);
 
-        Comparable value = iter.next();
-        for (int i = 0; i < index; i++) {
-            if (!iter.hasNext()) {
+        int i = 0;
+        for (Iterator<Comparable> iter = new LazySteppingIterator(this, 1); ; i++) {
+            final Comparable next = iter.next();
+            if (i == index) {
+                return next;
+            } else if (!iter.hasNext()) {
                 throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
             }
-            value = iter.next();
         }
-        return value;
     }
 
     /**
@@ -303,8 +303,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
                 }
             } else {
                 // let's brute-force calculate the size by iterating start to end
-                final Iterator<Comparable> iter = new StepIterator(this, 1);
-                while (iter.hasNext()) {
+                for (Iterator<Comparable> iter = new LazySteppingIterator(this, 1); iter.hasNext(); ) {
                     tempsize++;
                     // integer overflow
                     if (tempsize < 0) {
@@ -336,7 +335,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
         // Performance detail:
         // not using get(fromIndex), get(toIndex) in the following to avoid stepping over elements twice
-        final Iterator<Comparable> iter = new StepIterator(this, 1);
+        final Iterator<Comparable> iter = new LazySteppingIterator(this, 1);
 
         Comparable toValue = iter.next();
         int i = 0;
@@ -374,15 +373,13 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
      */
     @Override
     public boolean contains(Object value) {
-        final Iterator<Comparable> iter = new StepIterator(this, 1);
         if (value == null) {
             return false;
         }
-        while (iter.hasNext()) {
-            try {
-                if (compareEqual(value, iter.next())) return true;
-            } catch (ClassCastException e) {
-                return false;
+
+        for (Iterator<Comparable> iter = new LazySteppingIterator(this, 1); iter.hasNext(); ) {
+            if (compareEqual(value, iter.next())) {
+                return true;
             }
         }
         return false;
@@ -393,8 +390,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         if (step == 0 && compareEqual(from, to)) {
             return; // from == to and step == 0, nothing to do, so return
         }
-        final Iterator<Comparable> iter = new StepIterator(this, step);
-        while (iter.hasNext()) {
+
+        for (Iterator<Comparable> iter = new LazySteppingIterator(this, step); iter.hasNext(); ) {
             closure.call(iter.next());
         }
     }
@@ -404,106 +401,89 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
      */
     @Override
     public Iterator<Comparable> iterator() {
-        // non thread-safe iterator
-        final Iterator<Comparable> innerIterator = new StepIterator(this, 1);
         return new Iterator<Comparable>() {
+            private final Iterator<Comparable> delegate = new LazySteppingIterator(ObjectRange.this, 1);
+
             @Override
             public synchronized boolean hasNext() {
-                return innerIterator.hasNext();
+                return delegate.hasNext();
             }
 
             @Override
             public synchronized Comparable next() {
-                return innerIterator.next();
+                return delegate.next();
             }
 
             @Override
             public synchronized void remove() {
-                innerIterator.remove();
+                delegate.remove();
             }
         };
     }
 
     /**
-     * convenience class to serve in other methods.
-     * It's not thread-safe, and lazily produces the next element only on calls of hasNext() or next()
+     * Iterator with configurable step size
+     * It's not thread-safe, and lazily produces the current element (including the first one)
+     * only on hasNext() or next() calls.
      */
-    private static class StepIterator implements Iterator<Comparable> {
-        // actual step, can be +1 when desired step is -1 and direction is from high to low
+    class LazySteppingIterator implements Iterator<Comparable> {
+        private final Range<?> range;
         private final int step;
-        private final ObjectRange range;
-        private int index = -1;
-        private Comparable value;
-        private boolean nextFetched = true;
+        private final boolean isAscending;
 
-        private StepIterator(ObjectRange range, int desiredStep) {
+        private boolean isNextFetched = false;
+        private Comparable next = null;
+
+        LazySteppingIterator(Range<?> range, int desiredStep) {
             if (desiredStep == 0 && compareNotEqual(range.getFrom(), range.getTo())) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
             }
+
             this.range = range;
-            if (range.isReverse()) {
-                step = -desiredStep;
+            if (desiredStep < 0) {
+                step = -1 * desiredStep;
+                isAscending = range.isReverse();
             } else {
                 step = desiredStep;
+                isAscending = !range.isReverse();
             }
-            if (step > 0) {
-                value = range.getFrom();
-            } else {
-                value = range.getTo();
+        }
+
+        @Override
+        public boolean hasNext() {
+            fetchNextIfNeeded();
+            return (next != null) && (isAscending ? compareLessThanEqual(next, range.getTo())
+                                                  : compareGreaterThanEqual(next, range.getFrom()));
+        }
+
+        @Override
+        public Comparable next() {
+            if (!hasNext()) {
+                return null;
+            }
+
+            fetchNextIfNeeded();
+            isNextFetched = false;
+            return next;
+        }
+
+        private void fetchNextIfNeeded() {
+            if (!isNextFetched) {
+                isNextFetched = true;
+
+                if (next == null) {
+                    next = isAscending ? range.getFrom() // make the first fetch lazy too
+                                       : range.getTo();
+                } else {
+                    next = isAscending ? increment(next, step)
+                                       : decrement(next, step);
+                }
             }
         }
 
         @Override
         public void remove() {
-            range.remove(index);
-        }
-
-        @Override
-        public Comparable next() {
-            // not thread safe
-            if (!nextFetched) {
-                value = peek();
-                nextFetched = true;
-            }
-            nextFetched = false;
-            index++;
-            return value;
-        }
-
-        @Override
-        public boolean hasNext() {
-            // not thread safe
-            if (!nextFetched) {
-                value = peek();
-                nextFetched = true;
-            }
-            return value != null;
-        }
-
-        private Comparable peek() {
-            if (step > 0) {
-                Comparable peekValue = value;
-                for (int i = 0; i < step; i++) {
-                    peekValue = (Comparable) range.increment(peekValue);
-                    // handle back to beginning due to modulo incrementing
-                    if (compareLessThanEqual(peekValue, range.from)) return null;
-                }
-                if (compareLessThanEqual(peekValue, range.to)) {
-                    return peekValue;
-                }
-            } else {
-                final int positiveStep = -step;
-                Comparable peekValue = value;
-                for (int i = 0; i < positiveStep; i++) {
-                    peekValue = (Comparable) range.decrement(peekValue);
-                    // handle back to beginning due to modulo decrementing
-                    if (compareGreaterThanEqual(peekValue, range.to)) return null;
-                }
-                if (compareGreaterThanEqual(peekValue, range.from)) {
-                    return peekValue;
-                }
-            }
-            return null;
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -515,23 +495,41 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     }
 
     /**
-     * Increments by one
+     * Increments by step size
      *
      * @param value the value to increment
-     * @return the incremented value
+     * @param step  the value to increment by
+     * @return the incremented value or null, if there isn't any
      */
-    protected Object increment(Object value) {
-        return InvokerHelper.invokeMethod(value, "next", null);
+    @SuppressWarnings("unchecked")
+    private Comparable increment(Comparable value, int step) {
+        for (int i = 0; i < step; i++) {
+            final Comparable next = (Comparable) InvokerHelper.invokeMethod(value, "next", null);
+            if (!compareGreaterThan(next, value)) /* e.g. `next` of the last element */ {
+                return null;
+            }
+            value = next;
+        }
+        return value;
     }
 
     /**
-     * Decrements by one
+     * Decrements by step size
      *
      * @param value the value to decrement
-     * @return the decremented value
+     * @param step  the value to decrement by
+     * @return the decremented value or null, if there isn't any
      */
-    protected Object decrement(Object value) {
-        return InvokerHelper.invokeMethod(value, "previous", null);
+    @SuppressWarnings("unchecked")
+    private Comparable decrement(Comparable value, int step) {
+        for (int i = 0; i < step; i++) {
+            final Comparable previous = (Comparable) InvokerHelper.invokeMethod(value, "previous", null);
+            if (!compareLessThan(previous, value)) /* e.g. `previous` of the first element */ {
+                return null;
+            }
+            value = previous;
+        }
+        return value;
     }
 
     /**
