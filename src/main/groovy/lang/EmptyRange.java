@@ -47,6 +47,7 @@ public class EmptyRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparable getFrom() {
         return at;
     }
@@ -54,6 +55,7 @@ public class EmptyRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparable getTo() {
         return at;
     }
@@ -63,6 +65,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @return <code>false</code>
      */
+    @Override
     public boolean isReverse() {
         return false;
     }
@@ -72,6 +75,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @return <code>false</code>
      */
+    @Override
     public boolean containsWithinBounds(Object o) {
         return false;
     }
@@ -79,6 +83,7 @@ public class EmptyRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String inspect() {
         return InvokerHelper.inspect(at) + "..<" + InvokerHelper.inspect(at);
     }
@@ -97,6 +102,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @return 0
      */
+    @Override
     public int size() {
         return 0;
     }
@@ -106,6 +112,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws IndexOutOfBoundsException always
      */
+    @Override
     public Object get(int index) {
         throw new IndexOutOfBoundsException("can't get values from Empty Ranges");
     }
@@ -115,6 +122,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException always
      */
+    @Override
     public boolean add(Object o) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
@@ -124,6 +132,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public boolean addAll(int index, Collection c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
@@ -133,6 +142,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public boolean addAll(Collection c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
@@ -142,6 +152,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public boolean remove(Object o) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
@@ -151,6 +162,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public Object remove(int index) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
@@ -160,6 +172,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public boolean removeAll(Collection c) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
@@ -169,6 +182,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public boolean retainAll(Collection c) {
         throw new UnsupportedOperationException("cannot retainAll in Empty Ranges");
     }
@@ -178,6 +192,7 @@ public class EmptyRange extends AbstractList implements Range {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public Object set(int index, Object element) {
         throw new UnsupportedOperationException("cannot set in Empty Ranges");
     }
@@ -185,12 +200,14 @@ public class EmptyRange extends AbstractList implements Range {
     /**
      * Always does nothing for an empty range.
      */
+    @Override
     public void step(int step, Closure closure) {
     }
 
     /**
      * Always returns an empty list for an empty range.
      */
+    @Override
     public List step(int step) {
         return new ArrayList();
     }

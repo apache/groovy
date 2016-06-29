@@ -218,18 +218,22 @@ public class ObjectRange extends AbstractList implements Range {
                 && DefaultTypeTransformation.compareEqual(to, that.to);
     }
 
+    @Override
     public Comparable getFrom() {
         return from;
     }
 
+    @Override
     public Comparable getTo() {
         return to;
     }
 
+    @Override
     public boolean isReverse() {
         return reverse;
     }
 
+    @Override
     public Object get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
@@ -252,6 +256,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value of interest
      * @return true if the value is within the bounds
      */
+    @Override
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
             final int result = compareTo(from, value);
@@ -272,6 +277,7 @@ public class ObjectRange extends AbstractList implements Range {
         throw new UnsupportedOperationException("size must not be changed");
     }
 
+    @Override
     public int size() {
         if (size == -1) {
             int tempsize = 0;
@@ -321,6 +327,7 @@ public class ObjectRange extends AbstractList implements Range {
         return size;
     }
 
+    @Override
     public List subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -360,6 +367,7 @@ public class ObjectRange extends AbstractList implements Range {
         return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }
 
+    @Override
     public String inspect() {
         final String toText = InvokerHelper.inspect(to);
         final String fromText = InvokerHelper.inspect(from);
@@ -370,6 +378,7 @@ public class ObjectRange extends AbstractList implements Range {
      * iterates over all values and returns true if one value matches.
      * Also see containsWithinBounds.
      */
+    @Override
     public boolean contains(Object value) {
         final Iterator it = new StepIterator(this, 1);
         if (value == null) {
@@ -385,6 +394,7 @@ public class ObjectRange extends AbstractList implements Range {
         return false;
     }
 
+    @Override
     public void step(int step, Closure closure) {
         if (step == 0 && compareTo(from, to) == 0) {
             return; // from == to and step == 0, nothing to do, so return
@@ -398,6 +408,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Iterator iterator() {
         // non thread-safe iterator
         final Iterator innerIterator = new StepIterator(this, 1);
@@ -449,10 +460,12 @@ public class ObjectRange extends AbstractList implements Range {
             }
         }
 
+        @Override
         public void remove() {
             range.remove(index);
         }
 
+        @Override
         public Object next() {
             // not thread safe
             if (!nextFetched) {
@@ -464,6 +477,7 @@ public class ObjectRange extends AbstractList implements Range {
             return value;
         }
 
+        @Override
         public boolean hasNext() {
             // not thread safe
             if (!nextFetched) {
@@ -500,6 +514,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
     }
 
+    @Override
     public List step(int step) {
         final IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);

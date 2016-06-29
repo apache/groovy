@@ -70,10 +70,12 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
          */
         private int value = isReverse() ? getTo() : getFrom();
 
+        @Override
         public boolean hasNext() {
             return index < size;
         }
 
+        @Override
         public Integer next() {
             if (!hasNext()) {
                 // TODO instead of returning null, do this: throw new NoSuchElementException();
@@ -94,6 +96,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
          *
          * @throws java.lang.UnsupportedOperationException always
          */
+        @Override
         public void remove() {
             IntRange.this.remove(index);
         }
@@ -247,6 +250,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
                 || (inclusive != null && inclusive == that.inclusive && from == that.from && to == that.to));
     }
 
+    @Override
     public Integer getFrom() {
         if (inclusive == null || from <= to) {
             return from;
@@ -254,6 +258,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return inclusive ? to : to + 1;
     }
 
+    @Override
     public Integer getTo() {
         if (inclusive == null) {
             return to;
@@ -289,14 +294,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return getTo();
     }
 
+    @Override
     public boolean isReverse() {
         return inclusive == null ? reverse : (from > to);
     }
 
+    @Override
     public boolean containsWithinBounds(Object o) {
         return contains(o);
     }
 
+    @Override
     public Integer get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
@@ -307,14 +315,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return isReverse() ? getTo() - index : index + getFrom();
     }
 
+    @Override
     public int size() {
         return getTo() - getFrom() + 1;
     }
 
+    @Override
     public Iterator<Integer> iterator() {
         return new IntRangeIterator();
     }
 
+    @Override
     public List<Integer> subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -338,10 +349,12 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
                 : (reverse ? "" + to + ".." + from : "" + from + ".." + to);
     }
 
+    @Override
     public String inspect() {
         return toString();
     }
 
+    @Override
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             return (Integer) value >= getFrom() && (Integer) value <= getTo();
@@ -353,6 +366,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return false;
     }
 
+    @Override
     public boolean containsAll(Collection other) {
         if (other instanceof IntRange) {
             final IntRange range = (IntRange) other;
@@ -361,6 +375,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         return super.containsAll(other);
     }
 
+    @Override
     public void step(int step, Closure closure) {
         if (step == 0) {
             if (!getFrom().equals(getTo())) {
@@ -394,6 +409,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         }
     }
 
+    @Override
     public List<Integer> step(int step) {
         final IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
         step(step, adapter);
