@@ -18,10 +18,10 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * Represents an inclusive list of objects from a value to a value using
  * comparators.
- *
+ * <p>
  * Note: This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
  */
@@ -73,7 +73,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * Creates a new {@link ObjectRange} assumes smaller &lt;&#61; larger, else behavior is undefined.
      * Caution: Prefer the other constructor when in doubt.
-     *
+     * <p>
      * Optimized Constructor avoiding initial computation of comparison.
      */
     public ObjectRange(Comparable smaller, Comparable larger, boolean reverse) {
@@ -95,10 +95,10 @@ public class ObjectRange extends AbstractList implements Range {
             throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
         }
         if (reverse == null) {
-            boolean computedReverse = areReversed(smaller, larger);
+            final boolean computedReverse = areReversed(smaller, larger);
             // ensure invariant from <= to
             if (computedReverse) {
-                Comparable temp = larger;
+                final Comparable temp = larger;
                 larger = smaller;
                 smaller = temp;
             }
@@ -142,8 +142,8 @@ public class ObjectRange extends AbstractList implements Range {
             this.to = larger;
         } else {
             // Convenience hack: try convert single-char strings to ints
-            Comparable tempfrom = normaliseStringType(smaller);
-            Comparable tempto = normaliseStringType(larger);
+            final Comparable tempfrom = normaliseStringType(smaller);
+            final Comparable tempto = normaliseStringType(larger);
             // if after normalizing both are numbers, assume intended range was numbers
             if (tempfrom instanceof Number && tempto instanceof Number) {
                 this.from = tempfrom;
@@ -153,7 +153,7 @@ public class ObjectRange extends AbstractList implements Range {
                 // throw exception when starting with known class, and thus "from" cannot be advanced over "to".
                 // Note if start is an unusual Object, it could have a next() method
                 // that yields a Number or String to close the range
-                Comparable start = this.reverse ? larger : smaller;
+                final Comparable start = this.reverse ? larger : smaller;
                 if (start instanceof String || start instanceof Number) {
                     // starting with number will never reach a non-number, same for string
                     throw new IllegalArgumentException("Incompatible Argument classes for ObjectRange " + smaller.getClass() + ", " + larger.getClass());
@@ -174,15 +174,17 @@ public class ObjectRange extends AbstractList implements Range {
         if (from instanceof String && to instanceof String) {
             // this test depends deeply on the String.next implementation
             // 009.next is 00:, not 010
-            String start = from.toString();
-            String end = to.toString();
+            final String start = from.toString();
+            final String end = to.toString();
             if (start.length() != end.length()) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: different length");
             }
-            int length = start.length();
+            final int length = start.length();
             int i;
             for (i = 0; i < length; i++) {
-                if (start.charAt(i) != end.charAt(i)) break;
+                if (start.charAt(i) != end.charAt(i)) {
+                    break;
+                }
             }
             // strings must be equal except for the last character
             if (i < length - 1) {
@@ -211,9 +213,9 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public boolean equals(ObjectRange that) {
         return that != null
-                && this.reverse == that.reverse
-                && DefaultTypeTransformation.compareEqual(this.from, that.from)
-                && DefaultTypeTransformation.compareEqual(this.to, that.to);
+                && reverse == that.reverse
+                && DefaultTypeTransformation.compareEqual(from, that.from)
+                && DefaultTypeTransformation.compareEqual(to, that.to);
     }
 
     public Comparable getFrom() {
@@ -232,7 +234,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        StepIterator iter = new StepIterator(this, 1);
+        final StepIterator iter = new StepIterator(this, 1);
 
         Object value = iter.next();
         for (int i = 0; i < index; i++) {
@@ -252,8 +254,8 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
-            int result = compareTo(from, (Comparable) value);
-            return result == 0 || result < 0 && compareTo(to, (Comparable) value) >= 0;
+            final int result = compareTo(from, value);
+            return result == 0 || result < 0 && compareTo(to, value) >= 0;
         }
         return contains(value);
     }
@@ -265,6 +267,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * protection against calls from Groovy
      */
+    @SuppressWarnings("unused")
     private void setSize(int size) {
         throw new UnsupportedOperationException("size must not be changed");
     }
@@ -275,31 +278,31 @@ public class ObjectRange extends AbstractList implements Range {
             if ((from instanceof Integer || from instanceof Long)
                     && (to instanceof Integer || to instanceof Long)) {
                 // let's fast calculate the size
-                BigInteger fromNum = new BigInteger(from.toString());
-                BigInteger toNum = new BigInteger(to.toString());
-                BigInteger sizeNum = toNum.subtract(fromNum).add(new BigInteger("1"));
+                final BigInteger fromNum = new BigInteger(from.toString());
+                final BigInteger toNum = new BigInteger(to.toString());
+                final BigInteger sizeNum = toNum.subtract(fromNum).add(new BigInteger("1"));
                 tempsize = sizeNum.intValue();
                 if (!BigInteger.valueOf(tempsize).equals(sizeNum)) {
                     tempsize = Integer.MAX_VALUE;
                 }
             } else if (from instanceof Character && to instanceof Character) {
                 // let's fast calculate the size
-                char fromNum = (Character) from;
-                char toNum = (Character) to;
+                final char fromNum = (Character) from;
+                final char toNum = (Character) to;
                 tempsize = toNum - fromNum + 1;
-            } else if (((from instanceof BigDecimal || from instanceof BigInteger ) && to instanceof Number) ||
+            } else if (((from instanceof BigDecimal || from instanceof BigInteger) && to instanceof Number) ||
                     ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
-                BigDecimal fromNum = new BigDecimal(from.toString());
-                BigDecimal toNum = new BigDecimal(to.toString());
-                BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
+                final BigDecimal fromNum = new BigDecimal(from.toString());
+                final BigDecimal toNum = new BigDecimal(to.toString());
+                final BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 tempsize = sizeNum.intValue();
                 if (!BigInteger.valueOf(tempsize).equals(sizeNum)) {
                     tempsize = Integer.MAX_VALUE;
                 }
             } else {
                 // let's brute-force calculate the size by iterating start to end
-                Iterator iter = new StepIterator(this, 1);
+                final Iterator iter = new StepIterator(this, 1);
                 while (iter.hasNext()) {
                     tempsize++;
                     // integer overflow
@@ -331,7 +334,7 @@ public class ObjectRange extends AbstractList implements Range {
 
         // Performance detail:
         // not using get(fromIndex), get(toIndex) in the following to avoid stepping over elements twice
-        StepIterator iter = new StepIterator(this, 1);
+        final StepIterator iter = new StepIterator(this, 1);
 
         Object value = iter.next();
         int i = 0;
@@ -341,14 +344,14 @@ public class ObjectRange extends AbstractList implements Range {
             }
             value = iter.next();
         }
-        Object fromValue = value;
-        for (;i < toIndex - 1; i++) {
+        final Object fromValue = value;
+        for (; i < toIndex - 1; i++) {
             if (!iter.hasNext()) {
                 throw new IndexOutOfBoundsException("Index: " + i + " is too big for range: " + this);
             }
             value = iter.next();
         }
-        Object toValue = value;
+        final Object toValue = value;
 
         return new ObjectRange((Comparable) fromValue, (Comparable) toValue, reverse);
     }
@@ -358,8 +361,8 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public String inspect() {
-        String toText = InvokerHelper.inspect(to);
-        String fromText = InvokerHelper.inspect(from);
+        final String toText = InvokerHelper.inspect(to);
+        final String fromText = InvokerHelper.inspect(from);
         return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
@@ -368,8 +371,10 @@ public class ObjectRange extends AbstractList implements Range {
      * Also see containsWithinBounds.
      */
     public boolean contains(Object value) {
-        Iterator it = new StepIterator(this, 1);
-        if (value == null) return false;
+        final Iterator it = new StepIterator(this, 1);
+        if (value == null) {
+            return false;
+        }
         while (it.hasNext()) {
             try {
                 if (DefaultTypeTransformation.compareEqual(value, it.next())) return true;
@@ -384,7 +389,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (step == 0 && compareTo(from, to) == 0) {
             return; // from == to and step == 0, nothing to do, so return
         }
-        StepIterator iter = new StepIterator(this, step);
+        final StepIterator iter = new StepIterator(this, step);
         while (iter.hasNext()) {
             closure.call(iter.next());
         }
@@ -396,15 +401,17 @@ public class ObjectRange extends AbstractList implements Range {
     public Iterator iterator() {
         // non thread-safe iterator
         final Iterator innerIterator = new StepIterator(this, 1);
-        Iterator safeIterator = new Iterator() {
+        final Iterator safeIterator = new Iterator() {
             @Override
             public synchronized boolean hasNext() {
                 return innerIterator.hasNext();
             }
+
             @Override
             public synchronized Object next() {
                 return innerIterator.next();
             }
+
             @Override
             public void remove() {
                 innerIterator.remove();
@@ -412,6 +419,7 @@ public class ObjectRange extends AbstractList implements Range {
         };
         return safeIterator;
     }
+
     /**
      * convenience class to serve in other methods.
      * It's not thread-safe, and lazily produces the next element only on calls of hasNext() or next()
@@ -423,25 +431,28 @@ public class ObjectRange extends AbstractList implements Range {
         private int index = -1;
         private Comparable value;
         private boolean nextFetched = true;
+
         private StepIterator(ObjectRange range, final int desiredStep) {
             if (desiredStep == 0 && range.compareTo(range.getFrom(), range.getTo()) != 0) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
             }
             this.range = range;
             if (range.isReverse()) {
-                this.step = -desiredStep;
+                step = -desiredStep;
             } else {
-                this.step = desiredStep;
+                step = desiredStep;
             }
-            if (this.step > 0) {
+            if (step > 0) {
                 value = range.getFrom();
             } else {
                 value = range.getTo();
             }
         }
+
         public void remove() {
-            this.range.remove(index);
+            range.remove(index);
         }
+
         public Object next() {
             // not thread safe
             if (!nextFetched) {
@@ -452,6 +463,7 @@ public class ObjectRange extends AbstractList implements Range {
             index++;
             return value;
         }
+
         public boolean hasNext() {
             // not thread safe
             if (!nextFetched) {
@@ -460,6 +472,7 @@ public class ObjectRange extends AbstractList implements Range {
             }
             return value != null;
         }
+
         private Comparable peek() {
             if (step > 0) {
                 Comparable peekValue = value;
@@ -472,7 +485,7 @@ public class ObjectRange extends AbstractList implements Range {
                     return peekValue;
                 }
             } else {
-                int positiveStep = -step;
+                final int positiveStep = -step;
                 Comparable peekValue = value;
                 for (int i = 0; i < positiveStep; i++) {
                     peekValue = (Comparable) range.decrement(peekValue);
@@ -488,7 +501,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public List step(int step) {
-        IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
+        final IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);
         return adapter.asList();
     }
@@ -499,7 +512,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value to increment
      * @return the incremented value
      */
-    protected Object increment(Object value) {
+    private Object increment(Object value) {
         return InvokerHelper.invokeMethod(value, "next", null);
     }
 
@@ -509,7 +522,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value to decrement
      * @return the decremented value
      */
-    protected Object decrement(Object value) {
+    private Object decrement(Object value) {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
 
@@ -522,10 +535,11 @@ public class ObjectRange extends AbstractList implements Range {
         } else if (operand instanceof String) {
             final String string = (String) operand;
 
-            if (string.length() == 1)
+            if (string.length() == 1) {
                 return (int) string.charAt(0);
-            else
+            } else {
                 return string;
+            }
         } else {
             return operand;
         }

@@ -187,7 +187,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
     private void checkSize() {
         // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
-        Long size = (long) this.to - this.from + 1;
+        final Long size = (long) to - from + 1;
         if (size > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("A range must have no more than " + Integer.MAX_VALUE + " elements but attempted " + size + " elements");
         }
@@ -201,8 +201,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * @return the calculated range information (with 1 added to the to value, ready for providing to subList
      */
     public RangeInfo subListBorders(int size) {
-        if (inclusive == null)
+        if (inclusive == null) {
             throw new IllegalStateException("Should not call subListBorders on a non-inclusive aware IntRange");
+        }
         int tempFrom = from;
         if (tempFrom < 0) {
             tempFrom += size;
@@ -242,18 +243,24 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * @return <code>true</code> if the ranges are equal
      */
     public boolean equals(IntRange that) {
-        return that != null && ((this.inclusive == null && this.reverse == that.reverse && this.from == that.from && this.to == that.to)
-                || (this.inclusive != null && this.inclusive == that.inclusive && this.from == that.from && this.to == that.to));
+        return that != null && ((inclusive == null && reverse == that.reverse && from == that.from && to == that.to)
+                || (inclusive != null && inclusive == that.inclusive && from == that.from && to == that.to));
     }
 
     public Integer getFrom() {
-        if (inclusive == null || from <= to) return from;
+        if (inclusive == null || from <= to) {
+            return from;
+        }
         return inclusive ? to : to + 1;
     }
 
     public Integer getTo() {
-        if (inclusive == null) return to;
-        if (from <= to) return inclusive ? to : to - 1;
+        if (inclusive == null) {
+            return to;
+        }
+        if (from <= to) {
+            return inclusive ? to : to - 1;
+        }
         return from;
     }
 
@@ -338,9 +345,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             return (Integer) value >= getFrom() && (Integer) value <= getTo();
-        }
-        if (value instanceof BigInteger) {
-            BigInteger bigint = (BigInteger) value;
+        } else if (value instanceof BigInteger) {
+            final BigInteger bigint = (BigInteger) value;
             return bigint.compareTo(BigInteger.valueOf(getFrom())) >= 0 &&
                     bigint.compareTo(BigInteger.valueOf(getTo())) <= 0;
         }
@@ -350,7 +356,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     public boolean containsAll(Collection other) {
         if (other instanceof IntRange) {
             final IntRange range = (IntRange) other;
-            return this.getFrom() <= range.getFrom() && range.getTo() <= this.getTo();
+            return getFrom() <= range.getFrom() && range.getTo() <= getTo();
         }
         return super.containsAll(other);
     }
@@ -389,7 +395,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     }
 
     public List<Integer> step(int step) {
-        IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
+        final IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
         step(step, adapter);
         return adapter.asList();
     }
