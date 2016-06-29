@@ -201,7 +201,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         @SuppressWarnings("unchecked")
         public MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
             String name = sourceName != null ? sourceName : "GeneratedMarkupTemplate" + counter.getAndIncrement();
-            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, ""), modelTypes);
+            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, "x"), modelTypes);
             this.modeltypes = modelTypes;
         }
 
