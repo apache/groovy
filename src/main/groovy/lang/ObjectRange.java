@@ -165,6 +165,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparable getFrom() {
         return from;
     }
@@ -172,6 +173,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparable getTo() {
         return to;
     }
@@ -179,6 +181,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isReverse() {
         return reverse;
     }
@@ -186,6 +189,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
@@ -248,6 +252,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value of interest
      * @return true if the value is within the bounds
      */
+    @Override
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
             final int result = compareTo(from, (Comparable) value);
@@ -263,6 +268,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int size() {
         if (size == -1) {
             if ((from instanceof Integer || from instanceof Long)
@@ -301,6 +307,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public List subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -328,12 +335,18 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String inspect() {
         final String toText = InvokerHelper.inspect(to);
         final String fromText = InvokerHelper.inspect(from);
         return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
+    /**
+     * iterates over all values and returns true if one value matches.
+     * Also see containsWithinBounds.
+     */
+    @Override
     public boolean contains(Object value) {
         final Iterator it = iterator();
         if (value == null) {
@@ -352,6 +365,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void step(int step, Closure closure) {
         if (step == 0) {
             if (compareTo(from, to) != 0) {
@@ -391,6 +405,7 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
+    @Override
     public List step(int step) {
         final IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);
