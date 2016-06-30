@@ -21,7 +21,7 @@ jdk:
 
 install: true
 
-script: travis_wait 30 ./gradlew test
+script: travis_wait 35 ./gradlew test
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
