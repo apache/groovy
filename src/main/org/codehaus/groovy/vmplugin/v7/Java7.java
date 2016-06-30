@@ -92,7 +92,7 @@ public class Java7 extends Java6 {
         Class declaringClass = method.getDeclaringClass();
         try {
             return LOOKUP_Constructor.
-                    newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).
+                    newInstance(declaringClass, -1).
                     unreflectSpecial(method, declaringClass).
                     bindTo(receiver);
         } catch (ReflectiveOperationException e) {
