@@ -205,12 +205,6 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
     permission java.lang.RuntimePermission "createClassLoader";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/ClosureListenerTest.groovy" {
-    permission java.util.PropertyPermission "java.awt.headless", "read";
-    // below seems like a new requirement in jdk 1.6/1.7
-    permission java.util.PropertyPermission "os.version", "read";
-};
-
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
     permission java.io.FilePermission "${user.dir}${/}src${/}test${/}-", "read";
     permission java.util.PropertyPermission "file.encoding", "read";
@@ -234,55 +228,10 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
     permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForAndSqlBug.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForLoopBug.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
-    permission java.io.FilePermission "target${/}classes${/}test${/}*", "read, write";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/bugs/Groovy303_Bug.groovy" {
-    permission java.awt.AWTPermission "showWindowWithoutWarningBanner";
-    // below seems like a new requirement in jdk 1.5
-    permission java.util.PropertyPermission "os.version", "read";
-};
-
 grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
     permission java.io.FilePermission "src${/}test${/}groovy${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
     permission java.io.FilePermission "src${/}test${/}groovy${/}script${/}HelloWorld.groovy", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/sql/PersonTest.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteTest.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/sql/-" {
-    permission java.util.PropertyPermission "groovy.testdb.props", "read";
-    permission java.io.FilePermission "${groovy.testdb.props}", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy" {
-    permission java.util.PropertyPermission "file.separator", "read";
-    permission java.util.PropertyPermission "line.separator", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlTest.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}groovy${/}sql${/}-", "read";
-};
-
-grant codeBase "file:${user.dir}/src/test/groovy/util/AntTest.groovy" {
-    permission java.security.AllPermission;
-};
-
-grant codeBase "file:${user.dir}/src/test/org/codehaus/groovy/classgen/MetaClassTest.groovy" {
-    permission java.io.FilePermission "target${/}classes${/}test${/}-", "read";
 };

@@ -19,9 +19,6 @@
 package groovy.security;
 
 import groovy.lang.GroovyCodeSource;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.junit.Ignore;
 
@@ -77,10 +74,6 @@ public class SecurityTest extends SecurityTestSupport {
         assertExecute(new File("src/test/groovy/bugs/BadScriptNameBug.groovy"), null);
     }
 
-    public void testClosureListenerTest() {
-        assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
-    }
-
     public void testClosureMethodTest() {
         assertExecute(new File("src/test/groovy/ClosureMethodTest.groovy"), null);
     }
@@ -94,26 +87,8 @@ public class SecurityTest extends SecurityTestSupport {
         assertExecute(new File("src/test/groovy/ClosureWithDefaultParamTest.groovy"), null);
     }
 
-    public void testGroovy303_Bug() {
-        assertExecute(new File("src/test/groovy/bugs/Groovy303_Bug.groovy"), null);
-    }
-
     public void testScriptTest() {
         assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
-    }
-
-    //In addition to requiring several permissions, this test is an example of the case
-    //where the groovy class loader is required at script invocation time as well as
-    //during compilation.
-    public void testSqlCompleteWithoutDataSourceTest() {
-        assertExecute(new File("src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy"), null);
-    }
-
-    //Test to prevent scripts from invoking the groovy compiler.  This is done by restricting access
-    //to the org.codehaus.groovy packages.
-    public void testMetaClassTest() {
-        //Security.setProperty("package.access", "org.codehaus.groovy");
-        //assertExecute(new File("src/test/org/codehaus/groovy/classgen/MetaClassTest.groovy"), new RuntimePermission("accessClassInPackage.org.codehaus.groovy"));
     }
 
     //Mailing list post by Richard Hensley reporting a CodeSource bug.  A GroovyCodeSource created
