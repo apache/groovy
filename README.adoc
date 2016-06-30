@@ -143,3 +143,4 @@ The official CI server runs {groovy-ci}[here] and is sponsored by http://www.jet
 == License
 
 Groovy is licensed under the terms of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache License, Version 2.0]
+
