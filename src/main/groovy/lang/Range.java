@@ -23,23 +23,10 @@ import java.util.List;
 /**
  * A Range represents the list of all items obtained by starting from a
  * <code>from</code> value and calling <code>next()</code> successively
-<<<<<<< HEAD
  * until you reach the <code>to</code> value. For a reverse range,
  * the list is obtained by starting at the <code>to</code> value and
  * successively calling <code>previous()</code> until the <code>from</code>
  * value is reached.
-=======
- * until another call to <code>next()</code> would be higher than the <code>to</code> value.
- * For a reverse range, the list is obtained by starting at the <code>to</code> value and
- * successively calling <code>previous()</code> until another call to
- * <code>previous()</code> would be lower than the <code>from</code>value.
- * <p>
- * This means in odd cases the second boundary may not be contained in the range,
- * and a..b may produce a different set of elements than (b..a).reversed().
- * E.g.  1..2.5 == [1, 2]; but 2.5..1 == [2.5, 1.5]
->>>>>>> a8413d3... Refactor: unified the style of Range related classes
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface Range<T extends Comparable> extends List<T> {
     /**

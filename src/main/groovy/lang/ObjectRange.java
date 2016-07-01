@@ -36,8 +36,6 @@ import java.util.List;
  * <p>
  * Note: This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ObjectRange extends AbstractList implements Range {
 
@@ -107,9 +105,9 @@ public class ObjectRange extends AbstractList implements Range {
         }
 
         if (from instanceof Integer && to instanceof Long) {
-            from = Long.valueOf(((Integer) from).longValue());
+            from = ((Integer) from).longValue();
         } else if (to instanceof Integer && from instanceof Long) {
-            to = Long.valueOf(((Integer) to).longValue());
+            to = ((Integer) to).longValue();
         }
 
         // TODO: should we care about different types here?
@@ -435,16 +433,15 @@ public class ObjectRange extends AbstractList implements Range {
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
             return (int) (Character) operand;
-        } else if (operand instanceof String) {
+        }
+        if (operand instanceof String) {
             final String string = (String) operand;
 
             if (string.length() == 1) {
                 return (int) string.charAt(0);
-            } else {
-                return string;
             }
-        } else {
-            return operand;
+            return string;
         }
+        return operand;
     }
 }

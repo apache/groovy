@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * Constructing Ranges like 0..&lt;0
- * @author Dierk Koenig
- * @author Edwin Tellman
  */
 public class EmptyRange extends AbstractList implements Range {
     

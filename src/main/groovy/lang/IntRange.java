@@ -38,8 +38,6 @@ import java.util.List;
  * suitable for use with Groovy's range indexing - in particular if the from or to values
  * might be negative. This normally happens underneath the covers but is worth keeping
  * in mind if creating these ranges yourself explicitly.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
@@ -346,7 +344,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             return (Integer) value >= getFrom() && (Integer) value <= getTo();
-        } else if (value instanceof BigInteger) {
+        }
+        if (value instanceof BigInteger) {
             final BigInteger bigint = (BigInteger) value;
             return bigint.compareTo(BigInteger.valueOf(getFrom())) >= 0 &&
                     bigint.compareTo(BigInteger.valueOf(getTo())) <= 0;
@@ -368,9 +367,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         if (step == 0) {
             if (!getFrom().equals(getTo())) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-            } else {
-                return; // from == to and step == 0, nothing to do, so return
             }
+            return; // from == to and step == 0, nothing to do, so return
         }
 
         if (isReverse()) {
@@ -379,8 +377,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         if (step > 0) {
             int value = getFrom();
             while (value <= getTo()) {
-                closure.call(Integer.valueOf(value));
-                if((0L + value + step) >= Integer.MAX_VALUE) {
+                closure.call(value);
+                if(((long) value + step) >= Integer.MAX_VALUE) {
                     break;
                 }
                 value = value + step;
@@ -388,8 +386,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         } else {
             int value = getTo();
             while (value >= getFrom()) {
-                closure.call(Integer.valueOf(value));
-                if((0L + value + step) <= Integer.MIN_VALUE) {
+                closure.call(value);
+                if(((long) value + step) <= Integer.MIN_VALUE) {
                     break;
                 }
                 value = value + step;

@@ -16,14 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- *
- */
 package groovy.lang;
 
 import groovy.util.GroovyTestCase;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  * Provides unit tests for the {@link EmptyRange} class.
@@ -35,7 +36,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     /**
      * The 'from' value for the {@link Range}.
      */
-    private static final Integer AT = new Integer(17);
+    private static final Integer AT = 17;
 
     /**
      * The {@link Range} to test.
@@ -159,7 +160,7 @@ public class EmptyRangeTest extends GroovyTestCase {
      */
     public void testAddIntObject() {
         try {
-            range.add(0, new Integer(12));
+            range.add(0, 12);
             fail("added value to empty range");
         } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
@@ -189,7 +190,7 @@ public class EmptyRangeTest extends GroovyTestCase {
      */
     public void testAddObject() {
         try {
-            range.add(new Integer(12));
+            range.add(12);
             fail("added value to empty range");
         } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
@@ -386,7 +387,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         assertTrue("too many elements", result.isEmpty());
 
         // make sure a new list is returned each time
-        result.add(new Integer(1));
+        result.add(1);
         result = range.step(1);
         assertTrue("too many elements", result.isEmpty());
     }
