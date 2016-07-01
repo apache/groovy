@@ -91,7 +91,8 @@ public class ObjectRange extends AbstractList implements Range {
     private ObjectRange(Comparable smaller, Comparable larger, Boolean reverse) {
         if (smaller == null) {
             throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
-        } else if (larger == null) {
+        }
+        if (larger == null) {
             throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
         }
         if (reverse == null) {
@@ -259,8 +260,8 @@ public class ObjectRange extends AbstractList implements Range {
     @Override
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
-            final int result = compareTo(from, value);
-            return result == 0 || result < 0 && compareTo(to, value) >= 0;
+            final int result = compareTo(from, (Comparable) value);
+            return result == 0 || result < 0 && compareTo(to, (Comparable) value) >= 0;
         }
         return contains(value);
     }
@@ -412,7 +413,7 @@ public class ObjectRange extends AbstractList implements Range {
     public Iterator iterator() {
         // non thread-safe iterator
         final Iterator innerIterator = new StepIterator(this, 1);
-        final Iterator safeIterator = new Iterator() {
+        return new Iterator() {
             @Override
             public synchronized boolean hasNext() {
                 return innerIterator.hasNext();
@@ -424,11 +425,10 @@ public class ObjectRange extends AbstractList implements Range {
             }
 
             @Override
-            public void remove() {
+            public synchronized void remove() {
                 innerIterator.remove();
             }
         };
-        return safeIterator;
     }
 
     /**
@@ -547,16 +547,15 @@ public class ObjectRange extends AbstractList implements Range {
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
             return (int) (Character) operand;
-        } else if (operand instanceof String) {
+        }
+        if (operand instanceof String) {
             final String string = (String) operand;
 
             if (string.length() == 1) {
                 return (int) string.charAt(0);
-            } else {
-                return string;
             }
-        } else {
-            return operand;
+            return string;
         }
+        return operand;
     }
 }

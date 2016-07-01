@@ -30,13 +30,13 @@ import java.util.List;
 /**
  * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
  * to and potentially including a given {@code to} value.
- * <p/>
+ * <p>
  * Instances of this class may be either inclusive aware or non-inclusive aware. See the
  * relevant constructors for creating each type. Inclusive aware IntRange instances are
  * suitable for use with Groovy's range indexing - in particular if the from or to values
  * might be negative. This normally happens underneath the covers but is worth keeping
  * in mind if creating these ranges yourself explicitly.
- * <p/>
+ * <p>
  * Note: the design of this class might seem a little strange at first. It contains a Boolean
  * field, {@code inclusive}, which can be {@code true}, {@code false} or {@code null}. This
  * design is for backwards compatibility reasons. Groovy uses this class under the covers
@@ -45,7 +45,7 @@ import java.util.List;
  * covers by the {@code new IntRange(x, y)} and {@code new IntRange(x, y-1)}. This turns
  * out to be a lossy abstraction when x and/or y are negative values. Now the latter case
  * is represented by {@code new IntRange(false, x, y)}.
- * <p/>
+ * <p>
  * Note: This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
  * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  */
@@ -123,9 +123,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * If <code>true</code> or null, <code>to</code> is included in the range.
      * If <code>false</code>, the range stops before the <code>to</code> value.
-     * <p/>
+     * <p>
      * Null for non-inclusive-aware ranges (which are inclusive).
-     * <p/>
+     * <p>
      * If true or false, the reverse flag is discarded.
      */
     private final Boolean inclusive;
@@ -225,10 +225,10 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * Determines if this object is equal to another object. Delegates to
      * {@link AbstractList#equals(Object)} if <code>that</code> is anything
      * other than an {@link IntRange}.
-     * <p/>
+     * <p>
      * It is not necessary to override <code>hashCode</code>, as
      * {@link AbstractList#hashCode()} provides a suitable hash code.<p>
-     * <p/>
+     * <p>
      * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List, List)}
      * instead of this method.
      *
@@ -358,7 +358,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             return (Integer) value >= getFrom() && (Integer) value <= getTo();
-        } else if (value instanceof BigInteger) {
+        }
+        if (value instanceof BigInteger) {
             final BigInteger bigint = (BigInteger) value;
             return bigint.compareTo(BigInteger.valueOf(getFrom())) >= 0 &&
                     bigint.compareTo(BigInteger.valueOf(getTo())) <= 0;
@@ -380,9 +381,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         if (step == 0) {
             if (!getFrom().equals(getTo())) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-            } else {
-                return; // from == to and step == 0, nothing to do, so return
             }
+            return; // from == to and step == 0, nothing to do, so return
         }
 
         if (isReverse()) {
@@ -391,8 +391,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         if (step > 0) {
             int value = getFrom();
             while (value <= getTo()) {
-                closure.call(Integer.valueOf(value));
-                if ((0L + value + step) >= Integer.MAX_VALUE) {
+                closure.call(value);
+                if (((long) value + step) >= Integer.MAX_VALUE) {
                     break;
                 }
                 value = value + step;
@@ -400,8 +400,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         } else {
             int value = getTo();
             while (value >= getFrom()) {
-                closure.call(Integer.valueOf(value));
-                if ((0L + value + step) <= Integer.MIN_VALUE) {
+                closure.call(value);
+                if (((long) value + step) <= Integer.MIN_VALUE) {
                     break;
                 }
                 value = value + step;
