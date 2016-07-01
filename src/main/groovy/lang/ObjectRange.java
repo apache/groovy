@@ -18,17 +18,16 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.*;
 
 /**
  * Represents an inclusive list of objects from a value to a value using
@@ -195,7 +194,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
     private static boolean areReversed(Comparable from, Comparable to) {
         try {
-            return ScriptBytecodeAdapter.compareGreaterThan(from, to);
+            return compareGreaterThan(from, to);
         } catch (ClassCastException cce) {
             throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", cce);
         }
@@ -214,8 +213,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     public boolean equals(ObjectRange that) {
         return that != null
                 && reverse == that.reverse
-                && DefaultTypeTransformation.compareEqual(from, that.from)
-                && DefaultTypeTransformation.compareEqual(to, that.to);
+                && compareEqual(from, that.from)
+                && compareEqual(to, that.to);
     }
 
     @Override
@@ -259,14 +258,10 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     @Override
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
-            final int result = compareTo(from, (Comparable) value);
-            return result == 0 || result < 0 && compareTo(to, (Comparable) value) >= 0;
+            final int result = compareTo(from, value);
+            return result == 0 || result < 0 && compareGreaterThanEqual(to, value);
         }
         return contains(value);
-    }
-
-    protected int compareTo(Comparable first, Comparable second) {
-        return DefaultGroovyMethods.numberAwareCompareTo(first, second);
     }
 
     /**
@@ -385,7 +380,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         }
         while (iter.hasNext()) {
             try {
-                if (DefaultTypeTransformation.compareEqual(value, iter.next())) return true;
+                if (compareEqual(value, iter.next())) return true;
             } catch (ClassCastException e) {
                 return false;
             }
@@ -395,7 +390,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public void step(int step, Closure closure) {
-        if (step == 0 && compareTo(from, to) == 0) {
+        if (step == 0 && compareEqual(from, to)) {
             return; // from == to and step == 0, nothing to do, so return
         }
         final Iterator<Comparable> iter = new StepIterator(this, step);
@@ -441,8 +436,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         private Comparable value;
         private boolean nextFetched = true;
 
-        private StepIterator(ObjectRange range, final int desiredStep) {
-            if (desiredStep == 0 && range.compareTo(range.getFrom(), range.getTo()) != 0) {
+        private StepIterator(ObjectRange range, int desiredStep) {
+            if (desiredStep == 0 && compareNotEqual(range.getFrom(), range.getTo())) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
             }
             this.range = range;
@@ -491,9 +486,9 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
                 for (int i = 0; i < step; i++) {
                     peekValue = (Comparable) range.increment(peekValue);
                     // handle back to beginning due to modulo incrementing
-                    if (range.compareTo(peekValue, range.from) <= 0) return null;
+                    if (compareLessThanEqual(peekValue, range.from)) return null;
                 }
-                if (range.compareTo(peekValue, range.to) <= 0) {
+                if (compareLessThanEqual(peekValue, range.to)) {
                     return peekValue;
                 }
             } else {
@@ -502,9 +497,9 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
                 for (int i = 0; i < positiveStep; i++) {
                     peekValue = (Comparable) range.decrement(peekValue);
                     // handle back to beginning due to modulo decrementing
-                    if (range.compareTo(peekValue, range.to) >= 0) return null;
+                    if (compareGreaterThanEqual(peekValue, range.to)) return null;
                 }
-                if (range.compareTo(peekValue, range.from) >= 0) {
+                if (compareGreaterThanEqual(peekValue, range.from)) {
                     return peekValue;
                 }
             }
