@@ -137,6 +137,7 @@ public class BinaryExpressionTransformer {
                         MethodCallExpression call = new MethodCallExpression(left, "compareTo", new ArgumentListExpression(right));
                         call.setImplicitThis(false);
                         call.setMethodTarget(COMPARE_TO_METHOD);
+                        call.setSourcePosition(bin);
 
                         CompareIdentityExpression compareIdentity = new CompareIdentityExpression(
                                 left, right
@@ -192,6 +193,7 @@ public class BinaryExpressionTransformer {
                 call.setMethodTarget(adapter);
                 call.setImplicitThis(false);
             }
+            call.setSourcePosition(bin);
             if (!isAssignment) return call;
             // case of +=, -=, /=, ...
             // the method represents the operation type only, and we must add an assignment
