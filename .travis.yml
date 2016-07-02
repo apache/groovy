@@ -15,9 +15,16 @@
 
 language: groovy
 
-jdk:
-  - oraclejdk7
-  - oraclejdk8
+sudo: false
+
+matrix:
+  include:
+    - jdk: oraclejdk7
+    - jdk: oraclejdk8
+      addons:
+        apt:
+          packages:
+            - oracle-java8-installer
 
 install: true
 
