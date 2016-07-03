@@ -448,7 +448,7 @@ like this:
 ```groovy
 dependencies {
     compile 'org.codehaus.groovy:groovy:2.4.7:grooid'       // requires the grooid classifier
-    compile ('org.codehaus.groovy:groovy-json:2.4.0') {     // no grooid version available
+    compile ('org.codehaus.groovy:groovy-json:2.4.7') {     // no grooid version available
         transitive = false                                  // so do not depend on non-grooid version
     }
 }
