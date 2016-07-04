@@ -20,11 +20,12 @@ package groovy.security;
 
 import groovy.lang.GroovyCodeSource;
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.junit.Ignore;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.PropertyPermission;
 
@@ -33,13 +34,9 @@ import java.util.PropertyPermission;
  * behavior (e.g. ensuring that GroovyCodeSources may only be created for which proper permissions exist).
  * Other tests run .groovy scripts under a secure environment and ensure that the proper permissions
  * are required for success.
- * <p>
- * Todo: find out why the marked tests are environment specific and why security tests are not
- * running on the build server.
  *
  * @author Steve Goetze
  */
-@Ignore("does not work at the moment, please fix me")
 public class SecurityTest extends SecurityTestSupport {
 
     public void testForbiddenProperty() {
@@ -63,7 +60,16 @@ public class SecurityTest extends SecurityTestSupport {
     //Check that the Security package.access control works.
     public void testPackageAccess() {
         String script = "new javax.print.PrintException();";
-        Security.setProperty("package.access", "javax.print");
+        // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
+        // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
+        // higher upstream from this point of execution.
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                Security.setProperty("package.access", "javax.print");
+                return null;
+            }
+        });
         //This should throw an ACE because its codeBase does not allow access to javax.print
         assertExecute(script, "/groovy/security/javax/print/deny", new RuntimePermission("accessClassInPackage.javax.print"));
         //This should not throw an ACE because groovy.policy grants the codeBase access to javax.print
@@ -78,17 +84,16 @@ public class SecurityTest extends SecurityTestSupport {
         assertExecute(new File("src/test/groovy/ClosureMethodTest.groovy"), null);
     }
 
-    public void testGroovyMethodsTest_FAILS() {
-        if (notYetImplemented()) return;
-        assertExecute(new File("src/test/groovy/GroovyMethodsTest.groovy"), null);
-    }
-
     public void testClosureWithDefaultParamTest() {
         assertExecute(new File("src/test/groovy/ClosureWithDefaultParamTest.groovy"), null);
     }
 
     public void testScriptTest() {
         assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
+    }
+
+    public void testConstructorBug() {
+        assertExecute(new File("src/test/groovy/bugs/ConstructorBug.groovy"), null);
     }
 
     //Mailing list post by Richard Hensley reporting a CodeSource bug.  A GroovyCodeSource created
