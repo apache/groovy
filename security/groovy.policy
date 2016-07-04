@@ -150,6 +150,7 @@ grant codeBase "file:/groovy/testSupport" {
 //to grant a 'global' accessDeclaredPermission here.
 grant codeBase "file:/groovy/security/-" {
     permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.lang.RuntimePermission "getClassLoader";
 };
 
 grant codeBase "file:/groovy/security/testForbiddenPackage" {
@@ -198,6 +199,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureWithDefaultParamTest.groovy" {
+    permission java.lang.RuntimePermission "getClassLoader";
     permission java.io.FilePermission "src${/}test${/}-", "read";
 
     // Required because test calls File.eachLine which eventually invokes
