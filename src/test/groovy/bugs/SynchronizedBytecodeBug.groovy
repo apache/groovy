@@ -31,21 +31,14 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
         Integer foo = 0
 
         Thread.start{
-            println "sleeping for a moment"
             sleep 100
-            println "slept and synchronizing from thread"
             synchronized(foo) {
-                println "notifying"
                 foo.notify()
-                println "notified"
             }
         }
 
-        println "synchronizing"
         synchronized(foo) {
-            println "starting to wait"
             foo.wait()
-            println "waited"
         }
 
         // if this point is reached, the test worked :-)

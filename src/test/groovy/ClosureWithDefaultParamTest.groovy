@@ -91,9 +91,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         def keys = answer.collect {it.key }
         def values = answer.collect {it.value }
 
-        System.out.println("keys " + keys + " values " + values)
-        
-        // maps are in hash order so lets sort the results       
+        // maps are in hash order so lets sort the results
         keys.sort() 
         values.sort() 
         
@@ -147,11 +145,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     void testEachLine() {
         def file = new File("src/test/groovy/Bar.groovy")
         
-        System.out.println("Contents of file: " + file)
-        
-        file.eachLine { println(it) }
-        
-        println("")
+        file.eachLine { assert it != null }
     }
     
     void testReadLines() {
@@ -161,17 +155,11 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         
         assert lines != null
         assert lines.size() > 0
-
-        System.out.println("File has number of lines: " + lines.size())
     }
     
     void testEachFile() {
         def file = new File("src/test/groovy")
-        
-        System.out.println("Contents of dir: " + file)
-        
-        file.eachFile { println(it.getName()) }
-        
-        println("")
+
+        file.eachFile { assert it.getName() }
     }
 }

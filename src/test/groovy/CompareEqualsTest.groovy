@@ -33,12 +33,10 @@ class CompareEqualsTest extends GroovyTestCase {
 
 class Xyz {
     boolean equals(Xyz other) {
-        println "${other.class} TRUE"
         true
     }
 
     boolean equals(Object other) {
-        println "${other.class} FALSE"
         null
     }
 

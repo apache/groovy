@@ -21,8 +21,7 @@ package groovy
 class MethodCallTest extends GroovyTestCase {
 
     void testMethodCall() {
-        System.out.print("hello")
-        println("world!")
+        assert Math.max(5, 7) == 7
     }
 
     void testObjectMethodCall() {

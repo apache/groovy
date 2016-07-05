@@ -39,7 +39,6 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
     }
     
     void methodWithOneParam(text) {
-        println("Called method with parameter ${text}")
         assert text == "hello"
         flag = true
     }
@@ -61,7 +60,6 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
     }
 
     def methodWithTwoParams(a, b) {
-        println("Called method with parameters ${a} and ${b}")
         return a + b
     }
 }

@@ -48,6 +48,5 @@ class Groovy6041Bug extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('Tool')
-        println stubSource
     }
 }

@@ -23,7 +23,6 @@ class DefaultParamClosureTest extends GroovyTestCase {
     void testDefaultParameters() {
         // Default parameters working for closures 
     def doSomething = { a, b = 'defB', c = 'defC' ->
-            println "Called with a: ${a}, b ${b}, c ${c}"
             return a + "-" + b + "-" + c
         }
 
@@ -42,7 +41,6 @@ class DefaultParamClosureTest extends GroovyTestCase {
     void testDefaultTypedParameters() {
     // Handle typed parameters
     def doTypedSomething = { String a = 'defA', String b = 'defB', String c = 'defC' ->
-            println "Called typed method with a: ${a}, b ${b}, c ${c}"
             return a + "-" + b + "-" + c
         }
     

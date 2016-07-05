@@ -17,32 +17,24 @@
  *  under the License.
  */
 package groovy
-// TODO: GROOVY-435
+// GROOVY-435
 
 class SingletonBugTest extends GroovyTestCase {
 
     public void testPrivate() {
         def x = SingletonBugPrivate.getInstance()
         def y = SingletonBugPrivate.getInstance()
-        println "Get one private instance: $x"
-        println "Get another private instance: $y"
         assert x == y
 
-         println(SingletonBugPrivateSecond.getInstanceSecond())
-         println(SingletonBugPrivateSecond.doTestSecond())
-        // shouldFail { println(SingletonBugPrivateSecond.getInstanceSecond()) }
-        // shouldFail { println(SingletonBugPrivateSecond.doTestSecond()) }
+         SingletonBugPrivateSecond.getInstanceSecond() // shouldFail? - super class has single private constructor
+         SingletonBugPrivateSecond.doTestSecond()      // shouldFail? - super class has single private constructor
     }
 
     public void testProtected() {
         def x = SingletonBugProtected.getInstance()
         def y = SingletonBugProtected.getInstance()
-        println "Get one protected instance: $x"
-        println "Get another protected instance: $y"
         assert x == y
 
-        println(SingletonBugProtectedSecond.getInstanceSecond())
-        println(SingletonBugProtectedSecond.doTestSecond())
         x = SingletonBugProtectedSecond.getInstanceSecond()
         y = SingletonBugProtectedSecond.doTestSecond()
         assert x != y

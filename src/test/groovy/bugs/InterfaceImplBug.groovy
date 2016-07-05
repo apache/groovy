@@ -31,7 +31,6 @@ class InterfaceImplBug extends GroovyTestCase implements FooHandler {
     }
     
     void handle(Reader reader){
-        println("in handle method")
         def called = true
     }
 }

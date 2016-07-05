@@ -47,11 +47,10 @@ class Builder extends BuilderSupport {
     Object createNode(Object name, Object value)   { return createNode(name, [:], value) }
 
     Object createNode(Object name, Map attributes, Object value) {
-        println "create ${name}"
         return callOtherStaticallyTypedMethod()
     }
 
-    String callNormalMethod()               { println "normalMethod"; return "first" }
-    String callOtherStaticallyTypedMethod() { println "otherMethod";  return "second" }
+    String callNormalMethod()               { return "first" }
+    String callOtherStaticallyTypedMethod() { return "second" }
     
 }

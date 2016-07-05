@@ -25,8 +25,7 @@ class NestedClosureBug extends GroovyTestCase {
     void testBug() {
         def a = 123
         getValues().each { 
-            println it
-            it.each { 
+            it.each {
                 assert a == 123
             }
         }

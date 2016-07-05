@@ -28,8 +28,6 @@ class ClassExpressionTest extends GroovyTestCase {
     void testUseOfClass() {
         def x = String
         
-        System.out.println("x: " + x)
-        
         assert x != null
 
         assert x.getName().endsWith('String')
@@ -48,8 +46,6 @@ class ClassExpressionTest extends GroovyTestCase {
         x = ClassExpressionTest
         
         assert x != null
-
-        System.out.println("x: " + x)
     }
 
     void testClassPsuedoProperty() {
@@ -59,8 +55,6 @@ class ClassExpressionTest extends GroovyTestCase {
         assert x.class != null
 
         assert x.class == x.getClass();
-
-        System.err.println( "x.class: " + x.class );
     }
     
     void testPrimitiveClasses() {

@@ -28,8 +28,6 @@ class SubscriptOnStringArrayBug extends TestSupport {
         array[0] = "d"
         
         assert array[0] == "d"
-        
-        println("Contents of array are ${array.inspect()}")
     }
     
     void testRobsTestCase() {

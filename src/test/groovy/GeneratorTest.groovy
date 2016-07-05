@@ -44,8 +44,8 @@ class GeneratorTest extends GroovyTestCase {
 
     void testEach() {
         def x = this.&sampleGenerator
-
-        def value = x.each { println(it) }
+        def expected = ['A', 'B', 'C']
+        def value = x.each { assert it == expected.remove(0) }
     }
 
     void testMissingThisBug() {

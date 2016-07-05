@@ -566,7 +566,6 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testBorrowByName() {
-        println 'testBorrowByName'
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
         def a = new EMCT_Another()

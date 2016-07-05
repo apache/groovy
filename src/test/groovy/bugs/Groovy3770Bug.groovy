@@ -49,7 +49,7 @@ class Groovy3770Bug extends GroovyTestCase {
     
     void testCurriedClosuresShouldNotAffectParent() {
         // GROOVY-3875
-        def orig = { tmp -> println tmp }
+        def orig = { tmp -> assert tmp == 1 }
         def curriedOrig = orig.curry(1)
         assert orig != curriedOrig.getOwner()
     }

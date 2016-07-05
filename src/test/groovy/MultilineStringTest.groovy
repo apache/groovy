@@ -27,7 +27,6 @@ efg
         hijk
         
 """
-        println(s)
         assert s != null
         def idx = s.indexOf("i")
         assert idx > 0

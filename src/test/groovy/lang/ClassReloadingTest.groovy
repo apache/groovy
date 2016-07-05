@@ -125,7 +125,6 @@ class ClassReloadingTest extends GroovyTestCase {
               }
             """
             def groovyClass = cl.loadClass(className, true, false)
-            println System.identityHashCode(groovyClass)
             assert !groovyClass.declaredFields.any { it.name.contains('__timeStamp') }
             def message = groovyClass.newInstance().greeting
             assert "hello" == message
@@ -148,7 +147,6 @@ class ClassReloadingTest extends GroovyTestCase {
 
             // reload
             groovyClass = cl.loadClass(className, true, false)
-            println System.identityHashCode(groovyClass)
             assert groovyClass.declaredFields.any { it.name.contains('__timeStamp') }
             message = groovyClass.newInstance().greeting
             assert "goodbye" == message

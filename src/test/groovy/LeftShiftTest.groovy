@@ -27,8 +27,6 @@ class LeftShiftTest extends GroovyTestCase {
 
         def y = x << 2
 
-        println "Value is $y"
-
         assert y == 16
 
         assert x << 2 == 16
@@ -40,8 +38,6 @@ class LeftShiftTest extends GroovyTestCase {
         for (i in 1..10) {
             list << i
         }
-
-        println "List is $list"
     }
 
     void testLeftShiftOnExpression() {

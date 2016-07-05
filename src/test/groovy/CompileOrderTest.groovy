@@ -22,16 +22,13 @@ class CompileOrderTest extends GroovyTestCase {
    public void testCompileOrder() {
       def interfaceFile = File.createTempFile("TestOrderInterface", ".groovy", new File("target"))
       def concreteFile = File.createTempFile("TestOrderConcrete", ".groovy", new File("target"))
-
       def cl = new GroovyClassLoader(this.class.classLoader);
       def currentDir = concreteFile.parentFile.absolutePath
-      println currentDir
       cl.addClasspath(currentDir)
       cl.shouldRecompile = true
 
       try {
          // Create the interface
-         println "a"
          interfaceFile.deleteOnExit()
          def interfaceName = interfaceFile.name - ".groovy"
          interfaceFile.write "interface $interfaceName { }\n"
@@ -57,13 +54,11 @@ class CompileOrderTest extends GroovyTestCase {
 
         def cl = new GroovyClassLoader(this.class.classLoader);
         def currentDir = concreteFile.parentFile.absolutePath
-        println currentDir
         cl.addClasspath(currentDir)
         cl.shouldRecompile = true
 
         try {
             // Create the interface
-            println "a"
             interfaceFile.deleteOnExit()
             def interfaceName = interfaceFile.name - ".groovy"
             interfaceFile.write "interface $interfaceName { }\n"

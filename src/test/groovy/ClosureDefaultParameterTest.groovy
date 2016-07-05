@@ -25,15 +25,19 @@ class ClosureDefaultParameterTest extends GroovyTestCase {
 
     void testClosureWithDefaultParams() {
 
-        def block = {a = 123, b = 456 -> println "value of a = $a and b = $b" }
-
-        block = { Integer a = 123, String b = "abc" ->
-                  println "value of a = $a and b = $b"; return "$a $b".toString() }
+        def block = {a = 123, b = 456 -> "$a $b".toString() }
 
         assert block.call(456, "def") == "456 def"
-        assert block.call() == "123 abc"
-        assert block(456) == "456 abc"
+        assert block.call() == "123 456"
+        assert block(456) == "456 456"
         assert block(456, "def") == "456 def"
+
+        def block2 = { Integer a = 123, String b = "abc" -> "$a $b".toString() }
+
+        assert block2.call(456, "def") == "456 def"
+        assert block2.call() == "123 abc"
+        assert block2(456) == "456 abc"
+        assert block2(456, "def") == "456 def"
     }
     
     void testClosureWithDefaultParamFromOuterScope() {

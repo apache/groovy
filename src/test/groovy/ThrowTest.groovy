@@ -26,7 +26,6 @@ class ThrowTest extends GroovyTestCase {
         }
         catch (Exception e) {
             assert e.message == "abcd"
-            println("Caught exception ${e}")
         }
     }
 }

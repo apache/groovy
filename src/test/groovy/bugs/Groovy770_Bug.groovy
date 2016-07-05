@@ -30,9 +30,6 @@ class Groovy770_Bug extends GroovyTestCase {
 
         def l1 = [a, b]
         def l2 = [c]
-        println (l1)
-        println (l2)
-        println (l1 - l2)
         assert l1 - l2 == l1
 
 
@@ -41,9 +38,6 @@ class Groovy770_Bug extends GroovyTestCase {
         c = new CPair(sym:"y")
         l1 = [a, b]
         l2 = [c]
-        println (l1)
-        println (l2)
-        println (l1 - l2)
         assert l1 - l2 == [a]
     }
 }

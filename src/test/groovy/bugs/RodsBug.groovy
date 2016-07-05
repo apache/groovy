@@ -39,7 +39,6 @@ class RodsBug extends GroovyTestCase {
         if (x > 0) {
             //String name = "Rod"
             def name = "Rod"
-            println(name)
         }
     }
     

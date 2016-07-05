@@ -27,8 +27,6 @@ class BlockAsClosureBug extends GroovyTestCase {
             c = 9
         }
 
-        println(c)
-
         assert c == 9
     }
 
@@ -47,8 +45,6 @@ class BlockAsClosureBug extends GroovyTestCase {
             c = 9
         }
 
-        println(c)
-
         assert c == 9
     }
 
@@ -58,7 +54,6 @@ class BlockAsClosureBug extends GroovyTestCase {
         block: {
             c = 9
         }
-        println(c)
 
         assert c == 9
         return 5

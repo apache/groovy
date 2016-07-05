@@ -30,9 +30,7 @@ public class Groovy2365Bug extends Groovy2365Base {
         String path = createData();
 
         try {
-            System.out.println("Test started");
             for (int i = 0; i != 100; ++i ) {
-                    System.out.println("Iter " + i);
                     final GroovyClassLoader groovyLoader = new GroovyClassLoader ();
                     groovyLoader.addClasspath(path);
 

@@ -36,7 +36,6 @@ class TaggedsMap extends Groovy5859Support {
     @Override
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('TaggedsMap')
-        println stubSource
         assert stubSource.contains('super ((java.util.SortedMap)null);')
     }
 }
