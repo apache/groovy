@@ -188,6 +188,18 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         checkSize();
     }
 
+    /**
+     * Creates a new NumberRange with the same <code>from</code> and <code>to</code> as this
+     * IntRange but with a step size of <code>stepSize</code>.
+     *
+     * @param stepSize the desired step size
+     * @return a new NumberRange
+     * @since 2.5
+     */
+    public <T extends Number & Comparable> NumberRange by(T stepSize) {
+        return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusive);
+    }
+
     private void checkSize() {
         // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
         final Long size = (long) to - from + 1;

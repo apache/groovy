@@ -631,10 +631,13 @@ public class ScriptBytecodeAdapter {
                 return new IntRange(inclusive, ifrom, ito);
             } // else fall through for EmptyRange
         }
+        if (!inclusive && compareEqual(from, to)) {
+            return new EmptyRange((Comparable) from);
+        }
+        if (from instanceof Number && to instanceof Number) {
+            return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), inclusive);
+        }
         if (!inclusive) {
-            if (compareEqual(from, to)) {
-                return new EmptyRange((Comparable) from);
-            }
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
             } else {
@@ -643,6 +646,11 @@ public class ScriptBytecodeAdapter {
         }
 
         return new ObjectRange((Comparable) from, (Comparable) to);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Number & Comparable> T comparableNumber(Number n) {
+        return (T) n;
     }
 
     //assert
