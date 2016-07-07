@@ -22,7 +22,6 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
-import com.thoughtworks.xstream.XStream;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -34,12 +33,12 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.XStreamUtils;
 import org.codehaus.groovy.syntax.*;
 import org.objectweb.asm.Opcodes;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.security.AccessController;
@@ -229,15 +228,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private static void saveAsXML(String name, AST ast) {
-        XStream xstream = new XStream();
-        try {
-            xstream.toXML(ast, new FileWriter(name + ".antlr.xml"));
-            System.out.println("Written AST to " + name + ".antlr.xml");
-        }
-        catch (Exception e) {
-            System.out.println("Couldn't write to " + name + ".antlr.xml");
-            e.printStackTrace();
-        }
+        XStreamUtils.serialize(name + ".antlr", ast);
     }
 
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {

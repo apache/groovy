@@ -21,7 +21,6 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -45,8 +44,6 @@ import antlr.MismatchedTokenException;
 import antlr.MismatchedCharException;
 import antlr.NoViableAltException;
 import antlr.NoViableAltForCharException;
-
-import com.thoughtworks.xstream.XStream;
 
 /**
  * Provides an anchor for a single source unit (usually a script file)
@@ -293,14 +290,7 @@ public class SourceUnit extends ProcessingUnit {
     }
 
     private static void saveAsXML(String name, ModuleNode ast) {
-        XStream xstream = new XStream();
-        try {
-            xstream.toXML(ast, new FileWriter(name + ".xml"));
-            System.out.println("Written AST to " + name + ".xml");
-        } catch (Exception e) {
-            System.out.println("Couldn't write to " + name + ".xml");
-            e.printStackTrace();
-        }
+        XStreamUtils.serialize(name, ast);
     }
 
     //---------------------------------------------------------------------------    // SOURCE SAMPLING
