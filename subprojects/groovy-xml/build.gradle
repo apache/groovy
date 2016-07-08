@@ -26,4 +26,13 @@ dependencies {
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.codehaus.groovy.runtime.XmlGroovyMethods,groovy.xml.jaxb.JaxbGroovyMethods'
 }
-compileJava.dependsOn moduleDescriptor
+
+compileJava {
+    dependsOn moduleDescriptor
+    if (JavaVersion.current().java9Compatible) {
+        sourceCompatibility = 6
+        targetCompatibility = 9
+        options.fork = true
+        options.compilerArgs.addAll(['-addmods' , 'java.xml.bind'])
+    }
+}
