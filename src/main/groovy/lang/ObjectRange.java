@@ -381,13 +381,13 @@ public class ObjectRange extends AbstractList implements Range {
      */
     @Override
     public boolean contains(Object value) {
-        final Iterator it = new StepIterator(this, 1);
+        final Iterator iter = new StepIterator(this, 1);
         if (value == null) {
             return false;
         }
-        while (it.hasNext()) {
+        while (iter.hasNext()) {
             try {
-                if (DefaultTypeTransformation.compareEqual(value, it.next())) return true;
+                if (DefaultTypeTransformation.compareEqual(value, iter.next())) return true;
             } catch (ClassCastException e) {
                 return false;
             }
