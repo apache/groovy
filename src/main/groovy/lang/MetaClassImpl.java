@@ -2656,6 +2656,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
+        // turn setProperty on a Map to put on the Map itself
+        //----------------------------------------------------------------------
+        if (method == null && !isStatic && this.isMap) {
+            ((Map) object).put(name, newValue);
+            return;
+        }
+
+        //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
         if (method == null && field != null) {
@@ -2700,14 +2708,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
             method.doMethodInvoke(object, arguments);
-            return;
-        }
-
-        //----------------------------------------------------------------------
-        // turn setProperty on a Map to put on the Map itself
-        //----------------------------------------------------------------------
-        if (!isStatic && this.isMap) {
-            ((Map) object).put(name, newValue);
             return;
         }
 
