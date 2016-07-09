@@ -527,7 +527,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value to increment
      * @return the incremented value
      */
-    private Object increment(Object value) {
+    protected Object increment(Object value) {
         return InvokerHelper.invokeMethod(value, "next", null);
     }
 
@@ -537,7 +537,7 @@ public class ObjectRange extends AbstractList implements Range {
      * @param value the value to decrement
      * @return the decremented value
      */
-    private Object decrement(Object value) {
+    protected Object decrement(Object value) {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
 
