@@ -28,19 +28,19 @@ import java.util.List;
 /**
  * Constructing Ranges like 0..&lt;0
  */
-public class EmptyRange extends AbstractList implements Range {
+public class EmptyRange<T extends Comparable> extends AbstractList<T> implements Range<T> {
 
     /**
      * The value at which the range originates (may be <code>null</code>).
      */
-    protected Comparable at;
+    protected T at;
 
     /**
      * Creates a new {@link EmptyRange}.
      *
      * @param at the value at which the range starts (may be <code>null</code>).
      */
-    public EmptyRange(Comparable at) {
+    public EmptyRange(T at) {
         this.at = at;
     }
 
@@ -48,7 +48,7 @@ public class EmptyRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     @Override
-    public Comparable getFrom() {
+    public T getFrom() {
         return at;
     }
 
@@ -56,7 +56,7 @@ public class EmptyRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     @Override
-    public Comparable getTo() {
+    public T getTo() {
         return at;
     }
 
@@ -113,7 +113,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws IndexOutOfBoundsException always
      */
     @Override
-    public Object get(int index) {
+    public T get(int index) {
         throw new IndexOutOfBoundsException("can't get values from Empty Ranges");
     }
 
@@ -123,7 +123,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException always
      */
     @Override
-    public boolean add(Object o) {
+    public boolean add(T o) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
 
@@ -133,7 +133,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public boolean addAll(int index, Collection c) {
+    public boolean addAll(int index, Collection<? extends T> c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
 
@@ -143,7 +143,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public boolean addAll(Collection c) {
+    public boolean addAll(Collection<? extends T> c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
 
@@ -163,7 +163,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public Object remove(int index) {
+    public T remove(int index) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
 
@@ -173,7 +173,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public boolean removeAll(Collection c) {
+    public boolean removeAll(Collection<?> c) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
 
@@ -183,7 +183,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public boolean retainAll(Collection c) {
+    public boolean retainAll(Collection<?> c) {
         throw new UnsupportedOperationException("cannot retainAll in Empty Ranges");
     }
 
@@ -193,7 +193,7 @@ public class EmptyRange extends AbstractList implements Range {
      * @throws UnsupportedOperationException
      */
     @Override
-    public Object set(int index, Object element) {
+    public T set(int index, T element) {
         throw new UnsupportedOperationException("cannot set in Empty Ranges");
     }
 
@@ -208,7 +208,7 @@ public class EmptyRange extends AbstractList implements Range {
      * Always returns an empty list for an empty range.
      */
     @Override
-    public List step(int step) {
-        return new ArrayList();
+    public List<T> step(int step) {
+        return new ArrayList<T>();
     }
 }

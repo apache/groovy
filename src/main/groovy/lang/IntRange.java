@@ -338,7 +338,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         }
 
         if (fromIndex == toIndex) {
-            return new EmptyRange(getFrom());
+            return new EmptyRange<Integer>(getFrom());
         }
 
         return new IntRange(fromIndex + getFrom(), toIndex + getFrom() - 1, isReverse());

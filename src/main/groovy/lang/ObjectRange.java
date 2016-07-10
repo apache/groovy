@@ -337,7 +337,7 @@ public class ObjectRange extends AbstractList implements Range {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
         if (fromIndex == toIndex) {
-            return new EmptyRange(from);
+            return new EmptyRange<Comparable>(from);
         }
 
         // Performance detail:

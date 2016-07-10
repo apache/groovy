@@ -31,8 +31,6 @@ import java.util.List;
  * This means in odd cases the second boundary may not be contained in the range,
  * and a..b may produce a different set of elements than (b..a).reversed().
  * E.g.  1..2.5 == [1, 2]; but 2.5..1 == [2.5, 1.5]
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface Range<T extends Comparable> extends List<T> {
     /**
