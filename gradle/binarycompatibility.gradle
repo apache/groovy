@@ -32,6 +32,9 @@ buildscript {
         classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
     }
 }
+// for comparing between versions with different modules, set excludeModules to differing modules, e.g.
+//def excludeModules = ['performance', 'groovy-macro']
+def excludeModules = []
 
 task checkBinaryCompatibility {
     description = 'Generates binary compatibility reports'
@@ -40,10 +43,12 @@ check.dependsOn(checkBinaryCompatibility)
 
 if (JavaVersion.current().isJava7Compatible()) {
     allprojects {
-        apply plugin: 'me.champeau.gradle.japicmp'
+        if (!(project.name in excludeModules)) {
+            apply plugin: 'me.champeau.gradle.japicmp'
+        }
     }
 
-    def referenceMinorVersion = '2.4.2'
+    def referenceMinorVersion = '2.4.7'
 
     def prettyPrint = { classOrMethod ->
         "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
@@ -54,7 +59,8 @@ if (JavaVersion.current().isJava7Compatible()) {
 
             def skipClass = { c ->
                 c.fullyQualifiedName =~ /\$[0-9]+$/ || // skip AIC
-                c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
+                        c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
+//                        c.fullyQualifiedName.startsWith('groovyjarjar') ||
                         c.fullyQualifiedName.contains('_closure')
             }
             def skipMethod = { c, m -> skipClass(c) || m.name =~ /access\$[0-9]+/ }
@@ -163,40 +169,39 @@ if (JavaVersion.current().isJava7Compatible()) {
     }
 
     allprojects {
-
-        dependencies  {
-            japicmp files(rootProject.jar.archivePath)
-        }
-
-        task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
-            dependsOn replaceJarWithJarJar
-            baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
-            to = jar.archivePath
-            accessModifier = 'protected'
-            onlyModified = true
-            failOnModification = false
-            txtOutputFile = file("$buildDir/reports/japi.txt")
-
-            def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
-            inputs.file file("$configDir/$templateFile")
-            inputs.file templateFile
-            outputs.file htmlReportFile
-
-            def model = [title   : "Binary compatibility report for ${project.name}",
-                         project : project,
-                         baseline: baseline,
-                         archive : to.name]
-            outputProcessor(reportGenerator.curry(model))
-
-            doLast {
-                htmlReportFile.withWriter('utf-8') { wrt ->
-                    engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-                }
+        if (!(project.name in excludeModules)) {
+            dependencies {
+                japicmp files(rootProject.jar.archivePath)
             }
 
+            task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
+                dependsOn replaceJarWithJarJar
+                baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
+                to = jar.archivePath
+                accessModifier = 'protected'
+                onlyModified = true
+                failOnModification = false
+                txtOutputFile = file("$buildDir/reports/japi.txt")
+
+                def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
+                inputs.file file("$configDir/$templateFile")
+                inputs.file templateFile
+                outputs.file htmlReportFile
+
+                def model = [title   : "Binary compatibility report for ${project.name}",
+                             project : project,
+                             baseline: baseline,
+                             archive : to.name]
+                outputProcessor(reportGenerator.curry(model))
+
+                doLast {
+                    htmlReportFile.withWriter('utf-8') { wrt ->
+                        engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
+                    }
+                }
+            }
         }
     }
-
 
     allprojects {
         tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
