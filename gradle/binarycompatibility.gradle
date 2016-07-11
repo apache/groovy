@@ -54,13 +54,17 @@ if (JavaVersion.current().isJava7Compatible()) {
         "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
     }
 
+    def prettyPrintMethodWithReturnType = { method ->
+        "${Modifier.toString(method.get()?.modifiers)} ${method.get()?.returnType.name} ${method.get()?.name}${javassist.bytecode.Descriptor.toString(method.get()?.signature)}"
+    }
+
     def reportGenerator = { model ->
         outputProcessor {
 
             def skipClass = { c ->
                 c.fullyQualifiedName =~ /\$[0-9]+$/ || // skip AIC
                         c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
-//                        c.fullyQualifiedName.startsWith('groovyjarjar') ||
+                        c.fullyQualifiedName.startsWith('groovyjarjar') ||
                         c.fullyQualifiedName.contains('_closure')
             }
             def skipMethod = { c, m -> skipClass(c) || m.name =~ /access\$[0-9]+/ }
@@ -90,7 +94,7 @@ if (JavaVersion.current().isJava7Compatible()) {
             modifiedMethod { c, m ->
                 if (!skipMethod(c, m)) {
                     violations[c.fullyQualifiedName].warning << """<p>Method ${m.name} has been modified</p>
-<p>From <pre>${prettyPrint(m.oldMethod)}</pre> to <pre>${prettyPrint(m.newMethod)}</pre></p>"""
+<p>From <pre>${prettyPrintMethodWithReturnType(m.oldMethod)}</pre> to <pre>${prettyPrintMethodWithReturnType(m.newMethod)}</pre></p>"""
                 }
             }
 
