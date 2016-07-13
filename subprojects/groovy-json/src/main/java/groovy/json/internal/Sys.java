@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 class Sys {
 
     private static final boolean is1_7OrLater;
+    private static final boolean is1_8OrLater;
     private static final boolean is1_7;
     private static final boolean is1_8;
 
@@ -66,12 +67,17 @@ class Sys {
         }
 
         is1_7OrLater = v.compareTo(new BigDecimal("1.7")) >= 0;
+        is1_8OrLater = v.compareTo(new BigDecimal("1.8")) >= 0;
         is1_7 = v.compareTo(new BigDecimal("1.7")) == 0;
         is1_8 = v.compareTo(new BigDecimal("1.8")) == 0;
     }
 
     public static boolean is1_7OrLater() {
         return is1_7OrLater;
+    }
+
+    public static boolean is1_8OrLater() {
+        return is1_8OrLater;
     }
 
     public static boolean is1_7() {
