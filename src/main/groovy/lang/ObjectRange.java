@@ -37,8 +37,7 @@ import java.util.List;
  * Note: This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
  */
-public class ObjectRange extends AbstractList implements Range {
-
+public class ObjectRange extends AbstractList<Comparable> implements Range<Comparable> {
     /**
      * The first value in the range.
      */
@@ -77,7 +76,7 @@ public class ObjectRange extends AbstractList implements Range {
      * Optimized Constructor avoiding initial computation of comparison.
      */
     public ObjectRange(Comparable smaller, Comparable larger, boolean reverse) {
-        this(smaller, larger, Boolean.valueOf(reverse));
+        this(smaller, larger, (Boolean) reverse);
     }
 
     /**
@@ -235,13 +234,13 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     @Override
-    public Object get(int index) {
+    public Comparable get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
         final StepIterator iter = new StepIterator(this, 1);
 
-        Object value = iter.next();
+        Comparable value = iter.next();
         for (int i = 0; i < index; i++) {
             if (!iter.hasNext()) {
                 throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
@@ -309,7 +308,7 @@ public class ObjectRange extends AbstractList implements Range {
                 }
             } else {
                 // let's brute-force calculate the size by iterating start to end
-                final Iterator iter = new StepIterator(this, 1);
+                final Iterator<Comparable> iter = new StepIterator(this, 1);
                 while (iter.hasNext()) {
                     tempsize++;
                     // integer overflow
@@ -329,7 +328,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     @Override
-    public List subList(int fromIndex, int toIndex) {
+    public List<Comparable> subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
         }
@@ -342,26 +341,25 @@ public class ObjectRange extends AbstractList implements Range {
 
         // Performance detail:
         // not using get(fromIndex), get(toIndex) in the following to avoid stepping over elements twice
-        final StepIterator iter = new StepIterator(this, 1);
+        final Iterator<Comparable> iter = new StepIterator(this, 1);
 
-        Object value = iter.next();
+        Comparable toValue = iter.next();
         int i = 0;
         for (; i < fromIndex; i++) {
             if (!iter.hasNext()) {
                 throw new IndexOutOfBoundsException("Index: " + i + " is too big for range: " + this);
             }
-            value = iter.next();
+            toValue = iter.next();
         }
-        final Object fromValue = value;
+        final Comparable fromValue = toValue;
         for (; i < toIndex - 1; i++) {
             if (!iter.hasNext()) {
                 throw new IndexOutOfBoundsException("Index: " + i + " is too big for range: " + this);
             }
-            value = iter.next();
+            toValue = iter.next();
         }
-        final Object toValue = value;
 
-        return new ObjectRange((Comparable) fromValue, (Comparable) toValue, reverse);
+        return new ObjectRange(fromValue, toValue, reverse);
     }
 
     public String toString() {
@@ -381,7 +379,7 @@ public class ObjectRange extends AbstractList implements Range {
      */
     @Override
     public boolean contains(Object value) {
-        final Iterator iter = new StepIterator(this, 1);
+        final Iterator<Comparable> iter = new StepIterator(this, 1);
         if (value == null) {
             return false;
         }
@@ -400,7 +398,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (step == 0 && compareTo(from, to) == 0) {
             return; // from == to and step == 0, nothing to do, so return
         }
-        final StepIterator iter = new StepIterator(this, step);
+        final Iterator<Comparable> iter = new StepIterator(this, step);
         while (iter.hasNext()) {
             closure.call(iter.next());
         }
@@ -410,17 +408,17 @@ public class ObjectRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     @Override
-    public Iterator iterator() {
+    public Iterator<Comparable> iterator() {
         // non thread-safe iterator
-        final Iterator innerIterator = new StepIterator(this, 1);
-        return new Iterator() {
+        final Iterator<Comparable> innerIterator = new StepIterator(this, 1);
+        return new Iterator<Comparable>() {
             @Override
             public synchronized boolean hasNext() {
                 return innerIterator.hasNext();
             }
 
             @Override
-            public synchronized Object next() {
+            public synchronized Comparable next() {
                 return innerIterator.next();
             }
 
@@ -435,7 +433,7 @@ public class ObjectRange extends AbstractList implements Range {
      * convenience class to serve in other methods.
      * It's not thread-safe, and lazily produces the next element only on calls of hasNext() or next()
      */
-    private static class StepIterator implements Iterator {
+    private static class StepIterator implements Iterator<Comparable> {
         // actual step, can be +1 when desired step is -1 and direction is from high to low
         private final int step;
         private final ObjectRange range;
@@ -466,7 +464,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
 
         @Override
-        public Object next() {
+        public Comparable next() {
             // not thread safe
             if (!nextFetched) {
                 value = peek();
@@ -515,8 +513,8 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     @Override
-    public List step(int step) {
-        final IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
+    public List<Comparable> step(int step) {
+        final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<Comparable>(this);
         step(step, adapter);
         return adapter.asList();
     }
