@@ -44,7 +44,7 @@ public class ExtensionModuleHelperForTests {
                 throw new RuntimeException("Unable to find class loader")
             }
         }
-        Set<String> cp = ((URLClassLoader)cl).URLs.collect{ new File(it.toURI()).absolutePath}
+        Set<String> cp = System.getProperty("java.class.path").split(File.pathSeparator) as Set
         cp << baseDir.absolutePath
 
         def ant = new AntBuilder()

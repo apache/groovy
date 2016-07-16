@@ -61,7 +61,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
             [1, 2, 3, 4, 5].get(-2)                 // but negative index not allowed with get()
             assert false
         } catch (e) {
-            assert e instanceof ArrayIndexOutOfBoundsException
+            assert e instanceof IndexOutOfBoundsException
         }
         // end::list_usecases[]
     }

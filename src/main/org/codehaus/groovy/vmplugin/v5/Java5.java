@@ -336,8 +336,11 @@ public class Java5 implements VMPlugin {
                 return AnnotationNode.ANNOTATION_TARGET;
             case PACKAGE:
                 return AnnotationNode.PACKAGE_TARGET;
-            default:
-                throw new GroovyBugError("unsupported Target " + value);
+        }
+        if ("MODULE".equals(value.name())) {
+            return AnnotationNode.TYPE_TARGET;
+        } else {
+            throw new GroovyBugError("unsupported Target " + value);
         }
     }
 

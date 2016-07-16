@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import junit.framework.TestCase
+
 import static groovy.io.FileType.*
 
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -209,6 +211,12 @@ abstract class StubTestCase extends GroovyTestCase {
         return sources
     }
 
+    private static addToClassPath(GroovyClassLoader loader) {
+        loader.addURL(this.getProtectionDomain().getCodeSource().getLocation())
+        loader.addURL(GroovyTestCase.class.getProtectionDomain().getCodeSource().getLocation())
+        loader.addURL(TestCase.class.getProtectionDomain().getCodeSource().getLocation())
+    }
+
     /**
      * Launch the actual compilation -- hence launching the stub generator as well.
      *
@@ -216,6 +224,7 @@ abstract class StubTestCase extends GroovyTestCase {
      */
     protected void compile(List<File> sources) {
         loader = new GroovyClassLoader(this.class.classLoader)
+        addToClassPath(loader)
         def cu = new JavaAwareCompilationUnit(config, loader)
         cu.addSources(sources as File[])
         try {

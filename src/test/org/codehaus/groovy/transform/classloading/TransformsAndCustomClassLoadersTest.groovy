@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.classloading
 
+import junit.framework.TestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.ClassNode
@@ -28,6 +29,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GlobalTestTransformClassLoader
+import org.objectweb.asm.ClassVisitor
 
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -42,9 +44,19 @@ import java.lang.annotation.ElementType
  * @author Peter Niederwieser
  */
 class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
-    URL[] urls = collectUrls(getClass().classLoader)
+    URL[] urls = collectUrls(getClass().classLoader) + addGroovyUrls()
     GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (ClassLoader)null))
     GroovyClassLoader transformLoader = new GroovyClassLoader(new URLClassLoader(urls, new GroovyOnlyClassLoader()))
+
+    private static addGroovyUrls() {
+       [
+           GroovyObject.class.protectionDomain.codeSource.location.toURI().toURL(),    // load Groovy runtime
+           ClassVisitor.class.protectionDomain.codeSource.location.toURI().toURL(),    // load asm
+           GroovyTestCase.class.protectionDomain.codeSource.location.toURI().toURL(),  // load Groovy test module
+           TestCase.class.protectionDomain.codeSource.location.toURI().toURL(),        // -"-
+           this.protectionDomain.codeSource.location.toURI().toURL(),                  // load test as well
+       ]
+    }
 
     void setUp() {
         assert dependencyLoader.loadClass(CompilationUnit.class.name) != CompilationUnit
