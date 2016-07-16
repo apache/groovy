@@ -476,7 +476,7 @@ include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_
 Remember that this works out of the box *without* having to annotate
 with `@DelegatesTo`. However, to make the IDE aware of the delegate
 type, or the *type checker* aware of it, we need to add `@DelegatesTo`.
-And in this case, it will now that the `Greeter` variable is of
+And in this case, it will know that the `Greeter` variable is of
 type `Greeter`, so it will not report errors on the _sayHello_
 method *even if the exec method doesn’t explicitly define the target as
 of type Greeter*. This is a very powerful feature, because it prevents
