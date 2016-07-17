@@ -115,7 +115,14 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         final String fullName = declaringClass.getName() + "$" + fieldType.getNameWithoutPackage() + "Holder_" + fieldNode.getName().substring(1);
         final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, ClassHelper.OBJECT_TYPE);
         final String innerFieldName = "INSTANCE";
-        holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType, initExpr);
+
+        final String initializeMethodName = fullName + "_initExpr";
+        declaringClass.addMethod(initializeMethodName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType,
+                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(initExpr));
+
+        holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType,
+                callX(declaringClass, initializeMethodName));
+
         final Expression innerField = propX(classX(holderClass), innerFieldName);
         declaringClass.getModule().addClass(holderClass);
         body.addStatement(returnS(innerField));
