@@ -193,4 +193,8 @@ public class ASTNode {
         }
         return Collections.unmodifiableMap(metaDataMap);
     }
+
+    public ListHashMap getMetaDataMap() {
+        return metaDataMap;
+    }
 }

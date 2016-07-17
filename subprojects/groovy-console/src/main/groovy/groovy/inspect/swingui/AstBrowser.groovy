@@ -18,12 +18,16 @@
  */
 package groovy.inspect.swingui
 
+import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.TraceClassVisitor
 
-import java.awt.Cursor
-import java.awt.Font
-import java.awt.event.KeyEvent
-import java.util.prefs.Preferences
+import javax.swing.JFrame
 import javax.swing.JSplitPane
 import javax.swing.KeyStroke
 import javax.swing.UIManager
@@ -34,27 +38,24 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
-import org.codehaus.groovy.control.Phases
-
+import java.awt.Cursor
+import java.awt.Font
+import java.awt.event.KeyEvent
+import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
-import static java.awt.GridBagConstraints.*
-import org.codehaus.groovy.ast.ClassNode
-import groovy.lang.GroovyClassLoader.ClassCollector
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.SourceUnit
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.util.TraceClassVisitor
+import static java.awt.GridBagConstraints.BOTH
+import static java.awt.GridBagConstraints.HORIZONTAL
+import static java.awt.GridBagConstraints.NONE
+import static java.awt.GridBagConstraints.NORTHEAST
+import static java.awt.GridBagConstraints.NORTHWEST
+import static java.awt.GridBagConstraints.WEST
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
  *
  * Usage: java groovy.inspect.swingui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
- *
- * @author Hamlet D'Arcy (hamletdrc@gmail.com)
- * @author Guillaume Laforge, highlighting the code corresponding to a node selected in the tree view
- * @author Roshan Dawrani - separated out the swing UI related code from the model part so model could be used for various UIs
  */
 
 class AstBrowser {
@@ -200,11 +201,46 @@ class AstBrowser {
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
             propertyTable.model.rows.clear()
+            propertyTable.columnModel.getColumn(1).cellRenderer = new ButtonOrDefaultRenderer()
+            propertyTable.columnModel.getColumn(1).cellEditor = new ButtonOrTextEditor()
             TreeNode node = jTree.lastSelectedPathComponent
             if (node instanceof TreeNodeWithProperties) {
-
-                node.properties.each {
-                    propertyTable.model.rows << ['name': it[0], 'value': it[1], 'type': it[2]]
+                def titleSuffix = node.properties.find{ it[0] == 'text' }?.get(1)
+                for (it in node.properties) {
+                    def propList = it
+                    if (propList[2] == "ListHashMap" && propList[1] != 'null' && propList[1] != '[:]') {
+                        //If the class is a ListHashMap, make it accessible in a new frame through a button
+                        def btnPanel = swing.button(
+                            text: "See key/value pairs",
+                            actionPerformed: {
+                                def mapTable
+                                String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
+                                swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
+                                        size: [800, 600], show: true, locationRelativeTo: null  ) {
+                                    lookAndFeel("system")
+                                    panel {
+                                        scrollPane() {
+                                            mapTable = swing.table() {
+                                                tableModel(list: [[:]]) {
+                                                    propertyColumn(header: 'Name', propertyName: 'name')
+                                                    propertyColumn(header: 'Value', propertyName: 'value')
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                mapTable.model.rows.clear()
+                                propList[1].substring(1, propList[1].length() - 1).tokenize(',').each {
+                                    def kv = it.tokenize(':')
+                                    if (kv)
+                                        mapTable.model.rows << ["name": kv[0], "value": kv[1]]
+                                }
+                            })
+                        propertyTable.model.rows << ["name": propList[0], "value": btnPanel, "type": propList[2]]
+                        btnPanel.updateUI()
+                    } else {
+                        propertyTable.model.rows << ["name": it[0], "value": it[1], "type": it[2]]
+                    }
                 }
 
                 if (inputArea && rootElement) {
@@ -277,7 +313,8 @@ class AstBrowser {
         frame.size = prefs.frameSize
         splitterPane.dividerLocation = prefs.verticalDividerLocation
         mainSplitter.dividerLocation = prefs.horizontalDividerLocation
-        frame.show()
+        frame.pack()
+        frame.visible = true
 
         String source = script()
         decompile(phasePicker.selectedItem.phaseId, source)
@@ -317,9 +354,11 @@ class AstBrowser {
 
     void showAbout(EventObject evt) {
         def pane = swing.optionPane()
-        pane.setMessage('An interactive GUI to explore AST capabilities.')
+        def version = GroovySystem.getVersion()
+        pane.setMessage('An interactive GUI to explore AST capabilities\nVersion ' + version)
         def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
-        dialog.show()
+        dialog.pack()
+        dialog.visible = true
     }
 
     void showScriptFreeForm(EventObject evt) {
@@ -401,8 +440,6 @@ class AstBrowser {
 
 /**
  * This class sets and restores control positions in the browser.
- *
- * @author Hamlet D'Arcy
  */
 class AstBrowserUiPreferences {
 
@@ -458,8 +495,6 @@ class AstBrowserUiPreferences {
 
 /**
  * An adapter for the CompilePhase enum that can be entered into a Swing combobox.
- *
- * @author Hamlet D'Arcy
  */
 enum CompilePhaseAdapter {
     INITIALIZATION(Phases.INITIALIZATION, 'Initialization'),
@@ -487,8 +522,6 @@ enum CompilePhaseAdapter {
 
 /**
  * This class is a TreeNode and you can store additional properties on it.
- *
- * @author Hamlet D'Arcy
  */
 class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
@@ -520,8 +553,6 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
 /**
  * This interface is used to create tree nodes of various types 
- *
- * @author Roshan Dawrani
  */
 interface AstBrowserNodeMaker<T> {
     T makeNode(Object userObject)
@@ -531,8 +562,6 @@ interface AstBrowserNodeMaker<T> {
 
 /**
  * Creates tree nodes for swing UI  
- *
- * @author Roshan Dawrani
  */
 class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {
     DefaultMutableTreeNode makeNode(Object userObject) {
