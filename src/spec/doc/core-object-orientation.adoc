@@ -250,7 +250,7 @@ To create an object by using positional argument constructors, the respective cl
 constructors. In the case of multiple constructors, each must have a unique type signature. The constructors can also
 added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
 
-Typically, once at least one constructor is declared, the class can only be instantiated by getting one of its
+Typically, once at least one constructor is declared, the class can only be instantiated by having one of its
 constructors called. It is worth noting that, in this case, you can't normally create the class with named parameters.
 Groovy does support named parameters so long as the class contains a no-arg constructor or a constructor which takes
 a single `Map` argument - see the next section for details.
@@ -299,7 +299,7 @@ or a constructor with a single `Map` argument as previously mentioned.
 by supply both positional constructors as well as a no-arg or Map constructor.
 * When no (or a no-arg) constructor is declared, Groovy replaces the named constructor call by a call
 to the no-arg constructor followed by calls to the setter for each supplied named property. So, you
-might be better off using the Map constructor if your propertie are declared as `final` (since they
+might be better off using the Map constructor if your properties are declared as `final` (since they
 must be set in the constructor rather than after the fact with setters).
 
 
