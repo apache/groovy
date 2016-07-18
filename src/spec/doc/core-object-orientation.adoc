@@ -236,13 +236,28 @@ important features described in this manual.
 
 === Constructors
 
-Constructors are special methods used to initialize an object with a specific state. As in normal methods, it is possible for a class to declare more than one constructor. In Groovy there are two ways to invoke constructors: with positional parameters or named parameters. The former one is like we invoke Java constructors, while the second way allows one to specify the parameter names when invoking the constructor.
+Constructors are special methods used to initialize an object with a specific state. As with normal methods,
+it is possible for a class to declare more than one constructor, so long as each constructor has a unique
+type signature. If an object doesn't require any parameters during construction, it may use a _no-arg_ constructor.
+If no constructors are supplied, an empty no-arg constructor will be provided by the Groovy compiler. For constructors
+with parameters, Groovy supports two invocation styles: using positional parameters or named parameters.
+The former style is similar to how you would use Java constructors, while the second way
+allows one to specify parameter names when invoking the constructor.
 
 ==== Positional argument constructor
 
-To create an object by using positional argument constructors, the respective class needs to declare each of the constructors it allows being called. A side effect of this is that, once at least one constructor is declared, the class can only be instantiated by getting one of its constructors called. It is worth noting that, in this case, there is no way to create the class with named parameters.
+To create an object by using positional argument constructors, the respective class needs to declare one or more
+constructors. In the case of multiple constructors, each must have a unique type signature. The constructors can also
+added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
 
-There is three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword. The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as` keyword and by statically typing the variable.
+Typically, once at least one constructor is declared, the class can only be instantiated by getting one of its
+constructors called. It is worth noting that, in this case, you can't normally create the class with named parameters.
+Groovy does support named parameters so long as the class contains a no-arg constructor or a constructor which takes
+a single `Map` argument - see the next section for details.
+
+There are three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword.
+The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as`
+keyword and by statically typing the variable.
 
 [source,groovy]
 ----
@@ -256,7 +271,11 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_positional
 
 ==== Named argument constructor
 
-If no constructor is declared, it is possible to create objects by passing parameters in the form of a map (property/value pairs). This can be in handy in cases where one wants to allow several combinations of parameters. Otherwise, by using traditional positional parameters it would be necessary to declare all possible constructors.
+If no (or a no-arg) constructor is declared, it is possible to create objects by passing parameters in the form of a
+map (property/value pairs). This can be in handy in cases where one wants to allow several combinations of parameters.
+Otherwise, by using traditional positional parameters it would be necessary to declare all possible constructors.
+Having a constructor taking a single `Map` argument is also supported - such a constructor may also be added using
+the gapi:groovy.transform.MapConstructor[] annotation.
 
 [source,groovy]
 ----
@@ -268,7 +287,20 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_named_para
 <4> `age` parameter given in the instantiation
 <5> `name` and `age` parameters given in the instantiation
 
-It is important to highlight, however, that this approach gives more power to the constructor caller, while imposes a major responsibility to it. Thus, if a restriction is needed, one can just declare one or more constructors, and the instantiation by named parameters will no longer be available.
+It is important to highlight, however, that this approach gives more power to the constructor caller,
+while imposing an increased responsibility on the caller to get the names and value types correct.
+Thus, if greater control is desired, declaring constructors using positional parameters might be preferred.
+
+Notes:
+
+* While the example above supplied no constructor, you can also supply a no-arg constructor
+or a constructor with a single `Map` argument as previously mentioned.
+* You can support both named and positional construction
+by supply both positional constructors as well as a no-arg or Map constructor.
+* When no (or a no-arg) constructor is declared, Groovy replaces the named constructor call by a call
+to the no-arg constructor followed by calls to the setter for each supplied named property. So, you
+might be better off using the Map constructor if your propertie are declared as `final` (since they
+must be set in the constructor rather than after the fact with setters).
 
 
 === Methods
