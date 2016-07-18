@@ -215,8 +215,8 @@ class AstBrowser {
                             actionPerformed: {
                                 def mapTable
                                 String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
-                                swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
-                                        size: [800, 600], show: true, locationRelativeTo: null  ) {
+                                def props = swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
+                                        show: true, locationRelativeTo: null) {
                                     lookAndFeel("system")
                                     panel {
                                         scrollPane() {
@@ -235,6 +235,7 @@ class AstBrowser {
                                     if (kv)
                                         mapTable.model.rows << ["name": kv[0], "value": kv[1]]
                                 }
+                                props.pack()
                             })
                         propertyTable.model.rows << ["name": propList[0], "value": btnPanel, "type": propList[2]]
                         btnPanel.updateUI()
@@ -313,7 +314,6 @@ class AstBrowser {
         frame.size = prefs.frameSize
         splitterPane.dividerLocation = prefs.verticalDividerLocation
         mainSplitter.dividerLocation = prefs.horizontalDividerLocation
-        frame.pack()
         frame.visible = true
 
         String source = script()
