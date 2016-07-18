@@ -389,8 +389,28 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=va
 
 ==== Exception declaration
 
-(TBD)
+Groovy automatically allows you to treat checked exceptions like unchecked exceptions.
+This means that you don't need to declare any checked exceptions that a method may throw
+as shown in the following example which can throw a `FileNotFoundException` if the file isn't found:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=idiomatic_method_declaration,indent=0]
+----
+
+Nor will you be required to surround the call to the `badRead` method in the previous example within a try/catch
+block - though you are free to do so if you wish.
+
+If you wish to declare any exceptions that your code might throw (checked or otherwise) you are free to do so.
+Adding exceptions won't change how the code is used from any other Groovy code but can be seen as documentation
+for the human reader of your code. The exceptions will become part of the method declaration in the bytecode,
+so if your code might be called from Java, it might be useful to include them.
+Using an explicit checked exception declaration is illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=checked_method_declaration,indent=0]
+----
 
 === Fields and properties
 
