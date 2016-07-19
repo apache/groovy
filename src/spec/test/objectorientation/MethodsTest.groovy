@@ -104,6 +104,7 @@ class MethodsTest extends GroovyTestCase {
 
     void testIdiomaticMethodDeclaration() {
         assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
             // tag::idiomatic_method_declaration[]
             def badRead() {
                 new File('doesNotExist.txt').text
@@ -118,6 +119,7 @@ class MethodsTest extends GroovyTestCase {
 
     void testMethodDeclarationWithCheckedException() {
         assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
             // tag::checked_method_declaration[]
             def badRead() throws FileNotFoundException {
                 new File('doesNotExist.txt').text
