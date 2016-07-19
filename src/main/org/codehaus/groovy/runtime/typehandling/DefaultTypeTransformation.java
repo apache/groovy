@@ -585,7 +585,14 @@ public class DefaultTypeTransformation {
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
                     || (left instanceof GString && right instanceof String)) {
                 Comparable comparable = (Comparable) left;
-                return comparable.compareTo(right);
+                // GROOVY-7876: when comparing for equality we try to only call compareTo when an assignable
+                // relationship holds but with a container/holder class and because of erasure, we might still end
+                // up with the prospect of a ClassCastException which we want to ignore but only if testing equality
+                try {
+                    return comparable.compareTo(right);
+                } catch (ClassCastException cce) {
+                    if (!equalityCheckOnly) throw cce;
+                }
             }
         }
 
