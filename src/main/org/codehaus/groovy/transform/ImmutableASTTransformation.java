@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
@@ -527,6 +528,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             return true;
         if (!fieldType.isResolved())
             return false;
+        if ("java.util.Optional".equals(fieldType.getName()) && fieldType.getGenericsTypes() != null && fieldType.getGenericsTypes().length == 1) {
+            GenericsType optionalType = fieldType.getGenericsTypes()[0];
+            if (optionalType.isResolved() && !optionalType.isPlaceholder() && !optionalType.isWildcard()) {
+                String name = optionalType.getType().getName();
+                if (inImmutableList(name) || knownImmutableClasses.contains(name)) return true;
+                if (optionalType.getType().isEnum() || !optionalType.getType().getAnnotations(MY_TYPE).isEmpty()) return true;
+            }
+        }
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
                 !fieldType.getAnnotations(MY_TYPE).isEmpty();
