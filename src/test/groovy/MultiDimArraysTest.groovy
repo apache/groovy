@@ -25,10 +25,10 @@ package groovy
  */
 class MultiDimArraysTest extends GroovyTestCase {
 
-    // todo: enable as soon as multi dims are supported
     void testCallTwoDimStringArray() {
         def someArrayOfStringArrays = new SomeClass().anArrayOfStringArrays()
         assert 1 == someArrayOfStringArrays.size()
+        assert someArrayOfStringArrays[0][0] == 'whatever'
     }
 
     void testCallTwoDimStringArrayWorkaround() {

@@ -40,20 +40,19 @@ class VarargsMethodTest extends GroovyTestCase {
         assertEquals 2, varargsOnlyMethod( ['',''] as Object[])  
         assertEquals 2, varargsOnlyMethod( *['',''] )  
 
-        // todo: GROOVY-1023
+        // GROOVY-1023
         assertEquals 0, varargsOnlyMethod()
 
-        // todo: GROOVY-1026
+        // GROOVY-1026
         assertEquals(-1, varargsOnlyMethod(null))
         assertEquals(2, varargsOnlyMethod(null, null))
      }  
 
      Integer varargsOnlyMethod(Object[] args) {  
-         println("args = " + args)
-         // (1) todo: GROOVY-1023 (Java 5 feature)
+         // GROOVY-1023 (Java 5 feature)
          //     If this method having varargs is invoked with no parameter,
          //     then args is not null, but an array of length 0.
-         // (2) todo: GROOVY-1026 (Java 5 feature)
+         // GROOVY-1026 (Java 5 feature)
          //     If this method having varargs is invoked with one parameter
          //     null, then args is null, and so -1 is returned here.
          if (args == null)
@@ -70,13 +69,13 @@ class VarargsMethodTest extends GroovyTestCase {
          assertEquals 2, varargsLastMethod('', ['',''] as Object[])  
          assertEquals 2, varargsLastMethod('', *['',''] )  
 
-         // todo: GROOVY-1026
+         // GROOVY-1026
          assertEquals(-1, varargsLastMethod('',null))
          assertEquals(2, varargsLastMethod('',null, null))
      }  
   
      Integer varargsLastMethod(Object first, Object[] args) {  
-         // (1) todo: GROOVY-1026 (Java 5 feature)
+         // GROOVY-1026 (Java 5 feature)
          //     If this method having varargs is invoked with two parameters
          //     1 and null, then args is null, and so -1 is returned here.
          if (args == null)

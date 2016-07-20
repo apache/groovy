@@ -32,8 +32,7 @@ class Property2Test extends GroovyTestCase {
         // these are the properties and their values that should be there
         def props = ['name': 'James', 'count': 1, 'location': 'London', 'blah': 9]
         foo.properties.each { name, value ->
-            // todo: GROOVY-996
-            // We should see protected properties, but not  private ones.
+            // GROOVY-996 - We should see protected properties, but not  private ones.
             assert name != "invisible"
 
             def pvalue = props[name]

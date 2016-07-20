@@ -19,7 +19,7 @@
 package groovy.bugs
 
 /**
- * TODO: GROOVY-1059
+ * GROOVY-1059
  *
  *    Accessible to a closure attribute of an abject with the operator ".@".
  *    For examples, all of the expressions
@@ -39,13 +39,6 @@ class Groovy1059_Bug extends GroovyTestCase {
 
     void testClosureAsAttribute() {
         def x = new Groovy1059Foo()
-
-        println( x.say() )
-        println( (x.@say)() )
-        println( x.@say() )  // TODO: Groovy-1059 should work
-        println( x.@say.call() )
-        println( x.@say.doCall() )
-        println( x.@say2() )
 
         assert "I am a Method" == x.say()
         assert "I am a Method" == x.@say2()

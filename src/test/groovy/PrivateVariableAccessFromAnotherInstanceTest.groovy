@@ -44,10 +44,10 @@ class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implem
     
     void testClone() {
         def fred = new PrivateVariableAccessFromAnotherInstanceTest()
-        //@todo fails due to private access to 'bar'
-        //barney = fred.clone()
 
-        // TODO identity comparison
-        //assert !(barney === fred)
+        def barney = fred.clone()
+
+
+        assert !(barney.is(fred))
     }
 } 
