@@ -25,7 +25,7 @@ package groovy;
  */
 
 public class SomeClass {
-    // currently not supported to be called from Groovy
+
     public String[][] anArrayOfStringArrays() {
         return new String[][]{{"whatever"}};
     }

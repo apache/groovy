@@ -44,7 +44,7 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
         assert bugMethod(123) == 246
         assert bugMethod2(123) == 246
 
-        // @todo GROOVY-133
+        // GROOVY-133
         def closure = {int x-> x * 2 }
         assert closure.call(123) == 246
 
