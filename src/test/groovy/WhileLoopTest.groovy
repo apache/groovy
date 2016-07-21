@@ -22,7 +22,7 @@ class WhileLoopTest extends GroovyTestCase {
 
     void testVerySimpleWhile() {
         def val = doWhileMethod(0, 5)
-        println(val)
+        assert val == 5
     }
 
     void testWhileWithEmptyBody() {

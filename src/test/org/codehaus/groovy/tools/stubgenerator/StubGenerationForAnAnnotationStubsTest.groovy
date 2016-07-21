@@ -47,7 +47,5 @@ class StubGenerationForAnAnnotationStubsTest extends StringSourcesStubTestCase {
         String annotationClassSource = stubJavaSourceFor('Foo4451')
         assert annotationClassSource.contains('public @interface Foo4451')
         assert !annotationClassSource.contains('java.lang.annotation.Annotation')
-
-        println 'StubGenerationForAnAnnotationStubsTest - verified'
     }
 }

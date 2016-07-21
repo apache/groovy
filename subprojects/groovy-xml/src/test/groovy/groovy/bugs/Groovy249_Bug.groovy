@@ -28,8 +28,6 @@ class Groovy249_Bug extends GroovyTestCase {
     void testBug() {
         def t = new Bean249()
         t.b = "hello"
-        println t.b
-        println "test: ${t.b}"
         
         def xml = new MarkupBuilder()
         def root = xml.foo {

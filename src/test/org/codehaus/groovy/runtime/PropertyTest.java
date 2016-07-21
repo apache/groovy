@@ -161,7 +161,6 @@ public class PropertyTest extends GroovyTestCase {
         Process process = ProcessGroovyMethods.execute(java);
         Object value = InvokerHelper.getProperty(process, "in");
         assertNotNull(value);
-        System.out.println("Found in: " + value);
         process.destroy();
     }
 

@@ -20,8 +20,6 @@ package groovy.bugs
 
 class Groovy2490Bug extends GroovyTestCase {
     void test () {
-        System.out.println("One.foo = " + One.foo);
-        System.out.println("Two.foo = " + Two.foo);
         assertEquals One.foo, "hello"
         assertEquals Two.foo, "goodbye"
     }

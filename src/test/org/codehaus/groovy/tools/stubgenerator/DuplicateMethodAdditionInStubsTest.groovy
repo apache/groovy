@@ -55,6 +55,5 @@ class DuplicateMethodAdditionInStubsTest extends StringSourcesStubTestCase {
     void verifyStubs() {
         assert classes.size() == 2
         assert classes['de.app.User4453'].methods['setName'].size() == 2
-        println 'DuplicateMethodAdditionInStubsTest - verified'
     }
 }

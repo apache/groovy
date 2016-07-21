@@ -27,7 +27,6 @@ package org.codehaus.groovy.tools.stubgenerator
 class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestCase {
 
     Map<String, String> provideSources() {
-        println 'AnnotationMemberValuesResolutionStubsTestV1'
         [
             'foo/Foo4434V1.java': '''
                 package foo;

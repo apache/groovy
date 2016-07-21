@@ -46,10 +46,10 @@ class GStringTest extends GroovyTestCase {
 
         check("hello $name how are you?", teststr)
         check("hello ${name} how are you?", teststr)
-        check("hello ${println "feep"; name} how are you?", teststr)
+        check("hello ${(name + '  ').trim()} how are you?", teststr)
         check(/hello $name how are you?/, teststr)
         check(/hello ${name} how are you?/, teststr)
-        check(/hello ${println "feep"; name} how are you?/, teststr)
+        check(/hello ${(name + '  ').trim()} how are you?/, teststr)
     }
 
     void testWithVariableAtEnd() {
@@ -238,12 +238,12 @@ class GStringTest extends GroovyTestCase {
         assertEquals(w.buffer.toString(), "5")
         assertEquals(g4.toString(), "5")
         try {
-            println g5
+            w << g5
             fail("should throw a GroovyRuntimeException")
         } catch (GroovyRuntimeException e) {
         }
         try {
-            println g5.toString()
+            g5.toString()
             fail("should throw a GroovyRuntimeException")
         } catch (GroovyRuntimeException e) {
         }

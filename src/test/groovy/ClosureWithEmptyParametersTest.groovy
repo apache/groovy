@@ -25,13 +25,9 @@ class ClosureWithEmptyParametersTest extends GroovyTestCase {
 
     void testNoParams() {
 
-        def block = {-> println "hey I'm a closure!" }
-
-        println "About to call closure"
+        def block = {-> }
 
         block.call()
-
-        println "Done"
     }
 
 }

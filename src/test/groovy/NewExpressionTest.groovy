@@ -26,8 +26,6 @@ class NewExpressionTest extends GroovyTestCase {
         def cheese = new String( "hey you hosers" )
         
         assert cheese != null
-        
-        println(cheese)
     }
 
     void testNewBeanNoArgs() {
@@ -56,8 +54,6 @@ class NewExpressionTest extends GroovyTestCase {
 
     void testNewInstanceWithFullyQualifiedNameNotImported() {
         def bean = new java.io.File("Foo")
-
-        println "Created $bean"
 
         assert bean != null
     }

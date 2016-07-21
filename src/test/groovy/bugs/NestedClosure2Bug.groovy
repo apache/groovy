@@ -40,19 +40,13 @@ class NestedClosure2Bug extends TestSupport {
         def a = 123
         def b = 456
         def closure = {
-            println b
             def c = 999
             return {
                 f = 2222111
                 
-                println f
-                
-                println c
                 def d = 678
                 return { 
-                    println f
                     assert f == 2222111
-                    println d
                     return a
                 }
             }

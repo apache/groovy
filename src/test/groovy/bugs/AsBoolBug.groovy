@@ -29,19 +29,15 @@ public class AsBoolBug extends GroovyTestCase {
 
     void testMapAsBool() {
         def a = ["A":123]
-        println ("$a : ${a as Boolean}")
         assert a as Boolean == true
         a = [:]
-        println ("$a : ${a as Boolean}")
         assert a as Boolean == false
     }
 
     void testListAsBool() {
         def b = [123]
-        println ("$b : ${b as Boolean}")
         assert b as Boolean == true
         b = []
-        println ("$b : ${b as Boolean}")
         assert b as Boolean == false
     }
 
@@ -57,32 +53,19 @@ public class AsBoolBug extends GroovyTestCase {
     // This is a test case against GROOVY-812
     void testStringAsBool() {
         def c = "false"
-        println ("$c : ${c as Boolean}")
         assert c as Boolean == true
         assert c as Boolean == (c != null && c.length() > 0)
         boolean z = c
-        println ("$z")
         assert z == true
-        if (c)
-           println "It is true!!"
-        else
-           println "It is false!!"
 
         c = "123"
-        println ("$c : ${c as Boolean}")
         assert c as Boolean == true
         assert c as Boolean == (c != null && c.length() > 0)
 
         c = "False"
-        println ("$c : ${c as Boolean}")
         assert c as Boolean == true
         assert c as Boolean == (c != null && c.length() > 0)
-        if (c)
-           println "It is true!!"
-        else
-           println "It is false!!"
         z = c
-        println ("$z")
         assert z
     }
 }

@@ -49,8 +49,6 @@ public abstract class TestSupport extends GroovyTestCase {
     }
 
     public Iterator iterator() {
-        System.out.println("Calling custom iterator() method for " + this);
-
         return Arrays.asList(getMockArguments()).iterator();
     }
 }

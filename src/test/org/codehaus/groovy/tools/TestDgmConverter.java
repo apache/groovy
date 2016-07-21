@@ -47,8 +47,6 @@ public class TestDgmConverter extends TestCase {
             File file = files[i];
             final String name = file.getName();
             if (name.startsWith("dgm$")) {
-                System.out.println(name);
-
                 final String className = "org.codehaus.groovy.runtime." + name.substring(0, name.length() - ".class".length());
                 try {
                     Class cls = Class.forName(className, false, DefaultGroovyMethods.class.getClassLoader());
@@ -72,9 +70,6 @@ public class TestDgmConverter extends TestCase {
     public void testRegistry () {
         final MetaClassRegistryImpl metaClassRegistry = new MetaClassRegistryImpl();
         final Object [] instanceMethods = metaClassRegistry.getInstanceMethods().getArray();
-        for (int i = 0; i < instanceMethods.length; i++) {
-            System.out.println(instanceMethods[i]);
-
-        }
+        assertTrue(instanceMethods.length > 0);
     }
 }

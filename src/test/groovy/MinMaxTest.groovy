@@ -42,11 +42,7 @@ class MinMaxTest extends GroovyTestCase {
 
         def order = new OrderBy( { it.get('@cheese') } )
 
-        println("People ${people}")
-
         def p = people.min(order)
-
-        println("Found ${p}")
 
         assert p.get("@name") == "Joe" , "found person ${p}"
 

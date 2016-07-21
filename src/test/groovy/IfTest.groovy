@@ -24,7 +24,7 @@ class IfTest extends GroovyTestCase {
         def x = 1
 
         if (x) {
-            println "${x} is true"
+            // expected
         }
         else {
             fail("should not be false")
@@ -36,7 +36,7 @@ class IfTest extends GroovyTestCase {
             fail("should not be true")
         }
         else {
-            println "${x} is false"
+            // expected
         }
 
     }
@@ -45,7 +45,7 @@ class IfTest extends GroovyTestCase {
         def x = "abc"
 
         if (x) {
-            println "${x} is true"
+            // expected
         }
         else {
             fail("should not be false")
@@ -57,7 +57,7 @@ class IfTest extends GroovyTestCase {
             fail("should not be true")
         }
         else {
-            println "${x} is false"
+            // expected
         }
     }
 }

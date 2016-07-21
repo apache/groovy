@@ -31,7 +31,7 @@ class Groovy2666Bug extends GroovyTestCase{
         try {
             ex ()
         } catch (org.codehaus.groovy.GroovyBugError e) {
-            println "caught"
+            // expected
             return
         } catch (NullPointerException e) {
         }

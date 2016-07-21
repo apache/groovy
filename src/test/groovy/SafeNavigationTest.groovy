@@ -29,7 +29,6 @@ class SafeNavigationTest extends GroovyTestCase {
     void testNormalPropertyNavigation() {
         def x = ['a':456, 'foo':['bar':123, 'x':456], 'z':99]
         def y = x?.foo?.bar
-        println("found y ${x?.foo?.bar}")
         assert y == 123
     }
 

@@ -28,13 +28,10 @@ class MapConstructionTest extends GroovyTestCase {
     void testMap() {
         def m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
 
-        println(m)
-
         def mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ]
 
-        println(mtoo)
-
         assertMap(m)
+        assert mtoo[2][2] == 'def'
     }
 
     void testMapAsParameter() {

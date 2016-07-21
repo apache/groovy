@@ -29,12 +29,10 @@ class ClosureMissingMethodTest extends GroovyTestCase {
           int count = 0
 
           foo = {
-            println "inside foo"
             count++
             bar()
           }
           baz = {
-            println "inside baz"
             foo()
           }
 
@@ -55,12 +53,10 @@ class ClosureMissingMethodTest extends GroovyTestCase {
       int count = 0
 
       def foo = {
-          println "inside foo"
           count++
           bar()
       }
       def baz = {
-          println "inside baz"
           foo()
       }
 
@@ -79,12 +75,10 @@ class ClosureMissingMethodTest extends GroovyTestCase {
           int count = 0
 
           foo = {
-            println "inside foo"
             count++
             bar()
           }
           baz = {
-            println "inside baz"
             foo()
           }
           mc = new ExpandoMetaClass(baz.getClass())
@@ -108,12 +102,10 @@ class ClosureMissingMethodTest extends GroovyTestCase {
       int count = 0
 
       def foo = {
-          println "inside foo"
           count++
           bar()
       }
       def baz = {
-          println "inside baz"
           foo()
       }
       MetaClass mc = new ExpandoMetaClass(baz.getClass())

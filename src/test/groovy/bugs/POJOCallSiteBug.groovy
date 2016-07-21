@@ -82,7 +82,6 @@ class POJOCallSiteBug extends GroovyTestCase {
         Double[][] a = new Double[10][10]
         for (def i = 0; i <= 9; i++ ) {
             for (def j = 0; j <= 9; j++ ) {
-                println("i=$i j=$j a[0][i]=$a[0][i]")
                 def o = a[0][i]
                 a[0][i] = o + 1
             }

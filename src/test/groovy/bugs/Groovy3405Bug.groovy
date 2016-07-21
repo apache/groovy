@@ -35,7 +35,5 @@ class Groovy3405Bug extends GroovyTestCase {
         String.metaClass.'static'.testStaticOneParam = { first = "foo" ->  return first }
         assert "baz" == "".testStaticOneParam("baz")
         assert "foo" == "".testStaticOneParam()
-
-        println "Done"
     }
 }

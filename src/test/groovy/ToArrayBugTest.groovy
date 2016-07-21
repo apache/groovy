@@ -37,8 +37,6 @@ class ToArrayBugTest extends GroovyTestCase {
     }
     
     protected def callArrayMethod(array) {
-        System.out.println("Called method with ${array}")
-        
         def list = Arrays.asList(array)
         
         assert list.size() == 4

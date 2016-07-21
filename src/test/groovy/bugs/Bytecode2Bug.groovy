@@ -44,9 +44,7 @@ class Bytecode2Bug extends GroovyTestCase {
         assert m[2] == 2
         assert m[3] == 3
         assert m[4] == 4
-        
-        println("created: ${m}")
-        
+
         assert i == 5
     }
     
@@ -60,8 +58,6 @@ class Bytecode2Bug extends GroovyTestCase {
         assert m[2] == 2
         assert m[3] == 3
         assert m[4] == 4
-        
-        println("created: ${m}")
         
         assert i == 5
     }

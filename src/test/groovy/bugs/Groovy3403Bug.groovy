@@ -50,7 +50,6 @@ class Groovy3403Bug extends GroovyTestCase {
 
 class Main3403 {
    static test(){
-       println "original call made"
    }
 }
 

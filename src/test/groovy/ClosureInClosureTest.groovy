@@ -37,7 +37,7 @@ class ClosureInClosureTest extends GroovyTestCase {
 
         l.each{
             it.each{
-                println(text)
+                assert text == 'test '
             }
         }
     }
