@@ -178,4 +178,26 @@ public class VariableScope  {
     public Iterator<Variable> getReferencedClassVariablesIterator() {
         return getReferencedClassVariables().values().iterator();
     }
+
+    /**
+     * Gets a map containing the variables declared in this scope.
+     * This map cannot be modified.
+     * @return a map containing the declared variable references
+     */
+    public Map<String, Variable> getDeclaredVariables() {
+        if (declaredVariables == Collections.EMPTY_MAP) {
+            return declaredVariables;
+        } else {
+            return Collections.unmodifiableMap(declaredVariables);
+        }
+    }
+
+    /**
+     * Gets an iterator for the declared class variables. The remove
+     * operation is not supported.
+     * @return an iterator for the declared variables
+     */
+    public Iterator<Variable> getDeclaredVariablesIterator() {
+        return getDeclaredVariables().values().iterator();
+    }
 }
