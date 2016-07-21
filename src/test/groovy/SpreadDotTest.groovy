@@ -35,27 +35,28 @@ public class SpreadDotTest extends GroovyTestCase {
         def m2 = ["a":11, "b":22]
         def m3 = ["a":111, "b":222]
         def x = [m1,m2,m3]
-        println x*.a
-        println x*."a"
+        assert x*.a == [1, 11, 111]
+        assert x*."a" == [1, 11, 111]
         assert x == [m1, m2, m3]
 
         def m4 = null
         x << m4
-        println x*.a
-        println x*."a"
+        assert x*.a == [1, 11, 111, null]
+        assert x*."a" == [1, 11, 111, null]
         assert x == [m1, m2, m3, null]
 
+        Date checkDate = new Date()
         def d = new SpreadDotDemo()
         x << d
-        println x*."a"
+        assert x*."a"[4] >= checkDate
         assert x == [m1, m2, m3, null, d]
 
         def y = new SpreadDotDemo2()
-        println y."a"
-        println y.a
+        assert y."a" == 'Attribute Get a'
+        assert y.a == 'Attribute Get a'
 
         x << y
-        println x*."a"
+        assert x*."a"[5] == 'Attribute Get a'
         assert x == [m1, m2, m3, null, d, y]
     }
 

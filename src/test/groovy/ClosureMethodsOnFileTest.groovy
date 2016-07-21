@@ -37,11 +37,14 @@ class ClosureMethodsOnFileTest extends GroovyTestCase {
     }
 
     void testEachLine() {
-        file.eachLine { line -> println(line) }
+        file.eachLine { line -> assert line != null }
     }
 
     void testEachLineWithCount() {
-        file.eachLine { line, count -> println "$count > $line" }
+        int i = 0
+        file.eachLine { line, count ->
+            assert count == ++i && line != null
+        }
     }
 
     void testReadLines() {
@@ -51,8 +54,6 @@ class ClosureMethodsOnFileTest extends GroovyTestCase {
     }
 
     void testEachFile() {
-        println("Closure loop to display contents of dir: " + dir)
-        dir.eachFile { f -> println(f.getName()) }
-        println("")
+        dir.eachFile { f -> assert f.getName() }
     }
 }

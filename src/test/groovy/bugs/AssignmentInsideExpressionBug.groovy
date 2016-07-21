@@ -25,11 +25,15 @@ class AssignmentInsideExpressionBug extends GroovyTestCase {
     void testBug() {
         def x
         if ((x = someMethod()) != null) {
-            println x
+            assert x == 'worked!'
+        } else {
+            fail('x should not be null')
         }
         def y
         if ((y = getFoo()) > 5) {
-            println "y is greater than 5"
+            assert y == 7
+        } else {
+            fail("y [${y}] should be greater than 5")
         }
         
         def a = 123, b = 123

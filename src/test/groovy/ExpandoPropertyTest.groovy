@@ -38,7 +38,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         foo.cheese = "Cheddar"
         foo.fullName = "Gromit"
         foo.nameLength = { return fullName.length() }
-        foo.multiParam = { a, b, c -> println("Called with ${a}, ${b}, ${c}"); return a + b + c }
+        foo.multiParam = { a, b, c -> return a + b + c }
 
         assert foo.cheese == "Cheddar"
         assert foo.fullName == "Gromit"
@@ -64,7 +64,6 @@ class ExpandoPropertyTest extends GroovyTestCase {
 
     void testExpandoConstructorAndToString() {
         def foo = new Expando(type: "sometype", value: 42)
-        println foo
         assert foo.toString() == "{type=sometype, value=42}"
         assert "${foo}" == "{type=sometype, value=42}"
     }
@@ -74,7 +73,6 @@ class ExpandoPropertyTest extends GroovyTestCase {
         def foo = new Expando(type: "myfoo", value: 42, equals: equals)
         def bar = new Expando(type: "mybar", value: 43, equals: equals)
         def zap = new Expando(type: "myzap", value: 42, equals: equals)
-        println(foo)
 
         assert foo.equals(bar) == false
         assert foo.equals(zap) == true
@@ -82,7 +80,6 @@ class ExpandoPropertyTest extends GroovyTestCase {
         def list = []
         list << foo
         list << bar
-        println list
 
         assert list.contains(foo) == true
         assert list.contains(bar) == true
@@ -90,16 +87,10 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert list.indexOf(bar) == 1
         assert list.indexOf(foo) == 0
 
-        println "hashCode: " + foo.hashCode()
-
         foo.hashCode = { return value }
-        println("hashCode: " + foo.hashCode())
-
         assert foo.hashCode() == foo.value
-        println("toString: " + foo.toString())
 
         foo.toString = { return "Type: ${type}, Value: ${value}" }
-        println("toString: " + foo.toString())
         assert foo.toString() == "Type: myfoo, Value: 42"
     }
 

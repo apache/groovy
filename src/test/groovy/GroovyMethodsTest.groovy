@@ -433,15 +433,6 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
-    void testDisplaySystemProperties() {
-        println "System properties are..."
-        def properties = System.properties
-        def keys = properties.keySet().sort()
-        for (k in keys) {
-            println "${k} = ${properties[k]}"
-        }
-    }
-
     void testInForLists() {
         def list = ['a', 'b', 'c']
         assert 'b' in list

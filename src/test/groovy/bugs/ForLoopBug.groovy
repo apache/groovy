@@ -59,7 +59,6 @@ class ForLoopBug extends GroovyTestCase {
 
         def lastIndex
         for (i in a..b) {
-            println i
             lastIndex = i
         }
         a = lastIndex

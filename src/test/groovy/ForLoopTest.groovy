@@ -91,8 +91,6 @@ class ForLoopTest extends gls.CompilableTestSupport {
     void testArray() {
         def array = (0..4).toArray()
 
-        println "Class: ${array.getClass()} for array ${array}"
-
         x = 0
 
         for (i in array) {
@@ -104,8 +102,6 @@ class ForLoopTest extends gls.CompilableTestSupport {
 
     void testIntArray() {
         def array = TestSupport.getIntArray()
-
-        println "Class: ${array.getClass()} for array ${array}"
 
         x = 0
 

@@ -38,7 +38,6 @@ class TryCatchTest extends CompilableTestSupport {
         afterTryCatch()
         assert exceptionCalled, "should have invoked the catch clause"
         assert finallyCalled, "should have invoked the finally clause"
-        println("After try/catch")
     }
 
     void testStandaloneTryBlockShouldNotCompile() {
@@ -73,7 +72,6 @@ class TryCatchTest extends CompilableTestSupport {
         }
         assert !exceptionCalled, "should not invoked the catch clause"
         assert finallyCalled, "should have invoked the finally clause"
-        println "After try/catch"
     }
 
     void failingMethod() {
@@ -96,7 +94,6 @@ class TryCatchTest extends CompilableTestSupport {
     void afterTryCatch() {
         assert exceptionCalled, "should have invoked the catch clause"
         assert finallyCalled, "should have invoked the finally clause"
-        println("After try/catch")
     }
 
     protected void setUp() {

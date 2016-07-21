@@ -38,8 +38,6 @@ class ClosureVariableBug extends GroovyTestCase {
     
         assert foo.a != null
         
-        println "Foo has a = ${foo.a}"
-        
         def value = foo.a()
         assert value == 123
     }

@@ -38,7 +38,6 @@ class StringBufferTest extends GroovyTestCase {
         assert 'xx0123' == buf.toString(), 'border case left'
         buf = new StringBuffer('0123')
         buf[4..4] = 'xx'
-        println buf.toString()
         assert '0123xx' == buf.toString(), 'border case right'
         // more weird Ranges already tested in ListTest
     }

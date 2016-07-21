@@ -30,10 +30,6 @@ public class PropertyNameBug extends GroovyTestCase {
         map.put("foo.bar", "FooBar")
         map.put("foo.bar-bar", "FooBar-Bar")
         map.put("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!", "Any character")
-
-        println("foo.bar1 = ${map.get("foo.bar1")}")
-        println("foo.bar-bar = ${map.get("foo.bar-bar")}")
-        println("Specical Character Test: ${map.get("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!")}")
     }
 
     void testNonJavaIdentifierChacactersWithGroovySyntax() {
@@ -41,10 +37,6 @@ public class PropertyNameBug extends GroovyTestCase {
         map."foo.bar" = "FooBar"
         map."foo.bar-bar" = "FooBar-Bar"
         map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!" = "Any character"
-
-        println("foo.bar1 = ${map."foo.bar1"}")
-        println("foo.bar-bar = ${map."foo.bar-bar"}")
-        println("Specical Character Test: ${map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!"}")
     }
 }
 

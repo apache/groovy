@@ -23,7 +23,6 @@ class Groovy2350Bug extends GroovyTestCase{
      void testNoArg () {
          shouldFail (org.codehaus.groovy.runtime.metaclass.MethodSelectionException) {
              def a = new DefaultNoArgCtor()
-             println a
          }
 
          assertEquals "NULL", new DefaultNoArgCtor2().value

@@ -38,7 +38,7 @@ public class MethodFailureTest extends GroovyTestCase {
             fail("Should have thrown an exception");
         }
         catch (GroovyRuntimeException e) {
-            System.out.println(e);
+            // expected
         }
     }
 
@@ -50,8 +50,7 @@ public class MethodFailureTest extends GroovyTestCase {
             fail("Should have thrown an exception");
         }
         catch (GroovyRuntimeException e) {
-            System.out.println(e);
-            //e.printStackTrace();
+            // expected
         }
     }
 
@@ -67,8 +66,7 @@ public class MethodFailureTest extends GroovyTestCase {
             fail("Should have thrown an exception");
         }
         catch (GroovyRuntimeException e) {
-            System.out.println(e);
-            //e.printStackTrace();
+            // expected
         }
     }
 

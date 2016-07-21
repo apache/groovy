@@ -78,6 +78,5 @@ class Groovy3410Bug extends GroovyTestCase {
             }   
             println new Groovy3405N5()     
         """
-        println "testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields Done" 
     }
 }

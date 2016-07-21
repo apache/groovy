@@ -93,9 +93,9 @@ class ClosureTest extends GroovyTestCase {
 
         assert count == 1
 
-        block = System.out.&println
+        block = Math.&min
 
-        block.call("I just invoked a closure!")
+        assert block.call(3, 7) == 3
     }
   
     def incrementCallCount() {

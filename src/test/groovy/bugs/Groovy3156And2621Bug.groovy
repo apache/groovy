@@ -44,7 +44,6 @@ class Groovy3156And2621Bug extends GroovyTestCase {
     }
 
     void convention(String arg) {
-        println 'called'
     }
     
     void failingExecute() {

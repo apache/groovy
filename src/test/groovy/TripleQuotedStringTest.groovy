@@ -27,7 +27,6 @@ class TripleQuotedStringTest extends GroovyTestCase {
     and some escaped \""" quoting and
     an ending""".trim()
 
-        println(s)
         assert s != null
         def idx = s.indexOf("quoting and")
         assert idx > 0

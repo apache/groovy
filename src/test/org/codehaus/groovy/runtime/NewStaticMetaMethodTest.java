@@ -49,15 +49,11 @@ public class NewStaticMetaMethodTest extends TestCase {
 
         Object answer = metaMethod.invoke("abc", new Object[]{"123"});
         assertEquals("abc123", answer);
-
-        System.out.println("Found: " + answer);
     }
 
     public void testInvokeDefaultGroovyMethodUsingMetaClass() {
         Object answer = InvokerHelper.invokeMethod("abc", "plus", new Object[]{"123"});
         assertEquals("abc123", answer);
-
-        System.out.println("Found: " + answer);
     }
 
     public static String dummyMethod(String foo, String bar) throws Exception {

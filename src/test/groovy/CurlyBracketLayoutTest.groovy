@@ -26,7 +26,7 @@ class CurlyBracketLayoutTest extends GroovyTestCase
 
         if (foo.contains("b"))
         {
-            println "Worked a treat. foo = $foo"
+            // expected
         }
         else
         {
@@ -36,7 +36,7 @@ class CurlyBracketLayoutTest extends GroovyTestCase
         def list = [1, 2, 3]
         list.each
         {
-            println it
+            assert it >= 1 && it <= 3
         }
     }
 }

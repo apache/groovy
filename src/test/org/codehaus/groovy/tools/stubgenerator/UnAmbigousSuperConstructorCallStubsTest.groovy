@@ -50,6 +50,5 @@ class UnAmbigousSuperConstructorCallStubsTest extends StringSourcesStubTestCase 
         assert classes['UserAuthException'] != null
         String stubSource = stubJavaSourceFor('UserAuthException')
         assert !stubSource.contains('super (null)')
-        println 'UnAmbigousSuperConstructorCallStubsTest - verified'
     }
 }

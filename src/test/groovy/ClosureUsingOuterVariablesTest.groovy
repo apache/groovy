@@ -29,12 +29,9 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         def y = "hello"
         
         def closure = { i ->
-            println("x ${x}")
-            println("y ${y}")
-            println("i ${i}")
-                
             assert x == 123
             assert y == 'hello'
+            assert i == 321
         }
         closure.call(321)
     }
@@ -74,7 +71,6 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         def c = { b = a + it }
         c(5)
         
-        println(b)
         assert b == a + 5
     }    
 
