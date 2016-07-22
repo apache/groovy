@@ -496,4 +496,52 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
         }
     }
+
+    void testWithOptions() {
+        def options = JsonOutput.options()
+                .excludeNulls()
+                .dateFormat('yyyyMM')
+                .excludeFieldsByName('secretKey', 'creditCardNumber')
+                .excludeFieldsByType(URL)
+                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+
+        new StringWriter().with { w ->
+            def builder = new StreamingJsonBuilder(w, options)
+
+            builder.payload {
+                id 'YT-1234'
+                location null
+                secretKey 'J79-A25'
+                creditCardNumber '123-444-789-2233'
+                site new URL('http://groovy-lang.org')
+                isActive new java.util.concurrent.atomic.AtomicBoolean(true)
+            }
+
+            assert w.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'
+        }
+    }
+
+    @CompileStatic
+    void testWithOptionsCompileStatic() {
+        def options = JsonOutput.options()
+                .excludeNulls()
+                .dateFormat('yyyyMM')
+                .excludeFieldsByName('secretKey', 'creditCardNumber')
+                .excludeFieldsByType(URL)
+                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+
+        new StringWriter().with { w ->
+            def builder = new StreamingJsonBuilder(w, options)
+            builder.call('payload') {
+                call 'id', 'YT-1234'
+                call 'location', (String)null
+                call 'secretKey', 'J79-A25'
+                call 'creditCardNumber', '123-444-789-2233'
+                call 'site', new URL('http://groovy-lang.org')
+                call 'isActive', new java.util.concurrent.atomic.AtomicBoolean(true)
+            }
+
+            assert w.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'
+        }
+    }
 }

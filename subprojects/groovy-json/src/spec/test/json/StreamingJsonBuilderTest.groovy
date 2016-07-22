@@ -72,4 +72,36 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             // end::json_assert[]
        """
     }
+
+    void testStreamingJsonBuilderWithOptions() {
+        assertScript '''
+            import groovy.json.*
+            // tag::streaming_json_builder_options[]
+            def options = JsonOutput.options()
+                    .excludeNulls()
+                    .excludeFieldsByName('make', 'country', 'record')
+                    .excludeFieldsByType(Number)
+                    .addConverter(URL) { url -> '"http://groovy-lang.org"' }
+
+            StringWriter writer = new StringWriter()
+            StreamingJsonBuilder builder = new StreamingJsonBuilder(writer, options)
+
+            builder.records {
+              car {
+                    name 'HSV Maloo'
+                    make 'Holden'
+                    year 2006
+                    country 'Australia'
+                    homepage new URL('http://example.org')
+                    record {
+                        type 'speed'
+                        description 'production pickup truck with speed of 271kph'
+                    }
+              }
+            }
+
+            assert writer.toString() == '{"records":{"car":{"name":"HSV Maloo","homepage":"http://groovy-lang.org"}}}'
+            // end::streaming_json_builder_options[]
+        '''
+    }
 }

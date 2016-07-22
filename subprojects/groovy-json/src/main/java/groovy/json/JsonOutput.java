@@ -1073,6 +1073,35 @@ public class JsonOutput {
             return false;
         }
 
+        /**
+         * Package-private helper method used by StreamingJsonBuilder.
+         *
+         * @param name of the field
+         * @return true if that field is being excluded, else false
+         */
+        boolean isExcludingFieldsNamed(String name) {
+            return hasExcludedFieldNames && excludedFieldNames.contains(name);
+        }
+
+        /**
+         * Package-private helper method used by StreamingJsonBuilder.
+         *
+         * @param value an instance of an object
+         * @return true if values like this are being excluded, else false
+         */
+        boolean isExcludingValues(Object value) {
+            if (value == null) {
+                if (excludeNulls) {
+                    return true;
+                }
+            } else {
+                if (shouldExcludeType(value.getClass())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
     }
 
     /**
