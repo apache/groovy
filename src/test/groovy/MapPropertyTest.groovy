@@ -61,6 +61,34 @@ class MapPropertyTest extends GroovyTestCase {
         assert c.class == 1
         assert c.getClass() != 1
     }
+
+    // GROOVY-5985
+    void testMapPutAtWithKeyMatchingReadOnlyProperty() {
+        def map = [serialVersionUID:123]
+        assert map["serialVersionUID"] == 123
+        assert map.serialVersionUID == 123
+
+        map.put("serialVersionUID", 789)
+        assert map["serialVersionUID"] == 789
+        assert map.serialVersionUID == 789
+
+        map.putAt("serialVersionUID", 333)
+        assert map.serialVersionUID == 333
+
+        map = new MyMapClassWithReadOnlyProperties()
+
+        assert map['classVar'] == null
+        assert map.@classVar == 'class var'
+
+        map['classVar'] = 'map var'
+        assert map['classVar'] == 'map var'
+
+        assert map['instanceVar'] == null
+        assert map.@instanceVar == 77
+
+        map['instanceVar'] = 42
+        assert map['instanceVar'] == 42
+    }
 }
 
 class MyClass extends HashMap {
@@ -68,4 +96,9 @@ class MyClass extends HashMap {
         assert id == "hello"
         assert this.class == 1
     }
+}
+
+class MyMapClassWithReadOnlyProperties extends HashMap {
+    private static final String classVar = 'class var'
+    private final int instanceVar = 77
 }
