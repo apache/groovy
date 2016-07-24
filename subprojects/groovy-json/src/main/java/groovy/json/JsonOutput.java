@@ -57,6 +57,8 @@ public class JsonOutput {
     static final char QUOTE = '"';
 
     private static final char[] EMPTY_STRING_CHARS = Chr.array(QUOTE, QUOTE);
+    private static final char[] EMPTY_MAP_CHARS = {OPEN_BRACE, CLOSE_BRACE};
+    private static final char[] EMPTY_LIST_CHARS = {OPEN_BRACKET, CLOSE_BRACKET};
 
     private static final String NULL_VALUE = "null";
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
@@ -217,6 +219,123 @@ public class JsonOutput {
         writeMap(m, buffer);
 
         return buffer.toString();
+    }
+
+    /**
+     * Pretty print a JSON payload.
+     *
+     * @param jsonPayload
+     * @return a pretty representation of JSON payload.
+     */
+    public static String prettyPrint(String jsonPayload) {
+        int indentSize = 0;
+        // Just a guess that the pretty view will take a 20 percent more than original.
+        final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 1.2));
+
+        JsonLexer lexer = new JsonLexer(new StringReader(jsonPayload));
+        // Will store already created indents.
+        Map<Integer, char[]> indentCache = new HashMap<Integer, char[]>();
+        while (lexer.hasNext()) {
+            JsonToken token = lexer.next();
+            switch (token.getType()) {
+                case OPEN_CURLY:
+                    indentSize += 4;
+                    output.addChars(Chr.array(OPEN_BRACE, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
+
+                    break;
+                case CLOSE_CURLY:
+                    indentSize -= 4;
+                    output.addChar(NEW_LINE);
+                    if (indentSize > 0) {
+                        output.addChars(getIndent(indentSize, indentCache));
+                    }
+                    output.addChar(CLOSE_BRACE);
+
+                    break;
+                case OPEN_BRACKET:
+                    indentSize += 4;
+                    output.addChars(Chr.array(OPEN_BRACKET, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
+
+                    break;
+                case CLOSE_BRACKET:
+                    indentSize -= 4;
+                    output.addChar(NEW_LINE);
+                    if (indentSize > 0) {
+                        output.addChars(getIndent(indentSize, indentCache));
+                    }
+                    output.addChar(CLOSE_BRACKET);
+
+                    break;
+                case COMMA:
+                    output.addChars(Chr.array(COMMA, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
+
+                    break;
+                case COLON:
+                    output.addChars(Chr.array(COLON, SPACE));
+
+                    break;
+                case STRING:
+                    String textStr = token.getText();
+                    String textWithoutQuotes = textStr.substring(1, textStr.length() - 1);
+                    if (textWithoutQuotes.length() > 0) {
+                        output.addJsonEscapedString(textWithoutQuotes);
+                    } else {
+                        output.addQuoted(Chr.array());
+                    }
+
+                    break;
+                default:
+                    output.addString(token.getText());
+            }
+        }
+
+        return output.toString();
+    }
+
+    /**
+     * Creates new indent if it not exists in the indent cache.
+     *
+     * @return indent with the specified size.
+     */
+    private static char[] getIndent(int indentSize, Map<Integer, char[]> indentCache) {
+        char[] indent = indentCache.get(indentSize);
+        if (indent == null) {
+            indent = new char[indentSize];
+            Arrays.fill(indent, SPACE);
+            indentCache.put(indentSize, indent);
+        }
+
+        return indent;
+    }
+
+    /**
+     * Obtains JSON unescaped text for the given text
+     *
+     * @param text The text
+     * @return The unescaped text
+     */
+    public static JsonUnescaped unescaped(CharSequence text) {
+        return new JsonUnescaped(text);
+    }
+
+    /**
+     * Represents unescaped JSON
+     */
+    public static class JsonUnescaped {
+        private CharSequence text;
+
+        public JsonUnescaped(CharSequence text) {
+            this.text = text;
+        }
+
+        public CharSequence getText() {
+            return text;
+        }
+
+        @Override
+        public String toString() {
+            return text.toString();
+        }
     }
 
     /**
@@ -434,8 +553,6 @@ public class JsonOutput {
         buffer.addChar(CLOSE_BRACKET);
     }
 
-    private static final char[] EMPTY_MAP_CHARS = {OPEN_BRACE, CLOSE_BRACE};
-
     /**
      * Serializes map and writes it into specified buffer.
      */
@@ -463,8 +580,6 @@ public class JsonOutput {
         }
     }
 
-    private static final char[] EMPTY_LIST_CHARS = {OPEN_BRACKET, CLOSE_BRACKET};
-
     /**
      * Serializes iterator and writes it into specified buffer.
      */
@@ -481,123 +596,6 @@ public class JsonOutput {
             buffer.addChar(CLOSE_BRACKET);
         } else {
             buffer.addChars(EMPTY_LIST_CHARS);
-        }
-    }
-
-    /**
-     * Pretty print a JSON payload.
-     *
-     * @param jsonPayload
-     * @return a pretty representation of JSON payload.
-     */
-    public static String prettyPrint(String jsonPayload) {
-        int indentSize = 0;
-        // Just a guess that the pretty view will take 20 percent more than original.
-        final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 1.2));
-
-        JsonLexer lexer = new JsonLexer(new StringReader(jsonPayload));
-        // Will store already created indents.
-        Map<Integer, char[]> indentCache = new HashMap<Integer, char[]>();
-        while (lexer.hasNext()) {
-            JsonToken token = lexer.next();
-            switch (token.getType()) {
-                case OPEN_CURLY:
-                    indentSize += 4;
-                    output.addChars(Chr.array(OPEN_BRACE, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
-
-                    break;
-                case CLOSE_CURLY:
-                    indentSize -= 4;
-                    output.addChar(NEW_LINE);
-                    if (indentSize > 0) {
-                        output.addChars(getIndent(indentSize, indentCache));
-                    }
-                    output.addChar(CLOSE_BRACE);
-
-                    break;
-                case OPEN_BRACKET:
-                    indentSize += 4;
-                    output.addChars(Chr.array(OPEN_BRACKET, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
-
-                    break;
-                case CLOSE_BRACKET:
-                    indentSize -= 4;
-                    output.addChar(NEW_LINE);
-                    if (indentSize > 0) {
-                        output.addChars(getIndent(indentSize, indentCache));
-                    }
-                    output.addChar(CLOSE_BRACKET);
-
-                    break;
-                case COMMA:
-                    output.addChars(Chr.array(COMMA, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
-
-                    break;
-                case COLON:
-                    output.addChars(Chr.array(COLON, SPACE));
-
-                    break;
-                case STRING:
-                    String textStr = token.getText();
-                    String textWithoutQuotes = textStr.substring(1, textStr.length() - 1);
-                    if (textWithoutQuotes.length() > 0) {
-                        output.addJsonEscapedString(textWithoutQuotes);
-                    } else {
-                        output.addQuoted(Chr.array());
-                    }
-
-                    break;
-                default:
-                    output.addString(token.getText());
-            }
-        }
-
-        return output.toString();
-    }
-
-    /**
-     * Creates new indent if it not exists in the indent cache.
-     *
-     * @return indent with the specified size.
-     */
-    private static char[] getIndent(int indentSize, Map<Integer, char[]> indentCache) {
-        char[] indent = indentCache.get(indentSize);
-        if (indent == null) {
-            indent = new char[indentSize];
-            Arrays.fill(indent, SPACE);
-            indentCache.put(indentSize, indent);
-        }
-
-        return indent;
-    }
-
-    /**
-     * Obtains JSON unescaped text for the given text
-     *
-     * @param text The text
-     * @return The unescaped text
-     */
-    public static JsonUnescaped unescaped(CharSequence text) {
-        return new JsonUnescaped(text);
-    }
-
-    /**
-     * Represents unescaped JSON
-     */
-    public static class JsonUnescaped {
-        private CharSequence text;
-
-        public JsonUnescaped(CharSequence text) {
-            this.text = text;
-        }
-
-        public CharSequence getText() {
-            return text;
-        }
-
-        @Override
-        public String toString() {
-            return text.toString();
         }
     }
 
