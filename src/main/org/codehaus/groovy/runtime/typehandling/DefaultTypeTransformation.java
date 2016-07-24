@@ -578,9 +578,12 @@ public class DefaultTypeTransformation {
             else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
             }
+            else if (left instanceof GString && right instanceof String) {
+                return ((GString) left).compareTo(right);
+            }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
-                    || (left instanceof GString && right instanceof String)) {
+            ) {
                 Comparable comparable = (Comparable) left;
                 // GROOVY-7876: when comparing for equality we try to only call compareTo when an assignable
                 // relationship holds but with a container/holder class and because of erasure, we might still end
