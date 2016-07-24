@@ -69,4 +69,35 @@ class JsonBuilderTest extends GroovyTestCase {
             // end::json_assert[]
        """
     }
+
+    void testJsonBuilderWithOptions() {
+        assertScript """
+            // tag::json_builder_options[]
+            import groovy.json.*
+
+            def options = JsonOutput.options()
+                    .excludeNulls()
+                    .excludeFieldsByName('make', 'country', 'record')
+                    .excludeFieldsByType(Number)
+                    .addConverter(URL) { url -> '"http://groovy-lang.org"' }
+
+            JsonBuilder builder = new JsonBuilder(options)
+            builder.records {
+              car {
+                    name 'HSV Maloo'
+                    make 'Holden'
+                    year 2006
+                    country 'Australia'
+                    homepage new URL('http://example.org')
+                    record {
+                        type 'speed'
+                        description 'production pickup truck with speed of 271kph'
+                    }
+              }
+            }
+
+            assert builder.toString() == '{"records":{"car":{"name":"HSV Maloo","homepage":"http://groovy-lang.org"}}}'
+            // end::json_builder_options[]
+        """
+    }
 }
