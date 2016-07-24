@@ -94,6 +94,74 @@ class JsonTest extends GroovyTestCase {
         '''
     }
 
+    void testJsonOutputOptions() {
+        assertScript '''
+        import groovy.json.*
+
+        // tag::json_output_options[]
+        class Person {
+            String name
+            String title
+            int age
+            String password
+            Date dob
+            URL favoriteUrl
+        }
+
+        Person person = new Person(name: 'John', title: null, age: 21, password: 'secret',
+                                    dob: Date.parse('yyyy-MM-dd', '1984-12-15'),
+                                    favoriteUrl: new URL('http://groovy-lang.org/'))
+
+        def generator = JsonOutput.options()
+            .excludeNulls()
+            .dateFormat('MM@dd@yyyy')
+            .excludeFieldsByName('age', 'password')
+            .excludeFieldsByType(URL)
+            .createGenerator()
+
+        assert generator.toJson(person) == '{"dob":"12@15@1984","name":"John"}'
+        // end::json_output_options[]
+        '''
+    }
+
+    void testJsonOutputConverter() {
+        assertScript '''
+        import groovy.json.*
+        import static groovy.test.GroovyAssert.shouldFail
+
+        // tag::json_output_converter[]
+        class Person {
+            String name
+            URL favoriteUrl
+        }
+
+        Person person = new Person(name: 'John', favoriteUrl: new URL('http://groovy-lang.org/json.html#_jsonoutput'))
+
+        def generator = JsonOutput.options()
+            .addConverter(URL) { URL u, String key ->
+                if (key == 'favoriteUrl') {
+                    '"' + u.getHost() + '"'
+                } else {
+                    JsonOutput.toJson(u)
+                }
+            }
+            .createGenerator()
+
+        assert generator.toJson(person) == '{"favoriteUrl":"groovy-lang.org","name":"John"}'
+
+        // No key available when generating a JSON Array
+        def list = [new URL('http://groovy-lang.org/json.html#_jsonoutput')]
+        assert generator.toJson(list) == '["http://groovy-lang.org/json.html#_jsonoutput"]'
+
+        // First parameter to the converter must match the type for which it is registered
+        shouldFail(IllegalArgumentException) {
+            JsonOutput.options()
+                .addConverter(Date) { Calendar cal -> }
+        }
+        // end::json_output_converter[]
+        '''
+    }
+
     void testPrettyPrint() {
         // tag::pretty_print[]
         def json = JsonOutput.toJson([name: 'John Doe', age: 42])
