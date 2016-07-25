@@ -36,6 +36,8 @@ public class NumberAwareComparator<T> implements Comparator<T> {
             /* ignore */
         } catch (GroovyRuntimeException gre) {
             /* ignore */
+        } catch (IllegalArgumentException iae) {
+            /* ignore */
         }
         // since the object does not have a valid compareTo method
         // we compare using the hashcodes. null cases are handled by

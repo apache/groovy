@@ -17,12 +17,13 @@
  * under the License.
  *
  */
-
 package groovy.bugs
 
 class Groovy7876Bug extends GroovyTestCase {
     void testClassCastExceptionsFromCompareToShouldNotLeakOutOfEqualityCheck() {
         assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
             enum E1 {A, B, C}
             enum E2 {D, E, F}
             class Holder<T> implements Comparable<T> {
@@ -32,8 +33,18 @@ class Groovy7876Bug extends GroovyTestCase {
             }
             def a = new Holder<E1>(E1.A)
             def d = new Holder<E2>(E2.D)
-            assert E1.A != E2.D // control
+
+            // control cases
+            assert E1.A != E2.D
+            shouldFail(IllegalArgumentException) {
+                E1.A <=> E2.D
+            }
+
+            // holder cases
             assert a != d // invokes compareTo
+            shouldFail(IllegalArgumentException) {
+                a <=> d
+            }
         '''
     }
 }

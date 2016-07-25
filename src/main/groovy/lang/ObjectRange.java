@@ -196,8 +196,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     private static boolean areReversed(Comparable from, Comparable to) {
         try {
             return ScriptBytecodeAdapter.compareGreaterThan(from, to);
-        } catch (ClassCastException cce) {
-            throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", cce);
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", iae);
         }
     }
 
@@ -384,11 +384,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
             return false;
         }
         while (iter.hasNext()) {
-            try {
-                if (DefaultTypeTransformation.compareEqual(value, iter.next())) return true;
-            } catch (ClassCastException e) {
-                return false;
-            }
+            if (DefaultTypeTransformation.compareEqual(value, iter.next())) return true;
         }
         return false;
     }
