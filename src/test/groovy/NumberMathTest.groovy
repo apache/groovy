@@ -18,9 +18,7 @@
  */
 package groovy
 
-import junit.framework.Assert
-
-/** 
+/**
  * Basic NumberMath test.
  * @see org.codehaus.groovy.runtime.typehandling.NumberMath
  */
@@ -111,9 +109,9 @@ class NumberMathTest extends GroovyTestCase {
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")
         assert F1 / F2 instanceof Double
-        Assert.assertEquals F1 / F2, 0.5, 0.0000000001
+        assertEquals F1 / F2, 0.5, 0.0000000001
         assert D1 / D2 instanceof Double
-        Assert.assertEquals D1 / D2, 0.5, 0.0000000001
+        assertEquals D1 / D2, 0.5, 0.0000000001
 
         assert I1.intdiv(I2) instanceof Integer
         assert I1.intdiv(I2) == 0
@@ -149,14 +147,14 @@ class NumberMathTest extends GroovyTestCase {
     void testUnsupportedIntDivision() {
         try {
             1.0.intdiv(3)
-        } catch (UnsupportedOperationException uoe) {
+        } catch (UnsupportedOperationException ignore) {
             return
         }
         fail("Should catch an UnsupportedOperationException")
 
         try {
             1.0G.intdiv(3)
-        } catch (UnsupportedOperationException uoe) {
+        } catch (UnsupportedOperationException ignore) {
             return
         }
         fail("Should catch an UnsupportedOperationException")
@@ -166,17 +164,17 @@ class NumberMathTest extends GroovyTestCase {
         assert 20 == new Short("10") << 1
         assert 2 == new Byte("1") << 1
     }
-    
+
     void testLongDivAssign() {
         long d = 100L
         d /= 33L
         assert d.class == Long.class
     }
-    
+
     void testIntegerPlusCastException() {
         shouldFail(ClassCastException) {
-           Integer i = 12
-           i += " angry men"
+            Integer i = 12
+            i += " angry men"
         }
     }
 }
