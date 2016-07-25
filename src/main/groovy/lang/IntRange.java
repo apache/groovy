@@ -385,26 +385,22 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
             return; // from == to and step == 0, nothing to do, so return
         }
 
-        if (isReverse()) {
-            step = -step;
+        final boolean isAscending;
+        if (step < 0) {
+            step *= -1;
+            isAscending = isReverse();
+        } else {
+            isAscending = !isReverse();
         }
-        if (step > 0) {
-            int value = getFrom();
-            while (value <= getTo()) {
+
+        final long from = getFrom().longValue(), to = getTo().longValue();
+        if (isAscending) {
+            for (long value = from; value <= to; value += step) {
                 closure.call(value);
-                if (((long) value + step) >= Integer.MAX_VALUE) {
-                    break;
-                }
-                value = value + step;
             }
         } else {
-            int value = getTo();
-            while (value >= getFrom()) {
+            for (long value = to; value >= from; value -= step) {
                 closure.call(value);
-                if (((long) value + step) <= Integer.MIN_VALUE) {
-                    break;
-                }
-                value = value + step;
             }
         }
     }
