@@ -24,7 +24,14 @@ import groovy.lang.GroovyRuntimeException;
 
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,12 +41,17 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
- *
- * @author Guillaume Laforge
  */
 public class DefaultTypeTransformation {
 
@@ -50,7 +62,7 @@ public class DefaultTypeTransformation {
     //  --------------------------------------------------------
     //                  unboxing methods
     //  --------------------------------------------------------       
-    
+
     public static byte byteUnbox(Object value) {
         Number n = castToNumber(value, byte.class);
         return n.byteValue();
@@ -87,7 +99,7 @@ public class DefaultTypeTransformation {
     public static double doubleUnbox(Object value) {
         Number n = castToNumber(value, double.class);
         return n.doubleValue();
-    } 
+    }
 
     //  --------------------------------------------------------
     //                  boxing methods
@@ -132,12 +144,12 @@ public class DefaultTypeTransformation {
     public static Object box(double value) {
         return Double.valueOf(value);
     }
-    
+
     public static Number castToNumber(Object object) {
         // default to Number class in exception details, else use the specified Number subtype.
         return castToNumber(object, Number.class);
     }
-    
+
     public static Number castToNumber(Object object, Class type) {
         if (object instanceof Number)
             return (Number) object;
@@ -165,7 +177,7 @@ public class DefaultTypeTransformation {
 
     /**
      * Method used for coercing an object to a boolean value,
-     * thanks to an <code>asBoolean()</code> method added on types. 
+     * thanks to an <code>asBoolean()</code> method added on types.
      *
      * @param object to coerce to a boolean value
      * @return a boolean value
@@ -175,16 +187,16 @@ public class DefaultTypeTransformation {
         if (object == null) {
             return false;
         }
-        
+
         // equality check is enough and faster than instanceof check, no need to check superclasses since Boolean is final
-        if (object.getClass() == Boolean.class) {   
-            return ((Boolean)object).booleanValue();
+        if (object.getClass() == Boolean.class) {
+            return ((Boolean) object).booleanValue();
         }
-        
+
         // if the object is not null and no Boolean, try to call an asBoolean() method on the object
-        return (Boolean)InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
+        return (Boolean) InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
     }
-    
+
     @Deprecated
     public static char castToChar(Object object) {
         if (object instanceof Character) {
@@ -196,13 +208,12 @@ public class DefaultTypeTransformation {
             String text = object.toString();
             if (text.length() == 1) {
                 return text.charAt(0);
-            }
-            else {
-                throw new GroovyCastException(text,char.class);
+            } else {
+                throw new GroovyCastException(text, char.class);
             }
         }
     }
-    
+
     public static Object castToType(Object object, Class type) {
         if (object == null) return null;
         if (type == Object.class) return object;
@@ -216,7 +227,7 @@ public class DefaultTypeTransformation {
         if (type.isEnum()) {
             return ShortTypeHandling.castToEnum(object, type);
         } else if (Collection.class.isAssignableFrom(type)) {
-            return continueCastOnCollection(object,type);
+            return continueCastOnCollection(object, type);
         } else if (type == String.class) {
             return ShortTypeHandling.castToString(object);
         } else if (type == Character.class) {
@@ -226,10 +237,10 @@ public class DefaultTypeTransformation {
         } else if (type == Class.class) {
             return ShortTypeHandling.castToClass(object);
         } else if (type.isPrimitive()) {
-            return castToPrimitive(object,type);
+            return castToPrimitive(object, type);
         }
 
-        return continueCastOnNumber(object,type);
+        return continueCastOnNumber(object, type);
     }
 
     private static Object continueCastOnCollection(Object object, Class type) {
@@ -237,7 +248,7 @@ public class DefaultTypeTransformation {
         Collection answer;
         if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class) &&
                 (type == LinkedHashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
-            return new LinkedHashSet((Collection)object);
+            return new LinkedHashSet((Collection) object);
         }
         if (object.getClass().isArray()) {
             if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
@@ -249,9 +260,8 @@ public class DefaultTypeTransformation {
                 // passing in the list wrapper
                 try {
                     answer = (Collection) type.newInstance();
-                }
-                catch (Exception e) {
-                   throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
+                } catch (Exception e) {
+                    throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
                 }
             }
 
@@ -264,7 +274,7 @@ public class DefaultTypeTransformation {
             return answer;
         }
 
-        return continueCastOnNumber(object,type);
+        return continueCastOnNumber(object, type);
     }
 
     private static Object continueCastOnNumber(Object object, Class type) {
@@ -321,7 +331,7 @@ public class DefaultTypeTransformation {
 
     private static Object castToPrimitive(Object object, Class type) {
         if (type == boolean.class) {
-            return booleanUnbox(object); 
+            return booleanUnbox(object);
         } else if (type == byte.class) {
             return byteUnbox(object);
         } else if (type == char.class) {
@@ -344,13 +354,13 @@ public class DefaultTypeTransformation {
             }
             return answer;
         } //nothing else possible
-        throw new GroovyCastException(object,type);
+        throw new GroovyCastException(object, type);
     }
 
     private static Object continueCastOnSAM(Object object, Class type) {
         if (object instanceof Closure) {
             Method m = CachedSAMClass.getSAMMethod(type);
-            if (m!=null) {
+            if (m != null) {
                 return CachedSAMClass.coerceToSAM((Closure) object, m, type, type.isInterface());
             }
         }
@@ -373,13 +383,13 @@ public class DefaultTypeTransformation {
         if (args != null) {
             try {
                 return InvokerHelper.invokeConstructorOf(type, args);
-            } catch (InvokerInvocationException iie){
+            } catch (InvokerInvocationException iie) {
                 throw iie;
             } catch (GroovyRuntimeException e) {
-                if(e.getMessage().contains("Could not find matching constructor for")) {
+                if (e.getMessage().contains("Could not find matching constructor for")) {
                     try {
                         return InvokerHelper.invokeConstructorOf(type, object);
-                    } catch (InvokerInvocationException iie){
+                    } catch (InvokerInvocationException iie) {
                         throw iie;
                     } catch (Exception ex) {
                         // let's ignore exception and return the original object
@@ -425,7 +435,7 @@ public class DefaultTypeTransformation {
 
         return array;
     }
-    
+
     public static <T> Collection<T> asCollection(T[] value) {
         return arrayAsCollection(value);
     }
@@ -433,39 +443,30 @@ public class DefaultTypeTransformation {
     public static Collection asCollection(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;
-        }
-        else if (value instanceof Collection) {
+        } else if (value instanceof Collection) {
             return (Collection) value;
-        }
-        else if (value instanceof Map) {
+        } else if (value instanceof Map) {
             Map map = (Map) value;
             return map.entrySet();
-        }
-        else if (value.getClass().isArray()) {
+        } else if (value.getClass().isArray()) {
             return arrayAsCollection(value);
-        }
-        else if (value instanceof MethodClosure) {
+        } else if (value instanceof MethodClosure) {
             MethodClosure method = (MethodClosure) value;
             IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
             method.call(adapter);
             return adapter.asList();
-        }
-        else if (value instanceof String || value instanceof GString) {
+        } else if (value instanceof String || value instanceof GString) {
             return StringGroovyMethods.toList((CharSequence) value);
-        }
-        else if (value instanceof File) {
+        } else if (value instanceof File) {
             try {
                 return ResourceGroovyMethods.readLines((File) value);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        }
-        else if (value instanceof Class && ((Class)value).isEnum()) {
-            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
+        } else if (value instanceof Class && ((Class) value).isEnum()) {
+            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
             return Arrays.asList(values);
-        }
-        else {
+        } else {
             // let's assume it's a collection of 1
             return Collections.singletonList(value);
         }
@@ -493,7 +494,7 @@ public class DefaultTypeTransformation {
     @Deprecated
     public static boolean isEnumSubclass(Object value) {
         if (value instanceof Class) {
-            Class superclass = ((Class)value).getSuperclass();
+            Class superclass = ((Class) value).getSuperclass();
             while (superclass != null) {
                 if (superclass.getName().equals("java.lang.Enum")) {
                     return true;
@@ -504,7 +505,7 @@ public class DefaultTypeTransformation {
 
         return false;
     }
-    
+
     /**
      * Allows conversion of arrays into a mutable List
      *
@@ -523,16 +524,16 @@ public class DefaultTypeTransformation {
         }
         return list;
     }
-    
+
     public static Object[] primitiveArrayBox(Object array) {
         int size = Array.getLength(array);
         Object[] ret = (Object[]) Array.newInstance(ReflectionCache.autoboxType(array.getClass().getComponentType()), size);
         for (int i = 0; i < size; i++) {
-            ret[i]=Array.get(array, i);
+            ret[i] = Array.get(array, i);
         }
         return ret;
     }
-    
+
     /**
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
@@ -546,8 +547,7 @@ public class DefaultTypeTransformation {
         }
         if (left == null) {
             return -1;
-        }
-        else if (right == null) {
+        } else if (right == null) {
             return 1;
         }
         if (left instanceof Comparable) {
@@ -558,32 +558,27 @@ public class DefaultTypeTransformation {
                 if (isValidCharacterString(right)) {
                     return DefaultGroovyMethods.compareTo((Number) left, ShortTypeHandling.castToChar(right));
                 }
-            }
-            else if (left instanceof Character) {
+            } else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
-                    return DefaultGroovyMethods.compareTo((Character)left, ShortTypeHandling.castToChar(right));
+                    return DefaultGroovyMethods.compareTo((Character) left, ShortTypeHandling.castToChar(right));
                 }
                 if (right instanceof Number) {
-                    return DefaultGroovyMethods.compareTo((Character)left,(Number)right);
+                    return DefaultGroovyMethods.compareTo((Character) left, (Number) right);
                 }
-            }
-            else if (right instanceof Number) {
+            } else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
-                    return DefaultGroovyMethods.compareTo(ShortTypeHandling.castToChar(left),(Number) right);
+                    return DefaultGroovyMethods.compareTo(ShortTypeHandling.castToChar(left), (Number) right);
                 }
-            }
-            else if (left instanceof String && right instanceof Character) {
+            } else if (left instanceof String && right instanceof Character) {
                 return ((String) left).compareTo(right.toString());
-            }
-            else if (left instanceof String && right instanceof GString) {
+            } else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
-            }
-            else if (left instanceof GString && right instanceof String) {
+            } else if (left instanceof GString && right instanceof String) {
                 return ((GString) left).compareTo(right);
             }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
-            ) {
+                    ) {
                 Comparable comparable = (Comparable) left;
                 // GROOVY-7876: when comparing for equality we try to only call compareTo when an assignable
                 // relationship holds but with a container/holder class and because of erasure, we might still end
@@ -636,11 +631,11 @@ public class DefaultTypeTransformation {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
         if (left instanceof Map.Entry && right instanceof Map.Entry) {
-            Object k1 = ((Map.Entry)left).getKey();
-            Object k2 = ((Map.Entry)right).getKey();
+            Object k1 = ((Map.Entry) left).getKey();
+            Object k2 = ((Map.Entry) right).getKey();
             if (k1 == k2 || (k1 != null && k1.equals(k2))) {
-                Object v1 = ((Map.Entry)left).getValue();
-                Object v2 = ((Map.Entry)right).getValue();
+                Object v1 = ((Map.Entry) left).getValue();
+                Object v2 = ((Map.Entry) right).getValue();
                 if (v1 == v2 || (v1 != null && DefaultTypeTransformation.compareEqual(v1, v2)))
                     return true;
             }
@@ -687,8 +682,7 @@ public class DefaultTypeTransformation {
         // conservative coding
         if (a.getClass().getName().equals("[I")) {
             ans = (int[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new int[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -860,8 +854,7 @@ public class DefaultTypeTransformation {
         }
         if (type == Double.TYPE) {
             return convertToDoubleArray(a);
-        }
-        else {
+        } else {
             return a;
         }
     }
@@ -880,12 +873,12 @@ public class DefaultTypeTransformation {
 
     public static Object castToVargsArray(Object[] origin, int firstVargsPos, Class<?> arrayType) {
         Class<?> componentType = arrayType.getComponentType();
-        if (firstVargsPos>= origin.length) return Array.newInstance(componentType, 0);
-        int length = origin.length-firstVargsPos;
-        if (length==1 && arrayType.isInstance(origin[firstVargsPos])) return origin[firstVargsPos];
+        if (firstVargsPos >= origin.length) return Array.newInstance(componentType, 0);
+        int length = origin.length - firstVargsPos;
+        if (length == 1 && arrayType.isInstance(origin[firstVargsPos])) return origin[firstVargsPos];
         Object newArray = Array.newInstance(componentType, length);
-        for (int i=0; i<length; i++) {
-            Object convertedValue = castToType(origin[firstVargsPos+i],componentType);
+        for (int i = 0; i < length; i++) {
+            Object convertedValue = castToType(origin[firstVargsPos + i], componentType);
             Array.set(newArray, i, convertedValue);
         }
         return newArray;
