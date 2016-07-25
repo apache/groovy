@@ -80,7 +80,7 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
         assert compareTo(null, object1) == -1
         assert compareTo(1, 1) == 0
 
-        shouldFail(GroovyRuntimeException) {
+        shouldFail(IllegalArgumentException) {
             compareTo(object1, object2)
         }
 
@@ -122,10 +122,10 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
             }
         }
 
-        shouldFail(ClassCastException) {
+        shouldFail(IllegalArgumentException) {
             compareTo(1, "22")
         }
-        shouldFail(ClassCastException) {
+        shouldFail(IllegalArgumentException) {
             compareTo("22", 1)
         }
 

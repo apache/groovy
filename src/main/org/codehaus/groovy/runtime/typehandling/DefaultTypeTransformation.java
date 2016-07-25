@@ -542,6 +542,7 @@ public class DefaultTypeTransformation {
     }
 
     private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly) {
+        Exception cause = null;
         if (left == right) {
             return 0;
         }
@@ -592,7 +593,7 @@ public class DefaultTypeTransformation {
                 try {
                     return comparable.compareTo(right);
                 } catch (ClassCastException cce) {
-                    if (!equalityCheckOnly) throw cce;
+                    if (!equalityCheckOnly) cause = cce;
                 }
             }
         }
@@ -600,12 +601,13 @@ public class DefaultTypeTransformation {
         if (equalityCheckOnly) {
             return -1; // anything other than 0
         }
-        throw new GroovyRuntimeException(
-                MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
-                        left.getClass().getName(),
-                        left,
-                        right.getClass().getName(),
-                        right));
+        String message = MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
+                left.getClass().getName(), left, right.getClass().getName(), right);
+        if (cause != null) {
+            throw new IllegalArgumentException(message, cause);
+        } else {
+            throw new IllegalArgumentException(message);
+        }
     }
 
     public static boolean compareEqual(Object left, Object right) {
