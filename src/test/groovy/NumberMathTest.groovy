@@ -19,8 +19,15 @@
 package groovy
 
 import junit.framework.Assert
+import org.codehaus.groovy.runtime.typehandling.BigDecimalMath
+import org.codehaus.groovy.runtime.typehandling.BigIntegerMath
+import org.codehaus.groovy.runtime.typehandling.FloatingPointMath
+import org.codehaus.groovy.runtime.typehandling.IntegerMath
+import org.codehaus.groovy.runtime.typehandling.LongMath
 
-/** 
+import static org.codehaus.groovy.runtime.typehandling.NumberMath.getMath
+
+/**
  * Basic NumberMath test.
  * @see org.codehaus.groovy.runtime.typehandling.NumberMath
  */
@@ -162,21 +169,70 @@ class NumberMathTest extends GroovyTestCase {
         fail("Should catch an UnsupportedOperationException")
     }
 
+
+    private static class MyNumber extends Number {
+        def n
+
+        MyNumber(n) {
+            this.n = n
+        }
+
+        int intValue() { n }
+
+        long longValue() { n }
+
+        float floatValue() { n }
+
+        double doubleValue() { n }
+
+        int hashCode() { -n }
+
+        boolean equals(other) {
+            if (other instanceof MyNumber) {
+                return n == other.n
+            }
+            return false
+        }
+
+        String toString() { return Double.toString(floatValue()) }
+    }
+
+    void testGetMathCustom() {
+        assert getMath(1G) == BigIntegerMath.INSTANCE;
+        assert getMath(1.0G) == BigDecimalMath.INSTANCE;
+        assert getMath(Long.valueOf(1)) == LongMath.INSTANCE;
+        assert getMath(Integer.valueOf(1)) == IntegerMath.INSTANCE;
+        assert getMath(Short.valueOf("1")) == IntegerMath.INSTANCE;
+        assert getMath(Byte.valueOf("1")) == IntegerMath.INSTANCE;
+        assert getMath(Double.valueOf(1.0)) == FloatingPointMath.INSTANCE;
+        assert getMath(Float.valueOf(1.0f)) == FloatingPointMath.INSTANCE;
+
+        MyNumber num = new MyNumber(42);
+        assert getMath(num) == BigDecimalMath.INSTANCE;
+
+        assert getMath(num, Integer.valueOf(25)) == BigDecimalMath.INSTANCE;
+        assert getMath(num, Double.valueOf(25.0)) == FloatingPointMath.INSTANCE;
+        assert getMath(Integer.valueOf(25), num) == BigDecimalMath.INSTANCE;
+        assert getMath(Double.valueOf(25.0), num) == FloatingPointMath.INSTANCE;
+        assert getMath(num, 25) == BigDecimalMath.INSTANCE;
+        assert getMath(25, num) == BigDecimalMath.INSTANCE;
+    }
+
     void testGetMath() {
         assert 20 == new Short("10") << 1
         assert 2 == new Byte("1") << 1
     }
-    
+
     void testLongDivAssign() {
         long d = 100L
         d /= 33L
         assert d.class == Long.class
     }
-    
+
     void testIntegerPlusCastException() {
         shouldFail(ClassCastException) {
-           Integer i = 12
-           i += " angry men"
+            Integer i = 12
+            i += " angry men"
         }
     }
 }
