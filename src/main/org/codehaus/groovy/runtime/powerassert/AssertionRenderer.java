@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.powerassert;
 import java.util.*;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Creates a string representation of an assertion and its recorded values.
@@ -151,7 +152,7 @@ public final class AssertionRenderer {
         String toString;
 
         try {
-            toString = DefaultGroovyMethods.toString(value);
+            toString = InvokerHelper.format(value, true, -1, false);
         } catch (Exception e) {
             return String.format("%s (toString() threw %s)",
                     javaLangObjectToString(value), e.getClass().getName());
