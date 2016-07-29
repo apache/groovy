@@ -91,6 +91,7 @@ menuBar {
         menuItem(inspectLastAction)
         menuItem(inspectVariablesAction)
         menuItem(inspectAstAction)
+        menuItem(inspectTokensAction)
     }
 
     menu(text: 'Help', mnemonic: 'H') {
