@@ -22,6 +22,7 @@ import groovy.inspect.swingui.ObjectBrowser
 import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
+import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.messages.SimpleMessage
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
@@ -881,6 +882,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void inspectAst(EventObject evt = null) {
         new AstBrowser(inputArea, rootElement, shell.getClassLoader()).run({ inputArea.getText() } )
+    }
+
+    void inspectTokens(EventObject evt = null) {
+        def lf = LexerFrame.groovyScriptFactory(inputArea.getText())
+        lf.visible = true
     }
 
     void largerFont(EventObject evt = null) {

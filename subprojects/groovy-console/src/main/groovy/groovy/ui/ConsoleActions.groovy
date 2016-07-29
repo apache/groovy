@@ -255,6 +255,13 @@ inspectAstAction = action(
     accelerator: shortcut('T'),
 )
 
+inspectTokensAction = action(
+    name: 'Inspect Tokens',
+    closure: controller.&inspectTokens,
+    mnemonic: 'T',
+    accelerator: shortcut('K'),
+)
+
 captureStdOutAction = action(
     name: 'Capture Standard Output',
     closure: controller.&captureStdOut,
