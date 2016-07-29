@@ -17,39 +17,46 @@
  *  under the License.
  */
 package org.codehaus.groovy.antlr;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.Hashtable;
+
+import antlr.CharScanner;
+import antlr.Token;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
-import org.codehaus.groovy.antlr.parser.*;
-
-import antlr.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.Hashtable;
 
 /**
- * @author Santhosh Kumar T
+ * Swing application to graphically display the tokens produced by the lexer.
  */
-public class LexerFrame extends JFrame implements ActionListener{
-    JSplitPane jSplitPane1 = new JSplitPane();
-    JScrollPane jScrollPane1 = new JScrollPane();
-    JScrollPane jScrollPane2 = new JScrollPane();
-    JTextPane tokenPane = new HScrollableTextPane();
-    JButton jbutton = new JButton("open");
-    JPanel mainPanel = new JPanel(new BorderLayout());
-    JTextArea scriptPane = new JTextArea();
-    Border border1;
-    Border border2;
+public class LexerFrame extends JFrame implements ActionListener {
+    private final JSplitPane jSplitPane1 = new JSplitPane();
+    private final JScrollPane jScrollPane1 = new JScrollPane();
+    private final JScrollPane jScrollPane2 = new JScrollPane();
+    private final JTextPane tokenPane = new HScrollableTextPane();
+    private final JButton jbutton = new JButton("open");
+    private final JPanel mainPanel = new JPanel(new BorderLayout());
+    private final JTextArea scriptPane = new JTextArea();
+    private final Class lexerClass;
+    private final Hashtable tokens = new Hashtable();
 
-    Class lexerClass;
-
-    public LexerFrame(Class lexerClass, Class tokenTypesClass){
+    public LexerFrame(Class lexerClass, Class tokenTypesClass) {
         super("Token Steam Viewer");
         this.lexerClass = lexerClass;
-        try{
+        try {
             jbInit();
             setSize(500, 500);
             listTokens(tokenTypesClass);
@@ -57,71 +64,71 @@ public class LexerFrame extends JFrame implements ActionListener{
             final JPopupMenu popup = new JPopupMenu();
             popup.add(loadFileAction);
 
-            jbutton.setSize(30,30);
-            jbutton.addMouseListener(new MouseAdapter(){
+            jbutton.setSize(30, 30);
+            jbutton.addMouseListener(new MouseAdapter() {
                 public void mouseReleased(MouseEvent e) {
                     //if(e.isPopupTrigger())
-                        popup.show(scriptPane, e.getX(), e.getY());
+                    popup.show(scriptPane, e.getX(), e.getY());
                 }
             });
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        } catch(Exception e){
+            setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    Hashtable tokens = new Hashtable();
-
-    private void listTokens(Class tokenTypes) throws Exception{
-        Field field[] = tokenTypes.getDeclaredFields();
-        for(int i = 0; i<field.length; i++)
-            tokens.put(field[i].get(null), field[i].getName());
+    private void listTokens(Class tokenTypes) throws Exception {
+        for (Field field : tokenTypes.getDeclaredFields()) {
+            tokens.put(field.get(null), field.getName());
+        }
     }
 
-    public void actionPerformed(ActionEvent ae){
+    public void actionPerformed(ActionEvent ae) {
         Token token = (Token) ((JComponent) ae.getSource()).getClientProperty("token");
-        if(token.getType()==Token.EOF_TYPE){
+        if (token.getType() == Token.EOF_TYPE) {
             scriptPane.select(0, 0);
             return;
         }
-        try{
-            int start = scriptPane.getLineStartOffset(token.getLine()-1)+token.getColumn()-1;
-            scriptPane.select(start, start+token.getText().length());
+        try {
+            int start = scriptPane.getLineStartOffset(token.getLine() - 1) + token.getColumn() - 1;
+            scriptPane.select(start, start + token.getText().length());
             scriptPane.requestFocus();
-        } catch(BadLocationException ex){
+        } catch (BadLocationException ex) {
             // IGNORE
         }
     }
 
-    private Action loadFileAction = new AbstractAction("Open File..."){
-        public void actionPerformed(ActionEvent ae){
-            JFileChooser jfc = new JFileChooser();
-            int response = jfc.showOpenDialog(LexerFrame.this);
-            if(response!=JFileChooser.APPROVE_OPTION)
+    private Action loadFileAction = new AbstractAction("Open File...") {
+        public void actionPerformed(ActionEvent ae) {
+            final JFileChooser jfc = new JFileChooser();
+            final int response = jfc.showOpenDialog(LexerFrame.this);
+            if (response != JFileChooser.APPROVE_OPTION) {
                 return;
-            try{
+            }
+            try {
                 scanScript(jfc.getSelectedFile());
-            } catch(Exception ex){
+            } catch (final Exception ex) {
                 ex.printStackTrace();
             }
         }
     };
 
-    private void scanScript(File file) throws Exception{
+    private void scanScript(final File file) throws Exception {
         scriptPane.read(new FileReader(file), null);
 
         // create lexer
-        Constructor constructor = lexerClass.getConstructor(new Class[]{InputStream.class});
-        CharScanner lexer = (CharScanner) constructor.newInstance(new Object[]{new FileInputStream(file)});
+        final Constructor constructor = lexerClass.getConstructor(InputStream.class);
+        final FileInputStream fileInputStream = new FileInputStream(file);
+        final CharScanner lexer = (CharScanner) constructor.newInstance(fileInputStream);
 
         tokenPane.setEditable(true);
         tokenPane.setText("");
 
         int line = 1;
-        ButtonGroup bg = new ButtonGroup();
-        Token token = null;
+        final ButtonGroup bg = new ButtonGroup();
+        Token token;
 
-        while(true){
+        while (true) {
             token = lexer.nextToken();
             JToggleButton tokenButton = new JToggleButton((String) tokens.get(Integer.valueOf(token.getType())));
             bg.add(tokenButton);
@@ -130,36 +137,37 @@ public class LexerFrame extends JFrame implements ActionListener{
             tokenButton.putClientProperty("token", token);
             tokenButton.setMargin(new Insets(0, 1, 0, 1));
             tokenButton.setFocusPainted(false);
-            if(token.getLine()>line){
+            if (token.getLine() > line) {
                 tokenPane.getDocument().insertString(tokenPane.getDocument().getLength(), "\n", null);
                 line = token.getLine();
             }
             insertComponent(tokenButton);
-            if(token.getType()==Token.EOF_TYPE)
+            if (token.getType() == Token.EOF_TYPE){
                 break;
+            }
         }
 
         tokenPane.setEditable(false);
         tokenPane.setCaretPosition(0);
+        fileInputStream.close();
     }
 
-    private void insertComponent(JComponent comp){
-        try{
+    private void insertComponent(JComponent comp) {
+        try {
             tokenPane.getDocument().insertString(tokenPane.getDocument().getLength(), " ", null);
-        } catch(BadLocationException ex1){
+        } catch (BadLocationException ex1) {
             // Ignore
         }
-        try{
-            tokenPane.setCaretPosition(tokenPane.getDocument().getLength()-1);
-        } catch(Exception ex){
+        try {
+            tokenPane.setCaretPosition(tokenPane.getDocument().getLength() - 1);
+        } catch (Exception ex) {
             tokenPane.setCaretPosition(0);
         }
         tokenPane.insertComponent(comp);
     }
 
-    private void jbInit() throws Exception{
-        border1 = BorderFactory.createEmptyBorder();
-        border2 = BorderFactory.createEmptyBorder();
+    private void jbInit() throws Exception {
+        final Border border1 = BorderFactory.createEmptyBorder();
         jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
         tokenPane.setEditable(false);
         tokenPane.setText("");
@@ -169,9 +177,9 @@ public class LexerFrame extends JFrame implements ActionListener{
         scriptPane.setText("");
         jScrollPane1.setBorder(border1);
         jScrollPane2.setBorder(border1);
-        jSplitPane1.setMinimumSize(new Dimension(800,600));
+        jSplitPane1.setMinimumSize(new Dimension(800, 600));
         mainPanel.add(jSplitPane1, BorderLayout.CENTER);
-        mainPanel.add(jbutton,BorderLayout.NORTH);
+        mainPanel.add(jbutton, BorderLayout.NORTH);
         this.getContentPane().add(mainPanel);
         jSplitPane1.add(jScrollPane1, JSplitPane.LEFT);
         jScrollPane1.getViewport().add(tokenPane, null);
@@ -183,26 +191,27 @@ public class LexerFrame extends JFrame implements ActionListener{
         jSplitPane1.setResizeWeight(0.5);
     }
 
-    public static void main(String[] args) throws Exception{
-        try{
+    public static void main(String[] args) throws Exception {
+        try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch(Exception ignore){
+        } catch (Exception ignore) {
             // Ignore
         }
         new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class).setVisible(true);
     }
-}
 
-
-class HScrollableTextPane extends JTextPane{
-    public boolean getScrollableTracksViewportWidth(){
-        return(getSize().width<getParent().getSize().width);
-    }
-
-    public void setSize(Dimension d){
-        if(d.width<getParent().getSize().width){
-            d.width = getParent().getSize().width;
+    private static class HScrollableTextPane extends JTextPane {
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return (getSize().width < getParent().getSize().width);
         }
-        super.setSize(d);
+
+        @Override
+        public void setSize(final Dimension d) {
+            if (d.width < getParent().getSize().width) {
+                d.width = getParent().getSize().width;
+            }
+            super.setSize(d);
+        }
     }
 }
