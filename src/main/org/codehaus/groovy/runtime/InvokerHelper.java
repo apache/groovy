@@ -18,7 +18,23 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.Range;
+import groovy.lang.Script;
+import groovy.lang.SpreadMap;
+import groovy.lang.SpreadMapEvaluatingException;
+import groovy.lang.Tuple;
+import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
@@ -52,8 +68,6 @@ import java.util.regex.Pattern;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokerHelper {
     private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
@@ -113,13 +127,14 @@ public class InvokerHelper {
             return Arrays.asList((Object[]) value);
         }
         if (value instanceof Enumeration) {
+            Enumeration e = (Enumeration) value;
             List answer = new ArrayList();
-            for (Enumeration e = (Enumeration) value; e.hasMoreElements();) {
+            while (e.hasMoreElements()) {
                 answer.add(e.nextElement());
             }
             return answer;
         }
-        // lets assume its a collection of 1
+        // let's assume its a collection of 1
         return Collections.singletonList(value);
     }
 
@@ -273,9 +288,8 @@ public class InvokerHelper {
         if (value instanceof ArrayList) {
             // value is a list.
             List newlist = new ArrayList();
-            Iterator it = ((ArrayList) value).iterator();
-            for (; it.hasNext();) {
-                newlist.add(unaryMinus(it.next()));
+            for (Object o : ((ArrayList) value)) {
+                newlist.add(unaryMinus(o));
             }
             return newlist;
         }
@@ -296,9 +310,8 @@ public class InvokerHelper {
         if (value instanceof ArrayList) {
             // value is a list.
             List newlist = new ArrayList();
-            Iterator it = ((ArrayList) value).iterator();
-            for (; it.hasNext();) {
-                newlist.add(unaryPlus(it.next()));
+            for (Object o : ((ArrayList) value)) {
+                newlist.add(unaryPlus(o));
             }
             return newlist;
         }
@@ -358,9 +371,7 @@ public class InvokerHelper {
         if (value instanceof Map) {
             Object[] values = new Object[((Map) value).keySet().size() * 2];
             int index = 0;
-            Iterator it = ((Map) value).keySet().iterator();
-            for (; it.hasNext();) {
-                Object key = it.next();
+            for (Object key : ((Map) value).keySet()) {
                 values[index++] = key;
                 values[index++] = ((Map) value).get(key);
             }
@@ -381,9 +392,7 @@ public class InvokerHelper {
         while (i < values.length - 1) {
             if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map)) {
                 Map smap = (Map) values[i + 1];
-                Iterator iter = smap.keySet().iterator();
-                for (; iter.hasNext();) {
-                    Object key = iter.next();
+                for (Object key : smap.keySet()) {
                     answer.put(key, smap.get(key));
                 }
                 i += 2;
@@ -636,9 +645,9 @@ public class InvokerHelper {
                 return (String) arguments;
             }
         }
-        // TODO: For GROOVY-2599 do we need something like below but it breaks other things
-//        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
         try {
+            // TODO: For GROOVY-2599 do we need something like below but it breaks other things
+//            return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
             return arguments.toString();
         } catch (RuntimeException ex) {
             if (!safe) throw ex;
@@ -817,15 +826,15 @@ public class InvokerHelper {
         return toArrayString(arguments, false, -1, false);
     }
 
-    private static String toArrayString(Object[] collection, boolean verbose, int maxSize, boolean safe) {
-        if (collection == null) {
+    private static String toArrayString(Object[] array, boolean verbose, int maxSize, boolean safe) {
+        if (array == null) {
             return "null";
         }
         boolean first = true;
-        StringBuilder argBuf = new StringBuilder(collection.length);
+        StringBuilder argBuf = new StringBuilder(array.length);
         argBuf.append('[');
 
-        for (Object item : collection) {
+        for (Object item : array) {
             if (first) {
                 first = false;
             } else {
@@ -835,8 +844,8 @@ public class InvokerHelper {
                 argBuf.append("...");
                 break;
             }
-            if (item == collection) {
-                argBuf.append("(this Collection)");
+            if (item == array) {
+                argBuf.append("(this array)");
             } else {
                 argBuf.append(format(item, verbose, sizeLeft(maxSize, argBuf), safe));
             }
@@ -850,8 +859,8 @@ public class InvokerHelper {
      * with brace boundaries "[" and "]".
      *
      * @param arguments the array to process
-     * @param maxSize stop after approximately this many characters and append '...'
-     * @param safe    whether to use a default object representation for any item in the array if an exception occurs when generating its toString
+     * @param maxSize   stop after approximately this many characters and append '...'
+     * @param safe      whether to use a default object representation for any item in the array if an exception occurs when generating its toString
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments, int maxSize, boolean safe) {
@@ -893,9 +902,8 @@ public class InvokerHelper {
         if (value instanceof ArrayList) {
             // value is a list.
             List newlist = new ArrayList();
-            Iterator it = ((ArrayList) value).iterator();
-            for (; it.hasNext();) {
-                newlist.add(bitwiseNegate(it.next()));
+            for (Object o : ((ArrayList) value)) {
+                newlist.add(bitwiseNegate(o));
             }
             return newlist;
         }
