@@ -88,7 +88,7 @@ assert a.get(b) == null
         isRendered """
 assert [1]."\$x"(0) == null
            | |     |
-           1 get   false
+           1 'get' false
         """, {
             def x = "get"
             assert [1]."$x"(0) == null
@@ -378,7 +378,7 @@ assert holder.@x
 assert a.&"\$b" == null
        |    |  |
        []   |  false
-            get
+            'get'
         """, {
             def a = []
             def b = "get"
@@ -469,7 +469,7 @@ assert [1, *a] == null
         isRendered """
 assert one(*:m)
        |     |
-       0     [a:1, b:2]
+       0     ['a':1, 'b':2]
         """, {
             def m = [a:1, b:2]
             assert one(*:m)
@@ -479,7 +479,7 @@ assert one(*:m)
 assert [a:1, *:m] == null
                |  |
                |  false
-               [b:2, c:3]
+               ['b':2, 'c':3]
         """, {
             def m = [b:2, c:3]
             assert [a:1, *:m] == null
