@@ -54,7 +54,7 @@ assert x == null
 assert x == null
        | |
        | false
-       foo
+       'foo'
         """, {
             def x = "foo"
             assert x == null
@@ -65,10 +65,7 @@ assert x == null
         isRendered """
 assert null == x
             |  |
-            |  one
-            |  two
-            |  three
-            |  four
+            |  'one\\ntwo\\rthree\\r\\nfour'
             false
         """, {
             def x = "one\ntwo\rthree\r\nfour"
@@ -93,7 +90,7 @@ assert x == null
 assert x == null
        | |
        | false
-       [one, two]
+       ['one', 'two']
         """, {
             def x = ["one", "two"] as String[]
             assert x == null
@@ -107,7 +104,7 @@ assert x == null
 assert x == null
        | |
        | false
-       ""
+       ''
         ''', {
             assert x == null
         }
