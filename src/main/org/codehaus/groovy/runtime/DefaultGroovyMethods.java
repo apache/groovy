@@ -9368,7 +9368,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param items the items to add
      * @return true if the collection changed
      */
-    public static <T> boolean addAll(Collection<T> self, Iterator<T> items) {
+    public static <T> boolean addAll(Collection<T> self, Iterator<? extends T> items) {
         boolean changed = false;
         while (items.hasNext()) {
             T next =  items.next();
@@ -9384,7 +9384,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param items the items to add
      * @return true if the collection changed
      */
-    public static <T> boolean addAll(Collection<T> self, Iterable<T> items) {
+    public static <T> boolean addAll(Collection<T> self, Iterable<? extends T> items) {
         boolean changed = false;
         for (T next : items) {
             if (self.add(next)) changed = true;
