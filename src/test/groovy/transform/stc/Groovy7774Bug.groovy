@@ -26,16 +26,30 @@ class Groovy7774Bug extends StaticTypeCheckingTestCase {
             class Y extends X{}
 
             def create() {
-              Set<X> set = new HashSet<X>()
-              List<Y> addIterable = [new Y()]
-              Iterator<Y> addIterator = [new Y()].iterator()
-              Y[] addArray = [new Y()]
-              set.addAll(addIterable)
-              set.addAll(addIterator)
-              set.addAll(addArray)
-              assert set.size() == 3
+                Set<X> set = new HashSet<X>()
+                List<Y> addIterable = [new Y()]
+                Iterator<Y> addIterator = [new Y()].iterator()
+                Y[] addArray = [new Y()]
+                set.addAll(addIterable)
+                set.addAll(addIterator)
+                set.addAll(addArray)
+                assert set.size() == 3
             }
 
+            create()
+        '''
+    }
+
+    void testMapPutAllShouldHonorInheritance() {
+        assertScript '''
+            class X{}
+            class Y extends X{}
+
+            def create() {
+                Map<X, X> items = new HashMap<X, X>()
+                List<Map.Entry<Y, Y>> addEntries = new ArrayList<Map.Entry<Y, Y>>()
+                items.putAll(addEntries)
+            }
             create()
         '''
     }
