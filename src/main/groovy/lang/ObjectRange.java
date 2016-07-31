@@ -374,8 +374,9 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     }
 
     /**
-     * iterates over all values and returns true if one value matches.
-     * Also see containsWithinBounds.
+     * Iterates over all values and returns true if one value matches.
+     *
+     * @see #containsWithinBounds(Object)
      */
     @Override
     public boolean contains(Object value) {
@@ -406,28 +407,11 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     @Override
     public Iterator<Comparable> iterator() {
         // non thread-safe iterator
-        final Iterator<Comparable> innerIterator = new StepIterator(this, 1);
-        return new Iterator<Comparable>() {
-            @Override
-            public synchronized boolean hasNext() {
-                return innerIterator.hasNext();
-            }
-
-            @Override
-            public synchronized Comparable next() {
-                return innerIterator.next();
-            }
-
-            @Override
-            public synchronized void remove() {
-                innerIterator.remove();
-            }
-        };
+        return new StepIterator(this, 1);
     }
 
     /**
-     * convenience class to serve in other methods.
-     * It's not thread-safe, and lazily produces the next element only on calls of hasNext() or next()
+     * Non-thread-safe iterator which lazily produces the next element only on calls of hasNext() or next()
      */
     private static class StepIterator implements Iterator<Comparable> {
         // actual step, can be +1 when desired step is -1 and direction is from high to low
