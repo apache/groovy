@@ -5176,9 +5176,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             G key = outer.getKey();
             List<Map.Entry<K, V>> entries = outer.getValue();
             Map<K, V> target = createSimilarMap(self);
-            for (Map.Entry<K, V> entry : entries) {
-                target.put(entry.getKey(), entry.getValue());
-            }
+            putAll(target, entries);
             answer.put(key, target);
         }
         return answer;
@@ -8905,7 +8903,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the same map, after the items have been added to it.
      * @since 1.6.1
      */
-    public static <K, V> Map<K, V> putAll(Map<K, V> self, Collection<Map.Entry<? extends K, ? extends V>> entries) {
+    public static <K, V> Map<K, V> putAll(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
         for (Map.Entry<? extends K, ? extends V> entry : entries) {
             self.put(entry.getKey(), entry.getValue());
         }
@@ -8925,7 +8923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map containing all key, value pairs from self and entries
      * @since 1.6.1
      */
-    public static <K, V> Map<K, V> plus(Map<K, V> self, Collection<Map.Entry<? extends K, ? extends V>> entries) {
+    public static <K, V> Map<K, V> plus(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
         Map<K, V> map = cloneSimilarMap(self);
         putAll(map, entries);
         return map;
