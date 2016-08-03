@@ -1285,6 +1285,9 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.dropRight( 4 ).collect { it } == [ 1 ]
         a = 1
         assert items.dropRight( 5 ).collect { it } == []
+
+        // if we ever traverse the whole exploding list we'll get a RuntimeException
+        assert new ExplodingList('letters'.toList(), 4).iterator().dropRight(1).drop(1).take(1).toList() == ['e']
     }
 
     void testIterableDrop() {
@@ -1820,6 +1823,30 @@ class WackyHashCode {
 class Things implements Iterable<String> {
     Iterator iterator() {
         ["a", "B", "c"].iterator()
+    }
+}
+
+class ExplodingList extends ArrayList {
+    final int num
+
+    ExplodingList(List orig, int num) {
+        super(orig)
+        this.num = num
+    }
+
+    def get(int index) {
+        if (index == num) {
+            throw new RuntimeException("Explode!")
+        }
+        super.get(index)
+    }
+
+    Iterator iterator() {
+        int cursor = 0
+        new Iterator() {
+            boolean hasNext() { cursor < ExplodingList.this.size() }
+            def next() { ExplodingList.this.get(cursor++) }
+        }
     }
 }
 
