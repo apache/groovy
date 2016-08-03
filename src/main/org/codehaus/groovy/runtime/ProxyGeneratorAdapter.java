@@ -24,7 +24,6 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Trait;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -82,8 +81,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * Internally, the proxy generator makes use of ASM to generate bytecode, for improved performance as compared
  * to the legacy proxy generation mechanism which made use of string templates.
  *
- * @author Cedric Champeau
- *
  * @since 2.0.0
  */
 public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
@@ -130,13 +127,13 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
      * Construct a proxy generator. This generator is used when we need to create a proxy object for a class or an
      * interface given a map of closures.
      *
-     * @param closureMap the delegates implementations
-     * @param superClass corresponding to the superclass class visitor
-     * @param interfaces extra interfaces the proxy should implement
-     * @param proxyLoader the class loader which should be used to load the generated proxy
+     * @param closureMap    the delegates implementations
+     * @param superClass    corresponding to the superclass class visitor
+     * @param interfaces    extra interfaces the proxy should implement
+     * @param proxyLoader   the class loader which should be used to load the generated proxy
      * @param delegateClass if not null, generate a delegate field with the corresponding class
-     * @param emptyBody if set to true, the unimplemented abstract methods will receive an empty body instead of
-     *                  throwing an {@link UnsupportedOperationException}.
+     * @param emptyBody     if set to true, the unimplemented abstract methods will receive an empty body instead of
+     *                      throwing an {@link UnsupportedOperationException}.
      */
     public ProxyGeneratorAdapter(
             final Map<Object, Object> closureMap,
@@ -146,9 +143,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             final boolean emptyBody,
             final Class delegateClass) {
         super(Opcodes.ASM4, new ClassWriter(0));
-        this.loader = proxyLoader!=null?createInnerLoader(proxyLoader, interfaces):findClassLoader(superClass, interfaces);
+        this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
         this.visitedMethods = new LinkedHashSet<Object>();
-        this.delegatedClosures = closureMap.isEmpty()? EMPTY_DELEGATECLOSURE_MAP :new HashMap<String, Boolean>();
+        this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<String, Boolean>();
         boolean wildcard = false;
         for (Map.Entry<Object, Object> entry : closureMap.entrySet()) {
             String name = entry.getKey().toString();
@@ -162,8 +159,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         Class fixedSuperClass = adjustSuperClass(superClass, interfaces);
         // if we have to delegate to another object, generate the appropriate delegate field
         // and collect the name of the methods for which delegation is active
-        this.generateDelegateField = delegateClass!=null;
-        this.objectDelegateMethods = generateDelegateField?createDelegateMethodList(fixedSuperClass, delegateClass, interfaces):EMPTY_STRING_SET;
+        this.generateDelegateField = delegateClass != null;
+        this.objectDelegateMethods = generateDelegateField ? createDelegateMethodList(fixedSuperClass, delegateClass, interfaces) : EMPTY_STRING_SET;
         this.delegateClass = delegateClass;
 
         // a proxy is supposed to be a concrete class, so it cannot extend an interface.
@@ -178,7 +175,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             classList.add(delegateClass);
             Collections.addAll(this.classList, delegateClass.getInterfaces());
         }
-        if (interfaces!=null) {
+        if (interfaces != null) {
             Collections.addAll(this.classList, interfaces);
         }
         this.proxyName = proxyName();
@@ -189,9 +186,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         this.visit(Opcodes.V1_5, ACC_PUBLIC, proxyName, null, null, null);
         byte[] b = writer.toByteArray();
 //        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err));
-        cachedClass = loader.defineClass(proxyName.replace('/','.'), b);
+        cachedClass = loader.defineClass(proxyName.replace('/', '.'), b);
         // cache no-arg constructor
-        Class[] args = generateDelegateField?new Class[] { Map.class, delegateClass }:new Class[] { Map.class };
+        Class[] args = generateDelegateField ? new Class[]{Map.class, delegateClass} : new Class[]{Map.class};
         Constructor constructor;
         try {
             constructor = cachedClass.getConstructor(args);
@@ -210,7 +207,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         Set<ClassNode> traits = new LinkedHashSet<ClassNode>();
         // check if it's a trait
         collectTraits(superClass, traits);
-        if (interfaces!=null) {
+        if (interfaces != null) {
             for (Class anInterface : interfaces) {
                 collectTraits(anInterface, traits);
             }
@@ -220,7 +217,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[traits.size()]), null);
             CompilationUnit cu = new CompilationUnit(loader);
             CompilerConfiguration config = new CompilerConfiguration();
-            SourceUnit su = new SourceUnit(name+"wrapper", "", config, loader, new ErrorCollector(config));
+            SourceUnit su = new SourceUnit(name + "wrapper", "", config, loader, new ErrorCollector(config));
             cu.addSource(su);
             cu.compile(Phases.CONVERSION);
             su.getAST().addClass(cn);
@@ -229,7 +226,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             List<GroovyClass> classes = (List<GroovyClass>) cu.getClasses();
             for (GroovyClass groovyClass : classes) {
                 if (groovyClass.getName().equals(name)) {
-                    return loader.defineClass(name,groovyClass.getBytes());
+                    return loader.defineClass(name, groovyClass.getBytes());
                 }
             }
         }
@@ -238,7 +235,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     private static void collectTraits(final Class clazz, final Set<ClassNode> traits) {
         Annotation annotation = clazz.getAnnotation(Trait.class);
-        if (annotation!=null) {
+        if (annotation != null) {
             ClassNode trait = ClassHelper.make(clazz);
             traits.add(trait.getPlainNodeReference());
             LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
@@ -261,7 +258,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     private InnerLoader findClassLoader(Class clazz, Class[] interfaces) {
         ClassLoader cl = clazz.getClassLoader();
-        if (cl==null) cl = this.getClass().getClassLoader();
+        if (cl == null) cl = this.getClass().getClassLoader();
         return createInnerLoader(cl, interfaces);
     }
 
@@ -270,13 +267,13 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         List<Method> interfaceMethods = new ArrayList<Method>();
         List<Method> superClassMethods = new ArrayList<Method>();
         Collections.addAll(superClassMethods, superClass.getDeclaredMethods());
-        if (interfaces!=null) {
+        if (interfaces != null) {
             for (Class thisInterface : interfaces) {
                 getInheritedMethods(thisInterface, interfaceMethods);
             }
             for (Method method : interfaceMethods) {
                 if (!(containsEquivalentMethod(superClassMethods, method))) {
-                    selectedMethods.add(method.getName()+Type.getMethodDescriptor(method));
+                    selectedMethods.add(method.getName() + Type.getMethodDescriptor(method));
                 }
             }
         }
@@ -287,7 +284,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             if (!containsEquivalentMethod(interfaceMethods, method) &&
                     !containsEquivalentMethod(OBJECT_METHODS, method) &&
                     !containsEquivalentMethod(GROOVYOBJECT_METHODS, method)) {
-                selectedMethods.add(method.getName()+Type.getMethodDescriptor(method));
+                selectedMethods.add(method.getName() + Type.getMethodDescriptor(method));
             }
         }
         return selectedMethods;
@@ -357,6 +354,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     /**
      * Visit every class/interface this proxy should implement, and generate the appropriate
      * bytecode for delegation if available.
+     *
      * @param clazz an class for which to generate bytecode
      */
     private void visitClass(final Class clazz) {
@@ -393,7 +391,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             visitClass(intf);
         }
         Class superclass = clazz.getSuperclass();
-        if (superclass!=null) visitClass(superclass);
+        if (superclass != null) visitClass(superclass);
 
         // Ultimately, methods can be available in the closure map which are not defined by the superclass
         // nor the interfaces
@@ -512,7 +510,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             mv.visitMaxs(2, 2);
             mv.visitEnd();
         }
-
     }
 
     /**
@@ -521,7 +518,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private void addDelegateFields() {
         visitField(ACC_PRIVATE + ACC_FINAL, CLOSURES_MAP_FIELD, "Ljava/util/Map;", null, null);
         if (generateDelegateField) {
-            visitField(ACC_PRIVATE+ACC_FINAL, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass), null, null);
+            visitField(ACC_PRIVATE + ACC_FINAL, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass), null, null);
         }
     }
 
@@ -552,13 +549,13 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
         Object key = Arrays.asList(name, desc);
         if (visitedMethods.contains(key)) return null;
-        if (Modifier.isPrivate(access) || Modifier.isNative(access) || ((access&ACC_SYNTHETIC)!=0)) {
+        if (Modifier.isPrivate(access) || Modifier.isNative(access) || ((access & ACC_SYNTHETIC) != 0)) {
             // do not generate bytecode for private methods
             return null;
         }
         int accessFlags = access;
         visitedMethods.add(key);
-        if ((objectDelegateMethods.contains(name+desc) || delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
+        if ((objectDelegateMethods.contains(name + desc) || delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
             if (!GROOVYOBJECT_METHOD_NAMESS.contains(name)) {
                 if (Modifier.isAbstract(access)) {
                     // prevents the proxy from being abstract
@@ -568,8 +565,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                     delegatedClosures.put(name, Boolean.TRUE);
                     return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
                 }
-                if (generateDelegateField && objectDelegateMethods.contains(name+desc)) {
-                    return makeDelegateCall(name, desc,  signature, exceptions, accessFlags);
+                if (generateDelegateField && objectDelegateMethods.contains(name + desc)) {
+                    return makeDelegateCall(name, desc, signature, exceptions, accessFlags);
                 }
                 delegatedClosures.put(name, Boolean.TRUE);
                 return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
@@ -588,24 +585,28 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             Type[] args = Type.getArgumentTypes(desc);
             if (emptyBody) {
                 Type returnType = Type.getReturnType(desc);
-                if (returnType==Type.VOID_TYPE) {
+                if (returnType == Type.VOID_TYPE) {
                     mv.visitInsn(RETURN);
                 } else {
                     int loadIns = getLoadInsn(returnType);
                     switch (loadIns) {
-                        case ILOAD: mv.visitInsn(ICONST_0);
+                        case ILOAD:
+                            mv.visitInsn(ICONST_0);
                             break;
-                        case LLOAD: mv.visitInsn(LCONST_0);
+                        case LLOAD:
+                            mv.visitInsn(LCONST_0);
                             break;
-                        case FLOAD: mv.visitInsn(FCONST_0);
+                        case FLOAD:
+                            mv.visitInsn(FCONST_0);
                             break;
-                        case DLOAD: mv.visitInsn(DCONST_0);
+                        case DLOAD:
+                            mv.visitInsn(DCONST_0);
                             break;
                         default:
                             mv.visitInsn(ACONST_NULL);
                     }
                     mv.visitInsn(getReturnInsn(returnType));
-                    mv.visitMaxs(2, registerLen(args)+1);
+                    mv.visitMaxs(2, registerLen(args) + 1);
                 }
             } else {
                 // for compatibility with the legacy proxy generator, we should throw an UnsupportedOperationException
@@ -614,7 +615,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 mv.visitInsn(DUP);
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V", false);
                 mv.visitInsn(ATHROW);
-                mv.visitMaxs(2, registerLen(args)+1);
+                mv.visitMaxs(2, registerLen(args) + 1);
             }
             mv.visitEnd();
         }
@@ -624,10 +625,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private MethodVisitor createGetProxyTargetMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
         MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_FINAL, name, desc, signature, exceptions);
         mv.visitCode();
-        mv.visitIntInsn(ALOAD,0);
+        mv.visitIntInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
         mv.visitInsn(ARETURN);
-        mv.visitMaxs(1,1);
+        mv.visitMaxs(1, 1);
         mv.visitEnd();
         return null;
     }
@@ -641,7 +642,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private static int registerLen(final Type arg) {
-        return arg== Type.DOUBLE_TYPE||arg==Type.LONG_TYPE?2:1;
+        return arg == Type.DOUBLE_TYPE || arg == Type.LONG_TYPE ? 2 : 1;
     }
 
     private MethodVisitor createConstructor(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
@@ -673,7 +674,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc, false);
         mv.visitInsn(RETURN);
-        int max = idx + 1 + (generateDelegateField?1:0);
+        int max = idx + 1 + (generateDelegateField ? 1 : 0);
         mv.visitMaxs(max, max);
         mv.visitEnd();
         return null;
@@ -696,9 +697,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         mv.visitFieldInsn(PUTFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
     }
 
-    private static int getTypeArgsRegisterLength(Type[] args)  {
+    private static int getTypeArgsRegisterLength(Type[] args) {
         int length = 0;
-        for (Type type : args)  { length += registerLen(type); }
+        for (Type type : args) {
+            length += registerLen(type);
+        }
         return length;
     }
 
@@ -729,7 +732,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             } else {
                 mv.visitVarInsn(ALOAD, idx); // load argument i
             }
-            size = Math.max(size, 5+registerLen(arg));
+            size = Math.max(size, 5 + registerLen(arg));
             idx += registerLen(arg);
             mv.visitInsn(AASTORE); // store value into array
         }
@@ -749,7 +752,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         // method body should be:
         //  this.$delegate$closure$methodName.call(new Object[] { method arguments })
         Type[] args = Type.getArgumentTypes(desc);
-        int arrayStore = args.length+1;
+        int arrayStore = args.length + 1;
         BytecodeHelper.pushConstant(mv, args.length);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object"); // stack size = 1
         stackSize = 1;
@@ -768,7 +771,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 mv.visitVarInsn(ALOAD, idx); // load argument i
             }
             idx += registerLen(arg);
-            stackSize = Math.max(4, 3+registerLen(arg));
+            stackSize = Math.max(4, 3 + registerLen(arg));
             mv.visitInsn(AASTORE); // store value into array
         }
         mv.visitVarInsn(ASTORE, arrayStore); // store array
@@ -795,7 +798,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         stackSize++;
         mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "call", "([Ljava/lang/Object;)Ljava/lang/Object;", false); // call closure
         unwrapResult(mv, desc);
-        mv.visitMaxs(stackSize, arrayStore+1);
+        mv.visitMaxs(stackSize, arrayStore + 1);
         mv.visitEnd();
 //        System.out.println("tmv.getText() = " + tmv.getText());
         return null;
@@ -803,7 +806,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     private static void unwrapResult(final MethodVisitor mv, final String desc) {
         Type returnType = Type.getReturnType(desc);
-        if (returnType==Type.VOID_TYPE) {
+        if (returnType == Type.VOID_TYPE) {
             mv.visitInsn(POP);
             mv.visitInsn(RETURN);
         } else {
@@ -817,8 +820,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    public GroovyObject proxy(Map<Object,Object> map, Object... constructorArgs) {
-        if (constructorArgs==null && cachedNoArgConstructor!=null) {
+    public GroovyObject proxy(Map<Object, Object> map, Object... constructorArgs) {
+        if (constructorArgs == null && cachedNoArgConstructor != null) {
             // if there isn't any argument, we can make invocation faster using the cached constructor
             try {
                 return (GroovyObject) cachedNoArgConstructor.newInstance(map);
@@ -830,16 +833,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 throw new GroovyRuntimeException(e);
             }
         }
-        if (constructorArgs==null) constructorArgs= EMPTY_ARGS;
+        if (constructorArgs == null) constructorArgs = EMPTY_ARGS;
         Object[] values = new Object[constructorArgs.length + 1];
         System.arraycopy(constructorArgs, 0, values, 0, constructorArgs.length);
-        values[values.length-1] = map;
+        values[values.length - 1] = map;
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
     }
 
     @SuppressWarnings("unchecked")
-    public GroovyObject delegatingProxy(Object delegate,Map<Object,Object> map, Object... constructorArgs) {
-        if (constructorArgs==null && cachedNoArgConstructor!=null) {
+    public GroovyObject delegatingProxy(Object delegate, Map<Object, Object> map, Object... constructorArgs) {
+        if (constructorArgs == null && cachedNoArgConstructor != null) {
             // if there isn't any argument, we can make invocation faster using the cached constructor
             try {
                 return (GroovyObject) cachedNoArgConstructor.newInstance(map, delegate);
@@ -851,11 +854,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 throw new GroovyRuntimeException(e);
             }
         }
-        if (constructorArgs==null) constructorArgs= EMPTY_ARGS;
+        if (constructorArgs == null) constructorArgs = EMPTY_ARGS;
         Object[] values = new Object[constructorArgs.length + 2];
         System.arraycopy(constructorArgs, 0, values, 0, constructorArgs.length);
-        values[values.length-2] = map;
-        values[values.length-1] = delegate;
+        values[values.length - 2] = map;
+        values[values.length - 1] = delegate;
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
     }
 
@@ -866,7 +869,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
      */
     @SuppressWarnings("unchecked")
     public static Closure ensureClosure(Object o) {
-        if (o==null) throw new UnsupportedOperationException();
+        if (o == null) throw new UnsupportedOperationException();
         if (o instanceof Closure) return (Closure) o;
         return new ReturnValueWrappingClosure(o);
     }
@@ -918,18 +921,17 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         throw new IllegalArgumentException("Unexpected type class [" + type + "]");
     }
 
-
     private static class InnerLoader extends GroovyClassLoader {
-
         List<ClassLoader> internalClassLoaders = null;
 
         protected InnerLoader(final ClassLoader parent, final Class[] interfaces) {
             super(parent);
-            if(interfaces != null) {
-                for(Class c : interfaces) {
-                    if(c.getClassLoader() != parent) {
-                        if(internalClassLoaders == null) internalClassLoaders = new ArrayList<ClassLoader>(interfaces.length);
-                        if( ! internalClassLoaders.contains(c.getClassLoader()) ) {
+            if (interfaces != null) {
+                for (Class c : interfaces) {
+                    if (c.getClassLoader() != parent) {
+                        if (internalClassLoaders == null)
+                            internalClassLoaders = new ArrayList<ClassLoader>(interfaces.length);
+                        if (!internalClassLoaders.contains(c.getClassLoader())) {
                             internalClassLoaders.add(c.getClassLoader());
                         }
                     }
@@ -944,63 +946,47 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             // First check whether it's already been loaded, if so use it
             Class loadedClass = findLoadedClass(name);
-            
+
             if (loadedClass != null) return loadedClass;
-            
 
-            //check this class loader
+            // Check this class loader
             try {
-                
                 loadedClass = findClass(name);
-                
-            } catch (ClassNotFoundException e) { }
-            
-            if(loadedClass != null) return loadedClass;
+            } catch (ClassNotFoundException ignore) {
+            }
 
-            
-            //check parent classloader, keep the exception for future use
+            if (loadedClass != null) return loadedClass;
+
+            // Check parent classloader, keep the exception for future use
             ClassNotFoundException ex = null;
             try {
                 loadedClass = super.loadClass(name);
-            } catch(ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 ex = e;
             }
-            
-            if (loadedClass != null) return loadedClass;
-            
-            
-            // Not loaded, try to load it 
-            if(internalClassLoaders != null) {
 
-                for(ClassLoader i : internalClassLoaders) {
+            if (loadedClass != null) return loadedClass;
+
+            // Not loaded, try to load it 
+            if (internalClassLoaders != null) {
+                for (ClassLoader i : internalClassLoaders) {
                     try {
                         // Ignore parent delegation and just try to load locally
-
                         loadedClass = i.loadClass(name);
-                        
-                        if(loadedClass != null) return loadedClass;
-                        
+                        if (loadedClass != null) return loadedClass;
                     } catch (ClassNotFoundException e) {
                         // Swallow exception - does not exist locally
                     }
-
                 }
-                
             }
 
-            
-            //throw parent exception if exists, otherwise create a new exception
-            if(ex != null) throw ex;
-            
+            // Throw earlier exception from parent loader if it exists, otherwise create a new exception
+            if (ex != null) throw ex;
             throw new ClassNotFoundException(name);
-            
         }
-
     }
-    
 
-
-    private static class ReturnValueWrappingClosure<V> extends Closure<V>{
+    private static class ReturnValueWrappingClosure<V> extends Closure<V> {
         private final V value;
 
         public ReturnValueWrappingClosure(V returnValue) {

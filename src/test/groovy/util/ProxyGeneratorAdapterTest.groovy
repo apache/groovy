@@ -172,6 +172,24 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
             '''
     }
 
+    static class ClassA {}
+    static trait Trait1 { def method1() { 'Trait1 method' } }
+
+    // GROOVY-7443
+    void testTraitFromDifferentClassloader() {
+        def aWith1 = new ClassA().withTraits(Trait1)
+        assert aWith1.method1() == 'Trait1 method'
+        GroovyClassLoader gcl = new GroovyClassLoader(Thread.currentThread().contextClassLoader)
+        Class classB = gcl.parseClass('class ClassB {}')
+        Class trait2 = gcl.parseClass('trait Trait2 { def method2() { "Trait2 method" } }')
+        def bWith1 = classB.newInstance().withTraits(Trait1)
+        assert bWith1.method1() == 'Trait1 method'
+        def bWith2 = classB.newInstance().withTraits(trait2)
+        assert bWith2.method2() == 'Trait2 method'
+        def aWith2 = new ClassA().withTraits(trait2)
+        assert aWith2.method2() == 'Trait2 method'
+    }
+
     void testGetTypeArgsRegisterLength() {
         def types = { list -> list as org.objectweb.asm.Type[] }
         def proxyGeneratorAdapter = new ProxyGeneratorAdapter([:], Object, [] as Class[], null, false, Object)
