@@ -1276,6 +1276,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.drop( 4 ).collect { it } == [ 5 ]
         a = 1
         assert items.drop( 5 ).collect { it } == []
+
+        a = 1
+        assert items.dropRight( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        a = 1
+        assert items.dropRight( 2 ).collect { it } == [ 1, 2, 3 ]
+        a = 1
+        assert items.dropRight( 4 ).collect { it } == [ 1 ]
+        a = 1
+        assert items.dropRight( 5 ).collect { it } == []
     }
 
     void testIterableDrop() {
