@@ -1932,9 +1932,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
-     * @param self    an Iterable
+     * @param self    an Iterator
      * @param closure a Closure to operate on each item
-     * @return the self Iterable
+     * @return the self Iterator (now exhausted)
      * @since 2.3.0
      */
     public static <T> Iterator<T> eachWithIndex(Iterator<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
