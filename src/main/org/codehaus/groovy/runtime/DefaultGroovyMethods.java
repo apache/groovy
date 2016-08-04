@@ -1008,12 +1008,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns an iterator equivalent to this iterator with all duplicated items removed
-     * by using the default comparator. The original iterator will become
+     * by using Groovy's default number-aware comparator. The original iterator will become
      * exhausted of elements after determining the unique values. A new iterator
      * for the unique values will be returned.
      *
      * @param self an Iterator
-     * @return the modified Iterator
+     * @return a new Iterator of the unique items from the original iterator
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self) {
@@ -1021,8 +1021,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this collection to remove all duplicated items, using the
-     * default comparator.
+     * Modifies this collection to remove all duplicated items, using Groovy's
+     * default number-aware comparator.
      * <pre class="groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
      *
      * @param self a collection
@@ -1035,8 +1035,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this List to remove all duplicated items, using the
-     * default comparator.
+     * Modifies this List to remove all duplicated items, using Groovy's
+     * default number-aware comparator.
      * <pre class="groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
      *
      * @param self a List
@@ -1049,7 +1049,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Remove all duplicates from a given Collection using the default comparator.
+     * Remove all duplicates from a given Collection using Groovy's default number-aware comparator.
      * If mutate is true, it works by modifying the original object (and also returning it).
      * If mutate is false, a new collection is returned leaving the original unchanged.
      * <pre class="groovyTestCase">
@@ -1088,7 +1088,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Remove all duplicates from a given List using the default comparator.
+     * Remove all duplicates from a given List using Groovy's default number-aware comparator.
      * If mutate is true, it works by modifying the original object (and also returning it).
      * If mutate is false, a new collection is returned leaving the original unchanged.
      * <pre class="groovyTestCase">
@@ -1135,13 +1135,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
      *
-     * @param self an Iterator
-     * @param closure a Closure used to determine unique items
+     * @param self      an Iterator
+     * @param condition a Closure used to determine unique items
      * @return the modified Iterator
      * @since 1.5.5
      */
-    public static <T> Iterator<T> unique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return toList((Iterable<T>) unique(toList(self), closure)).listIterator();
+    public static <T> Iterator<T> unique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<T>(condition, true)
+                : new ClosureComparator<T>(condition);
+        return unique(self, comparator);
     }
 
     /**
@@ -1263,7 +1266,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns an iterator equivalent to this iterator with all duplicated
-     * items removed by using the supplied comparator.
+     * items removed by using the supplied comparator. The original iterator
+     * will be exhausted upon returning.
      *
      * @param self an Iterator
      * @param comparator a Comparator
@@ -1271,7 +1275,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self, Comparator<T> comparator) {
-        return toList((Iterable<T>) unique(toList(self), comparator)).listIterator();
+        return toList((Iterable<T>) unique(toList(self), false, comparator)).listIterator();
     }
 
     /**
@@ -1519,18 +1523,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Iterator<T> toUnique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        return new UniqueIterator<T>(self, condition.getMaximumNumberOfParameters() == 1
+        return toUnique(self, condition.getMaximumNumberOfParameters() == 1
                 ? new OrderBy<T>(condition, true)
                 : new ClosureComparator<T>(condition));
     }
 
-    private static final class UniqueIterator<E> implements Iterator<E> {
+    private static final class ToUniqueIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final Set<E> seen;
         private boolean exhausted;
         private E next;
 
-        private UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
+        private ToUniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
             this.delegate = delegate;
             seen = new TreeSet<E>(comparator);
             advance();
@@ -1575,7 +1579,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Iterator<T> toUnique(Iterator<T> self, Comparator<T> comparator) {
-        return new UniqueIterator<T>(self, comparator);
+        return new ToUniqueIterator<T>(self, comparator);
     }
 
     /**
@@ -1587,7 +1591,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Iterator<T> toUnique(Iterator<T> self) {
-        return new UniqueIterator<T>(self, null);
+        return toUnique(self, (Comparator<T>) null);
     }
 
     /**
@@ -1953,11 +1957,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an Collection,
+     * Iterates through a Collection,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
-     * @param self    an Collection
+     * @param self    a Collection
      * @param closure a Closure to operate on each item
      * @return the self Collection
      * @since 2.4.0
@@ -2037,7 +2041,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an Collection, passing each item to the given closure.
+     * Iterates through a Collection, passing each item to the given closure.
      *
      * @param self    the Collection over which we iterate
      * @param closure the closure applied on each element found
@@ -11142,7 +11146,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List as a union of a List and an Collection.
+     * Create a List as a union of a List and a Collection.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -11172,7 +11176,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Set as a union of a Set and an Collection.
+     * Create a Set as a union of a Set and a Collection.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -11202,7 +11206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a SortedSet as a union of a SortedSet and an Collection.
+     * Create a SortedSet as a union of a SortedSet and a Collection.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -12022,7 +12026,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
-     * @param removeMe a Iterable of elements to remove
+     * @param removeMe an Iterable of elements to remove
      * @return a new List with the given elements removed
      * @since 1.8.7
      */
@@ -12134,7 +12138,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * collections have their contents (recursively) added to the new collection.
      * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
-     * @param self a Iterable to flatten
+     * @param self an Iterable to flatten
      * @return a flattened Collection
      * @since 1.6.0
      */
@@ -15382,7 +15386,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Number into a Long
      *
      * @param self a Number
-     * @return an Long
+     * @return a Long
      * @since 1.0
      */
     public static Long toLong(Number self) {
