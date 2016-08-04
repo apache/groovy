@@ -900,7 +900,6 @@ import groovy.transform.TypeCheckingMode
             import javax.servlet.ServletRegistration
 
             /**
-
              * author: Richard Vowles - http://gplus.to/RichardVowles
              */
             @CompileStatic

@@ -200,8 +200,8 @@ annotated script element).
 [[Grape-MultipleGrapeAnnotations]]
 === Multiple Grape Annotations
 
-In order to use a Grape annotation multiple times on the same node you must use the
-`@Grapes` annotation, e.g.:
+In early versions of Groovy, if you wanted to use a Grab annotation multiple times
+on the same node you had to use the `@Grapes` annotation, e.g.:
 
 [source,groovy]
 ---------------------------------------------------------------------------------
@@ -213,12 +213,22 @@ class Example {
 }
 ---------------------------------------------------------------------------------
 
-Otherwise you’ll encounter the following error:
+Otherwise you’d encounter the following error:
 
 ------------------------------------------------------
 Cannot specify duplicate annotation on the same member
 ------------------------------------------------------
 
+But in recent versions, @Grapes is purely optional.
+
+Technical notes:
+
+* Originally, Groovy stored the Grab annotations for access at runtime
+and duplicates aren't allowed in the bytecode. In current versions, @Grab has only
+SOURCE retention, so the multiple occurrences aren't an issue.
+* Future versions of Grape may support using the Grapes annotation to
+provide a level of structuring, e.g. allowing a GrabExclude or GrabResolver
+annotation to apply to only a subset of the Grab annotations.
 
 [[Grape-Methodcall]]
 === Method call
@@ -370,9 +380,9 @@ Using Apache Commons Collections:
 [source,groovy]
 -----------------------------------------------------------------------------
 // create and use a primitive array list
+@Grab(group='commons-primitives', module='commons-primitives', version='1.0')
 import org.apache.commons.collections.primitives.ArrayIntList
 
-@Grab(group='commons-primitives', module='commons-primitives', version='1.0')
 def createEmptyInts() { new ArrayIntList() }
 
 def ints = createEmptyInts()
@@ -409,18 +419,16 @@ Launching a Jetty server to serve Groovy templates:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------
-@Grapes([
-    @Grab(group='org.eclipse.jetty.aggregate', module='jetty-server', version='8.1.7.v20120910'),
-    @Grab(group='org.eclipse.jetty.aggregate', module='jetty-servlet', version='8.1.7.v20120910'),
-    @Grab(group='javax.servlet', module='javax.servlet-api', version='3.0.1')])
-
+@Grab('org.eclipse.jetty.aggregate:jetty-server:8.1.19.v20160209')
+@Grab('org.eclipse.jetty.aggregate:jetty-servlet:8.1.19.v20160209')
+@Grab('javax.servlet:javax.servlet-api:3.0.1')
 import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.*
-import groovy.servlet.*
+import org.eclipse.jetty.servlet.ServletContextHandler
+import groovy.servlet.TemplateServlet
 
 def runServer(duration) {
     def server = new Server(8080)
-    def context = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
+    def context = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS)
     context.resourceBase = "."
     context.addServlet(TemplateServlet, "*.gsp")
     server.start()
@@ -432,7 +440,7 @@ runServer(10000)
 --------------------------------------------------------------------------------------------------
 
 Grape will download Jetty and its dependencies on first launch of this
-script, and cache them. We’re creating a new Jetty Server on port 8080,
+script, and cache them. We create a new Jetty Server on port 8080,
 then expose Groovy’s TemplateServlet at the root of the context — Groovy
 comes with its own powerful template engine mechanism. We start the
 server and let it run for a certain duration. Each time someone will hit
