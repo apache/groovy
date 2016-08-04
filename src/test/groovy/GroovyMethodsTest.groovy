@@ -1846,6 +1846,7 @@ class ExplodingList extends ArrayList {
         new Iterator() {
             boolean hasNext() { cursor < ExplodingList.this.size() }
             def next() { ExplodingList.this.get(cursor++) }
+            void remove() {}
         }
     }
 }
