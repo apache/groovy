@@ -1017,7 +1017,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self) {
-        return toList((Iterable<T>) unique(toList(self))).listIterator();
+        return uniqueItems(new IteratorIterableAdapter<T>(self)).listIterator();
     }
 
     /**
@@ -1068,6 +1068,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> Collection<T> unique(Collection<T> self, boolean mutate) {
+        List<T> answer = uniqueItems(self);
+        if (mutate) {
+            self.clear();
+            self.addAll(answer);
+        }
+        return mutate ? self : answer ;
+    }
+
+    private static <T> List<T> uniqueItems(Iterable<T> self) {
         List<T> answer = new ArrayList<T>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1080,11 +1089,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!duplicated)
                 answer.add(t);
         }
-        if (mutate) {
-            self.clear();
-            self.addAll(answer);
-        }
-        return mutate ? self : answer ;
+        return answer;
     }
 
     /**
@@ -1275,7 +1280,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self, Comparator<T> comparator) {
-        return toList((Iterable<T>) unique(toList(self), false, comparator)).listIterator();
+        return uniqueItems(new IteratorIterableAdapter<T>(self), comparator).listIterator();
+    }
+
+    private static class IteratorIterableAdapter<T> implements Iterable<T> {
+        private final Iterator<T> self;
+
+        private IteratorIterableAdapter(Iterator<T> self) {
+            this.self = self;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return self;
+        }
     }
 
     /**
@@ -1428,6 +1446,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Comparator<T> comparator) {
+        List<T> answer = uniqueItems(self, comparator);
+        if (mutate) {
+            self.clear();
+            self.addAll(answer);
+        }
+        return mutate ? self : answer;
+    }
+
+    private static <T> List<T> uniqueItems(Iterable<T> self, Comparator<T> comparator) {
         List<T> answer = new ArrayList<T>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1440,11 +1467,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!duplicated)
                 answer.add(t);
         }
-        if (mutate) {
-            self.clear();
-            self.addAll(answer);
-        }
-        return mutate ? self : answer;
+        return answer;
     }
 
     /**
