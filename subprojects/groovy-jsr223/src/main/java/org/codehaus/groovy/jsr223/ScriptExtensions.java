@@ -84,8 +84,8 @@ public class ScriptExtensions {
 
     @SuppressWarnings("unchecked")
     private static void storeBindingVars(ScriptEngine self, Binding binding) {
-        Set<Map.Entry> vars = binding.getVariables().entrySet();
-        for (Map.Entry me : vars) {
+        Set<Map.Entry<?, ?>> vars = binding.getVariables().entrySet();
+        for (Map.Entry<?, ?> me : vars) {
             self.put(me.getKey().toString(), me.getValue());
         }
     }
