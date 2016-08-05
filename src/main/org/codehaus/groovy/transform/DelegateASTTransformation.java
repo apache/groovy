@@ -171,15 +171,31 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     }
 
     private void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
-        String getterName = "get" + Verifier.capitalize(name);
-        if (owner.getGetterMethod(getterName) == null
-                && !shouldSkipPropertyMethod(name, getterName, excludes, includes)) {
-            owner.addMethod(getterName,
-                    ACC_PUBLIC,
-                    GenericsUtils.nonGeneric(prop.getType()),
-                    Parameter.EMPTY_ARRAY,
-                    null,
-                    returnS(propX(varX(fieldNode), name)));
+        boolean isPrimBool = prop.getOriginType().equals(ClassHelper.boolean_TYPE);
+        // do a little bit of pre-work since Groovy compiler hasn't added property accessors yet
+        boolean willHaveGetAccessor = true;
+        boolean willHaveIsAccessor = isPrimBool;
+        String suffix = Verifier.capitalize(name);
+        if (isPrimBool) {
+            ClassNode cNode = prop.getDeclaringClass();
+            if (cNode.getGetterMethod("is" + suffix) != null && cNode.getGetterMethod("get" + suffix) == null)
+                willHaveGetAccessor = false;
+            if (cNode.getGetterMethod("get" + suffix) != null && cNode.getGetterMethod("is" + suffix) == null)
+                willHaveIsAccessor = false;
+        }
+        for (String prefix : new String[]{"get", "is"}) {
+            String getterName = prefix + suffix;
+            if (owner.getGetterMethod(getterName) == null
+                    && !shouldSkipPropertyMethod(name, getterName, excludes, includes)) {
+                if (prefix.equals("get") && willHaveGetAccessor || prefix.equals("is") && willHaveIsAccessor) {
+                    owner.addMethod(getterName,
+                            ACC_PUBLIC,
+                            GenericsUtils.nonGeneric(prop.getType()),
+                            Parameter.EMPTY_ARRAY,
+                            null,
+                            returnS(propX(varX(fieldNode), name)));
+                }
+            }
         }
     }
     

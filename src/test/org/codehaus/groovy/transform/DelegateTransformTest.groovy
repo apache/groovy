@@ -21,10 +21,7 @@ package org.codehaus.groovy.transform
 import gls.CompilableTestSupport
 
 /**
- * @author Alex Tkachman
- * @author Guillaume Laforge
- * @author Paul King
- * @author Andre Steingress
+ * Tests for the @{code @Delegate} AST transform.
  */
 class DelegateTransformTest extends CompilableTestSupport {
 
@@ -693,6 +690,35 @@ assert foo.dm.x == '123'
             assert f.size() == 2
             assert f.internalDelegate == ['bar', 'baz']
         '''
+    }
+
+    // GROOVY-5752
+    void testDelegationShouldAccountForPrimitiveBooleanProperties() {
+        assertScript """
+            class A {
+                boolean a
+                boolean b
+                boolean isB() { b }
+                boolean c
+                boolean getC() { c }
+            }
+
+            class B {
+                @Delegate A a = new A(a: true, b: true, c: true)
+            }
+
+            def a = new A(a: true, b: true, c: true)
+            assert a.getA()
+            assert a.isA()
+            assert a.isB()
+            assert a.getC()
+
+            def b = new B()
+            assert b.getA()
+            assert b.isA()
+            assert b.isB()
+            assert b.getC()
+        """
     }
 }
 
