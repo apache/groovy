@@ -214,8 +214,8 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
     // Required because GroovyCodeSource calls to File#getCanonicalPath (at least on the Windows FileSystem)
     permission java.util.PropertyPermission "user.dir", "read";
 
-    permission java.io.FilePermission "${user.dir}${/}src${/}test${/}groovy${/}bugs${/}TestBase.groovy", "read";
-    permission java.io.FilePermission "${user.dir}${/}src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestBase.groovy", "read";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
     permission java.io.FilePermission "${user.dir}${/}target${/}classes${/}test${/}groovy${/}bugs${/}TestBase.class", "read";
     permission java.io.FilePermission "${user.dir}${/}target${/}classes${/}test${/}groovy${/}bugs${/}TestDerived.class", "read";
 };
