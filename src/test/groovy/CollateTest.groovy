@@ -91,6 +91,13 @@ class CollateTest extends GroovyTestCase {
     assert [ 1, 2, 3 ].collate( 2, -1 ) == [[ 1, 2 ]]
   }
 
+  void testZeroedStep() {
+    String message = shouldFail (IllegalArgumentException) {
+      [ 1, 2, 3 ].collate( 2, 0 )
+    }
+    assert message == 'step cannot be zero'
+  }
+
   void testChaining() {
     def list = 1..15
     def expected = [ [ [ 1, 2, 3],  [ 4, 5, 6] ],
