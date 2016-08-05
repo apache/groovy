@@ -160,7 +160,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            Expression getter = getterX(cNode, pNode);
+            Expression getter = getterThisX(cNode, pNode);
 
             appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
         }

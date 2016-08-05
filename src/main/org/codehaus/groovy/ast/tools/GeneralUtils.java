@@ -70,11 +70,6 @@ import java.util.Set;
 
 /**
  * Handy methods when working with the Groovy AST
- *
- * @author Guillaume Laforge
- * @author Paul King
- * @author Andre Steingress
- * @author Graeme Rocher
  */
 public class GeneralUtils {
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
@@ -481,8 +476,8 @@ public class GeneralUtils {
     }
 
     public static BooleanExpression hasSamePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
-        return sameX(callThisX(getterName), callX(other, getterName));
+        ClassNode cNode = pNode.getDeclaringClass();
+        return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
     }
 
     public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {
@@ -633,13 +628,9 @@ public class GeneralUtils {
     }
 
     /**
-     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
-     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
-     * instead of a field access.
-     * @param annotatedNode the class node where the property node is accessed from
-     * @param pNode the property being accessed
-     * @return a method call expression or a property expression
+     * @deprecated use getterThisX instead
      */
+    @Deprecated
     public static Expression getterX(ClassNode annotatedNode, PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
@@ -650,5 +641,41 @@ public class GeneralUtils {
             return callX(new VariableExpression("this"), getterName, ArgumentListExpression.EMPTY_ARGUMENTS);
         }
         return propX(new VariableExpression("this"), pNode.getName());
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     *
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterThisX(ClassNode annotatedNode, PropertyNode pNode) {
+        return getterX(annotatedNode, new VariableExpression("this"), pNode);
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     *
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param receiver the object having the property
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterX(ClassNode annotatedNode, Expression receiver, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            boolean existingExplicitGetter = annotatedNode.getGetterMethod(getterName) != null;
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callX(receiver, getterName);
+        }
+        return propX(receiver, pNode.getName());
     }
 }

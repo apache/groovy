@@ -126,7 +126,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = getterX(cNode, pNode);
+            Expression getter = getterThisX(cNode, pNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
             body.addStatement(ifS(
                     notX(sameX(getter, varX("this"))),
