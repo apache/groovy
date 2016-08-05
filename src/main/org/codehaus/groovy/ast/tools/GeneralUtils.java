@@ -72,11 +72,6 @@ import java.util.Set;
 
 /**
  * Handy methods when working with the Groovy AST
- *
- * @author Guillaume Laforge
- * @author Paul King
- * @author Andre Steingress
- * @author Graeme Rocher
  */
 public class GeneralUtils {
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
@@ -506,8 +501,8 @@ public class GeneralUtils {
     }
 
     public static BooleanExpression hasSamePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
-        return sameX(callThisX(getterName), callX(other, getterName));
+        ClassNode cNode = pNode.getDeclaringClass();
+        return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
     }
 
     public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {

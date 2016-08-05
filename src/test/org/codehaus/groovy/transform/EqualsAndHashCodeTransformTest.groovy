@@ -103,4 +103,20 @@ class EqualsAndHashCodeTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testPrimitiveBooleanPropertiesWithIsGetter_GROOVY6245() {
+        assertScript '''
+            @groovy.transform.EqualsAndHashCode
+            class A {
+                boolean a
+                boolean isA() { a }
+            }
+
+            def a1 = new A(a: true)
+            def a2 = new A(a: true)
+            def a3 = new A(a: false)
+            assert a1 == a2
+            assert a1 != a3
+        '''
+    }
+
 }
