@@ -3055,6 +3055,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (size <= 0 || selfList.isEmpty()) {
             answer.add(selfList);
         } else {
+            if (step == 0) {
+                step = size;
+            }
             for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
                 if (!keepRemainder && pos > selfList.size() - size) {
                     break ;
