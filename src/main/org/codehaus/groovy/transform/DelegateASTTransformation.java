@@ -200,15 +200,31 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     }
 
     private static void addGetterIfNeeded(DelegateDescription delegate, PropertyNode prop, String name, boolean allNames) {
-        String getterName = "get" + Verifier.capitalize(name);
-        if (delegate.owner.getGetterMethod(getterName) == null
-                && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
-            delegate.owner.addMethod(getterName,
-                    ACC_PUBLIC,
-                    GenericsUtils.nonGeneric(prop.getType()),
-                    Parameter.EMPTY_ARRAY,
-                    null,
-                    returnS(propX(delegate.getOp, name)));
+        boolean isPrimBool = prop.getOriginType().equals(ClassHelper.boolean_TYPE);
+        // do a little bit of pre-work since Groovy compiler hasn't added property accessors yet
+        boolean willHaveGetAccessor = true;
+        boolean willHaveIsAccessor = isPrimBool;
+        String suffix = Verifier.capitalize(name);
+        if (isPrimBool) {
+            ClassNode cNode = prop.getDeclaringClass();
+            if (cNode.getGetterMethod("is" + suffix) != null && cNode.getGetterMethod("get" + suffix) == null)
+                willHaveGetAccessor = false;
+            if (cNode.getGetterMethod("get" + suffix) != null && cNode.getGetterMethod("is" + suffix) == null)
+                willHaveIsAccessor = false;
+        }
+        for (String prefix : new String[]{"get", "is"}) {
+            String getterName = prefix + suffix;
+            if (delegate.owner.getGetterMethod(getterName) == null
+                    && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
+                if (prefix.equals("get") && willHaveGetAccessor || prefix.equals("is") && willHaveIsAccessor) {
+                    delegate.owner.addMethod(getterName,
+                            ACC_PUBLIC,
+                            GenericsUtils.nonGeneric(prop.getType()),
+                            Parameter.EMPTY_ARRAY,
+                            null,
+                            returnS(propX(delegate.getOp, name)));
+                }
+            }
         }
     }
     
