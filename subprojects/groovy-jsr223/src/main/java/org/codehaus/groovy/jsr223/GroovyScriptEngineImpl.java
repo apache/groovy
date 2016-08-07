@@ -79,8 +79,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 
-import java.lang.Class;
-import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
