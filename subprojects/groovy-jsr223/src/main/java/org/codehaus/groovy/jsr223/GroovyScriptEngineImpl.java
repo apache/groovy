@@ -97,10 +97,10 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private final ManagedConcurrentValueMap<String, Class> classMap = new ManagedConcurrentValueMap<String, Class>(ReferenceBundle.getSoftBundle());
+    private final ManagedConcurrentValueMap<String, Class<?>> classMap = new ManagedConcurrentValueMap<String, Class<?>>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private final ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
+    private final ManagedConcurrentValueMap<String, Closure<?>> globalClosures = new ManagedConcurrentValueMap<String, Closure<?>>(ReferenceBundle.getHardBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -150,7 +150,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         } catch (ClassCastException cce) { /*ignore.*/ }
 
         try {
-            Class clazz = getScriptClass(script);
+            Class<?> clazz = getScriptClass(script);
             if (clazz == null) throw new ScriptException("Script class is null");
             return eval(clazz, ctx);
         } catch (Exception e) {
@@ -214,7 +214,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // package-privates
-    Object eval(Class scriptClass, final ScriptContext ctx) throws ScriptException {
+    Object eval(Class<?> scriptClass, final ScriptContext ctx) throws ScriptException {
         /*
          * We use the following Binding instance so that global variable lookup
          * will be done in the current ScriptContext instance.
@@ -321,9 +321,9 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
-    Class getScriptClass(String script)
+    Class<?> getScriptClass(String script)
             throws CompilationFailedException {
-        Class clazz = classMap.get(script);
+        Class<?> clazz = classMap.get(script);
         if (clazz != null) {
             return clazz;
         }
@@ -369,7 +369,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     private Object callGlobal(String name, Object[] args, ScriptContext ctx) {
-        Closure closure = globalClosures.get(name);
+        Closure<?> closure = globalClosures.get(name);
         if (closure != null) {
             return closure.call(args);
         } else {
@@ -396,7 +396,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
         return (T) Proxy.newProxyInstance(
                 clazz.getClassLoader(),
-                new Class[]{clazz},
+                new Class<?>[]{clazz},
                 new InvocationHandler() {
                     public Object invoke(Object proxy, Method m, Object[] args)
                             throws Throwable {
@@ -411,7 +411,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         // check whether thread context loader can "see" Groovy Script class
         ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Class c = ctxtLoader.loadClass(Script.class.getName());
+            Class<?> c = ctxtLoader.loadClass(Script.class.getName());
             if (c == Script.class) {
                 return ctxtLoader;
             }
