@@ -116,7 +116,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     public GroovyScriptEngineImpl() {
-        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration()));
+        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT)));
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
