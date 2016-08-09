@@ -16,8 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-// Groovy Regex Coach - Copyright 2007 Jeremy Rayner
-
 import groovy.swing.SwingBuilder
 import java.awt.Color
 import java.awt.event.ActionEvent
