@@ -92,7 +92,10 @@ class CollateTest extends GroovyTestCase {
   }
 
   void testZeroedStep() {
-    assert [ 1, 2, 3 ].collate( 2, 0 ) == [[1, 2], [3]]
+    String message = shouldFail (IllegalArgumentException) {
+      [ 1, 2, 3 ].collate( 2, 0 )
+    }
+    assert message == 'step cannot be zero'
   }
 
   void testChaining() {

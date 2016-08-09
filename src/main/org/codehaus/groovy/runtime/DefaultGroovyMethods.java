@@ -3047,6 +3047,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param step          the number of elements to step through for each sub-list
      * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
+     * @throws IllegalArgumentException if the step is zero.
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
@@ -3055,9 +3056,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (size <= 0 || selfList.isEmpty()) {
             answer.add(selfList);
         } else {
-            if (step == 0) {
-                step = size;
-            }
+            if (step == 0) throw new IllegalArgumentException("step cannot be zero");
             for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
                 if (!keepRemainder && pos > selfList.size() - size) {
                     break ;
