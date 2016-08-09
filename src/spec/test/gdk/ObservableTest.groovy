@@ -20,7 +20,6 @@ package gdk
 
 import java.beans.PropertyChangeListener
 
-
 class ObservableTest extends GroovyTestCase {
 
     void testObservableList() {

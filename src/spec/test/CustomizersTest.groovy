@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
@@ -32,7 +31,6 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 import static org.codehaus.groovy.syntax.Types.*
-
 
 class CustomizersTest extends GroovyTestCase {
 

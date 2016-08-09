@@ -18,7 +18,6 @@
  */
 package gdk
 
-
 class ExpandoTest extends GroovyTestCase {
     void testExpandoAddProperty() {
         // tag::expando_property[]

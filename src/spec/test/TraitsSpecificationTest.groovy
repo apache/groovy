@@ -19,7 +19,6 @@
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 
-
 /**
  * Specification tests for the traits feature
  */

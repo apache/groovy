@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-// Groovy Regex Coach - Copyright 2007 Jeremy Rayner
 // inspired by http://weitz.de/regex-coach/
 
 import java.awt.*
