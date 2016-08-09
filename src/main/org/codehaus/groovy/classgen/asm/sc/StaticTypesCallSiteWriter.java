@@ -646,13 +646,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             } else if ("power".equals(message)) {
                 writePowerCall(receiver, arguments, rType, aType);
                 return true;
-            } else if ("mod".equals(message)) {
-                writeModCall(receiver, arguments, rType, aType);
-                return true;
-            }
-            else if("rightShiftUnsigned".equals(message))
-            {
-                writeShiftOperatorCall(receiver, arguments, rType, aType);
+            } else if ("mod".equals(message) || "leftShift".equals(message) || "rightShift".equals(message) || "rightShiftUnsigned".equals(message)) {
+                writeOperatorCall(receiver, arguments, message);
                 return true;
             }
         } else if (STRING_TYPE.equals(rType) && "plus".equals(message)) {
@@ -745,23 +740,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         operandStack.replace(rType.getComponentType(), m2-m1);
     }
 
-    private void writeModCall(Expression receiver, Expression arguments, ClassNode rType, ClassNode aType) {
-        prepareSiteAndReceiver(receiver, "mod", false, controller.getCompileStack().isLHS());
+    private void writeOperatorCall(Expression receiver, Expression arguments, String operator) {
+        prepareSiteAndReceiver(receiver, operator, false, controller.getCompileStack().isLHS());
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         visitBoxedArgument(arguments);
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", "mod", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
-        controller.getOperandStack().replace(Number_TYPE, 2);
-    }
-
-    private void writeShiftOperatorCall(Expression receiver, Expression arguments, ClassNode rType, ClassNode aType) {
-        prepareSiteAndReceiver(receiver, "rightShiftUnsigned", false, controller.getCompileStack().isLHS());
-        controller.getOperandStack().doGroovyCast(Number_TYPE);
-        visitBoxedArgument(arguments);
-        controller.getOperandStack().doGroovyCast(Number_TYPE);
-        MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", "rightShiftUnsigned", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", operator, "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         controller.getOperandStack().replace(Number_TYPE, 2);
     }
 
