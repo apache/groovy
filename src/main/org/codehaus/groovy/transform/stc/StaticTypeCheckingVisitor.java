@@ -783,7 +783,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
             if (argumentListExpression.getExpressions().isEmpty()) {
                 GenericsType[] genericsTypes = lType.getGenericsTypes();
-                if (lType.getGenericsTypes()==null) {
+                if (genericsTypes == null) {
                     // case of def foo = new HashMap<>()
                     genericsTypes = node.redirect().getGenericsTypes();
                 }
@@ -801,6 +801,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode type = getType(argumentListExpression.getExpression(0));
                 if (type.isUsingGenerics()) {
                     GenericsType[] genericsTypes = type.getGenericsTypes();
+                    if (genericsTypes == null) {
+                        genericsTypes = node.redirect().getGenericsTypes();
+                    }
                     GenericsType[] copy = new GenericsType[genericsTypes.length];
                     for (int i = 0; i < genericsTypes.length; i++) {
                         GenericsType genericsType = genericsTypes[i];
