@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.ClassNodeUtils.isInnerClass;
+
 /**
  * Verifier to check non-static access in static contexts
  */
@@ -123,6 +125,16 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression mce) {
+        if (inSpecialConstructorCall && !isInnerClass(currentMethod.getDeclaringClass())) {
+            Expression objectExpression = mce.getObjectExpression();
+            if (objectExpression instanceof VariableExpression) {
+                VariableExpression ve = (VariableExpression) objectExpression;
+                if (ve.isThisExpression()) {
+                    addError("Can't access instance method '" + mce.getMethodAsString() + "' before the class is constructed", mce);
+                    return;
+                }
+            }
+        }
         super.visitMethodCallExpression(mce);
     }
 

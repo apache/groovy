@@ -19,6 +19,74 @@
 package groovy.bugs
 
 class ConstructorThisCallBug extends GroovyTestCase {
+    // GROOVY-7014
+    void testThisCallingInstanceMethod() {
+        def msg = shouldFail '''
+            class Base {
+                String getData() { return "ABCD" }
+                Base() { this(getData()) }
+                Base(String arg) {}
+            }
+        '''
+        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
+    }
+
+    void testThisCallingStaticMethod() {
+        assertScript '''
+            class Base {
+                private String b
+                static String getData() { return "ABCD" }
+                Base() { this(getData()) }
+                Base(String b) { this.b = b }
+                String toString() { b }
+            }
+            assert new Base().toString() == 'ABCD'
+        '''
+    }
+
+    void testInnerClassSuperCallingInstanceMethod() {
+        assertScript '''
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                static String a
+
+                private class Inner extends Parent {
+                   Inner() { super(myA()) }
+                }
+
+                String test() { new Inner().str }
+                String myA() { a }
+            }
+            def o = new Outer()
+            Outer.a = 'ok'
+            assert o.test() == 'ok'
+        '''
+    }
+
+    void testInnerClassSuperCallingStaticProperty() {
+        assertScript '''
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                static String a
+
+                private class Inner extends Parent {
+                   Inner() { super(getA()) }
+                }
+
+                String test() { new Inner().str }
+            }
+            def o = new Outer()
+            Outer.a = 'ok'
+            assert o.test() == 'ok'
+        '''
+    }
+
     // GROOVY-994
     void testCallA() {
         assert new ConstructorCallA("foo").toString() == 'foo'

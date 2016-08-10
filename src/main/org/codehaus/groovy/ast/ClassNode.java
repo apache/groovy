@@ -1296,40 +1296,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if a matching method was found
      */
     public boolean hasPossibleStaticMethod(String name, Expression arguments) {
-        int count = 0;
-
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) arguments;
-            // TODO this won't strictly be true when using list expansion in argument calls
-            count = tuple.getExpressions().size();
-        } else if (arguments instanceof MapExpression) {
-            count = 1;
-        }
-
-        for (MethodNode method : getMethods(name)) {
-            if(method.isStatic()) {
-                Parameter[] parameters = method.getParameters();
-                if (parameters.length == count) return true;
-
-                // handle varargs case
-                if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
-                    if (count >= parameters.length - 1) return true;
-                }
-                
-                // handle parameters with default values
-                int nonDefaultParameters = 0;
-                for (Parameter parameter : parameters) {
-                    if (!parameter.hasInitialExpression()) {
-                        nonDefaultParameters++;
-                    }
-                }
-
-                if (count < parameters.length && nonDefaultParameters <= count) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return ClassNodeUtils.hasPossibleStaticMethod(this, name, arguments, false);
     }
 
     public boolean isInterface(){
