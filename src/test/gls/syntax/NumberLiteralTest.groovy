@@ -32,4 +32,32 @@ public class NumberLiteralTest extends gls.CompilableTestSupport {
         '''
     }
 
+    void testValidIntegerLiterals() {
+        shouldCompile '''
+             def a = 2147483647I
+             def b = -2147483648I
+             def c = -2147483647I
+         '''
+    }
+
+    void testValidLongLiterals() {
+        shouldCompile '''
+             def d = 9223372036854775807L
+             def e = -9223372036854775808L
+             def f = -9223372036854775807L
+        '''
+    }
+
+    void testInvalidIntegerLiteral() {
+        shouldNotCompile '''
+            def n = 2147483648I
+        '''
+    }
+
+    void testInvalidLongLiteral() {
+        shouldNotCompile '''
+            def n = 9223372036854775808L
+        '''
+    }
+
 }
