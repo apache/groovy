@@ -18,27 +18,39 @@
  */
 package groovy.lang;
 
-import java.math.BigDecimal;
-
 /**
- * Tests {@link ObjectRange}s of {@link BigDecimal}s.
- *
- * @author Edwin Tellman
+ * Tests {@link ObjectRange}s of {@link Long}s.
  */
-public class BigDecimalRangeTest extends NumberRangeTest {
+public class LongObjectRangeTest extends NumberRangeTestCase {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        expectNullFromExhausted = true;
+    }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new BigDecimal(from), new BigDecimal(to));
+        return new ObjectRange(new Long(from), new Long(to));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     protected Comparable createValue(int value) {
-        return new BigDecimal(value);
+        return new Long(value);
     }
 
+    public void testSizeWithLongTo() {
+        assertEquals(3, new ObjectRange(new Integer(Integer.MAX_VALUE), new Long(Integer.MAX_VALUE + 2L)).size());
+    }
+
+    // GROOVY-4973: Range made-up of from: Integer and to: Long should have 'from' promoted to type Long.
+    protected void checkRangeValues(Integer from, Comparable to, Range range) {
+        assertEquals("wrong 'from' value", Long.valueOf(from.longValue()), range.getFrom());
+        assertEquals("wrong 'to' value", to, range.getTo());
+    }
 }

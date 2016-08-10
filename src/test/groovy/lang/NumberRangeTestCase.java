@@ -24,13 +24,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Provides unit tests for ranges of numbers.
- *
- * @author Edwin Tellman
  */
-public abstract class NumberRangeTest extends TestCase {
+public abstract class NumberRangeTestCase extends TestCase {
+
+    /**
+     * legacy ranges in Groovy hush exceptions and return null when exhausted
+     */
+    protected boolean expectNullFromExhausted = false;
 
     /**
      * Records the values passed to a closure.
@@ -160,8 +164,8 @@ public abstract class NumberRangeTest extends TestCase {
     public void testOneElementRange() {
         final Range range = createRange(1, 1);
         int next = 1;
-        for (Iterator iter = range.iterator(); iter.hasNext();) {
-            final Number number = (Number) iter.next();
+        for (Object value : range) {
+            final Number number = (Number) value;
             assertEquals("wrong number", createValue(next++), number);
         }
         assertEquals("wrong number of elements in iteration", 2, next);
@@ -425,7 +429,15 @@ public abstract class NumberRangeTest extends TestCase {
             assertEquals("wrong next value", createValue(next++), value);
         }
         assertEquals("wrong number of elements in iteration", 6, next);
-        assertNull("got element after iterator finished", iter.next());
+        if (expectNullFromExhausted) {
+            assertNull("got element after iterator finished", iter.next());
+        } else {
+            try {
+                iter.next();
+                fail("successfully got element from exhausted iterator");
+            } catch(NoSuchElementException ignore) {
+            }
+        }
     }
 
     /**
@@ -450,8 +462,8 @@ public abstract class NumberRangeTest extends TestCase {
     public void testIterateReversed() {
         final Range range = createRange(5, 1);
         int next = 5;
-        for (Iterator iter = range.iterator(); iter.hasNext();) {
-            assertEquals("wrong number", createValue(next--), iter.next());
+        for (Object value : range) {
+            assertEquals("wrong number", createValue(next--), value);
         }
         assertEquals("wrong number of elements in iteration", 0, next);
     }

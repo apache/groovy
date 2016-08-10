@@ -19,24 +19,29 @@
 package groovy.lang;
 
 /**
- * Tests {@link ObjectRange}s of {@link Float}s.
- *
- * @author Edwin Tellman
+ * Tests {@link ObjectRange}s of {@link Integer}s.
  */
-public class FloatRangeTest extends NumberRangeTest {
-
-    /**
-     * {@inheritDoc}
-     */
-    protected Range createRange(int from, int to) {
-        return new ObjectRange(new Float(from), new Float(to));
+public class IntegerObjectRangeTest extends NumberRangeTestCase {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        expectNullFromExhausted = true;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
+    protected Range createRange(int from, int to) {
+        return new ObjectRange(new Integer(from), new Integer(to));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected Comparable createValue(int value) {
-        return new Double(value);
+        return new Integer(value);
     }
 
 }

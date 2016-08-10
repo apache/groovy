@@ -374,7 +374,7 @@ public class EmptyRangeTest extends GroovyTestCase {
      */
     public void testStepIntClosure() {
         final List callLog = new ArrayList();
-        final Closure closure = new NumberRangeTest.RecordingClosure(callLog);
+        final Closure closure = new NumberRangeTestCase.RecordingClosure(callLog);
         range.step(1, closure);
         assertEquals("wrong number of calls to closure", 0, callLog.size());
     }
