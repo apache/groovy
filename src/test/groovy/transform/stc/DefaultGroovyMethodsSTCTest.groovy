@@ -18,11 +18,8 @@
  */
 package groovy.transform.stc
 
-
 /**
  * Unit tests for static type checking : default groovy methods.
- *
- * @author Cedric Champeau
  */
 class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
@@ -123,6 +120,28 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert ListCompilerAndReverser.revlist([["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]) == [9, 8, 7, 6, 5, 4, 3, 2, 1]
+        '''
+    }
+
+    // GROOVY-7283
+    void testArrayMinMaxSupportsOneAndTwoArgClosures() {
+        assertScript '''
+            Date now = new Date()
+            Date then = now + 7
+            def dates = [now, then] as Date[]
+            assert dates.min() == now
+            assert dates.max() == then
+            assert dates.min{ d -> d.time } == now
+            assert dates.max{ d1, d2 -> d2.time <=> d1.time } == now
+        '''
+    }
+
+    // GROOVY-7283
+    void testListWithDefaultInfersInt() {
+        assertScript '''
+            def list = [].withDefault{ it.longValue() }
+            list[0] = list.get(3) // TODO why doesn't getAt work?
+            assert list[0] == 3 && list[0].class == Long
         '''
     }
 }
