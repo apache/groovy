@@ -18,20 +18,44 @@
  */
 package org.codehaus.groovy.control;
 
-import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
-
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Types;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+
+import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 
 /**
  * Visitor to resolve constants and method calls from static Imports
- *
- * @author Jochen Theodorou
- * @author Paul King
  */
 public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
@@ -509,15 +533,19 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return accessor;
     }
 
-    private static boolean hasStaticProperty(ClassNode staticImportType, String propName) {
-        ClassNode classNode = staticImportType;
+    private static boolean hasStaticProperty(ClassNode cNode, String propName) {
+        return getStaticProperty(cNode, propName) != null;
+    }
+
+    private static PropertyNode getStaticProperty(ClassNode cNode, String propName) {
+        ClassNode classNode = cNode;
         while (classNode != null) {
             for (PropertyNode pn : classNode.getProperties()) {
-                if (pn.getName().equals(propName) && pn.isStatic()) return true;
+                if (pn.getName().equals(propName) && pn.isStatic()) return pn;
             }
             classNode = classNode.getSuperClass();
         }
-        return false;
+        return null;
     }
 
     private Expression findStaticPropertyAccessorByFullName(ClassNode staticImportType, String accessorMethodName) {

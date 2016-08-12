@@ -18,8 +18,20 @@
  */
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,14 +40,10 @@ import java.util.List;
 
 /**
  * Verifier to check non-static access in static contexts
- *
- * @author Jochen Theodorou
- * @author Paul King
- * @author <a href="mailto:roshandawrani@codehaus.org">Roshan Dawrani</a>
  */
 public class StaticVerifier extends ClassCodeVisitorSupport {
     private boolean inSpecialConstructorCall;
-    private boolean inPropertyExpression;
+    private boolean inPropertyExpression; // TODO use it or lose it
     private boolean inClosure;
     private MethodNode currentMethod;
     private SourceUnit source;

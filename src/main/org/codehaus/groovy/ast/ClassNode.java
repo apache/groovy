@@ -100,8 +100,6 @@ import java.util.Set;
  * by the class are needed, then a call to {@link #redirect()} will help.
  *
  * @see org.codehaus.groovy.ast.ClassHelper
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jochen Theodorou
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
     private static class MapOfLists {
@@ -1307,10 +1305,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } else if (arguments instanceof MapExpression) {
             count = 1;
         }
-        
+
         for (MethodNode method : getMethods(name)) {
             if(method.isStatic()) {
-                Parameter[] parameters = method.getParameters(); 
+                Parameter[] parameters = method.getParameters();
                 if (parameters.length == count) return true;
 
                 // handle varargs case

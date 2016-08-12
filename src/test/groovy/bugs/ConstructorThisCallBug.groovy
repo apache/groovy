@@ -16,34 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- * ConstructorThisCallBug.groovy
- *
- *     Test Script for the Jira issue: GROOVY-994.
- *
- * @author    Pilho Kim
- * @date      2005.08.05.06.21
- */
-
 package groovy.bugs
 
-public class ConstructorThisCallBug extends GroovyTestCase {
-    public void testCallA() {
-        def a1 = new ConstructorCallA("foo")
-        def a2 = new ConstructorCallA(9) 
-        def a3 = new ConstructorCallA() 
+class ConstructorThisCallBug extends GroovyTestCase {
+    // GROOVY-994
+    void testCallA() {
+        assert new ConstructorCallA("foo").toString() == 'foo'
+        assert new ConstructorCallA(9).toString() == '81'
+        assert new ConstructorCallA().toString() == '100'
+    }
+
+    private static class ConstructorCallA {
+        private String a
+
+        ConstructorCallA(String a) { this.a = a }
+
+        ConstructorCallA(int a) { this("" + (a * a)) } // call another constructor
+
+        ConstructorCallA() { this(10) } // call another constructor
+
+        String toString() { a }
     }
 }
-
-public class ConstructorCallA { 
-    public ConstructorCallA() {
-        this(19)               // call another constructor
-    }
-
-    public ConstructorCallA(String a) {
-    }
-
-    public ConstructorCallA(int a) {
-        this("" + (a*a))       // call another constructor
-    }
-} 
