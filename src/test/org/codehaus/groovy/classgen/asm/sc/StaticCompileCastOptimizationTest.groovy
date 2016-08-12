@@ -18,14 +18,14 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.stc.DefaultGroovyMethodsSTCTest
+import groovy.transform.stc.StaticTypeCheckingTestCase
 
 /**
  * Unit tests for static compilation: DGM method calls.
  *
  * @author Cedric Champeau
  */
-class StaticCompileCastOptimizationTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
+class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldOptimizeAsTypeToSimpleCast() {
         try {
