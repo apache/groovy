@@ -446,10 +446,10 @@ class DocGenerator {
 
     private static class DocUtil {
         static String resolveJdkClassName(String className) {
-            if (className in ['A', 'B', 'E', 'G', 'K', 'S', 'T', 'U', 'V', 'W']) {
+            if (className in 'A'..'Z') {
                 return 'java.lang.Object'
             }
-            if (className in ['T[]', 'E[]', 'K[]']) {
+            if (className in ('A'..'Z').collect{ it + '[]' }) {
                 return 'java.lang.Object[]'
             }
             return className
