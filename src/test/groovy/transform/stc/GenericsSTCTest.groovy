@@ -1813,6 +1813,18 @@ assert result == 'ok'
         '''
     }
 
+    //GROOVY-7713
+    void testClosureReturnNull() {
+        assertScript '''
+            Closure<String> cl = {
+                if (hashCode() > 0) {
+                    return null
+                }
+                'foo'
+            }
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {

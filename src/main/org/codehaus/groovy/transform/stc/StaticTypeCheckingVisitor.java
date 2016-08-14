@@ -171,8 +171,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
+            if (returnStatement.getExpression() == ConstantExpression.NULL) return;
+            if (isNullConstant(returnStatement.getExpression())) return;
             checkReturnType(returnStatement);
-            if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
             if (typeCheckingContext.getEnclosingClosure()!=null) {
                 addClosureReturnType(getType(returnStatement.getExpression()));
             } else if (typeCheckingContext.getEnclosingMethod() != null) {
@@ -4179,7 +4180,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected static boolean isNullConstant(final Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null;
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
     }
 
     protected ClassNode inferMapExpressionType(final MapExpression map) {
