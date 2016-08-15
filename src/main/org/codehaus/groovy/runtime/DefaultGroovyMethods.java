@@ -7903,6 +7903,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return withLazyDefault(self, init);
     }
 
+    @Deprecated
+    public static <T> List<T> withDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
+        return withDefault(self, init);
+    }
+
     /**
      * Decorates a list allowing it to grow when called with a non-existent index value.
      * When called with such values, the list is grown in size and a default value
@@ -7949,6 +7954,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return ListWithDefault.newInstance(self, true, init);
     }
 
+    @Deprecated
+    public static <T> List<T> withLazyDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
+        return ListWithDefault.newInstance(self, true, init);
+    }
+
     /**
      * Decorates a list allowing it to grow when called with a non-existent index value.
      * When called with such values, the list is grown in size and a default value
@@ -7986,6 +7996,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> ListWithDefault<T> withEagerDefault(List<T> self, @ClosureParams(value=SimpleType.class, options="int") Closure<T> init) {
+        return ListWithDefault.newInstance(self, false, init);
+    }
+
+    @Deprecated
+    public static <T> List<T> withEagerDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
         return ListWithDefault.newInstance(self, false, init);
     }
 
