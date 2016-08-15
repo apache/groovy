@@ -141,6 +141,7 @@ ext {
     antVersion = '1.9.7'
     asmVersion = '6.0_ALPHA'
     antlrVersion = '2.7.7'
+    bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.3.1'
     commonsHttpClientVersion = '3.1'
@@ -201,6 +202,7 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
@@ -310,6 +312,15 @@ processResources.doLast {
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
         into sourceSets.main.output.classesDir
+    }
+}
+
+tasks.withType(Jar) {
+    doFirst {
+        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+        }
+        ant.echo('Bridger: ' + ant.properties.stdout)
     }
 }
 
