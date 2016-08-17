@@ -1446,7 +1446,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static GenericsType buildWildcardType(GenericsType origin) {
         ClassNode lowerBound = origin.getType().getPlainNodeReference();
-        if (hasBounds(origin)) {
+        if (hasNonTrivialBounds(origin)) {
             lowerBound.setGenericsTypes(new GenericsType[]{origin});
         }
         ClassNode base = makeWithoutCaching("?");
@@ -1461,7 +1461,7 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
             if (resolved==null) continue;
             GenericsType connection = entry.getValue();
-            if (connection.isPlaceholder() && !hasBounds(connection)) {
+            if (connection.isPlaceholder() && !hasNonTrivialBounds(connection)) {
                 continue;
             }
             if (!compatibleConnection(resolved,connection)) {
@@ -1492,7 +1492,7 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
         ClassNode compareNode;
-        if (hasBounds(resolved)) {
+        if (hasNonTrivialBounds(resolved)) {
             compareNode = getCombinedBoundType(resolved);
             compareNode = compareNode.redirect().getPlainNodeReference();
         } else {
@@ -1750,7 +1750,7 @@ public abstract class StaticTypeCheckingSupport {
             String name = gt.getName();
             GenericsType specType = spec.get(name);
             if (specType!=null) return specType;
-            if (hasBounds(gt)) {
+            if (hasNonTrivialBounds(gt)) {
                 GenericsType newGT = new GenericsType(gt.getType(), applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
                 newGT.setPlaceholder(true);
                 return newGT;
@@ -1770,8 +1770,13 @@ public abstract class StaticTypeCheckingSupport {
         return newGT;
     }
 
-    private static boolean hasBounds(GenericsType gt) {
-        return gt.getLowerBound() != null || gt.getUpperBounds() != null;
+    private static boolean hasNonTrivialBounds(GenericsType gt) {
+        ClassNode[] upperBounds = gt.getUpperBounds();
+        return gt.getLowerBound() != null || gt.isWildcard() ||
+                (upperBounds != null && (
+                        upperBounds.length != 1
+                                || upperBounds[0].isGenericsPlaceHolder()
+                                || !OBJECT_TYPE.equals(upperBounds[0])));
     }
 
     private static ClassNode[] applyGenericsContext(
@@ -1797,7 +1802,7 @@ public abstract class StaticTypeCheckingSupport {
         newBound.setGenericsTypes(applyGenericsContext(spec, bound.getGenericsTypes()));
         if (bound.isGenericsPlaceHolder()) {
             GenericsType[] gt= newBound.getGenericsTypes();
-            boolean hasBounds = hasBounds(gt[0]);
+            boolean hasBounds = hasNonTrivialBounds(gt[0]);
             if (hasBounds || !gt[0].isPlaceholder()) return getCombinedBoundType(gt[0]);
             String placeHolderName = newBound.getGenericsTypes()[0].getName();
             if (!placeHolderName.equals(newBound.getUnresolvedName())) {
@@ -1816,7 +1821,7 @@ public abstract class StaticTypeCheckingSupport {
         //TODO: this method should really return some kind of meta ClassNode
         // representing the combination of all bounds. The code here, just picks
         // something out to be able to proceed and is not actually correct
-        if (hasBounds(genericsType)) {
+        if (hasNonTrivialBounds(genericsType)) {
             if (genericsType.getLowerBound()!=null) return genericsType.getLowerBound();
             if (genericsType.getUpperBounds()!=null) return genericsType.getUpperBounds()[0];
         }
