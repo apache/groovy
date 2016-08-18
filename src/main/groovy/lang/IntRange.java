@@ -415,4 +415,14 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         step(step, adapter);
         return adapter.asList();
     }
+
+    @Override
+    public int hashCode(){
+        int hashCode;
+        final int from = this.getFrom();
+        final int to = this.getTo();
+
+        hashCode = new Integer(((from+to+1)*(from+to))/2).intValue()+to;
+        return hashCode;
+    }
 }
