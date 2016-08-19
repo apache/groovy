@@ -334,6 +334,11 @@ public class InvocationWriter {
         } else {
             sender.visit(acg);
         }
+
+        String methodName = getMethodName(message);
+        if (adapter == invokeMethodOnSuper && methodName != null) {
+            controller.getSuperMethodNames().add(methodName);
+        }
         
         // receiver
         compileStack.pushImplicitThis(implicitThis);

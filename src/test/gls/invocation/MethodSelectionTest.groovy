@@ -430,6 +430,73 @@ public class MethodSelectionTest extends CompilableTestSupport {
           assert 3 == exp.takeBigInteger(new MyInteger("3"))
       '''
   }
+
+  // GROOVY-7655
+  void testOverloadAndSuper() {
+      assertScript '''
+        class A {
+            boolean aCalled = false
+            def myMethod( def item ) {
+                aCalled = true
+            }
+        }
+
+        class B extends A {
+            boolean bCalled = false
+            def myMethod( def item ) {
+                super.myMethod( item+"B" )
+                bCalled = true
+            }
+        }
+
+        class C extends B {
+            boolean cCalled = false
+            def cMethod( def item ) {
+                super.myMethod( item )
+                cCalled = true
+            }
+        }
+
+        def c = new C()
+        c.cMethod( "stuff" )
+
+        assert c.aCalled
+        assert c.bCalled
+        assert c.cCalled
+      '''
+      assertScript '''
+        class A {
+            boolean aCalled = false
+            def myMethod( def item ) {
+                aCalled = true
+            }
+        }
+
+        class B extends A {
+            boolean bCalled = false
+            def myMethod( def item ) {
+                super.myMethod( item+"B" )
+                bCalled = true
+            }
+        }
+
+        class C extends B { }
+        class D extends C {
+            boolean dCalled = false
+            def dMethod( def item ) {
+                super.myMethod( item )
+                dCalled = true
+            }
+        }
+
+        def d = new D()
+        d.dMethod( "stuff" )
+
+        assert d.aCalled
+        assert d.bCalled
+        assert d.dCalled
+      '''
+  }
 }
 
 class Foo3977 {

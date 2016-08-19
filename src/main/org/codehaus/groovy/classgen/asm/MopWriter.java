@@ -79,8 +79,8 @@ public class MopWriter {
             return;
         }
         Set<MopKey> currentClassSignatures = buildCurrentClassSignatureSet(classNode.getMethods());
-        visitMopMethodList(classNode.getMethods(), true, Collections.EMPTY_SET);
-        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures);
+        visitMopMethodList(classNode.getMethods(), true, Collections.EMPTY_SET, Collections.EMPTY_LIST);
+        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures, controller.getSuperMethodNames());
     }
 
     private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
@@ -104,7 +104,7 @@ public class MopWriter {
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
      * @see #generateMopCalls(LinkedList, boolean)
      */
-    private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo) {
+    private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
         HashMap<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
         LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
         for (MethodNode mn : methods) {
@@ -123,7 +123,11 @@ public class MopWriter {
                 continue;
             }
             if (methodName.startsWith("<")) continue;
-            if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, mn.getParameters()))) continue;
+            if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, mn.getParameters())) &&
+                !orNameMentionedHere.contains(methodName))
+            {
+                continue;
+            }
             String name = getMopMethodName(mn, isThis);
             MopKey key = new MopKey(name, mn.getParameters());
             if (mops.containsKey(key)) continue;
