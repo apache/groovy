@@ -138,4 +138,15 @@ class IntRangeTest extends GroovyTestCase {
         assert bs[-1..<-7].toString() == '{0, 5}'
         assert bs[20..<-8].toString() == '{2, 3}'
     }
+
+    void testHashCode(){
+        def maxRange = new IntRange(1,Integer.MAX_VALUE)
+        def rangeWithName = [:]
+        rangeWithName.put(maxRange, "maxRange")
+        def dupRange = new IntRange(1,Integer.MAX_VALUE)
+        assertEquals(rangeWithName.get(dupRange), "maxRange")
+    }
+
+
+
 }
