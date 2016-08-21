@@ -41,7 +41,6 @@ public class ShortTypeHandling {
 
     public static String castToString(Object object) {
         if (object==null) return null;
-        if (object instanceof Class) return (String) object;
         return object.toString();
     }
 
