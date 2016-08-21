@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
@@ -228,10 +229,10 @@ public class StatementWriter {
         Label breakLabel = controller.getCompileStack().getBreakLabel();
 
         mv.visitLabel(continueLabel);
-        Expression bool = loop.getBooleanExpression();
+        BooleanExpression bool = loop.getBooleanExpression();
         boolean boolHandled = false;
-        if (bool instanceof ConstantExpression) {
-            ConstantExpression constant = (ConstantExpression) bool;
+        if (bool.getExpression() instanceof ConstantExpression) {
+            ConstantExpression constant = (ConstantExpression) bool.getExpression();
             if (constant.getValue()==Boolean.TRUE) {
                 boolHandled = true;
                 // do nothing
