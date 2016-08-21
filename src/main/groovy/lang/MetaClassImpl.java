@@ -497,10 +497,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         class MOPIter extends MethodIndexAction {
             boolean useThis;
-            public boolean skipClass(CachedClass clazz) {
-                return !useThis && clazz == theCachedClass;
+
+            @Override
+            public boolean skipClass(Class clazz) {
+                return !useThis && clazz == theClass;
             }
 
+            @Override
             public void methodNameAction(Class clazz, MetaMethodIndex.Entry e) {
                 if (useThis) {
                     if (e.methods == null)
