@@ -33,6 +33,7 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.syntax.TokenUtil.removeAssignment;
 import static org.codehaus.groovy.syntax.Types.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
@@ -40,8 +41,6 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
  * This class is for internal use only!
  * This class will dispatch to the right type adapters according to the 
  * kind of binary expression that is provided.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @author Roshan Dawrani
  */
 public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper {
     
@@ -249,28 +248,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         if (leftBinExpr.getOperation().getType() != LEFT_SQUARE_BRACKET) return false;
         return true;
     }
-    
-    private static int removeAssignment(int op) {
-        switch (op) {
-            case PLUS_EQUAL: return PLUS;
-            case MINUS_EQUAL: return MINUS;
-            case MULTIPLY_EQUAL: return MULTIPLY;
-            case LEFT_SHIFT_EQUAL: return LEFT_SHIFT;
-            case RIGHT_SHIFT_EQUAL: return RIGHT_SHIFT;
-            case RIGHT_SHIFT_UNSIGNED_EQUAL: return RIGHT_SHIFT_UNSIGNED;
-            case LOGICAL_OR_EQUAL: return LOGICAL_OR;
-            case LOGICAL_AND_EQUAL: return LOGICAL_AND;
-            case MOD_EQUAL: return MOD;
-            case DIVIDE_EQUAL: return DIVIDE;
-            case INTDIV_EQUAL: return INTDIV;
-            case POWER_EQUAL: return POWER;
-            case BITWISE_OR_EQUAL: return BITWISE_OR;
-            case BITWISE_AND_EQUAL: return BITWISE_AND;
-            case BITWISE_XOR_EQUAL: return BITWISE_XOR;
-            default: return op;
-        }
-    }
-    
+
     private boolean doAssignmentToArray(BinaryExpression binExp) {
         if (!isAssignmentToArray(binExp)) return false;
         // we need to handle only assignment to arrays combined with an operation
