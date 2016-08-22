@@ -104,4 +104,11 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
        assert j==3
     """   
   }
+
+  void testChainedMultiAssignmentDecl() {
+    def a, b
+    def (c, d) = (a, b) = [1, 2]
+    assert [a, b] == [1, 2]
+    assert [c, d] == [1, 2]
+  }
 }

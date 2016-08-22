@@ -70,4 +70,13 @@ class MultipleAssignmentTest extends CompilableTestSupport {
         assert b == 2
         assert c == null
     }
+
+    void testChainedMultiAssignment() {
+        def a, b, c, d
+        (c, d) = (a, b) = [1, 2]
+        assert [a, b] == [1, 2]
+        assert [c, d] == [1, 2]
+        (c, d) = a = (a, b) = [3, 4]
+        assert [c, d] == [3, 4]
+    }
 }
