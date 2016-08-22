@@ -1443,7 +1443,10 @@ multipleAssignmentDeclaration {Token first = cloneToken(LT(1));}
         (t:typeSpec[false]!)?
         LPAREN^ nls! typeNamePairs[#mods,first] RPAREN!
         ASSIGN^ nls!
-        assignmentExpression[0]
+        (
+          (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) => multipleAssignment[0]
+          | assignmentExpression[0]
+        )
         {#multipleAssignmentDeclaration=#(create(VARIABLE_DEF,"VARIABLE_DEF",first,LT(1)), #mods, #(create(TYPE,"TYPE",first,LT(1)),#t), #multipleAssignmentDeclaration);}
     ;
 
@@ -2330,7 +2333,10 @@ expression[int lc_stmt]
 multipleAssignment[int lc_stmt] {Token first = cloneToken(LT(1));}
     :   LPAREN^ nls! listOfVariables[null,null,first] RPAREN!
         ASSIGN^ nls!
-        assignmentExpression[lc_stmt]
+        (
+          (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) => multipleAssignment[lc_stmt]
+          | assignmentExpression[lc_stmt]
+        )
     ;
 
 
