@@ -66,6 +66,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
@@ -717,11 +718,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
         VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
-        MethodCallExpression call = new MethodCallExpression(
-                ve,
-                setterInfo.name,
-                rightExpression
-        );
+        // for compound assignment "x op= y" find type as if it was "x = (x op y)"
+        final Expression newRightExpression = isCompoundAssignment(expression)
+                ? new BinaryExpression(leftExpression, getOpWithoutEqual(expression), rightExpression)
+                : rightExpression;
+        MethodCallExpression call = new MethodCallExpression(ve, setterInfo.name, newRightExpression);
         call.setImplicitThis(false);
         visitMethodCallExpression(call);
         MethodNode directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -731,11 +732,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
                 if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
-                    call = new MethodCallExpression(
-                            ve,
-                            setterInfo.name,
-                            new CastExpression(type,rightExpression)
-                    );
+                    call = new MethodCallExpression(ve, setterInfo.name, new CastExpression(type, newRightExpression));
                     call.setImplicitThis(false);
                     visitMethodCallExpression(call);
                     directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -749,16 +746,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == directSetterCandidate) {
                     leftExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
-                    storeType(leftExpression, getType(rightExpression));
+                    storeType(leftExpression, getType(newRightExpression));
                     break;
                 }
             }
         } else {
             ClassNode firstSetterType = setterInfo.setters.iterator().next().getParameters()[0].getOriginType();
-            addAssignmentError(firstSetterType, getType(rightExpression), expression);
+            addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
         return false;
+    }
+
+    private boolean isCompoundAssignment(Expression exp) {
+        if (!(exp instanceof BinaryExpression)) return false;
+        int type = ((BinaryExpression) exp).getOperation().getType();
+        return isAssignment(type) && type != ASSIGN;
+    }
+
+    private Token getOpWithoutEqual(Expression exp) {
+        if (!(exp instanceof BinaryExpression)) return null; // should never happen
+        Token op = ((BinaryExpression) exp).getOperation();
+        int typeWithoutEqual = TokenUtil.removeAssignment(op.getType());
+        return new Token(typeWithoutEqual, op.getText() /* will do */, op.getStartLine(), op.getStartColumn());
     }
 
     protected ClassNode getOriginalDeclarationType(Expression lhs) {
