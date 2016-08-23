@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
@@ -341,6 +342,13 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformClosureExpression(ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
+        if (ce.getParameters() != null) {
+            for (Parameter p : ce.getParameters()) {
+                if (p.hasInitialExpression()) {
+                    p.setInitialExpression(transform(p.getInitialExpression()));
+                }
+            }
+        }
         Statement code = ce.getCode();
         if (code != null) code.visit(this);
         inClosure = oldInClosure;
