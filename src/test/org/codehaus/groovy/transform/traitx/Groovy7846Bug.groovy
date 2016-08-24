@@ -25,27 +25,25 @@ class Groovy7846Bug extends GroovyTestCase {
     void testTraitsShouldAllowGenerifiedReturnTypesInStaticMethods() {
         def cl = new GroovyClassLoader()
         cl.parseClass('''
+            class Foo {
+                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
+                    callable.call()
+                }
+            }
 
-class Foo {
-    static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
-        callable.call()
-    }
-}
-trait TraitWithStaticMethod<D>  {
+            trait TraitWithStaticMethod<D>  {
+                Collection<D> asCollection(D type) {
+                    return [type]
+                }
 
-    static Collection<D> asCollection(D type) {
-        return [type]
-    }
-
-    static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
-        callable.call()
-    }
-}
-''')
+                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
+                    callable.call()
+                }
+            }
+        ''')
         Class cls = cl.parseClass('''
-class Bar implements TraitWithStaticMethod<Bar> {}
-
-''')
+            class Bar implements TraitWithStaticMethod<Bar> {}
+        ''')
 
         assert new ClassNode(cls).methods
         assert cls.withClient { true }

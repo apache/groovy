@@ -1308,7 +1308,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Done extends Base<Done> { }
             class Next<H, T extends Base<T>> extends Base<Next<H, T>> {
                 H head; T tail
-                static Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
+                static <H, T extends Base<T>> Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
                 String toString() { "Next($head, ${tail.toString()})" }
             }
 
