@@ -180,7 +180,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<String, GenericsType> oldPNames = genericParameterNames;
-        genericParameterNames = new HashMap<String, GenericsType>(genericParameterNames);
+        genericParameterNames = node.isStatic()
+                ? new HashMap<String, GenericsType>()
+                : new HashMap<String, GenericsType>(genericParameterNames);
 
         resolveGenericsHeader(node.getGenericsTypes());
 
@@ -199,8 +201,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
-        currentMethod = oldCurrentMethod;
 
+        currentMethod = oldCurrentMethod;
         genericParameterNames = oldPNames;
         currentScope = oldScope;
     }
@@ -214,10 +216,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     public void visitProperty(PropertyNode node) {
+        Map<String, GenericsType> oldPNames = genericParameterNames;
+        if (node.isStatic()) {
+            genericParameterNames = new HashMap<String, GenericsType>();
+        }
+
         ClassNode t = node.getType();
         resolveOrFail(t, node);
         super.visitProperty(node);
         fieldTypesChecked.add(node.getField());
+
+        genericParameterNames = oldPNames;
     }
 
     private boolean resolveToInner (ClassNode type) {
