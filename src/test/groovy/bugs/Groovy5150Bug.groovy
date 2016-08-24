@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import junit.framework.TestCase
+import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
@@ -124,6 +125,7 @@ class Groovy5150Bug extends GroovyTestCase {
             }
         '''
             def loader = new GroovyClassLoader(this.class.classLoader)
+            config.setClasspathList ([getClasspathElement(this.class), getClasspathElement(GroovyTestCase),  getClasspathElement(TestCase)])
             def cu = new JavaAwareCompilationUnit(config, loader)
             cu.addSources([b] as File[])
             cu.compile()
@@ -132,6 +134,12 @@ class Groovy5150Bug extends GroovyTestCase {
             config.targetDirectory.deleteDir()
             config.jointCompilationOptions.stubDir.deleteDir()
         }
+    }
+
+    private static getClasspathElement(Class c) {
+        def codeSource = c.protectionDomain.codeSource
+        def file = new File(codeSource.getLocation().toURI()).getPath()
+        return file.toString()
     }
 
     void testShouldAllowCharConstantInSwitchWithStubs() {
