@@ -640,15 +640,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // GROOVY-3726: clear volatile, transient modifiers so that they don't get applied to methods
         if ((propNodeModifiers & Modifier.VOLATILE) != 0) {
-            propNodeModifiers = propNodeModifiers - Modifier.VOLATILE;
+            propNodeModifiers -= Modifier.VOLATILE;
         }
         if ((propNodeModifiers & Modifier.TRANSIENT) != 0) {
-            propNodeModifiers = propNodeModifiers - Modifier.TRANSIENT;
+            propNodeModifiers -= Modifier.TRANSIENT;
         }
 
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
-            MethodNode getter = classNode.getGetterMethod(getterName);
+            MethodNode getter = classNode.getGetterMethod(getterName, !node.isStatic());
             if (getter == null && ClassHelper.boolean_TYPE == node.getType()) {
                 String secondGetterName = "is" + capitalize(name);
                 getter = classNode.getGetterMethod(secondGetterName);
@@ -668,9 +668,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
+        int getterModifiers = propNodeModifiers;
+        // don't make static accessors final
+        if (node.isStatic() && (propNodeModifiers & Modifier.FINAL) != 0) {
+            getterModifiers -= Modifier.FINAL;
+        }
         if (getterBlock != null) {
             MethodNode getter =
-                    new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+                    new MethodNode(getterName, getterModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
             addPropertyMethod(getter);
             visitMethod(getter);
@@ -678,7 +683,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (ClassHelper.boolean_TYPE == node.getType() || ClassHelper.Boolean_TYPE == node.getType()) {
                 String secondGetterName = "is" + capitalize(name);
                 MethodNode secondGetter =
-                        new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+                        new MethodNode(secondGetterName, getterModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
                 addPropertyMethod(secondGetter);
                 visitMethod(secondGetter);
