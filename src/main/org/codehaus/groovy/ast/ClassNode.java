@@ -1078,6 +1078,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public MethodNode getGetterMethod(String getterName) {
+        return getGetterMethod(getterName, true);
+    }
+
+    public MethodNode getGetterMethod(String getterName, boolean searchSuperClasses) {
         MethodNode getterMethod = null;
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (getterName.equals(method.getName())
@@ -1093,8 +1097,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
         if (getterMethod != null) return getterMethod;
-        ClassNode parent = getSuperClass();
-        if (parent!=null) return parent.getGetterMethod(getterName);
+        if (searchSuperClasses) {
+            ClassNode parent = getSuperClass();
+            if (parent != null) return parent.getGetterMethod(getterName);
+        }
         return null;
     }
 
