@@ -1025,7 +1025,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
 
-   /**
+    /**
      * <p>Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
      *
@@ -2371,7 +2371,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         for (CachedClass klass : superClasses) {
             SingleKeyHashMap propertyIndex = classPropertyIndex.getNotNull(klass);
             if (last != null) {
-                copyNonPrivateFields(last, propertyIndex);
+                copyNonPrivateFields(last, propertyIndex, klass);
             }
             last = propertyIndex;
             addFields(klass, propertyIndex);
@@ -2386,12 +2386,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to) {
+        copyNonPrivateFields(from, to, null);
+    }
+
+    private static void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to, CachedClass klass) {
         for (ComplexKeyHashMap.EntryIterator iter = from.getEntrySetIterator(); iter.hasNext();) {
             SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) iter.next();
             CachedField mfp = (CachedField) entry.getValue();
-            if (!Modifier.isPublic(mfp.getModifiers()) && !Modifier.isProtected(mfp.getModifiers())) continue;
+            if (!inheritedOrPublic(mfp) && !packageLocal(mfp, klass)) continue;
             to.put(entry.getKey(), mfp);
         }
+    }
+
+    private static boolean inheritedOrPublic(CachedField mfp) {
+        return Modifier.isPublic(mfp.getModifiers()) || Modifier.isProtected(mfp.getModifiers());
+    }
+
+    private static boolean packageLocal(CachedField mfp, CachedClass klass) {
+        if ((mfp.getModifiers() & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) != 0 || klass == null)
+            return false;
+        Package fieldPackage = mfp.field.getDeclaringClass().getPackage();
+        Package classPackage = klass.getTheClass().getPackage();
+        return (fieldPackage == null && classPackage == null) ||
+                fieldPackage != null && classPackage != null && fieldPackage.getName().equals(classPackage.getName());
     }
 
     private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Index classPropertyIndex, boolean isThis) {
