@@ -837,19 +837,37 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
         if (objectExpression instanceof ClassExpression && pe.getPropertyAsString() != null) {
-            // possibly an inner class
+            // possibly an inner class (or inherited inner class)
             ClassExpression ce = (ClassExpression) objectExpression;
-            ClassNode type = new ConstructedNestedClass(ce.getType(), pe.getPropertyAsString());
-            if (resolve(type, false, false, false)) {
-                Expression ret = new ClassExpression(type);
-                ret.setSourcePosition(ce);
-                return ret;
+            ClassNode classNode = ce.getType();
+            while (classNode != null) {
+                ClassNode type = new ConstructedNestedClass(classNode, pe.getPropertyAsString());
+                if (resolve(type, false, false, false)) {
+                    if (classNode == ce.getType() || isVisibleNestedClass(type, ce.getType())) {
+                        Expression ret = new ClassExpression(type);
+                        ret.setSourcePosition(ce);
+                        return ret;
+                    }
+                }
+                classNode = classNode.getSuperClass();
             }
         }
         Expression ret = pe;
         checkThisAndSuperAsPropertyAccess(pe);
         if (isTopLevelProperty) ret = correctClassClassChain(pe);
         return ret;
+    }
+
+    private boolean isVisibleNestedClass(ClassNode type, ClassNode ceType) {
+        if (!type.isRedirectNode()) return false;
+        ClassNode redirect = type.redirect();
+        if (Modifier.isPublic(redirect.getModifiers()) || Modifier.isProtected(redirect.getModifiers())) return true;
+        // package local
+        PackageNode classPackage = ceType.getPackage();
+        PackageNode nestedPackage = redirect.getPackage();
+        return (redirect.getModifiers() & (Modifier.PROTECTED | Modifier.PUBLIC | Modifier.PRIVATE)) == 0 &&
+                ((classPackage == null && nestedPackage == null) ||
+                        classPackage != null && nestedPackage != null && classPackage.getName().equals(nestedPackage.getName()));
     }
 
     private boolean directlyImplementsTrait(ClassNode trait) {
