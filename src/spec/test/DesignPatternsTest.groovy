@@ -204,7 +204,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             // tag::adapter_inheritance_usage[]
             def hole = new RoundHole(radius: 4.0)
             (4..7).each { w ->
-                def peg = new SquarePegAdapter(peg: new SquarePeg(width: w))
+                def peg = new SquarePegAdapter(width: w)
                 if (hole.pegFits(peg)) {
                     println "peg $peg fits in hole $hole"
                 } else {
