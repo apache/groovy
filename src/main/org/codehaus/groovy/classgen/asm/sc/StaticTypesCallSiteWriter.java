@@ -662,11 +662,20 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 ClassNode current = rType;
                 MethodNode getAtNode = null;
                 while (current!=null && getAtNode==null) {
-                    getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
+                    getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
+                    if (getAtNode == null) {
+                        getAtNode = getCompatibleMethod(current, "getAt", aType);
+                    }
                     if (getAtNode==null && isPrimitiveType(aType)) {
-                        getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(getWrapper(aType), "index")});
+                        getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getWrapper(aType), "index")});
+                        if (getAtNode == null) {
+                            getAtNode = getCompatibleMethod(current, "getAt", getWrapper(aType));
+                        }
                     } else if (getAtNode==null && aType.isDerivedFrom(Number_TYPE)) {
-                        getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(getUnwrapper(aType), "index")});
+                        getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getUnwrapper(aType), "index")});
+                        if (getAtNode == null) {
+                            getAtNode = getCompatibleMethod(current, "getAt", getUnwrapper(aType));
+                        }
                     }
                     current = current.getSuperClass();
                 }
@@ -724,6 +733,21 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
         return false;
+    }
+
+    private MethodNode getCompatibleMethod(ClassNode current, String getAt, ClassNode aType) {
+        // TODO this really should find "best" match or find all matches and complain about ambiguity if more than one
+        // TODO handle getAt with more than one parameter
+        // TODO handle default getAt methods on Java 8 interfaces
+        for (MethodNode methodNode : current.getDeclaredMethods("getAt")) {
+            if (methodNode.getParameters().length == 1) {
+                ClassNode paramType = methodNode.getParameters()[0].getType();
+                if (aType.isDerivedFrom(paramType) || aType.declaresInterface(paramType)) {
+                    return methodNode;
+                }
+            }
+        }
+        return null;
     }
 
     private void writeArrayGet(final Expression receiver, final Expression arguments, final ClassNode rType, final ClassNode aType) {
