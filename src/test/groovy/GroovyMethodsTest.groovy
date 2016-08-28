@@ -1540,6 +1540,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [] == [].intersect([4, 5, 6, 7, 8])
         assert [] == [1, 2, 3, 4, 5].intersect([])
         assert [4, 5] == [1, 2, 3, 4, 5].intersect([4, 5, 6, 7, 8])
+        assert [[0, 1]] == [[0, 0], [0, 1]].intersect([[0, 1], [1, 1]])
     }
 
     void testIntersectForIterables() {
@@ -1555,12 +1556,17 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [4, 5] == iterableA.intersect(iterableB)
     }
 
-    // GROOVY-7602
     void testIntersectForMaps() {
+        // GROOVY-7602
         def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
         def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
         def intersection = list1.intersect(list2)
         assert intersection == [[language: 'Groovy'], [language: 'Java']]
+
+        def locs1 = [[loc: [0, 1]], [loc: [1, 1]]]
+        def locs2 = [[loc: [2, 1]], [loc: [1, 1]]]
+        def locInter = [[loc: [1, 1]]]
+        assert [[loc: [1, 1]]] == locs1.intersect(locs2)
     }
 
     // GROOVY-7602
@@ -1572,11 +1578,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert c1.intersect(c2)
     }
 
-    // GROOVY-7530
     void testDisjointForMaps() {
+        // GROOVY-7530
         def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
         def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
         assert !list1.disjoint(list2)
+
+        def locs1 = [[loc: [0, 1]], [loc: [1, 1]]]
+        def locs2 = [[loc: [2, 1]], [loc: [1, 1]]]
+        assert !locs1.disjoint(locs2)
     }
 
     class Foo {
@@ -1610,6 +1620,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 3, 4, 5].disjoint([])
         assert ![1, 2, 3, 4, 5].disjoint([4, 5, 6, 7, 8])
         assert [1, 2, 3].disjoint([4, 5, 6, 7, 8])
+        assert ![[0, 0], [0, 1]].disjoint([[0, 1], [1, 1]])
     }
 
     void testDisjointForIterables() {
