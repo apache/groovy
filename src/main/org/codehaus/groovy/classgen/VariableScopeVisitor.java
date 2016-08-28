@@ -385,10 +385,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // TODO handle local variables
     private void checkForFinal(final Expression expression, VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        boolean isFinal = isFinal(v.getModifiers());
-        boolean isParameter = v instanceof Parameter;
-        if (isFinal && isParameter) {
-            addError("Cannot assign a value to final variable '" + v.getName() + "'", expression);
+        if (v != null) {
+            boolean isFinal = isFinal(v.getModifiers());
+            boolean isParameter = v instanceof Parameter;
+            if (isFinal && isParameter) {
+                addError("Cannot assign a value to final variable '" + v.getName() + "'", expression);
+            }
         }
     }
 
