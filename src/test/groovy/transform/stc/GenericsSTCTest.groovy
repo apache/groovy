@@ -1542,11 +1542,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6135
     void testGenericField() {
         assertScript '''
-            import javax.xml.ws.Holder
-
-            Holder<Integer> holder = new Holder<Integer>()
-            holder.value = 5
-            assert holder.value > 4
+            class MyClass {
+                static void main(args) {
+                    Holder<Integer> holder = new Holder<Integer>()
+                    holder.value = 5
+                    assert holder.value > 4
+                }
+                private static class Holder<T> {
+                    T value
+                }
+            }
         '''
     }
 
