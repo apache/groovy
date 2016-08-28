@@ -25,9 +25,6 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.lang.ref.PhantomReference;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -43,38 +40,37 @@ public class ClassInfo {
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
-    public final int hash;
+    public final int hash = -1;
     private final Class klazz;
 
-    private volatile int version;
+    private final AtomicInteger version = new AtomicInteger();
 
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
-    
-    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
-    private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
-    
+
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+
     private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
-		@Override
-		public ClassInfo computeValue(Class<?> type) {
-			ClassInfo ret = new ClassInfo(type);
-			globalClassSet.add(ret);
-			return ret;
-		}
-	});
-    
+        @Override
+        public ClassInfo computeValue(Class<?> type) {
+            ClassInfo ret = new ClassInfo(type);
+            globalClassSet.add(ret);
+            return ret;
+        }
+    });
+
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
-    	this.hash = System.identityHashCode(klazz);
-    	this.klazz = klazz;
+        this.klazz = klazz;
         if (ClassInfo.DebugRef.debug)
-          new DebugRef(klazz);
+            new DebugRef(klazz);
         new ClassInfoCleanup(this);
 
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
@@ -82,11 +78,11 @@ public class ClassInfo {
     }
 
     public int getVersion() {
-        return version;
+        return version.get();
     }
 
     public void incVersion() {
-        version++;
+        version.incrementAndGet();
         VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
@@ -99,12 +95,12 @@ public class ClassInfo {
 
     public static void clearModifiedExpandos() {
         synchronized(modifiedExpandos){
-	        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-	            ClassInfo info = it.next();
-	            it.remove();
-	            info.setStrongMetaClass(null);
-	        }
-	    }
+            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+                ClassInfo info = it.next();
+                it.remove();
+                info.setStrongMetaClass(null);
+            }
+        }
     }
 
     public CachedClass getCachedClass() {
@@ -116,32 +112,14 @@ public class ClassInfo {
     }
 
     public static ClassInfo getClassInfo (Class cls) {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.get(cls);
-        return (ClassInfo) globalClassValue.get(cls);
-    }
-
-    private static LocalMap getLocalClassInfoMap() {
-        ThreadLocalMapHandler handler = localMapRef.get();
-        SoftReference<LocalMap> ref=null;
-        if (handler!=null) ref = handler.get();
-        LocalMap map=null;
-        if (ref!=null) map = ref.get();
-        return map;
+        return globalClassValue.get(cls);
     }
 
     public static Collection<ClassInfo> getAllClassInfo () {
-        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
-        return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
+        return getAllGlobalClassInfo();
     }
 
     public static void onAllClassInfo(ClassInfoAction action) {
-        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
-        if (localClassInfos!=null) {
-            for (ClassInfo localClassInfo : localClassInfos) {
-                action.onClassInfo(localClassInfo);
-            }
-        }
         for (ClassInfo classInfo : getAllGlobalClassInfo()) {
             action.onClassInfo(classInfo);
         }
@@ -151,48 +129,42 @@ public class ClassInfo {
         return globalClassSet.values();
     }
 
-    private static Collection<ClassInfo> getAllLocalClassInfo() {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.values();
-        return globalClassSet.values();
-    }
-
     public MetaClass getStrongMetaClass() {
         return strongMetaClass;
     }
 
     public void setStrongMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
         MetaClass strongRef = strongMetaClass;
-        
+
         if (strongRef instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)strongRef).inRegistry = false;
-          synchronized(modifiedExpandos){
-            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-              ClassInfo info = it.next();
-              if(info == this){
-                it.remove();
-              }
+            ((ExpandoMetaClass)strongRef).inRegistry = false;
+            synchronized(modifiedExpandos){
+                for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+                    ClassInfo info = it.next();
+                    if(info == this){
+                        it.remove();
+                    }
+                }
             }
-          }
         }
 
         strongMetaClass = answer;
 
         if (answer instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)answer).inRegistry = true;
-          synchronized(modifiedExpandos){
-            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-              ClassInfo info = it.next();
-                if(info == this){
-                  it.remove();
+            ((ExpandoMetaClass)answer).inRegistry = true;
+            synchronized(modifiedExpandos){
+                for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+                    ClassInfo info = it.next();
+                    if(info == this){
+                        it.remove();
+                    }
                 }
-             }
-             modifiedExpandos.add(this);
-          }
+                modifiedExpandos.add(this);
+            }
         }
 
         replaceWeakMetaClassRef(null);
@@ -206,7 +178,7 @@ public class ClassInfo {
     }
 
     public void setWeakMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         strongMetaClass = null;
         ManagedReference<MetaClass> newRef = null;
@@ -241,11 +213,11 @@ public class ClassInfo {
     private MetaClass getMetaClassUnderLock() {
         MetaClass answer = getStrongMetaClass();
         if (answer!=null) return answer;
-        
+
         answer = getWeakMetaClass();
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
-        
+
         if (isValidWeakMetaClass(answer, mccHandle)) {
             return answer;
         }
@@ -260,7 +232,7 @@ public class ClassInfo {
         }
         return answer;
     }
-    
+
     private static boolean isValidWeakMetaClass(MetaClass metaClass) {
         return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
     }
@@ -322,7 +294,7 @@ public class ClassInfo {
                 cachedClass = new BigDecimalCachedClass(klazz, classInfo);
             } else if (klazz == Long.class || klazz == Long.TYPE) {
                 cachedClass = new LongCachedClass(klazz, classInfo, klazz==Long.class);
-            } else if (klazz == Float.class || klazz == Float.TYPE) { 
+            } else if (klazz == Float.class || klazz == Float.TYPE) {
                 cachedClass = new FloatCachedClass(klazz, classInfo, klazz==Float.class);
             } else if (klazz == Short.class || klazz == Short.TYPE) {
                 cachedClass = new ShortCachedClass(klazz, classInfo, klazz==Short.class);
@@ -339,7 +311,7 @@ public class ClassInfo {
             }
         } else {
             if (klazz.getName().charAt(0) == '[')
-              cachedClass = new ArrayCachedClass(klazz, classInfo);
+                cachedClass = new ArrayCachedClass(klazz, classInfo);
             else if (klazz == Boolean.class) {
                 cachedClass = new BooleanCachedClass(klazz, classInfo, true);
             } else if (klazz == Character.class) {
@@ -354,7 +326,7 @@ public class ClassInfo {
         }
         return cachedClass;
     }
-    
+
     private static boolean isSAM(Class<?> c) {
         return CachedSAMClass.getSAMMethod(c) !=null;
     }
@@ -369,120 +341,29 @@ public class ClassInfo {
 
     public MetaClass getPerInstanceMetaClass(Object obj) {
         if (perInstanceMetaClassMap == null)
-          return null;
+            return null;
 
-        return (MetaClass) perInstanceMetaClassMap.get(obj);
+        return perInstanceMetaClassMap.get(obj);
     }
 
     public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
-        version++;
+        version.incrementAndGet();
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ManagedConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle()); 
+                perInstanceMetaClassMap = new ManagedConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle());
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }
         else {
             if (perInstanceMetaClassMap != null) {
-              perInstanceMetaClassMap.remove(obj);
+                perInstanceMetaClassMap.remove(obj);
             }
         }
     }
 
     public boolean hasPerInstanceMetaClasses () {
         return perInstanceMetaClassMap != null;
-    }
-
-    private static final class LocalMap extends HashMap<Class,ClassInfo> {
-
-        private static final int CACHE_SIZE = 5;
-
-        // We use a PhantomReference or a WeakReference for the Thread
-        // because the ThreadLocal manages a map with the thread as key.
-        // If we make a strong reference to the thread here, then it is 
-        // possible, that the map cannot be cleaned. If the number of 
-        // threads is not limited, then this map may consume too much memory
-        // This reference here is unmanaged (queue==null) because if the map 
-        // key gets collected, the reference will too. 
-        private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
-
-        private int nextCacheEntry;
-
-        private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
-        private static final ClassInfo NOINFO = new ClassInfo(Void.class);
-
-        private LocalMap() {
-            for (int i = 0; i < cache.length; i++) {
-                cache[i] = NOINFO;
-            }
-        }
-
-        public ClassInfo get(Class key) {
-            ClassInfo info = getFromCache(key);
-            if (info != null)
-              return info;
-
-            info = super.get(key);
-            if (info != null)
-              return putToCache(info);
-
-            return putToCache((ClassInfo) globalClassValue.get(key));
-        }
-
-        private ClassInfo getFromCache (Class klazz) {
-            for (int i = 0, k = nextCacheEntry-1; i < cache.length; i++, k--) {
-                if (k < 0)
-                  k += CACHE_SIZE;
-
-                final ClassInfo info = cache[k];
-                if (klazz == info.klazz) {
-                    nextCacheEntry = k+1;
-                    if (nextCacheEntry == CACHE_SIZE)
-                      nextCacheEntry = 0;
-                    return info;
-                }
-            }
-            return null;
-        }
-
-        private ClassInfo putToCache (ClassInfo classInfo) {
-            cache [nextCacheEntry++] = classInfo;
-            if (nextCacheEntry == CACHE_SIZE)
-              nextCacheEntry = 0;
-            return classInfo;
-        }
-    }
-
-    private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
-        SoftReference<LocalMap> recentThreadMapRef;
-        
-        protected SoftReference<LocalMap> initialValue() {
-            return new SoftReference(new LocalMap(),null);
-        }
-
-        public SoftReference<LocalMap> get() {
-            SoftReference<LocalMap> mapRef = recentThreadMapRef;
-            LocalMap recent = null;
-            if (mapRef!=null) recent = mapRef.get();
-            // we don't need to handle myThread.get()==null, because in that
-            // case the thread has been collected, meaning the entry for the
-            // thread is invalid anyway, so it is valid if recent has a 
-            // different value. 
-            if (recent != null && recent.myThread.get() == Thread.currentThread()) {
-                return mapRef;
-            } else {
-                SoftReference<LocalMap> ref = super.get();
-                recentThreadMapRef = ref;
-                return ref;
-            }
-        }
-    }
-    
-    private static final WeakReference<ThreadLocalMapHandler> localMapRef;
-    static {
-        ThreadLocalMapHandler localMap = new ThreadLocalMapHandler();
-        localMapRef = new WeakReference<ThreadLocalMapHandler>(localMap,null);
     }
 
     private static class LazyCachedClassRef extends LazyReference<CachedClass> {
@@ -510,7 +391,7 @@ public class ClassInfo {
             return new ClassLoaderForClassArtifacts(info.klazz);
         }
     }
-    
+
     private static class ClassInfoCleanup extends ManagedReference<ClassInfo> {
 
         public ClassInfoCleanup(ClassInfo classInfo) {
@@ -518,10 +399,10 @@ public class ClassInfo {
         }
 
         public void finalizeRef() {
-        	ClassInfo classInfo = get();
-        	classInfo.setStrongMetaClass(null);
-        	classInfo.cachedClassRef.clear();
-        	classInfo.artifactClassLoader.clear();
+            ClassInfo classInfo = get();
+            classInfo.setStrongMetaClass(null);
+            classInfo.cachedClassRef.clear();
+            classInfo.artifactClassLoader.clear();
         }
     }
 
@@ -543,30 +424,30 @@ public class ClassInfo {
             super.finalizeReference();
         }
     }
-    
+
     private static class GlobalClassSet {
-    	
-    	private ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
-    	
-    	public int size(){
-		return values().size();
-    	}
-    	
-    	public int fullSize(){
-		return values().size();
-    	}
-    	
-    	public Collection<ClassInfo> values(){
-    		synchronized(items){
-    			return Arrays.asList(items.toArray(new ClassInfo[0]));
-    		}
-    	}
-    	
-    	public void add(ClassInfo value){
-    		synchronized(items){
-    			items.add(value);
-    		}
-    	}
+
+        private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
+
+        public int size(){
+            return values().size();
+        }
+
+        public int fullSize(){
+            return values().size();
+        }
+
+        public Collection<ClassInfo> values(){
+            synchronized(items){
+                return Arrays.asList(items.toArray(new ClassInfo[0]));
+            }
+        }
+
+        public void add(ClassInfo value){
+            synchronized(items){
+                items.add(value);
+            }
+        }
 
     }
 
