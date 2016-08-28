@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.util.Finalizable;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 
@@ -39,6 +40,15 @@ class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
 		@Override
 		public void setValue(T value) {
 			if(value!=null) super.setValue(value);
+		}
+
+		@Override
+		public void finalizeReference() {
+			T value = getValue();
+			if (value instanceof Finalizable) {
+				((Finalizable) value).finalizeReference();
+			}
+			super.finalizeReference();
 		}
 	}
 

@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -32,16 +33,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handle for all information we want to keep about the class
+ * <p>
+ * This class handles caching internally and its advisable to not store
+ * references directly to objects of this class.  The static factory method
+ * {@link ClassInfo#getClassInfo(Class)} should be used to retrieve an instance
+ * from the cache.  Internally the {@code Class} associated with a {@code ClassInfo}
+ * instance is kept as {@link WeakReference}, so it not safe to reference
+ * and instance without the Class being either strongly or softly reachable.
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo {
+public class ClassInfo implements Finalizable {
 
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
     public final int hash = -1;
-    private final Class klazz;
+    private final WeakReference<Class<?>> klazz;
 
     private final AtomicInteger version = new AtomicInteger();
 
@@ -68,11 +76,7 @@ public class ClassInfo {
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
-        this.klazz = klazz;
-        if (ClassInfo.DebugRef.debug)
-            new DebugRef(klazz);
-        new ClassInfoCleanup(this);
-
+    	this.klazz = new WeakReference<Class<?>>(klazz);
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
@@ -101,6 +105,19 @@ public class ClassInfo {
                 info.setStrongMetaClass(null);
             }
         }
+    }
+
+    /**
+     * Returns the {@code Class} associated with this {@code ClassInfo}.
+     * <p>
+     * This method can return {@code null} if the {@code Class} is no longer reachable
+     * through any strong or soft references.  A non-null return value indicates that this
+     * {@code ClassInfo} is valid.
+     *
+     * @return the {@code Class} associated with this {@code ClassInfo}, else {@code null}
+     */
+    public final Class<?> getTheClass() {
+        return klazz.get();
     }
 
     public CachedClass getCachedClass() {
@@ -222,7 +239,7 @@ public class ClassInfo {
             return answer;
         }
 
-        answer = mccHandle.create(klazz, metaClassRegistry);
+        answer = mccHandle.create(klazz.get(), metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
@@ -248,6 +265,17 @@ public class ClassInfo {
         return (!enableGloballyOn || cachedAnswerIsEMC);
     }
 
+    /**
+     * Returns the {@code MetaClass} for the {@code Class} associated with this {@code ClassInfo}.
+     * If no {@code MetaClass} exists one will be created.
+     * <p>
+     * It is not safe to call this method without a {@code Class} associated with this {@code ClassInfo}.
+     * It is advisable to aways retrieve a ClassInfo instance from the cache by using the static
+     * factory method {@link ClassInfo#getClassInfo(Class)} to ensure the referenced Class is
+     * strongly reachable.
+     *
+     * @return a {@code MetaClass} instance
+     */
     public final MetaClass getMetaClass() {
         MetaClass answer = getMetaClassForClass();
         if (answer != null) return answer;
@@ -375,7 +403,7 @@ public class ClassInfo {
         }
 
         public CachedClass initValue() {
-            return createCachedClass(info.klazz, info);
+            return createCachedClass(info.klazz.get(), info);
         }
     }
 
@@ -388,41 +416,15 @@ public class ClassInfo {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return new ClassLoaderForClassArtifacts(info.klazz);
+            return new ClassLoaderForClassArtifacts(info.klazz.get());
         }
     }
 
-    private static class ClassInfoCleanup extends ManagedReference<ClassInfo> {
-
-        public ClassInfoCleanup(ClassInfo classInfo) {
-            super(weakBundle, classInfo);
-        }
-
-        public void finalizeRef() {
-            ClassInfo classInfo = get();
-            classInfo.setStrongMetaClass(null);
-            classInfo.cachedClassRef.clear();
-            classInfo.artifactClassLoader.clear();
-        }
-    }
-
-    private static class DebugRef extends ManagedReference<Class> {
-        public static final boolean debug = false;
-
-        private static final AtomicInteger count = new AtomicInteger();
-
-        final String name;
-
-        public DebugRef(Class klazz) {
-            super(softBundle, klazz);
-            name = klazz == null ? "<null>" : klazz.getName();
-            count.incrementAndGet();
-        }
-
-        public void finalizeRef() {
-            //System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
-            super.finalizeReference();
-        }
+    @Override
+    public void finalizeReference() {
+        setStrongMetaClass(null);
+        cachedClassRef.clear();
+        artifactClassLoader.clear();
     }
 
     private static class GlobalClassSet {
