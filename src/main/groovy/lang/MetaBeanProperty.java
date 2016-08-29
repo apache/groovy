@@ -26,9 +26,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Pilho Kim
  */
 public class MetaBeanProperty extends MetaProperty {
 
@@ -121,7 +118,7 @@ public class MetaBeanProperty extends MetaProperty {
     /**
      * Gets the visibility modifiers for the property as defined by the getter and setter methods.
      *
-     * @return the visibility modifer of the getter, the setter, or both depending on which exist
+     * @return the visibility modifier of the getter, the setter, or both depending on which exist
      */
     public int getModifiers() {
         MetaMethod getter = getGetter();
@@ -140,7 +137,7 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     /**
-     * Sets the field of this propery
+     * Sets the field of this property
      *
      * @param field
      */
