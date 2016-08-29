@@ -92,15 +92,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
+
 /**
  * Allows methods to be dynamically added to existing classes at runtime
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Guillaume Laforge
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @author Graeme Rocher
- * @author Alex Tkachman
- * @author Roshan Dawrani
  * @see groovy.lang.MetaClass
  */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
@@ -2403,12 +2399,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static boolean packageLocal(CachedField mfp, CachedClass klass) {
-        if ((mfp.getModifiers() & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) != 0 || klass == null)
+        if (klass == null)
             return false;
-        Package fieldPackage = mfp.field.getDeclaringClass().getPackage();
-        Package classPackage = klass.getTheClass().getPackage();
-        return (fieldPackage == null && classPackage == null) ||
-                fieldPackage != null && classPackage != null && fieldPackage.getName().equals(classPackage.getName());
+        return isDefaultVisibility(mfp.getModifiers()) && inSamePackage(mfp.field.getDeclaringClass(), klass.getTheClass());
     }
 
     private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Index classPropertyIndex, boolean isThis) {

@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -63,6 +64,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -761,5 +763,23 @@ public class GeneralUtils {
 
     public static String getSetterName(String name) {
         return "set" + Verifier.capitalize(name);
+    }
+
+    public static boolean isDefaultVisibility(int modifiers) {
+        return (modifiers & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) == 0;
+    }
+
+    public static boolean inSamePackage(ClassNode first, ClassNode second) {
+        PackageNode firstPackage = first.getPackage();
+        PackageNode secondPackage = second.getPackage();
+        return ((firstPackage == null && secondPackage == null) ||
+                        firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
+    }
+
+    public static boolean inSamePackage(Class first, Class second) {
+        Package firstPackage = first.getPackage();
+        Package secondPackage = second.getPackage();
+        return ((firstPackage == null && secondPackage == null) ||
+                        firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
     }
 }

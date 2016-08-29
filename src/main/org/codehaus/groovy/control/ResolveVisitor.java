@@ -35,6 +35,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
+
 /**
  * Visitor to resolve Types and convert VariableExpression to
  * ClassExpressions if needed. The ResolveVisitor will try to
@@ -43,10 +46,6 @@ import java.util.*;
  * will force creation of a ClassExpression for C
  * <p>
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
- *
- * @author Jochen Theodorou
- * @author Roshan Dawrani
- * @author Alex Tkachman
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
@@ -872,11 +871,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode redirect = type.redirect();
         if (Modifier.isPublic(redirect.getModifiers()) || Modifier.isProtected(redirect.getModifiers())) return true;
         // package local
-        PackageNode classPackage = ceType.getPackage();
-        PackageNode nestedPackage = redirect.getPackage();
-        return (redirect.getModifiers() & (Modifier.PROTECTED | Modifier.PUBLIC | Modifier.PRIVATE)) == 0 &&
-                ((classPackage == null && nestedPackage == null) ||
-                        classPackage != null && nestedPackage != null && classPackage.getName().equals(nestedPackage.getName()));
+        return isDefaultVisibility(redirect.getModifiers()) && inSamePackage(ceType, redirect);
     }
 
     private boolean directlyImplementsTrait(ClassNode trait) {
