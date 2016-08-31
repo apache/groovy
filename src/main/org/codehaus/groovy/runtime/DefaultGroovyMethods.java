@@ -8873,12 +8873,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // check original unaltered
      * assert set == [3, 4, 2] as Set
      * </pre>
-     * The first element returned by the Iterable's iterator is returned.
+     * The last element returned by the Iterable's iterator is returned.
      * If the Iterable doesn't guarantee a defined order it may appear like
      * a random element is returned.
      *
      * @param self an Iterable
-     * @return the first item from the Iterable
+     * @return the last item from the Iterable
      * @throws NoSuchElementException if the Iterable is empty and you try to access the last() item.
      * @since 1.8.7
      */
