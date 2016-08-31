@@ -45,4 +45,18 @@
     </method>
 <% } %>
   </methods>
+
+  <properties><% for (property in classDoc.properties()) { %>
+    <property modifiers="${property.isPublic()?'public ':''}${property.isStatic()?'static ':''}" type="${property.type().qualifiedTypeName()}" name="${property.name()}">
+      <comment>${property.commentText()}</comment>
+    </property>
+<% } %>
+  </properties>
+
+  <fields><% for (field in classDoc.fields()) { %>
+    <field modifiers="${field.isPublic()?'public ':''}${field.isStatic()?'static ':''}" type="${field.type().qualifiedTypeName()}" name="${field.name()}">
+      <comment>${field.commentText()}</comment>
+    </field>
+<% } %>
+  </fields>
 </class>

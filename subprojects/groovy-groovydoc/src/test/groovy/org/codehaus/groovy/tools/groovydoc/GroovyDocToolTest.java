@@ -646,6 +646,31 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("There has to be a reference to class ArrayList", "ArrayList", m.group(2));
     }
 
+    public void testScript() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
+        xmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
+        assertTrue("There should be a reference to method sayHello", containsTagWithName(scriptDoc, "method", "sayHello"));
+        assertTrue(scriptDoc, scriptDoc.contains("Use this to say Hello"));
+
+        assertTrue("There should be a reference to method sayGoodbye", containsTagWithName(scriptDoc, "method", "sayGoodbye"));
+        assertTrue(scriptDoc, scriptDoc.contains("Use this to bid farewell"));
+
+        assertTrue("There should be a reference to property instanceProp", containsTagWithName(scriptDoc, "property", "instanceProp"));
+
+        assertTrue("There should be a reference to field staticField", containsTagWithName(scriptDoc, "field", "staticField"));
+
+        assertFalse("Script local variables should not appear in groovydoc output", scriptDoc.contains("localVar"));
+    }
+
+    private boolean containsTagWithName(String text, String tagname, String name) {
+        return text.matches("(?s).*<"+ tagname + "[^>]* name=\""+ name + "\".*");
+    }
+
     private GroovyClassDoc getGroovyClassDocByName(GroovyRootDoc root, String name) {
         GroovyClassDoc[] classes = root.classes();
 
