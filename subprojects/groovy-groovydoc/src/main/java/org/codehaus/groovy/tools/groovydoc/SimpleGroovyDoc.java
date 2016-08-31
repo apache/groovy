@@ -159,6 +159,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         if (isTrait()) return "Trait";
         if (isAnnotationType()) return "Annotation Type";
         if (isEnum()) return "Enum";
+        if (isScript()) return "Script";
         return "Class";
     }
 

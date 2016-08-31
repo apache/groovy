@@ -243,20 +243,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (currentClassDoc == null) {
                 // assume we have a script
                 if ("true".equals(properties.getProperty("processScripts", "true"))) {
-                    currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, className, links);
-                    currentClassDoc.setFullPathName(packagePath + FS + className);
-                    currentClassDoc.setPublic(true);
-                    currentClassDoc.setScript(true);
-                    currentClassDoc.setGroovy(isGroovy);
-                    currentClassDoc.setSuperClassName("groovy/lang/Script");
-                    if ("true".equals(properties.getProperty("includeMainForScripts", "true"))) {
-                        currentClassDoc.add(createMainMethod(currentClassDoc));
-                    }
-                    classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
-                    if (foundClasses == null) {
-                        foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
-                    }
-                    foundClasses.put(className, currentClassDoc);
+                    currentClassDoc = getOrMakeScriptClassDoc();
                 } else {
                     return;
                 }
@@ -264,6 +251,29 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             SimpleGroovyMethodDoc currentMethodDoc = createMethod(t, currentClassDoc);
             currentClassDoc.add(currentMethodDoc);
         }
+    }
+
+    private SimpleGroovyClassDoc getOrMakeScriptClassDoc() {
+        SimpleGroovyClassDoc currentClassDoc;
+        if (foundClasses != null && foundClasses.containsKey(className)) {
+            currentClassDoc = foundClasses.get(className);
+        } else {
+            currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, className, links);
+            currentClassDoc.setFullPathName(packagePath + FS + className);
+            currentClassDoc.setPublic(true);
+            currentClassDoc.setScript(true);
+            currentClassDoc.setGroovy(isGroovy);
+            currentClassDoc.setSuperClassName("groovy/lang/Script");
+            if ("true".equals(properties.getProperty("includeMainForScripts", "true"))) {
+                currentClassDoc.add(createMainMethod(currentClassDoc));
+            }
+            classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+            if (foundClasses == null) {
+                foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+            }
+            foundClasses.put(className, currentClassDoc);
+        }
+        return currentClassDoc;
     }
 
     private SimpleGroovyMethodDoc createMethod(GroovySourceAST t, SimpleGroovyClassDoc currentClassDoc) {
@@ -338,20 +348,40 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitVariableDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT && !insideAnonymousInnerClass() && isFieldDefinition()) {
+        if (visit == OPENING_VISIT && !insideAnonymousInnerClass()) {
+            boolean validField = true;
             SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
-            if (currentClassDoc != null) {
-                String fieldName = getIdentFor(t);
-                currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
-                currentFieldDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
-                boolean isProp = processModifiers(t, currentFieldDoc);
-                currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
-                processAnnotations(t, currentFieldDoc);
-                if (isProp) {
-                    currentClassDoc.addProperty(currentFieldDoc);
+            if (currentClassDoc == null) {
+                // assume we have a script (and it may have a @Field)
+                if ("true".equals(properties.getProperty("processScripts", "true"))) {
+                    currentClassDoc = getOrMakeScriptClassDoc();
+                    validField = false;
                 } else {
-                    currentClassDoc.add(currentFieldDoc);
+                    return;
                 }
+            } else if (!isFieldDefinition()) {
+                return;
+            }
+            String fieldName = getIdentFor(t);
+            if (fieldName.isEmpty()) return; // multi-assignment
+            currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
+            currentFieldDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+            boolean isProp = processModifiers(t, currentFieldDoc);
+            currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
+            processAnnotations(t, currentFieldDoc);
+            if (!validField) { // look for @Field
+                for (GroovyAnnotationRef ref : currentFieldDoc.annotations()) {
+                    if ("Field".equals(ref.name()) || "groovy/transform/Field".equals(ref.name())) {
+                        validField = true;
+                        break;
+                    }
+                }
+            }
+            if (!validField) return;
+            if (isProp) {
+                currentClassDoc.addProperty(currentFieldDoc);
+            } else {
+                currentClassDoc.add(currentFieldDoc);
             }
         }
     }
@@ -424,10 +454,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String extractImportPath(GroovySourceAST t) {
-        return recurseDownImportBranch(getImportPathDotType(t));
+        return recurseDownImportBranch(getPackageDotType(t));
     }
 
-    private static GroovySourceAST getImportPathDotType(GroovySourceAST t) {
+    private static GroovySourceAST getPackageDotType(GroovySourceAST t) {
         GroovySourceAST child = t.childOfType(DOT);
         if (child == null) {
             child = t.childOfType(IDENT);
@@ -453,14 +483,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private void addAnnotationRef(SimpleGroovyProgramElementDoc node, GroovySourceAST t) {
-        GroovySourceAST classNode = t.childOfType(IDENT);
+        GroovySourceAST classNode = getPackageDotType(t);
         if (classNode != null) {
             node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
         }
     }
 
     private void addAnnotationRef(SimpleGroovyParameter node, GroovySourceAST t) {
-        GroovySourceAST classNode = t.childOfType(IDENT);
+        GroovySourceAST classNode = getPackageDotType(t);
         if (classNode != null) {
             node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
         }
@@ -888,7 +918,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private static String getIdentFor(GroovySourceAST gpn) {
-        return gpn.childOfType(IDENT).getText();
+        GroovySourceAST ident = gpn.childOfType(IDENT);
+        return ident == null ? "" : ident.getText();
     }
 
     private String getIdentPlusTypeArgsFor(GroovySourceAST gpn) {

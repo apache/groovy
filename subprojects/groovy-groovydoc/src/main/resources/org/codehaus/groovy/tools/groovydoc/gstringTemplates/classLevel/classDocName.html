@@ -177,7 +177,8 @@ if (location.href.indexOf('is-external=true') == -1) {
 <div class="header">
 <%
 def pkg = classDoc.containingPackage().nameWithDots()
-String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(classDoc.getNameWithTypeArgs())}"
+def name = classDoc.getNameWithTypeArgs() ?: classDoc.name()
+String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(name)}"
 if (pkg != "DefaultPackage") {
 %>
     <div class="subTitle">Package: <strong>${pkg}</strong></div>
