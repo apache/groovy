@@ -50,8 +50,10 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 
@@ -227,7 +229,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 ClassExpression ce = (ClassExpression) pe.getObjectExpression();
                 ClassNode type = ce.getType();
                 if (type.isEnum()) return exp;
-                Expression constant = findConstant(type.getField(pe.getPropertyAsString()));
+                Expression constant = findConstant(getField(type, pe.getPropertyAsString()));
                 if (constant != null) return constant;
             }
         } else if (exp instanceof ListExpression) {
@@ -565,9 +567,27 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private static Expression findStaticField(ClassNode staticImportType, String fieldName) {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
-            FieldNode field = staticImportType.getField(fieldName);
+            FieldNode field = getField(staticImportType, fieldName);
             if (field != null && field.isStatic())
                 return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
+        }
+        return null;
+    }
+
+    private static FieldNode getField(ClassNode classNode, String fieldName) {
+        ClassNode node = classNode;
+        Set<String> visited = new HashSet<String>();
+        while (node != null) {
+            FieldNode fn = node.getDeclaredField(fieldName);
+            if (fn != null) return fn;
+            ClassNode[] interfaces = node.getInterfaces();
+            for (ClassNode iNode : interfaces) {
+                if (visited.contains(iNode.getName())) continue;
+                FieldNode ifn = getField(iNode, fieldName);
+                visited.add(iNode.getName());
+                if (ifn != null) return ifn;
+            }
+            node = node.getSuperClass();
         }
         return null;
     }
