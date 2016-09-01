@@ -905,17 +905,17 @@ public class AsmClassGenerator extends ClassGenerator {
                     visitFieldExpression(new FieldExpression(field));
                     return;
                 }
-            }
-            if (isSuperExpression(objectExpression)) {
-                String prefix;
-                if (controller.getCompileStack().isLHS()) {
-                    throw new GroovyBugError("Unexpected super property set for:"+expression.getText());
-                } else {
-                    prefix = "get";
+                if (isSuperExpression(objectExpression)) {
+                    String prefix;
+                    if (controller.getCompileStack().isLHS()) {
+                        throw new GroovyBugError("Unexpected super property set for:" + expression.getText());
+                    } else {
+                        prefix = "get";
+                    }
+                    String propName = prefix + MetaClassHelper.capitalize(name);
+                    visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
+                    return;
                 }
-                String propName = prefix + MetaClassHelper.capitalize(name);
-                visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
-                return;
             }
         }
 
