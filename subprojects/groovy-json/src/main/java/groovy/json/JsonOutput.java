@@ -493,7 +493,7 @@ public class JsonOutput {
     public static String prettyPrint(String jsonPayload) {
         int indentSize = 0;
         // Just a guess that the pretty view will take a 20 percent more than original.
-        final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 0.2));
+        final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 1.2));
 
         JsonLexer lexer = new JsonLexer(new StringReader(jsonPayload));
         // Will store already created indents.
