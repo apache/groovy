@@ -250,6 +250,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
             }
             SimpleGroovyMethodDoc currentMethodDoc = createMethod(t, currentClassDoc);
+            StringBuilder params = new StringBuilder();
+            getTypeParameters(t.childOfType(TYPE_PARAMETERS), params, "def");
+            currentMethodDoc.setTypeParameters(params.toString());
             currentClassDoc.add(currentMethodDoc);
         }
     }
@@ -795,7 +798,16 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (next.getType() == TYPE_UPPER_BOUNDS) return "? extends " + boundType;
             if (next.getType() == TYPE_LOWER_BOUNDS) return "? super " + boundType;
         } else if (typeNode.getType() == IDENT) {
-            return getAsTextCurrent(typeNode, defaultText);
+            String ident = getAsTextCurrent(typeNode, defaultText);
+            AST next = typeNode.getNextSibling();
+            if (next == null && typeNode.getFirstChild() != null) {
+                // Java2Groovy produces a slightly different tree structure (TODO fix converter or java.g instead?)
+                next = typeNode.getFirstChild();
+            }
+            if (next == null) return ident;
+            String boundType = getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
+            if (next.getType() == TYPE_UPPER_BOUNDS) return ident + " extends " + boundType;
+            if (next.getType() == TYPE_LOWER_BOUNDS) return ident + " super " + boundType;
         }
         return defaultText;
     }
