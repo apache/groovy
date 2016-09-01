@@ -2015,11 +2015,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an Set,
+     * Iterates through a Set,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
-     * @param self    an Set
+     * @param self    a Set
      * @param closure a Closure to operate on each item
      * @return the self Set
      * @since 2.4.0
@@ -2029,11 +2029,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an SortedSet,
+     * Iterates through a SortedSet,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
-     * @param self    an SortedSet
+     * @param self    a SortedSet
      * @param closure a Closure to operate on each item
      * @return the self SortedSet
      * @since 2.4.0
@@ -2095,7 +2095,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an Set, passing each item to the given closure.
+     * Iterates through a Set, passing each item to the given closure.
      *
      * @param self    the Set over which we iterate
      * @param closure the closure applied on each element found
@@ -2107,7 +2107,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through an SortedSet, passing each item to the given closure.
+     * Iterates through a SortedSet, passing each item to the given closure.
      *
      * @param self    the SortedSet over which we iterate
      * @param closure the closure applied on each element found
@@ -9191,7 +9191,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert sortedSet == [3, 4, 2] as SortedSet
      * </pre>
      *
-     * @param self an SortedSet
+     * @param self a SortedSet
      * @return a SortedSet without its first element
      * @throws NoSuchElementException if the SortedSet is empty and you try to access the tail()
      * @since 2.4.0
@@ -9344,7 +9344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert sortedSet == [3, 4, 2] as SortedSet
      * </pre>
      *
-     * @param self an SortedSet
+     * @param self a SortedSet
      * @return a SortedSet without its last element
      * @throws NoSuchElementException if the SortedSet is empty and you try to access init()
      * @since 2.4.0
@@ -10573,7 +10573,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Coerce an Boolean instance to a boolean value.
+     * Coerce a Boolean instance to a boolean value.
      *
      * @param bool the Boolean
      * @return the boolean value
@@ -14279,11 +14279,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of a BigInteger to an BigInteger certain exponent. Called by the
-     * '**' operator.
+     * Power of a BigInteger to a BigInteger certain exponent. Called by the '**' operator.
      *
      * @param self     a BigInteger
-     * @param exponent an BigInteger exponent
+     * @param exponent a BigInteger exponent
      * @return a BigInteger to the power of a the exponent
      * @since 2.3.8
      */
@@ -15429,7 +15428,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Number into a Float
      *
      * @param self a Number
-     * @return an Float
+     * @return a Float
      * @since 1.0
      */
     public static Float toFloat(Number self) {
@@ -15440,7 +15439,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Number into a Double
      *
      * @param self a Number
-     * @return an Double
+     * @return a Double
      * @since 1.0
      */
     public static Double toDouble(Number self) {
@@ -15468,7 +15467,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Number into a BigDecimal
      *
      * @param self a Number
-     * @return an BigDecimal
+     * @return a BigDecimal
      * @since 1.0
      */
     public static BigDecimal toBigDecimal(Number self) {
@@ -15517,7 +15516,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform this Number into a BigInteger.
      *
      * @param self a Number
-     * @return an BigInteger
+     * @return a BigInteger
      * @since 1.0
      */
     public static BigInteger toBigInteger(Number self) {
