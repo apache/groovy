@@ -132,7 +132,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.containsValue(value);
     }
 
-    public Set entrySet() {
+    public Set<Map.Entry> entrySet() {
         return result.entrySet();
     }
 
