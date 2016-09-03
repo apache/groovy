@@ -332,6 +332,15 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert t.foo() == 2
         """
     }
+
+    // GROOVY-7927
+    void testSAMGenericsInAssignment() {
+        assertScript """
+            interface SAM<T,R> { R accept(T t); }
+            SAM<Integer,Integer> s = { Integer n -> -n }
+            assert s.accept(1) == -1
+        """
+    }
     
     void testSAMProperty() {
         assertScript """
