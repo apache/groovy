@@ -37,13 +37,7 @@ public class ExtensionModuleHelperForTests {
     }
     org.junit.runner.JUnitCore.main('TempTest')
 """
-        def cl = ExtensionModuleHelperForTests.classLoader
-        while (!(cl instanceof URLClassLoader)) {
-            cl = cl.parent
-            if (cl ==null) {
-                throw new RuntimeException("Unable to find class loader")
-            }
-        }
+
         Set<String> cp = System.getProperty("java.class.path").split(File.pathSeparator) as Set
         cp << baseDir.absolutePath
 
