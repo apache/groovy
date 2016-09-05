@@ -18,17 +18,20 @@
  */
 package org.codehaus.groovy.util
 
-/**
- * Provides Groovy with functionality similar to the unix tr command
- * which translates a string replacing characters from a source set
- * with characters from a replacement set.
- *
- * @author UEHARA Junji (uehaj)
- * @author NAKANO Yasuharu (nobeans)
- * @since 1.7.3
- */
-class StringUtil {
+import groovy.transform.CompileStatic
 
+/**
+ * String utility functions.
+ */
+@CompileStatic
+class StringUtil {
+    /**
+     * Provides Groovy with functionality similar to the unix tr command
+     * which translates a string replacing characters from a source set
+     * with characters from a replacement set.
+     *
+     * @since 1.7.3
+     */
     static String tr(String text, String source, String replacement) {
         if (!text || !source) { return text }
         source = expandHyphen(source)
@@ -37,18 +40,18 @@ class StringUtil {
         // padding replacement with a last character, if necessary
         replacement = replacement.padRight(source.size(), replacement[replacement.size() - 1])
 
-        return text.collect { original ->
+        return text.collect { String original ->
             if (source.contains(original)) {
                 replacement[source.lastIndexOf(original)]
             } else {
                 original
             }
-        }.join()
+        }.join('')
     }
 
     // no expansion for hyphen at start or end of Strings
     private static String expandHyphen(String text) {
         if (!text.contains('-')) { return text }
-        return text.replaceAll(/(.)-(.)/, { all, begin, end -> (begin..end).join() })
+        return text.replaceAll(/(.)-(.)/, { all, begin, end -> (begin..end).join('') })
     }
 }
