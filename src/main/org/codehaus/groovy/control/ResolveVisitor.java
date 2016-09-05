@@ -1285,14 +1285,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveOrFail(anInterface, node, true);
         }
 
-        checkCyclicInheritence(node, node.getUnresolvedSuperClass(), node.getInterfaces());
+        checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());
         
         super.visitClass(node);
 
         currentClass = oldNode;
     }
     
-    private void checkCyclicInheritence(ClassNode originalNode, ClassNode parentToCompare, ClassNode[] interfacesToCompare) {
+    private void checkCyclicInheritance(ClassNode originalNode, ClassNode parentToCompare, ClassNode[] interfacesToCompare) {
         if(!originalNode.isInterface()) {
             if(parentToCompare == null) return;
             if(originalNode == parentToCompare.redirect()) {
@@ -1308,7 +1308,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
             if(parentToCompare == ClassHelper.OBJECT_TYPE) return;
-            checkCyclicInheritence(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
+            checkCyclicInheritance(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
         } else {
             if(interfacesToCompare != null && interfacesToCompare.length > 0) {
                 // check interfaces at this level first
@@ -1320,7 +1320,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
                 // check next level of interfaces
                 for(ClassNode intf : interfacesToCompare) {
-                    checkCyclicInheritence(originalNode, null, intf.getInterfaces());
+                    checkCyclicInheritance(originalNode, null, intf.getInterfaces());
                 }
             } else {
                 return;
