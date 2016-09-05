@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -31,8 +32,10 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -233,10 +236,10 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 null
         );
 
-        block = new BlockStatement();
         if (isStatic) {
-            setPropertySetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            block = nestedPropertyMissingSetterBlock(node, parameters);
         } else {
+            block = new BlockStatement();
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
@@ -269,10 +272,10 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 null
         );
 
-        block = new BlockStatement();
         if (isStatic) {
-            setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            block = nestedPropertyMissingGetterBlock(node, parameters);
         } else {
+            block = new BlockStatement();
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
@@ -285,6 +288,40 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             );
         }
         method.setCode(block);
+    }
+
+    private BlockStatement nestedPropertyMissingGetterBlock(ClassNode node, Parameter[] parameters) {
+        ClassNode next = node.getOuterClass();
+        BlockStatement block = new BlockStatement();
+        if (next.getOuterClass() == null) {
+            setPropertyGetterDispatcher(block, new ClassExpression(next), parameters);
+        } else {
+            BlockStatement tryBlock = new BlockStatement();
+            setPropertyGetterDispatcher(tryBlock, new ClassExpression(next), parameters);
+            TryCatchStatement tryCatchStatement = new TryCatchStatement(tryBlock, new BlockStatement());
+            Parameter catchParameter = new Parameter(ClassHelper.make(MissingPropertyException.class), "mpe");
+            BlockStatement catchBlock = nestedPropertyMissingGetterBlock(next, parameters);
+            tryCatchStatement.addCatch(new CatchStatement(catchParameter, catchBlock));
+            block.addStatement(tryCatchStatement);
+        }
+        return block;
+    }
+
+    private BlockStatement nestedPropertyMissingSetterBlock(ClassNode node, Parameter[] parameters) {
+        ClassNode next = node.getOuterClass();
+        BlockStatement block = new BlockStatement();
+        if (next.getOuterClass() == null) {
+            setPropertySetterDispatcher(block, new ClassExpression(next), parameters);
+        } else {
+            BlockStatement tryBlock = new BlockStatement();
+            setPropertySetterDispatcher(tryBlock, new ClassExpression(next), parameters);
+            TryCatchStatement tryCatchStatement = new TryCatchStatement(tryBlock, new BlockStatement());
+            Parameter catchParameter = new Parameter(ClassHelper.make(MissingPropertyException.class), "mpe");
+            BlockStatement catchBlock = nestedPropertyMissingSetterBlock(next, parameters);
+            tryCatchStatement.addCatch(new CatchStatement(catchParameter, catchBlock));
+            block.addStatement(tryCatchStatement);
+        }
+        return block;
     }
 
     /**
