@@ -666,7 +666,7 @@ public class CompilerConfiguration {
 
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            pluginFactory = ParserPluginFactory.newInstance(true);
+            pluginFactory = ParserPluginFactory.newInstance();
         }
         return pluginFactory;
     }
