@@ -28,6 +28,7 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -48,17 +49,10 @@ public class CachedClass {
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
         public CachedField[] initValue() {
             final Field[] declaredFields = (Field[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
-                   public /*Field[]*/ Object run() {
-                       final Field[] df = getTheClass().getDeclaredFields();
-                       try {
-                           AccessibleObject.setAccessible(df, true);
-                       } catch (SecurityException e) {
-                           // swallow for strict security managers
-                       } catch (RuntimeException re) {
-                           // test for JDK9 JIGSAW
-                           if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
-                       }
+               AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
+                   public Field[] run() {
+                       Field[] df = getTheClass().getDeclaredFields();
+                       df = (Field[]) makeAccessible(df);
                        return df;                                                   
                    }
                });
@@ -84,18 +78,35 @@ public class CachedClass {
         }
     };
 
+    // to be run in PrivilegedAction!
+    private static AccessibleObject[] makeAccessible(final AccessibleObject[] aoa) {
+        try {
+            AccessibleObject.setAccessible(aoa, true);
+            return aoa;
+        } catch (Throwable outer) {
+            // swallow for strict security managers, module systems, android or others,
+            // but try one-by-one to get the allowed ones at least
+            final ArrayList<AccessibleObject> ret = new ArrayList<>(aoa.length);
+            for (final AccessibleObject ao : aoa) {
+                try {
+                    ao.setAccessible(true);
+                    ret.add(ao);
+                } catch (Throwable inner) {
+                    // swallow for strict security managers, module systems, android or others
+                }
+            }
+            return ret.toArray((AccessibleObject[]) Array.newInstance(aoa.getClass().getComponentType(), ret.size()));
+        }
+    }
+
     private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
                    public /*Method[]*/ Object run() {
                        try {
-                           final Method[] dm = getTheClass().getDeclaredMethods();
-                           try {
-                               AccessibleObject.setAccessible(dm, true);
-                           } catch (SecurityException e) {
-                               // swallow for strict security managers
-                           }
+                           Method[] dm = getTheClass().getDeclaredMethods();
+                           dm = (Method[]) makeAccessible(dm);
                            return dm;
                        } catch (Throwable e) {
                            // Typically, Android can throw ClassNotFoundException
