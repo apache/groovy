@@ -45,7 +45,7 @@ public class ExtensionModuleHelperForTests {
         try {
             jdk9 = this.classLoader.loadClass("java.lang.reflect.Module") != null
         } catch (e) {
-            throw e
+            // ignore
         }
 
         def ant = new AntBuilder()
