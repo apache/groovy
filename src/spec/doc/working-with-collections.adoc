@@ -433,7 +433,7 @@ It is worth noting that negative indices are allowed, to extract more easily fro
 
 [source,groovy]
 ---------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_3,indent=0]
+include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4,indent=0]
 ---------------------------------
 
 You can use negative indices to count from the end of the List, array,
@@ -441,7 +441,7 @@ String etc.
 
 [source,groovy]
 --------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4,indent=0]
+include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4a,indent=0]
 --------------------------------
 
 Eventually, if you use a backwards range (the starting index is greater than
