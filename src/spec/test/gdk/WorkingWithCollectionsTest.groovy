@@ -443,7 +443,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
     void testMapPropertyNotation() {
         // tag::map_property[]
         def map = [name: 'Gromit', likes: 'cheese', id: 1234]
-        assert map.name == 'Gromit'     // can be used instead of map.get('Gromit')
+        assert map.name == 'Gromit'     // can be used instead of map.get('name')
         assert map.id == 1234
 
         def emptyMap = [:]
@@ -721,10 +721,12 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         text = "nice cheese gromit!"
         x = text[-1]
         assert x == "!"
+        // end::subscript_4[]
 
+        // tag::subscript_4a[]
         def name = text[-7..-2]
         assert name == "gromit"
-        // end::subscript_4[]
+        // end::subscript_4a[]
 
         // tag::subscript_5[]
         text = "nice cheese gromit!"
