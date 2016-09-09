@@ -252,22 +252,12 @@ sourceSets {
             }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         groovy {
             srcDirs = [
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         resources {
             srcDirs = ['src/main', 'src/tools', 'src/resources']
