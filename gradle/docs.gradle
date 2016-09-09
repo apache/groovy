@@ -46,7 +46,7 @@ def javadocSpec = {
         version = true
         overview = rootProject.file('src/main/overviewj.html')
         footer = doc.footer
-        source = rootProject.useIndy()?'1.7':'1.6'
+        source = '1.7'
         links('http://docs.oracle.com/javase/8/docs/api/', 'http://docs.oracle.com/javaee/7/api/',
                 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'http://junit.org/junit4/javadoc/latest/',
                 'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc/')
