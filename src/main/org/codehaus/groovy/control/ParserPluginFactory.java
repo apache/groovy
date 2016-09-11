@@ -34,7 +34,9 @@ public abstract class ParserPluginFactory {
      *
      * @param useNewParser unused.
      * @return the new parser factory.
+     * @deprecated use {@link #newInstance()}
      */
+    @Deprecated
     public static ParserPluginFactory newInstance(boolean useNewParser) {
         return newInstance();
     }
