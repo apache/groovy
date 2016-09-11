@@ -65,6 +65,7 @@ public class JsonOutput {
     private static final String NULL_VALUE = "null";
     private static final String EMPTY_VALUE = "";
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+    private static final Locale JSON_DATE_FORMAT_LOCALE = Locale.US;
     private static final String DEFAULT_TIMEZONE = "GMT";
 
     /* package-private for use in builders */
@@ -323,7 +324,9 @@ public class JsonOutput {
 
         private String dateFormat = JsonOutput.JSON_DATE_FORMAT;
 
-        private String timezone = JsonOutput.DEFAULT_TIMEZONE;
+        private Locale dateLocale = JsonOutput.JSON_DATE_FORMAT_LOCALE;
+
+        private TimeZone timezone = TimeZone.getTimeZone(JsonOutput.DEFAULT_TIMEZONE);
 
         private final Set<Converter> converters = new LinkedHashSet<Converter>();
 
@@ -345,7 +348,8 @@ public class JsonOutput {
 
         /**
          * Sets the date format that will be used to serialize {@code Date} objects.
-         * This must be a valid pattern for {@link java.text.SimpleDateFormat}.
+         * This must be a valid pattern for {@link java.text.SimpleDateFormat} and the
+         * date formatter will be constructed with the default locale of {@link Locale#US}.
          *
          * @param format date format pattern used to serialize dates
          * @return a reference to this {@code Options} instance
@@ -353,10 +357,23 @@ public class JsonOutput {
          * @exception IllegalArgumentException if the given pattern is invalid
          */
         public Options dateFormat(String format) {
+            return dateFormat(format, JsonOutput.JSON_DATE_FORMAT_LOCALE);
+        }
+
+        /**
+         * Sets the date format that will be used to serialize {@code Date} objects.
+         * This must be a valid pattern for {@link java.text.SimpleDateFormat}.
+         *
+         * @param format date format pattern used to serialize dates
+         * @param locale the locale whose date format symbols will be used
+         * @return a reference to this {@code Options} instance
+         * @exception IllegalArgumentException if the given pattern is invalid
+         */
+        public Options dateFormat(String format, Locale locale) {
             // validate date format pattern
-            // TODO (jwagenleitner): should Locale also be a parameter and/or have its own setter?
-            new SimpleDateFormat(format, Locale.US);
+            new SimpleDateFormat(format, locale);
             dateFormat = format;
+            dateLocale = locale;
             return this;
         }
 
@@ -368,9 +385,7 @@ public class JsonOutput {
          * @exception NullPointerException if the given timezone is null
          */
         public Options timezone(String timezone) {
-            // validate the timezone
-            TimeZone.getTimeZone(timezone);
-            this.timezone = timezone;
+            this.timezone = TimeZone.getTimeZone(timezone);
             return this;
         }
 
@@ -502,7 +517,8 @@ public class JsonOutput {
 
         private final boolean excludeNulls;
         private final String dateFormat;
-        private final String timezone;
+        private final Locale dateLocale;
+        private final TimeZone timezone;
 
         private final Set<Converter> converters = new LinkedHashSet<Converter>();
 
@@ -520,6 +536,7 @@ public class JsonOutput {
             excludeNulls = options.excludeNulls;
             nullValue = (excludeNulls) ? JsonOutput.EMPTY_VALUE : JsonOutput.NULL_VALUE;
             dateFormat = options.dateFormat;
+            dateLocale = options.dateLocale;
             timezone = options.timezone;
             if (!options.converters.isEmpty()) {
                 converters.addAll(options.converters);
@@ -886,8 +903,8 @@ public class JsonOutput {
          * Serializes date and writes it into specified buffer.
          */
         private void writeDate(Date date, CharBuf buffer) {
-            SimpleDateFormat formatter = new SimpleDateFormat(dateFormat, Locale.US);
-            formatter.setTimeZone(TimeZone.getTimeZone(timezone));
+            SimpleDateFormat formatter = new SimpleDateFormat(dateFormat, dateLocale);
+            formatter.setTimeZone(timezone);
             buffer.addQuoted(formatter.format(date));
         }
 
