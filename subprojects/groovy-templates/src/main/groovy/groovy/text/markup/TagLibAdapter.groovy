@@ -45,7 +45,7 @@ package groovy.text.markup
  * </pre>
  *
  * Performance-wise, it would be better to reimplement the taglib, but this makes it easier to reuse
- * exisiting code.
+ * existing code.
  *
  * @author Cédric Champeau
  */

@@ -228,7 +228,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      *     <li>or no argument at all</li>
      * </ul>
      * <p>
-     * Example with a classicala builder-style:
+     * Example with a classical builder-style:
      * <pre><code class="groovyTestCase">
      * def json = new groovy.json.JsonBuilder()
      * def result = json.person {

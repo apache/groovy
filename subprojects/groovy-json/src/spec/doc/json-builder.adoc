@@ -21,7 +21,7 @@
 
 = JsonBuilder
 
-Groovys `JsonBuilder` makes it easy to create Json. For example to create this Json string:
+Groovy's `JsonBuilder` makes it easy to create Json. For example to create this Json string:
 
 [source,groovy]
 ----

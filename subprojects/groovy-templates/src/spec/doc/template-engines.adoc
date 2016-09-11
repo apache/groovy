@@ -108,7 +108,7 @@ in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have 
 
 == StreamingTemplateEngine
 
-The `StreamingTemplateEngine` engine is functionally equivalent to the `SimpleTemplateEngine`, but creates the template using writeable closures making it more scalable for large templates. Specifically this template engine can handle strings larger than 64k.
+The `StreamingTemplateEngine` engine is functionally equivalent to the `SimpleTemplateEngine`, but creates the template using writable closures making it more scalable for large templates. Specifically this template engine can handle strings larger than 64k.
 
 It uses JSP style <% %> script and <%= %> expression syntax or GString style expressions. The variable 'out' is bound to the writer that the template is being written to.
 
