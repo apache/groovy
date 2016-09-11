@@ -20,6 +20,7 @@ package org.codehaus.groovy.control;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -31,19 +32,22 @@ public abstract class XStreamUtils {
         if (name == null || name.length() == 0) return;
 
         XStream xstream = new XStream(new StaxDriver());
+        FileWriter astFileWriter = null;
         try {
             File astFile = astFile(name);
             if (astFile == null) {
                 System.out.println("File-name for writing " + name + " AST could not be determined!");
                 return;
             }
-
-            xstream.toXML(ast, new FileWriter(astFile, false));
+            astFileWriter = new FileWriter(astFile, false);
+            xstream.toXML(ast, astFileWriter);
             System.out.println("Written AST to " + name + ".xml");
 
         } catch (Exception e) {
             System.out.println("Couldn't write to " + name + ".xml");
             e.printStackTrace();
+        } finally {
+            DefaultGroovyMethods.closeQuietly(astFileWriter);
         }
     }
 
