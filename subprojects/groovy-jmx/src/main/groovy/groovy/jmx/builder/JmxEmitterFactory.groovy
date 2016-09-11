@@ -23,7 +23,7 @@ import javax.management.NotificationFilterSupport
 import javax.management.ObjectName
 
 /**
- * This class is the factory for the emitter node.  This node faciliates the declaration of a JMX event emitter.
+ * This class is the factory for the emitter node.  This node facilitates the declaration of a JMX event emitter.
  * The emitter is used to broadcast arbitrary event on the MBeanServer's event bus.  Registered listeners are
  * able to consume event once sent.
  * <p>

@@ -113,7 +113,7 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     private void buildIfNeeded() {
         if (map == null) {
-            /** added to avoid hash collision attack. */
+            // added to avoid hash collision attack
             if (Sys.is1_8OrLater() || (Sys.is1_7() && JDK_MAP_ALTHASHING_SYSPROP != null)) {
                 map = new LinkedHashMap<String, Object>(size, 0.01f);
             } else {

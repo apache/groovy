@@ -57,7 +57,7 @@ public class JsonLexer implements Iterator<JsonToken> {
     private JsonToken currentToken = null;
 
     /**
-     * Instanciates a lexer with a reader from which to read JSON tokens.
+     * Instantiates a lexer with a reader from which to read JSON tokens.
      * Under the hood, the reader is wrapped in a <code>LineColumnReader</code>,
      * for line and column information, unless it's already an instance of that class.
      *

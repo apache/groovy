@@ -48,7 +48,7 @@ class ReflectionCompletor {
     /**
      *
      * @param shell
-     * @param metaclass_completion_prefix_length how long the prefix must be to disaply candidates from metaclass
+     * @param metaclass_completion_prefix_length how long the prefix must be to display candidates from metaclass
      */
     ReflectionCompletor(final Groovysh shell) {
         this.shell = shell
@@ -81,7 +81,7 @@ class ReflectionCompletor {
             /**
              * for aggregate types, find an arbitrary collection-member
              * element within the instance. This may cause invalid completion candidates when the collection is not
-             * homogenous, but still better than no completion at all. Alternatively the union or intersection of
+             * homogeneous, but still better than no completion at all. Alternatively the union or intersection of
              * candidate completions could be built. For non-aggregate types, we assume that whatever find()
              * returns is useful for *. completion as well.
              */

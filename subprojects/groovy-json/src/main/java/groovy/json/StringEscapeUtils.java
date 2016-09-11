@@ -165,7 +165,7 @@ public class StringEscapeUtils {
     /**
      * Worker method for the {@link #escapeJavaScript(String)} method.
      * 
-     * @param out write to receieve the escaped string
+     * @param out writer to receive the escaped string
      * @param str String to escape values in, may be null
      * @param escapeSingleQuote escapes single quotes if <code>true</code>
      * @param escapeForwardSlash TODO

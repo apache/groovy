@@ -63,7 +63,7 @@ public class TemplateConfiguration {
     }
 
     /**
-     * Set the encoding used to write the declaration header. Note that it is the responsability of
+     * Set the encoding used to write the declaration header. Note that it is the responsibility of
      * the user to ensure that it matches the writer encoding.
      * @param declarationEncoding encoding to be used in the declaration string
      */
@@ -158,7 +158,7 @@ public class TemplateConfiguration {
     }
 
     /**
-     * Set the template base class. You can use a distrinct template class to provide more
+     * Set the template base class. You can use a distinct template class to provide more
      * statically available data to your templates.
      *
      * @param baseTemplateClass a class extending {@link groovy.text.markup.BaseTemplate}

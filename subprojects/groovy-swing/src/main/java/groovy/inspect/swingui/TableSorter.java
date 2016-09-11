@@ -18,6 +18,16 @@
  */
 package groovy.inspect.swingui;
 
+import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.Date;
+import java.util.Vector;
+
 /**
  * A sorter for TableModels. The sorter has a model (conforming to TableModel)
  * and itself implements TableModel. TableSorter does not store or copy
@@ -35,17 +45,6 @@ package groovy.inspect.swingui;
  * @author Philip Milne
  * @author Minimal adjustments by Dierk Koenig, June 2005
  */
-
-import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.Date;
-import java.util.Vector;
-
 public class TableSorter extends TableMap {
     int indexes[];
     Vector sortingColumns = new Vector();

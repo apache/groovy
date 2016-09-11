@@ -436,11 +436,11 @@ Once you have an instance of JmxBuilder, you are now ready to invoke any of its 
 
 === JMX Connectors
 
-Remote connectivity is a crucial part of the JMX architecture. JmxBuilder facilitates the creation of connector servers and connector clients with nimimal amount of coding.
+Remote connectivity is a crucial part of the JMX architecture. JmxBuilder facilitates the creation of connector servers and connector clients with a minimal amount of coding.
 
 ==== Connector Server
 
-JmxBuilder.connectoServer() supports the full Connector api syntax and will let you specify properties, override the URL, specify your own host, etc.
+JmxBuilder.connectorServer() supports the full Connector api syntax and will let you specify properties, override the URL, specify your own host, etc.
 
 **Syntax**
 
@@ -776,7 +776,7 @@ Using JmxBuilder, you can target methods to export for management using the meth
 include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_operations_by_signature,indent=0]
 ----
 
-In the snipet above, JmxBuilder would **select method makeRequest(String)** to be exported instead of the other version makeRequest() which takes no parameter. In this shorthand context, the signature is specified as a list of type (i.e. "String").
+In the snippet above, JmxBuilder would **select method makeRequest(String)** to be exported instead of the other version makeRequest() which takes no parameter. In this shorthand context, the signature is specified as a list of type (i.e. "String").
 
 ==== Export Operations with Explicit Descriptors
 
