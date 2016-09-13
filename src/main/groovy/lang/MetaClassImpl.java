@@ -94,6 +94,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
+import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -625,10 +626,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         for (CachedClass cls : interfaces) {
             MetaMethod methods[] = getNewMetaMethods(cls);
             for (MetaMethod method : methods) {
-                if (!newGroovyMethodsSet.contains(method)) {
-                    newGroovyMethodsSet.add(method);
+                boolean skip = false;
+                // skip DGM methods on an interface if the class already has the method
+                // but don't skip for GroovyObject-related methods as it breaks things :-(
+                if (method instanceof GeneratedMetaMethod && !isAssignableFrom(GroovyObject.class, method.getDeclaringClass().getTheClass())) {
+                    for (Method m : theClass.getMethods()) {
+                        if (method.getName().equals(m.getName())
+                                // below not true for DGM#push and also co-variant return scenarios
+                                //&& method.getReturnType().equals(m.getReturnType())
+                                && MetaMethod.equal(method.getParameterTypes(), m.getParameterTypes())) {
+                            skip = true;
+                            break;
+                        }
+                    }
                 }
-                addMetaMethodToIndex(method, mainClassMethodHeader);
+                if (!skip) {
+                    if (!newGroovyMethodsSet.contains(method)) {
+                        newGroovyMethodsSet.add(method);
+                    }
+                    addMetaMethodToIndex(method, mainClassMethodHeader);
+                }
             }
         }
     }
