@@ -214,7 +214,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property getter dispatcher
+        // add property setter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "val")
@@ -251,7 +251,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property setter dispatcher
+        // add property getter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name")
         };
