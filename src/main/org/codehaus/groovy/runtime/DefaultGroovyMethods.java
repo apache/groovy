@@ -8928,11 +8928,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the last item from the List. Using add() and pop()
-     * is similar to push and pop on a Stack.
-     * <pre class="groovyTestCase">def list = ["a", false, 2]
-     * assert list.pop() == 2
-     * assert list == ["a", false]</pre>
+     * Removes the initial item from the List, similar to pop on a Stack.
+     * <pre class="groovyTestCase">
+     * def list = ["a", false, 2]
+     * assert list.pop() == 'a'
+     * assert list == [false, 2]
+     * </pre>
+     *
+     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
+     * If you need the old behavior use 'removeLast'.
      *
      * @param self a List
      * @return the item removed from the List
@@ -8940,6 +8944,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> T pop(List<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot pop() an empty List");
+        }
+        return self.remove(0);
+    }
+
+    /**
+     * Removes the last item from the List. Using add() and pop()
+     * is similar to push and pop on a Stack.
+     * <pre class="groovyTestCase">
+     * def list = ["a", false, 2]
+     * assert list.removeLast() == 2
+     * assert list == ["a", false]
+     * </pre>
+     *
+     * @param self a List
+     * @return the item removed from the List
+     * @throws NoSuchElementException if the list is empty and you try to pop() it.
+     * @since 2.5.0
+     */
+    public static <T> T removeLast(List<T> self) {
         if (self.isEmpty()) {
             throw new NoSuchElementException("Cannot pop() an empty List");
         }
@@ -8981,20 +9006,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Appends an item to the List. Synonym for add().
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * Prepends an item to the start of the List, similar to push on a stack.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
      * list.push("x")
-     * assert list == [3, 4, 2, "x"]</pre>
+     * assert list == ['x', 3, 4, 2]
+     * </pre>
+     *
+     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
+     * If you need the old behavior use 'add'.
      *
      * @param self a List
-     * @param value element to be appended to this list.
-     * @return <tt>true</tt> (as per the general contract of the
-     *            <tt>Collection.add</tt> method).
-     * @throws NoSuchElementException if the list is empty and you try to pop() it.
+     * @param value element to be prepended to this list.
+     * @return <tt>true</tt> (for legacy compatibility reasons).
      * @since 1.5.5
      */
     public static <T> boolean push(List<T> self, T value) {
-        return self.add(value);
+        self.add(0, value);
+        return true;
     }
 
     /**

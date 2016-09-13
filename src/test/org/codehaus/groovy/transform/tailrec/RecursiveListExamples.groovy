@@ -75,7 +75,7 @@ class RecursiveList {
     static Map rlist(List elements, Map result = empty) {
         if (!elements)
             return result
-        Object head = elements.pop()
+        Object head = elements.removeLast()
         rlist(elements, cons(head, result))
     }
 
