@@ -123,7 +123,7 @@ class DynamicTargetClass {
             return result
         else {
             def element = elements.pop()
-            result.add(element)
+            result.push(element)
             return revert(elements, result)
         }
     }

@@ -256,15 +256,20 @@ class ListTest extends GroovyTestCase {
     void testPop() {
         def l = []
         l << 'a' << 'b'
-        def value = l.pop()
+        def value = l.removeLast()
         assert value == 'b'
         assert l == ['a']
 
-        l.add('c')
+        l << 'b'
+        value = l.pop()
+        assert value == 'a'
+        assert l == ['b']
+
+        l.push('c')
         value = l.pop()
         assert value == 'c'
         value = l.pop()
-        assert value == 'a'
+        assert value == 'b'
         try {
             l.pop()
             fail("Should have thrown an exception")
