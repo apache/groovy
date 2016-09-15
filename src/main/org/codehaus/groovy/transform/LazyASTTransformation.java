@@ -44,6 +44,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -156,8 +157,12 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
-        final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
-        fieldNode.getDeclaringClass().addMethod(name, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        String propName = MetaClassHelper.capitalize(fieldNode.getName().substring(1));
+        fieldNode.getDeclaringClass().addMethod("get" + propName, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        if (ClassHelper.boolean_TYPE.equals(type)) {
+            fieldNode.getDeclaringClass().addMethod("is" + propName, visibility, type,
+                    Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt(callThisX("get" + propName)));
+        }
     }
 
     private static void createSoft(FieldNode fieldNode, Expression initExpr) {
