@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -887,7 +888,7 @@ public abstract class StaticTypeCheckingSupport {
             // we want to add one, because there is an interface between
             // the interface we search for and the interface we are in.
             if (sub != -1) {
-                sub+=(i+1); // GROOVY-6970: Make sure we can choose between equivalent methods
+                sub+=1;
             }
             // we are interested in the longest path only
             max = Math.max(max, sub);
@@ -971,7 +972,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
-        Collection<MethodNode> choicesLeft = removeCovariants(methods);
+        Collection<MethodNode> choicesLeft = removeCovariantsAndInterfaceEquivalents(methods);
         for (MethodNode candidateNode : choicesLeft) {
             ClassNode declaringClassForDistance = candidateNode.getDeclaringClass();
             ClassNode actualReceiverForDistance = receiver != null ? receiver : candidateNode.getDeclaringClass();
@@ -1106,7 +1107,7 @@ public abstract class StaticTypeCheckingSupport {
         return raw;
     }
 
-    private static Collection<MethodNode> removeCovariants(Collection<MethodNode> collection) {
+    private static Collection<MethodNode> removeCovariantsAndInterfaceEquivalents(Collection<MethodNode> collection) {
         if (collection.size()<=1) return collection;
         List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
         List<MethodNode> list = new LinkedList<MethodNode>(new HashSet<MethodNode>(collection));
@@ -1116,45 +1117,66 @@ public abstract class StaticTypeCheckingSupport {
             for (int j=i+1;j<list.size();j++) {
                 MethodNode two = list.get(j);
                 if (toBeRemoved.contains(two)) continue;
-                if (one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass()) {
-                    Parameter[] onePars = one.getParameters();
-                    Parameter[] twoPars = two.getParameters();
-                    if (onePars.length == twoPars.length) {
-                        boolean sameTypes = true;
-                        for (int k = 0; k < onePars.length; k++) {
-                            Parameter onePar = onePars[k];
-                            Parameter twoPar = twoPars[k];
-                            if (!onePar.getType().equals(twoPar.getType())) {
-                                sameTypes = false;
-                                break;
-                            }
-                        }
-                        if (sameTypes) {
-                            ClassNode oneRT = one.getReturnType();
-                            ClassNode twoRT = two.getReturnType();
-                            if (oneRT.isDerivedFrom(twoRT) || oneRT.implementsInterface(twoRT)) {
-                                toBeRemoved.add(two);
-                            } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
-                                toBeRemoved.add(one);
-                            }
+                if (one.getParameters().length == two.getParameters().length) {
+                    if (areOverloadMethodsInSameClass(one,two)) {
+                        if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())){
+                            removeMethodWithSuperReturnType(toBeRemoved, one, two);
                         } else {
                             // this is an imperfect solution to determining if two methods are
                             // equivalent, for example String#compareTo(Object) and String#compareTo(String)
                             // in that case, Java marks the Object version as synthetic
-                            if (one.isSynthetic() && !two.isSynthetic()) {
-                                toBeRemoved.add(one);
-                            } else if (two.isSynthetic() && !one.isSynthetic()) {
-                                toBeRemoved.add(two);
-                            }
+                            removeSyntheticMethodIfOne(toBeRemoved, one, two);
                         }
+                    }else if(areEquivalentInterfaceMethods(one, two)){
+                        // GROOVY-6970 choose between equivalent interface methods
+                        removeMethodInSuperInterface(toBeRemoved, one, two);
                     }
-                }                
+                }
             }
         }
         if (toBeRemoved.isEmpty()) return list;
         List<MethodNode> result = new LinkedList<MethodNode>(list);
         result.removeAll(toBeRemoved);
         return result;
+    }
+
+    private static void removeMethodInSuperInterface(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
+        ClassNode oneDC=one.getDeclaringClass();
+        ClassNode twoDC=two.getDeclaringClass();
+        if(oneDC.implementsInterface(twoDC)){
+            toBeRemoved.add(two);
+        }else{
+            toBeRemoved.add(one);
+        }
+    }
+
+    private static boolean areEquivalentInterfaceMethods(MethodNode one, MethodNode two) {
+        return one.getName().equals(two.getName())
+                && one.getDeclaringClass().isInterface()
+                && two.getDeclaringClass().isInterface()
+                && ParameterUtils.parametersEqual(one.getParameters(), two.getParameters());
+    }
+
+    private static void removeSyntheticMethodIfOne(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
+        if (one.isSynthetic() && !two.isSynthetic()) {
+            toBeRemoved.add(one);
+        } else if (two.isSynthetic() && !one.isSynthetic()) {
+            toBeRemoved.add(two);
+        }
+    }
+
+    private static void removeMethodWithSuperReturnType(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
+        ClassNode oneRT = one.getReturnType();
+        ClassNode twoRT = two.getReturnType();
+        if (oneRT.isDerivedFrom(twoRT) || oneRT.implementsInterface(twoRT)) {
+            toBeRemoved.add(two);
+        } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
+            toBeRemoved.add(one);
+        }
+    }
+
+    private static boolean areOverloadMethodsInSameClass(MethodNode one, MethodNode two){
+        return one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass();
     }
 
     /**
@@ -1376,7 +1398,7 @@ public abstract class StaticTypeCheckingSupport {
             addMethodLevelDeclaredGenerics(candidateMethod,resolvedMethodGenerics);
         }
         // so first we remove hidden generics
-        for (String key: resolvedMethodGenerics.keySet()) classGTs.remove(key); 
+        for (String key: resolvedMethodGenerics.keySet()) classGTs.remove(key);
         // then we use the remaining information to refine the given generics
         applyGenericsConnections(classGTs,resolvedMethodGenerics);
         // and then start our checks with the receiver
@@ -1455,7 +1477,7 @@ public abstract class StaticTypeCheckingSupport {
         return gt;
     }
 
-    private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics, Set<String> fixedGenericsPlaceHolders) 
+    private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics, Set<String> fixedGenericsPlaceHolders)
     {
         for (Map.Entry<String, GenericsType> entry : connections.entrySet()) {
             GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
@@ -1467,7 +1489,7 @@ public abstract class StaticTypeCheckingSupport {
             if (!compatibleConnection(resolved,connection)) {
                 if (    !(resolved.isPlaceholder() || resolved.isWildcard()) &&
                         !fixedGenericsPlaceHolders.contains(entry.getKey()) &&
-                        compatibleConnection(connection,resolved)) 
+                        compatibleConnection(connection,resolved))
                 {
                     // we did for example find T=String and now check against
                     // T=Object, which fails the first compatibleConnection check
@@ -1485,9 +1507,9 @@ public abstract class StaticTypeCheckingSupport {
     private static boolean compatibleConnection(GenericsType resolved, GenericsType connection) {
         GenericsType gt = connection;
         if (!connection.isWildcard()) gt = buildWildcardType(connection);
-        if (    resolved.isPlaceholder() && resolved.getUpperBounds()!=null && 
-                resolved.getUpperBounds().length==1 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder() && 
-                resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) 
+        if (    resolved.isPlaceholder() && resolved.getUpperBounds()!=null &&
+                resolved.getUpperBounds().length==1 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder() &&
+                resolved.getUpperBounds()[0].getName().equals("java.lang.Object"))
         {
             return true;
         }
@@ -1546,7 +1568,7 @@ public abstract class StaticTypeCheckingSupport {
                     checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(value,newValue);
                     continue;
                 }
-                GenericsType original = entry.getValue(); 
+                GenericsType original = entry.getValue();
                 if (!original.isWildcard() && !original.isPlaceholder()) {
                     continue;
                 }
@@ -1627,10 +1649,10 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * use supplied type to make a connection from usage to declaration
-     * The method operates in two modes. 
-     * * For type !instanceof target a structural compare will be done 
+     * The method operates in two modes.
+     * * For type !instanceof target a structural compare will be done
      *   (for example Dummy&lt;T&gt; and List&lt;R&gt; to get T=R)
-     * * If type equals target, a structural match is done as well 
+     * * If type equals target, a structural match is done as well
      *   (for example Colection&lt;U&gt; and Collection&lt;E&gt; to get U=E)
      * * otherwise we climb the hierarchy to find a case of type equals target
      *   to then execute the structural match, while applying possibly existing
@@ -1732,7 +1754,7 @@ public abstract class StaticTypeCheckingSupport {
         newTarget.setGenericsTypes(newGTs);
         return GenericsUtils.extractPlaceholders(newTarget);
     }
-    
+
     private static GenericsType[] applyGenericsContext(
             Map<String, GenericsType> spec, GenericsType[] gts
     ) {
@@ -1924,7 +1946,7 @@ public abstract class StaticTypeCheckingSupport {
      * specifically by the Groovy compiler.
      */
     private static class ObjectArrayStaticTypesHelper {
-        public static <T> T getAt(T[] arr, int index) { return null;} 
+        public static <T> T getAt(T[] arr, int index) { return null;}
         public static <T,U extends T> void putAt(T[] arr, int index, U object) { }
     }
 
@@ -1999,7 +2021,7 @@ public abstract class StaticTypeCheckingSupport {
 
             scanClassesForDGMMethods(methods, staticExtClasses, true);
             scanClassesForDGMMethods(methods, instanceExtClasses, false);
-            
+
             return methods;
         }
 
