@@ -887,7 +887,7 @@ public abstract class StaticTypeCheckingSupport {
             // we want to add one, because there is an interface between
             // the interface we search for and the interface we are in.
             if (sub != -1) {
-                sub+=1; // GROOVY-6970: Make sure we can choose between equivalent methods
+                sub+=1;
             }
             // we are interested in the longest path only
             max = Math.max(max, sub);
