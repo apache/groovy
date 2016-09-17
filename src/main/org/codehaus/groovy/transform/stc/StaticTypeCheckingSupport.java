@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -1120,7 +1121,7 @@ public abstract class StaticTypeCheckingSupport {
                 Parameter[] twoPars = two.getParameters();
                 if (onePars.length == twoPars.length) {
                     if (areOverloadMethodsInSameClass(one,two)) {
-                        if (allParameterTypesAreSame(onePars, twoPars)){
+                        if (ParameterUtils.parametersEqual(onePars, twoPars)){
                             removeMethodWithSuperReturnType(toBeRemoved, one, two);
                         } else {
                             // this is an imperfect solution to determining if two methods are
@@ -1155,7 +1156,7 @@ public abstract class StaticTypeCheckingSupport {
         return one.getName().equals(two.getName())
                 && one.getDeclaringClass().isInterface()
                 && two.getDeclaringClass().isInterface()
-                && allParameterTypesAreSame(onePars, twoPars);
+                && ParameterUtils.parametersEqual(onePars, twoPars);
     }
 
     private static void removeSyntheticMethodIfOne(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
@@ -1178,17 +1179,6 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean areOverloadMethodsInSameClass(MethodNode one, MethodNode two){
         return one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass();
-    }
-
-    private static boolean allParameterTypesAreSame(Parameter[] onePars, Parameter[] twoPars) {
-        for (int k = 0; k < onePars.length; k++) {
-            Parameter onePar = onePars[k];
-            Parameter twoPar = twoPars[k];
-            if (!onePar.getType().equals(twoPar.getType())) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
