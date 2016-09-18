@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -82,8 +83,13 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         final Expression soft = node.getMember("soft");
         final Expression init = getInitExpr(xform, fieldNode);
 
-        fieldNode.rename("$" + fieldNode.getName());
+        String backingFieldName = "$" + fieldNode.getName();
+        fieldNode.rename(backingFieldName);
         fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+        PropertyNode pNode = fieldNode.getDeclaringClass().getProperty(backingFieldName);
+        if (pNode != null) {
+            fieldNode.getDeclaringClass().getProperties().remove(pNode);
+        }
 
         if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
             createSoft(fieldNode, init);
