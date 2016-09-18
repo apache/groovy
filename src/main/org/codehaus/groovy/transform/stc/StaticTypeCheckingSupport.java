@@ -1117,11 +1117,9 @@ public abstract class StaticTypeCheckingSupport {
             for (int j=i+1;j<list.size();j++) {
                 MethodNode two = list.get(j);
                 if (toBeRemoved.contains(two)) continue;
-                Parameter[] onePars = one.getParameters();
-                Parameter[] twoPars = two.getParameters();
-                if (onePars.length == twoPars.length) {
+                if (one.getParameters().length == two.getParameters().length) {
                     if (areOverloadMethodsInSameClass(one,two)) {
-                        if (ParameterUtils.parametersEqual(onePars, twoPars)){
+                        if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())){
                             removeMethodWithSuperReturnType(toBeRemoved, one, two);
                         } else {
                             // this is an imperfect solution to determining if two methods are
@@ -1129,7 +1127,7 @@ public abstract class StaticTypeCheckingSupport {
                             // in that case, Java marks the Object version as synthetic
                             removeSyntheticMethodIfOne(toBeRemoved, one, two);
                         }
-                    }else if(areEquivalentInterfaceMethods(one, two, onePars, twoPars)){
+                    }else if(areEquivalentInterfaceMethods(one, two)){
                         // GROOVY-6970 choose between equivalent interface methods
                         removeMethodInSuperInterface(toBeRemoved, one, two);
                     }
@@ -1152,11 +1150,11 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static boolean areEquivalentInterfaceMethods(MethodNode one, MethodNode two, Parameter[] onePars, Parameter[] twoPars) {
+    private static boolean areEquivalentInterfaceMethods(MethodNode one, MethodNode two) {
         return one.getName().equals(two.getName())
                 && one.getDeclaringClass().isInterface()
                 && two.getDeclaringClass().isInterface()
-                && ParameterUtils.parametersEqual(onePars, twoPars);
+                && ParameterUtils.parametersEqual(one.getParameters(), two.getParameters());
     }
 
     private static void removeSyntheticMethodIfOne(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
