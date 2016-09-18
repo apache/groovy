@@ -1108,18 +1108,18 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static Collection<MethodNode> removeCovariantsAndInterfaceEquivalents(Collection<MethodNode> collection) {
-        if (collection.size()<=1) return collection;
+        if (collection.size() <= 1) return collection;
         List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
         List<MethodNode> list = new LinkedList<MethodNode>(new HashSet<MethodNode>(collection));
-        for (int i=0;i<list.size()-1;i++) {
+        for (int i = 0; i < list.size() - 1; i++) {
             MethodNode one = list.get(i);
             if (toBeRemoved.contains(one)) continue;
-            for (int j=i+1;j<list.size();j++) {
+            for (int j = i + 1; j < list.size(); j++) {
                 MethodNode two = list.get(j);
                 if (toBeRemoved.contains(two)) continue;
                 if (one.getParameters().length == two.getParameters().length) {
                     if (areOverloadMethodsInSameClass(one,two)) {
-                        if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())){
+                        if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             removeMethodWithSuperReturnType(toBeRemoved, one, two);
                         } else {
                             // this is an imperfect solution to determining if two methods are
@@ -1127,7 +1127,7 @@ public abstract class StaticTypeCheckingSupport {
                             // in that case, Java marks the Object version as synthetic
                             removeSyntheticMethodIfOne(toBeRemoved, one, two);
                         }
-                    }else if(areEquivalentInterfaceMethods(one, two)){
+                    } else if (areEquivalentInterfaceMethods(one, two)) {
                         // GROOVY-6970 choose between equivalent interface methods
                         removeMethodInSuperInterface(toBeRemoved, one, two);
                     }
@@ -1141,11 +1141,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static void removeMethodInSuperInterface(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
-        ClassNode oneDC=one.getDeclaringClass();
-        ClassNode twoDC=two.getDeclaringClass();
-        if(oneDC.implementsInterface(twoDC)){
+        ClassNode oneDC = one.getDeclaringClass();
+        ClassNode twoDC = two.getDeclaringClass();
+        if (oneDC.implementsInterface(twoDC)) {
             toBeRemoved.add(two);
-        }else{
+        } else {
             toBeRemoved.add(one);
         }
     }
@@ -1175,8 +1175,8 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static boolean areOverloadMethodsInSameClass(MethodNode one, MethodNode two){
-        return one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass();
+    private static boolean areOverloadMethodsInSameClass(MethodNode one, MethodNode two) {
+        return one.getName().equals(two.getName()) && one.getDeclaringClass() == two.getDeclaringClass();
     }
 
     /**
