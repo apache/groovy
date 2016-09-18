@@ -143,9 +143,6 @@ import java.lang.annotation.Target;
  *     return DateHolder_date3.INSTANCE
  * }
  * </pre>
- *
- * @author Alex Tkachman
- * @author Paul King
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
