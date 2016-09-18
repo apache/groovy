@@ -72,7 +72,7 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
                 }
 
                 static main(args) {
-                    assert new Demo().hashCode() == 8730
+                    assert new Demo().hashCode() == 7590
                     assert new Demo(myBooleanProperty: true).toString() == 'Demo(false)'
                 }
             }
