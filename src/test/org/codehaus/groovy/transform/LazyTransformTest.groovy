@@ -188,4 +188,22 @@ class LazyTransformTest extends GroovyShellTestCase {
         """)
         assertEquals([10,20,30,40,50,60], res)
     }
+
+    // GROOVY-7940
+    void testGeneratesIsAndGetAccessorsForBooleanPrimitives() {
+        assertScript '''
+            class Super {
+                boolean aBoolean = true
+            }
+
+            class Testing extends Super {
+                @Lazy
+                boolean aBoolean = {-> false }()
+            }
+
+            assert !new Testing().isaBoolean()
+            assert !new Testing().getaBoolean()
+            assert !new Testing().aBoolean
+        '''
+    }
 }
