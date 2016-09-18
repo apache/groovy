@@ -8928,19 +8928,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the initial item from the List, similar to pop on a Stack.
+     * Removes the initial item from the List.
+     *
      * <pre class="groovyTestCase">
      * def list = ["a", false, 2]
      * assert list.pop() == 'a'
      * assert list == [false, 2]
      * </pre>
      *
+     * This is similar to pop on a Stack where the first item in the list
+     * represents the top of the stack.
+     *
      * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
      * If you need the old behavior use 'removeLast'.
      *
      * @param self a List
      * @return the item removed from the List
-     * @throws NoSuchElementException if the list is empty and you try to pop() it.
+     * @throws NoSuchElementException if the list is empty
      * @since 1.0
      */
     public static <T> T pop(List<T> self) {
@@ -8951,22 +8955,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the last item from the List. Using add() and pop()
-     * is similar to push and pop on a Stack.
+     * Removes the last item from the List.
+     *
      * <pre class="groovyTestCase">
      * def list = ["a", false, 2]
      * assert list.removeLast() == 2
      * assert list == ["a", false]
      * </pre>
      *
+     * Using add() and removeLast() is similar to push and pop on a Stack
+     * where the last item in the list represents the top of the stack.
+     *
      * @param self a List
      * @return the item removed from the List
-     * @throws NoSuchElementException if the list is empty and you try to pop() it.
+     * @throws NoSuchElementException if the list is empty
      * @since 2.5.0
      */
     public static <T> T removeLast(List<T> self) {
         if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot pop() an empty List");
+            throw new NoSuchElementException("Cannot removeLast() an empty List");
         }
         return self.remove(self.size() - 1);
     }
@@ -9006,12 +9013,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Prepends an item to the start of the List, similar to push on a stack.
+     * Prepends an item to the start of the List.
+     *
      * <pre class="groovyTestCase">
      * def list = [3, 4, 2]
      * list.push("x")
      * assert list == ['x', 3, 4, 2]
      * </pre>
+     *
+     * This is similar to push on a Stack where the first item in the list
+     * represents the top of the stack.
      *
      * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
      * If you need the old behavior use 'add'.
