@@ -675,6 +675,29 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
+    void testNestedPropertyHandling() {
+        // GROOVY-6831
+        assertScript '''
+            class Outer {
+                private static List items = []
+                void add() { items.add('Outer') }
+                static class Nested {
+                    void add() { items.add('Nested') }
+                    static class NestedNested {
+                        void add() { items.add('NestedNested') }
+                        void set() { items = ['Overridden'] }
+                    }
+                }
+            }
+            new Outer().add()
+            new Outer.Nested().add()
+            new Outer.Nested.NestedNested().add()
+            assert Outer.items == ["Outer", "Nested", "NestedNested"]
+            new Outer.Nested.NestedNested().set()
+            assert Outer.items == ["Overridden"]
+        '''
+    }
+
     void testInnerClassOfInterfaceIsStatic() {
         //GROOVY-7312
         assertScript '''
