@@ -2744,7 +2744,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new ReadOnlyPropertyException(name, theClass);
         }
 
-        invokeMissingProperty(object, name, newValue, false);
+        if ((isStatic || object instanceof Class) && !"metaClass".equals(name))
+            invokeStaticMissingProperty(object, name, newValue, false);
+        else
+            invokeMissingProperty(object, name, newValue, false);
     }
 
     private static boolean isPrivateOrPkgPrivate(int mod) {
