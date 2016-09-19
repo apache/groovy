@@ -20,8 +20,7 @@ package groovy.lang
 
 /**
  * Tests for method missing handling in Groovy
-
- * @author Graeme Rocher
+ *
  * @since 1.5
  */
 class MethodMissingTest extends GroovyTestCase {
@@ -106,7 +105,7 @@ class MethodMissingTest extends GroovyTestCase {
         sw.withPrintWriter { pw ->
             exception.printStackTrace(pw)
             assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
-            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@????>]")
+            assert sw.toString().contains("is applicable for argument types: (Broken) values: [<Broken@????>]")
             assert !sw.toString().contains("toString broken")
         }
         sw = new StringWriter()
@@ -114,7 +113,7 @@ class MethodMissingTest extends GroovyTestCase {
         sw.withPrintWriter { pw ->
             exception.printStackTrace(pw)
             assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
-            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@9>]")
+            assert sw.toString().contains("is applicable for argument types: (Broken) values: [<Broken@9>]")
             assert !sw.toString().contains("toString broken")
         }
     }

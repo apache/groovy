@@ -83,7 +83,7 @@ class StaticCompilationIntroTest extends GroovyTestCase {
             shell.evaluate(TYPESAFE_PROGRAM+RUNTIME_MAGIC+RUN)
             assert false
         } catch (MissingMethodException e) {
-            assert e.message.contains('No signature of method: Computer.compute() is applicable for argument types: (java.util.Date)')
+            assert e.message.contains('No signature of method: Computer.compute() is applicable for argument types: (Date)')
         }
     }
 

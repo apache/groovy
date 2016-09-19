@@ -26,8 +26,6 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  * <p>
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
@@ -60,7 +58,7 @@ public class MissingMethodException extends GroovyRuntimeException {
                 + "."
                 + method
                 + "() is applicable for argument types: ("
-                + InvokerHelper.toTypeString(arguments)
+                + InvokerHelper.toTypeString(arguments, 60)
                 + ") values: "
                 + InvokerHelper.toArrayString(arguments, 60, true)
                 + MethodRankHelper.getMethodSuggestionString(method, type, arguments);

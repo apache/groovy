@@ -23,17 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import org.codehaus.groovy.util.StringUtil
 
 /** 
- * Tests the various new Groovy methods
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Guillaume Laforge
- * @author Dierk Koenig
- * @author Paul King
- * @author Joachim Baumann
- * @author Mike Dillon
- * @author Tim Yates
- * @author Dinko Srkoc
- * @author Yu Kobayashi
+ * Tests various GDK methods
  */
 class GroovyMethodsTest extends GroovyTestCase {
     
@@ -98,7 +88,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         try {
             ['one hundred', 200] as Dimension
         } catch (Exception e) {
-            assert e.message.contains("java.lang.String")
+            assert e.message.contains("Could not find matching constructor for:")
+            assert e.message.contains("String,")
         }
     }
 

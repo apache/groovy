@@ -93,7 +93,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
             InvokerHelper.format(eObject..eObject2)
         }
 
-        assert InvokerHelper.format(eObject..eObject, false, -1, true) == '<groovy.lang.ObjectRange@????>'
+        assert InvokerHelper.format(eObject..eObject, false, -1, true) == '<ObjectRange@????>'
     }
 
     void testToStringLists() {

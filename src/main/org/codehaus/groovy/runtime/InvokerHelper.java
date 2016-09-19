@@ -35,6 +35,7 @@ import groovy.lang.SpreadMap;
 import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
 import groovy.lang.Writable;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
@@ -59,10 +60,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -377,7 +380,7 @@ public class InvokerHelper {
             }
             return new SpreadMap(values);
         }
-        throw new SpreadMapEvaluatingException("Cannot spread the map " + value.getClass().getName() + ", value " + value);
+        throw new SpreadMapEvaluatingException("Cannot spread the map " + typeName(value) + ", value " + value);
     }
 
     public static List createList(Object[] values) {
@@ -676,7 +679,7 @@ public class InvokerHelper {
         } catch (Exception ignored) {
             hash = "????";
         }
-        return "<" + item.getClass().getName() + "@" + hash + ">";
+        return "<" + typeName(item) + "@" + hash + ">";
     }
 
     private static String formatMap(Map map, boolean verbose, int maxSize, boolean safe) {
@@ -748,17 +751,55 @@ public class InvokerHelper {
      * @return the string representation of the type
      */
     public static String toTypeString(Object[] arguments) {
+        return toTypeString(arguments, -1);
+    }
+
+    /**
+     * A helper method to format the arguments types as a comma-separated list.
+     *
+     * @param arguments the type to process
+     * @param maxSize   stop after approximately this many characters and append '...', -1 means don't stop
+     * @return the string representation of the type
+     */
+    public static String toTypeString(Object[] arguments, int maxSize) {
         if (arguments == null) {
             return "null";
         }
         StringBuilder argBuf = new StringBuilder();
         for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
-                argBuf.append(", ");
+            if (maxSize != -1 && argBuf.length() > maxSize) {
+                argBuf.append("...");
+                break;
+            } else {
+                if (i > 0) {
+                    argBuf.append(", ");
+                }
+                argBuf.append(arguments[i] != null ? typeName(arguments[i]) : "null");
             }
-            argBuf.append(arguments[i] != null ? arguments[i].getClass().getName() : "null");
         }
         return argBuf.toString();
+    }
+
+    private static Set<String> DEFAULT_IMPORT_PKGS = new HashSet<String>();
+    private static Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<String>();
+    static {
+        for (String pkgName : ResolveVisitor.DEFAULT_IMPORTS) {
+            DEFAULT_IMPORT_PKGS.add(pkgName.substring(0, pkgName.length() - 1));
+        }
+        DEFAULT_IMPORT_CLASSES.add("java.math.BigDecimal");
+        DEFAULT_IMPORT_CLASSES.add("java.math.BigInteger");
+    }
+    /**
+     * Gets the type name
+     *
+     * @param argument the object to find the type for
+     * @return the type name (slightly pretty format taking into account default imports)
+     */
+    private static String typeName(Object argument) {
+        Class<?> aClass = argument.getClass();
+        String pkgName = aClass.getPackage() == null ? "" : aClass.getPackage().getName();
+        boolean useShort = DEFAULT_IMPORT_PKGS.contains(pkgName) || DEFAULT_IMPORT_CLASSES.contains(aClass.getName());
+        return useShort ? aClass.getSimpleName() : aClass.getName();
     }
 
     /**
@@ -775,7 +816,7 @@ public class InvokerHelper {
      * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
      *
      * @param arg     the map to process
-     * @param maxSize stop after approximately this many characters and append '...'
+     * @param maxSize stop after approximately this many characters and append '...', -1 means don't stop
      * @return the string representation of the map
      */
     public static String toMapString(Map arg, int maxSize) {
@@ -807,7 +848,7 @@ public class InvokerHelper {
      * A helper method to return the string representation of a list with bracket boundaries "[" and "]".
      *
      * @param arg     the collection to process
-     * @param maxSize stop after approximately this many characters and append '...'
+     * @param maxSize stop after approximately this many characters and append '...', -1 means don't stop
      * @param safe    whether to use a default object representation for any item in the collection if an exception occurs when generating its toString
      * @return the string representation of the collection
      */
