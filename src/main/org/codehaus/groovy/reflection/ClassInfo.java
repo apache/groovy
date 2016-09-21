@@ -132,6 +132,22 @@ public class ClassInfo implements Finalizable {
         return globalClassValue.get(cls);
     }
 
+    /**
+     * Removes a {@code ClassInfo} from the cache.
+     *
+     * This is useful in cases where the Class is parsed from a script, such as when
+     * using GroovyClassLoader#parseClass, and is executed for its result but the Class
+     * is not retained or cached.  Removing the {@code ClassInfo} associated with the Class
+     * will make the Class and its ClassLoader eligible for garbage collection sooner that
+     * it would otherwise.
+     *
+     * @param cls the Class associated with the ClassInfo to remove
+     *            from cache
+     */
+    public static void remove(Class<?> cls) {
+        globalClassValue.remove(cls);
+    }
+
     public static Collection<ClassInfo> getAllClassInfo () {
         return getAllGlobalClassInfo();
     }
