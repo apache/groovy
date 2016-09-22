@@ -2258,6 +2258,22 @@ d.foo()
         assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
     }
 
+    void testClassDoesNotImplementSelfTypeDefinedInInheritedTrait() {
+        def err = shouldFail '''
+            import groovy.transform.SelfType
+
+            interface Self { def bar() }
+            @SelfType(Self)
+            trait Trait {
+                def foo() { bar() }
+            }
+            interface Middle extends Trait { }
+            class Child implements Middle { }
+            new Child().foo()
+        '''
+        assert err.contains("class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'")
+    }
+
     void testClassDoesNotImplementSelfTypeUsingAbstractClass() {
         def err = shouldFail '''
         import groovy.transform.SelfType
