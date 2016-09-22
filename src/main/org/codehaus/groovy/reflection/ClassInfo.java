@@ -49,7 +49,19 @@ public class ClassInfo implements Finalizable {
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
     public final int hash = -1;
-    private final WeakReference<Class<?>> klazz;
+    private final WeakReference<Class<?>> classRef;
+
+    // TODO: should be able to remove the klazz field once 2.5 becomes the mainline release
+    // Gradle has a cleanup mechanism in place to reflectively access this klazz field.
+    // The klazz field is being kept for compatibility so as to not break builds that depend
+    // on versions of Groovy after the field was changed to a WeakReference (classRef).  It
+    // appears that Gradle only performs the cleanup when it detects a groovy version of 2.4.x,
+    // so the klazz field and placeholder Sentinel class can likely be safely removed once
+    // the release version bumps to 2.5 (or beyond).
+    // See:
+    // https://github.com/gradle/gradle/blob/711f64/subprojects/core/src/main/java/org/gradle/api/internal/classloading/LeakyOnJava7GroovySystemLoader.java#L74
+    private static final class Sentinel {}
+    private static final Class<?> klazz = Sentinel.class;
 
     private final AtomicInteger version = new AtomicInteger();
 
@@ -76,7 +88,7 @@ public class ClassInfo implements Finalizable {
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
-    	this.klazz = new WeakReference<Class<?>>(klazz);
+        this.classRef = new WeakReference<Class<?>>(klazz);
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
@@ -117,7 +129,7 @@ public class ClassInfo implements Finalizable {
      * @return the {@code Class} associated with this {@code ClassInfo}, else {@code null}
      */
     public final Class<?> getTheClass() {
-        return klazz.get();
+        return classRef.get();
     }
 
     public CachedClass getCachedClass() {
@@ -239,7 +251,7 @@ public class ClassInfo implements Finalizable {
             return answer;
         }
 
-        answer = mccHandle.create(klazz.get(), metaClassRegistry);
+        answer = mccHandle.create(classRef.get(), metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
@@ -403,7 +415,7 @@ public class ClassInfo implements Finalizable {
         }
 
         public CachedClass initValue() {
-            return createCachedClass(info.klazz.get(), info);
+            return createCachedClass(info.classRef.get(), info);
         }
     }
 
@@ -416,7 +428,7 @@ public class ClassInfo implements Finalizable {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return new ClassLoaderForClassArtifacts(info.klazz.get());
+            return new ClassLoaderForClassArtifacts(info.classRef.get());
         }
     }
 
