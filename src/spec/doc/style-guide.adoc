@@ -209,16 +209,15 @@ list.each  { println it }
 
 Always prefer the third form, which is more natural, as an empty pair of parentheses is just useless syntactical noise!
 
-There are some cases where Groovy doesn't allow you to remove parentheses.
-As I said, top-level expressions can omit them, but for nested method calls or on the right-hand side of an assignment,
-you can't omit them there.
+In some cases parentheses are required, such as when making nested method calls or when calling a method without parameters.
 
 [source,groovy]
 ----
 def foo(n) { n }
+def bar() { 1 }
 
 println foo 1 // won't work
-def m = foo 1
+def m = bar   // won't work
 ----
 
 == Classes as first-class citizens
