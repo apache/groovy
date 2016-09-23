@@ -18,9 +18,7 @@
  */
 package groovy.json;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import groovy.lang.GroovyObjectSupport;
+import groovy.lang.*;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -506,6 +504,9 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                             if(value instanceof Closure) {
                                 call(name, (Closure)value);
                             }
+                            else if(value instanceof Writable) {
+                                call(name, (Writable)value);
+                            }
                             else {
                                 call(name, value);
                             }
@@ -651,6 +652,23 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(json.toString());
         }
 
+        /**
+         * Writes the given Writable as the value of the given attribute name
+         *
+         * @param name The attribute name 
+         * @param json The writable value
+         * @throws IOException
+         */
+        public void call(String name, Writable json) throws IOException {
+            writeName(name);
+            verifyValue();
+            if(json instanceof GString) {
+                writer.write(JsonOutput.toJson(json.toString()));
+            }
+            else {
+                json.writeTo(writer);
+            }
+        }
 
         private void writeObjects(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
             verifyValue();
