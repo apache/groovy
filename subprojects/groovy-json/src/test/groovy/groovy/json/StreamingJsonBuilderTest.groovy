@@ -65,6 +65,28 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testJsonBuilderWithWritableValue() {
+        new StringWriter().with { w ->
+            def builder = new StreamingJsonBuilder(w)
+            def writable = new Writable() {
+                @Override
+                Writer writeTo(Writer writer) throws IOException {
+                    new StreamingJsonBuilder(writer).call {
+                        sectionId "world"
+                        assert delegate instanceof StreamingJsonBuilder.StreamingJsonDelegate
+                    }
+                    return writer
+                }
+            }
+            builder.response {
+                status "ok"
+                results writable
+            }
+
+            assert w.toString() == '{"response":{"status":"ok","results":{"sectionId":"world"}}}'
+        }
+    }
+
     void testJsonBuilderWithNestedClosures() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
