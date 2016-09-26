@@ -29,6 +29,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -61,7 +62,30 @@ public class JsonOutput {
     private static final String NULL_VALUE = "null";
     private static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String DEFAULT_TIMEZONE = "GMT";
+    private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXX";
+    private static final String ISO8601_TIMEZONE = "UTC";
+    private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>() {
+        @Override
+	protected DateFormat initialValue() {
+	    SimpleDateFormat sdf;
+	    if (ISO8601_DATE_FORMAT.equals(System.getProperty("groovy.json.dateFormat"))) {
+		sdf = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
+		sdf.setTimeZone(TimeZone.getTimeZone(ISO8601_TIMEZONE));
+	    } else {
+		sdf = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
+		sdf.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+	    }
+	    return sdf;
+	}
+    };
 
+    /**
+     * @param DateFormat field to set the format to
+     */
+    public static void setDateFormat(DateFormat dfmt) {
+	dateFormat.set(dfmt);
+    }
+    
     /**
      * @return "true" or "false" for a boolean value
      */
@@ -347,9 +371,7 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-        SimpleDateFormat formatter = new SimpleDateFormat(JSON_DATE_FORMAT, Locale.US);
-        formatter.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
-        buffer.addQuoted(formatter.format(date));
+        buffer.addQuoted(dateFormat.get().format(date));
     }
 
     /**

@@ -17,7 +17,7 @@
  *  under the License.
  */
 package groovy.json
-
+import java.text.SimpleDateFormat;
 import static groovy.json.JsonOutput.toJson
 
 import groovy.transform.Canonical
@@ -186,7 +186,6 @@ class JsonOutputTest extends GroovyTestCase {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
         c.clearTime()
         c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
-
         assert toJson(c) == '"2008-03-04T12:50:00+0000"'
     }
 
