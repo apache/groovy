@@ -18,10 +18,7 @@
  */
 package groovy.json;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import groovy.lang.GroovyObjectSupport;
-import groovy.lang.Writable;
+import groovy.lang.*;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -665,7 +662,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         public void call(String name, Writable json) throws IOException {
             writeName(name);
             verifyValue();
-            if(json instanceof CharSequence) {
+            if(json instanceof GString) {
                 writer.write(JsonOutput.toJson(json.toString()));
             }
             else {
