@@ -658,8 +658,8 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         /**
          * Writes the given Writable as the value of the given attribute name
          *
-         * @param name The attribute name The attribute name
-         * @param json The value The writable
+         * @param name The attribute name 
+         * @param json The writable value
          * @throws IOException
          */
         public void call(String name, Writable json) throws IOException {
