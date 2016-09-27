@@ -71,8 +71,10 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             def writable = new Writable() {
                 @Override
                 Writer writeTo(Writer writer) throws IOException {
+                    def value = "world"
                     new StreamingJsonBuilder(writer).call {
-                        sectionId "world"
+                        sectionId "$value"
+                        itemId "foo"
                         assert delegate instanceof StreamingJsonBuilder.StreamingJsonDelegate
                     }
                     return writer
@@ -83,7 +85,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
                 results writable
             }
 
-            assert w.toString() == '{"response":{"status":"ok","results":{"sectionId":"world"}}}'
+            assert w.toString() == '{"response":{"status":"ok","results":{"sectionId":"world","itemId":"foo"}}}'
         }
     }
 

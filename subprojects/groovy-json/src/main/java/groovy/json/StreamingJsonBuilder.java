@@ -665,7 +665,12 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         public void call(String name, Writable json) throws IOException {
             writeName(name);
             verifyValue();
-            json.writeTo(writer);
+            if(json instanceof CharSequence) {
+                writer.write(JsonOutput.toJson(json.toString()));
+            }
+            else {
+                json.writeTo(writer);
+            }
         }
 
         private void writeObjects(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
