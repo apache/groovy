@@ -348,6 +348,26 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
     }
 
     /**
+     * Serializes the internal data structure built with the builder to a conformant JSON payload string
+     * <p>
+     * Example:
+     * <pre><code class="groovyTestCase">
+     * def json = new groovy.json.JsonBuilder()
+     * json { temperature 37 }
+     *
+     * assert json.toString() == '{"temperature":37}'
+     * </code></pre>
+     *
+     * @param writeNullValues flag to decide whether to write null values with the string 'null'
+     *                        or to omit writing the key and the value.
+     *
+     * @return a JSON output
+     */
+    public String toString(boolean writeNullValues) {
+        return JsonOutput.toJson(content, writeNullValues);
+    }
+
+    /**
      * Pretty-prints and formats the JSON payload.
      * <p>
      * This method calls the JsonLexer to parser the output of the builder,
