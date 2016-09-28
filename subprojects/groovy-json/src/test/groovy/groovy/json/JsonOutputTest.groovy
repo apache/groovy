@@ -655,6 +655,17 @@ class JsonOutputTest extends GroovyTestCase {
         assert !opts.@excludedFieldTypes.contains(null)
     }
 
+    void testOptionsDisableUnicodeEscaping() {
+        def json = JsonOutput.options()
+                        .disableUnicodeEscaping()
+                        .createGenerator()
+
+        String unicodeString = 'ΚΡΕΩΠΟΛΕΙΟ'
+        assert json.toJson([unicodeString]) == """["${unicodeString}"]"""
+
+        assert json.toJson(['KÉY':'VALUE']) == '{"KÉY":"VALUE"}'
+    }
+
 }
 
 @Canonical

@@ -322,6 +322,8 @@ public class JsonOutput {
 
         private boolean excludeNulls;
 
+        private boolean disableUnicodeEscaping;
+
         private String dateFormat = JsonOutput.JSON_DATE_FORMAT;
 
         private Locale dateLocale = JsonOutput.JSON_DATE_FORMAT_LOCALE;
@@ -343,6 +345,16 @@ public class JsonOutput {
          */
         public Options excludeNulls() {
             excludeNulls = true;
+            return this;
+        }
+
+        /**
+         * Disables the escaping of Unicode characters in JSON String values.
+         *
+         * @return a reference to this {@code Options} instance
+         */
+        public Options disableUnicodeEscaping() {
+            disableUnicodeEscaping = true;
             return this;
         }
 
@@ -516,6 +528,7 @@ public class JsonOutput {
     public static class Generator {
 
         private final boolean excludeNulls;
+        private final boolean disableUnicodeEscaping;
         private final String dateFormat;
         private final Locale dateLocale;
         private final TimeZone timezone;
@@ -534,6 +547,7 @@ public class JsonOutput {
 
         private Generator(Options options) {
             excludeNulls = options.excludeNulls;
+            disableUnicodeEscaping = options.disableUnicodeEscaping;
             nullValue = (excludeNulls) ? JsonOutput.EMPTY_VALUE : JsonOutput.NULL_VALUE;
             dateFormat = options.dateFormat;
             dateLocale = options.dateLocale;
@@ -834,9 +848,9 @@ public class JsonOutput {
             } else if (Iterator.class.isAssignableFrom(objectClass)) {
                 writeIterator((Iterator) object, buffer);
             } else if (objectClass == Character.class) {
-                buffer.addJsonEscapedString(Chr.array((Character) object));
+                buffer.addJsonEscapedString(Chr.array((Character) object), disableUnicodeEscaping);
             } else if (objectClass == URL.class) {
-                buffer.addJsonEscapedString(object.toString());
+                buffer.addJsonEscapedString(object.toString(), disableUnicodeEscaping);
             } else if (objectClass == UUID.class) {
                 buffer.addQuoted(object.toString());
             } else if (objectClass == JsonUnescaped.class) {
@@ -883,7 +897,7 @@ public class JsonOutput {
          */
         private void writeCharSequence(CharSequence seq, CharBuf buffer) {
             if (seq.length() > 0) {
-                buffer.addJsonEscapedString(seq.toString());
+                buffer.addJsonEscapedString(seq.toString(), disableUnicodeEscaping);
             } else {
                 buffer.addChars(EMPTY_STRING_CHARS);
             }
@@ -945,9 +959,9 @@ public class JsonOutput {
             } else if (char[].class.isAssignableFrom(arrayClass)) {
                 char[] charArray = (char[]) array;
                 if (charArray.length > 0) {
-                    buffer.addJsonEscapedString(Chr.array(charArray[0]));
+                    buffer.addJsonEscapedString(Chr.array(charArray[0]), disableUnicodeEscaping);
                     for (int i = 1; i < charArray.length; i++) {
-                        buffer.addChar(COMMA).addJsonEscapedString(Chr.array(charArray[i]));
+                        buffer.addChar(COMMA).addJsonEscapedString(Chr.array(charArray[i]), disableUnicodeEscaping);
                     }
                 }
             } else if (double[].class.isAssignableFrom(arrayClass)) {
@@ -1017,7 +1031,7 @@ public class JsonOutput {
                         firstItem = false;
                     }
 
-                    buffer.addJsonFieldName(key);
+                    buffer.addJsonFieldName(key, disableUnicodeEscaping);
                     writeObject(key, value, buffer);
                 }
                 buffer.addChar(CLOSE_BRACE);

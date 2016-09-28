@@ -63,6 +63,17 @@ class CharBufTest extends GroovyTestCase {
         assert str == '" \\\\ "'
     }
 
+    void testDisableUnicodeEscaping() {
+        String str = CharBuf.create(0).addJsonEscapedString("Éric").toString()
+        assert str == '"\\u00c9ric"'
+
+        str = CharBuf.create(0).addJsonEscapedString("Éric", false).toString()
+        assert str == '"\\u00c9ric"'
+
+        str = CharBuf.create(0).addJsonEscapedString("Éric", true).toString()
+        assert str == '"Éric"'
+    }
+
     /**
      * https://issues.apache.org/jira/browse/GROOVY-6937
      * https://issues.apache.org/jira/browse/GROOVY-6852
