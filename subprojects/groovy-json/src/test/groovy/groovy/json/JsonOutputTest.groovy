@@ -438,7 +438,7 @@ class JsonOutputTest extends GroovyTestCase {
         constantValue 37
     }
     def Expando  expandoWithNullValues = new Expando(optionalValue: null, constantValue: 37)
-    def Map<String, Integer> mapWithNullValues = new HashMap<String, Integer>()
+    def Map<String, Integer> mapWithNullValues = new TreeMap<>()
 
     void testGivenMapValuesAreNullWhenWriteNullValuesIsTrueThenWriteNullValues() {
         mapWithNullValues.put("optionalValue",null)
@@ -446,7 +446,7 @@ class JsonOutputTest extends GroovyTestCase {
 
         assert toJson(closureWithNullValues) == '{"optionalValue":null,"constantValue":37}'
         assert toJson(expandoWithNullValues) == '{"optionalValue":null,"constantValue":37}'
-        assert toJson(mapWithNullValues) == '{"optionalValue":null,"constantValue":37}'
+        assert toJson(mapWithNullValues) == '{"constantValue":37,"optionalValue":null}'
     }
 
     void testGivenMapValuesAreNullWhenWriteNullValuesIsFalseThenDoNotWriteKeyAndValue() {
