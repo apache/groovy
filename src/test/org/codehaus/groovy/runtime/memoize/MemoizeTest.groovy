@@ -48,4 +48,37 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
         assert maxExecutionCount == 2
         assert minExecutionCount == 2
     }
+
+    // GROOVY-6584
+    void testMemoizeFunctionClosure() {
+        int timesMethodBodyExecuted = 0
+        def lst = []
+        lst.metaClass.getTotalCount = {
+            ++timesMethodBodyExecuted
+            12
+        }.memoize()
+
+        assert lst.getTotalCount() == 12
+        assert lst.getTotalCount() == 12
+        assert timesMethodBodyExecuted == 1
+
+        timesMethodBodyExecuted = 0
+        lst.metaClass.getUsersByDeptAndMgrId = { String dept, int id ->
+            ++timesMethodBodyExecuted
+            [dept, "${id}"]
+        }.memoize()
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert timesMethodBodyExecuted == 2
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert timesMethodBodyExecuted == 2
+    }
 }
