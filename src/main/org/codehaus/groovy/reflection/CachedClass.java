@@ -86,7 +86,7 @@ public class CachedClass {
         } catch (Throwable outer) {
             // swallow for strict security managers, module systems, android or others,
             // but try one-by-one to get the allowed ones at least
-            final ArrayList<AccessibleObject> ret = new ArrayList<>(aoa.length);
+            final ArrayList<AccessibleObject> ret = new ArrayList<AccessibleObject>(aoa.length);
             for (final AccessibleObject ao : aoa) {
                 try {
                     ao.setAccessible(true);
