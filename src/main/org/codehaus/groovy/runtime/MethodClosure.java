@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -68,6 +69,13 @@ public class MethodClosure extends Closure {
     private Object readResolve() {
         if (ALLOW_RESOLVE) {
             return this;
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        if (ALLOW_RESOLVE) {
+            stream.defaultReadObject();
         }
         throw new UnsupportedOperationException();
     }
