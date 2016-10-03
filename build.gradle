@@ -383,7 +383,7 @@ task dgmConverter(dependsOn:compileJava) {
 }
 
 compileJava {
-    dependsOn ensureGrammars, exceptionUtils
+    dependsOn ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
