@@ -292,9 +292,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
-        String doc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/MultiCatchExample.html");
+        String doc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, doc);
-        assertTrue(doc, doc.indexOf("foo has a multi-catch exception inside") > 0);
+        assertTrue(doc, doc.contains("foo has a multi-catch exception inside"));
     }
 
     public void testStaticModifier() throws Exception {
@@ -319,6 +319,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String classWithAnonymousInnerClassDoc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, classWithAnonymousInnerClassDoc);
         assertTrue("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", !classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
+    }
+
+    public void testJavaClassWithDiamondOperator() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond";
+        srcList.add(base + ".java");
+        xmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String doc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, doc);
+        assertTrue("stringList not found in: \"" + doc + "\"", doc.contains("stringList"));
     }
 
     public void testVisibilityPublic() throws Exception {
