@@ -17,24 +17,20 @@
  *  under the License.
  */
 package gls.ch03.s01;
+
 /**
  * Except for comments, identifiers and the contents of ... string 
  * literals, all input elements are formed from ASCII characters.
- *
- * TODO: Find a better way to test these things
- * Note that this is a little hard to test since the input file is ASCII.
- *
- * @author Jeremy Rayner
  */
-
 class Unicode2 extends GroovyTestCase {
 
-//todo - this doesn't seem to work in raw Java5.0 either
-//    public void testUTF16SupplementaryCharacters() {
-//        assert 1 == "\uD840\uDC00".length()
-//    }
+    void testUTF16SupplementaryCharacters() {
+        def s = "\uD840\uDC00"
+        assert 2 == s.length() // number of Unicode code units
+        assert 1 == s.codePointCount(0, s.length()) // number of Unicode code points
+    }
 
-    public void testIdentifiers() {
+    void testIdentifiers() {
         def foo\u0044 = 12
         assert 20 == foo\u0044 + 8
     }
