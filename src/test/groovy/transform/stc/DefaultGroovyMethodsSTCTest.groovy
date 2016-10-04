@@ -144,5 +144,12 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             assert list[0] == 3 && list[0].class == Long
         '''
     }
+
+    // GROOVY-7952
+    void testIsGetterMethodAsProperty() {
+        assertScript '''
+            assert !'abc'.allWhitespace
+        '''
+    }
 }
 
