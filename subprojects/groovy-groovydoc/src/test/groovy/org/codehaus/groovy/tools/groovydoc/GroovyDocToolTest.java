@@ -61,7 +61,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
+                new String[] {"src/test/groovy", "src/test/resources", "../../src/test"}, // source file dirs
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
@@ -318,9 +318,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         List<String> srcList = new ArrayList<String>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond";
         srcList.add(base + ".java");
-        xmlTool.add(srcList);
+        xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
-        xmlTool.renderToOutput(output, MOCK_DIR);
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String doc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, doc);
         assertTrue("stringList not found in: \"" + doc + "\"", doc.contains("stringList"));
