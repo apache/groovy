@@ -1315,6 +1315,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             // GROOVY-5568, the property may be defined by DGM
             List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
+            for (MethodNode m: findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "is" + capName, ClassNode.EMPTY_ARRAY)) {
+                if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
+            }
             if (!methods.isEmpty()) {
                 List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
                 if (methodNodes.size() == 1) {
