@@ -31,7 +31,9 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
     // cache for all preimported classes
     List<String> preimportedClassNames
     // cache for all manually imported classes
-    final Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>()
+    final Map<String, Collection<String>> cachedImports = new HashMap<>().withDefault {String key ->
+        collectImportedSymbols(key)
+    }
 
     ImportsSyntaxCompletor(final Groovysh shell) {
         this.shell = shell
@@ -41,27 +43,16 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
     boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = findMatchingPreImportedClasses(prefix, candidates)
-        for (String importName in shell.imports) {
-            foundMatch |= findMatchingImportedClassesCached(prefix, importName, candidates)
+        for (String importSpec in shell.imports) {
+            foundMatch |= findMatchingImportedClassesCached(prefix, importSpec, candidates)
         }
         return foundMatch
     }
 
     boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, final List<String> candidates) {
-        Collection<String> cached
-        if (! cachedImports.containsKey(importSpec)) {
-            cached = new HashSet<String>()
-            collectImportedSymbols(importSpec, cached)
-            cachedImports.put(importSpec, cached)
-        } else {
-            cached = cachedImports.get(importSpec)
-        }
-        Collection<String> matches = cached.findAll({String it -> it.startsWith(prefix)})
-        if (matches) {
-            candidates.addAll(matches)
-            return true
-        }
-        return false
+        candidates.addAll(cachedImports
+            .get(importSpec)
+            .findAll({String it -> it.startsWith(prefix)}))
     }
 
     boolean findMatchingPreImportedClasses(final String prefix, final Collection<String> matches) {
@@ -87,51 +78,49 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
         return foundMatch
     }
 
-    private static final String STATIC_IMPORT_PATTERN = ~/^import static ([a-z0-9]+\.)+[A-Z][a-zA-Z0-9]*(\.(\*|[^.]+))?$/
+    private static final String STATIC_IMPORT_PATTERN = ~/^static ([a-zA-Z_][a-zA-Z_0-9]*\.)+([a-zA-Z_][a-zA-Z_0-9]*|\*)$/
 
     /**
      * finds matching imported classes or static methods
-     * @param prefix
-     * @param importSpec
-     * @param matches
-     * @return
+     * @param importSpec an import statement without the leading 'import ' or trailing semicolon
+     * @return all names matching the importSpec
      */
-    void collectImportedSymbols(final String importSpec, final Collection<String> matches) {
+    SortedSet<String> collectImportedSymbols(final String importSpec) {
+        final SortedSet<String> symbols = new TreeSet<>()
         String asKeyword = ' as '
         int asIndex = importSpec.indexOf(asKeyword)
         if (asIndex > -1) {
             String alias = importSpec.substring(asIndex + asKeyword.length())
-            matches << alias
-            return
+            symbols << alias
+            return symbols
         }
-        String staticPrefix = 'import static '
+        int lastDotIndex = importSpec.lastIndexOf('.')
+        String symbolName = importSpec.substring(lastDotIndex + 1)
+        String staticPrefix = 'static '
         if (importSpec.startsWith(staticPrefix)) {
             // make sure pattern is safe, though shell should have done anyway
             if (importSpec.matches(STATIC_IMPORT_PATTERN)) {
-                String evalImportSpec
-                if (importSpec.endsWith('.*')) {
-                    evalImportSpec = importSpec[staticPrefix.length()..-3]
-                } else {
-                    evalImportSpec = importSpec[staticPrefix.length()..(importSpec.lastIndexOf('.') - 1)]
-                }
-                Class clazz = shell.interp.evaluate([evalImportSpec]) as Class
+                String className = importSpec.substring(staticPrefix.length(), lastDotIndex)
+                Class clazz = shell.interp.evaluate([className]) as Class
                 if (clazz != null) {
-                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')*.value
-                    for (member in members) {
-                        matches.add(member)
+                    List<String> clazzSymbols = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')*.value
+                    List<String> importedSymbols;
+                    if (symbolName == '*') {
+                        importedSymbols = clazzSymbols;
+                    } else {
+                        Set<String> acceptableMatches = [symbolName, symbolName + '(', symbolName + '()']
+                        importedSymbols = acceptableMatches.intersect(clazzSymbols)
                     }
-                }
-            }
-        } else if (importSpec.endsWith('*')) {
-            Set<String> packnames = shell.packageHelper.getContents(importSpec.substring('import '.length()))
-            if (packnames) {
-                for (String packName in packnames) {
-                    matches << packName
+                    symbols.addAll(importedSymbols)
                 }
             }
         } else {
-            String symbolname = importSpec.substring(importSpec.lastIndexOf('.') + 1)
-            matches << symbolname
+            if (symbolName == '*') {
+                symbols.addAll(shell.packageHelper.getContents(importSpec))
+            } else {
+                symbols << symbolName
+            }
         }
+        return symbols;
     }
 }
