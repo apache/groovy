@@ -1314,21 +1314,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             // GROOVY-5568, the property may be defined by DGM
-            List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
-            for (MethodNode m: findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "is" + capName, ClassNode.EMPTY_ARRAY)) {
-                if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
-            }
-            if (!methods.isEmpty()) {
-                List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
-                if (methodNodes.size() == 1) {
-                    MethodNode getter = methodNodes.get(0);
-                    if (visitor != null) {
-                        visitor.visitMethod(getter);
-                    }
-                    ClassNode cn = inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                    storeInferredTypeForPropertyExpression(pexp, cn);
+            List<ClassNode> dgmReceivers = new ArrayList<ClassNode>(2);
+            dgmReceivers.add(testClass);
+            if (isPrimitiveType(testClass)) dgmReceivers.add(getWrapper(testClass));
+            for (ClassNode dgmReceiver: dgmReceivers) {
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
+                for (MethodNode m : findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
+                    if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
+                }
+                if (!methods.isEmpty()) {
+                    List<MethodNode> methodNodes = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
+                    if (methodNodes.size() == 1) {
+                        MethodNode getter = methodNodes.get(0);
+                        if (visitor != null) {
+                            visitor.visitMethod(getter);
+                        }
+                        ClassNode cn = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                        storeInferredTypeForPropertyExpression(pexp, cn);
 
-                    return true;
+                        return true;
+                    }
                 }
             }
         }
