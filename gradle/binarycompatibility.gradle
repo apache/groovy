@@ -41,176 +41,174 @@ task checkBinaryCompatibility {
 }
 check.dependsOn(checkBinaryCompatibility)
 
-if (JavaVersion.current().isJava7Compatible()) {
-    allprojects {
-        if (!(project.name in excludeModules)) {
-            apply plugin: 'me.champeau.gradle.japicmp'
+allprojects {
+    if (!(project.name in excludeModules)) {
+        apply plugin: 'me.champeau.gradle.japicmp'
+    }
+}
+
+def referenceMinorVersion = '2.4.7'
+
+def prettyPrint = { classOrMethod ->
+    "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
+}
+
+def prettyPrintMethodWithReturnType = { method ->
+    "${Modifier.toString(method.get()?.modifiers)} ${method.get()?.returnType.name} ${method.get()?.name}${javassist.bytecode.Descriptor.toString(method.get()?.signature)}"
+}
+
+def reportGenerator = { model ->
+    outputProcessor {
+
+        def skipClass = { c ->
+            c.fullyQualifiedName =~ /\$[0-9]+$/ || // skip AIC
+                    c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
+                    c.fullyQualifiedName.startsWith('groovyjarjar') ||
+                    c.fullyQualifiedName.contains('_closure')
         }
-    }
-
-    def referenceMinorVersion = '2.4.7'
-
-    def prettyPrint = { classOrMethod ->
-        "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
-    }
-
-    def prettyPrintMethodWithReturnType = { method ->
-        "${Modifier.toString(method.get()?.modifiers)} ${method.get()?.returnType.name} ${method.get()?.name}${javassist.bytecode.Descriptor.toString(method.get()?.signature)}"
-    }
-
-    def reportGenerator = { model ->
-        outputProcessor {
-
-            def skipClass = { c ->
-                c.fullyQualifiedName =~ /\$[0-9]+$/ || // skip AIC
-                        c.fullyQualifiedName.startsWith('org.codehaus.groovy.runtime.dgm$') ||
-                        c.fullyQualifiedName.startsWith('groovyjarjar') ||
-                        c.fullyQualifiedName.contains('_closure')
+        def skipMethod = { c, m -> skipClass(c) || m.name =~ /access\$[0-9]+/ }
+        def violations = [:].withDefault {
+            // key = class name
+            // value = map of violations
+            [:].withDefault { [] }
+        }
+        removedConstructor { c, m ->
+            if (!skipMethod(c, m)) {
+                def level = Modifier.isPrivate(m.oldConstructor.get()?.modifiers) ? 'info' : 'error'
+                violations[c.fullyQualifiedName][level] << "Constructor ${prettyPrint(m.oldConstructor)} has been removed"
             }
-            def skipMethod = { c, m -> skipClass(c) || m.name =~ /access\$[0-9]+/ }
-            def violations = [:].withDefault {
-                // key = class name
-                // value = map of violations
-                [:].withDefault { [] }
+        }
+        removedMethod { c, m ->
+            if (!skipMethod(c, m)) {
+                def level = m.name.startsWith('super$') ? 'warning' : 'error'
+                violations[c.fullyQualifiedName][level] << "Method ${m.name} has been removed"
             }
-            removedConstructor { c, m ->
-                if (!skipMethod(c, m)) {
-                    def level = Modifier.isPrivate(m.oldConstructor.get()?.modifiers) ? 'info' : 'error'
-                    violations[c.fullyQualifiedName][level] << "Constructor ${prettyPrint(m.oldConstructor)} has been removed"
-                }
+        }
+        removedClass { c ->
+            if (!skipClass(c)) {
+                violations[c.fullyQualifiedName].error << "Class has been removed"
             }
-            removedMethod { c, m ->
-                if (!skipMethod(c, m)) {
-                    def level = m.name.startsWith('super$') ? 'warning' : 'error'
-                    violations[c.fullyQualifiedName][level] << "Method ${m.name} has been removed"
-                }
-            }
-            removedClass { c ->
-                if (!skipClass(c)) {
-                    violations[c.fullyQualifiedName].error << "Class has been removed"
-                }
-            }
+        }
 
-            modifiedMethod { c, m ->
-                if (!skipMethod(c, m)) {
-                    violations[c.fullyQualifiedName].warning << """<p>Method ${m.name} has been modified</p>
+        modifiedMethod { c, m ->
+            if (!skipMethod(c, m)) {
+                violations[c.fullyQualifiedName].warning << """<p>Method ${m.name} has been modified</p>
 <p>From <pre>${prettyPrintMethodWithReturnType(m.oldMethod)}</pre> to <pre>${prettyPrintMethodWithReturnType(m.newMethod)}</pre></p>"""
-                }
-            }
-
-            modifiedConstructor { c, m ->
-                if (!skipMethod(c, m)) {
-                    violations[c.fullyQualifiedName].warning << """<p>Constructor ${m.name} has been modified</p>
-<p>From <pre>${prettyPrint(m.oldConstructor)}</pre> to <pre>${prettyPrint(m.newConstructor)}</pre></p>"""
-                }
-            }
-
-            modifiedClass { c ->
-                if (!skipClass(c)) {
-                    def level = c.binaryCompatible?'info':'error'
-                    def message = "Class ${c.fullyQualifiedName} has been modified"
-                    violations[c.fullyQualifiedName][level] << message
-                }
-            }
-
-            newClass { c ->
-                if (!skipClass(c)) {
-                    violations[c.fullyQualifiedName].info << "Class has been added"
-                }
-            }
-            newMethod { c, m ->
-                if (!skipMethod(c, m)) {
-                    violations[c.fullyQualifiedName].info << """<p>Method ${m.name} has been added</p>
-<p>Signature: <pre>${prettyPrint(m.newMethod)}</pre></p>"""
-                }
-            }
-
-            after {
-                model.violations = violations
             }
         }
+
+        modifiedConstructor { c, m ->
+            if (!skipMethod(c, m)) {
+                violations[c.fullyQualifiedName].warning << """<p>Constructor ${m.name} has been modified</p>
+<p>From <pre>${prettyPrint(m.oldConstructor)}</pre> to <pre>${prettyPrint(m.newConstructor)}</pre></p>"""
+            }
+        }
+
+        modifiedClass { c ->
+            if (!skipClass(c)) {
+                def level = c.binaryCompatible?'info':'error'
+                def message = "Class ${c.fullyQualifiedName} has been modified"
+                violations[c.fullyQualifiedName][level] << message
+            }
+        }
+
+        newClass { c ->
+            if (!skipClass(c)) {
+                violations[c.fullyQualifiedName].info << "Class has been added"
+            }
+        }
+        newMethod { c, m ->
+            if (!skipMethod(c, m)) {
+                violations[c.fullyQualifiedName].info << """<p>Method ${m.name} has been added</p>
+<p>Signature: <pre>${prettyPrint(m.newMethod)}</pre></p>"""
+            }
+        }
+
+        after {
+            model.violations = violations
+        }
     }
+}
 
 // using a global engine for all tasks in order to increase performance
-    def configDir = file("$rootProject.projectDir/config/binarycompatibility")
-    def templateFile = 'binarycompat-report.groovy'
-    def templateConfiguration = new TemplateConfiguration()
-    templateConfiguration.with {
-        autoIndent = true
-        autoNewLine = true
-    }
-    def engine = new MarkupTemplateEngine(this.class.classLoader, configDir, templateConfiguration)
+def configDir = file("$rootProject.projectDir/config/binarycompatibility")
+def templateFile = 'binarycompat-report.groovy'
+def templateConfiguration = new TemplateConfiguration()
+templateConfiguration.with {
+    autoIndent = true
+    autoNewLine = true
+}
+def engine = new MarkupTemplateEngine(this.class.classLoader, configDir, templateConfiguration)
 
-    task japicmpAll(type: me.champeau.gradle.ArtifactJapicmpTask) {
-        dependsOn jarAll
-        baseline = "org.codehaus.groovy:groovy-all:${referenceMinorVersion}@jar"
-        to = jarAll.archivePath
-        accessModifier = 'protected'
-        onlyModified = true
-        failOnModification = false
-        txtOutputFile = file("$buildDir/reports/japi.txt")
+task japicmpAll(type: me.champeau.gradle.ArtifactJapicmpTask) {
+    dependsOn jarAll
+    baseline = "org.codehaus.groovy:groovy-all:${referenceMinorVersion}@jar"
+    to = jarAll.archivePath
+    accessModifier = 'protected'
+    onlyModified = true
+    failOnModification = false
+    txtOutputFile = file("$buildDir/reports/japi.txt")
 
-        doFirst {
-            classpath = allprojects.configurations.japicmp.files.flatten()
-        }
-
-        def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
-        inputs.file file("$configDir/$templateFile")
-        inputs.file templateFile
-        outputs.file htmlReportFile
-
-        def model = [title   : "Binary compatibility report for ${project.name}",
-                     project : project,
-                     baseline: baseline,
-                     archive : to.name]
-        outputProcessor(reportGenerator.curry(model))
-
-        doLast {
-            htmlReportFile.withWriter('utf-8') { wrt ->
-                engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-            }
-        }
+    doFirst {
+        classpath = allprojects.configurations.japicmp.files.flatten()
     }
 
-    allprojects {
-        if (!(project.name in excludeModules)) {
-            dependencies {
-                japicmp files(rootProject.jar.archivePath)
-            }
+    def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
+    inputs.file file("$configDir/$templateFile")
+    inputs.file templateFile
+    outputs.file htmlReportFile
 
-            task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
-                dependsOn replaceJarWithJarJar
-                baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
-                to = jar.archivePath
-                accessModifier = 'protected'
-                onlyModified = true
-                failOnModification = false
-                txtOutputFile = file("$buildDir/reports/japi.txt")
+    def model = [title   : "Binary compatibility report for ${project.name}",
+                 project : project,
+                 baseline: baseline,
+                 archive : to.name]
+    outputProcessor(reportGenerator.curry(model))
 
-                def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
-                inputs.file file("$configDir/$templateFile")
-                inputs.file templateFile
-                outputs.file htmlReportFile
+    doLast {
+        htmlReportFile.withWriter('utf-8') { wrt ->
+            engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
+        }
+    }
+}
 
-                def model = [title   : "Binary compatibility report for ${project.name}",
-                             project : project,
-                             baseline: baseline,
-                             archive : to.name]
-                outputProcessor(reportGenerator.curry(model))
+allprojects {
+    if (!(project.name in excludeModules)) {
+        dependencies {
+            japicmp files(rootProject.jar.archivePath)
+        }
 
-                doLast {
-                    htmlReportFile.withWriter('utf-8') { wrt ->
-                        engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-                    }
+        task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
+            dependsOn replaceJarWithJarJar
+            baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
+            to = jar.archivePath
+            accessModifier = 'protected'
+            onlyModified = true
+            failOnModification = false
+            txtOutputFile = file("$buildDir/reports/japi.txt")
+
+            def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
+            inputs.file file("$configDir/$templateFile")
+            inputs.file templateFile
+            outputs.file htmlReportFile
+
+            def model = [title   : "Binary compatibility report for ${project.name}",
+                         project : project,
+                         baseline: baseline,
+                         archive : to.name]
+            outputProcessor(reportGenerator.curry(model))
+
+            doLast {
+                htmlReportFile.withWriter('utf-8') { wrt ->
+                    engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
                 }
             }
         }
     }
+}
 
-    allprojects {
-        tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
-            checkBinaryCompatibility.dependsOn(task)
-        }
-
+allprojects {
+    tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
+        checkBinaryCompatibility.dependsOn(task)
     }
+
 }

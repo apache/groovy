@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.internal.util.UncheckedThrow;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.*;
@@ -413,7 +414,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         try {
             return (V) getMetaClass().invokeMethod(this,"doCall",args);
         } catch (InvokerInvocationException e) {
-            ExceptionUtils.sneakyThrow(e.getCause());
+            UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable statement
         }  catch (Exception e) {
             return (V) throwRuntimeException(e);

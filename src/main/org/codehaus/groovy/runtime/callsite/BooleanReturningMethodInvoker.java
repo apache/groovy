@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.runtime.ExceptionUtils;
+import org.apache.groovy.internal.util.UncheckedThrow;
 
 /**
  * Helper class for internal use only. This allows to call a given method and
@@ -51,9 +51,8 @@ public class BooleanReturningMethodInvoker {
             Object ret = csa.array[0].call(receiver, args);
             return convertToBoolean(ret);
         } catch (Throwable t) {
-            // ExceptionUtils is a bytecode generated helper class 
-            // to allow throwing checked exceptions without declaring a throws
-            ExceptionUtils.sneakyThrow(t);
+            // UncheckedThrow allows throwing checked exceptions without declaring a throws
+            UncheckedThrow.rethrow(t);
             return false;
         }
     }
@@ -68,9 +67,8 @@ public class BooleanReturningMethodInvoker {
         try {
             arg = csa.array[1].call(arg, CallSiteArray.NOPARAM);
         } catch (Throwable t) {
-            // ExceptionUtils is a bytecode generated helper class 
-            // to allow throwing checked exceptions without declaring a throws
-            ExceptionUtils.sneakyThrow(t);
+            // UncheckedThrow allows throwing checked exceptions without declaring a throws
+            UncheckedThrow.rethrow(t);
         }
         return ((Boolean) arg).booleanValue();
     }

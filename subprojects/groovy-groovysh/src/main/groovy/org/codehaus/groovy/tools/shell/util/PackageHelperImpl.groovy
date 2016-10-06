@@ -115,12 +115,21 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
                 mergeNewPackages(packageNames, url, rootPackages)
             }
         }
-        if (jigsaw) {
+        if (jigsaw || isModularRuntime()) {
             URL jigsawURL = URI.create("jrt:/").toURL()
             Set<String> jigsawPackages = getPackagesAndClassesFromJigsaw(jigsawURL)  { isPackage, name -> isPackage && name }
             mergeNewPackages(jigsawPackages, jigsawURL, rootPackages)
         }
         return rootPackages
+    }
+
+    // TODO: review after jdk9 is released
+    private static boolean isModularRuntime() {
+        try {
+            return this.classLoader.loadClass('java.lang.reflect.Module', false) != null
+        } catch (e) {
+            return false
+        }
     }
 
     /**

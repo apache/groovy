@@ -141,12 +141,13 @@ ext {
     antVersion = '1.9.7'
     asmVersion = '6.0_ALPHA'
     antlrVersion = '2.7.7'
+    bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.3.1'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '3.0'
+    gradleVersion = '3.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.3'
@@ -201,6 +202,7 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
@@ -252,22 +254,12 @@ sourceSets {
             }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         groovy {
             srcDirs = [
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         resources {
             srcDirs = ['src/main', 'src/tools', 'src/resources']
@@ -320,6 +312,15 @@ processResources.doLast {
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
         into sourceSets.main.output.classesDir
+    }
+}
+
+tasks.withType(Jar) {
+    doFirst {
+        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+        }
+        ant.echo('Bridger: ' + ant.properties.stdout)
     }
 }
 
@@ -382,7 +383,7 @@ task dgmConverter(dependsOn:compileJava) {
 }
 
 compileJava {
-    dependsOn ensureGrammars, exceptionUtils
+    dependsOn ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 

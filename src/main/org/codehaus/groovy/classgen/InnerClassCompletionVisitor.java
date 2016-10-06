@@ -177,7 +177,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
         final int objectDistance = getObjectDistance(outerClass);
 
-        // add method dispatcher
+        // add missing method dispatcher
         Parameter[] parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "args")
@@ -214,7 +214,25 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property getter dispatcher
+        // add static missing method dispatcher
+        methodName = "$static_methodMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setMethodDispatcherCode(block, new ClassExpression(outerClass), parameters);
+        method.setCode(block);
+
+        // add property setter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "val")
@@ -235,7 +253,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         block = new BlockStatement();
         if (isStatic) {
-            setPropertySetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
         } else {
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
@@ -251,7 +269,25 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property setter dispatcher
+        // add static property missing setter dispatcher
+        methodName = "$static_propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.VOID_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
+        method.setCode(block);
+
+        // add property getter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name")
         };
@@ -271,7 +307,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         block = new BlockStatement();
         if (isStatic) {
-            setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
         } else {
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
@@ -284,6 +320,24 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                     })
             );
         }
+        method.setCode(block);
+
+        // add static property missing getter dispatcher
+        methodName = "$static_propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
         method.setCode(block);
     }
 

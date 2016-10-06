@@ -517,7 +517,7 @@ The output will now be:
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template_expected,indent=0]
 ----
 
-We can slightly change the template so that the `title` intruction is found on the same line as the `head` one:
+We can slightly change the template so that the `title` instruction is found on the same line as the `head` one:
 
 [source,groovy]
 ----

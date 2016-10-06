@@ -294,7 +294,8 @@ public abstract class TraitComposer {
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
-        Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
+        boolean noCastRequired = genericsSpec.isEmpty() || fixedReturnType.getName().equals(ClassHelper.VOID_TYPE.getName());
+        Expression forwardExpression = noCastRequired ? mce : new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
         // we could rely on the first parameter name ($static$self) but that information is not
         // guaranteed to be always present

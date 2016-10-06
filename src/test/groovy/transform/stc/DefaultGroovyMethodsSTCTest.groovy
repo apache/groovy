@@ -140,8 +140,15 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     void testListWithDefaultInfersInt() {
         assertScript '''
             def list = [].withDefault{ it.longValue() }
-            list[0] = list.get(3) // TODO why doesn't getAt work?
+            list[0] = list[3]
             assert list[0] == 3 && list[0].class == Long
+        '''
+    }
+
+    // GROOVY-7952
+    void testIsGetterMethodAsProperty() {
+        assertScript '''
+            assert !'abc'.allWhitespace
         '''
     }
 }

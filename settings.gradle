@@ -25,6 +25,7 @@ def subprojects = ['groovy-ant',
         'groovy-jmx',
         'groovy-json',
         'groovy-jsr223',
+        'groovy-nio',
         'groovy-servlet',
         'groovy-sql',
         'groovy-swing',
@@ -34,10 +35,6 @@ def subprojects = ['groovy-ant',
         'groovy-xml',
         'groovy-macro'
 ]
-
-if(JavaVersion.current().isJava7Compatible()) {
-    subprojects << 'groovy-nio'
-}
 
 if (JavaVersion.current().isJava8Compatible()) {
     subprojects << 'performance'

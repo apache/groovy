@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -44,6 +45,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -81,8 +83,13 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         final Expression soft = node.getMember("soft");
         final Expression init = getInitExpr(xform, fieldNode);
 
-        fieldNode.rename("$" + fieldNode.getName());
+        String backingFieldName = "$" + fieldNode.getName();
+        fieldNode.rename(backingFieldName);
         fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+        PropertyNode pNode = fieldNode.getDeclaringClass().getProperty(backingFieldName);
+        if (pNode != null) {
+            fieldNode.getDeclaringClass().getProperties().remove(pNode);
+        }
 
         if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
             createSoft(fieldNode, init);
@@ -156,8 +163,12 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
-        final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
-        fieldNode.getDeclaringClass().addMethod(name, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        String propName = MetaClassHelper.capitalize(fieldNode.getName().substring(1));
+        fieldNode.getDeclaringClass().addMethod("get" + propName, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        if (ClassHelper.boolean_TYPE.equals(type)) {
+            fieldNode.getDeclaringClass().addMethod("is" + propName, visibility, type,
+                    Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt(callThisX("get" + propName)));
+        }
     }
 
     private static void createSoft(FieldNode fieldNode, Expression initExpr) {

@@ -46,7 +46,7 @@ def javadocSpec = {
         version = true
         overview = rootProject.file('src/main/overviewj.html')
         footer = doc.footer
-        source = rootProject.useIndy()?'1.7':'1.6'
+        source = '1.7'
         links('http://docs.oracle.com/javase/8/docs/api/', 'http://docs.oracle.com/javaee/7/api/',
                 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'http://junit.org/junit4/javadoc/latest/',
                 'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc/')
@@ -90,7 +90,7 @@ javadocAll {
 javadocAll javadocSpec
 
 // Root project has an extra 'all' groovydoc task
-task groovydocAll(type: Groovydoc)  
+task groovydocAll(type: Groovydoc)
 groovydocAll {
     dependsOn( { project(':groovy-groovydoc').classes })
     dependsOn( { project(':groovy-docgenerator').classes })
@@ -123,10 +123,7 @@ task docGDK {
 //    ext.extraDocGDKclasses = []
     dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
     // TODO don't hard-code these
-    dependsOn([project(':groovy-sql'), project(':groovy-xml'), project(':groovy-swing')]*.classes)
-    if(JavaVersion.current().isJava7Compatible()) {
-        dependsOn([project(':groovy-nio')]*.classes)
-    }
+    dependsOn([project(':groovy-nio'), project(':groovy-sql'), project(':groovy-xml'), project(':groovy-swing')]*.classes)
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.main.runtimeClasspath + configurations.tools
@@ -163,9 +160,7 @@ task docGDK {
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
-                    if(JavaVersion.current().isJava7Compatible()) {
-                        arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
-                    }
+                    arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
                 }
             }
         } finally {
@@ -188,9 +183,7 @@ allprojects {
     apply plugin: 'javadocHotfix'
 }
 
-if (JavaVersion.current().isJava7Compatible()) {
-    javadocAll.options.source = '1.7'
-}
+javadocAll.options.source = '1.7'
 
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {

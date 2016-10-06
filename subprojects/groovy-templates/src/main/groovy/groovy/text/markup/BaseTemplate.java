@@ -21,8 +21,8 @@ package groovy.text.markup;
 import groovy.lang.Closure;
 import groovy.lang.Writable;
 import groovy.text.Template;
+import org.apache.groovy.internal.util.UncheckedThrow;
 import org.codehaus.groovy.control.io.NullWriter;
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.IOException;
@@ -518,7 +518,7 @@ public abstract class BaseTemplate implements Writable {
         try {
             writeTo(wrt);
         } catch (IOException e) {
-            ExceptionUtils.sneakyThrow(e);
+            UncheckedThrow.rethrow(e);
         }
         return wrt.toString();
     }

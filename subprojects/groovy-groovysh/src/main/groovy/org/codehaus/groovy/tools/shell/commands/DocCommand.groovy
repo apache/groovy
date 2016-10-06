@@ -109,7 +109,7 @@ class DocCommand extends CommandSupport {
         } else if (hasAWTDesktopPlatformSupport) {
             browseWithAWT(urls)
         } else {
-            fail 'Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set ' +
+            fail 'Browser could not be opened due to missing platform support for "java.awt.Desktop". Please set ' +
                  "a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable referring to the browser binary to " +
                  'solve this issue.'
         }

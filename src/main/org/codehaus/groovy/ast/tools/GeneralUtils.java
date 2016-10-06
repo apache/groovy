@@ -417,7 +417,7 @@ public class GeneralUtils {
         }
         ClassNode next = type;
         while (next != null) {
-            Collections.addAll(res, next.getInterfaces());
+            res.addAll(next.getAllInterfaces());
             next = next.getSuperClass();
         }
         return res;

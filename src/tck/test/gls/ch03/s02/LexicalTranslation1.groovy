@@ -18,8 +18,8 @@
  */
 package gls.ch03.s02
 
-/** Checks Lexical Translation steps as defined in $3.2 of GLS
- * @author Jeremy Rayner
+/**
+ * Checks Lexical Translation steps as defined in $3.2 of GLS
  */
 class LexicalTranslation1 extends GroovyTestCase {
     void testTranslationOfUnicodeEscapes() {

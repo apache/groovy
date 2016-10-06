@@ -105,7 +105,7 @@ class JmxOperationInfoManager {
     /** *
      * Generates a ModelMBeanOperationInfo object from a meta map provided.
      * @param the meta map for the method
-     * @return the generated ModelMBeanOprationInfo
+     * @return the generated ModelMBeanOperationInfo
      */
     public static ModelMBeanOperationInfo getOperationInfoFromMap(Map map) {
         if (!map) return null
