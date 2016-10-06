@@ -32,11 +32,6 @@ import java.util.NoSuchElementException;
 public abstract class NumberRangeTestCase extends TestCase {
 
     /**
-     * legacy ranges in Groovy hush exceptions and return null when exhausted
-     */
-    protected boolean expectNullFromExhausted = false;
-
-    /**
      * Records the values passed to a closure.
      */
     protected static class RecordingClosure extends Closure {
@@ -429,14 +424,10 @@ public abstract class NumberRangeTestCase extends TestCase {
             assertEquals("wrong next value", createValue(next++), value);
         }
         assertEquals("wrong number of elements in iteration", 6, next);
-        if (expectNullFromExhausted) {
-            assertNull("got element after iterator finished", iter.next());
-        } else {
-            try {
-                iter.next();
-                fail("successfully got element from exhausted iterator");
-            } catch(NoSuchElementException ignore) {
-            }
+        try {
+            iter.next();
+            fail("successfully got element from exhausted iterator");
+        } catch(NoSuchElementException ignore) {
         }
     }
 

@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Provides unit tests for the <code>ObjectRange</code> class.
@@ -306,6 +307,18 @@ public class ObjectRangeTest extends TestCase {
 
         assertEquals("a and b", a, b);
         assertFalse("a != c", a.equals(c));
+    }
+
+    public void testIteratorException() {
+        Iterator iter = createRange(1, 2).iterator();
+        iter.next();
+        iter.next();
+        try {
+            iter.next();
+            fail("Should have thrown NoSuchElementException");
+        } catch(NoSuchElementException e) {
+
+        }
     }
 
     public void testIteratorAndStep1() {

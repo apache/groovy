@@ -27,7 +27,6 @@ public class BigIntegerObjectRangeTest extends NumberRangeTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        expectNullFromExhausted = true;
     }
 
     /**
