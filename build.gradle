@@ -214,6 +214,7 @@ dependencies {
 
     examplesCompile project(':groovy-test')
     examplesCompile project(':groovy-swing')
+
     examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
@@ -238,6 +239,7 @@ dependencies {
 
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
+    testCompile project(':groovy-macro')
 }
 
 ext.generatedDirectory = "${buildDir}/generated-sources"
