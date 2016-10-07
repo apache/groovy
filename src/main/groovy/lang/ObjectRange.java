@@ -447,11 +447,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         @Override
         public Comparable next() {
             // not thread safe
-            if (!nextFetched) {
-                value = peek();
-                nextFetched = true;
-            }
-            if (value == null) {
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             nextFetched = false;
