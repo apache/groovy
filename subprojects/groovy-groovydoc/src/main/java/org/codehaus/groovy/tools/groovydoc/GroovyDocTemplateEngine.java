@@ -87,6 +87,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing class template for: " + classDoc.getFullPathName());
             e.printStackTrace();
         }
         return templateWithBindingApplied;
@@ -105,6 +106,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing package template for: " + packageDoc.name());
             e.printStackTrace();
         }
         return templateWithBindingApplied;
@@ -123,6 +125,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing root doc template");
             e.printStackTrace();
         }
         return templateWithBindingApplied;
