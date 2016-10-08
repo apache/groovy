@@ -171,9 +171,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (getterMethod == null) {
                 getterMethod = OBJECT_TYPE.getGetterMethod(getterName);
             }
-            if (getterMethod == null) {
-                getterMethod = OBJECT_TYPE.getGetterMethod(altGetterName);
-            }
 
             if (getterMethod != null) {
                 MethodCallExpression call = new MethodCallExpression(
