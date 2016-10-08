@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -40,13 +40,10 @@ import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.macro.runtime.MacroBuilder;
-import org.codehaus.groovy.macro.runtime.MacroSubstitutionKey;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 
@@ -126,8 +123,6 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
             return true;
         }
 
-        final MapExpression mapExpression = buildSubstitutionMap(closureExpression);
-
         String source = convertClosureToSource(closureExpression);
 
         BlockStatement closureBlock = (BlockStatement) closureExpression.getCode();
@@ -159,7 +154,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
         macroArgumentsExpressions.remove(macroArgumentsExpressions.size() - 1);
 
         macroArgumentsExpressions.add(new ConstantExpression(source));
-        macroArgumentsExpressions.add(mapExpression);
+        macroArgumentsExpressions.add(buildSubstitutionMap(closureExpression));
         macroArgumentsExpressions.add(new ClassExpression(ClassHelper.makeWithoutCaching(MacroBuilder.getMacroValue(closureBlock, asIs).getClass(), false)));
 
         macroCall.setObjectExpression(new PropertyExpression(new ClassExpression(ClassHelper.makeWithoutCaching(MacroBuilder.class, false)), "INSTANCE"));
@@ -170,9 +165,8 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
         return true;
     }
 
-    private MapExpression buildSubstitutionMap(final ASTNode expr) {
-        final Map<MacroSubstitutionKey, ClosureExpression> map = new HashMap<MacroSubstitutionKey, ClosureExpression>();
-        final MapExpression mapExpression = new MapExpression();
+    private ListExpression buildSubstitutionMap(final ASTNode expr) {
+        final ListExpression listExpression = new ListExpression();
 
         ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
             @Override
@@ -206,9 +200,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
                         ((BlockStatement) code).setVariableScope(null);
                     }
 
-                    MacroSubstitutionKey key = new MacroSubstitutionKey(call, expr.getLineNumber(), expr.getColumnNumber());
-
-                    map.put(key, substitutionClosureExpression);
+                    listExpression.addExpression(substitutionClosureExpression);
                 }
             }
         };
@@ -217,10 +209,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
         } else {
             expr.visit(visitor);
         }
-        for (Map.Entry<MacroSubstitutionKey, ClosureExpression> entry : map.entrySet()) {
-            mapExpression.addMapEntryExpression(entry.getKey().toConstructorCallExpression(), entry.getValue());
-        }
-        return mapExpression;
+        return listExpression;
     }
 
     @Override
