@@ -186,4 +186,27 @@ class MacroTest extends GroovyTestCase {
         AstAssert.assertSyntaxTree([expected], [getReturnStatement()]);
 '''
     }
+
+    void testMultipleSubstitutions() {
+        assertScript '''
+        import org.codehaus.groovy.ast.expr.*;
+        import org.codehaus.groovy.ast.stmt.*;
+        import org.codehaus.groovy.ast.ClassHelper;
+        import org.codehaus.groovy.ast.builder.AstAssert;
+
+        import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+
+        def var1 = new VariableExpression("a")
+        def var2 = new VariableExpression("b")
+        def var3 = new VariableExpression("c")
+
+        ReturnStatement result = macro {
+            return new NonExistingClass($v{var1}, $v{var2}) + $v{var3}
+        }
+
+        def expected = returnS(plusX(ctorX(ClassHelper.make("NonExistingClass"), args(var1, var2)), var3))
+
+        AstAssert.assertSyntaxTree([expected], [result])
+'''
+    }
 }
