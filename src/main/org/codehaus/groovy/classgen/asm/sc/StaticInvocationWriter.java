@@ -125,21 +125,34 @@ public class StaticInvocationWriter extends InvocationWriter {
             cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
             cn.setDeclaringClass(mn.getDeclaringClass());
         }
+        TupleExpression args = makeArgumentList(call.getArguments());
         if (cn.isPrivate()) {
             ClassNode classNode = controller.getClassNode();
             ClassNode declaringClass = cn.getDeclaringClass();
             if (declaringClass != classNode) {
-                controller.getSourceUnit().addError(new SyntaxException("Cannot call private constructor for " + declaringClass.toString(false) +
+                MethodNode bridge = null;
+                if (call.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
+                    Map<MethodNode, MethodNode> bridgeMethods = declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
+                    bridge = bridgeMethods != null ? bridgeMethods.get(cn) : null;
+                }
+                if (bridge != null && bridge instanceof ConstructorNode) {
+                    ArgumentListExpression newArgs = new ArgumentListExpression(new ConstantExpression(null));
+                    for (Expression arg: args) {
+                        newArgs.addExpression(arg);
+                    }
+                    cn = (ConstructorNode) bridge;
+                    args = newArgs;
+                } else {
+                    controller.getSourceUnit().addError(new SyntaxException("Cannot call private constructor for " + declaringClass.toString(false) +
                             " from class " + classNode.toString(false), call.getLineNumber(), call.getColumnNumber(), mn.getLastLineNumber(), call.getLastColumnNumber()));
+                }
             }
         }
 
         String ownerDescriptor = prepareConstructorCall(cn);
-        TupleExpression args = makeArgumentList(call.getArguments());
         int before = controller.getOperandStack().getStackLength();
         loadArguments(args.getExpressions(), cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
-
     }
 
     @Override
