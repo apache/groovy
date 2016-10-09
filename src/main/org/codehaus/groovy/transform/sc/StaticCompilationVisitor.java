@@ -46,6 +46,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.*;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * This visitor is responsible for amending the AST with static compilation metadata or transform the AST so that
@@ -248,6 +250,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
         List<MethodNode> methods = new ArrayList<MethodNode>(node.getAllDeclaredMethods());
+        methods.addAll(node.getDeclaredConstructors());
         Map<MethodNode, MethodNode> privateBridgeMethods = (Map<MethodNode, MethodNode>) node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         if (privateBridgeMethods!=null) {
             // private bridge methods already added
@@ -273,7 +276,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                             orig.getName()
                     );
                 }
-                newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression arguments;
                 if (method.getParameters()==null || method.getParameters().length==0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
@@ -284,17 +286,36 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                     }
                     arguments = new ArgumentListExpression(args);
                 }
-                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression(newParams[0]);
-                MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
-                mce.setMethodTarget(method);
 
-                ExpressionStatement returnStatement = new ExpressionStatement(mce);
-                MethodNode bridge = node.addMethod(
-                        "access$"+i, access,
-                        correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
-                        newParams,
-                        method.getExceptions(),
-                        returnStatement);
+                MethodNode bridge;
+                if (method instanceof ConstructorNode) {
+                    // create constructor with a nested class as the first parameter, creating one if necessary
+                    ClassNode thatType = null;
+                    Iterator<InnerClassNode> innerClasses = node.getInnerClasses();
+                    if (innerClasses.hasNext()) {
+                        thatType = innerClasses.next();
+                    } else {
+                        thatType = new InnerClassNode(node.redirect(), node.getName() + "$1", ACC_STATIC | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE);
+                        node.getModule().addClass(thatType);
+                    }
+                    newParams[0] = new Parameter(thatType.getPlainNodeReference(), "$that");
+                    Expression cce = new ConstructorCallExpression(ClassNode.THIS, arguments);
+                    Statement body = new ExpressionStatement(cce);
+                    bridge = node.addConstructor(ACC_SYNTHETIC, newParams, ClassNode.EMPTY_ARRAY, body);
+                } else {
+                    newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
+                    Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression(newParams[0]);
+                    MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
+                    mce.setMethodTarget(method);
+
+                    ExpressionStatement returnStatement = new ExpressionStatement(mce);
+                    bridge = node.addMethod(
+                            "access$"+i, access,
+                            correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
+                            newParams,
+                            method.getExceptions(),
+                            returnStatement);
+                }
                 GenericsType[] origGenericsTypes = method.getGenericsTypes();
                 if (origGenericsTypes !=null) {
                     bridge.setGenericsTypes(applyGenericsContextToPlaceHolders(genericsSpec,origGenericsTypes));
