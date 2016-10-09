@@ -22,17 +22,10 @@ package org.apache.groovy.internal.util;
 import org.apache.groovy.lang.annotation.Incubating;
 
 /**
- * Allows to throw a checked exception unchecked.
+ * Backport of Java8 Supplier.
  * INTERNAL USE ONLY.
  */
 @Incubating
-public class UncheckedThrow {
-    public static void rethrow( final Throwable checkedException ) {
-        UncheckedThrow.<RuntimeException>thrownInsteadOf( checkedException );
-    }
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void thrownInsteadOf(Throwable t) throws T {
-        throw (T) t;
-    }
+public interface Supplier<T> {
+    T get();
 }
-

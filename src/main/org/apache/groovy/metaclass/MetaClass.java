@@ -17,22 +17,25 @@
  *  under the License.
  */
 
-package org.apache.groovy.internal.util;
+package org.apache.groovy.metaclass;
 
+import groovy.lang.MetaMethod;
+import org.apache.groovy.internal.metaclass.MetaClassConstant;
+import org.apache.groovy.internal.util.ReevaluatingReference;
 import org.apache.groovy.lang.annotation.Incubating;
 
 /**
- * Allows to throw a checked exception unchecked.
- * INTERNAL USE ONLY.
+ * A MetaClass within Groovy defines the behaviour of any given Groovy or Java class
  */
 @Incubating
-public class UncheckedThrow {
-    public static void rethrow( final Throwable checkedException ) {
-        UncheckedThrow.<RuntimeException>thrownInsteadOf( checkedException );
+public final class MetaClass<T> {
+    private final ReevaluatingReference<MetaClassConstant<T>> implRef;
+
+    MetaClass(ReevaluatingReference<MetaClassConstant<T>> implRef) {
+        this.implRef = implRef;
     }
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void thrownInsteadOf(Throwable t) throws T {
-        throw (T) t;
+
+    public MetaMethod getMethod(String name, Class[] parameters) {
+        return implRef.getPayload().getMethod(name, parameters);
     }
 }
-

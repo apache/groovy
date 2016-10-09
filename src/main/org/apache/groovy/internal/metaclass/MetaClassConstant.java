@@ -17,22 +17,34 @@
  *  under the License.
  */
 
-package org.apache.groovy.internal.util;
+package org.apache.groovy.internal.metaclass;
 
+import groovy.lang.MetaClassImpl;
+import groovy.lang.MetaMethod;
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.lang.invoke.SwitchPoint;
+
 /**
- * Allows to throw a checked exception unchecked.
+ * The one and only implementation of a meta class.
  * INTERNAL USE ONLY.
  */
 @Incubating
-public class UncheckedThrow {
-    public static void rethrow( final Throwable checkedException ) {
-        UncheckedThrow.<RuntimeException>thrownInsteadOf( checkedException );
+public final class MetaClassConstant<T> {
+    private final SwitchPoint switchPoint = new SwitchPoint();
+    //TODO Joche: replace with real implementation
+    private final MetaClassImpl impl;
+
+    public MetaClassConstant(Class<T> clazz) {
+        impl = new MetaClassImpl(clazz);
     }
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void thrownInsteadOf(Throwable t) throws T {
-        throw (T) t;
+
+    public SwitchPoint getSwitchPoint() {
+        return switchPoint;
+    }
+
+    // TODO Jochen: replace with new MetaMethod
+    public MetaMethod getMethod(String name, Class[] parameters) {
+        return impl.pickMethod(name, parameters);
     }
 }
-

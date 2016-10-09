@@ -19,30 +19,29 @@
 
 package org.apache.groovy.metaclass;
 
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaClassRegistry;
+import org.apache.groovy.internal.metaclass.MetaClassConstant;
+import org.apache.groovy.internal.util.Function;
+import org.apache.groovy.internal.util.ReevaluatingReference;
+import org.apache.groovy.internal.util.Supplier;
 import org.apache.groovy.lang.annotation.Incubating;
 
-import java.lang.ref.WeakReference;
-import java.util.Map;
+import java.lang.invoke.SwitchPoint;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Realm is the representation of a metaclass layer in a tree of realm objects.
  */
 @Incubating
 public final class Realm {
-    public final static Realm ROOT = new Realm("Root", null);
+    private final static Realm ROOT = new Realm("ROOT", null);
 
     private final String name;
     private final Realm parent;
-    private final ClassValue<MetaClass> cv = new ClassValue<MetaClass>() {
+    private final ClassValue<MetaClassConstant<?>> cv = new ClassValue<MetaClassConstant<?>>() {
         @Override
-        protected MetaClass computeValue(Class type) {
-            return new MetaClassImpl(type);
+        @SuppressWarnings("unchecked")
+        protected MetaClassConstant<?> computeValue(Class<?> type) {
+            return new MetaClassConstant(type);
         }
     };
 
@@ -51,9 +50,13 @@ public final class Realm {
         this.parent = parent;
     }
 
-    public Realm createRealm(String name) {
+    public static Realm newRealm(String name, Realm parent) {
         Objects.requireNonNull(name, "missing realm name");
-        return new Realm(name, this);
+        if (parent == null) {
+            return new Realm(name, ROOT);
+        } else {
+            return new Realm(name, parent);
+        }
     }
 
     @Override
@@ -64,7 +67,25 @@ public final class Realm {
                 '}';
     }
 
-    public MetaClass getMetaClass(Class<?> theClass) {
-        return cv.get(theClass);
+    public <T> MetaClass<T> getMetaClass(final Class<T> theClass) {
+        Supplier<MetaClassConstant<T>> valueSupplier = new Supplier<MetaClassConstant<T>>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public MetaClassConstant<T> get() {
+                return (MetaClassConstant<T>) cv.get(theClass);
+            }
+        };
+        Function<MetaClassConstant<T>, SwitchPoint> validationSupplier = new Function<MetaClassConstant<T>, SwitchPoint>() {
+            @Override
+            public SwitchPoint apply(MetaClassConstant<T> metaClassImpl) {
+                return metaClassImpl.getSwitchPoint();
+            }
+        };
+        ReevaluatingReference<MetaClassConstant<T>> ref = new ReevaluatingReference<>(
+                MetaClassConstant.class,
+                valueSupplier,
+                validationSupplier
+        );
+        return new MetaClass<>(ref);
     }
 }
