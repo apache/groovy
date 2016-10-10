@@ -36,6 +36,7 @@ import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
 import groovy.lang.Writable;
 import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
@@ -86,6 +87,7 @@ public class InvokerHelper {
 
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
+        ClassInfo.remove(clazz);
         Introspector.flushFromCaches(clazz);
     }
 
