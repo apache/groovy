@@ -66,6 +66,7 @@ public class InvokerHelper {
 
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
+        ClassInfo.remove(clazz);
         Introspector.flushFromCaches(clazz);
     }
 
