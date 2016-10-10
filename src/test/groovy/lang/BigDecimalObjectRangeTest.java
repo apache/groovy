@@ -24,10 +24,6 @@ import java.math.BigDecimal;
  * Tests {@link ObjectRange}s of {@link BigDecimal}s.
  */
 public class BigDecimalObjectRangeTest extends NumberRangeTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
 
     /**
      * {@inheritDoc}
