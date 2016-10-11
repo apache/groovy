@@ -983,9 +983,7 @@ public class GroovyClassLoader extends URLClassLoader {
     @Override
     public void close() throws IOException {
         super.close();
-        for (Class cl : classCache.values()) {
-            InvokerHelper.removeClass(cl);
-        }
+        clearCache();
     }
 
     private static class TimestampAdder extends CompilationUnit.PrimaryClassNodeOperation implements Opcodes {
