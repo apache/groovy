@@ -72,6 +72,7 @@ public class MethodCallExpression extends Expression implements MethodCall {
         answer.setSafe(safe);
         answer.setSpreadSafe(spreadSafe);
         answer.setImplicitThis(implicitThis);
+        answer.setGenericsTypes(genericsTypes);
         answer.setSourcePosition(this);
         answer.setMethodTarget(target);
         answer.copyNodeMetaData(this);
