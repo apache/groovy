@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.PropertyNodeUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
@@ -312,7 +313,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         ClassNode[] exceptions = {ClassHelper.make(PropertyVetoException.class)};
         MethodNode setter = new MethodNode(
                 setterName,
-                propertyNode.getModifiers(),
+                PropertyNodeUtils.adjustPropertyModifiersForMethod(propertyNode),
                 ClassHelper.VOID_TYPE,
                 params(param(propertyNode.getType(), "value")),
                 exceptions,
