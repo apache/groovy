@@ -47,7 +47,7 @@ buildscript {
 
 plugins {
     id 'com.gradle.build-scan' version '1.2'
-    id 'me.champeau.buildscan-recipes' version '0.1.0-beta-5'
+    id 'me.champeau.buildscan-recipes' version '0.1.0'
 }
 
 buildScan {
@@ -55,7 +55,7 @@ buildScan {
     licenseAgree = 'yes'
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
-    recipes 'git-status'
+    recipes 'git-status', 'gc-stats'
 }
 
 apply from: 'gradle/filter.gradle'
