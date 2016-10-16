@@ -84,8 +84,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
-            def candidates = completor.collectImportedSymbols('foo.lang.Xxxxx as Abcdef')
-            assert ['Abcdef'] as Set == candidates
+            def candidates = ['prefill']
+            completor.collectImportedSymbols('foo.lang.Xxxxx as Abcdef', candidates)
+            assert ['prefill', 'Abcdef'] == candidates
         }
     }
 

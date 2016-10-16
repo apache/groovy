@@ -31,8 +31,10 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
     // cache for all preimported classes
     List<String> preimportedClassNames
     // cache for all manually imported classes
-    final Map<String, Collection<String>> cachedImports = new HashMap<>().withDefault {String key ->
-        collectImportedSymbols(key)
+    final Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>().withDefault {String key ->
+        Collection<String> matchingImports = new TreeSet<String>()
+        collectImportedSymbols(key, matchingImports)
+        matchingImports
     }
 
     ImportsSyntaxCompletor(final Groovysh shell) {
@@ -83,16 +85,15 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
     /**
      * finds matching imported classes or static methods
      * @param importSpec an import statement without the leading 'import ' or trailing semicolon
-     * @return all names matching the importSpec
+     * @param matches all names matching the importSpec will be added to this Collection
      */
-    SortedSet<String> collectImportedSymbols(final String importSpec) {
-        final SortedSet<String> symbols = new TreeSet<>()
+    void collectImportedSymbols(final String importSpec, final Collection<String> matches) {
         String asKeyword = ' as '
         int asIndex = importSpec.indexOf(asKeyword)
         if (asIndex > -1) {
             String alias = importSpec.substring(asIndex + asKeyword.length())
-            symbols << alias
-            return symbols
+            matches << alias
+            return
         }
         int lastDotIndex = importSpec.lastIndexOf('.')
         String symbolName = importSpec.substring(lastDotIndex + 1)
@@ -111,16 +112,15 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
                         Set<String> acceptableMatches = [symbolName, symbolName + '(', symbolName + '()']
                         importedSymbols = acceptableMatches.intersect(clazzSymbols)
                     }
-                    symbols.addAll(importedSymbols)
+                    matches.addAll(importedSymbols)
                 }
             }
         } else {
             if (symbolName == '*') {
-                symbols.addAll(shell.packageHelper.getContents(importSpec))
+                matches.addAll(shell.packageHelper.getContents(importSpec))
             } else {
-                symbols << symbolName
+                matches << symbolName
             }
         }
-        return symbols;
     }
 }
