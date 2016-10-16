@@ -49,7 +49,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * @since 2.3.0
  */
 class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
-    public static final String UNRESOLVED_HELPER_CLASS = "UNRESOLVED_HELPER_CLASS";
+    static final String UNRESOLVED_HELPER_CLASS = "UNRESOLVED_HELPER_CLASS";
     private final SourceUnit unit;
 
     SuperCallTraitTransformer(final SourceUnit unit) {
