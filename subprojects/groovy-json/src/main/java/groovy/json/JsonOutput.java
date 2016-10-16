@@ -21,17 +21,10 @@ package groovy.json;
 import groovy.json.internal.CharBuf;
 import groovy.json.internal.Chr;
 import groovy.lang.Closure;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.FromString;
 import groovy.util.Expando;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.io.File;
 import java.io.StringReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**

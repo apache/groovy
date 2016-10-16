@@ -97,7 +97,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
 
     /**
      * Instantiates a JSON builder with some existing data structure
-     * and options that will be used to generate the output.
+     * and a configured generator.
      *
      * @param content a pre-existing data structure
      * @param generator used to generate the output

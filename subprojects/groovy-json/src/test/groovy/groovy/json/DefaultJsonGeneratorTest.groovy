@@ -261,3 +261,18 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
     }
 
 }
+
+class JsonBar {
+    String favoriteDrink
+    Date lastVisit
+    JsonCyclicReference cycle = new JsonCyclicReference()
+    JsonBar(String favoriteDrink, Date lastVisit) {
+        this.favoriteDrink = favoriteDrink
+        this.lastVisit = lastVisit
+    }
+}
+
+class JsonCyclicReference {
+    static final DEFAULT = new JsonCyclicReference()
+    JsonCyclicReference() { }
+}

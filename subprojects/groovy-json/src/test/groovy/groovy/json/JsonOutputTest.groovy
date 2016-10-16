@@ -456,21 +456,6 @@ class JsonFoo {
     int getProperties() { return 0 }
 }
 
-class JsonBar {
-    String favoriteDrink
-    Date lastVisit
-    JsonCyclicReference cycle = new JsonCyclicReference()
-    JsonBar(String favoriteDrink, Date lastVisit) {
-        this.favoriteDrink = favoriteDrink
-        this.lastVisit = lastVisit
-    }
-}
-
-class JsonCyclicReference {
-    static final DEFAULT = new JsonCyclicReference()
-    JsonCyclicReference() { }
-}
-
 enum JsonStreetKind {
     street, boulevard, avenue
 }

@@ -87,7 +87,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     }
 
     /**
-     * Instantiates a JSON builder with the given output options.
+     * Instantiates a JSON builder with the given generator.
      *
      * @param writer A writer to which Json will be written
      * @param generator used to generate the output
@@ -111,7 +111,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
 
     /**
      * Instantiates a JSON builder, possibly with some existing data structure and
-     * the given output options.
+     * the given generator.
      *
      * @param writer A writer to which Json will be written
      * @param content a pre-existing data structure, default to null
