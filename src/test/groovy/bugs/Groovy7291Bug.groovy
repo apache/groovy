@@ -18,24 +18,48 @@
  */
 package groovy.bugs
 
-class Groovy7291Bug extends GroovyShellTestCase {
+import groovy.transform.NotYetImplemented
+
+class Groovy7291Bug extends GroovyTestCase {
+
+    static final boolean runningWithIndy = Boolean.getBoolean('groovy.target.indy')
+
+    @NotYetImplemented
+    void testPrimitiveDoubleIndy() {
+        if (!runningWithIndy) return
+        assertScript '''
+            double a
+            def b = {
+               a = a + 1
+            }
+            b()
+            assert a == 1.0d
+        '''
+    }
+
     void testPrimitiveDouble() {
-        evaluate('''
-double a;
-def b = {
-   a = a + 1;
-}
-b();
-        ''');
+        // TODO: remove this conditional and method above when fixed for Indy
+        if (runningWithIndy) return
+
+        assertScript '''
+            double a
+            def b = {
+               a = a + 1
+            }
+            b()
+            assert a == 1.0d
+        '''
     }
 
     void testDouble() {
-        shouldFail('''
-Double a;
-def b = {
-   a = a + 1;
-}
-b();
-        ''');
+        shouldFail(NullPointerException,
+        '''
+            Double a;
+            def b = {
+               a = a + 1;
+            }
+            b()
+        ''')
     }
+
 }
