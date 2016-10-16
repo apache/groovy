@@ -30,7 +30,7 @@ With runtime metaprogramming we can postpone to runtime the decision to intercep
 In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptors. Groovy allows metaprogramming for all types of objects but in different manner.
 
 - POJO - A regular Java object, whose class can be written in Java or any other language for the JVM.
-- POGO - A Groovy object, whose class is written in Groovy. It extends `java.lang.Object` and implements the gapi:groovy.lang.GroovyObject[] interface by default. 
+- POGO - A Groovy object, whose class is written in Groovy. It extends `java.lang.Object` and implements the gapi:groovy.lang.GroovyObject[] interface by default.
 - Groovy Interceptor - A Groovy object that implements the gapi:groovy.lang.GroovyInterceptable[] interface and has method-interception capability, which we'll discuss in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> section.
 
 For every method call Groovy checks whether the object is a POJO or a POGO. For POJOs, Groovy fetches it's `MetaClass` from the gapi:groovy.lang.MetaClassRegistry[] and delegates method invocation to it. For POGOs, Groovy takes more steps, as illustrated in the following figure:
@@ -79,7 +79,7 @@ Here is a simple example:
 ----
 include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_get_property,indent=0]
 ----
-<1> Forwards the request to the getter for all properties except `field3`.  
+<1> Forwards the request to the getter for all properties except `field3`.
 
 You can intercept write access to properties by overriding the `setProperty()` method:
 
@@ -139,7 +139,7 @@ something like this:
 class GORM {
 
    def dynamicMethods = [...] // an array of dynamic methods that use regex
-   
+
    def methodMissing(String name, args) {
        def method = dynamicMethods.find { it.match(name) }
        if(method) {
@@ -2829,6 +2829,153 @@ to use the Groovy Console, in particular the AST browser tool, to gain knowledge
 resource for learning is the https://github.com/apache/groovy/tree/master/src/test/org/codehaus/groovy/ast/builder[AST Builder]
 test suite.
 
+==== Macros
+
+===== Introduction
+
+Until version 2.5.0, when developing AST transformations, developers should have a deep knowledge about how the AST
+(Abstract Syntax Tree) was built by the compiler in order to know how to add new expressions or statements during
+compile time.
+
+Although the use of `org.codehaus.groovy.ast.tool.GeneralUtils` static methods could mitigate the burden of creating
+expressions and statements, it's still a low-level way of writing those AST nodes directly.
+We needed something to abstract us from writing the AST directly and that's exactly what Groovy macros were made for.
+They allow you to directly add code during compilation, without having to translate the code you had in mind to the
+`org.codehaus.groovy.ast.*` node related classes.
+
+===== Statements and expressions
+
+Let's see an example, lets create a local AST transformation: `@AddMessageMethod`. When applied to a given class it
+will add a new method called `getMessage` to that class. The method will return "42". The annotation is pretty
+straight forward:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroStatementTest.groovy[tags=addmethodannotation,indent=0]
+----
+
+What would the AST transformation look like without the use of a macro ? Something like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroStatementTest.groovy[tags=addmethodtransformationwithoutmacro,indent=0]
+----
+
+<1> Create a return statement
+<2> Create a constant expression "42"
+<3> Adding the code to the new method
+<4> Adding the new method to the annotated class
+
+If you're not used to the AST API, that definitely doesn't look like the code you had in mind. Now look how the
+previous code simplifies with the use of macros.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroStatementTest.groovy[tags=basicWithMacro,indent=0]
+----
+
+<1> Much simpler. You wanted to add a return statement that returned "42" and that's exactly what you can read inside
+the `macro` utility method. Your plain code will be translated for you to a `org.codehaus.groovy.ast.stmt.ReturnStatement`
+<2> Adding the return statement to the new method
+<3> Adding the new code to the annotated class
+
+Although the `macro` method is used in this example to create a **statement** the `macro` method could also be used to create
+**expressions** as well, it depends on which `macro` signature you use:
+
+- `macro(Closure)`: Create a given statement with the code inside the closure.
+- `macro(Boolean,Closure)`: if **true** wrap expressions inside the closure inside an statement, if **false** then return
+an expression
+- `macro(CompilePhase, Closure)`: Create a given statement with the code inside the closure in a specific compile phase
+- `macro(CompilePhase, Boolean, Closure)`: Create an statement or an expression (true == statement, false == expression)
+in a specific compilation phase.
+
+NOTE: All these signatures can be found at `org.codehaus.groovy.macro.runtime.MacroGroovyMethods`
+
+Sometimes we could be only interested in creating a given expression, not the whole statement, in order to do that we
+should use any of the `macro` invocations with a boolean parameter:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroExpressionTest.groovy[tags=addgettwotransformation,indent=0]
+----
+
+<1> We're telling macro not to wrap the expression in a statement, we're only interested in the expression
+<2> Assigning the expression
+<3> Creating a `ReturnStatement` using a method from `GeneralUtils` and returning the expression
+<4> Adding the code to the new method
+<5> Adding the method to the class
+
+===== Variable substitution
+
+Macros are great but we can't create anything useful or reusable if our macros couldn't receive parameters or resolve
+surrounding variables.
+
+In the following example we're creating an AST transformation `@MD5` that when applied to a given String field will
+add a method returning the MD5 value of that field.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroVariableSubstitutionTest.groovy[tags=md5annotation,indent=0]
+----
+
+And the transformation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroVariableSubstitutionTest.groovy[tags=md5transformation,indent=0]
+----
+
+<1> We need a reference to a variable expression
+<2> If using a class outside the standard packages we should add any needed imports or use the qualified name. When
+using the qualified named of a given static method you need to make sure it's resolved in the proper compile phase. In
+this particular case we're instructing the macro to resolve it at the SEMANTIC_ANALYSIS phase, which is the first compile phase
+with type information.
+<3> In order to substitute any `expression` inside the macro we need to use the `$v` method. `$v` receives a closure as an
+argument, and the closure is only allowed to substitute expressions, meaning classes inheriting
+`org.codehaus.groovy.ast.expr.Expression`.
+
+===== MacroClass
+
+As we mentioned earlier, the `macro` method is only capable of producing `statements` and `expressions`. But what if we
+want to produce other types of nodes, such as a method, a field and so on?
+
+`org.codehaus.groovy.macro.transform.MacroClass` can be used to create **classes** (ClassNode instances) in our
+transformations the same way we created statements and expressions with the `macro` method before.
+
+The next example is a local transformation `@Statistics`. When applied to a given class, it will add two methods
+**getMethodCount()** and **getFieldCount()** which return how many methods and fields within the class respectively. Here
+is the marker annotation.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroClassTest.groovy[tags=statisticsannotation,indent=0]
+----
+
+And the AST transformation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MacroClassTest.groovy[tags=statisticstransformation,indent=0]
+----
+
+<1> Creating a template class
+<2> Adding template class methods to the annotated class
+<3> Passing the reference class
+<4> Extracting reference class method count value expression
+<5> Extracting reference class field count value expression
+<6> Building the **getMethodCount()** method using reference's method count value expression
+<7> Building the **getFieldCount()** method using reference's field count value expression
+
+Basically we've created the **Statistics** class as a template to avoid writing low level AST API, then we
+copied methods created in the template class to their final destination.
+
+NOTE: Types inside the `MacroClass` implementation should be resolved inside, that's why we had to write
+`java.lang.Integer` instead of simply writing `Integer`.
+
+IMPORTANT: Notice that we're using `@CompileDynamic`. That's because the way we use `MacroClass` is like we
+were actually implementing it. So if you were using `@CompileStatic` it will complain because an implementation of
+an abstract class can't be another different class.
+
 ==== Testing AST transformations
 ===== Separating source trees
 
@@ -2867,6 +3014,90 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 The difference is that when you use `assertScript`, the code in the `assertScript` block is compiled *when the
 unit test is executed*. That is to say that this time, the `Subject` class will be compiled with debugging active, and
 the breakpoint is going to be hit.
+
+===== ASTMatcher
+
+Sometimes you may want to make assertions over AST nodes; perhaps to filter the nodes, or to make sure a given
+transformation has built the expected AST node.
+
+**Filtering nodes**
+
+For instance if you would like to apply a given transformation only to a specific set of AST nodes, you could
+use **ASTMatcher** to filter these nodes. The following example shows how to transform a given expression to
+another. Using **ASTMatcher** it looks for a specific expression `1 + 1` and it transforms it to `3`. That's why
+we called it the `@Joking` example.
+
+First we create the `@Joking` annotation that only can be applied to methods:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherFilteringTest.groovy[tags=jokingannotation,indent=0]
+----
+
+Then the transformation, that only applies an instance of `org.codehaus.groovy.ast.ClassCodeExpressionTransformer`
+to all the expressions within the method code block.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherFilteringTest.groovy[tags=jokingtransformation,indent=0]
+----
+<1> Get the method's code statement and apply the expression transformer
+
+And this is when the **ASTMatcher** is used to apply the transformation only to those expressions matching
+the expression `1 + 1`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherFilteringTest.groovy[tags=jokingexpressiontransformer,indent=0]
+----
+<1> Builds the expression used as reference pattern
+<2> Checks the current expression evaluated matches the reference expression
+<3> If it matches then replaces the current expression with the expression built with `macro`
+
+Then you could test the implementation as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherFilteringTest.groovy[tags=jokingexample,indent=0]
+----
+
+**Unit testing AST transforms**
+
+Normally we test AST transformations just checking that the final use of the transformation does what we expect. But
+it would be great if we could have an easy way to check, for example, that the nodes the transformation adds are what
+we expected from the beginning.
+
+The following transformation adds a new method `giveMeTwo` to an annotated class.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherTestingTest.groovy[tags=twiceasttransformation,indent=0]
+----
+<1> Adding the method to the annotated class
+<2> Building a binary expression. The binary expression uses the same variable expression in both
+sides of the `+` token (check `varX` method at **org.codehaus.groovy.ast.tool.GeneralUtils**).
+<3> Builds a new **ClassNode** with a method called `giveMeTwo` which returns the result of an expression
+passed as parameter.
+
+Now instead of creating a test executing the transformation over a given sample code. I would like to check that
+the construction of the binary expression is done properly:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherTestingTest.groovy[tags=testexpression,indent=0]
+----
+<1> Using ASTMatcher as a category
+<2> Build a template node
+<3> Apply some constraints to that template node
+<4> Tells compiler that `a` is a placeholder.
+<5> Asserts reference node and current node are equal
+
+Of course you can/should always check the actual execution:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTMatcherTestingTest.groovy[tags=executiontesting,indent=0]
+----
 
 ===== ASTTest
 

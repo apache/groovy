@@ -45,7 +45,13 @@ import org.codehaus.groovy.transform.trait.Traits;
 import static java.lang.reflect.Modifier.*;
 import static org.objectweb.asm.Opcodes.*;
 /**
- * ClassCompletionVerifier
+ * Checks that a class satisfies various conditions including:
+ * <ul>
+ *     <li>Incorrect class or method access modifiers</li>
+ *     <li>No abstract methods appear in a non-abstract class</li>
+ *     <li>Existence and correct visibility for inherited members</li>
+ *     <li>Invalid attempts to override final members</li>
+ * </ul>
  */
 public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 

@@ -158,19 +158,21 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         // GROOVY-5580, it is still possible that we're calling a superinterface property
         String getterName = "get" + MetaClassHelper.capitalize(methodName);
+        String altGetterName = "is" + MetaClassHelper.capitalize(methodName);
         if (receiverType.isInterface()) {
             Set<ClassNode> allInterfaces = receiverType.getAllInterfaces();
             MethodNode getterMethod = null;
             for (ClassNode anInterface : allInterfaces) {
                 getterMethod = anInterface.getGetterMethod(getterName);
-                if (getterMethod!=null) break;
+                if (getterMethod == null) getterMethod = anInterface.getGetterMethod(altGetterName);
+                if (getterMethod != null) break;
             }
             // GROOVY-5585
-            if (getterMethod==null) {
+            if (getterMethod == null) {
                 getterMethod = OBJECT_TYPE.getGetterMethod(getterName);
             }
 
-            if (getterMethod!=null) {
+            if (getterMethod != null) {
                 MethodCallExpression call = new MethodCallExpression(
                         receiver,
                         getterName,
@@ -188,13 +190,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
         List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY);
+        for (MethodNode m: findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, altGetterName, ClassNode.EMPTY_ARRAY)) {
+            if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
+        }
         if (!methods.isEmpty()) {
             List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
-            if (methodNodes.size()==1) {
+            if (methodNodes.size() == 1) {
                 MethodNode getter = methodNodes.get(0);
                 MethodCallExpression call = new MethodCallExpression(
                         receiver,
-                        getterName,
+                        getter.getName(),
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 call.setMethodTarget(getter);

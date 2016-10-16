@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -969,11 +970,20 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public void clearCache() {
         synchronized (classCache) {
+            for (Class cl : classCache.values()) {
+                InvokerHelper.removeClass(cl);
+            }
             classCache.clear();
         }
         synchronized (sourceCache) {
             sourceCache.clear();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        clearCache();
     }
 
     private static class TimestampAdder extends CompilationUnit.PrimaryClassNodeOperation implements Opcodes {

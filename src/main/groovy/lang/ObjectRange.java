@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Represents an inclusive list of objects from a value to a value using
@@ -446,9 +447,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         @Override
         public Comparable next() {
             // not thread safe
-            if (!nextFetched) {
-                value = peek();
-                nextFetched = true;
+            if (!hasNext()) {
+                throw new NoSuchElementException();
             }
             nextFetched = false;
             index++;

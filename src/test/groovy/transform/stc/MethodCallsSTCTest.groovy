@@ -690,6 +690,39 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testIsGetterAsPropertyFromSuperInterface() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        boolean foo(Lower impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo({ true } as Lower)
+        '''
+    }
+
+    void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImpl() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { boolean isBar() { true } }
+        boolean foo(Foo impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo(new Foo())
+        '''
+    }
+
+    void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { boolean isBar() { true } }
+        class Bar extends Foo {}
+        boolean foo(Bar impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo(new Bar())
+        '''
+    }
+
     // GROOVY-5580: getName variant
     void testGetNameFromSuperInterface() {
         assertScript '''interface Upper { String getName() }

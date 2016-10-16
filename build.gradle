@@ -46,12 +46,16 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.0'
+    id 'com.gradle.build-scan' version '1.2'
+    id 'me.champeau.buildscan-recipes' version '0.1.0-beta-4'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
+    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
+    recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
+    recipes 'git-status'
 }
 
 apply from: 'gradle/filter.gradle'
@@ -214,6 +218,7 @@ dependencies {
 
     examplesCompile project(':groovy-test')
     examplesCompile project(':groovy-swing')
+
     examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
@@ -238,6 +243,7 @@ dependencies {
 
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
+    testCompile project(':groovy-macro')
 }
 
 ext.generatedDirectory = "${buildDir}/generated-sources"

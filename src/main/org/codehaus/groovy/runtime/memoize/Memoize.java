@@ -123,6 +123,8 @@ public abstract class Memoize {
             super(closure.getOwner());
             this.cache = cache;
             this.closure = closure;
+            parameterTypes = closure.getParameterTypes();
+            maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
         }
         
         @Override public V call(final Object... args) {

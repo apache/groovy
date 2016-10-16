@@ -26,6 +26,7 @@ import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
@@ -78,8 +79,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         @Override
         public Integer next() {
             if (!hasNext()) {
-                // TODO instead of returning null, do this: throw new NoSuchElementException();
-                return null;
+                throw new NoSuchElementException();
             }
             if (index++ > 0) {
                 if (isReverse()) {
@@ -186,6 +186,18 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         this.inclusive = inclusive;
         this.reverse = false; // range may still be reversed, this value is ignored for inclusive-aware ranges
         checkSize();
+    }
+
+    /**
+     * Creates a new NumberRange with the same <code>from</code> and <code>to</code> as this
+     * IntRange but with a step size of <code>stepSize</code>.
+     *
+     * @param stepSize the desired step size
+     * @return a new NumberRange
+     * @since 2.5
+     */
+    public <T extends Number & Comparable> NumberRange by(T stepSize) {
+        return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusive);
     }
 
     private void checkSize() {

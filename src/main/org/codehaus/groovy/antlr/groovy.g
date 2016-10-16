@@ -1975,9 +1975,13 @@ forInClause
 /** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
  *  Support this practice, even though it isn't very Groovy.
  */
-compatibleBodyStatement
+compatibleBodyStatement {Token first = LT(1);}
     :   (LCURLY)=>
         compoundStatement
+    // comma sep decl case converted to multiple statements so must be wrapped in SLIST when single statement occurs after if/while/for
+    |  (declarationStart (varInitializer)? COMMA)=>
+        de:declaration
+        {#compatibleBodyStatement = #(create(SLIST,"CBSLIST",first,LT(1)),de);}
     |
         statement[EOF]
     ;

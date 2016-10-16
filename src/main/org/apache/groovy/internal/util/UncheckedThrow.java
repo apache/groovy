@@ -23,6 +23,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 
 /**
  * Allows to throw a checked exception unchecked.
+ * INTERNAL USE ONLY.
  */
 @Incubating
 public class UncheckedThrow {
