@@ -497,16 +497,17 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
-    void testWithOptions() {
-        def options = JsonOutput.options()
+    void testWithGenerator() {
+        def generator = new JsonGenerator.Options()
                 .excludeNulls()
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
                 .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+                .build()
 
         new StringWriter().with { w ->
-            def builder = new StreamingJsonBuilder(w, options)
+            def builder = new StreamingJsonBuilder(w, generator)
 
             builder.payload {
                 id 'YT-1234'
@@ -522,16 +523,17 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
     }
 
     @CompileStatic
-    void testWithOptionsCompileStatic() {
-        def options = JsonOutput.options()
+    void testWithGeneratorCompileStatic() {
+        def generator = new JsonGenerator.Options()
                 .excludeNulls()
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
                 .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+                .build()
 
         new StringWriter().with { w ->
-            def builder = new StreamingJsonBuilder(w, options)
+            def builder = new StreamingJsonBuilder(w, generator)
             builder.call('payload') {
                 call 'id', 'YT-1234'
                 call 'location', (String)null

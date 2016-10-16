@@ -178,14 +178,14 @@ include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.gr
 
 === Customizing Output
 
-If you need control over the serialized output you can use the `JsonOutput.options()` method.  You can set one or
-more options on this builder in order to alter the resulting output.  When you are done setting the options simply
-call the `createGenerator()` method in order to get a fully configured instance that will generate output based on
-the options selected.
+If you need control over the serialized output you can use a `JsonGenerator`.  The `JsonGenerator.Options` builder
+can be used to create a customized generator.  One or more options can be set on this builder in order to alter
+the resulting output.  When you are done setting the options simply call the `build()` method in order to get a fully
+configured instance that will generate output based on the options selected.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_options,indent=0]
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_generator,indent=0]
 ----
 
 In addition to excluding certain values from being generated you can also register converters in order to transform

@@ -94,11 +94,11 @@ class JsonTest extends GroovyTestCase {
         '''
     }
 
-    void testJsonOutputOptions() {
+    void testJsonOutputWithGenerator() {
         assertScript '''
         import groovy.json.*
 
-        // tag::json_output_options[]
+        // tag::json_output_generator[]
         class Person {
             String name
             String title
@@ -112,15 +112,15 @@ class JsonTest extends GroovyTestCase {
                                     dob: Date.parse('yyyy-MM-dd', '1984-12-15'),
                                     favoriteUrl: new URL('http://groovy-lang.org/'))
 
-        def generator = JsonOutput.options()
+        def generator = new JsonGenerator.Options()
             .excludeNulls()
             .dateFormat('MM@dd@yyyy')
             .excludeFieldsByName('age', 'password')
             .excludeFieldsByType(URL)
-            .createGenerator()
+            .build()
 
         assert generator.toJson(person) == '{"dob":"12@15@1984","name":"John"}'
-        // end::json_output_options[]
+        // end::json_output_generator[]
         '''
     }
 
@@ -137,7 +137,7 @@ class JsonTest extends GroovyTestCase {
 
         Person person = new Person(name: 'John', favoriteUrl: new URL('http://groovy-lang.org/json.html#_jsonoutput'))
 
-        def generator = JsonOutput.options()
+        def generator = new JsonGenerator.Options()
             .addConverter(URL) { URL u, String key ->
                 if (key == 'favoriteUrl') {
                     '"' + u.getHost() + '"'
@@ -145,7 +145,7 @@ class JsonTest extends GroovyTestCase {
                     JsonOutput.toJson(u)
                 }
             }
-            .createGenerator()
+            .build()
 
         assert generator.toJson(person) == '{"favoriteUrl":"groovy-lang.org","name":"John"}'
 
@@ -155,7 +155,7 @@ class JsonTest extends GroovyTestCase {
 
         // First parameter to the converter must match the type for which it is registered
         shouldFail(IllegalArgumentException) {
-            JsonOutput.options()
+            new JsonGenerator.Options()
                 .addConverter(Date) { Calendar cal -> }
         }
         // end::json_output_converter[]

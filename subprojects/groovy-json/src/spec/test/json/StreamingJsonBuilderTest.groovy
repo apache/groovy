@@ -18,8 +18,6 @@
  */
 package json
 
-import groovy.util.GroovyTestCase
-
 class StreamingJsonBuilderTest extends GroovyTestCase {
 
     void testStreamingJsonBuilder() {
@@ -73,18 +71,19 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
        """
     }
 
-    void testStreamingJsonBuilderWithOptions() {
+    void testStreamingJsonBuilderWithGenerator() {
         assertScript '''
             import groovy.json.*
-            // tag::streaming_json_builder_options[]
-            def options = JsonOutput.options()
+            // tag::streaming_json_builder_generator[]
+            def generator = new JsonGenerator.Options()
                     .excludeNulls()
                     .excludeFieldsByName('make', 'country', 'record')
                     .excludeFieldsByType(Number)
                     .addConverter(URL) { url -> '"http://groovy-lang.org"' }
+                    .build()
 
             StringWriter writer = new StringWriter()
-            StreamingJsonBuilder builder = new StreamingJsonBuilder(writer, options)
+            StreamingJsonBuilder builder = new StreamingJsonBuilder(writer, generator)
 
             builder.records {
               car {
@@ -101,7 +100,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
 
             assert writer.toString() == '{"records":{"car":{"name":"HSV Maloo","homepage":"http://groovy-lang.org"}}}'
-            // end::streaming_json_builder_options[]
+            // end::streaming_json_builder_generator[]
         '''
     }
 }

@@ -403,15 +403,16 @@ class JsonBuilderTest extends GroovyTestCase {
         assert new JsonBuilder({'\u0002' 0}).toString() == '{"\\u0002":0}'
     }
 
-    void testWithOptions() {
-        def options = JsonOutput.options()
+    void testWithGenerator() {
+        def generator = new JsonGenerator.Options()
                 .excludeNulls()
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
                 .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+                .build()
 
-        def json = new JsonBuilder(options)
+        def json = new JsonBuilder(generator)
 
         json.payload {
             id 'YT-1234'
@@ -424,7 +425,7 @@ class JsonBuilderTest extends GroovyTestCase {
 
         assert json.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'
 
-        json = new JsonBuilder(['foo', null, 'bar', new URL('http://groovy-lang.org')], options)
+        json = new JsonBuilder(['foo', null, 'bar', new URL('http://groovy-lang.org')], generator)
         assert json.toString() == '["foo","bar"]'
     }
 
