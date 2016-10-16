@@ -658,10 +658,8 @@ public class CompileStack implements Opcodes {
     public BytecodeVariable defineVariable(Variable v, boolean initFromStack) {
         return defineVariable(v, v.getOriginType(), initFromStack);
     }
+
     public BytecodeVariable defineVariable(Variable v, ClassNode variableType, boolean initFromStack) {
-        //TODO: any usage of this method should have different operand stack handing
-        //      then the remove(1) here and there in this one can be removed and others
-        //      can be changed
         String name = v.getName();
         BytecodeVariable answer = defineVar(name, variableType, v.isClosureSharedVariable(), v.isClosureSharedVariable());
         stackVariables.put(name, answer);
@@ -672,7 +670,16 @@ public class CompileStack implements Opcodes {
         ClassNode type = answer.getType().redirect();
         OperandStack operandStack = controller.getOperandStack();
 
-        if (!initFromStack) pushInitValue(type, mv);
+        if (!initFromStack) {
+            if (ClassHelper.isPrimitiveType(v.getOriginType()) && ClassHelper.getWrapper(v.getOriginType()) == variableType) {
+                pushInitValue(v.getOriginType(), mv);
+                operandStack.push(v.getOriginType());
+                operandStack.box();
+                operandStack.remove(1);
+            } else {
+                pushInitValue(type, mv);
+            }
+        }
         operandStack.push(answer.getType());
         if (answer.isHolder())  {
             operandStack.box();

@@ -396,7 +396,11 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             // we use this NOP to have a valid jump target for the various labels
             //mv.visitInsn(NOP);
-            mv.visitMaxs(0, 0);
+            try {
+                mv.visitMaxs(0, 0);
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("ASM reporting processing error for "+controller.getClassNode()+"#"+node.getName()+" with signature "+node.getTypeDescriptor()+" in "+sourceFile+":"+node.getLineNumber(), e);
+            }
         }
         mv.visitEnd();
     }

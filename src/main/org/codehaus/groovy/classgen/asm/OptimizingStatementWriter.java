@@ -581,37 +581,19 @@ public class OptimizingStatementWriter extends StatementWriter {
             addTypeInformation(expression.getExpression(),expression);
         }
 
-        private void replaceEmptyToConstantZeroIfNecessary(DeclarationExpression expression) {
-            // GROOVY-7291 and GROOVY-5570, a variable referenced by closure cannot be primitive type
-            // So here's a trick: in this case replace EmptyExpression on the right side to a ConstantExpression
-            Expression leftExpression = expression.getLeftExpression();
-            Expression rightExpression=expression.getRightExpression();
-            if (leftExpression instanceof VariableExpression
-                    && rightExpression instanceof EmptyExpression) {
-                VariableExpression leftVariableExpression = (VariableExpression) leftExpression;
-
-                if (isPrimitiveType(leftVariableExpression.getOriginType())
-                        && leftVariableExpression.isClosureSharedVariable()) {
-                   expression.setRightExpression(new ConstantExpression(0));
-                }
-            }
-        }
-
         @Override
         public void visitDeclarationExpression(DeclarationExpression expression) {
-            replaceEmptyToConstantZeroIfNecessary(expression);
-
-            Expression rightExpression = expression.getRightExpression();
-            rightExpression.visit(this);
+            Expression right = expression.getRightExpression();
+            right.visit(this);
 
             ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
+            Expression rightExpression = expression.getRightExpression();
             ClassNode rightType = optimizeDivWithIntOrLongTarget(rightExpression, leftType);
-
-            if (rightType==null) rightType = typeChooser.resolveType(rightExpression, node);
+            if (rightType==null) rightType = typeChooser.resolveType(expression.getRightExpression(), node);
             if (isPrimitiveType(leftType) && isPrimitiveType(rightType)) {
                 // if right is a constant, then we optimize only if it makes
                 // a block complete, so we set a maybe
-                if (rightExpression instanceof ConstantExpression) {
+                if (right instanceof ConstantExpression) {
                     opt.chainCanOptimize(true);
                 } else {
                     opt.chainShouldOptimize(true);
