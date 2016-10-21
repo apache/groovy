@@ -63,9 +63,6 @@ import static groovy.json.JsonOutput.OPEN_BRACKET;
  */
 public class DefaultJsonGenerator implements JsonGenerator {
 
-    protected static final String NULL_VALUE = "null";
-    protected static final String EMPTY_VALUE = "";
-
     protected final boolean excludeNulls;
     protected final boolean disableUnicodeEscaping;
     protected final String dateFormat;
@@ -74,15 +71,14 @@ public class DefaultJsonGenerator implements JsonGenerator {
     protected final Set<Converter> converters = new LinkedHashSet<Converter>();
     protected final Set<String> excludedFieldNames = new HashSet<String>();
     protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
-    protected final String nullValue;
-    protected final boolean hasConverters;
-    protected final boolean hasExcludedFieldNames;
-    protected final boolean hasExcludedFieldTypes;
+
+    private final boolean hasConverters;
+    private final boolean hasExcludedFieldNames;
+    private final boolean hasExcludedFieldTypes;
 
     protected DefaultJsonGenerator(Options options) {
         excludeNulls = options.excludeNulls;
         disableUnicodeEscaping = options.disableUnicodeEscaping;
-        nullValue = (excludeNulls) ? EMPTY_VALUE : NULL_VALUE;
         dateFormat = options.dateFormat;
         dateLocale = options.dateLocale;
         timezone = options.timezone;
@@ -190,18 +186,17 @@ public class DefaultJsonGenerator implements JsonGenerator {
      * Serializes object and writes it into specified buffer.
      */
     protected void writeObject(String key, Object object, CharBuf buffer) {
+
+        if (isExcludingValues(object)) {
+            return;
+        }
+
         if (object == null) {
-            if (!excludeNulls) {
-                buffer.addNull();
-            }
+            buffer.addNull();
             return;
         }
 
         Class<?> objectClass = object.getClass();
-
-        if (shouldExcludeType(objectClass)) {
-            return;
-        }
 
         Converter converter = findConverter(objectClass);
         if (converter != null) {
@@ -393,13 +388,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
                 String key = entry.getKey().toString();
                 Object value = entry.getValue();
 
-                if (excludeNulls && value == null) {
-                    continue;
-                }
-                if (hasExcludedFieldNames && excludedFieldNames.contains(key)) {
-                    continue;
-                }
-                if (value != null && shouldExcludeType(value.getClass())) {
+                if (isExcludingValues(value) || isExcludingFieldsNamed(key)) {
                     continue;
                 }
 
@@ -434,10 +423,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
             boolean needComma = false;
             while (iterator.hasNext()) {
                 Object it = iterator.next();
-                if (excludeNulls && it == null) {
-                    continue;
-                }
-                if (it != null && shouldExcludeType(it.getClass())) {
+                if (isExcludingValues(it)) {
                     continue;
                 }
                 if (needComma) buffer.addChar(COMMA);
@@ -501,7 +487,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
         protected final Closure<? extends CharSequence> closure;
         protected final int paramCount;
 
-        static JsonGenerator.Converter of(Class<?> type, Closure<? extends CharSequence> closure) {
+        static Converter of(Class<?> type, Closure<? extends CharSequence> closure) {
             return new ClosureConverter(type, closure);
         }
 
