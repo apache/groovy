@@ -43,4 +43,52 @@ class Groovy7291Bug extends GroovyTestCase {
         ''')
     }
 
+    void testPrimitiveDeclarationHasDefaultValueInClosure() {
+        assertScript '''
+            boolean z
+            byte b
+            char c
+            short s
+            int i
+            long j
+            float f
+            double d
+            def cl = {
+                assert z == false && z.class == Boolean
+                assert b == 0 && b.class == Byte
+                assert c == '\u0000' && c.class == Character
+                assert s == 0 && s.class == Short
+                assert i == 0 && i.class == Integer
+                assert j == 0L && j.class == Long
+                assert f == 0.0f && f.class == Float
+                assert d == 0.0d && d.class == Double
+            }
+            cl()
+        '''
+    }
+
+    void testWrapperDeclarationIsNullInClosure() {
+        assertScript '''
+            Boolean z
+            Byte b
+            Character c
+            Short s
+            Integer i
+            Long j
+            Float f
+            Double d
+            def cl = {
+                assert z == null
+                assert b == null
+                assert c == null
+                assert s == null
+                assert i == null
+                assert j == null
+                assert f == null
+                assert d == null
+            }
+            cl()
+        '''
+    }
+
 }
