@@ -253,7 +253,7 @@ public interface JsonGenerator {
                                         @ClosureParams(value=FromString.class, options={"T","T,String"})
                                         Closure<? extends CharSequence> closure)
         {
-            Converter converter = DefaultJsonGenerator.ClosureConverter.of(type, closure);
+            Converter converter = new DefaultJsonGenerator.ClosureConverter(type, closure);
             if (converters.contains(converter)) {
                 converters.remove(converter);
             }

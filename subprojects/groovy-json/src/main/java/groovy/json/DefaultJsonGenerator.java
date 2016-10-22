@@ -461,10 +461,6 @@ public class DefaultJsonGenerator implements JsonGenerator {
         protected final Closure<? extends CharSequence> closure;
         protected final int paramCount;
 
-        static Converter of(Class<?> type, Closure<? extends CharSequence> closure) {
-            return new ClosureConverter(type, closure);
-        }
-
         protected ClosureConverter(Class<?> type, Closure<? extends CharSequence> closure) {
             if (type == null) {
                 throw new NullPointerException("Type parameter must not be null");
