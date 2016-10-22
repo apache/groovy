@@ -72,10 +72,6 @@ public class DefaultJsonGenerator implements JsonGenerator {
     protected final Set<String> excludedFieldNames = new HashSet<String>();
     protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
 
-    private final boolean hasConverters;
-    private final boolean hasExcludedFieldNames;
-    private final boolean hasExcludedFieldTypes;
-
     protected DefaultJsonGenerator(Options options) {
         excludeNulls = options.excludeNulls;
         disableUnicodeEscaping = options.disableUnicodeEscaping;
@@ -84,21 +80,12 @@ public class DefaultJsonGenerator implements JsonGenerator {
         timezone = options.timezone;
         if (!options.converters.isEmpty()) {
             converters.addAll(options.converters);
-            hasConverters = true;
-        } else {
-            hasConverters = false;
         }
         if (!options.excludedFieldNames.isEmpty()) {
             excludedFieldNames.addAll(options.excludedFieldNames);
-            hasExcludedFieldNames = true;
-        } else {
-            hasExcludedFieldNames = false;
         }
         if (!options.excludedFieldTypes.isEmpty()) {
             excludedFieldTypes.addAll(options.excludedFieldTypes);
-            hasExcludedFieldTypes = true;
-        } else {
-            hasExcludedFieldTypes = false;
         }
     }
 
@@ -117,7 +104,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
      */
     @Override
     public boolean isExcludingFieldsNamed(String name) {
-        return hasExcludedFieldNames && excludedFieldNames.contains(name);
+        return excludedFieldNames.contains(name);
     }
 
     /**
@@ -126,15 +113,10 @@ public class DefaultJsonGenerator implements JsonGenerator {
     @Override
     public boolean isExcludingValues(Object value) {
         if (value == null) {
-            if (excludeNulls) {
-                return true;
-            }
+            return excludeNulls;
         } else {
-            if (shouldExcludeType(value.getClass())) {
-                return true;
-            }
+            return shouldExcludeType(value.getClass());
         }
-        return false;
     }
 
     /**
@@ -239,17 +221,16 @@ public class DefaultJsonGenerator implements JsonGenerator {
             writeArray(objectClass, object, buffer);
         } else if (Enum.class.isAssignableFrom(objectClass)) {
             buffer.addQuoted(((Enum<?>) object).name());
-        }else if (File.class.isAssignableFrom(objectClass)){
+        } else if (File.class.isAssignableFrom(objectClass)) {
             Map<?, ?> properties = getObjectProperties(object);
             //Clean up all recursive references to File objects
             Iterator<? extends Map.Entry<?, ?>> iterator = properties.entrySet().iterator();
-            while(iterator.hasNext()){
+            while(iterator.hasNext()) {
                 Map.Entry<?,?> entry = iterator.next();
-                if(entry.getValue() instanceof File){
+                if(entry.getValue() instanceof File) {
                     iterator.remove();
                 }
             }
-
             writeMap(properties, buffer);
         } else {
             Map<?, ?> properties = getObjectProperties(object);
@@ -418,22 +399,20 @@ public class DefaultJsonGenerator implements JsonGenerator {
      * Serializes iterator and writes it into specified buffer.
      */
     protected void writeIterator(Iterator<?> iterator, CharBuf buffer) {
-        if (iterator.hasNext()) {
-            buffer.addChar(OPEN_BRACKET);
-            boolean needComma = false;
-            while (iterator.hasNext()) {
-                Object it = iterator.next();
-                if (isExcludingValues(it)) {
-                    continue;
-                }
-                if (needComma) buffer.addChar(COMMA);
-                writeObject(it, buffer);
-                needComma = true;
-            }
-            buffer.addChar(CLOSE_BRACKET);
-        } else {
+        if (!iterator.hasNext()) {
             buffer.addChars(EMPTY_LIST_CHARS);
+            return;
         }
+        buffer.addChar(OPEN_BRACKET);
+        while (iterator.hasNext()) {
+            Object it = iterator.next();
+            if (!isExcludingValues(it)) {
+                writeObject(it, buffer);
+                buffer.addChar(COMMA);
+            }
+        }
+        buffer.removeLastChar(); // dangling comma
+        buffer.addChar(CLOSE_BRACKET);
     }
 
     /**
@@ -447,9 +426,6 @@ public class DefaultJsonGenerator implements JsonGenerator {
      *         if no compatible converters are found for the given type.
      */
     protected Converter findConverter(Class<?> type) {
-        if (!hasConverters) {
-            return null;
-        }
         for (Converter c : converters) {
             if (c.handles(type)) {
                 return c;
@@ -465,11 +441,9 @@ public class DefaultJsonGenerator implements JsonGenerator {
      * @return {@code true} if the given type should not be output, else {@code false}
      */
     protected boolean shouldExcludeType(Class<?> type) {
-        if (hasExcludedFieldTypes) {
-            for (Class<?> t : excludedFieldTypes) {
-                if (t.isAssignableFrom(type)) {
-                    return true;
-                }
+        for (Class<?> t : excludedFieldTypes) {
+            if (t.isAssignableFrom(type)) {
+                return true;
             }
         }
         return false;

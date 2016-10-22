@@ -30,6 +30,9 @@ import java.util.*;
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
  * This class can also be used as a category, so as to add <code>toJson()</code> methods to various types.
+ * <p>
+ * This class does not provide the ability to customize the resulting output.  A {@link JsonGenerator}
+ * can be used if the ability to alter the resulting output is required.
  *
  * @author Guillaume Laforge
  * @author Roshan Dawrani
@@ -37,6 +40,7 @@ import java.util.*;
  * @author Rick Hightower
  * @author Graeme Rocher
  *
+ * @see JsonGenerator
  * @since 1.8.0
  */
 public class JsonOutput {
