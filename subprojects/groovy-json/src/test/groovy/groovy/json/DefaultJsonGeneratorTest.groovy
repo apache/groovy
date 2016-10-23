@@ -31,6 +31,11 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
         json = generator.toJson([field1: null, field2: "test"])
         assert json == '{"field2":"test"}'
 
+        assert generator.toJson([null]) == '[]'
+        assert generator.toJson(['a','b','c','d', null]) == '["a","b","c","d"]'
+        assert generator.toJson(['a', null, null, null, null]) == '["a"]'
+        assert generator.toJson(['a', null, null, null, 'e']) == '["a","e"]'
+
         def jsonArray = ["foo", null, "bar"]
         def jsonExpected = '["foo","bar"]'
         assert generator.toJson(jsonArray) == jsonExpected

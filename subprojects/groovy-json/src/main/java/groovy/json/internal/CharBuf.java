@@ -685,7 +685,16 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public void removeLastChar() {
-        location--;
+        if (location > 0) {
+            location--;
+        }
+    }
+
+    public void removeLastChar(char expect) {
+        if (location == 0 || buffer[location-1] != expect) {
+            return;
+        }
+        removeLastChar();
     }
 
     private Cache<BigDecimal, char[]> bigDCache;

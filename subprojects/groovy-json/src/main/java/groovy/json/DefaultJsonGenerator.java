@@ -358,33 +358,25 @@ public class DefaultJsonGenerator implements JsonGenerator {
      * Serializes map and writes it into specified buffer.
      */
     protected void writeMap(Map<?, ?> map, CharBuf buffer) {
-        if (!map.isEmpty()) {
-            buffer.addChar(OPEN_BRACE);
-            boolean firstItem = true;
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                if (entry.getKey() == null) {
-                    throw new IllegalArgumentException("Maps with null keys can\'t be converted to JSON");
-                }
-
-                String key = entry.getKey().toString();
-                Object value = entry.getValue();
-
-                if (isExcludingValues(value) || isExcludingFieldsNamed(key)) {
-                    continue;
-                }
-
-                if (!firstItem) {
-                    buffer.addChar(COMMA);
-                } else {
-                    firstItem = false;
-                }
-
-                writeMapEntry(key, value, buffer);
-            }
-            buffer.addChar(CLOSE_BRACE);
-        } else {
+        if (map.isEmpty()) {
             buffer.addChars(EMPTY_MAP_CHARS);
+            return;
         }
+        buffer.addChar(OPEN_BRACE);
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (entry.getKey() == null) {
+                throw new IllegalArgumentException("Maps with null keys can\'t be converted to JSON");
+            }
+            String key = entry.getKey().toString();
+            Object value = entry.getValue();
+            if (isExcludingValues(value) || isExcludingFieldsNamed(key)) {
+                continue;
+            }
+            writeMapEntry(key, value, buffer);
+            buffer.addChar(COMMA);
+        }
+        buffer.removeLastChar(COMMA); // dangling comma
+        buffer.addChar(CLOSE_BRACE);
     }
 
     /**
@@ -411,7 +403,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
                 buffer.addChar(COMMA);
             }
         }
-        buffer.removeLastChar(); // dangling comma
+        buffer.removeLastChar(COMMA); // dangling comma
         buffer.addChar(CLOSE_BRACKET);
     }
 

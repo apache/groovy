@@ -95,4 +95,28 @@ class CharBufTest extends GroovyTestCase {
         result = new JsonBuilder(obj).toString()
         assert result == /["${'\\u20ac' * 20_000}"]/
     }
+
+    void testRemoveLastChar() {
+        CharBuf buffer
+
+        buffer = CharBuf.create(8).add('value1,')
+        buffer.removeLastChar()
+        assert buffer.toString() == 'value1'
+
+        buffer = CharBuf.create(4)
+        buffer.removeLastChar()
+        assert buffer.toString() == ''
+
+        buffer = CharBuf.create(8).add('[]')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[]'
+
+        buffer = CharBuf.create(8).add('[val,')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[val'
+
+        buffer = CharBuf.create(32).add('[one,two,three,four,')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[one,two,three,four'
+    }
 }
