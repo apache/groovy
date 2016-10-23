@@ -63,6 +63,17 @@ class CharBufTest extends GroovyTestCase {
         assert str == '" \\\\ "'
     }
 
+    void testDisableUnicodeEscaping() {
+        String str = CharBuf.create(0).addJsonEscapedString("Éric").toString()
+        assert str == '"\\u00c9ric"'
+
+        str = CharBuf.create(0).addJsonEscapedString("Éric", false).toString()
+        assert str == '"\\u00c9ric"'
+
+        str = CharBuf.create(0).addJsonEscapedString("Éric", true).toString()
+        assert str == '"Éric"'
+    }
+
     /**
      * https://issues.apache.org/jira/browse/GROOVY-6937
      * https://issues.apache.org/jira/browse/GROOVY-6852
@@ -83,5 +94,29 @@ class CharBufTest extends GroovyTestCase {
         obj = ["\u20AC" * 20_000]
         result = new JsonBuilder(obj).toString()
         assert result == /["${'\\u20ac' * 20_000}"]/
+    }
+
+    void testRemoveLastChar() {
+        CharBuf buffer
+
+        buffer = CharBuf.create(8).add('value1,')
+        buffer.removeLastChar()
+        assert buffer.toString() == 'value1'
+
+        buffer = CharBuf.create(4)
+        buffer.removeLastChar()
+        assert buffer.toString() == ''
+
+        buffer = CharBuf.create(8).add('[]')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[]'
+
+        buffer = CharBuf.create(8).add('[val,')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[val'
+
+        buffer = CharBuf.create(32).add('[one,two,three,four,')
+        buffer.removeLastChar((char)',')
+        assert buffer.toString() == '[one,two,three,four'
     }
 }
