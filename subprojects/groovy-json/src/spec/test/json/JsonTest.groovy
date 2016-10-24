@@ -114,12 +114,12 @@ class JsonTest extends GroovyTestCase {
 
         def generator = new JsonGenerator.Options()
             .excludeNulls()
-            .dateFormat('MM@dd@yyyy')
+            .dateFormat('yyyy@MM')
             .excludeFieldsByName('age', 'password')
             .excludeFieldsByType(URL)
             .build()
 
-        assert generator.toJson(person) == '{"dob":"12@15@1984","name":"John"}'
+        assert generator.toJson(person) == '{"dob":"1984@12","name":"John"}'
         // end::json_output_generator[]
         '''
     }
