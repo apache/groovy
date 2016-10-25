@@ -3843,8 +3843,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
             }
-            if (typeCheckingContext.getEnclosingClosure() == null) {
-                // not in a closure
+            // TODO: investigate the trait exclusion a bit further, needed otherwise
+            // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying
+            // not static method can't be called from a static context
+            if (typeCheckingContext.getEnclosingClosure() == null || (receiver instanceof InnerClassNode && !receiver.getName().endsWith("$Trait$Helper"))) {
+                // not in a closure or within an inner class
                 ClassNode parent = receiver;
                 while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
                     parent = parent.getOuterClass();
