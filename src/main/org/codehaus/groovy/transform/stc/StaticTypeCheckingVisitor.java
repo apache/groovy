@@ -1179,15 +1179,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if ("this".equals(propertyName) && staticOnlyAccess) {
-            // Outer.this
+            // Outer.this for any level of nesting
             ClassNode outerNode = objectExpressionType.getGenericsTypes()[0].getType();
-            ClassNode current = typeCheckingContext.getEnclosingClassNode();
-            if (!current.isStaticClass() && current instanceof InnerClassNode) {
-                InnerClassNode icn = (InnerClassNode) current;
-                if (outerNode.equals(icn.getOuterClass())) {
-                    storeType(pexp, outerNode);
-                    return true;
+            List<ClassNode> candidates = typeCheckingContext.getEnclosingClassNodes();
+            ClassNode found = null;
+            for (ClassNode current : candidates) {
+                if (!current.isStaticClass() && current instanceof InnerClassNode && outerNode.equals(current.getOuterClass())) {
+                    found = current;
+                    break;
                 }
+            }
+            if (found != null) {
+                storeType(pexp, outerNode);
+                return true;
             }
         }
 
