@@ -170,6 +170,7 @@ import java.lang.annotation.Target;
  *
  * @author Paul King
  * @author Andre Steingress
+ * @author Dominik Przybysz
  * @see groovy.transform.ToString
  * @see groovy.transform.Canonical
  * @since 1.7
@@ -246,4 +247,11 @@ public @interface Immutable {
      * @since 2.2.0
      */
     boolean copyWith() default false;
+
+    /**
+     * Set access modifier for generated constructors
+     *
+     * @since 2.5.0
+     */
+    AccessModifier constructorsModifier() default AccessModifier.PUBLIC;
 }

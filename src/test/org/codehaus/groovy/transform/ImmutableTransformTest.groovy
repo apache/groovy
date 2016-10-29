@@ -1037,4 +1037,25 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             '''
         }
     }
+
+    @Test
+    void testImmutableConstructorAccessModifier() {
+        assertScript '''
+            import groovy.transform.AccessModifier
+            import groovy.transform.Immutable
+            import java.lang.reflect.Modifier
+
+            @Immutable class PersonWithDefaultConstructors { String name}
+            @Immutable(constructorsModifier = AccessModifier.PUBLIC) class PersonWithPublicConstructors { String name}
+            @Immutable(constructorsModifier = AccessModifier.PRIVATE) class PersonWithPrivateConstructors { String name}
+            @Immutable(constructorsModifier = AccessModifier.PACKAGE) class PersonWithPackageConstructors { String name}
+            @Immutable(constructorsModifier = AccessModifier.PROTECTED) class PersonWithProtectedConstructors { String name}
+
+            assert PersonWithDefaultConstructors.constructors.every {Modifier.isPublic(it.modifiers)}
+            assert PersonWithPublicConstructors.constructors.every {Modifier.isPublic(it.modifiers)}
+            assert PersonWithPrivateConstructors.constructors.every {Modifier.isPrivate(it.modifiers)}
+            assert PersonWithPackageConstructors.constructors.every {!Modifier.isPublic(it.modifiers) && !Modifier.isPrivate(it.modifiers) && !Modifier.isProtected(it.modifiers)}
+            assert PersonWithProtectedConstructors.constructors.every {Modifier.isProtected(it.modifiers)}
+        '''
+    }
 }
