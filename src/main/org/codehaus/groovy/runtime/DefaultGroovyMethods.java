@@ -8300,7 +8300,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted map
      * @since 1.7.2
      */
-    public static <K, V> Map<K, V> sort(Map<K, V> self, Comparator<K> comparator) {
+    public static <K, V> Map<K, V> sort(Map<K, V> self, Comparator<? super K> comparator) {
         Map<K, V> result = new TreeMap<K, V>(comparator);
         result.putAll(self);
         return result;
@@ -8384,7 +8384,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted items as an Iterator
      * @since 1.5.5
      */
-    public static <T> Iterator<T> sort(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> Iterator<T> sort(Iterator<T> self, Comparator<? super T> comparator) {
         return sort((Iterable<T>) toList(self), true, comparator).listIterator();
     }
 
@@ -8428,7 +8428,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a sorted List
      * @since 2.2.0
      */
-    public static <T> List<T> sort(Iterable<T> self, boolean mutate, Comparator<T> comparator) {
+    public static <T> List<T> sort(Iterable<T> self, boolean mutate, Comparator<? super T> comparator) {
         List<T> list = mutate ? asList(self) : toList(self);
         Collections.sort(list, comparator);
         return list;
@@ -8442,7 +8442,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted array
      * @since 1.5.5
      */
-    public static <T> T[] sort(T[] self, Comparator<T> comparator) {
+    public static <T> T[] sort(T[] self, Comparator<? super T> comparator) {
         return sort(self, true, comparator);
     }
 
@@ -8465,7 +8465,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a sorted array
      * @since 1.8.1
      */
-    public static <T> T[] sort(T[] self, boolean mutate, Comparator<T> comparator) {
+    public static <T> T[] sort(T[] self, boolean mutate, Comparator<? super T> comparator) {
         T[] answer = mutate ? self : self.clone();
         Arrays.sort(answer, comparator);
         return answer;
