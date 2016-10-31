@@ -132,5 +132,33 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             assert !'abc'.allWhitespace
         '''
     }
+
+    // GROOVY-7976
+    void testSortMethodsWithComparatorAcceptingSubclass() {
+        assertScript '''
+            class SecondLetterComparator implements Comparator<? extends CharSequence> {
+                int compare(CharSequence cs1, CharSequence cs2) {
+                    cs1.charAt(1) <=> cs2.charAt(1)
+                }
+            }
+
+            def orig1 = ['ant', 'rat', 'bug', 'dog']
+            def sorted1 = orig1.sort(false, new SecondLetterComparator())
+            assert orig1 == ['ant', 'rat', 'bug', 'dog']
+            assert sorted1 == ['rat', 'ant', 'dog', 'bug']
+
+            String[] orig2 = ['ant', 'rat', 'bug', 'dog']
+            def sorted2 = orig2.sort(false, new SecondLetterComparator())
+            assert orig2 == ['ant', 'rat', 'bug', 'dog']
+            assert sorted2 == ['rat', 'ant', 'dog', 'bug']
+            orig2.sort(new SecondLetterComparator())
+            assert orig2 == ['rat', 'ant', 'dog', 'bug']
+
+            def orig3 = [ant:5, rat:10, bug:15, dog:20]
+            def sorted3 = orig3.sort(new SecondLetterComparator())
+            assert orig3 == [ant:5, rat:10, bug:15, dog:20]
+            assert sorted3*.value == [10, 5, 20, 15]
+        '''
+    }
 }
 
