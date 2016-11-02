@@ -2959,6 +2959,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     mn = disambiguateMethods(mn, chosenReceiver!=null?chosenReceiver.getType():null, args, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
+                        if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null &&
+                                !directMethodCallCandidate.isStatic() && objectExpression instanceof ClassExpression &&
+                                !"java.lang.Class".equals(directMethodCallCandidate.getDeclaringClass().getName())) {
+                            ClassNode owner = directMethodCallCandidate.getDeclaringClass();
+                            addStaticTypeError("Non static method " + owner.getName() + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                        }
                         if (chosenReceiver==null) {
                             chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
                             if (chosenReceiver==null) {
