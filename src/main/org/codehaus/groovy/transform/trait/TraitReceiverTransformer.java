@@ -138,15 +138,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             } else if (accessedVariable instanceof PropertyNode) {
                 String propName = accessedVariable.getName();
                 if (knownFields.contains(propName)) {
-                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
-                    MethodCallExpression mce = new MethodCallExpression(
-                            createFieldHelperReceiver(),
-                            method,
-                            ArgumentListExpression.EMPTY_ARGUMENTS
-                    );
-                    mce.setSourcePosition(exp);
-                    mce.setImplicitThis(false);
-                    return mce;
+                    return transformAccessOnProperty(exp, weavedType, propName);
                 } else {
                     return new PropertyExpression(
                             new VariableExpression(weaved),
@@ -173,15 +165,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (pexp.isImplicitThis() || "this".equals(object.getText())) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
-                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
-                    MethodCallExpression mce = new MethodCallExpression(
-                            createFieldHelperReceiver(),
-                            method,
-                            ArgumentListExpression.EMPTY_ARGUMENTS
-                    );
-                    mce.setSourcePosition(exp);
-                    mce.setImplicitThis(false);
-                    return mce;
+                    return transformAccessOnProperty(exp, weavedType, propName);
                 }
             }
         } else if (exp instanceof ClosureExpression) {
@@ -209,6 +193,18 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         // todo: unary expressions (field++, field+=, ...)
         return super.transform(exp);
+    }
+
+    private Expression transformAccessOnProperty(final Expression exp, final ClassNode weavedType, final String propName) {
+        String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
+        MethodCallExpression mce = new MethodCallExpression(
+                createFieldHelperReceiver(),
+                method,
+                ArgumentListExpression.EMPTY_ARGUMENTS
+        );
+        mce.setSourcePosition(exp);
+        mce.setImplicitThis(false);
+        return mce;
     }
 
     private Expression transformFieldExpression(final FieldExpression exp) {
