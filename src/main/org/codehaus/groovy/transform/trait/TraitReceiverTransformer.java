@@ -91,108 +91,136 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (exp instanceof BinaryExpression) {
             return transformBinaryExpression((BinaryExpression) exp, weavedType);
         } else if (exp instanceof StaticMethodCallExpression) {
-            StaticMethodCallExpression call = (StaticMethodCallExpression) exp;
-            ClassNode ownerType = call.getOwnerType();
-            if (traitClass.equals(ownerType)) {
-                MethodCallExpression result = new MethodCallExpression(
-                        new VariableExpression(weaved),
-                        call.getMethod(),
-                        transform(call.getArguments())
-                );
-                result.setSafe(false);
-                result.setImplicitThis(false);
-                result.setSpreadSafe(false);
-                result.setSourcePosition(call);
-                return result;
-            }
+            Expression result = transformStaticMethodCallExpression((StaticMethodCallExpression) exp);
+            if (result != null) return result;
         } else if (exp instanceof MethodCallExpression) {
-            MethodCallExpression call = (MethodCallExpression) exp;
-            Expression obj = call.getObjectExpression();
-            if (call.isImplicitThis() || "this".equals(obj.getText())) {
-                return transformMethodCallOnThis(call);
-            } else if ("super".equals(obj.getText())) {
-                return transformSuperMethodCall(call);
-            }
+            Expression result = transformMethodCallExpression((MethodCallExpression) exp);
+            if (result != null) return result;
         } else if (exp instanceof FieldExpression) {
             return transformFieldExpression((FieldExpression) exp);
         } else if (exp instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) exp;
-            Variable accessedVariable = vexp.getAccessedVariable();
-            if (accessedVariable instanceof FieldNode) {
-                FieldNode fn = (FieldNode) accessedVariable;
-                Expression receiver = createFieldHelperReceiver();
-                MethodCallExpression mce;
-                boolean isStatic = fn.isStatic();
-                if (isStatic) {
-                    receiver = createStaticReceiver(receiver);
-                }
-                mce = new MethodCallExpression(
-                        receiver,
-                        Traits.helperGetterName(fn),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.setSourcePosition(exp);
-                mce.setImplicitThis(false);
-                markDynamicCall(mce, fn, isStatic);
-                return mce;
-            } else if (accessedVariable instanceof PropertyNode) {
-                String propName = accessedVariable.getName();
-                if (knownFields.contains(propName)) {
-                    return transformAccessOnProperty(exp, weavedType, propName);
-                } else {
-                    return new PropertyExpression(
-                            new VariableExpression(weaved),
-                            accessedVariable.getName()
-                    );
-                }
-            } else if (accessedVariable instanceof DynamicVariable) {
+            Expression result = transformVariableExpression(exp, weavedType);
+            if (result != null) return result;
+        } else if (exp instanceof PropertyExpression) {
+            Expression result = transformPropertyExpression(exp, weavedType);
+            if (result != null) return result;
+        } else if (exp instanceof ClosureExpression) {
+            return transformClosureExpression(exp);
+        }
+
+        // todo: unary expressions (field++, field+=, ...)
+        return super.transform(exp);
+    }
+
+    private Expression transformClosureExpression(final Expression exp) {
+        MethodCallExpression mce = new MethodCallExpression(
+                exp,
+                "rehydrate",
+                new ArgumentListExpression(
+                        new VariableExpression(weaved),
+                        new VariableExpression(weaved),
+                        new VariableExpression(weaved)
+                )
+        );
+        mce.setImplicitThis(false);
+        mce.setSourcePosition(exp);
+        boolean oldInClosure = inClosure;
+        inClosure = true;
+        ((ClosureExpression) exp).getCode().visit(this);
+        inClosure = oldInClosure;
+        // The rewrite we do is causing some troubles with type checking, which will
+        // not be able to perform closure parameter type inference
+        // so we store the replacement, which will be done *after* type checking.
+        exp.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, mce);
+        return exp;
+    }
+
+    private Expression transformPropertyExpression(final Expression exp, final ClassNode weavedType) {
+        PropertyExpression pexp = (PropertyExpression) exp;
+        Expression object = pexp.getObjectExpression();
+        if (pexp.isImplicitThis() || "this".equals(object.getText())) {
+            String propName = pexp.getPropertyAsString();
+            if (knownFields.contains(propName)) {
+                return transformAccessOnProperty(exp, weavedType, propName);
+            }
+        }
+        return null;
+    }
+
+    private Expression transformVariableExpression(final Expression exp, final ClassNode weavedType) {
+        VariableExpression vexp = (VariableExpression) exp;
+        Variable accessedVariable = vexp.getAccessedVariable();
+        if (accessedVariable instanceof FieldNode) {
+            FieldNode fn = (FieldNode) accessedVariable;
+            Expression receiver = createFieldHelperReceiver();
+            MethodCallExpression mce;
+            boolean isStatic = fn.isStatic();
+            if (isStatic) {
+                receiver = createStaticReceiver(receiver);
+            }
+            mce = new MethodCallExpression(
+                    receiver,
+                    Traits.helperGetterName(fn),
+                    ArgumentListExpression.EMPTY_ARGUMENTS
+            );
+            mce.setSourcePosition(exp);
+            mce.setImplicitThis(false);
+            markDynamicCall(mce, fn, isStatic);
+            return mce;
+        } else if (accessedVariable instanceof PropertyNode) {
+            String propName = accessedVariable.getName();
+            if (knownFields.contains(propName)) {
+                return transformAccessOnProperty(exp, weavedType, propName);
+            } else {
                 return new PropertyExpression(
                         new VariableExpression(weaved),
                         accessedVariable.getName()
                 );
             }
-            if (vexp.isThisExpression()) {
-                VariableExpression res = new VariableExpression(weaved);
-                res.setSourcePosition(exp);
-                return res;
-            }
-            if (vexp.isSuperExpression()) {
-                throwSuperError(vexp);
-            }
-        } else if (exp instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) exp;
-            Expression object = pexp.getObjectExpression();
-            if (pexp.isImplicitThis() || "this".equals(object.getText())) {
-                String propName = pexp.getPropertyAsString();
-                if (knownFields.contains(propName)) {
-                    return transformAccessOnProperty(exp, weavedType, propName);
-                }
-            }
-        } else if (exp instanceof ClosureExpression) {
-            MethodCallExpression mce = new MethodCallExpression(
-                    exp,
-                    "rehydrate",
-                    new ArgumentListExpression(
-                            new VariableExpression(weaved),
-                            new VariableExpression(weaved),
-                            new VariableExpression(weaved)
-                    )
+        } else if (accessedVariable instanceof DynamicVariable) {
+            return new PropertyExpression(
+                    new VariableExpression(weaved),
+                    accessedVariable.getName()
             );
-            mce.setImplicitThis(false);
-            mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure;
-            inClosure = true;
-            ((ClosureExpression) exp).getCode().visit(this);
-            inClosure = oldInClosure;
-            // The rewrite we do is causing some troubles with type checking, which will
-            // not be able to perform closure parameter type inference
-            // so we store the replacement, which will be done *after* type checking.
-            exp.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, mce);
-            return exp;
         }
+        if (vexp.isThisExpression()) {
+            VariableExpression res = new VariableExpression(weaved);
+            res.setSourcePosition(exp);
+            return res;
+        }
+        if (vexp.isSuperExpression()) {
+            throwSuperError(vexp);
+        }
+        return null;
+    }
 
-        // todo: unary expressions (field++, field+=, ...)
-        return super.transform(exp);
+    private Expression transformMethodCallExpression(final MethodCallExpression exp) {
+        MethodCallExpression call = exp;
+        Expression obj = call.getObjectExpression();
+        if (call.isImplicitThis() || "this".equals(obj.getText())) {
+            return transformMethodCallOnThis(call);
+        } else if ("super".equals(obj.getText())) {
+            return transformSuperMethodCall(call);
+        }
+        return null;
+    }
+
+    private Expression transformStaticMethodCallExpression(final StaticMethodCallExpression exp) {
+        StaticMethodCallExpression call = exp;
+        ClassNode ownerType = call.getOwnerType();
+        if (traitClass.equals(ownerType)) {
+            MethodCallExpression result = new MethodCallExpression(
+                    new VariableExpression(weaved),
+                    call.getMethod(),
+                    transform(call.getArguments())
+            );
+            result.setSafe(false);
+            result.setImplicitThis(false);
+            result.setSpreadSafe(false);
+            result.setSourcePosition(call);
+            return result;
+        }
+        return null;
     }
 
     private Expression transformAccessOnProperty(final Expression exp, final ClassNode weavedType, final String propName) {
