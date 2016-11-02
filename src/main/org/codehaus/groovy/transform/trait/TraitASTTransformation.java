@@ -192,7 +192,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
                     return;
                 }
-                helper.addMethod(processMethod(cNode, methodNode, fieldHelper, fieldNames));
+                helper.addMethod(processMethod(cNode, helper, methodNode, fieldHelper, fieldNames));
                 if (methodNode.isPrivate() || methodNode.isStatic()) {
                     nonPublicAPIMethods.add(methodNode);
                 }
@@ -386,9 +386,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return true;
     }
 
-
     private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer,
-                              final ClassNode fieldHelper, final ClassNode helper, final ClassNode trait, final Set<String> knownFields) {
+                              final ClassNode fieldHelper, final ClassNode helper, final ClassNode trait,
+                              final Set<String> knownFields) {
         if (field.isProtected()) {
             unit.addError(new SyntaxException("Cannot have protected field in a trait (" + trait.getName() + "#" + field.getName() + ")",
                     field.getLineNumber(), field.getColumnNumber()));
@@ -412,7 +412,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             } else {
                 VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
                 ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-                processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
+                processBody(thisObject, initCode, trait, helper, fieldHelper, knownFields);
                 BlockStatement code = (BlockStatement) selectedMethod.getCode();
                 MethodCallExpression mce;
                 if (field.isStatic()) {
@@ -476,7 +476,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         fieldHelper.addField(dummyField);
     }
 
-    private MethodNode processMethod(ClassNode traitClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {
+    private MethodNode processMethod(ClassNode traitClass, ClassNode traitHelperClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = createSelfParameter(traitClass, methodNode.isStatic());
@@ -488,7 +488,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
+                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
         mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
@@ -538,13 +538,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return type;
     }
 
-    private Statement processBody(VariableExpression thisObject, MethodNode methodNode, Statement code, ClassNode trait, ClassNode fieldHelper, Collection<String> knownFields) {
+    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode trait, ClassNode traitHelper, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
         NAryOperationRewriter operationRewriter = new NAryOperationRewriter(unit, knownFields);
         code.visit(operationRewriter);
         SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(unit);
         code.visit(superTrn);
-        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, fieldHelper, knownFields);
+        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, traitHelper, fieldHelper, knownFields);
         code.visit(trn);
         return code;
     }
