@@ -65,15 +65,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private final VariableExpression weaved;
     private final SourceUnit unit;
     private final ClassNode traitClass;
+    private final ClassNode traitHelperClass;
     private final ClassNode fieldHelper;
     private final Collection<String> knownFields;
 
     private boolean inClosure;
 
-    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, final ClassNode traitClass, ClassNode fieldHelper, Collection<String> knownFields) {
+    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, final ClassNode traitClass, final ClassNode traitHelperClass, ClassNode fieldHelper, Collection<String> knownFields) {
         this.weaved = thisObject;
         this.unit = unit;
         this.traitClass = traitClass;
+        this.traitHelperClass = traitHelperClass;
         this.fieldHelper = fieldHelper;
         this.knownFields = knownFields;
     }
@@ -357,23 +359,23 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             List<MethodNode> methods = traitClass.getMethods(methodName);
             for (MethodNode methodNode : methods) {
                 if (methodName.equals(methodNode.getName()) && methodNode.isPrivate()) {
-                    return transformPrivateMethodCall(call, arguments, methodName);
+                    if (inClosure) {
+                        return transformPrivateMethodCallOnThisInClosure(call, arguments, methodName);
+                    }
+                    return transformPrivateMethodCallOnThis(call, arguments, methodName);
                 }
             }
         }
+
         if (inClosure) {
-            MethodCallExpression transformed = new MethodCallExpression(
-                    (Expression) call.getReceiver(),
-                    call.getMethod(),
-                    transform(call.getArguments())
-            );
-            transformed.setSourcePosition(call);
-            transformed.setSafe(call.isSafe());
-            transformed.setSpreadSafe(call.isSpreadSafe());
-            transformed.setImplicitThis(call.isImplicitThis());
-            return transformed;
+            return transformMethodCallOnThisInClosure(call);
         }
 
+        return transformMethodCallOnThisFallBack(call, method, arguments);
+
+    }
+
+    private Expression transformMethodCallOnThisFallBack(final MethodCallExpression call, final Expression method, final Expression arguments) {
         MethodCallExpression transformed = new MethodCallExpression(
                 weaved,
                 method,
@@ -386,10 +388,37 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         return transformed;
     }
 
-    private Expression transformPrivateMethodCall(final MethodCallExpression call, final Expression arguments, final String methodName) {
+    private Expression transformMethodCallOnThisInClosure(final MethodCallExpression call) {
+        MethodCallExpression transformed = new MethodCallExpression(
+                (Expression) call.getReceiver(),
+                call.getMethod(),
+                transform(call.getArguments())
+        );
+        transformed.setSourcePosition(call);
+        transformed.setSafe(call.isSafe());
+        transformed.setSpreadSafe(call.isSpreadSafe());
+        transformed.setImplicitThis(call.isImplicitThis());
+        return transformed;
+    }
+
+    private Expression transformPrivateMethodCallOnThis(final MethodCallExpression call, final Expression arguments, final String methodName) {
         ArgumentListExpression newArgs = createArgumentList(arguments);
         MethodCallExpression transformed = new MethodCallExpression(
                 new VariableExpression("this"),
+                methodName,
+                newArgs
+        );
+        transformed.setSourcePosition(call);
+        transformed.setSafe(call.isSafe());
+        transformed.setSpreadSafe(call.isSpreadSafe());
+        transformed.setImplicitThis(true);
+        return transformed;
+    }
+
+    private Expression transformPrivateMethodCallOnThisInClosure(final MethodCallExpression call, final Expression arguments, final String methodName) {
+        ArgumentListExpression newArgs = createArgumentList(arguments);
+        MethodCallExpression transformed = new MethodCallExpression(
+                new ClassExpression(traitHelperClass),
                 methodName,
                 newArgs
         );
