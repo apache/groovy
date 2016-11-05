@@ -36,7 +36,8 @@ class CustomJsonGeneratorTest extends GroovyTestCase {
 
         assert generator.toJson(['one', null, 'two', null]) == '["one","two"]'
         assert generator.toJson(['Foo':'test1', 'BAR':'test2']) == '{"foo":"test1","bar":"test2"}'
-        assert generator.toJson(['foo': new CustomFoo()]) == '{"foo":"CustomFoo from CustomJsonConverter"}'
+        assert generator.toJson(['foo': new CustomFoo(c: { -> "CustomFoo from CustomJsonConverter" })]) == '{"foo":"CustomFoo from CustomJsonConverter"}'
+        assert generator.toJson(['foo': new CustomFoo(c: { -> JsonOutput.unescaped("{}") })]) == '{"foo":{}}'
     }
 
     static class CustomJsonOptions extends Options {
@@ -75,15 +76,17 @@ class CustomJsonGeneratorTest extends GroovyTestCase {
         }
 
         @Override
-        CharSequence convert(Object value) {
+        Object convert(Object value) {
             return convert(value, null)
         }
 
         @Override
-        CharSequence convert(Object value, String key) {
-            return '"CustomFoo from CustomJsonConverter"'
+        Object convert(Object value, String key) {
+            return ((CustomFoo)value).c.call()
         }
     }
 
-    static class CustomFoo {}
+    static class CustomFoo {
+        Closure c
+    }
 }

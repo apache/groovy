@@ -409,7 +409,7 @@ class JsonBuilderTest extends GroovyTestCase {
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
-                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.toString() }
+                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.get() }
                 .build()
 
         def json = new JsonBuilder(generator)

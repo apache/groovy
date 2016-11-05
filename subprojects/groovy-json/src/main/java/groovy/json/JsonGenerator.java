@@ -89,7 +89,7 @@ public interface JsonGenerator {
          * @param value the object to convert
          * @return a JSON value representing the object
          */
-        CharSequence convert(Object value);
+        Object convert(Object value);
 
         /**
          * Converts a given object to a JSON value.
@@ -98,7 +98,7 @@ public interface JsonGenerator {
          * @param key the key name for the value, may be {@code null}
          * @return a JSON value representing the object
          */
-        CharSequence convert(Object value, String key);
+        Object convert(Object value, String key);
 
     }
 
@@ -225,7 +225,7 @@ public interface JsonGenerator {
          * <pre><code class="groovyTestCase">
          *     def generator = new groovy.json.JsonGenerator.Options()
          *                         .addConverter(URL) { URL u ->
-         *                             "\"${u.getHost()}\""
+         *                             u.getHost()
          *                         }
          *                         .build()
          *
@@ -251,7 +251,7 @@ public interface JsonGenerator {
          */
         public <T> Options addConverter(Class<T> type,
                                         @ClosureParams(value=FromString.class, options={"T","T,String"})
-                                        Closure<? extends CharSequence> closure)
+                                        Closure closure)
         {
             Converter converter = new DefaultJsonGenerator.ClosureConverter(type, closure);
             if (converters.contains(converter)) {

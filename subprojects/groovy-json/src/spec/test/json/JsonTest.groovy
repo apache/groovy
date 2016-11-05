@@ -140,9 +140,9 @@ class JsonTest extends GroovyTestCase {
         def generator = new JsonGenerator.Options()
             .addConverter(URL) { URL u, String key ->
                 if (key == 'favoriteUrl') {
-                    '"' + u.getHost() + '"'
+                    u.getHost()
                 } else {
-                    JsonOutput.toJson(u)
+                    u
                 }
             }
             .build()

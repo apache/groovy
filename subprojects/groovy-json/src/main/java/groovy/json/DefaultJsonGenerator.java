@@ -182,8 +182,8 @@ public class DefaultJsonGenerator implements JsonGenerator {
 
         Converter converter = findConverter(objectClass);
         if (converter != null) {
-            writeRaw(converter.convert(object, key), buffer);
-            return;
+            object = converter.convert(object, key);
+            objectClass = object.getClass();
         }
 
         if (CharSequence.class.isAssignableFrom(objectClass)) { // Handle String, StringBuilder, GString and other CharSequence implementations
@@ -450,10 +450,10 @@ public class DefaultJsonGenerator implements JsonGenerator {
     protected static class ClosureConverter implements Converter {
 
         protected final Class<?> type;
-        protected final Closure<? extends CharSequence> closure;
+        protected final Closure closure;
         protected final int paramCount;
 
-        protected ClosureConverter(Class<?> type, Closure<? extends CharSequence> closure) {
+        protected ClosureConverter(Class<?> type, Closure closure) {
             if (type == null) {
                 throw new NullPointerException("Type parameter must not be null");
             }
@@ -498,7 +498,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
          * @param value the object to convert
          * @return a JSON value representing the value
          */
-        public CharSequence convert(Object value) {
+        public Object convert(Object value) {
             return convert(value, null);
         }
 
@@ -509,7 +509,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
          * @param key the key name for the value, may be {@code null}
          * @return a JSON value representing the value
          */
-        public CharSequence convert(Object value, String key) {
+        public Object convert(Object value, String key) {
             return (paramCount == 1) ?
                     closure.call(value) :
                     closure.call(value, key);
