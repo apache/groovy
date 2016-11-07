@@ -26,7 +26,7 @@ class PrimitiveTest extends GroovyTestCase {
             }
 
             assert Foo.class.getDeclaredField('i').type == int.class
-            assert Foo.i != int.class && Foo.i.class == Integer.class
+            assert Foo.i.class != int.class && Foo.i.class == Integer.class
             // end::primitive_references[]
         '''
     }
