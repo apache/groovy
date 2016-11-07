@@ -91,13 +91,13 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
     void testConverters() {
         def generator = new JsonGenerator.Options()
                 .addConverter(JsonCyclicReference) { object, key ->
-            return '"JsonCyclicReference causes a stackoverflow"'
+            return "JsonCyclicReference causes a stackoverflow"
         }
         .addConverter(Date) { object ->
-            return '"4 score and 7 years ago"'
+            return "4 score and 7 years ago"
         }
         .addConverter(Calendar) { object ->
-            return '"22 days ago"'
+            return "22 days ago"
         }
         .build()
 

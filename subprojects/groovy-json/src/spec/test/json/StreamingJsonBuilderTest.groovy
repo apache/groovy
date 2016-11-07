@@ -79,7 +79,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
                     .excludeNulls()
                     .excludeFieldsByName('make', 'country', 'record')
                     .excludeFieldsByType(Number)
-                    .addConverter(URL) { url -> '"http://groovy-lang.org"' }
+                    .addConverter(URL) { url -> "http://groovy-lang.org" }
                     .build()
 
             StringWriter writer = new StringWriter()

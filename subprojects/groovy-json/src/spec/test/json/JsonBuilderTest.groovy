@@ -79,7 +79,7 @@ class JsonBuilderTest extends GroovyTestCase {
                     .excludeNulls()
                     .excludeFieldsByName('make', 'country', 'record')
                     .excludeFieldsByType(Number)
-                    .addConverter(URL) { url -> '"http://groovy-lang.org"' }
+                    .addConverter(URL) { url -> "http://groovy-lang.org" }
                     .build()
 
             JsonBuilder builder = new JsonBuilder(generator)
