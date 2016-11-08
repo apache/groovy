@@ -218,6 +218,48 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Allows the closure to be called for the object reference self (similar
+     * to <code>with</code> and always returns self.
+     * <p>
+     * Any method invoked inside the closure will first be invoked on the
+     * self reference. For instance, the following method calls to the append()
+     * method are invoked on the StringBuilder instance:
+     * <pre>
+     * def b = new StringBuilder().tap {
+     *   append('foo')
+     *   append('bar')
+     * }
+     * assert b.toString() == 'foobar'
+     * </pre>
+     * This is commonly used to simplify object creation, such as this example:
+     * <pre>
+     * def p = new Person().tap {
+     *   firstName = 'John'
+     *   lastName = 'Doe'
+     * }
+     * </pre>
+     *
+     * @param self    the object to have a closure act upon
+     * @param closure the closure to call on the object
+     * @return self
+     * @since 2.5.0
+     */
+    public static <T,U> U tap(
+            @DelegatesTo.Target("self") U self,
+            @DelegatesTo(value=DelegatesTo.Target.class,
+                    target="self",
+                    strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class)
+            Closure<T> closure) {
+        @SuppressWarnings("unchecked")
+        final Closure<T> clonedClosure = (Closure<T>) closure.clone();
+        clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
+        clonedClosure.setDelegate(self);
+        clonedClosure.call(self);
+        return self;
+    }
+
+    /**
      * Allows the subscript operator to be used to lookup dynamic property values.
      * <code>bean[somePropertyNameExpression]</code>. The normal property notation
      * of groovy is neater and more concise but only works with compile-time known
