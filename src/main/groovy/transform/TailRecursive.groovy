@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
 /**
- * Class annotation used to transform method with tail recursive calls into iterative methods automagically
+ * Method annotation used to transform methods with tail recursive calls into iterative methods automagically
  * since the JVM cannot do this itself. This works for both static and non-static methods.
  * <p/>
  * It allows you to write a method like this:
