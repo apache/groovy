@@ -188,10 +188,10 @@ configured instance that will generate output based on the options selected.
 include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_generator,indent=0]
 ----
 
-A closure can be used to transform a type into a valid JSON value.  These closure converters are registered
-for a given type and will be called any time that type or a subtype is encountered.  The first parameter to the
-closure is an object matching the type for which the converter is registered and this parameter is required.
-The closure may take an optional second `String` parameter and this will be set to the key name if one is available.
+A closure can be used to transform a type.  These closure converters are registered for a given type and will be
+called any time that type or a subtype is encountered.  The first parameter to the closure is an object matching the
+type for which the converter is registered and this parameter is required. The closure may take an optional second
+`String` parameter and this will be set to the key name if one is available.
 
 [source,groovy]
 ----

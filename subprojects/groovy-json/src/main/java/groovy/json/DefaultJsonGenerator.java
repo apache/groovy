@@ -442,18 +442,17 @@ public class DefaultJsonGenerator implements JsonGenerator {
     }
 
     /**
-     * A converter that handles converting a given type to a JSON value
-     * using a closure.
+     * A converter that handles converting a given type using a closure.
      *
      * @since 2.5
      */
     protected static class ClosureConverter implements Converter {
 
         protected final Class<?> type;
-        protected final Closure closure;
+        protected final Closure<?> closure;
         protected final int paramCount;
 
-        protected ClosureConverter(Class<?> type, Closure closure) {
+        protected ClosureConverter(Class<?> type, Closure<?> closure) {
             if (type == null) {
                 throw new NullPointerException("Type parameter must not be null");
             }
@@ -486,28 +485,28 @@ public class DefaultJsonGenerator implements JsonGenerator {
          *
          * @param type the type of the object to convert
          * @return true if this converter can successfully convert values of
-         *      the given type to a JSON value
+         *      the given type
          */
         public boolean handles(Class<?> type) {
             return this.type.isAssignableFrom(type);
         }
 
         /**
-         * Converts a given value to a JSON value.
+         * Converts a given value.
          *
          * @param value the object to convert
-         * @return a JSON value representing the value
+         * @return the converted object
          */
         public Object convert(Object value) {
             return convert(value, null);
         }
 
         /**
-         * Converts a given value to a JSON value.
+         * Converts a given value.
          *
          * @param value the object to convert
          * @param key the key name for the value, may be {@code null}
-         * @return a JSON value representing the value
+         * @return the converted object
          */
         public Object convert(Object value, String key) {
             return (paramCount == 1) ?

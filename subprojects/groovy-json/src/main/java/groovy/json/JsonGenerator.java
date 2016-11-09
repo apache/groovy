@@ -67,7 +67,7 @@ public interface JsonGenerator {
     boolean isExcludingValues(Object value);
 
     /**
-     * Handles converting a given type to a JSON value.
+     * Handles converting a given type.
      *
      * @since 2.5
      */
@@ -79,24 +79,24 @@ public interface JsonGenerator {
          *
          * @param type the type of the object to convert
          * @return {@code true} if this converter can successfully convert values of
-         *      the given type to a JSON value, else {@code false}
+         *      the given type, else {@code false}
          */
         boolean handles(Class<?> type);
 
         /**
-         * Converts a given object to a JSON value.
+         * Converts a given object.
          *
          * @param value the object to convert
-         * @return a JSON value representing the object
+         * @return the converted object
          */
         Object convert(Object value);
 
         /**
-         * Converts a given object to a JSON value.
+         * Converts a given object.
          *
          * @param value the object to convert
          * @param key the key name for the value, may be {@code null}
-         * @return a JSON value representing the object
+         * @return the converted object
          */
         Object convert(Object value, String key);
 
@@ -216,10 +216,6 @@ public interface JsonGenerator {
          * value if serializing a JSON Object.  This parameter will be {@code null} when
          * serializing a JSON Array or when there is no way to determine the name of the key.
          *
-         * <p>The return value from the closure must be a valid JSON value. The result
-         * of the closure will be written to the internal buffer directly and no quoting,
-         * escaping or other manipulation will be done to the resulting output.
-         *
          * <p>
          * Example:
          * <pre><code class="groovyTestCase">
@@ -251,7 +247,7 @@ public interface JsonGenerator {
          */
         public <T> Options addConverter(Class<T> type,
                                         @ClosureParams(value=FromString.class, options={"T","T,String"})
-                                        Closure closure)
+                                        Closure<?> closure)
         {
             Converter converter = new DefaultJsonGenerator.ClosureConverter(type, closure);
             if (converters.contains(converter)) {
