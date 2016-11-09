@@ -728,7 +728,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writeName(name);
             verifyValue();
             if(json instanceof GString) {
-                writer.write(JsonOutput.toJson(json.toString()));
+                writer.write(generator.toJson(json.toString()));
             }
             else {
                 json.writeTo(writer);
