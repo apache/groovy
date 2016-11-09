@@ -129,8 +129,8 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
         options.addConverter(java.sql.Date, {})
 
         assert options.@converters.size() == 4
-        assert options.@converters[2].convert(null) == 'c2'
-        assert !options.@converters.find { it.convert(null) == 'c1' }
+        assert options.@converters[2].convert(null, null) == 'c2'
+        assert !options.@converters.find { it.convert(null, null) == 'c1' }
     }
 
     void testConvertersBadInput() {

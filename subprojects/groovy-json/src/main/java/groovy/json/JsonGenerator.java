@@ -87,14 +87,6 @@ public interface JsonGenerator {
          * Converts a given object.
          *
          * @param value the object to convert
-         * @return the converted object
-         */
-        Object convert(Object value);
-
-        /**
-         * Converts a given object.
-         *
-         * @param value the object to convert
          * @param key the key name for the value, may be {@code null}
          * @return the converted object
          */

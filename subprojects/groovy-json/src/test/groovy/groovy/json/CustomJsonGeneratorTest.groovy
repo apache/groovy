@@ -76,11 +76,6 @@ class CustomJsonGeneratorTest extends GroovyTestCase {
         }
 
         @Override
-        Object convert(Object value) {
-            return convert(value, null)
-        }
-
-        @Override
         Object convert(Object value, String key) {
             return ((CustomFoo)value).c.call()
         }

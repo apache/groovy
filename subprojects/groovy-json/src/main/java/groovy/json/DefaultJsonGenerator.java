@@ -487,18 +487,9 @@ public class DefaultJsonGenerator implements JsonGenerator {
          * @return true if this converter can successfully convert values of
          *      the given type
          */
+        @Override
         public boolean handles(Class<?> type) {
             return this.type.isAssignableFrom(type);
-        }
-
-        /**
-         * Converts a given value.
-         *
-         * @param value the object to convert
-         * @return the converted object
-         */
-        public Object convert(Object value) {
-            return convert(value, null);
         }
 
         /**
@@ -508,6 +499,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
          * @param key the key name for the value, may be {@code null}
          * @return the converted object
          */
+        @Override
         public Object convert(Object value, String key) {
             return (paramCount == 1) ?
                     closure.call(value) :
