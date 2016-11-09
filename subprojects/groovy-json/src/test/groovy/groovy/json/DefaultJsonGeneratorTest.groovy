@@ -88,7 +88,7 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
         }
     }
 
-    void testConverters() {
+    void testClosureConverters() {
         def generator = new JsonGenerator.Options()
                 .addConverter(JsonCyclicReference) { object, key ->
             return "JsonCyclicReference causes a stackoverflow"
@@ -116,6 +116,28 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
         assert generator.toJson((Iterable)jsonArray) == jsonExpected
 
         assert generator.toJson([timeline: Calendar.getInstance()]) == '{"timeline":"22 days ago"}'
+    }
+
+    void testCustomConverters() {
+        def converter = new JsonGenerator.Converter() {
+            @Override
+            boolean handles(Class<?> type) { Date.class == type }
+            @Override
+            Object convert(Object value, String key) { '42' }
+        }
+
+        def generator = new JsonGenerator.Options()
+                            .addConverter(converter)
+                            .build()
+
+        assert generator.toJson([new Date()]) == '["42"]'
+
+        def mapConverter = [handles: { Date.class == it }, convert: { obj, key -> 7 }]
+        generator = new JsonGenerator.Options()
+                       .addConverter(mapConverter as JsonGenerator.Converter)
+                        .build()
+
+        assert generator.toJson([new Date()]) == '[7]'
     }
 
     void testConverterAddedLastTakesPrecedence() {

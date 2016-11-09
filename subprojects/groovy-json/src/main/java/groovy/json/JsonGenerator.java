@@ -198,6 +198,19 @@ public interface JsonGenerator {
         }
 
         /**
+         * Registers a converter that will be called when a type it handles is encountered.
+         *
+         * @param converter to register
+         * @return a reference to this {@code Options} instance
+         */
+        public Options addConverter(Converter converter) {
+            if (converter != null) {
+                converters.add(converter);
+            }
+            return this;
+        }
+
+        /**
          * Registers a closure that will be called when the specified type or subtype
          * is serialized.
          *
@@ -245,8 +258,7 @@ public interface JsonGenerator {
             if (converters.contains(converter)) {
                 converters.remove(converter);
             }
-            converters.add(converter);
-            return this;
+            return addConverter(converter);
         }
 
         /**
