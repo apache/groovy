@@ -24,11 +24,6 @@ import java.math.BigInteger;
  * Tests {@link ObjectRange}s of {@link BigInteger}s.
  */
 public class BigIntegerObjectRangeTest extends NumberRangeTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        expectNullFromExhausted = true;
-    }
 
     /**
      * {@inheritDoc}

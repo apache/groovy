@@ -22,11 +22,6 @@ package groovy.lang;
  * Tests {@link ObjectRange}s of {@link Long}s.
  */
 public class LongObjectRangeTest extends NumberRangeTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        expectNullFromExhausted = true;
-    }
 
     /**
      * {@inheritDoc}

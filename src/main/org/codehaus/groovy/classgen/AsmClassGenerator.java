@@ -396,7 +396,11 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             // we use this NOP to have a valid jump target for the various labels
             //mv.visitInsn(NOP);
-            mv.visitMaxs(0, 0);
+            try {
+                mv.visitMaxs(0, 0);
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("ASM reporting processing error for "+controller.getClassNode()+"#"+node.getName()+" with signature "+node.getTypeDescriptor()+" in "+sourceFile+":"+node.getLineNumber(), e);
+            }
         }
         mv.visitEnd();
     }
@@ -957,16 +961,21 @@ public class AsmClassGenerator extends ClassGenerator {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 if (iterType.getOuterClass()==null) break;
                 FieldNode thisField = iterType.getField("this$0");
-                if (thisField==null) break;
-                ClassNode thisFieldType = thisField.getType();
                 iterType = iterType.getOuterClass();
-                if (ClassHelper.CLOSURE_TYPE.equals(thisFieldType)) {
-                    mv.visitFieldInsn(GETFIELD, ownerName, "this$0", BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
+                if (thisField == null) {
+                    // closure within inner class
                     mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
                     mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(iterType));
                 } else {
-                    String typeName = BytecodeHelper.getTypeDescription(iterType);
-                    mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
+                    ClassNode thisFieldType = thisField.getType();
+                    if (ClassHelper.CLOSURE_TYPE.equals(thisFieldType)) {
+                        mv.visitFieldInsn(GETFIELD, ownerName, "this$0", BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
+                        mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
+                        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(iterType));
+                    } else {
+                        String typeName = BytecodeHelper.getTypeDescription(iterType);
+                        mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
+                    }
                 }
             }
             controller.getOperandStack().push(type);

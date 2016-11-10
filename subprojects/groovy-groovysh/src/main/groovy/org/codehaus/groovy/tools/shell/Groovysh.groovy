@@ -75,6 +75,7 @@ class Groovysh extends Shell {
 
     final Interpreter interp
 
+    // individual imports are stored without leading 'import ' or trailing ';'
     final List<String> imports = []
 
     int indentSize = 2

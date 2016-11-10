@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.PropertyNodeUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
@@ -247,7 +248,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
         MethodNode setter = new MethodNode(
                 setterName,
-                propertyNode.getModifiers(),
+                PropertyNodeUtils.adjustPropertyModifiersForMethod(propertyNode),
                 ClassHelper.VOID_TYPE,
                 params(param(propertyNode.getType(), "value")),
                 ClassNode.EMPTY_ARRAY,

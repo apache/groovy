@@ -159,7 +159,7 @@ include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.gr
 <<json-userguide.adoc#json_jsonslurper,JsonSlurper>>, being a JSON parser.
 
 `JsonOutput` comes with overloaded, static `toJson` methods. Each `toJson` implementation takes a different parameter type.
-The static method can either be used directly or by importing the methods with a static import statement.
+The static methods can either be used directly or by importing the methods with a static import statement.
 
 The result of a `toJson` call is a `String` containing the JSON code.
 
@@ -176,6 +176,30 @@ has support for serialising POGOs, that is, plain-old Groovy objects.
 include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_pogo,indent=0]
 ----
 
+=== Customizing Output
+
+If you need control over the serialized output you can use a `JsonGenerator`.  The `JsonGenerator.Options` builder
+can be used to create a customized generator.  One or more options can be set on this builder in order to alter
+the resulting output.  When you are done setting the options simply call the `build()` method in order to get a fully
+configured instance that will generate output based on the options selected.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_generator,indent=0]
+----
+
+A closure can be used to transform a type.  These closure converters are registered for a given type and will be
+called any time that type or a subtype is encountered.  The first parameter to the closure is an object matching the
+type for which the converter is registered and this parameter is required. The closure may take an optional second
+`String` parameter and this will be set to the key name if one is available.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_converter,indent=0]
+----
+
+==== Formatted Output
+
 As we saw in previous examples, the JSON output is not pretty printed per default. However, the `prettyPrint` method in `JsonOutput` comes
 to rescue for this task.
 
@@ -186,6 +210,8 @@ include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.gr
 
 `prettyPrint` takes a `String` as single parameter; therefore, it can be applied on arbitrary JSON `String` instances, not only the result of
 `JsonOutput.toJson`.
+
+=== Builders
 
 Another way to create JSON from Groovy is to use `JsonBuilder` or `StreamingJsonBuilder`. Both builders provide a
 DSL which allows to formulate an object graph which is then converted to JSON.

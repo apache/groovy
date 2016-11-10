@@ -341,32 +341,34 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public final CharBuf addJsonEscapedString(String jsonString) {
-        char[] charArray = FastStringUtils.toCharArray(jsonString);
-        return addJsonEscapedString(charArray);
+        return addJsonEscapedString(jsonString, false);
     }
 
-    private static boolean hasAnyJSONControlOrUnicodeChars(int c) {
-        /* Anything less than space is a control character. */
-        if (c < 30) {
+    public final CharBuf addJsonEscapedString(String jsonString, boolean disableUnicodeEscaping) {
+        char[] charArray = FastStringUtils.toCharArray(jsonString);
+        return addJsonEscapedString(charArray, disableUnicodeEscaping);
+    }
+
+    private static boolean shouldEscape(int c, boolean disableUnicodeEscaping) {
+        if (c < 32) { /* less than space is a control char */
             return true;
-        /* 34 is double quote. */
-        } else if (c == 34) {
+        } else if (c == 34) {  /* double quote */
             return true;
-        } else if (c == 92) {
+        } else if (c == 92) {  /* backslash */
             return true;
-        } else if (c < ' ' || c > 126) {
+        } else if (!disableUnicodeEscaping && c > 126) {  /* non-ascii char range */
             return true;
         }
 
         return false;
     }
 
-    private static boolean hasAnyJSONControlChars(final char[] charArray) {
+    private static boolean hasAnyJSONControlChars(final char[] charArray, boolean disableUnicodeEscaping) {
         int index = 0;
         char c;
         while (true) {
             c = charArray[index];
-            if (hasAnyJSONControlOrUnicodeChars(c)) {
+            if (shouldEscape(c, disableUnicodeEscaping)) {
                 return true;
             }
             if (++index >= charArray.length) return false;
@@ -374,9 +376,13 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public final CharBuf addJsonEscapedString(final char[] charArray) {
+        return addJsonEscapedString(charArray, false);
+    }
+
+    public final CharBuf addJsonEscapedString(final char[] charArray, boolean disableUnicodeEscaping) {
         if (charArray.length == 0) return this;
-        if (hasAnyJSONControlChars(charArray)) {
-            return doAddJsonEscapedString(charArray);
+        if (hasAnyJSONControlChars(charArray, disableUnicodeEscaping)) {
+            return doAddJsonEscapedString(charArray, disableUnicodeEscaping);
         } else {
             return this.addQuoted(charArray);
         }
@@ -386,7 +392,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     final byte[] charTo = new byte[2];
 
-    private CharBuf doAddJsonEscapedString(char[] charArray) {
+    private CharBuf doAddJsonEscapedString(char[] charArray, boolean disableUnicodeEscaping) {
         char[] _buffer = buffer;
         int _location = this.location;
 
@@ -410,7 +416,7 @@ public class CharBuf extends Writer implements CharSequence {
         while (true) {
             char c = charArray[index];
 
-            if (hasAnyJSONControlOrUnicodeChars(c)) {
+            if (shouldEscape(c, disableUnicodeEscaping)) {
                    /* We are covering our bet with a safety net.
                       otherwise we would have to have 5x buffer
                       allocated for control chars */
@@ -514,14 +520,22 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public final CharBuf addJsonFieldName(String str) {
-        return addJsonFieldName(FastStringUtils.toCharArray(str));
+        return addJsonFieldName(str, false);
+    }
+
+    public final CharBuf addJsonFieldName(String str, boolean disableUnicodeEscaping) {
+        return addJsonFieldName(FastStringUtils.toCharArray(str), disableUnicodeEscaping);
     }
 
     private static final char[] EMPTY_STRING_CHARS = Chr.array('"', '"');
 
     public final CharBuf addJsonFieldName(char[] chars) {
+        return addJsonFieldName(chars, false);
+    }
+
+    public final CharBuf addJsonFieldName(char[] chars, boolean disableUnicodeEscaping) {
         if (chars.length > 0) {
-            addJsonEscapedString(chars);
+            addJsonEscapedString(chars, disableUnicodeEscaping);
         } else {
             addChars(EMPTY_STRING_CHARS);
         }
@@ -671,7 +685,16 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public void removeLastChar() {
-        location--;
+        if (location > 0) {
+            location--;
+        }
+    }
+
+    public void removeLastChar(char expect) {
+        if (location == 0 || buffer[location-1] != expect) {
+            return;
+        }
+        removeLastChar();
     }
 
     private Cache<BigDecimal, char[]> bigDCache;

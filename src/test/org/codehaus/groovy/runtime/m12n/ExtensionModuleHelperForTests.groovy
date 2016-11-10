@@ -64,7 +64,7 @@ public class ExtensionModuleHelperForTests {
                                 }
                             }
                             if (jdk9) {
-                                jvmarg(value: '-addmods')
+                                jvmarg(value: '--add-modules')
                                 jvmarg(value: 'java.xml.bind')
                             }
                         }

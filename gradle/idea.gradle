@@ -48,7 +48,7 @@ idea {
 
                 // jdk, language level fix
                 def pRoot = node.component.find { it.'@name' == 'ProjectRootManager' }
-                pRoot.'@languageLevel' = 'JDK_1_6'
+                pRoot.'@languageLevel' = 'JDK_1_7'
                 pRoot.'@project-jdk-name' = '1.8'
 
                 // Use git

@@ -1179,15 +1179,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if ("this".equals(propertyName) && staticOnlyAccess) {
-            // Outer.this
+            // Outer.this for any level of nesting
             ClassNode outerNode = objectExpressionType.getGenericsTypes()[0].getType();
-            ClassNode current = typeCheckingContext.getEnclosingClassNode();
-            if (!current.isStaticClass() && current instanceof InnerClassNode) {
-                InnerClassNode icn = (InnerClassNode) current;
-                if (outerNode.equals(icn.getOuterClass())) {
-                    storeType(pexp, outerNode);
-                    return true;
+            List<ClassNode> candidates = typeCheckingContext.getEnclosingClassNodes();
+            ClassNode found = null;
+            for (ClassNode current : candidates) {
+                if (!current.isStaticClass() && current instanceof InnerClassNode && outerNode.equals(current.getOuterClass())) {
+                    found = current;
+                    break;
                 }
+            }
+            if (found != null) {
+                storeType(pexp, outerNode);
+                return true;
             }
         }
 
@@ -1314,18 +1318,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             // GROOVY-5568, the property may be defined by DGM
-            List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
-            if (!methods.isEmpty()) {
-                List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
-                if (methodNodes.size() == 1) {
-                    MethodNode getter = methodNodes.get(0);
-                    if (visitor != null) {
-                        visitor.visitMethod(getter);
-                    }
-                    ClassNode cn = inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                    storeInferredTypeForPropertyExpression(pexp, cn);
+            List<ClassNode> dgmReceivers = new ArrayList<ClassNode>(2);
+            dgmReceivers.add(testClass);
+            if (isPrimitiveType(testClass)) dgmReceivers.add(getWrapper(testClass));
+            for (ClassNode dgmReceiver: dgmReceivers) {
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
+                for (MethodNode m : findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
+                    if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
+                }
+                if (!methods.isEmpty()) {
+                    List<MethodNode> methodNodes = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
+                    if (methodNodes.size() == 1) {
+                        MethodNode getter = methodNodes.get(0);
+                        if (visitor != null) {
+                            visitor.visitMethod(getter);
+                        }
+                        ClassNode cn = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                        storeInferredTypeForPropertyExpression(pexp, cn);
 
-                    return true;
+                        return true;
+                    }
                 }
             }
         }
@@ -2975,6 +2987,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     mn = disambiguateMethods(mn, chosenReceiver!=null?chosenReceiver.getType():null, args, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
+                        if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null &&
+                                !directMethodCallCandidate.isStatic() && objectExpression instanceof ClassExpression &&
+                                !"java.lang.Class".equals(directMethodCallCandidate.getDeclaringClass().getName())) {
+                            ClassNode owner = directMethodCallCandidate.getDeclaringClass();
+                            addStaticTypeError("Non static method " + owner.getName() + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                        }
                         if (chosenReceiver==null) {
                             chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
                         }

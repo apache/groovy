@@ -65,12 +65,24 @@ import java.util.*;
  */
 public class JsonBuilder extends GroovyObjectSupport implements Writable {
 
+    private final JsonGenerator generator;
     private Object content;
 
     /**
      * Instantiates a JSON builder.
      */
     public JsonBuilder() {
+        this.generator = JsonOutput.DEFAULT_GENERATOR;
+    }
+
+    /**
+     * Instantiates a JSON builder with a configured generator.
+     *
+     * @param generator used to generate the output
+     * @since 2.5
+     */
+    public JsonBuilder(JsonGenerator generator) {
+        this.generator = generator;
     }
 
     /**
@@ -80,6 +92,20 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      */
     public JsonBuilder(Object content) {
         this.content = content;
+        this.generator = JsonOutput.DEFAULT_GENERATOR;
+    }
+
+    /**
+     * Instantiates a JSON builder with some existing data structure
+     * and a configured generator.
+     *
+     * @param content a pre-existing data structure
+     * @param generator used to generate the output
+     * @since 2.5
+     */
+    public JsonBuilder(Object content, JsonGenerator generator) {
+        this.content = content;
+        this.generator = generator;
     }
 
     public Object getContent() {
@@ -344,7 +370,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * @return a JSON output
      */
     public String toString() {
-        return JsonOutput.toJson(content);
+        return generator.toJson(content);
     }
 
     /**

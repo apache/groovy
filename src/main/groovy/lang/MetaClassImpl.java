@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.internal.util.UncheckedThrow;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -34,7 +35,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -3295,7 +3295,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 addProperties();
             } catch (Throwable e) {
                 if (!AndroidSupport.isRunningAndroid()) {
-                    ExceptionUtils.sneakyThrow(e);
+                    UncheckedThrow.rethrow(e);
                 }
                 // Introspection failure...
                 // May happen in Android

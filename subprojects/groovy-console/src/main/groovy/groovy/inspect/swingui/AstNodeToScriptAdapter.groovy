@@ -18,7 +18,6 @@
  */
 package groovy.inspect.swingui
 
-
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
@@ -37,10 +36,8 @@ import org.codehaus.groovy.classgen.Verifier
  * This class takes Groovy source code, compiles it to a specific compile phase, and then decompiles it
  * back to the groovy source. It is used by GroovyConsole's AST Browser, but can also be invoked from
  * the command line.
- *
- * @author Hamlet D'Arcy
  */
-class AstNodeToScriptAdapter  {
+class AstNodeToScriptAdapter {
 
     /**
      * Run this class as a script to compile a groovy file and print out the resulting source.
@@ -68,20 +65,21 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
     }
 
     /**
-    * This method takes source code, compiles it, then reverses it back to source. 
-    * @param script
-    *    the source code to be compiled. If invalid, a compile error occurs
-    * @param compilePhase
-    *    the CompilePhase. Must be an int mapped in {@link CompilePhase}
-    * @param classLoader
-    *    (optional) the classloader to use. If missing/null then the current is used.    
-    *    This parameter enables things like ASTBrowser to invoke this with the correct classpath
-    * @param showScriptFreeForm
-    *    Whether or not to show the script portion of the source code
-    * @param showScriptClass
-    *    Whether or not to show the Script class from the source code
-    * @returns the source code from the AST state
-    */
+     * This method takes source code, compiles it, then reverses it back to source.
+     *
+     * @param script
+     *    the source code to be compiled. If invalid, a compile error occurs
+     * @param compilePhase
+     *    the CompilePhase. Must be an int mapped in {@link CompilePhase}
+     * @param classLoader
+     *    (optional) the classloader to use. If missing/null then the current is used.
+     *    This parameter enables things like ASTBrowser to invoke this with the correct classpath
+     * @param showScriptFreeForm
+     *    Whether or not to show the script portion of the source code
+     * @param showScriptClass
+     *    Whether or not to show the Script class from the source code
+     * @returns the source code from the AST state
+     */
     String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
 
         def writer = new StringWriter()
@@ -113,8 +111,6 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
 
 /**
  * An adapter from ASTNode tree to source code.
- *
- * @author Hamlet D'Arcy
  */
 class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {
 
@@ -267,7 +263,8 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         }
 
         visitModifiers(node.modifiers)
-        print "class $node.name"
+        if (node.isInterface()) print node.name
+        else print "class $node.name"
         visitGenerics node?.genericsTypes
         boolean first = true
         node.unresolvedInterfaces?.each {
@@ -402,40 +399,10 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         printDoubleBreak()
     }
 
-    private def visitModifiers(int modifiers) {
-        if (Modifier.isAbstract(modifiers)) {
-            print 'abstract '
-        }
-        if (Modifier.isFinal(modifiers)) {
-            print 'final '
-        }
-        if (Modifier.isInterface(modifiers)) {
-            print 'interface '
-        }
-        if (Modifier.isNative(modifiers)) {
-            print 'native '
-        }
-        if (Modifier.isPrivate(modifiers)) {
-            print 'private '
-        }
-        if (Modifier.isProtected(modifiers)) {
-            print 'protected '
-        }
-        if (Modifier.isPublic(modifiers)) {
-            print 'public '
-        }
-        if (Modifier.isStatic(modifiers)) {
-            print 'static '
-        }
-        if (Modifier.isSynchronized(modifiers)) {
-            print 'synchronized '
-        }
-        if (Modifier.isTransient(modifiers)) {
-            print 'transient '
-        }
-        if (Modifier.isVolatile(modifiers)) {
-            print 'volatile '
-        }
+    private void visitModifiers(int modifiers) {
+        String mods = Modifier.toString(modifiers)
+        mods = mods ? mods + ' ' : mods
+        print mods
     }
 
     @Override
@@ -458,7 +425,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             // GROOVY-5150: final constants may be initialized directly
             print ' = '
             if (ClassHelper.STRING_TYPE == type) {
-                print "'"+node.initialValueExpression.text.replaceAll("'", "\\\\'")+"'"
+                print "'" + node.initialValueExpression.text.replaceAll("'", "\\\\'") + "'"
             } else if (ClassHelper.char_TYPE == type) {
                 print "'${node.initialValueExpression.text}'"
             } else {
@@ -635,7 +602,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
             print '('
             expression?.arguments?.visit this
-            print ')'            
+            print ')'
         } else {
             expression?.arguments?.visit this
         }
@@ -825,7 +792,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     /**
      * Prints out the type, safely handling arrays.
      * @param classNode
-     *      classnode
      */
     void visitType(ClassNode classNode) {
         def name = classNode.name
@@ -864,7 +830,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print '/*BytecodeExpression*/'
         printLineBreak()
     }
-
 
 
     @Override

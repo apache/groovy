@@ -69,4 +69,10 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
             assert 2d.groovy6496(2d) == 2d
     '''
     }
+
+    void testExtensionPropertyWithPrimitiveReceiver() {
+        assertScript '''
+            assert 4.even
+        '''
+    }
 }
