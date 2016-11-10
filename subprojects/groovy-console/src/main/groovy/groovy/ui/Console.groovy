@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.ui
 
@@ -19,7 +22,9 @@ import groovy.inspect.swingui.ObjectBrowser
 import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
+import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.messages.SimpleMessage
+import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import java.awt.Component
 import java.awt.EventQueue
@@ -171,6 +176,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     File currentClasspathDir = new File(Preferences.userNodeForPackage(Console).get('currentClasspathDir', '.'))
 
     // Running scripts
+    CompilerConfiguration baseConfig
     CompilerConfiguration config
     GroovyShell shell
     int scriptNameCounter = 0
@@ -187,14 +193,35 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean scriptRunning = false
     boolean stackOverFlowError = false
     Action interruptAction
-    
+
+    Action selectWordAction
+    Action selectPreviousWordAction
+
     static void main(args) {
-        if (args.length == 1 && args[0] == '--help') {
-            println '''usage: groovyConsole [options] [filename]
-options:
-  --help                               This Help message
-  -cp,-classpath,--classpath <path>    Specify classpath'''
-            return
+        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
+        MessageSource messages = new MessageSource(Console)
+        cli.with {
+            classpath(messages['cli.option.classpath.description'])
+            cp(longOpt: 'classpath', messages['cli.option.cp.description'])
+            h(longOpt: 'help', messages['cli.option.help.description'])
+            V(longOpt: 'version', messages['cli.option.version.description'])
+            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+        }
+        OptionAccessor options = cli.parse(args)
+
+        if (options == null) {
+            // CliBuilder prints error, but does not exit
+            System.exit(22) // Invalid Args
+        }
+
+        if (options.h) {
+            cli.usage()
+            System.exit(0)
+        }
+
+        if (options.V) {
+            System.out.println(messages.format('cli.info.version', GroovySystem.version))
+            System.exit(0)
         }
 
         // full stack trace should not be logged to the output window - GROOVY-4663
@@ -203,10 +230,16 @@ options:
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
-        def console = new Console(Console.class.classLoader?.getRootLoader())
+        def baseConfig = new CompilerConfiguration()
+        baseConfig.setParameters((boolean) options.hasOption("pa"))
+
+        def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
-        if (args.length == 1) console.loadScriptFile(args[0] as File)
+        if (args.length > 0 && !args[-1].toString().startsWith("-")) {
+            console.loadScriptFile(args[-1] as File)
+        }
+
     }
 
     Console() {
@@ -222,6 +255,11 @@ options:
     }
 
     Console(ClassLoader parent, Binding binding) {
+        this(parent, binding, new CompilerConfiguration())
+    }
+
+    Console(ClassLoader parent, Binding binding, CompilerConfiguration baseConfig) {
+        this.baseConfig = baseConfig
         newScript(parent, binding);
         try {
             System.setProperty('groovy.full.stacktrace', System.getProperty('groovy.full.stacktrace',
@@ -244,7 +282,7 @@ options:
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        config = new CompilerConfiguration()
+        config = new CompilerConfiguration(baseConfig)
         if (threadInterrupt) config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
 
         shell = new GroovyShell(parent, binding, config)
@@ -463,11 +501,11 @@ options:
 
     // Return false if use elected to cancel
     boolean askToSaveFile() {
-        if (scriptFile == null || !dirty) {
+        if (!dirty) {
             return true
         }
         switch (JOptionPane.showConfirmDialog(frame,
-            'Save changes to ' + scriptFile.name + '?',
+            'Save changes' + (scriptFile != null ? " to ${scriptFile.name}" : '') + '?',
             'GroovyConsole', JOptionPane.YES_NO_CANCEL_OPTION))
         {
             case JOptionPane.YES_OPTION:
@@ -634,9 +672,11 @@ options:
     }
 
     void fileOpen(EventObject evt = null) {
-        def scriptName = selectFilename()
-        if (scriptName != null) {
-            loadScriptFile(scriptName)
+        if (askToSaveFile()) {
+            def scriptName = selectFilename()
+            if (scriptName != null) {
+                loadScriptFile(scriptName)
+            }
         }
     }
 
@@ -844,44 +884,71 @@ options:
         new AstBrowser(inputArea, rootElement, shell.getClassLoader()).run({ inputArea.getText() } )
     }
 
+    void inspectTokens(EventObject evt = null) {
+        def lf = LexerFrame.groovyScriptFactory(inputArea.getText())
+        lf.visible = true
+    }
+
     void largerFont(EventObject evt = null) {
         updateFontSize(inputArea.font.size + 2)
     }
 
-    static boolean notifySystemOut(String str) {
+    static boolean notifySystemOut(int consoleId, String str) {
         if (!captureStdOut) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendOutputLines(str, console.outputStyle)
+            } else {
                 consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
             }
+        }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
         }
         return false
     }
 
-    static boolean notifySystemErr(String str) {
+    static boolean notifySystemErr(int consoleId, String str) {
         if (!captureStdErr) {
             // Output as normal
             return true
         }
 
-        // Put onto GUI
-        if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendStacktrace(str)}
-        }
-        else {
-            SwingUtilities.invokeLater {
+        Closure doAppend = {
+            Console console = findConsoleById(consoleId)
+            if (console) {
+                console.appendStacktrace(str)
+            } else {
                 consoleControllers.each {it.appendStacktrace(str)}
             }
         }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            doAppend.call()
+        }
+        else {
+            SwingUtilities.invokeLater doAppend
+        }
         return false
+    }
+
+    int getConsoleId() {
+        return System.identityHashCode(this)
+    }
+
+    private static Console findConsoleById(int consoleId) {
+        return consoleControllers.find { it.consoleId == consoleId }
     }
 
     // actually run the script
@@ -964,6 +1031,7 @@ options:
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
             try {
+                systemOutInterceptor.setConsoleId(this.getConsoleId())
                 SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if(beforeExecution) {
@@ -998,6 +1066,7 @@ options:
                 runThread = null
                 scriptRunning = false
                 interruptAction.enabled = false
+                systemOutInterceptor.removeConsoleId()
             }
         }
     }
@@ -1028,7 +1097,7 @@ options:
         runThread = Thread.start {
             try {
                 SwingUtilities.invokeLater { showCompilingMessage() }
-                shell.parse(record.allText)
+                shell.getClassLoader().parseClass(record.allText)
                 SwingUtilities.invokeLater { compileFinishNormal() }
             } catch (Throwable t) {
                 SwingUtilities.invokeLater { finishException(t, false) }
@@ -1164,6 +1233,74 @@ options:
 	    }
 	}
 	
+    }
+
+    void selectBlock(EventObject evt = null) {
+        final int startPos = inputArea.getSelectionStart()
+        final int endPos = inputArea.getSelectionEnd()
+        final int startRow = rootElement.getElementIndex(startPos)
+        final int endRow = rootElement.getElementIndex(endPos)
+        final Element rowElement = rootElement.getElement(startRow)
+        final int startRowOffset = rowElement.getStartOffset()
+        final int endRowOffset = rowElement.getEndOffset()
+
+        // Empty line, nothing to do
+        if (startRowOffset == endRowOffset - 1) {
+            return
+        }
+
+        // Nothing is currently selected so select next chunk unless we are at the end of
+        // the line then we select the previous
+        if (startPos == endPos && selectWordAction != null && selectPreviousWordAction != null) {
+            if (endPos == endRowOffset - 1) {
+                selectPreviousWordAction.actionPerformed(evt)
+            } else {
+                selectWordAction.actionPerformed(evt)
+            }
+            return
+        }
+
+        // Partial selection on a single line but not the entire line or word
+        // selection actions are not available so select the entire line
+        if (startRow == endRow && (startPos != startRowOffset || (endPos != endRowOffset - 1))) {
+            inputArea.setSelectionStart(startRowOffset)
+            inputArea.setSelectionEnd(endRowOffset - 1)
+            return
+        }
+
+        // At this point an entire line or multiple lines are selected so
+        // look for a block/paragraph to select
+        String rowText = inputArea.document.getText(startRowOffset, endRowOffset - startRowOffset)
+        if (!rowText?.trim()) {
+            // Selection is empty or all spaces so not part of any block
+            return
+        }
+
+        // Look up for first empty row
+        int startBlockPos = startRowOffset
+        for (int i = startRow - 1; i >= 0; i--) {
+            Element re = rootElement.getElement(i)
+            rowText = inputArea.document.getText(re.getStartOffset(), re.getEndOffset() - re.getStartOffset())
+            if (!rowText?.trim()) {
+                break
+            }
+            startBlockPos = re.getStartOffset()
+        }
+
+        // Look down for first empty row
+        int endBlockPos = endRowOffset
+        int totalRows = rootElement.getElementCount()
+        for (int i = startRow + 1; i < totalRows; i++) {
+            Element re = rootElement.getElement(i)
+            rowText = inputArea.document.getText(re.getStartOffset(), re.getEndOffset() - re.getStartOffset())
+            if (!rowText?.trim()) {
+                break
+            }
+            endBlockPos = re.getEndOffset()
+        }
+
+        inputArea.setSelectionStart(startBlockPos)
+        inputArea.setSelectionEnd(endBlockPos)
     }
 
     void showMessage(String message) {

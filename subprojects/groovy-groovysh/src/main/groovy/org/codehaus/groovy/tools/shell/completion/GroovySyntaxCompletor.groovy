@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.completion
 
 import antlr.TokenStreamException
@@ -36,34 +38,41 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  */
 class GroovySyntaxCompletor implements Completer {
 
+    protected final static Logger LOG = Logger.create(GroovySyntaxCompletor)
+
     private final Groovysh shell
     private final List<IdentifierCompletor> identifierCompletors
+    private final IdentifierCompletor classnameCompletor
     private final ReflectionCompletor reflectionCompletor
     private final InfixKeywordSyntaxCompletor infixCompletor
     private final Completer filenameCompletor
-    protected String[] classes
-    protected static final Logger log = Logger.create(GroovySyntaxCompletor)
 
     static final enum CompletionCase {
         SECOND_IDENT,
         NO_COMPLETION,
         DOT_LAST,
+        SPREAD_DOT_LAST,
         PREFIX_AFTER_DOT,
-        NO_DOT_PREFIX
+        PREFIX_AFTER_SPREAD_DOT,
+        NO_DOT_PREFIX,
+        INSTANCEOF
     }
 
-    GroovySyntaxCompletor(Groovysh shell,
-                          ReflectionCompletor reflectionCompletor,
-                          List<IdentifierCompletor> identifierCompletors,
-                          Completer filenameCompletor) {
+    GroovySyntaxCompletor(final Groovysh shell,
+                          final ReflectionCompletor reflectionCompletor,
+                          IdentifierCompletor classnameCompletor,
+                          final List<IdentifierCompletor> identifierCompletors,
+                          final Completer filenameCompletor) {
         this.shell = shell
+        this.classnameCompletor = classnameCompletor
         this.identifierCompletors = identifierCompletors
         infixCompletor = new InfixKeywordSyntaxCompletor()
         this.reflectionCompletor = reflectionCompletor
         this.filenameCompletor = filenameCompletor
     }
 
-    int complete(final String bufferLine, final int cursor, List candidates) {
+    @Override
+    int complete(final String bufferLine, final int cursor, final List<CharSequence> candidates) {
         if (! bufferLine) {
             return -1
         }
@@ -93,7 +102,13 @@ class GroovySyntaxCompletor implements Completer {
         }
         if (completionCase == CompletionCase.SECOND_IDENT) {
             if (infixCompletor.complete(tokens, candidates)) {
-                return tokens.last().getColumn() - 1
+                return tokens.last().column - 1
+            }
+            return -1
+        }
+        if (completionCase == CompletionCase.INSTANCEOF) {
+            if (classnameCompletor.complete(tokens, candidates)) {
+                return tokens.last().column - 1
             }
             return -1
         }
@@ -106,6 +121,8 @@ class GroovySyntaxCompletor implements Completer {
                 break
             case CompletionCase.DOT_LAST:
             case CompletionCase.PREFIX_AFTER_DOT:
+            case CompletionCase.SPREAD_DOT_LAST:
+            case CompletionCase.PREFIX_AFTER_SPREAD_DOT:
                 result = reflectionCompletor.complete(tokens, candidates)
                 break
             default:
@@ -120,22 +137,28 @@ class GroovySyntaxCompletor implements Completer {
         GroovySourceToken currentToken = tokens[-1]
 
         // now look at last 2 tokens to decide whether we are in a completion situation at all
-        if (currentToken.getType() == IDENT) {
+        if (currentToken.type == IDENT) {
             // cursor is on identifier, use it as prefix and check whether it follows a dot
 
             if (tokens.size() == 1) {
                 return CompletionCase.NO_DOT_PREFIX
             }
             GroovySourceToken previousToken = tokens[-2]
-            if (previousToken.getType() == DOT) {
+            if (previousToken.type == DOT || previousToken.type == OPTIONAL_DOT) {
                 // we have a dot, so need to evaluate the statement up to the dot for completion
                 if (tokens.size() < 3) {
                     return CompletionCase.NO_COMPLETION
                 }
                 return CompletionCase.PREFIX_AFTER_DOT
+            } else if (previousToken.type == SPREAD_DOT) {
+                    // we have a dot, so need to evaluate the statement up to the dot for completion
+                    if (tokens.size() < 3) {
+                        return CompletionCase.NO_COMPLETION
+                    }
+                    return CompletionCase.PREFIX_AFTER_SPREAD_DOT
             } else {
                 // no dot, so we complete a varname, classname, or similar
-                switch (previousToken.getType()) {
+                switch (previousToken.type) {
                 // if any of these is before, no useful completion possible in this completor
                     case LITERAL_import:
                     case LITERAL_class:
@@ -169,23 +192,33 @@ class GroovySyntaxCompletor implements Completer {
                 }
             }
 
-        } else if (currentToken.getType() == DOT) {
+        } else if (currentToken.type == DOT || currentToken.type == OPTIONAL_DOT) {
             // cursor is on dot, so need to evaluate the statement up to the dot for completion
             if (tokens.size() == 1) {
                 return CompletionCase.NO_COMPLETION
             }
             return CompletionCase.DOT_LAST
+        } else if (currentToken.type == SPREAD_DOT) {
+            // cursor is on spread-dot, so need to evaluate the statement up to the dot for completion
+            if (tokens.size() == 1) {
+                return CompletionCase.NO_COMPLETION
+            }
+            return CompletionCase.SPREAD_DOT_LAST
+        } else if (currentToken.type == LITERAL_instanceof) {
+            return CompletionCase.INSTANCEOF
+        } else {
+            LOG.debug('Untreated toke type: ' + currentToken.type)
         }
         return CompletionCase.NO_COMPLETION
     }
 
-    int completeIdentifier(final  List<GroovySourceToken> tokens, List candidates) {
+    int completeIdentifier(final  List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         boolean foundMatches = false
         for (IdentifierCompletor completor: identifierCompletors) {
             foundMatches |= completor.complete(tokens, candidates)
         }
         if (foundMatches) {
-            return tokens.last().getColumn() - 1
+            return tokens.last().column - 1
         }
         return -1
     }
@@ -194,7 +227,7 @@ class GroovySyntaxCompletor implements Completer {
         // for shell commands, don't complete
         int commandEnd = bufferLine.indexOf(' ')
         if (commandEnd != -1) {
-            String commandTokenText = bufferLine.substring(0, commandEnd);
+            String commandTokenText = bufferLine.substring(0, commandEnd)
             for (command in registry.commands()) {
                 if (commandTokenText == command.name || commandTokenText in command.aliases) {
                     return true
@@ -204,10 +237,10 @@ class GroovySyntaxCompletor implements Completer {
         return false
     }
 
-    static GroovyLexer createGroovyLexer(String src) {
+    static GroovyLexer createGroovyLexer(final String src) {
         Reader unicodeReader = new UnicodeEscapingReader(new StringReader(src), new SourceBuffer())
         GroovyLexer lexer = new GroovyLexer(unicodeReader)
-        unicodeReader.setLexer(lexer);
+        unicodeReader.setLexer(lexer)
         return lexer
     }
 
@@ -225,9 +258,9 @@ class GroovySyntaxCompletor implements Completer {
      * @param result
      * @return true if lexing was successfull
      */
-    static boolean tokenizeBuffer(String bufferLine,
+    static boolean tokenizeBuffer(final String bufferLine,
                                   final List<String> previousLines,
-                                  List<GroovySourceToken> result) {
+                                  final List<GroovySourceToken> result) {
         GroovyLexer groovyLexer
         if (previousLines.size() > 0) {
             StringBuilder src = new StringBuilder()
@@ -246,14 +279,14 @@ class GroovySyntaxCompletor implements Completer {
         while (true) {
             try {
                 nextToken = groovyLexer.nextToken() as GroovySourceToken
-                if (nextToken.getType() == EOF) {
-                    if (! result.isEmpty() && nextToken.getLine() > result.last().getLine()) {
+                if (nextToken.type == EOF) {
+                    if (! result.isEmpty() && nextToken.line > result.last().line) {
                         // no completion if EOF line has no tokens
                         return false
                     }
                     break
                 }
-                if (nextToken.getType() == STRING_CTOR_START) {
+                if (nextToken.type == STRING_CTOR_START) {
                     isGString = true
                 }
                 result << nextToken
@@ -267,21 +300,17 @@ class GroovySyntaxCompletor implements Completer {
                         char firstChar = restline.charAt(leadingBlanks)
                         // Exception with following hyphen either means we're in String or at end of GString.
                         if (firstChar.toString() in ['"', "'"]
-                                && previousLines.size() + 1 == lastToken.getLine()) {
+                                && previousLines.size() + 1 == lastToken.line) {
                             throw new InStringException(lastToken.columnLast + leadingBlanks - 1)
                         }
                     }
                 }
                 return false
-            } catch (java.lang.NullPointerException e) {
+            } catch (NullPointerException e) {
                 // this can happen when e.g. a string as not closed
                 return false
             }
         }
-        if (result.isEmpty()) {
-            return false
-        }
-
-        return true
+        return !result.empty
     }
 }

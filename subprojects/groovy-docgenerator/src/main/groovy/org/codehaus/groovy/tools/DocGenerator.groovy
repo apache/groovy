@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools
 
@@ -53,7 +56,7 @@ class DocGenerator {
     }
 
     /**
-     * Parse the DefaultGroovyMethods class to build a graph representing the structure of the class,
+     * Parse the *GroovyMethods (DGM) classes to build a graph representing the structure of the class,
      * with its methods, javadoc comments and tags.
      */
     private static DocSource parseSource(List<File> sourceFiles) {
@@ -78,10 +81,9 @@ class DocGenerator {
             if (!method.isPublic() || !method.isStatic()) {
                 return // skip it
             }
-            def firstParamType = method.parameters[0].type
-            if (firstParamType.javaClass.fullyQualifiedName.startsWith('groovy')) {
-                return // nothing, skip it
-            }
+
+            def firstParam = method.parameters[0]
+            def firstParamType = firstParam.resolvedValue.isEmpty() ? firstParam.type : new Type(firstParam.resolvedValue, 0, firstParam.parentClass)
             docSource.add(firstParamType, method)
         }
         docSource.populateInheritedMethods()
@@ -444,10 +446,10 @@ class DocGenerator {
 
     private static class DocUtil {
         static String resolveJdkClassName(String className) {
-            if (className in ['T', 'E', 'U', 'K', 'V', 'G']) {
+            if (className in 'A'..'Z') {
                 return 'java.lang.Object'
             }
-            if (className in ['T[]', 'E[]']) {
+            if (className in ('A'..'Z').collect{ it + '[]' }) {
                 return 'java.lang.Object[]'
             }
             return className
@@ -459,7 +461,7 @@ class DocGenerator {
 
         private static String linkify(String text, String packageName) {
             text.replaceAll(/\{@link\s+([^}]*)\s*\}/) { String all, String destination ->
-                // A class name cannot be omitted: https://jira.codehaus.org/browse/GROOVY-6740 TODO: remove DocUtil once fixed?
+                // A class name cannot be omitted: https://issues.apache.org/jira/browse/GROOVY-6740 TODO: remove DocUtil once fixed?
                 DocUtil.getLinkAnchor(destination, packageName)
             }
         }

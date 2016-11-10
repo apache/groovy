@@ -1,21 +1,25 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.util;
 
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -24,6 +28,7 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.*;
@@ -142,7 +147,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     public Properties toProperties() {
         Properties props = new Properties();
         flatten(props);
-        
+
         props = convertValuesToString(props);
 
         return props;
@@ -176,7 +181,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
                 continue;
             } else {
-                if (configEntry instanceof Map && ((Map)configEntry).size() > 0 && value instanceof Map) {
+                if (configEntry instanceof Map && !((Map) configEntry).isEmpty() && value instanceof Map) {
                     // recur
                     doMerge((Map) configEntry, (Map) value);
                 } else {
@@ -250,7 +255,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         }
     }
 
-    private void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
+    private static void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
 //        key = key.indexOf('.') > -1 ? InvokerHelper.inspect(key) : key;
         boolean isKeyword = KEYWORDS.contains(key);
         key = isKeyword ? InvokerHelper.inspect(key) : key;
@@ -269,7 +274,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         out.newLine();
     }
 
-    private Properties convertValuesToString(Map props) {
+    private static Properties convertValuesToString(Map props) {
         Properties newProps = new Properties();
 
         for (Object o : props.entrySet()) {
@@ -364,15 +369,15 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
             throw new AssertionError();
         }
     }
-    
+
     /**
      * Checks if a config option is set. Example usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def config = new ConfigSlurper().parse("foo { password='' }")
      * assert config.foo.isSet('password')
      * assert config.foo.isSet('username') == false
      * </pre>
-     * 
+     *
      * The check works <b>only</v> for options <b>one</b> block below the current block.
      * E.g. <code>config.isSet('foo.password')</code> will always return false.
      *
@@ -384,9 +389,32 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         if (delegateMap.containsKey(option)) {
             Object entry = delegateMap.get(option);
             if (!(entry instanceof ConfigObject) || !((ConfigObject) entry).isEmpty()) {
-                return Boolean.TRUE; 
-            } 
+                return Boolean.TRUE;
+            }
         }
-        return Boolean.FALSE; 
+        return Boolean.FALSE;
+    }
+
+    public String prettyPrint() {
+        StringWriter sw = new StringWriter();
+        try {
+            writeTo(sw);
+        } catch (IOException e) {
+            throw new GroovyRuntimeException(e);
+        }
+
+        return sw.toString();
+    }
+
+    @Override
+    public String toString() {
+        StringWriter sw = new StringWriter();
+        try {
+            InvokerHelper.write(sw, this);
+        } catch (IOException e) {
+            throw new GroovyRuntimeException(e);
+        }
+
+        return sw.toString();
     }
 }

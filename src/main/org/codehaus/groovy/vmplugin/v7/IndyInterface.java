@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.vmplugin.v7;
 
@@ -69,13 +72,20 @@ public class IndyInterface {
         /** boolean to indicate if logging for indy is enabled */
         protected static final boolean LOG_ENABLED;
         static {
+            boolean enableLogger = false;
+
             LOG = Logger.getLogger(IndyInterface.class.getName());
-            if (System.getProperty("groovy.indy.logging")!=null) {
-                LOG.setLevel(Level.ALL);
-                LOG_ENABLED = true;
-            } else {
-                LOG_ENABLED = false;
+
+            try {
+                if (System.getProperty("groovy.indy.logging")!=null) {
+                    LOG.setLevel(Level.ALL);
+                    enableLogger = true;
+                }
+            } catch (SecurityException e) {
+                // Allow security managers to prevent system property access
             }
+
+            LOG_ENABLED = enableLogger;
         }
         /** LOOKUP constant used for for example unreflect calls */
         public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -106,9 +116,12 @@ public class IndyInterface {
             if (LOG_ENABLED) {
                  LOG.info("invalidating switch point");
             }
-        	SwitchPoint old = switchPoint;
-            switchPoint = new SwitchPoint();
-            synchronized(IndyInterface.class) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
+
+            synchronized(IndyInterface.class) {
+                SwitchPoint old = switchPoint;
+                switchPoint = new SwitchPoint();
+                SwitchPoint.invalidateAll(new SwitchPoint[]{old});
+            }
         }
 
         /**
@@ -151,6 +164,7 @@ public class IndyInterface {
          * bootstrap method for method calls with "this" as receiver
          * @deprecated since Groovy 2.1.0
          */
+        @Deprecated
         public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, true, false);
         }
@@ -159,6 +173,7 @@ public class IndyInterface {
          * bootstrap method for method calls with "this" as receiver safe
          * @deprecated since Groovy 2.1.0
          */
+        @Deprecated
         public static CallSite bootstrapCurrentSafe(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, true, false);
         }
@@ -167,6 +182,7 @@ public class IndyInterface {
          * bootstrap method for standard method calls
          * @deprecated since Groovy 2.1.0
          */
+        @Deprecated
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, false, false);
         }
@@ -175,6 +191,7 @@ public class IndyInterface {
          * bootstrap method for null safe standard method calls
          * @deprecated since Groovy 2.1.0
          */
+        @Deprecated
         public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, false, false);
         }
@@ -214,4 +231,15 @@ public class IndyInterface {
             call = call.asType(MethodType.methodType(Object.class,Object[].class));
             return call.invokeExact(arguments);
         }
+
+        /**
+         * @since 2.5.0
+         */
+         public static CallSite staticArrayAccess(MethodHandles.Lookup lookup, String name, MethodType type) {
+            if (type.parameterCount()==2) {
+                return new ConstantCallSite(IndyArrayAccess.arrayGet(type));
+            } else {
+                return new ConstantCallSite(IndyArrayAccess.arraySet(type));
+            }
+         }
 }

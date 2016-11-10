@@ -1,25 +1,28 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.GroovyRuntimeException;
-
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -79,6 +82,8 @@ public class WriterController {
     private TypeChooser typeChooser;
     private int bytecodeVersion = Opcodes.V1_5;
     private int lineNumber = -1;
+    private int helperMethodIndex = 0;
+    private List<String> superMethodNames = new ArrayList<String>();
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
@@ -90,7 +95,7 @@ public class WriterController {
             optimizeForInt=false;
             // set other optimizations options to false here
         } else {
-            if (Boolean.TRUE.equals(optOptions.get("indy"))) invokedynamic=true;
+            if (Boolean.TRUE.equals(optOptions.get(CompilerConfiguration.INVOKEDYNAMIC))) invokedynamic=true;
             if (Boolean.FALSE.equals(optOptions.get("int"))) optimizeForInt=false;
             if (invokedynamic) optimizeForInt=false;
             // set other optimizations options to false here
@@ -398,4 +403,12 @@ public class WriterController {
 	public void resetLineNumber() {
 		setLineNumber(-1);
 	}
+
+    public int getNextHelperMethodIndex() {
+        return helperMethodIndex++;
+    }
+
+    public List<String> getSuperMethodNames() {
+        return superMethodNames;
+    }
 }

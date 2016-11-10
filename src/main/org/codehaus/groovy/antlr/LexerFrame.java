@@ -1,127 +1,180 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.antlr;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.Hashtable;
+
+import antlr.CharScanner;
+import antlr.Token;
+import org.codehaus.groovy.antlr.java.JavaLexer;
+import org.codehaus.groovy.antlr.java.JavaTokenTypes;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
-import org.codehaus.groovy.antlr.parser.*;
-
-import antlr.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.Hashtable;
 
 /**
- * @author Santhosh Kumar T
- * @version 1.0
+ * Swing application to graphically display the tokens produced by the lexer.
  */
+public class LexerFrame extends JFrame implements ActionListener {
+    private final JSplitPane jSplitPane1 = new JSplitPane();
+    private final JScrollPane jScrollPane1 = new JScrollPane();
+    private final JScrollPane jScrollPane2 = new JScrollPane();
+    private final JTextPane tokenPane = new HScrollableTextPane();
+    private final JButton jbutton = new JButton("open");
+    private final JPanel mainPanel = new JPanel(new BorderLayout());
+    private final JTextArea scriptPane = new JTextArea();
+    private final Class lexerClass;
+    private final Hashtable tokens = new Hashtable();
 
-public class LexerFrame extends JFrame implements ActionListener{
-    JSplitPane jSplitPane1 = new JSplitPane();
-    JScrollPane jScrollPane1 = new JScrollPane();
-    JScrollPane jScrollPane2 = new JScrollPane();
-    JTextPane tokenPane = new HScrollableTextPane();
-    JButton jbutton = new JButton("open");
-    JPanel mainPanel = new JPanel(new BorderLayout());
-    JTextArea scriptPane = new JTextArea();
-    Border border1;
-    Border border2;
+    /**
+     * Constructor used when invoking as a standalone application
+     *
+     * @param lexerClass      the lexer class to use
+     * @param tokenTypesClass the lexer token types class
+     */
+    public LexerFrame(Class lexerClass, Class tokenTypesClass) {
+        this(lexerClass, tokenTypesClass, null);
+    }
 
-    Class lexerClass;
-
-    public LexerFrame(Class lexerClass, Class tokenTypesClass){
+    /**
+     * Constructor used when invoking for a specific file
+     *
+     * @param lexerClass      the lexer class to use
+     * @param tokenTypesClass the lexer token types class
+     */
+    public LexerFrame(Class lexerClass, Class tokenTypesClass, Reader reader) {
         super("Token Steam Viewer");
         this.lexerClass = lexerClass;
-        try{
-            jbInit();
+        try {
+            jbInit(reader);
             setSize(500, 500);
             listTokens(tokenTypesClass);
 
-            final JPopupMenu popup = new JPopupMenu();
-            popup.add(loadFileAction);
-
-            jbutton.setSize(30,30);
-            jbutton.addMouseListener(new MouseAdapter(){
-                public void mouseReleased(MouseEvent e) {
-                    //if(e.isPopupTrigger())
+            if (reader == null) {
+                final JPopupMenu popup = new JPopupMenu();
+                popup.add(loadFileAction);
+                jbutton.setSize(30, 30);
+                jbutton.addMouseListener(new MouseAdapter() {
+                    public void mouseReleased(MouseEvent e) {
+                        //if(e.isPopupTrigger())
                         popup.show(scriptPane, e.getX(), e.getY());
-                }
-            });
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        } catch(Exception e){
+                    }
+                });
+            } else {
+                safeScanScript(reader);
+            }
+
+            setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    Hashtable tokens = new Hashtable();
-
-    private void listTokens(Class tokenTypes) throws Exception{
-        Field field[] = tokenTypes.getDeclaredFields();
-        for(int i = 0; i<field.length; i++)
-            tokens.put(field[i].get(null), field[i].getName());
+    /**
+     * Creates a Groovy language LexerFrame for the given script text
+     *
+     * @param scriptText the Groovy source file to parse/render
+     * @return the new frame rending the parsed tokens
+     */
+    public static LexerFrame groovyScriptFactory(String scriptText) {
+        return new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class, new StringReader(scriptText));
     }
 
-    public void actionPerformed(ActionEvent ae){
+    private void listTokens(Class tokenTypes) throws Exception {
+        for (Field field : tokenTypes.getDeclaredFields()) {
+            tokens.put(field.get(null), field.getName());
+        }
+    }
+
+    public void actionPerformed(ActionEvent ae) {
         Token token = (Token) ((JComponent) ae.getSource()).getClientProperty("token");
-        if(token.getType()==Token.EOF_TYPE){
+        if (token.getType() == Token.EOF_TYPE) {
             scriptPane.select(0, 0);
             return;
         }
-        try{
-            int start = scriptPane.getLineStartOffset(token.getLine()-1)+token.getColumn()-1;
-            scriptPane.select(start, start+token.getText().length());
+        try {
+            int start = scriptPane.getLineStartOffset(token.getLine() - 1) + token.getColumn() - 1;
+            scriptPane.select(start, start + token.getText().length());
             scriptPane.requestFocus();
-        } catch(BadLocationException ex){
+        } catch (BadLocationException ex) {
             // IGNORE
         }
     }
 
-    private Action loadFileAction = new AbstractAction("Open File..."){
-        public void actionPerformed(ActionEvent ae){
-            JFileChooser jfc = new JFileChooser();
-            int response = jfc.showOpenDialog(LexerFrame.this);
-            if(response!=JFileChooser.APPROVE_OPTION)
+    private final Action loadFileAction = new AbstractAction("Open File...") {
+        public void actionPerformed(ActionEvent ae) {
+            final JFileChooser jfc = new JFileChooser();
+            final int response = jfc.showOpenDialog(LexerFrame.this);
+            if (response != JFileChooser.APPROVE_OPTION) {
                 return;
-            try{
-                scanScript(jfc.getSelectedFile());
-            } catch(Exception ex){
-                ex.printStackTrace();
             }
+            safeScanScript(jfc.getSelectedFile());
         }
     };
 
-    private void scanScript(File file) throws Exception{
-        scriptPane.read(new FileReader(file), null);
+    private void safeScanScript(File file) {
+        try {
+            scanScript(new StringReader(ResourceGroovyMethods.getText(file)));
+        } catch (final Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void safeScanScript(Reader reader) {
+        try {
+            scanScript(reader instanceof StringReader ? (StringReader) reader : new StringReader(IOGroovyMethods.getText(reader)));
+        } catch (final Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void scanScript(final StringReader reader) throws Exception {
+        scriptPane.read(reader, null);
+        reader.reset();
 
         // create lexer
-        Constructor constructor = lexerClass.getConstructor(new Class[]{InputStream.class});
-        CharScanner lexer = (CharScanner) constructor.newInstance(new Object[]{new FileInputStream(file)});
+        final Constructor constructor = lexerClass.getConstructor(Reader.class);
+        final CharScanner lexer = (CharScanner) constructor.newInstance(reader);
 
         tokenPane.setEditable(true);
         tokenPane.setText("");
 
         int line = 1;
-        ButtonGroup bg = new ButtonGroup();
-        Token token = null;
+        final ButtonGroup bg = new ButtonGroup();
+        Token token;
 
-        while(true){
+        while (true) {
             token = lexer.nextToken();
             JToggleButton tokenButton = new JToggleButton((String) tokens.get(Integer.valueOf(token.getType())));
             bg.add(tokenButton);
@@ -130,36 +183,37 @@ public class LexerFrame extends JFrame implements ActionListener{
             tokenButton.putClientProperty("token", token);
             tokenButton.setMargin(new Insets(0, 1, 0, 1));
             tokenButton.setFocusPainted(false);
-            if(token.getLine()>line){
+            if (token.getLine() > line) {
                 tokenPane.getDocument().insertString(tokenPane.getDocument().getLength(), "\n", null);
                 line = token.getLine();
             }
             insertComponent(tokenButton);
-            if(token.getType()==Token.EOF_TYPE)
+            if (token.getType() == Token.EOF_TYPE) {
                 break;
+            }
         }
 
         tokenPane.setEditable(false);
         tokenPane.setCaretPosition(0);
+        reader.close();
     }
 
-    private void insertComponent(JComponent comp){
-        try{
+    private void insertComponent(JComponent comp) {
+        try {
             tokenPane.getDocument().insertString(tokenPane.getDocument().getLength(), " ", null);
-        } catch(BadLocationException ex1){
+        } catch (BadLocationException ex1) {
             // Ignore
         }
-        try{
-            tokenPane.setCaretPosition(tokenPane.getDocument().getLength()-1);
-        } catch(Exception ex){
+        try {
+            tokenPane.setCaretPosition(tokenPane.getDocument().getLength() - 1);
+        } catch (Exception ex) {
             tokenPane.setCaretPosition(0);
         }
         tokenPane.insertComponent(comp);
     }
 
-    private void jbInit() throws Exception{
-        border1 = BorderFactory.createEmptyBorder();
-        border2 = BorderFactory.createEmptyBorder();
+    private void jbInit(Reader reader) throws Exception {
+        final Border border = BorderFactory.createEmptyBorder();
         jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
         tokenPane.setEditable(false);
         tokenPane.setText("");
@@ -167,11 +221,13 @@ public class LexerFrame extends JFrame implements ActionListener{
         scriptPane.setEditable(false);
         scriptPane.setMargin(new Insets(5, 5, 5, 5));
         scriptPane.setText("");
-        jScrollPane1.setBorder(border1);
-        jScrollPane2.setBorder(border1);
-        jSplitPane1.setMinimumSize(new Dimension(800,600));
+        jScrollPane1.setBorder(border);
+        jScrollPane2.setBorder(border);
+        jSplitPane1.setMinimumSize(new Dimension(800, 600));
         mainPanel.add(jSplitPane1, BorderLayout.CENTER);
-        mainPanel.add(jbutton,BorderLayout.NORTH);
+        if (reader == null) {
+            mainPanel.add(jbutton, BorderLayout.NORTH);
+        }
         this.getContentPane().add(mainPanel);
         jSplitPane1.add(jScrollPane1, JSplitPane.LEFT);
         jScrollPane1.getViewport().add(tokenPane, null);
@@ -183,26 +239,41 @@ public class LexerFrame extends JFrame implements ActionListener{
         jSplitPane1.setResizeWeight(0.5);
     }
 
-    public static void main(String[] args) throws Exception{
-        try{
+    public static void main(String[] args) throws Exception {
+        try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch(Exception ignore){
+        } catch (Exception ignore) {
             // Ignore
         }
-        new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class).setVisible(true);
-    }
-}
-
-
-class HScrollableTextPane extends JTextPane{
-    public boolean getScrollableTracksViewportWidth(){
-        return(getSize().width<getParent().getSize().width);
-    }
-
-    public void setSize(Dimension d){
-        if(d.width<getParent().getSize().width){
-            d.width = getParent().getSize().width;
+        LexerFrame lexerFrame = null;
+        if (args.length == 0) {
+            lexerFrame = new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class);
+        } else if (args.length > 1) {
+            System.err.println("usage: java LexerFrame [filename.ext]");
+            System.exit(1);
+        } else {
+            String filename = args[0];
+            if (filename.endsWith(".java")) {
+                lexerFrame = new LexerFrame(JavaLexer.class, JavaTokenTypes.class, new FileReader(filename));
+            } else {
+                lexerFrame = new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class, new FileReader(filename));
+            }
         }
-        super.setSize(d);
+        lexerFrame.setVisible(true);
+    }
+
+    private static class HScrollableTextPane extends JTextPane {
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return (getSize().width < getParent().getSize().width);
+        }
+
+        @Override
+        public void setSize(final Dimension d) {
+            if (d.width < getParent().getSize().width) {
+                d.width = getParent().getSize().width;
+            }
+            super.setSize(d);
+        }
     }
 }

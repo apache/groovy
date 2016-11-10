@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.lang;
 
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -30,14 +32,13 @@ import java.lang.reflect.Modifier;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Alex Tkachman
- * @version $Revision$
  */
 public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     private String signature;
     private String mopName;
 
     /**
-     *Constructor for a metamethod with an empy parameter list
+     * Constructor for a metamethod with an empty parameter list
      */
     public MetaMethod() {
     }
@@ -75,15 +76,15 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     /**
      * Gets the class where this method is declared
      *
-     * @return class of this mehtod
+     * @return class of this method
      */
     public abstract CachedClass getDeclaringClass();
 
     /**
      * Invoke this method
      *
-     * @param object The object this method should be involded on
-     * @param arguments The arguments for the menthod if applicable
+     * @param object The object this method should be invoked on
+     * @param arguments The arguments for the method if applicable
      * @return The return value of the invocation
      */
     public abstract Object invoke(Object object, Object[] arguments);
@@ -145,7 +146,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     *Returns a string representation of this mehthod 
+     * Returns a string representation of this method
      */
     public String toString() {
         return super.toString()
@@ -170,7 +171,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether or not this method is static.
+     * Returns whether or not this method is static.
      * @return true if this method is static
      */
     public boolean isStatic() {
@@ -178,7 +179,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether or not this method is abstract.
+     * Returns whether or not this method is abstract.
      * @return true if this method is abstract
      */
     public boolean isAbstract() {
@@ -186,7 +187,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether or not this method is private.
+     * Returns whether or not this method is private.
      * @return true if this method is private
      */
     public final boolean isPrivate() {
@@ -194,7 +195,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether or not this method is protected.
+     * Returns whether or not this method is protected.
      * @return true if this method is protected
      */
     public final boolean isProtected() {
@@ -202,7 +203,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether or not this method is public.
+     * Returns whether or not this method is public.
      * @return true if this method is public
      */
     public final boolean isPublic() {
@@ -222,7 +223,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Checks the compatibulily between two modifier masks. Checks that they are equal
+     * Checks the compatibility between two modifier masks. Checks that they are equal
      * with regards to access and static modifier.
      *
      * @return true if the modifiers are compatible
@@ -233,14 +234,14 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns wether this object is cachable
+     * Returns whether this object is cacheable
      */
     public boolean isCacheable() {
         return true;
     }
 
     /**
-     * Return a descriptior of this method based on the returntype and parameters of this method.
+     * Return a descriptor of this method based on the return type and parameters of this method.
      */
     public String getDescriptor() {
         return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
@@ -315,7 +316,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
      * there is no guarantee that it will be called
      *
      * @param object The object the method is to be called at.
-     * @param argumentArray Arguments for the mehtod invokation.
+     * @param argumentArray Arguments for the method invocation.
      * @return The return value of the invoked method.
      */
     public Object doMethodInvoke(Object object, Object[] argumentArray) {

@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy
 
 class MapTest extends GroovyTestCase {
@@ -126,6 +144,46 @@ class MapTest extends GroovyTestCase {
         def items = [keys, values].transpose()
         map1.putAll(items.collect{ it as MapEntry })
         assert map1 == control
+    }
+
+    void testRemoveAll() {
+        // given:
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+
+        // when: 'two parameters = key,value'
+        map1.removeAll { k,v ->
+            k == 'a'
+        }
+        // then:
+        assert map1 == [b:2]
+
+        // when: 'one parameter = entry'
+        map2.removeAll { e ->
+            e.value == 3
+        }
+        // then:
+        assert map2 == [d:4]
+    }
+
+    void testRetainAll() {
+        // given:
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+
+        // when: 'two parameters = key,value'
+        map1.retainAll { k,v ->
+            k == 'a'
+        }
+        // then:
+        assert map1 == [a:1]
+
+        // when: 'one parameter = entry'
+        map2.retainAll { e ->
+            e.value == 3
+        }
+        // then:
+        assert map2 == [c:3]
     }
 
     void testPlusCollectionMapEntry() {

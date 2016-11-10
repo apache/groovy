@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
 
@@ -51,7 +54,7 @@ import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGE
 public class GroovyRootDocBuilder {
     private final Logger log = Logger.create(GroovyRootDocBuilder.class);
     private static final char FS = '/';
-    private List<LinkArgument> links;
+    private final List<LinkArgument> links;
     private final GroovyDocTool tool;
     private final String[] sourcepaths;
     private final SimpleGroovyRootDoc rootDoc;
@@ -131,7 +134,7 @@ public class GroovyRootDocBuilder {
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();
     }
 
-    private JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
+    private static JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         JavaLexer lexer = new JavaLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -140,7 +143,7 @@ public class GroovyRootDocBuilder {
         return parser;
     }
 
-    private GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
+    private static GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -149,7 +152,7 @@ public class GroovyRootDocBuilder {
         return parser;
     }
 
-    public void buildTree(List<String> filenames) throws IOException, RecognitionException, TokenStreamException {
+    public void buildTree(List<String> filenames) throws IOException {
         setOverview();
 
         List<File> sourcepathFiles = new ArrayList<File>();
@@ -189,7 +192,8 @@ public class GroovyRootDocBuilder {
 
     private void processFile(String filename, File srcFile, boolean isAbsolute) throws IOException {
         String src = ResourceGroovyMethods.getText(srcFile);
-        String packagePath = isAbsolute ? "DefaultPackage" : tool.getPath(filename).replace('\\', FS);
+        String relPackage = tool.getPath(filename).replace('\\', FS);
+        String packagePath = isAbsolute ? "DefaultPackage" : relPackage;
         String file = tool.getFile(filename);
         SimpleGroovyPackageDoc packageDoc = null;
         if (!isAbsolute) {
@@ -198,7 +202,8 @@ public class GroovyRootDocBuilder {
         // todo: this might not work correctly for absolute paths
         if (filename.endsWith("package.html") || filename.endsWith("package-info.java") || filename.endsWith("package-info.groovy")) {
             if (packageDoc == null) {
-                packageDoc = new SimpleGroovyPackageDoc(packagePath);
+                packageDoc = new SimpleGroovyPackageDoc(relPackage);
+                packagePath = relPackage;
             }
             processPackageInfo(src, filename, packageDoc);
             rootDoc.put(packagePath, packageDoc);
@@ -275,7 +280,7 @@ public class GroovyRootDocBuilder {
         return SimpleGroovyClassDoc.replaceAllTags(self, s1, s2, regex, links, relPath, rootDoc, null);
     }
 
-    private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
+    private static void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
         packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
     }
 
@@ -284,13 +289,13 @@ public class GroovyRootDocBuilder {
         rootDoc.setDescription(description);
     }
 
-    private String trimPackageAndComments(String src) {
+    private static String trimPackageAndComments(String src) {
         return src.replaceFirst("(?sm)^package.*", "")
                 .replaceFirst("(?sm)/.*\\*\\*(.*)\\*/", "$1")
                 .replaceAll("(?m)^\\s*\\*", "");
     }
 
-    private String scrubOffExcessiveTags(String src) {
+    private static String scrubOffExcessiveTags(String src) {
         String description = pruneTagFromFront(src, "html");
         description = pruneTagFromFront(description, "/head");
         description = pruneTagFromFront(description, "body");
@@ -298,20 +303,20 @@ public class GroovyRootDocBuilder {
         return pruneTagFromEnd(description, "/body");
     }
 
-    private String pruneTagFromFront(String description, String tag) {
+    private static String pruneTagFromFront(String description, String tag) {
         int index = Math.max(indexOfTag(description, tag.toLowerCase()), indexOfTag(description, tag.toUpperCase()));
         if (index < 0) return description;
         return description.substring(index);
     }
 
-    private String pruneTagFromEnd(String description, String tag) {
+    private static String pruneTagFromEnd(String description, String tag) {
         int index = Math.max(description.lastIndexOf("<" + tag.toLowerCase() + ">"),
                 description.lastIndexOf("<" + tag.toUpperCase() + ">"));
         if (index < 0) return description;
         return description.substring(0, index);
     }
 
-    private int indexOfTag(String text, String tag) {
+    private static int indexOfTag(String text, String tag) {
         int pos = text.indexOf("<" + tag + ">");
         if (pos > 0) pos += tag.length() + 2;
         return pos;

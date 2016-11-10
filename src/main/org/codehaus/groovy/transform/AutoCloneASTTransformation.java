@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -80,7 +83,8 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             cNode.addInterface(CLONEABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             AutoCloneStyle style = getStyle(anno, "style");
-            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> excludes = getMemberStringList(anno, "excludes");
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             List<FieldNode> list = getInstancePropertyFields(cNode);
             if (includeFields) {
                 list.addAll(getInstanceNonPropertyFields(cNode));
@@ -93,11 +97,11 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
                 case SERIALIZATION:
                     createCloneSerialization(cNode);
                     break;
-                case CLONE:
-                    createClone(cNode, list, excludes);
-                    break;
                 case SIMPLE:
                     createSimpleClone(cNode, list, excludes);
+                    break;
+                default:
+                    createClone(cNode, list, excludes);
                     break;
             }
         }
@@ -133,8 +137,8 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
-    private void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
-        if (cNode.getDeclaredConstructors().size() == 0) {
+    private static void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
+        if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             BlockStatement noArgBody = new BlockStatement();
             noArgBody.addStatement(EmptyStatement.INSTANCE);
@@ -157,14 +161,14 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             }
             for (FieldNode fieldNode : list) {
                 String name = fieldNode.getName();
-                if (excludes.contains(name)) continue;
+                if (excludes != null && excludes.contains(name)) continue;
                 ClassNode fieldType = fieldNode.getType();
                 Expression direct = propX(other, name);
                 Expression to = propX(varX("this"), name);
                 Statement assignDirect = assignS(to, direct);
-                Statement assignCloned = assignS(to, castX(fieldType, callX(direct, "clone")));
+                Statement assignCloned = assignS(to, castX(fieldType, callCloneDirectX(direct)));
                 Statement assignClonedDynamic = assignS(to, castX(fieldType, callCloneDynamicX(direct)));
-                if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+                if (isCloneableType(fieldType)) {
                     initBody.addStatement(assignCloned);
                 } else if (!possiblyCloneable(fieldType)) {
                     initBody.addStatement(assignDirect);
@@ -178,16 +182,24 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
     }
 
-    private boolean possiblyCloneable(ClassNode type) {
-        return !isPrimitiveType(type) && ((isOrImplements(type, CLONEABLE_TYPE) || (type.getModifiers() & ACC_FINAL) == 0));
+    private static boolean isCloneableType(ClassNode fieldType) {
+        return isOrImplements(fieldType, CLONEABLE_TYPE) || !fieldType.getAnnotations(MY_TYPE).isEmpty();
     }
 
-    private Expression callCloneDynamicX(Expression target) {
+    private static boolean possiblyCloneable(ClassNode type) {
+        return !isPrimitiveType(type) && ((isCloneableType(type) || (type.getModifiers() & ACC_FINAL) == 0));
+    }
+
+    private static Expression callCloneDynamicX(Expression target) {
         return callX(INVOKER_TYPE, "invokeMethod", args(target, constX("clone"), ConstantExpression.NULL));
     }
 
-    private void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
-        if (cNode.getDeclaredConstructors().size() == 0) {
+    private static Expression callCloneDirectX(Expression direct) {
+        return ternaryX(equalsNullX(direct), ConstantExpression.NULL, callX(direct, "clone"));
+    }
+
+    private static void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+        if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
             cNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
         }
@@ -200,7 +212,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             returnS(result)));
     }
 
-    private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+    private static void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = varX(methodParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
@@ -210,14 +222,14 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         }
         for (FieldNode fieldNode : fieldNodes) {
             String name = fieldNode.getName();
-            if (excludes.contains(name)) continue;
+            if (excludes != null && excludes.contains(name)) continue;
             ClassNode fieldType = fieldNode.getType();
             Expression direct = propX(varX("this"), name);
             Expression to = propX(other, name);
             Statement assignDirect = assignS(to, direct);
-            Statement assignCloned = assignS(to, castX(fieldType, callX(direct, "clone")));
+            Statement assignCloned = assignS(to, castX(fieldType, callCloneDirectX(direct)));
             Statement assignClonedDynamic = assignS(to, castX(fieldType, callCloneDynamicX(direct)));
-            if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+            if (isCloneableType(fieldType)) {
                 methodBody.addStatement(assignCloned);
             } else if (!possiblyCloneable(fieldType)) {
                 methodBody.addStatement(assignDirect);
@@ -229,18 +241,18 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, params(methodParam), exceptions, methodBody);
     }
 
-    private void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
+    private static void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         final BlockStatement body = new BlockStatement();
         final Expression result = varX("_result", cNode);
         body.addStatement(declS(result, castX(cNode, callSuperX("clone"))));
         for (FieldNode fieldNode : fieldNodes) {
-            if (excludes.contains(fieldNode.getName())) continue;
+            if (excludes != null && excludes.contains(fieldNode.getName())) continue;
             ClassNode fieldType = fieldNode.getType();
             Expression fieldExpr = varX(fieldNode);
             Expression to = propX(result, fieldNode.getName());
-            Statement doClone = assignS(to, castX(fieldType, callX(fieldExpr, "clone")));
+            Statement doClone = assignS(to, castX(fieldType, callCloneDirectX(fieldExpr)));
             Statement doCloneDynamic = assignS(to, castX(fieldType, callCloneDynamicX(fieldExpr)));
-            if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+            if (isCloneableType(fieldType)) {
                 body.addStatement(doClone);
             } else if (possiblyCloneable(fieldType)) {
                 body.addStatement(ifS(isInstanceOfX(fieldExpr, CLONEABLE_TYPE), doCloneDynamic));
@@ -251,7 +263,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
-    private AutoCloneStyle getStyle(AnnotationNode node, String name) {
+    private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof PropertyExpression) {
             PropertyExpression prop = (PropertyExpression) member;

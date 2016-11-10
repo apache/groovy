@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.ast;
 
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
@@ -33,6 +35,8 @@ import java.util.Set;
  * @see ClassNode
  */
 public class GenericsType extends ASTNode {
+    public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
+    
     private final ClassNode[] upperBounds;
     private final ClassNode lowerBound;
     private ClassNode type;
@@ -277,6 +281,8 @@ public class GenericsType extends ASTNode {
                     // but with reversed arguments
                     return implementsInterfaceOrIsSubclassOf(lowerBound, classNode) && checkGenerics(classNode);
                 }
+                // If there are no bounds, the generic type is basically Object, and everything is compatible.
+                return true;
             }
             // if this is not a generics placeholder, first compare that types represent the same type
             if ((type!=null && !type.equals(classNode))) {
@@ -435,17 +441,15 @@ public class GenericsType extends ASTNode {
                                                         gt = classNodePlaceholders.get(gt.getName());
                                                     }
                                                 }
-                                                match = match &&
-                                                        (implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
-                                                         || classNodeType.isCompatibleWith(gt.getType())); // workaround for GROOVY-6095
+                                                match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
+                                                         || classNodeType.isCompatibleWith(gt.getType()); // workaround for GROOVY-6095
                                                 if (!match) break;
                                             }
                                         }
                                         return match;
-                                    } else {
+                                    } else if (classNodePlaceholders.containsKey(name)) {
                                         redirectBoundType = classNodePlaceholders.get(name);
                                     }
-
                                 }
                             }
                             match = redirectBoundType.isCompatibleWith(classNodeType.getType());

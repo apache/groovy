@@ -1,27 +1,31 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -45,17 +49,22 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,11 +74,6 @@ import java.util.Set;
 
 /**
  * Handy methods when working with the Groovy AST
- *
- * @author Guillaume Laforge
- * @author Paul King
- * @author Andre Steingress
- * @author Graeme Rocher
  */
 public class GeneralUtils {
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
@@ -122,6 +126,13 @@ public class GeneralUtils {
     }
 
     public static BlockStatement block(VariableScope varScope, Statement... stmts) {
+        BlockStatement block = new BlockStatement();
+        block.setVariableScope(varScope);
+        for (Statement stmt : stmts) block.addStatement(stmt);
+        return block;
+    }
+
+    public static BlockStatement block(VariableScope varScope, List<Statement> stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(varScope);
         for (Statement stmt : stmts) block.addStatement(stmt);
@@ -360,12 +371,30 @@ public class GeneralUtils {
         return result;
     }
 
+    public static List<String> getInstanceNonPropertyFieldNames(ClassNode cNode) {
+        List<FieldNode> fList = getInstanceNonPropertyFields(cNode);
+        List<String> result = new ArrayList<String>(fList.size());
+        for (FieldNode fNode : fList) {
+            result.add(fNode.getName());
+        }
+        return result;
+    }
+
     public static List<PropertyNode> getInstanceProperties(ClassNode cNode) {
         final List<PropertyNode> result = new ArrayList<PropertyNode>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode);
             }
+        }
+        return result;
+    }
+
+    public static List<String> getInstancePropertyNames(ClassNode cNode) {
+        List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, false, false, true);
+        List<String> result = new ArrayList<String>(pList.size());
+        for (PropertyNode pNode : pList) {
+            result.add(pNode.getName());
         }
         return result;
     }
@@ -388,7 +417,7 @@ public class GeneralUtils {
         }
         ClassNode next = type;
         while (next != null) {
-            Collections.addAll(res, next.getInterfaces());
+            res.addAll(next.getAllInterfaces());
             next = next.getSuperClass();
         }
         return res;
@@ -459,6 +488,11 @@ public class GeneralUtils {
         return eqX(varX(fNode), propX(other, fNode.getName()));
     }
 
+    public static BinaryExpression hasEqualPropertyX(ClassNode annotatedNode, PropertyNode pNode, VariableExpression other) {
+        return eqX(getterThisX(annotatedNode, pNode), getterX(other.getOriginType(), other, pNode));
+    }
+
+    @Deprecated
     public static BinaryExpression hasEqualPropertyX(PropertyNode pNode, Expression other) {
         String getterName = getGetterName(pNode);
         return eqX(callThisX(getterName), callX(other, getterName));
@@ -469,8 +503,8 @@ public class GeneralUtils {
     }
 
     public static BooleanExpression hasSamePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
-        return sameX(callThisX(getterName), callX(other, getterName));
+        ClassNode cNode = pNode.getDeclaringClass();
+        return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
     }
 
     public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {
@@ -610,5 +644,142 @@ public class GeneralUtils {
 
     public static VariableExpression varX(String name, ClassNode type) {
         return new VariableExpression(name, type);
+    }
+
+    public static ThrowStatement throwS(Expression expr) {
+        return new ThrowStatement(expr);
+    }
+
+    public static CatchStatement catchS(Parameter variable, Statement code) {
+        return new CatchStatement(variable, code);
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterThisX(ClassNode annotatedNode, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callThisX(getterName);
+        }
+        return propX(new VariableExpression("this"), pNode.getName());
+    }
+
+    /**
+     * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
+     * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
+     * instead of a field access.
+     * @param annotatedNode the class node where the property node is accessed from
+     * @param receiver the object having the property
+     * @param pNode the property being accessed
+     * @return a method call expression or a property expression
+     */
+    public static Expression getterX(ClassNode annotatedNode, Expression receiver, PropertyNode pNode) {
+        ClassNode owner = pNode.getDeclaringClass();
+        if (annotatedNode.equals(owner)) {
+            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            }
+            return callX(receiver, getterName);
+        }
+        return propX(receiver, pNode.getName());
+    }
+
+    /**
+     * Converts an expression into the String source. Only some specific expressions like closure expression
+     * support this.
+     *
+     * @param readerSource a source
+     * @param expression an expression. Can't be null
+     * @return the source the closure was created from
+     * @throws java.lang.IllegalArgumentException when expression is null
+     * @throws java.lang.Exception when closure can't be read from source
+     */
+    public static String convertASTToSource(ReaderSource readerSource, ASTNode expression) throws Exception {
+        if (expression == null) throw new IllegalArgumentException("Null: expression");
+
+        StringBuilder result = new StringBuilder();
+        for (int x = expression.getLineNumber(); x <= expression.getLastLineNumber(); x++) {
+            String line = readerSource.getLine(x, null);
+            if (line == null) {
+                throw new Exception(
+                        "Error calculating source code for expression. Trying to read line " + x + " from " + readerSource.getClass()
+                );
+            }
+            if (x == expression.getLastLineNumber()) {
+                line = line.substring(0, expression.getLastColumnNumber() - 1);
+            }
+            if (x == expression.getLineNumber()) {
+                line = line.substring(expression.getColumnNumber() - 1);
+            }
+            //restoring line breaks is important b/c of lack of semicolons
+            result.append(line).append('\n');
+        }
+
+
+        String source = result.toString().trim();
+
+        return source;
+    }
+
+    public static boolean copyStatementsWithSuperAdjustment(ClosureExpression pre, BlockStatement body) {
+        Statement preCode = pre.getCode();
+        boolean changed = false;
+        if (preCode instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) preCode;
+            List<Statement> statements = block.getStatements();
+            for (int i = 0; i < statements.size(); i++) {
+                Statement statement = statements.get(i);
+                // adjust the first statement if it's a super call
+                if (i == 0 && statement instanceof ExpressionStatement) {
+                    ExpressionStatement es = (ExpressionStatement) statement;
+                    Expression preExp = es.getExpression();
+                    if (preExp instanceof MethodCallExpression) {
+                        MethodCallExpression mce = (MethodCallExpression) preExp;
+                        String name = mce.getMethodAsString();
+                        if ("super".equals(name)) {
+                            es.setExpression(new ConstructorCallExpression(ClassNode.SUPER, mce.getArguments()));
+                            changed = true;
+                        }
+                    }
+                }
+                body.addStatement(statement);
+            }
+        }
+        return changed;
+    }
+
+    public static String getSetterName(String name) {
+        return "set" + Verifier.capitalize(name);
+    }
+
+    public static boolean isDefaultVisibility(int modifiers) {
+        return (modifiers & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) == 0;
+    }
+
+    public static boolean inSamePackage(ClassNode first, ClassNode second) {
+        PackageNode firstPackage = first.getPackage();
+        PackageNode secondPackage = second.getPackage();
+        return ((firstPackage == null && secondPackage == null) ||
+                        firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
+    }
+
+    public static boolean inSamePackage(Class first, Class second) {
+        Package firstPackage = first.getPackage();
+        Package secondPackage = second.getPackage();
+        return ((firstPackage == null && secondPackage == null) ||
+                        firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
     }
 }

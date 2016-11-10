@@ -1,7 +1,28 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Bean Scripting Framework
 
 WARNING: The http://commons.apache.org/proper/commons-bsf/[Bean Scripting Framework] is an attempt to create an API
-to allow calling scripting languages from Java. It hasn't been updated for long and abandonned in favor of the
+to allow calling scripting languages from Java. It hasn't been updated for long and abandoned in favor of the
 standard <<jsr223,JSR-223>> API.
 
 The BSF engine for Groovy is implemented by the `org.codehaus.groovy.bsf.GroovyEngine` class. However, that fact is
@@ -9,7 +30,7 @@ normally hidden away by the BSF APIs. You just treat Groovy like any of the othe
 API.
 
 NOTE: Since Groovy has its own native support for integration with Java, you only need to worry about BSF if you also
-want to also be able to call other languages, e.g. http://jruby.codehaus.org/[JRuby] or if you want to remain very
+want to also be able to call other languages, e.g. http://jruby.org/[JRuby] or if you want to remain very
 loosely coupled from your scripting language.
 
 == Getting started
@@ -19,7 +40,7 @@ following Java code to run a sample Groovy script:
 
 [source,java]
 -------------------------------------------------------------------------------
-include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_simple,indent=0]
+include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_simple,indent=0]
 -------------------------------------------------------------------------------
 
 == Passing in variables
@@ -33,7 +54,7 @@ approach is the normal approach used with Groovy. Here is an example:
 
 [source,java]
 -----------------------------------------------------------------------
-include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_variable_passing,indent=0]
+include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_variable_passing,indent=0]
 -----------------------------------------------------------------------
 
 == Other calling options
@@ -48,7 +69,7 @@ closures. Here is an example:
 
 [source,java]
 --------------------------------------------------------------------------------
-include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_apply,indent=0]
+include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_apply,indent=0]
 --------------------------------------------------------------------------------
 
 == Access to the scripting engine
@@ -60,6 +81,6 @@ is an example:
 
 [source,java]
 --------------------------------------------------------------------------
-include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_access,indent=0]
+include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_access,indent=0]
 --------------------------------------------------------------------------
 

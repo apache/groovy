@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime;
 
@@ -20,7 +23,9 @@ import groovy.lang.Closure;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 
@@ -43,6 +48,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Iterator;
@@ -51,6 +57,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasSingleStringArg;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLine;
 
 /**
@@ -67,33 +74,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLin
  * at the Java method call level. I.e. future versions of Groovy may
  * remove or move a method call in this file but would normally
  * aim to keep the method available from within Groovy.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jeremy Rayner
- * @author Sam Pullara
- * @author Rod Cope
- * @author Guillaume Laforge
- * @author John Wilson
- * @author Hein Meling
- * @author Dierk Koenig
- * @author Pilho Kim
- * @author Marc Guillemot
- * @author Russel Winder
- * @author bing ran
- * @author Jochen Theodorou
- * @author Paul King
- * @author Michael Baehr
- * @author Joachim Baumann
- * @author Alex Tkachman
- * @author Ted Naleid
- * @author Brad Long
- * @author Jim Jagielski
- * @author Rodolfo Velasco
- * @author jeremi Joslin
- * @author Hamlet D'Arcy
- * @author Cedric Champeau
- * @author Tim Yates
- * @author Dinko Srkoc
  */
 public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -520,7 +500,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(Reader self, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex), closure);
     }
 
@@ -550,7 +530,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(Reader self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         BufferedReader br;
         T result = null;
 
@@ -566,7 +546,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                     break;
                 } else {
                     List vals = Arrays.asList(pattern.split(line));
-                    result = closure.call(vals);
+                    result = closure.call(hasSingleStringArg(closure) ? vals.get(0) : vals);
                 }
             }
             Reader temp = self;
@@ -596,7 +576,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
     }
 
@@ -615,7 +595,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
     }
 
@@ -634,7 +614,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
     }
 
@@ -651,7 +631,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
     }
 
@@ -1146,7 +1126,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriter(Writer writer, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Writer writer, @ClosureParams(FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(writer);
 
@@ -1174,7 +1154,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(Reader reader, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(Reader reader, @ClosureParams(FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(reader);
 
@@ -1198,7 +1178,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(InputStream stream, @ClosureParams(value=SimpleType.class, options="java.io.InputStream") Closure<T> closure) throws IOException {
+    public static <T, U extends InputStream> T withStream(U stream, @ClosureParams(value=FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(stream);
 
@@ -1310,7 +1290,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(OutputStream os, @ClosureParams(value=SimpleType.class, options="java.io.OutputStream") Closure<T> closure) throws IOException {
+    public static <T, U extends OutputStream> T withStream(U os, @ClosureParams(value=FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(os);
             os.flush();
@@ -1382,7 +1362,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transforms each character from this reader by passing it to the given
      * closure.  The Closure should return each transformed character, which
-     * will be passed to the Writer.  The reader and writer will be both be
+     * will be passed to the Writer.  The reader and writer will both be
      * closed before this method returns.
      *
      * @param self    a Reader object
@@ -1397,7 +1377,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             char[] chars = new char[1];
             while ((c = self.read()) != -1) {
                 chars[0] = (char) c;
-                writer.write((String) closure.call(new String(chars)));
+                Object o = closure.call(new String(chars));
+                if (o != null) {
+                    writer.write(o.toString());
+                }
             }
             writer.flush();
 
@@ -1613,7 +1596,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 2.4.0
      */
-    public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
+    public static <T, U extends Closeable> T withCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws IOException {
         try {
             T result = action.call(self);
 
@@ -1627,4 +1610,47 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    static void writeUTF16BomIfRequired(final Writer writer, final String charset) throws IOException {
+        writeUTF16BomIfRequired(writer, Charset.forName(charset));
+    }
+
+    static void writeUTF16BomIfRequired(final Writer writer, final Charset charset) throws IOException {
+        if ("UTF-16BE".equals(charset.name())) {
+            writeUtf16Bom(writer, true);
+        } else if ("UTF-16LE".equals(charset.name())) {
+            writeUtf16Bom(writer, false);
+        }
+    }
+
+    static void writeUTF16BomIfRequired(final OutputStream stream, final String charset) throws IOException {
+        writeUTF16BomIfRequired(stream, Charset.forName(charset));
+    }
+
+    static void writeUTF16BomIfRequired(final OutputStream stream, final Charset charset) throws IOException {
+        if ("UTF-16BE".equals(charset.name())) {
+            writeUtf16Bom(stream, true);
+        } else if ("UTF-16LE".equals(charset.name())) {
+            writeUtf16Bom(stream, false);
+        }
+    }
+
+    private static void writeUtf16Bom(OutputStream stream, boolean bigEndian) throws IOException {
+        if (bigEndian) {
+            stream.write(-2);  // FE
+            stream.write(-1);  // FF
+        } else {
+            stream.write(-1);  // FF
+            stream.write(-2);  // FE
+        }
+    }
+
+    private static void writeUtf16Bom(Writer writer, boolean bigEndian) throws IOException {
+        if (bigEndian) {
+            writer.write(-2);  // FE
+            writer.write(-1);  // FF
+        } else {
+            writer.write(-1);  // FF
+            writer.write(-2);  // FE
+        }
+    }
 }

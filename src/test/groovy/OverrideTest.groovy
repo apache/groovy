@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy
 
@@ -138,5 +141,79 @@ def d = new Derived()
             }
         """
         assert message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
+    }
+
+    void testOverrideOnMethodWithDefaultParameters() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument = [:]) {
+                    return null
+                }
+            }
+            new TemplatedInterfaceImplementation()
+        '''
+    }
+
+    void testOverrideOnMethodWithDefaultParametersVariant() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument, String foo = null) {
+                    return foo
+                }
+            }
+            new TemplatedInterfaceImplementation()
+        '''
+    }
+
+    //GROOVY-7849
+    void testArrayReturnTypeCovariance() {
+        assertScript '''
+            interface Base {}
+
+            interface Derived extends Base {}
+
+            interface I {
+                Base[] foo()
+            }
+
+            class C implements I {
+                Derived[] foo() { null }
+            }
+            new C().foo()
+        '''
+    }
+
+    //GROOVY-7185
+    void testArrayReturnTypeCovarianceGenericsVariant() {
+        assertScript '''
+            interface A<T> {
+                T[] process();
+            }
+
+            class B implements A<String> {
+                @Override
+                public String[] process() {
+                    ['foo']
+                }
+            }
+
+            class C extends B {
+                @Override
+                String[] process() {
+                    super.process()
+                }
+            }
+            assert new C().process()[0] == 'foo'
+        '''
     }
 }

@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -79,23 +82,23 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         }
     }
 
-    private void addListGetter(FieldNode fNode) {
+    private static void addListGetter(FieldNode fNode) {
         addGetter(fNode, getComponentTypeForList(fNode.getType()));
     }
 
-    private void addListSetter(FieldNode fNode) {
+    private static void addListSetter(FieldNode fNode) {
         addSetter(fNode, getComponentTypeForList(fNode.getType()));
     }
 
-    private void addArrayGetter(FieldNode fNode) {
+    private static void addArrayGetter(FieldNode fNode) {
         addGetter(fNode, fNode.getType().getComponentType());
     }
 
-    private void addArraySetter(FieldNode fNode) {
+    private static void addArraySetter(FieldNode fNode) {
         addSetter(fNode, fNode.getType().getComponentType());
     }
 
-    private void addGetter(FieldNode fNode, ClassNode componentType) {
+    private static void addGetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
@@ -104,7 +107,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         cNode.addMethod(makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
     }
 
-    private void addSetter(FieldNode fNode, ClassNode componentType) {
+    private static void addSetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] theParams = params(
@@ -114,7 +117,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
     }
 
-    private ClassNode getComponentTypeForList(ClassNode fType) {
+    private static ClassNode getComponentTypeForList(ClassNode fType) {
         if (fType.isUsingGenerics() && fType.getGenericsTypes().length == 1) {
             return fType.getGenericsTypes()[0].getType();
         } else {
@@ -122,13 +125,13 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         }
     }
 
-    private int getModifiers(FieldNode fNode) {
+    private static int getModifiers(FieldNode fNode) {
         int mods = ACC_PUBLIC;
         if (fNode.isStatic()) mods |= ACC_STATIC;
         return mods;
     }
 
-    private String makeName(FieldNode fNode, String prefix) {
+    private static String makeName(FieldNode fNode, String prefix) {
         return prefix + MetaClassHelper.capitalize(fNode.getName());
     }
 }

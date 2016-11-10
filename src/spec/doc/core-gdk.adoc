@@ -1,8 +1,29 @@
-= Groovy Development Kit (Peter Ledbrook)
+//////////////////////////////////////////
 
-== Working with IO (Peter Ledbrook)
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-== Working with collections (TBD)
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Groovy Development Kit
+
+include::{projectdir}/src/spec/doc/working-with-io.adoc[leveloffset=+1]
+
+include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 
 == Handy utilities
 
@@ -90,7 +111,7 @@ include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_method,i
 === Observable list, map and set
 
 Groovy comes with observable lists, maps and sets. Each of these collections trigger `java.beans.PropertyChangeEvent` events when elements
-are added, removed or changed. Note that a `PropertyChangeEvent` is not only signaling that a certain event has
+are added, removed or changed. Note that a `PropertyChangeEvent` is not only signalling that a certain event has
  occurred, moreover, it holds information on the property name and the old/new value a certain property has been changed to.
 
 Depending on the type of change that has happened, observable collections might fire more specialized `PropertyChangeEvent`

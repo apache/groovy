@@ -1,19 +1,24 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.grape
+
+import org.codehaus.groovy.reflection.ReflectionCache
 
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
@@ -104,6 +109,7 @@ class GrapeIvy implements GrapeEngine {
 
         settings.setVariable("ivy.default.configuration.m2compatible", "true")
         ivyInstance = Ivy.newInstance(settings)
+        org.apache.ivy.core.IvyContext.getContext().setIvy(ivyInstance);
         resolvedDependencies = []
         downloadedArtifacts = []
 
@@ -237,6 +243,7 @@ class GrapeIvy implements GrapeEngine {
     public grab(Map args, Map... dependencies) {
         ClassLoader loader = null
         grabRecordsForCurrDependencies.clear()
+
         try {
             // identify the target classloader early, so we fail before checking repositories
             loader = chooseClassLoader(
@@ -290,17 +297,12 @@ class GrapeIvy implements GrapeEngine {
                         metaMethods.each { CachedClass c, List<MetaMethod> methods ->
                             // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
                             // have their own ClassInfo, and we must change them as well!
-                            def classesToBeUpdated = ClassInfo.allClassInfo.findAll {
-                                boolean found = false
-                                CachedClass current = it.cachedClass
-                                while (!found && current != null) {
-                                    if (current == c || current.interfaces.contains(c)) {
-                                        found = true
-                                    }
-                                    current = current.cachedSuperClass
+                            Set<CachedClass> classesToBeUpdated = [c]
+                            ClassInfo.onAllClassInfo { ClassInfo info ->
+                                if (c.theClass.isAssignableFrom(info.cachedClass.theClass)) {
+                                    classesToBeUpdated << info.cachedClass
                                 }
-                                found
-                            }.collect { it.cachedClass }
+                            }
                             classesToBeUpdated*.addNewMopMethods(methods)
                         }
                     }
@@ -336,8 +338,12 @@ class GrapeIvy implements GrapeEngine {
     }
 
     void processRunners(InputStream is, String name, ClassLoader loader) {
-        is.text.readLines().each {
-            GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it.trim()).newInstance()
+        is.text.readLines()*.trim().findAll{ !it.isEmpty() && it[0] != '#' }.each {
+            try {
+                GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it).newInstance()
+            } catch (Exception ex) {
+                throw new IllegalStateException("Error registering runner class '" + it + "'", ex)
+            }
         }
     }
 
@@ -563,7 +569,15 @@ class GrapeIvy implements GrapeEngine {
         // err on the side of using the class already loaded into the
         // classloader rather than adding another jar of the same module
         // with a different version
-        ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
+        ResolveReport report = null
+        try {
+            report = getDependencies(args, *localDeps.asList().reverse())
+        } catch (Exception e) {
+            // clean-up the state first
+            localDeps.removeAll(grabRecordsForCurrDependencies)
+            grabRecordsForCurrDependencies.clear()
+            throw e
+        }
 
         List<URI> results = []
         for (ArtifactDownloadReport adl in report.allArtifactsReports) {

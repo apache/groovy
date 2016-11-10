@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen;
 
@@ -19,6 +22,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -43,13 +47,11 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
  * <p>
  * Current limitations:
  * - annotations on local variables are not supported
- *
- * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
-public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyClassVisitor {
+public class ExtendedVerifier extends ClassCodeVisitorSupport {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
-    private SourceUnit source;
+    private final SourceUnit source;
     private ClassNode currentClass;
 
     public ExtendedVerifier(SourceUnit sourceUnit) {
@@ -150,7 +152,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         }
     }
 
-    private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
+    private static void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
         if (visited.getClassNode().isResolved() && visited.getClassNode().getName().equals("java.lang.Deprecated")) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
@@ -169,40 +171,23 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
     private void visitOverride(AnnotatedNode node, AnnotationNode visited) {
         ClassNode annotationClassNode = visited.getClassNode();
         if (annotationClassNode.isResolved() && annotationClassNode.getName().equals("java.lang.Override")) {
-            if (node instanceof MethodNode) {
+            if (node instanceof MethodNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
+                boolean override = false;
                 MethodNode origMethod = (MethodNode) node;
-                ClassNode cNode = node.getDeclaringClass();
-                ClassNode next = cNode;
-                outer:
-                while (next != null) {
-                    Map genericsSpec = createGenericsSpec(next);
-                    MethodNode mn = correctToGenericsSpec(genericsSpec, origMethod);
-                    if (next != cNode) {
-                        ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
-                        MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
-                        if (found != null) break;
-                    }
-                    List<ClassNode> ifaces = new ArrayList<ClassNode>();
-                    ifaces.addAll(Arrays.asList(next.getInterfaces()));
-                    Map updatedGenericsSpec = new HashMap(genericsSpec);
-                    while (!ifaces.isEmpty()) {
-                        ClassNode origInterface = ifaces.remove(0);
-                        if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
-                            updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
-                            ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
-                            MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
-                            if (found2 != null) break outer;
-                            ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
+                ClassNode cNode = origMethod.getDeclaringClass();
+                if (origMethod.hasDefaultValue()) {
+                    List<MethodNode> variants = cNode.getDeclaredMethods(origMethod.getName());
+                    for (MethodNode m : variants) {
+                        if (m.getAnnotations().contains(visited) && isOverrideMethod(m)) {
+                            override = true;
+                            break;
                         }
                     }
-                    ClassNode superClass = next.getUnresolvedSuperClass();
-                    if (superClass!=null) {
-                        next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
-                    } else {
-                        next = null;
-                    }
+                } else {
+                    override = isOverrideMethod(origMethod);
                 }
-                if (next == null) {
+
+                if (!override) {
                     addError("Method '" + origMethod.getName() + "' from class '" + cNode.getName() + "' does not override " +
                             "method from its superclass or interfaces but is annotated with @Override.", visited);
                 }
@@ -210,28 +195,49 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         }
     }
 
-    private MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
+    private static boolean isOverrideMethod(MethodNode method) {
+        ClassNode cNode = method.getDeclaringClass();
+        ClassNode next = cNode;
+        outer:
+        while (next != null) {
+            Map genericsSpec = createGenericsSpec(next);
+            MethodNode mn = correctToGenericsSpec(genericsSpec, method);
+            if (next != cNode) {
+                ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
+                MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
+                if (found != null) break;
+            }
+            List<ClassNode> ifaces = new ArrayList<ClassNode>();
+            ifaces.addAll(Arrays.asList(next.getInterfaces()));
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!ifaces.isEmpty()) {
+                ClassNode origInterface = ifaces.remove(0);
+                if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
+                    ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
+                    MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
+                    if (found2 != null) break outer;
+                    ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
+                }
+            }
+            ClassNode superClass = next.getUnresolvedSuperClass();
+            if (superClass != null) {
+                next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+            } else {
+                next = null;
+            }
+        }
+        return next != null;
+    }
+
+    private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
         for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
-            if (parametersEqual(method.getParameters(), mn.getParameters())) {
+            if (ParameterUtils.parametersEqual(method.getParameters(), mn.getParameters())) {
                 return method;
             }
         }
         return null;
-    }
-
-    private static boolean parametersEqual(Parameter[] a, Parameter[] b) {
-        if (a.length == b.length) {
-            boolean answer = true;
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
-                    answer = false;
-                    break;
-                }
-            }
-            return answer;
-        }
-        return false;
     }
 
     /**
@@ -257,7 +263,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         return CompilerConfiguration.isPostJDK5(this.source.getConfiguration().getTargetBytecode());
     }
 
-    protected void addError(String msg, ASTNode expr) {
+    public void addError(String msg, ASTNode expr) {
         this.source.getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(
                         new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)

@@ -1,24 +1,49 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform.traitx
 
-import groovy.transform.NotYetImplemented
+import groovy.transform.SelfType
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.ListExpression
 
 class TraitASTTransformationTest extends GroovyTestCase {
+    void testTraitOverrideAnnotation() {
+        assertScript '''
+        interface MyInterface {
+            String fooMethod()
+            void noMethod()
+        }
+
+        trait MyTrait implements MyInterface {
+            @Override String fooMethod() { "foo" }
+            @Override void noMethod() { }
+        }
+
+        class Foo implements MyTrait {}
+        def foo = new Foo()
+
+        foo.noMethod()
+        assert foo.fooMethod() == "foo"
+        '''
+    }
+
     void testTraitWithNoMethod() {
         assertScript '''
         trait MyTrait {}
@@ -2113,7 +2138,324 @@ d.foo()
 '''
     }
 
+    // GROOVY-7058
+    void testShouldNotThrowNPEBecauseOfIncompleteGenericsTypeInformation() {
+        assertScript '''
+    class Project { Task task(String name, Map args) {} }
+    class Task {}
+    interface Plugin<P>{}
+    trait PluginUtils {
+        abstract Project getProject()
+
+        public <T extends Task> T createTask(String name, Class<T> type, Closure<?> config) {
+          project.task(name, type: type, config)
+        }
+    }
+
+    class MyPlugin implements Plugin<Project>, PluginUtils { Project project }
+    new MyPlugin()
+'''
+    }
+
+    // GROOVY-7123
+    void testHelperSetterShouldNotReturnVoid() {
+        assertScript '''
+            trait A {
+                def foo
+                def bar() { foo = 42 }
+            }
+            class C implements A {}
+
+            assert new C().bar() == 42
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
+
+    void testSimpleSelfType() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+
+        @CompileStatic
+        @SelfType(A)
+        trait B {
+            int b() { 2*a() }
+        }
+        class C implements A,B {}
+        def c = new C()
+        assert c.b() == 2
+        '''
+    }
+
+    void testSimpleSelfTypeInSubTrait() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+
+        @CompileStatic
+        @SelfType(A)
+        trait B {
+            int b() { 2*a() }
+        }
+
+        @CompileStatic
+        trait SubB extends B {
+            int c() { 3*a() }
+        }
+
+
+        class C implements A,SubB {}
+        def c = new C()
+        assert c.c() == 3
+        '''
+    }
+
+    void testDoubleSelfType() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+        trait A2 {
+            int a2() { 2 }
+        }
+
+        @CompileStatic
+        @SelfType([A,A2])
+        trait B {
+            int b() { 2*a()*a2() }
+        }
+        class C implements A,A2,B {}
+        def c = new C()
+        assert c.b() == 4
+        '''
+    }
+
+    void testClassDoesNotImplementSelfType() {
+        def err = shouldFail '''
+        import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        @SelfType([String,Serializable])
+        trait B {
+            String b() { toUpperCase() }
+        }
+        class C implements B {}
+        def c = new C()
+        '''
+        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
+        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+    }
+
+    void testClassDoesNotImplementSelfTypeDefinedInInheritedTrait() {
+        def err = shouldFail '''
+            import groovy.transform.SelfType
+
+            interface Self { def bar() }
+            @SelfType(Self)
+            trait Trait {
+                def foo() { bar() }
+            }
+            interface Middle extends Trait { }
+            class Child implements Middle { }
+            new Child().foo()
+        '''
+        assert err.contains("class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'")
+    }
+
+    void testClassDoesNotImplementSelfTypeUsingAbstractClass() {
+        def err = shouldFail '''
+        import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        @SelfType([String,Serializable])
+        trait B {
+            String b() { toUpperCase() }
+        }
+        abstract class C implements B {}
+        class D extends C {}
+        def c = new D()
+
+        '''
+        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
+        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+    }
+
+    void testMethodAcceptingThisAsSelfTrait() {
+        assertScript '''
+import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+
+class MyDevice extends Device implements Communicating {}
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+'''
+    }
+
+    void testRuntimeSelfType() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.SelfType
+
+trait A {
+    int a() { 1 }
+}
+
+@CompileStatic
+@SelfType(A)
+trait B {
+    int b() { 2*a() }
+}
+class C implements A {}
+def c = new C() as B
+assert c.b() == 2
+'''
+    }
+
+    void testRuntimeSelfTypeWithInheritance() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.SelfType
+
+trait A {
+    int a() { 1 }
+}
+
+@CompileStatic
+@SelfType(A)
+trait B {
+    int b() { 2*a() }
+}
+
+trait B2 extends B {}
+
+class C implements A {}
+def c = new C() as B2
+assert c.b() == 2
+'''
+    }
+    void testAnnotationsOfPrecompiledTrait() {
+        def cn = ClassHelper.make(DoubleSelfTypeTrait)
+        def ann = cn.getAnnotations(ClassHelper.make(SelfType))
+        assert ann.size() == 1
+        def st = ann[0]
+        def val = st.getMember('value')
+        assert val instanceof ListExpression
+        val.expressions.each {
+            assert it instanceof ClassExpression
+        }
+    }
+
+
+    @SelfType([String, Date])
+    trait DoubleSelfTypeTrait {}
+
+    //GROOVY-7287
+    void testTraitWithMethodLevelGenericsShadowing() {
+        assertScript '''
+            trait Configurable<ConfigObject> {
+                ConfigObject configObject
+
+                void configure(Closure<Void> configSpec) {
+                    configSpec.resolveStrategy = Closure.DELEGATE_FIRST
+                    configSpec.delegate = configObject
+                    configSpec()
+                }
+            }
+            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
+                Configurable<T> obj = (Configurable<T>) clazz.newInstance()
+                obj.configure(configSpec)
+                obj
+            }
+
+
+            class Module implements Configurable<ModuleConfig> {
+                String value
+
+                Module(){
+                    configObject = new ModuleConfig()
+                }
+
+
+                @Override
+                void configure(Closure<Void> configSpec) {
+                    Configurable.super.configure(configSpec)
+                    value = "${configObject.name}-${configObject.version}"
+                }
+            }
+
+
+            class ModuleConfig {
+                String name
+                String version
+            }
+            def module = configure(Module) {
+                name = 'test\'
+                version = '1.0\'
+            }
+            assert module.value == 'test-1.0\'
+        '''
+
+        assertScript '''
+            trait SomeTrait {
+                def <T extends Number> T someOtherMethod() {}
+            }
+            class SuperClass<T> implements SomeTrait {}
+            class SubClass extends SuperClass<String> implements SomeTrait {}
+            SubClass.declaredMethods.findAll    {it.name=="someOtherMethod"}.
+                                     each {
+                                         assert it.returnType == Number
+                                         assert it.genericReturnType.name == "T"
+                                     }
+        '''
+    }
+
+    //GROOVY-7297
+    void testMethodlevelGenericsFromPrecompiledClass() {
+        //SomeTrait needs to be outside the script
+        assertScript '''
+            trait SomeTrait {
+                String title
+                public <T> List<T> someMethod(T data) {}
+            }
+            class Foo implements SomeTrait {}
+
+            def sc = new Foo(title: 'some title')
+            assert 'some title' == sc.title
+        '''
+    }
+
 }

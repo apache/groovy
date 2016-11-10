@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -26,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Variable annotation used for getting the URI of the current script.
  * <p>
- * The type of the variable annotated with {@code @BaseScript} must be assignment compatible with {@link java.net.URI}.
+ * The type of the variable annotated with {@code @SourceURI} must be assignment compatible with {@link java.net.URI}.
  * It will be used to hold a URI object that references the source for the current script.
  * </p><p>By default the URI
  * will be made absolute (which is to say it will have an authority) in the case where a relative path was used
@@ -35,7 +37,7 @@ import java.lang.annotation.Target;
  * </p>
  *
  * Example usage:
- * <pre>
+ * <pre class="groovyTestCase">
  * {@code @groovy.transform.SourceURI} def sourceURI
  *
  * assert sourceURI instanceof java.net.URI

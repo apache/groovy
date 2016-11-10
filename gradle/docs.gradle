@@ -1,13 +1,39 @@
-task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydocAll', 'docGDK']) {
-    ext.footer = 'Copyright &amp;copy; 2003-2014 The Codehaus. All rights reserved.'
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
+    if (JavaVersion.current().java7Compatible) {
+        dependsOn 'asciidocAll', 'assembleAsciidoc'
+    }
+    ext.footer = 'Copyright &copy; 2003-2016 The Apache Software Foundation. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
-task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
-    subprojects {
-        from project.asciidoctor
+if (JavaVersion.current().java7Compatible) {
+    task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
+        subprojects {
+            from project.asciidoctor
+        }
+        into "$buildDir/asciidoc"
     }
-    into "$buildDir/asciidoc"
+
+    task asciidocAll(dependsOn: {allprojects.asciidoctor})
 }
 
 def javadocSpec = {
@@ -20,10 +46,10 @@ def javadocSpec = {
         version = true
         overview = rootProject.file('src/main/overviewj.html')
         footer = doc.footer
-        source = rootProject.useIndy()?'1.7':'1.6'
-        links('http://docs.oracle.com/javase/7/docs/api/', 'http://evgeny-goldin.org/javadoc/ant/api/',
-                'http://commons.apache.org/proper/commons-cli/javadocs/api-release', 'http://junit.org/javadoc/latest/',
-                'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc')
+        source = '1.8'
+        links('http://docs.oracle.com/javase/8/docs/api/', 'http://docs.oracle.com/javaee/7/api/',
+                'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'http://junit.org/junit4/javadoc/latest/',
+                'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc/')
     }
 }
 
@@ -35,21 +61,19 @@ def groovydocSpec = {
     ext.doctitle = doc.title
     header = doc.title
     footer = doc.footer
-    overview = rootProject.file('src/main/overview.html')
+    overviewText = rootProject.resources.text.fromFile('src/main/overview.html')
     includePrivate = false
-    link 'http://docs.oracle.com/javaee/6/api/', 'javax.servlet.', 'javax.management.'
-    link 'http://docs.oracle.com/javase/7/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
-    link 'http://evgeny-goldin.org/javadoc/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
-    link 'http://junit.org/javadoc/latest/', 'org.junit.', 'junit.'
-    link 'http://www.antlr2.org/javadoc', 'antlr.'
-    link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release', 'org.apache.commons.cli.'
+    link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
+    link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
+    link 'http://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
+    link 'http://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
+    link 'http://www.antlr2.org/javadoc/', 'antlr.'
+    link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
 }
 
 allprojects {
     javadoc javadocSpec
     groovydoc groovydocSpec
-
-    task asciidocAll(dependsOn: 'asciidoctor')
 }
 
 // Root project has an extra 'all' javadoc task
@@ -65,8 +89,9 @@ javadocAll {
 }
 javadocAll javadocSpec
 
+
 // Root project has an extra 'all' groovydoc task
-task groovydocAll(type: Groovydoc)  
+task groovydocAll(type: Groovydoc)
 groovydocAll {
     dependsOn( { project(':groovy-groovydoc').classes })
     dependsOn( { project(':groovy-docgenerator').classes })
@@ -99,13 +124,10 @@ task docGDK {
 //    ext.extraDocGDKclasses = []
     dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
     // TODO don't hard-code these
-    dependsOn([project(':groovy-sql'), project(':groovy-xml'), project(':groovy-swing')]*.classes)
-    if(JavaVersion.current().isJava7Compatible()) {
-        dependsOn([project(':groovy-nio')]*.classes)
-    }
+    dependsOn([project(':groovy-nio'), project(':groovy-sql'), project(':groovy-xml'), project(':groovy-swing')]*.classes)
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
-    inputs.files sourceSets.tools.runtimeClasspath
+    inputs.files sourceSets.main.runtimeClasspath + configurations.tools
     outputs.dir destinationDir
     doLast { task ->
         try {
@@ -113,13 +135,13 @@ task docGDK {
                 java(classname: 'org.codehaus.groovy.tools.DocGenerator',
                      fork: 'true',
                      failonerror: 'true',
-                     classpath: (configurations.tools + groovydocAll.groovyClasspath).asPath,
+                     classpath: (sourceSets.main.runtimeClasspath + configurations.tools + groovydocAll.groovyClasspath).asPath,
                      errorproperty: 'edr',
                      outputproperty: 'odr') {
                     arg(value: '-title')
                     arg(value: 'Groovy JDK enhancements')
                     arg(value: '-link')
-                    arg(value: 'groovy,org.codehaus.groovy=http://groovy.codehaus.org/gapi/')
+                    arg(value: 'groovy,org.codehaus.groovy=http://docs.groovy-lang.org/latest/html/gapi/')
                     arg(value: '-link')
                     arg(value: 'java,org.xml,javax,org.w3c=http://docs.oracle.com/javase/7/docs/api/')
                     // either package name if in core or fully qualified path otherwise
@@ -139,9 +161,7 @@ task docGDK {
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
-                    if(JavaVersion.current().isJava7Compatible()) {
-                        arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
-                    }
+                    arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
                 }
             }
         } finally {
@@ -159,23 +179,12 @@ task docGDK {
     }
 }
 
-// this will apply the javadoc fix tool to all generated javadocs
-// we use it to make sure that the javadocs are not vulnerable independently of the JDK used to build
+// apply javadoc fix tool to generated javadocs - ensures no vulnerability even on old JDK versions
 allprojects {
-    tasks.withType(Javadoc).all {
-        doLast {
-            logger.lifecycle("Applying Javadoc fix tool (see http://www.kb.cert.org/vuls/id/225657) into $destinationDir".toString())
-            def javadocFix = new JavadocFixTool()
-            javadocFix.recursive = true
-            javadocFix.doPatch = true
-            javadocFix.searchAndPatch(destinationDir)
-        }
-    }
+    apply plugin: 'javadocHotfix'
 }
 
-if (JavaVersion.current().isJava7Compatible()) {
-    javadocAll.options.source = '1.7'
-}
+javadocAll.options.source = '1.8'
 
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {

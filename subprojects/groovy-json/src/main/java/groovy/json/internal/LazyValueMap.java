@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -66,7 +67,6 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     boolean mapChopped = false;
 
     public LazyValueMap(boolean lazyChop) {
-
         this.items = new Entry[5];
         this.lazyChop = lazyChop;
     }
@@ -87,7 +87,6 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         }
         items[len] = miv;
         len++;
-
     }
 
     /**
@@ -96,9 +95,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      * @param key to lookup
      * @return the item for the given key
      */
-
     public final Object get(Object key) {
-
         Object object = null;
 
         /* if the map is null, then we create it. */
@@ -125,7 +122,6 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
                 list.chopList();
             }
         }
-
     }
 
     /**
@@ -137,7 +133,6 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
             return;
         }
         mapChopped = true;
-
 
         /* If the internal map was not create yet, don't. We can chop the value w/o creating the internal map.*/
         if (this.map == null) {
@@ -173,11 +168,10 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
                 }
             }
         }
-
     }
 
     /* We need to chop up this child container. */
-    private void chopContainer(Value value) {
+    private static void chopContainer(Value value) {
         Object obj = value.toValue();
         if (obj instanceof LazyValueMap) {
             LazyValueMap map = (LazyValueMap) obj;
@@ -200,22 +194,19 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         return map.entrySet();
     }
 
-    private final void buildMap() {
-
-
-        /** added to avoid hash collision attack. */
-        if (Sys.is1_7OrLater() && System.getProperty("jdk.map.althashing.threshold") != null) {
-            map = new HashMap<String, Object>( items.length );
+    private void buildMap() {
+        // added to avoid hash collision attack
+        if (Sys.is1_8OrLater() || (Sys.is1_7() && LazyMap.JDK_MAP_ALTHASHING_SYSPROP != null)) {
+            map = new HashMap<String, Object>(items.length);
         } else {
             map = new TreeMap<String, Object>();
         }
 
-
-        for ( Entry<String, Value> miv : items ) {
-            if ( miv == null ) {
+        for (Entry<String, Value> miv : items) {
+            if (miv == null) {
                 break;
             }
-            map.put( miv.getKey(), miv.getValue().toValue() );
+            map.put(miv.getKey(), miv.getValue().toValue());
         }
 
         len = 0;
@@ -233,10 +224,8 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     }
 
     public String toString() {
-
         if (map == null) buildMap();
         return map.toString();
-
     }
 
     public int len() {
@@ -250,5 +239,4 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     public Entry<String, Value>[] items() {
         return items;
     }
-
 }

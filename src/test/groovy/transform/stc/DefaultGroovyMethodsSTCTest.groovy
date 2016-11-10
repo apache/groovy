@@ -1,25 +1,25 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
 
-
 /**
  * Unit tests for static type checking : default groovy methods.
- *
- * @author Cedric Champeau
  */
 class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
@@ -120,6 +120,63 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert ListCompilerAndReverser.revlist([["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]) == [9, 8, 7, 6, 5, 4, 3, 2, 1]
+        '''
+    }
+
+    // GROOVY-7283
+    void testArrayMinMaxSupportsOneAndTwoArgClosures() {
+        assertScript '''
+            Date now = new Date()
+            Date then = now + 7
+            def dates = [now, then] as Date[]
+            assert dates.min() == now
+            assert dates.max() == then
+            assert dates.min{ d -> d.time } == now
+            assert dates.max{ d1, d2 -> d2.time <=> d1.time } == now
+        '''
+    }
+
+    // GROOVY-7283
+    void testListWithDefaultInfersInt() {
+        assertScript '''
+            def list = [].withDefault{ it.longValue() }
+            list[0] = list[3]
+            assert list[0] == 3 && list[0].class == Long
+        '''
+    }
+
+    // GROOVY-7952
+    void testIsGetterMethodAsProperty() {
+        assertScript '''
+            assert !'abc'.allWhitespace
+        '''
+    }
+
+    // GROOVY-7976
+    void testSortMethodsWithComparatorAcceptingSubclass() {
+        assertScript '''
+            class SecondLetterComparator implements Comparator<? extends CharSequence> {
+                int compare(CharSequence cs1, CharSequence cs2) {
+                    cs1.charAt(1) <=> cs2.charAt(1)
+                }
+            }
+
+            def orig1 = ['ant', 'rat', 'bug', 'dog']
+            def sorted1 = orig1.sort(false, new SecondLetterComparator())
+            assert orig1 == ['ant', 'rat', 'bug', 'dog']
+            assert sorted1 == ['rat', 'ant', 'dog', 'bug']
+
+            String[] orig2 = ['ant', 'rat', 'bug', 'dog']
+            def sorted2 = orig2.sort(false, new SecondLetterComparator())
+            assert orig2 == ['ant', 'rat', 'bug', 'dog']
+            assert sorted2 == ['rat', 'ant', 'dog', 'bug']
+            orig2.sort(new SecondLetterComparator())
+            assert orig2 == ['rat', 'ant', 'dog', 'bug']
+
+            def orig3 = [ant:5, rat:10, bug:15, dog:20]
+            def sorted3 = orig3.sort(new SecondLetterComparator())
+            assert orig3 == [ant:5, rat:10, bug:15, dog:20]
+            assert sorted3*.value == [10, 5, 20, 15]
         '''
     }
 }

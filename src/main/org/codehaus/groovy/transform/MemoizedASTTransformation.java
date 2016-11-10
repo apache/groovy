@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -110,7 +113,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
+    private static MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
         Statement code = annotatedMethod.getCode();
         int access = ACC_PROTECTED;
         if (annotatedMethod.isStatic()) {
@@ -134,7 +137,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MEMOIZE_AT_LEAST_METHOD_NAME = "memoizeAtLeast";
     private static final String MEMOIZE_BETWEEN_METHOD_NAME = "memoizeBetween";
 
-    private MethodCallExpression buildMemoizeClosureCallExpression(MethodNode privateMethod,
+    private static MethodCallExpression buildMemoizeClosureCallExpression(MethodNode privateMethod,
                                                                    int protectedCacheSize, int maxCacheSize) {
         Parameter[] srcParams = privateMethod.getParameters();
         Parameter[] newParams = cloneParams(srcParams);
@@ -165,7 +168,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         StringBuilder nameBuilder = new StringBuilder("memoizedMethod" + ident + "$").append(methodNode.getName());
         if (methodNode.getParameters() != null) {
             for (Parameter parameter : methodNode.getParameters()) {
-                nameBuilder.append(parameter.getType().getNameWithoutPackage());
+                nameBuilder.append(buildTypeName(parameter.getType()));
             }
         }
         while (owner.getField(nameBuilder.toString()) != null) {
@@ -173,6 +176,13 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         }
 
         return nameBuilder.toString();
+    }
+
+    private static String buildTypeName(ClassNode type) {
+        if (type.isArray()) {
+            return String.format("%sArray", buildTypeName(type.getComponentType()));
+        }
+        return type.getNameWithoutPackage();
     }
 
 }

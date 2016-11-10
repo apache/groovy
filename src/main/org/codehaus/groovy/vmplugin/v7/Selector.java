@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.vmplugin.v7;
 
@@ -35,6 +38,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -119,7 +123,7 @@ public abstract class Selector {
     }
 
     private static class CastSelector extends MethodSelector {
-        private Class<?> staticSourceType, staticTargetType;
+        private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
             super(callSite, Selector.class, "", CALL_TYPES.CAST, false, false, false, arguments);
@@ -282,7 +286,11 @@ public abstract class Selector {
             }
 
             if (method!=null || mci==null) return;
-            MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, name, false);
+            Class chosenSender = this.sender;
+            if (mci.getTheClass()!= chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+                chosenSender = mci.getTheClass();
+            }
+            MetaProperty res = mci.getEffectiveGetMetaProperty(chosenSender, receiver, name, false);
             if (res instanceof MethodMetaProperty) {
                 MethodMetaProperty mmp = (MethodMetaProperty) res;
                 method = mmp.getMetaMethod();
@@ -542,11 +550,11 @@ public abstract class Selector {
             Object[] newArgs = removeRealReceiver(args);
             if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
-                method = mci.retrieveStaticMethod(name, newArgs);
+                if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
             } else {
                 String changedName = name;
                 if (receiver instanceof GeneratedClosure && changedName.equals("call")) {changedName = "doCall";}
-                method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
+                if (!mci.hasCustomInvokeMethod()) method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+method);
         }
@@ -885,7 +893,7 @@ public abstract class Selector {
                     if (LOG_ENABLED) LOG.info("added same class check at pos "+i);
                 }
                 Class[] drops = new Class[i];
-                for (int j=0; j<drops.length; j++) drops[j] = pt[j];
+                System.arraycopy(pt, 0, drops, 0, drops.length);
                 test = MethodHandles.dropArguments(test, 0, drops);
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
             }
@@ -1018,9 +1026,7 @@ public abstract class Selector {
      */
     private static Object[] removeRealReceiver(Object[] args) {
         Object[] ar = new Object[args.length-1];
-        for (int i=1; i<args.length; i++) {
-            ar[i-1] = args[i];
-        }
+        System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;
     }
 }

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.transform;
 
 import java.lang.annotation.Retention;
@@ -45,6 +47,83 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *     {@code comparatorByLast} and {@code comparatorByBorn}</li>
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * //--------------------------------------------------------------------------
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
+ * &#64;Sortable
+ * &#64;ToString
+ * class Course {
+ *     // Order of properties determines priority when sorting
+ *     String title
+ *     Date beginDate
+ *     Integer maxAttendees  // int doesn't implement Comparable, so use Integer
+ * }
+ *
+ *
+ * final Course groovy = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
+ * final Course groovy2 = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
+ * final Course grails = new Course(
+ *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
+ *
+ *
+ * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ * assert courses.last().title == 'Grails'
+ *
+ * // Use toSorted() method to sort
+ * final List&lt;Course&gt; sorted = courses.toSorted()
+ *
+ * assert sorted.first().title == 'Grails'
+ * assert sorted.last().title == 'Groovy'
+ * assert sorted.maxAttendees == [20, 50, 40]
+ * </pre>
+ * <pre class="groovyTestCase">
+ * //--------------------------------------------------------------------------
+ * // Order of fields for includes determines priority when sorting
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
+ * &#64;Sortable(includes = ['title', 'maxAttendees'])
+ * // Or &#64;Sortable(excludes = ['beginDate'])
+ * &#64;ToString
+ * class Course {
+ *     String title
+ *     Date beginDate
+ *     Integer maxAttendees
+ * }
+ *
+ * final Course groovy = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
+ * final Course groovy2 = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
+ * final Course grails = new Course(
+ *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
+ *
+ *
+ * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ *
+ * // Use toSorted() method to sort
+ * final List&lt;Course&gt; sorted = courses.toSorted()
+ *
+ * assert sorted.first().title == 'Grails'
+ * assert sorted.last().title == 'Groovy'
+ * assert sorted.maxAttendees == [20, 40, 50]
+ *
+ * //--------------------------------------------------------------------------
+ * // Static methods to create comparators.
+ * final Comparator byMaxAttendees = Course.comparatorByMaxAttendees()
+ * final List&lt;Course&gt; sortedByMaxAttendees = courses.sort(false, byMaxAttendees)
+ *
+ * assert sortedByMaxAttendees.maxAttendees == [20, 40, 50]
+ * // beginDate is not used for sorting
+ * assert sortedByMaxAttendees[2].beginDate &lt; sortedByMaxAttendees[1].beginDate
+ *
+ * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') }.toSorted() == ['comparatorByMaxAttendees', 'comparatorByTitle']
+ * </pre>
  *
  * @author Andres Almiray
  * @author Paul King
@@ -56,8 +135,10 @@ public @interface Sortable {
     /**
      * Property names to include in the comparison algorithm.
      * Must not be used if 'excludes' is used.
+     * The default value is a special marker value indicating that no includes are defined; all properties
+     * are included if 'includes' remains undefined and 'excludes' is explicitly or implicitly an empty list.
      */
-    String[] includes() default {};
+    String[] includes() default {Undefined.STRING};
 
     /**
      * Property names to exclude in the comparison algorithm.

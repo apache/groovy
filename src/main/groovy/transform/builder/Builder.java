@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.builder;
 
@@ -21,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.annotation.Documented;
 
+import groovy.transform.Undefined;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStrategy;
@@ -70,9 +74,10 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
 public @interface Builder {
 
     /**
-     * A class for which builder methods should be created
+     * A class for which builder methods should be created. It will be an error to leave
+     * this attribute with its default value for some strategies.
      */
-    Class forClass();
+    Class forClass() default Undefined.CLASS.class;
 
     /**
      * A class capturing the builder strategy
@@ -84,20 +89,20 @@ public @interface Builder {
      * Default is determined by the strategy which might use "" or "set" but you can choose your own, e.g. "with".
      * If non-empty the first letter of the property will be capitalized before being appended to the prefix.
      */
-    String prefix();
+    String prefix() default Undefined.STRING;
 
     /**
      * For strategies which create a builder helper class, the class name to use for the helper class.
      * Not used if using {@code forClass} since in such cases the builder class is explicitly supplied.
      * Default is determined by the strategy, e.g. <em>TargetClass</em> + "Builder" or <em>TargetClass</em> + "Initializer".
      */
-    String builderClassName();
+    String builderClassName() default Undefined.STRING;
 
     /**
      * For strategies which create a builder helper class that creates the instance, the method name to call to create the instance.
      * Default is determined by the strategy, e.g. <em>build</em> or <em>create</em>.
      */
-    String buildMethodName();
+    String buildMethodName() default Undefined.STRING;
 
     /**
      * The method name to use for a builder factory method in the source class for easy access of the
@@ -105,7 +110,7 @@ public @interface Builder {
      * Must not be used if using {@code forClass}.
      * Default is determined by the strategy, e.g. <em>builder</em> or <em>createInitializer</em>.
      */
-    String builderMethodName();
+    String builderMethodName() default Undefined.STRING;
 
     /**
      * List of field and/or property names to exclude from generated builder methods.
@@ -118,6 +123,28 @@ public @interface Builder {
      * List of field and/or property names to include within the generated builder methods.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
+     * The default value is a special marker value indicating that no includes are defined; all fields
+     * are included if includes remains undefined and excludes is explicitly or implicitly an empty list.
      */
-    String[] includes() default {};
+    String[] includes() default {Undefined.STRING};
+
+    /**
+     * By default, properties are set directly using their respective field.
+     * By setting {@code useSetters=true} then a writable property will be set using its setter.
+     * If turning on this flag we recommend that setters that might be called are
+     * made null-safe wrt the parameter.
+     */
+    boolean useSetters() default false;
+
+    /**
+     * Generate builder methods for properties from super classes.
+     */
+    boolean includeSuperProperties() default false;
+
+    /**
+     * Whether the generated builder should support all properties, including those with names that are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }

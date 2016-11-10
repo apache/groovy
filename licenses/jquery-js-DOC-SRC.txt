@@ -1,0 +1,8 @@
+JQuery License
+
+The following file is used within documentation:
+
+    src/spec/assets/css/jquery-2.1.1.min.js
+
+This file is made available under the following MIT license:
+licenses/jquery-js-license.txt

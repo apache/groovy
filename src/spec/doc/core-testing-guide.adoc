@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Testing Guide
 
 == Introduction
@@ -6,9 +27,9 @@ The Groovy programming language comes with great support for writing tests. In a
 features and test integration with state-of-the-art testing libraries and frameworks, the Groovy ecosystem has born
 a rich set of testing libraries and frameworks.
 
-This chapter will start with language specific testing features and continue with a closer look at JUnit integration,
-Spock for specifications and Geb for functional tests. Finally, we an overview of other testing libraries known to
-be working with Groovy.
+This chapter will start with language specific testing features and continue with a closer look at JUnit
+integration, Spock for specifications, and Geb for functional tests. Finally, we'll do an overview of other testing
+libraries known to be working with Groovy.
 
 == Language Features
 
@@ -84,8 +105,8 @@ assert [[1,2,3,3,3,3,4]].first().unique() == [1,2,3]
 <1> The error message shows the actual state of the collection, not the state before the `unique` method was applied
 
 [NOTE]
-If you choose to provide a custom assertion error message this can be done by using the Java syntax +assert
-expression1 : expression2+ where +expression1+ is the Boolean expression and +expression2+ is the custom error message.
+If you choose to provide a custom assertion error message this can be done by using the Java syntax `assert
+expression1 : expression2` where `expression1` is the Boolean expression and `expression2` is the custom error message.
  Be aware though that this will disable the power assert and will fully fallback to custom
  error messages on assertion errors.
 
@@ -189,7 +210,7 @@ include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags
 <4> a call to `verify` (optional) checks whether the number of method calls is as expected
 
 `MockFor` and `StubFor` can not be used to test statically compiled classes e.g for Java classes or Groovy classes that
-make use of +@CompileStatic+. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
+make use of `@CompileStatic`. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
 
 [[testing_guide_emc]]
 ==== Expando Meta-Class (EMC)
@@ -237,7 +258,8 @@ include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags
 ----
 
 Another alternative is to register a `MetaClassRegistryChangeEventListener`, track the changed classes and remove
-the changes in the cleanup method of your chosen testing runtime. A good example can be found https://github.com/grails/grails-core/blob/master/grails-bootstrap/src/main/groovy/org/codehaus/groovy/grails/cli/support/MetaClassRegistryCleaner.java[in the Grails web
+the changes in the cleanup method of your chosen testing runtime. A good example can be found
+https://github.com/grails/grails-core/blob/master/grails-bootstrap/src/main/groovy/grails/build/support/MetaClassRegistryCleaner.java[in the Grails web
 development framework].
 
 Besides using the `ExpandoMetaClass` on a class-level, there is also support for using the meta-class on a per-object
@@ -355,7 +377,7 @@ make certain types of tests easier to write.
 
 
 In this section, we will have a look at some of the methods provided by `GroovyTestCase`. A full list of these can be
-found in the JavaDoc documentation for http://groovy.codehaus.org/api/groovy/util/GroovyTestCase.html[groovy.util.GroovyTestCase],
+found in the JavaDoc documentation for gapi:groovy.util.GroovyTestCase[] ,
 don't forget it is inherited from `junit.framework.TestCase` which inherits all the `assert*` methods.
 
 ==== Assertion Methods
@@ -448,6 +470,16 @@ As can be seen in the example above, the static methods found in `GroovyAssert` 
 `groovy.test.GroovyAssert` descends from `org.junit.Assert` that means it inherits all JUnit assertion methods. However,
 with the introduction of the power assertion statement, it turned out to be _good practice to rely on assertion statements_
 instead of using the JUnit assertion methods with the improved message being the main reason.
+
+It is worth mentioning that `GroovyAssert.shouldFail` is not absolutely identical to `GroovyTestCase.shouldFail`. While
+`GroovyTestCase.shouldFail` returns the exception message, `GroovyAssert.shouldFail` returns the exception itself. It
+takes a few more keystrokes to get the message, but in return you can access other properties and methods of the
+exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
+----
 
 == Testing with Spock
 
@@ -609,56 +641,3 @@ the `Browser` configuration is externalized. `GebTest` delegates methods like `g
 
 In the previous section we only scratched the surface of the available Geb features. More information on Geb can be found
 at the http://gebish.org[project homepage].
-
-== Other Testing Libraries and Frameworks
-
-=== TestNG
-
-http://testng.org/[TestNG] is a testing framework inspired from JUnit and NUnit but with new functionality to make
-it more powerful and easier to use. Features include:
-
-* JDK 5 Annotations
-* Flexible test configuration
-* Support for data-driven testing (with `@DataProvider`)
-* Support for parameters
-* Allows distribution of tests on slave machines
-* Powerful execution model (no more TestSuite)
-* Supported by a variety of tools and plug-ins (Eclipse, IDEA, Maven, etc...)
-* Embeds `BeanShell` for further flexibility
-* Default JDK functions for runtime and logging (no dependencies)
-* Dependent methods for application server testing
-
-=== Mockito
-
-https://code.google.com/p/mockito/[Mockito] is a Java mocking library. It has very slim API, almost no time is needed
-to start mocking. Features include:
-
-* Mocks concrete classes as well as interfaces
-* Little annotation syntax sugar - `@Mock`
-* Verification errors are clean - click on stack trace to see failed verification in test; click on exception's cause
-to navigate to actual interaction in code. Stack trace is always clean.
-* Allows flexible verification in order (e.g: verify in order what you want, not every single interaction)
-* Supports exact-number-of-times and at-least-once verification
-* Flexible verification or stubbing using argument matchers (`anyObject()`, `anyString()` or `refEq()` for reflection-based
-equality matching)
-* Allows creating custom argument matchers or using existing Hamcrest matchers
-
-=== EasyMock
-
-http://easymock.org/[EasyMock] is a mocking library for Java. Features include:
-
-* Hand-writing classes for Mock Objects is not needed.
-* Supports refactoring-safe Mock Objects: test code will not break at runtime when renaming methods or reordering method parameters
-* Supports return values and exceptions.
-* Supports checking the order of method calls, for one or more Mock Objects.
-
-=== JBehave
-
-http://jbehave.org/[JBehave] is a framework for Behaviour-Driven Development (BDD). BDD is an evolution of test-driven
-development and acceptance-test driven design, and is intended to make these practices more accessible and intuitive
-to newcomers and experts alike. It shifts the vocabulary from being test-based to behaviour-based, and positions itself
-as a design philosophy.
-
-=== JMockit
-
-https://code.google.com/p/jmockit/[jmockit] is a mocking library for Java.

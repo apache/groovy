@@ -1,21 +1,25 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -268,7 +272,7 @@ public class SwingGroovyMethods {
      * Provide the standard Groovy <code>size()</code> method for <code>JComboBox</code>.
      *
      * @param self a JComboBox
-     * @return the intem count of the comboBox
+     * @return the item count of the comboBox
      * @since 1.6.4
      */
     public static int size(JComboBox self) {
@@ -673,7 +677,7 @@ public class SwingGroovyMethods {
      */
     @SuppressWarnings("unchecked")
     public static Iterator<TreeNode> iterator(TreeNode self) {
-        return DefaultGroovyMethods.iterator(self.children());
+        return (Iterator<TreeNode>) DefaultGroovyMethods.iterator(self.children());
     }
 
     /**
@@ -1045,5 +1049,16 @@ public class SwingGroovyMethods {
      */
     public static Component getAt(JToolBar self, int index) {
         return self.getComponentAtIndex(index);
+    }
+
+    /**
+     * Allows the usage of a one-element string for a mnemonic
+     * @param button a AbstractButton
+     * @param mnemonic the String
+     * @since 2.3.7
+     */
+    public static void setMnemonic(AbstractButton button, String mnemonic) {
+        char c = ShortTypeHandling.castToChar(mnemonic);
+        button.setMnemonic(c);
     }
 }

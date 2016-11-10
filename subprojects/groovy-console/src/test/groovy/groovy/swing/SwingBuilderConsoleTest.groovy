@@ -1,24 +1,30 @@
-package groovy.swing
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
+package groovy.swing
 
 import groovy.ui.Console
 import groovy.ui.ConsoleActions
 import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
+
+import javax.swing.JTextPane
+import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 import org.junit.rules.TemporaryFolder
 
@@ -432,4 +438,131 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             }
         }
     }
+
+    void testSelectBlock() {
+        testInEDT {
+            final consoleActions = new ConsoleActions()
+            def swing = new SwingBuilder()
+            final console = new Console()
+            swing.controller = console
+            swing.build(consoleActions)
+            console.run()
+            JTextPane inputArea = console.inputArea
+            ActionEvent event = new ActionEvent(inputArea, 1, '')
+
+            inputArea.text =
+                    'import com.example.HelloWorldService\n' +  //0-36
+                    '    \n' +                                  //37-41
+                    'def service = new HelloWorldService()\n' + //42-79
+                    'service.init()\n' +                        //80-94
+                    '\n' +                                      //95
+                    'if (service.isAvailable()) {\n' +          //96-124
+                    '    service.printGreeting()\n' +           //125-152
+                    '}\n' +                                     //153-154
+                    '\n' +                                      //155
+                    'println service'                           //156-171
+
+            inputArea.setCaretPosition(0)
+            console.selectBlock(event)
+            assert 'import' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'import com.example.HelloWorldService' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'import com.example.HelloWorldService\n' == inputArea.getSelectedText()
+
+            inputArea.setCaretPosition(49) // ser(v)ice
+            console.selectBlock(event)
+            assert 'service' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert 'def service = new HelloWorldService()' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert inputArea.getSelectedText() ==
+                    'def service = new HelloWorldService()\n' +
+                    'service.init()\n'
+
+            inputArea.setCaretPosition(95)
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            console.selectBlock(event)
+            assert inputArea.getSelectionStart() == inputArea.getSelectionEnd()
+            assert 95 == inputArea.getCaretPosition()
+
+            inputArea.setCaretPosition(125)
+            console.selectBlock(event)
+            assert '    ' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert '    service.printGreeting()' == inputArea.getSelectedText()
+
+            console.selectBlock(event)
+            assert inputArea.getSelectedText() ==
+                    'if (service.isAvailable()) {\n' +
+                    '    service.printGreeting()\n' +
+                    '}\n'
+
+            inputArea.setCaretPosition(171)
+            console.selectBlock(event)
+            assert 'service' == inputArea.getSelectedText()
+        }
+    }
+
+    void testSystemOutputAndErrorRedirectedToCorrectConsole() {
+        testInEDT {
+            SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
+                runnable.run()
+            }
+            Thread.metaClass.static.start = { Runnable runnable ->
+                runnable.run()
+            }
+
+            Console.prefs = testPreferences
+
+            try {
+                def swing = new SwingBuilder()
+                final Console console = new Console()
+                swing.controller = console
+                swing.build(new ConsoleActions())
+                console.run()
+                console.fileNewWindow()
+                final Console console2 = Console.consoleControllers.last()
+
+                console.showScriptInOutput = false
+                console2.showScriptInOutput = false
+
+                def doc = console.outputArea.document
+                def doc2 = console2.outputArea.document
+
+                assert console.consoleId != console2.consoleId
+
+                console.inputArea.text = 'println "test1"'
+                console.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert '' == doc2.getText(0, doc2.length).trim()
+
+                console2.inputArea.text = 'println "test2"'
+                console2.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert 'test2' == doc2.getText(0, doc2.length).trim()
+
+                console2.inputArea.text = 'System.err.println "error2"'
+                console2.runScript()
+
+                assert 'test1' == doc.getText(0, doc.length).trim()
+                assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
+                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
+                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
+            }
+        }
+    }
+
 }

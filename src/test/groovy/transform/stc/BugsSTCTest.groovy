@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy.transform.stc
 
 /**
@@ -114,6 +132,17 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         })
         List getList() {
         }
+        '''
+    }
+
+    void testGroovy7477NullGenericsType() {
+        assertScript '''
+        class L<E> extends ArrayList<E> {
+            boolean removeIf(Comparator<? super E> filter) { }
+        }
+        L<String> items = ['foo', 'bar'] as L<String>
+        items.removeIf({a, b -> 1} as Comparator<?>)
+        assert items
         '''
     }
 
@@ -619,6 +648,30 @@ Printer
         '''
     }
 
+    void testAmbiguousMethodResolutionGroovy7710NoArgsOverloaded() {
+        shouldFailWithMessages '''
+            Arrays.sort()
+        ''', 'Reference to method is ambiguous. Cannot choose between '
+    }
+
+    void testAmbiguousMethodResolutionGroovy7711NoArgsCovariantOverride() {
+        assertScript '''
+            class A {}
+            class B {
+                Object m(Object[] args) {
+                    new Object()
+                }
+            }
+            class C extends B {
+                A m(Object[] args) {
+                    new A()
+                }
+            }
+            C c = new C()
+            A a = c.m()
+        '''
+    }
+
     // GROOVY-6911
     void testShouldNotThrowArrayIndexOfOutBoundsException() {
         assertScript '''
@@ -629,7 +682,39 @@ Printer
             }
 
             Map<String, Object> m = new C().bar()
-            List tmp = (List) m.get("some_key_here")     // <---  actually groovy crashes here!!
+            List tmp = (List) m.get("some_key_here")
+        '''
+    }
+
+    // GROOVY-7416
+    void testMethodsFromInterfacesOfSuperClassesShouldBeVisible() {
+        assertScript '''
+            interface SomeInterface {
+                void someInterfaceMethod()
+            }
+
+            abstract class AbstractSuperClass implements SomeInterface {}
+
+            abstract class AbstractSubClass extends AbstractSuperClass {
+                void someMethod() {
+                    someInterfaceMethod()
+                }
+            }
+
+            assert AbstractSubClass.name == 'AbstractSubClass'
+        '''
+        assertScript '''
+            interface SomeInterface { void foo() }
+            interface SomeOtherInterface { void bar() }
+            interface AnotherInterface extends SomeInterface, SomeOtherInterface {}
+
+            abstract class Parent implements AnotherInterface {}
+
+            abstract class Child extends Parent {
+                void baz() { foo(); bar() }
+            }
+
+            assert Child.name == 'Child'
         '''
     }
 }

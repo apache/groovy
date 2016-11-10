@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.json;
 
 import groovy.io.LineColumnReader;
@@ -45,8 +47,8 @@ import static groovy.json.JsonTokenType.STRING;
  * JSON slurper which parses text or reader content into a data structure of lists and maps.
  * <p>
  * Example usage:
- * <code><pre>
- * def slurper = new JsonSlurper()
+ * <code><pre class="groovyTestCase">
+ * def slurper = new groovy.json.JsonSlurperClassic()
  * def result = slurper.parseText('{"person":{"name":"Guillaume","age":33,"pets":["dog","cat"]}}')
  *
  * assert result.person.name == "Guillaume"
@@ -72,7 +74,7 @@ public class JsonSlurperClassic {
             throw new IllegalArgumentException("The JSON input text should neither be null nor empty.");
         }
 
-        return parse(new LineColumnReader (new StringReader (text)));
+        return parse(new LineColumnReader(new StringReader(text)));
     }
 
     /**
@@ -131,16 +133,16 @@ public class JsonSlurperClassic {
         Reader reader = null;
         try {
             if (charset == null || charset.length() == 0) {
-                reader = ResourceGroovyMethods.newReader ( file );
+                reader = ResourceGroovyMethods.newReader(file);
             } else {
                 reader = ResourceGroovyMethods.newReader(file, charset);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process file: " + file.getPath(), ioe);
         } finally {
             if (reader != null) {
-                DefaultGroovyMethodsSupport.closeWithWarning ( reader );
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
             }
         }
     }
@@ -189,7 +191,7 @@ public class JsonSlurperClassic {
                 reader = ResourceGroovyMethods.newReader(url, params);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {
@@ -245,7 +247,7 @@ public class JsonSlurperClassic {
                 reader = ResourceGroovyMethods.newReader(url, params, charset);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {
@@ -261,7 +263,7 @@ public class JsonSlurperClassic {
      * @return a list of JSON values
      */
     private List parseArray(JsonLexer lexer) {
-        List content = new ArrayList ();
+        List content = new ArrayList();
 
         JsonToken currentToken;
 
@@ -329,7 +331,7 @@ public class JsonSlurperClassic {
      * @return a Map representing a JSON object
      */
     private Map parseObject(JsonLexer lexer) {
-        Map content = new HashMap ();
+        Map content = new HashMap();
 
         JsonToken previousToken = null;
         JsonToken currentToken = null;
@@ -378,7 +380,7 @@ public class JsonSlurperClassic {
                         "Expected " + COLON.getLabel() + " " +
                                 "on line: " + currentToken.getStartLine() + ", " +
                                 "column: " + currentToken.getStartColumn() + ".\n" +
-                                "But got '" + currentToken.getText() +  "' instead."
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
 

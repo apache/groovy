@@ -1,0 +1,92 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= AntBuilder
+
+Despite being primarily a build tool, http://ant.apache.org/[Apache Ant] is
+a very practical tool for manipulating files including zip files, copy, resource processing, ...
+But if ever you’ve been working with a `build.xml` file or some _Jelly script_
+and found yourself a little restricted by all those pointy brackets, or
+found it a bit weird using XML as a scripting language and wanted
+something a little cleaner and more straight forward, then maybe Ant
+scripting with Groovy might be what you're after.
+
+Groovy has a helper class called `AntBuilder` which makes the scripting
+of Ant tasks really easy; allowing a real scripting language to be used
+for programming constructs (variables, methods, loops, logical
+branching, classes etc). It still looks like a neat concise version of
+Ant's XML without all those pointy brackets; though you can mix and
+match this markup inside your script. Ant itself is a collection of jar
+files. By adding them to your classpath, you can easily use them within
+Groovy as is. We believe using `AntBuilder` leads to more concise and
+readily understood syntax.
+
+`AntBuilder` exposes Ant tasks directly using the convenient builder notation that
+we are used to in Groovy. Here is the most basic example, which is printing a message
+on the standard output:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=example_echo,indent=0]
+----
+<1> creates an instance of `AntBuilder`
+<2> executes the `echo` task with the message in parameter
+
+Imagine that you need to create a ZIP file:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=create_zip_builder,indent=0]
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=create_zip_zip,indent=0]
+----
+
+In the next example, we demonstrate the use of `AntBuilder` to copy a list of files
+using a classical Ant pattern directly in Groovy:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=copy_files,indent=0]
+----
+
+Another example would be iterating over a list of files matching a specific pattern:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=filescanner,indent=0]
+----
+
+Or execute a JUnit test:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=run_junit,indent=0]
+----
+
+We can even go further by compiling and executing a Java file directly from Groovy:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=compile_java,indent=0]
+----
+
+It is worth mentioning that `AntBuilder` is included in http://gradle.org/[Gradle], so you can use it in Gradle
+just like you would in Groovy. Additional documentation can be found in the
+http://gradle.org/docs/current/userguide/ant.html[Gradle manual].

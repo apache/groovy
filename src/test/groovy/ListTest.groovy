@@ -1,19 +1,24 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy
+
+import groovy.transform.TypeChecked
 
 class ListTest extends GroovyTestCase {
 
@@ -251,15 +256,20 @@ class ListTest extends GroovyTestCase {
     void testPop() {
         def l = []
         l << 'a' << 'b'
-        def value = l.pop()
+        def value = l.removeLast()
         assert value == 'b'
         assert l == ['a']
 
-        l.add('c')
+        l << 'b'
+        value = l.pop()
+        assert value == 'a'
+        assert l == ['b']
+
+        l.push('c')
         value = l.pop()
         assert value == 'c'
         value = l.pop()
-        assert value == 'a'
+        assert value == 'b'
         try {
             l.pop()
             fail("Should have thrown an exception")
@@ -287,6 +297,11 @@ class ListTest extends GroovyTestCase {
         if (!list) {
             fail("[1] should have evaluated to true, but didn't")
         }
+    }
+
+    void testIndices() {
+        assert 0..2 == [5, 6, 7].indices
+        assert 0..<0 == [].indices
     }
 
     // see also SubscriptTest
@@ -402,6 +417,26 @@ class ListTest extends GroovyTestCase {
         shouldFail(UnsupportedOperationException) {
             immlist[0] = 1
         }
+    }
+
+    void testWithIndex_indexed_groovy7175() {
+        assert [] == [].withIndex()
+        assert [] == [].withIndex(10)
+        assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
+        assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
+        assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
+        assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
+        assert [:] == [].indexed()
+        assert [:] == [].indexed(10)
+        assert [0: 'a', 1: 'b'] == ["a", "b"].indexed()
+        assert [5: 'a', 6: 'b'] == ["a", "b"].indexed(5)
+        assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str -> "$idx: $str" }
+        assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str -> "$idx: $str" }
+    }
+
+    @TypeChecked
+    void testWithIndex_indexed_typeChecked_groovy7175() {
+        assert ["A", "BB"] == ["a", "b"].indexed(1).collect { idx, str -> str.toUpperCase() * idx }
     }
 
     // GROOVY-4946
@@ -775,5 +810,28 @@ class ListTest extends GroovyTestCase {
     void testEmptyRangeAccessReturnsLinkedListCopy() {
         def list = new LinkedList([0,1,2,3])
         assert list[0..<0] instanceof LinkedList
+    }
+
+    void testRemoveAt() {
+        shouldFail(IndexOutOfBoundsException) {
+            [].removeAt(0)
+        }
+        def list = [1, 2, 3]
+        assert 2 == list.removeAt(1)
+        assert [1, 3] == list
+    }
+
+    void testRemoveElement() {
+        def list = [1, 2, 3, 2]
+        assert list.removeElement(2)
+        assert [1, 3, 2] == list
+        assert !list.removeElement(4)
+        assert [1, 3, 2] == list
+    }
+
+    // GROOVY-7299
+    void testMultipleVeryLongLlists() {
+        def script = "def a = ["+'1000,'*2000+"];def b = ["+'1000,'*2000+"]; def c=(a+b).sum(); assert c==4_000_000";
+        assertScript script
     }
 }

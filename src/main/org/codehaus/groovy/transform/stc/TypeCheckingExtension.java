@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -99,7 +101,7 @@ public class TypeCheckingExtension {
 
     /**
      * This method is called by the type checker when a method call cannot be resolved. Extensions
-     * may override this method to handle missing methods and avoid the type checker to throw an
+     * may override this method to handle missing methods and prevent the type checker from throwing an
      * error.
      *
      *
@@ -199,7 +201,7 @@ public class TypeCheckingExtension {
      * been visited by the type checker. This is in particular important for nodes which are marked with
      * {@link groovy.transform.TypeCheckingMode#SKIP}.
      *
-     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression} or a {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}
+     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}, or {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression}
      * @return false if the type checker should visit the node, or true if this extension replaces what the
      * type checker would do with the method call.
      */
@@ -212,7 +214,7 @@ public class TypeCheckingExtension {
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
      * {@link groovy.transform.TypeCheckingMode#SKIP}.
-     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression} or a {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}
+     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}, or {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression}
      */
     public void afterMethodCall(MethodCall call) {
     }

@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 [[groovy-operators]]
 = Operators
 
@@ -18,27 +39,27 @@ The following binary arithmetic operators are available in Groovy:
 | Purpose
 | Remarks
 
-| +++
+| `+`
 | addition
 |
 
-| +-+
-| substraction
+| `-`
+| subtraction
 |
 
-| +*+
+| `*`
 | multiplication
 |
 
-| +/+
+| `/`
 | division
-| Use +intdiv()+ for integer division, and see the section about <<core-syntax.adoc#integer_division,the integer division>> for more information on the return type of the division.
+| Use `intdiv()` for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
 
-| +%+
-| modulo
+| `%`
+| remainder
 |
 
-| +**+
+| `**`
 | power
 | See the section about <<core-syntax.adoc#power_operator,the power operation>> for more information on the return type of the operation.
 |====
@@ -52,7 +73,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_arith_ops,i
 
 === Unary operators
 
-The +++ and +-+ operators are also available as unary operators:
+The `+` and `-` operators are also available as unary operators:
 
 [source,groovy]
 ----
@@ -60,27 +81,28 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,i
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
-In terms of unary arithmetics operators, the ++++ (increment) and +--+ (decrement) operators are available, 
+In terms of unary arithmetics operators, the `++` (increment) and `--` (decrement) operators are available,
 both in prefix and postfix notation:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=plusplus_minusminus,indent=0]
 ----
-<1> The postfix increment will increment +a+ after the expression has been evaluated and assigned into +b+
-<2> The postfix decrement will decrement +c+ after the expression has been evaluated and assigned into +d+
-<3> The prefix increment will increment +e+ before the expression is evaluated and assigned into +f+
-<4> The prefix decrement will decrement +g+ before the expression is evaluated and assigned into +h+
+<1> The postfix increment will increment `a` after the expression has been evaluated and assigned into `b`
+<2> The postfix decrement will decrement `c` after the expression has been evaluated and assigned into `d`
+<3> The prefix increment will increment `e` before the expression is evaluated and assigned into `f`
+<4> The prefix decrement will decrement `g` before the expression is evaluated and assigned into `h`
 
 === Assignment arithmetic operators
 
-From the binary arithmetic operators we have seen above, certain of them are also available in an assignment form:
+The binary arithmetic operators we have seen above are also available in an assignment form:
 
-* ++=+
-* +-=+
-* +*=+
-* +/=+
-* +%=+
+* `+=`
+* `-=`
+* `*=`
+* `/=`
+* `%=`
+* `**=`
 
 Let's see them in action:
 
@@ -92,7 +114,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_assign_oper
 == Relational operators
 
 Relational operators allow comparisons between objects, to know if two objects are the same or different,
-or if one is greater or lower than or equal to the other.
+or if one is greater than, less than, or equal to the other.
 
 The following operators are available:
 
@@ -101,26 +123,26 @@ The following operators are available:
 | Operator
 | Purpose
 
-| +==+
+| `==`
 | equal
 
-| +!=+
+| `!=`
 | different
 
-| +<+
+| `<`
 | less than
 
-| `<=`
+| `\<=`
 | less than or equal
 
-| +>+
+| `>`
 | greater than
 
-| +>=+
+| `>=`
 | greater than or equal
 |====
 
-These operators into action in simple number comparisons:
+Here are some examples of simple number comparisons using these operators:
 
 [source,groovy]
 ----
@@ -153,7 +175,7 @@ The logical "not" has a higher priority than the logical "and".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
 ----
-<1> Here, the assertion is true, because "not" has a higher precedence than "and", otherwise, the assertion would have failed
+<1> Here, the assertion is true (as the expression in parentheses is false), because "not" has a higher precedence than "and", so it only applies to the first "false" term; otherwise, it would have applied to the result of the "and", turned it into true, and the assertion would have failed
 
 The logical "and" has a higher priority than the logical "or".
 
@@ -161,21 +183,25 @@ The logical "and" has a higher priority than the logical "or".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
 ----
-<1> Here, the assertion is true, because "and" has a higher precedence than "or", otherwise, the assertion would have failed
+<1> Here, the assertion is true, because "and" has a higher precedence than "or", therefore the "or" is executed last and returns true, having one true argument; otherwise, the "and" would have executed last and returned false, having one false argument, and the assertion would have failed
 
-=== Short-circuiting for `||`
+=== Short-circuiting
 
-The logical "or" operator is supporting short-circuiting: if the left operand is true, it won't evaluate the right operand.
+The logical `||` operator supports short-circuiting: if the left operand is true, it knows that the result will be true in any case, so it won't evaluate the right operand.
 The right operand will be evaluated only if the left operand is false.
+
+Likewise for the logical `&&` operator: if the left operand is false, it knows that the result will be false in any case, so it won't evaluate the right operand.
+The right operand will be evaluated only if the left operand is true.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_or_shortcircuit,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_shortcircuit,indent=0]
 ----
-<1> We create a function that returns its boolean argument, but it sets the `called` flag 
-<2> In the first case, we confirm that the function is not called, as `||` short-circuits the evaluation of the right operand.
-<3> In the second case, the right operand is called, as indicated by the fact our flag is now true
-
+<1> We create a function that sets the `called` flag to true whenever it's called
+<2> In the first case, after resetting the called flag, we confirm that if the left operand to `||` is true, the function is not called, as `||` short-circuits the evaluation of the right operand
+<3> In the second case, the left operand is false and so the function is called, as indicated by the fact our flag is now true
+<4> Likewise for `&&`, we confirm that the function is not called with a false left operand
+<5> But the function is called with a true left operand
 
 == Bitwise operators
 
@@ -211,7 +237,7 @@ In Groovy, bitwise operators have the particularity of being <<Operator-Overload
 === Not operator
 
 The "not" operator is represented with an exclamation mark (`!`) and inverts the result of the underlying boolean expression. In
-particular, it is possible to combine the `not` operator with the <<Groovy-Truth,Groovy truth>>:
+particular, it is possible to combine the `not` operator with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>:
 
 [source,groovy]
 ----
@@ -237,7 +263,7 @@ You can write:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
 ----
 
-The ternary operator is also compatible with the <<Groovy-Truth,Groovy truth>>, so you can make it even simpler:
+The ternary operator is also compatible with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>, so you can make it even simpler:
 
 [source,groovy]
 ----
@@ -247,14 +273,15 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ter
 === Elvis operator
 
 The "Elvis operator" is a shortening of the ternary operator. One instance of where this is handy is for returning
-a 'sensible default' value if an expression resolves to `false` or `null`. A simple example might look like this:
+a 'sensible default' value if an expression resolves to `false`-ish (as in
+<<core-semantics.adoc#Groovy-Truth,Groovy truth>>). A simple example might look like this:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_elvis,indent=0]
 ----
 <1> with the ternary operator, you have to repeat the value you want to assign
-<2> with the Elvis operator, the value which is tested is used if it is not `false` or `null`
+<2> with the Elvis operator, the value, which is tested, is used if it is not `false`-ish
 
 Usage of the Elvis operator reduces the verbosity of your code and reduces the risks of errors in case of refactorings,
 by removing the need to duplicate the expression which is tested in both the condition and the positive return value.
@@ -296,9 +323,10 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=direct_field_op,in
 ----
 <1> use of `.@` forces usage of the field instead of the getter
 
-=== Method reference operator
+[[method-pointer-operator]]
+=== Method pointer operator
 
-The method reference operator (`.&`) call be used to store a reference to a method in a variable, in order to call it
+The method pointer operator (`.&`) call be used to store a reference to a method in a variable, in order to call it
 later:
 
 [source,groovy]
@@ -310,7 +338,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference,i
 <3> `fun` can be called like a regular method
 <4> we can check that the result is the same as if we had called it directly on `str`
 
-There are multiple advantages in using method references. First of all, the type of such a method reference is
+There are multiple advantages in using method pointers. First of all, the type of such a method pointer is
 a `groovy.lang.Closure`, so it can be used in any place a closure would be used. In particular, it is suitable to
 convert an existing method for the needs of the strategy pattern:
 
@@ -319,12 +347,12 @@ convert an existing method for the needs of the strategy pattern:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_strategy,indent=0]
 ----
 <1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
-<2> we define a function that takes a `Person` a returns a `String`
-<3> we create a method reference on that function
+<2> we define a function that takes a `Person` and returns a `String`
+<3> we create a method pointer on that function
 <4> we create the list of elements we want to collect the descriptors
-<5> the method reference can be used where a `Closure` was expected
+<5> the method pointer can be used where a `Closure` was expected
 
-Method references are bound by the receiver and a method name. Arguments are resolved at runtime, meaning that if you have
+Method pointers are bound by the receiver and a method name. Arguments are resolved at runtime, meaning that if you have
 multiple methods with the same name, the syntax is not different, only resolution of the appropriate method to be called
 will be done at runtime:
 
@@ -334,9 +362,9 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_d
 ----
 <1> define an overloaded `doSomething` method accepting a `String` as an argument
 <2> define an overloaded `doSomething` method accepting an `Integer` as an argument
-<3> create a single method reference on `doSomething`, without specifying argument types
-<4> using the method reference with a `String` calls the `String` version of `doSomething`
-<5> using the method reference with an `Integer` calls the `Integer` version of `doSomething`
+<3> create a single method pointer on `doSomething`, without specifying argument types
+<4> using the method pointer with a `String` calls the `String` version of `doSomething`
+<5> using the method pointer with an `Integer` calls the `Integer` version of `doSomething`
 
 == Regular expression operators
 
@@ -370,8 +398,8 @@ instance:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
 ----
-<1> `~=` creates a matcher against the `text` variable, using the pattern on the right hand side
-<2> the return type of `~=` is a `Matcher`
+<1> `=~` creates a matcher against the `text` variable, using the pattern on the right hand side
+<2> the return type of `=~` is a `Matcher`
 <3> equivalent to calling `if (!m.find())`
 
 Since a `Matcher` coerces to a `boolean` by calling its `find` method, the `=~` operator is consistent with the simple
@@ -386,11 +414,11 @@ and requires a strict match of the input string:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
 ----
-<1> `~==` matches the subject with the regular expression, but match must be strict
-<2> the return type of `~==` is therefore a `boolean`
+<1> `==~` matches the subject with the regular expression, but match must be strict
+<2> the return type of `==~` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
 
-== Other operators (WIP)
+== Other operators
 
 === Spread operator
 
@@ -504,7 +532,8 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=intrange,indent=0]
 <5> meaning that you can call the `size` method on it
 
 Ranges implementation is lightweight, meaning that only the lower and upper bounds are stored. You can create a range
-from any `Comparable` object. For example, you can create a range of characters this way:
+from any `Comparable` object that has `next()` and `previous()` methods to determine the next / previous item in the range.
+For example, you can create a range of characters this way:
 
 [source,groovy]
 ----
@@ -513,7 +542,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=charrange,indent=0
 
 === Spaceship operator
 
-The spaceship operator (`<=>`) delegates to the `compareTo` method:
+The spaceship operator (`pass:[<=>]`) delegates to the `compareTo` method:
 
 [source,groovy]
 ----
@@ -580,7 +609,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=identity_op,indent
 === Coercion operator
 
 The coercion operator (`as`) is a variant of casting. Coercion converts object from one type to another *without* them
-being compatible for assignement. Let's take an example:
+being compatible for assignment. Let's take an example:
 
 [source,groovy]
 ----
@@ -636,7 +665,36 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=call_op,indent=0]
 <2> we can call the method using the classic method call syntax
 <3> or we can omit `.call` thanks to the call operator
 
-== Operator precedence (TBD)
+== Operator precedence
+The table below lists all groovy operators in order of precedence.
+
+[options="header"]
+|======================
+|Level | Operator(s) | Name(s)
+| 1 | `new` &#160; `()` | object creation, explicit parentheses
+|   | `()` &#160; `{}` &#160; `[]` | method call, closure, literal list/map
+|   | `.` &#160; `.&` &#160; `.@` | member access, method closure, field/attribute access
+|   | `?.` &#160; `\*` &#160; `*.` &#160; `*:` | safe dereferencing, spread, spread-dot, spread-map
+|   | `~` &#160; `!` &#160; `(type)` | bitwise negate/pattern, not, typecast
+|   | `[]` &#160; `++` &#160; `--` | list/map/array index, post inc/decrement
+| 2 | `**` | power
+| 3 | `++` &#160; `--` &#160; `+` &#160; `-` | pre inc/decrement, unary plus, unary minus
+| 4 | `*` &#160; `/` &#160; `%` | multiply, div, remainder
+| 5 | `+` &#160; `-` | addition, subtraction
+| 6 | `<<` &#160; `>>` &#160; `>>>` &#160; `..` &#160; `..<` | left/right (unsigned) shift, inclusive/exclusive range
+| 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `instanceof` &#160; `as` | less/greater than/or equal, in, instanceof, type coercion
+| 8 | `==` &#160; `!=` &#160; `pass:[<=>]` | equals, not equals, compare to
+|   | `=~` &#160; `==~` | regex find, regex match
+| 9 | `&` | binary/bitwise and
+| 10 | `^` | binary/bitwise xor
+| 11 | `\|` | binary/bitwise or
+| 12 | `&&` | logical and
+| 13 | `\|\|` | logical or
+| 14 | `? :` | ternary conditional
+|    | `?:` | elvis operator
+| 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; +
+`pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` | various assignments
+|======================
 
 [[Operator-Overloading]]
 == Operator overloading
@@ -684,49 +742,59 @@ Here is a complete list of the operators and their corresponding methods:
 | Operator
 | Method
 
-| +++
+| `+`
 | a.plus(b)
-| +a[b]+
+| `a[b]`
 | a.getAt(b)
 
-| +-+
+| `-`
 | a.minus(b)
-| +a[b] = c+
+| `a[b] = c`
 | a.putAt(b, c)
 
-| +*+
+| `*`
 | a.multiply(b)
-| +<<+
+| `a in b`
+| b.isCase(a)
+
+| `/`
+| a.div(b)
+| `<<`
 | a.leftShift(b)
 
-| +/+
-| a.div(b)
-| +>>+
+| `%`
+| a.mod(b)
+| `>>`
 | a.rightShift(b)
 
-| +%+
-| a.mod(b)
+| `**`
+| a.power(b)
+| `>>>`
+| a.rightShiftUnsigned(b)
+
+| `\|`
+| a.or(b)
 | `++`
 | a.next()
 
-| +**+
-| a.power(b)
-| +--+
+| `&`
+| a.and(b)
+| `--`
 | a.previous()
 
-| +\|+
-| a.or(b)
+| `^`
+| a.xor(b)
 | `+a`
 | a.positive()
 
-| +&+
-| a.and(b)
-| +-a+
+| `as`
+| a.asType(b)
+| `-a`
 | a.negative()
 
-| +^+
-| a.xor(b)
-| +~a+
-| a.bitwiseNegative()
+| `a()`
+| a.call()
+| `~a`
+| a.bitwiseNegate()
 |====
 

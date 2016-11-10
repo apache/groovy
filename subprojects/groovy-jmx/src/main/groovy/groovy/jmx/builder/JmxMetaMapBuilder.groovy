@@ -1,19 +1,21 @@
 /*
- * Copyright 2008 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.jmx.builder
 
 import java.lang.reflect.Constructor
@@ -246,7 +248,7 @@ class JmxMetaMapBuilder {
     }
 
     /**
-     * Builds a fully-nornalized meta map for a given POJO property and its associated descriptor.
+     * Builds a fully-normalized meta map for a given POJO property and its associated descriptor.
      * The method fills in defaults where possible and creates listeners for onChange attribute events.
      * @param prop - property to build meta map for.
      * @param attribName - the descriptive name of attribute.
@@ -365,7 +367,7 @@ class JmxMetaMapBuilder {
      * Builds a fully-normalized constructor meta map for the specified constructor.  The method provides
      * defaults where necessary and uses the descriptor to fill in the collected data from JmxBuilder.bean() node..
      * @param ctor - the Constructor instance being described.
-     * @param descriptor - descriptor meta data collected from JmxBulider.bean() node.
+     * @param descriptor - descriptor meta data collected from JmxBuilder.bean() node.
      * @return a fully-normalized meta map of the constructor.
      */
     private static Map createConstructorMap(ctor, descriptor) {
@@ -575,7 +577,7 @@ class JmxMetaMapBuilder {
     }
 
     /** *
-     * Creates a fully-normalized meta map for a given parmater type on a give method.
+     * Creates a fully-normalized meta map for a given parameter type on a give method.
      * The descriptor represents data collected from JmxBuilder.bean() node.
      * @param method - method with parameter being described
      * @param type - type of parameter being described
@@ -606,7 +608,7 @@ class JmxMetaMapBuilder {
      * **************************************/
 
     /**
-     * Creates a fully-normalized meta map for agiven collection of listeners.
+     * Creates a fully-normalized meta map for a given collection of listeners.
      * @param - collection of descriptors to normalize
      * @see JmxMetaMapBuilder#createListenerMap(Object)
      */

@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -102,6 +104,56 @@ import java.lang.annotation.Target;
  * this pattern tend to use. This is because a new <code>Object</code> is NOT serializable, but
  * a 0-size array is. Therefore, using {@code @Synchronized} will not prevent your
  * object from being serialized.
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.Synchronized
+ *
+ * class Util {
+ *     private counter = 0
+ *
+ *     private def list = ['Groovy']
+ *
+ *     private Object listLock = new Object[0]
+ *
+ *     &#64;Synchronized
+ *     void workOnCounter() {
+ *         assert 0 == counter
+ *         counter++
+ *         assert 1 == counter
+ *         counter --
+ *         assert 0 == counter
+ *     }
+ *
+ *     &#64;Synchronized('listLock')
+ *     void workOnList() {
+ *         assert 'Groovy' == list[0]
+ *         list &lt;&lt; 'Grails'
+ *         assert 2 == list.size()
+ *         list = list - 'Grails'
+ *         assert 'Groovy' == list[0]
+ *     }
+ * }
+ *
+ * def util = new Util()
+ * def tc1 = Thread.start {
+ *     100.times {
+ *         util.workOnCounter()
+ *         sleep 20 
+ *         util.workOnList()
+ *         sleep 10
+ *     }
+ * }
+ * def tc2 = Thread.start {
+ *     100.times {
+ *         util.workOnCounter()
+ *         sleep 10 
+ *         util.workOnList()
+ *         sleep 15
+ *     }
+ * }
+ * tc1.join()
+ * tc2.join()
+ * </pre>
  *
  * @author Paul King
  * @since 1.7.3

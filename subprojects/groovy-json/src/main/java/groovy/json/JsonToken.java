@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json;
 
@@ -27,14 +30,11 @@ import static groovy.json.JsonTokenType.*;
  * @since 1.8.0
  */
 public class JsonToken {
+
     private static final BigInteger MAX_LONG    = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger MIN_LONG    = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger MAX_INTEGER = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger MIN_INTEGER = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigDecimal MAX_DOUBLE  = new BigDecimal(String.valueOf(Double.MAX_VALUE));
-    private static final BigDecimal MIN_DOUBLE  = MAX_DOUBLE.negate();
-    private static final BigDecimal MAX_FLOAT   = new BigDecimal(String.valueOf(Float.MAX_VALUE));
-    private static final BigDecimal MIN_FLOAT   = MAX_FLOAT.negate();
 
     /** Start line position */
     private long startLine;
@@ -53,8 +53,8 @@ public class JsonToken {
 
     /**
      * Return the value represented by this token (ie. a number, a string, a boolean or null).
-     * For numbers, the most appropriate type is returned (Float, Double, BigDecimal for decimal numbers,
-     * and Integer, Long and BigInteger for integral numbers).
+     * For numbers, BigDecimal is returned for decimals and Integer, Long or BigInteger for 
+     * integral numbers.
      *
      * @return the represented value
      */
@@ -72,9 +72,9 @@ public class JsonToken {
             } else {
                 // an integer number
                 BigInteger v = new BigInteger(text);
-                if(v.compareTo(MAX_INTEGER) <= 0 && v.compareTo(MIN_INTEGER) >= 0 ) {
+                if (v.compareTo(MAX_INTEGER) <= 0 && v.compareTo(MIN_INTEGER) >= 0) {
                     return v.intValue();
-                } else if (v.compareTo(MAX_LONG) <= 0 && v.compareTo(MIN_LONG) >= 0 ) {
+                } else if (v.compareTo(MAX_LONG) <= 0 && v.compareTo(MIN_LONG) >= 0) {
                     return v.longValue();
                 } else {
                     return v;

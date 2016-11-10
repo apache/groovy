@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -25,7 +28,6 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -54,7 +56,7 @@ public class AnnotationCollectorTransform {
     }
 
     /**
-     * Class used by {@link CompilationUnit} to transform the alias class
+     * Class used by {@link org.codehaus.groovy.control.CompilationUnit} to transform the alias class
      * into what is needed by the compiler. This means removing invalid
      * modifiers, interfaces and superclasses, as well as adding a static
      * value method returning our serialized version of the data for processing
@@ -76,7 +78,7 @@ public class AnnotationCollectorTransform {
                 if (an.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
                     collector = an;
                     break;
-                };
+                }
             }
             if (collector==null) return;
             
@@ -165,8 +167,8 @@ public class AnnotationCollectorTransform {
         }
         ListExpression memberListExp = (ListExpression) memberValue;
         List<Expression> memberList = memberListExp.getExpressions();
-        if (memberList.size()==0) return Collections.EMPTY_LIST;
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>();
+        if (memberList.isEmpty()) return Collections.EMPTY_LIST;
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>();
         for (Expression e : memberList) {
             AnnotationNode toAdd = new AnnotationNode(e.getType());
             toAdd.setSourcePosition(aliasAnnotationUsage);
@@ -175,13 +177,13 @@ public class AnnotationCollectorTransform {
         return ret;
     }
 
-    private List<AnnotationNode> getStoredTargetList(AnnotationNode aliasAnnotationUsage, SourceUnit source) {
+    private static List<AnnotationNode> getStoredTargetList(AnnotationNode aliasAnnotationUsage, SourceUnit source) {
         ClassNode alias = aliasAnnotationUsage.getClassNode().redirect();
         List<AnnotationNode> ret = getMeta(alias);
         return copy(ret, aliasAnnotationUsage);
     }
 
-    private List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
+    private static List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
         if (orig.isEmpty()) return orig;
         List<AnnotationNode> ret = new ArrayList<AnnotationNode>(orig.size());
         for (AnnotationNode an : orig) {
@@ -197,7 +199,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> annotations = alias.getAnnotations();
         if (annotations.size() < 2) return Collections.EMPTY_LIST;
         
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
             if (type.getName().equals(AnnotationCollector.class.getName())) continue;
@@ -223,7 +225,7 @@ public class AnnotationCollectorTransform {
     private static List<AnnotationNode> makeListOfAnnotations(Object[][] data) {
         if (data.length==0) return Collections.EMPTY_LIST;
 
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
         for (Object[] inner : data) {
             Class anno = (Class) inner[0];
             AnnotationNode toAdd = new AnnotationNode(ClassHelper.make(anno));
@@ -231,7 +233,7 @@ public class AnnotationCollectorTransform {
 
             @SuppressWarnings("unchecked")
             Map<String,Object> member = (Map<String, Object>) inner[1];
-            if (member.size()==0) continue;
+            if (member.isEmpty()) continue;
             Map<String, Expression> generated = new HashMap<String, Expression>(member.size());
             for (String name : member.keySet()) {
                 Object val = member.get(name);
@@ -276,7 +278,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> targetList = getTargetListFromValue(collector, aliasAnnotationUsage, source);
         int size = targetList.size()+stored.size();
         if (size==0) return Collections.EMPTY_LIST;
-        ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(size);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(size);
         ret.addAll(stored);
         ret.addAll(targetList);
 
@@ -310,7 +312,7 @@ public class AnnotationCollectorTransform {
             }
         }
 
-        if (unusedNames.size()>0) {
+        if (!unusedNames.isEmpty()) {
             String message = "Annotation collector got unmapped names "+unusedNames.toString()+".";
             addError(message, aliasAnnotationUsage, source);
         }

@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -23,6 +24,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -65,7 +67,9 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.internKeys", "false"));
     protected static ConcurrentHashMap<String, String> internedKeysCache;
 
-    protected String charset = Charsets.UTF_8.name();
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    protected String charset = UTF_8.name();
 
     private CharBuf fileInputBuf;
 
@@ -120,10 +124,8 @@ public abstract class BaseJsonParser implements JsonParser {
     }
 
     public Object parse(Reader reader) {
-
         fileInputBuf = IO.read(reader, fileInputBuf, bufSize);
         return parse(fileInputBuf.readForRecycle());
-
     }
 
     public Object parse(InputStream input) {
@@ -138,10 +140,7 @@ public abstract class BaseJsonParser implements JsonParser {
         }
     }
 
-    private final CharBuf builder = CharBuf.create(20);
-
     public Object parse(File file, String charset) {
-
         Reader reader = null;
         try {
             if (charset == null || charset.length() == 0) {
@@ -157,7 +156,6 @@ public abstract class BaseJsonParser implements JsonParser {
                 DefaultGroovyMethodsSupport.closeWithWarning(reader);
             }
         }
-
     }
 
     protected static boolean isDecimalChar(int currentChar) {
@@ -170,11 +168,9 @@ public abstract class BaseJsonParser implements JsonParser {
                 return true;
         }
         return false;
-
     }
 
     protected static boolean isDelimiter(int c) {
-
         return c == COMMA || c == CLOSED_CURLY || c == CLOSED_BRACKET;
     }
 
@@ -201,7 +197,6 @@ public abstract class BaseJsonParser implements JsonParser {
                 indexHolder[0] = index;
                 return true;
             }
-
         }
 
         indexHolder[0] = index;
@@ -221,17 +216,8 @@ public abstract class BaseJsonParser implements JsonParser {
                     break;
                 }
             }
-            if (isEscape(currentChar)) {
-                if (!escape) {
-                    escape = true;
-                } else {
-                    escape = false;
-                }
-            } else {
-                escape = false;
-            }
+            escape = isEscape(currentChar) && !escape;
         }
         return index;
     }
-
 }

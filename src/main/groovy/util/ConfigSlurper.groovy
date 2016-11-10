@@ -1,39 +1,40 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.util
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
- * <p>
  * ConfigSlurper is a utility class for reading configuration files defined in the form of Groovy
- * scripts. Configuration settings can be defined using dot notation or scoped using closures
+ * scripts. Configuration settings can be defined using dot notation or scoped using closures:
  *
  * <pre><code>
- *   grails.webflow.stateless = true
- *    smtp {
- *        mail.host = 'smtp.myisp.com'
- *        mail.auth.user = 'server'
- *    }
- *    resources.URL = "http://localhost:80/resources"
- * </pre></code>
+ * grails.webflow.stateless = true
+ * smtp {
+ *     mail.host = 'smtp.myisp.com'
+ *     mail.auth.user = 'server'
+ * }
+ * resources.URL = "http://localhost:80/resources"
+ * </code></pre>
  *
- * <p>Settings can either be bound into nested maps or onto a specified JavaBean instance. In the case
- * of the latter an error will be thrown if a property cannot be bound.
+ * Settings can either be bound into nested maps or onto a specified JavaBean instance.
+ * In the latter case, an error will be thrown if a property cannot be bound.
  *
  * @author Graeme Rocher
  * @author Andres Almiray
@@ -53,6 +54,7 @@ class ConfigSlurper {
 
     /**
      * Constructs a new ConfigSlurper instance using the given environment
+     *
      * @param env The Environment to use
      */
     ConfigSlurper(String env) {
@@ -90,6 +92,7 @@ class ConfigSlurper {
 
     /**
      * Parses a ConfigObject instances from an instance of java.util.Properties
+     *
      * @param The java.util.Properties instance
      */
     ConfigObject parse(Properties properties) {
@@ -151,6 +154,7 @@ class ConfigSlurper {
     /**
      * Parse the given script into a configuration object (a Map)
      * (This method creates a new class to parse the script each time it is called.)
+     *
      * @param script The script to parse
      * @return A Map of maps that can be navigating with dot de-referencing syntax to obtain configuration entries
      */
@@ -239,7 +243,7 @@ class ConfigSlurper {
                         } finally {
                             currentConditionalBlock.push(conditionalBlockKey)
                         }
-                        stack.pop()
+                        stack.removeLast()
                     }
                 } else {
                     def co
@@ -252,7 +256,7 @@ class ConfigSlurper {
                     assignName.call(name, co)
                     pushStack.call(co)
                     args[0].call()
-                    stack.pop()
+                    stack.removeLast()
                 }
             } else if (args.length == 2 && args[1] instanceof Closure) {
                 try {
@@ -290,7 +294,7 @@ class ConfigSlurper {
 }
 
 /**
- * Since Groovy Script doesn't support overriding setProperty, we have to using a trick with the Binding to provide this
+ * Since Groovy Script doesn't support overriding setProperty, we use a trick with the Binding to provide this
  * functionality
  */
 class ConfigBinding extends Binding {

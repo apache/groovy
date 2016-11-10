@@ -1,9 +1,30 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = InvokeDynamic support
 
 
 == Foreword
 
-Since Groovy 2.0, we added support for the JVM http://docs.oracle.com/javase/7/docs/technotes/guides/vm/multiple-language-support.html#invokedynamic[invokedynamic] instruction. This instruction is supported since Java 7 and is a new bytecode instruction in the JVM that allows easier implementation of dynamic languages. This instruction will also be used internally, by the JVM, for the upcoming lamdba support in Java 8.
+Since Groovy 2.0, we added support for the JVM http://docs.oracle.com/javase/7/docs/technotes/guides/vm/multiple-language-support.html#invokedynamic[invokedynamic] instruction. This instruction is supported since Java 7 and is a new bytecode instruction in the JVM that allows easier implementation of dynamic languages. This instruction will also be used internally, by the JVM, for the lambda support in Java 8.
 
 This means that unlike APIs, AST transformations or syntactic sugar, this feature is **not visible** to the developer or the end user. It is a compilation and runtime feature only. This means that given two programs written in Groovy, you have the choice to compile it with or without invokedynamic support. Whatever you choose, it comes with pros and cons:
 
@@ -26,7 +47,7 @@ The first jar is Groovy compiled without invokedynamic support, while the second
 Both jars contain a fully working groovy implementation. They are mutually exclusive (don't put both on classpath).
 
 === Command-line and indy
-If you download the distribution and that you use the command line, it's always the "normal" version of Groovy which is picked up in classpath. This means that whatever command you use (++groovy++, ++groovyc++, ++groovysh++ or ++groovyConsole++), invokedynamic support is not available out of the box. To use the invokedynamic version, you have to switch the jars manually. The distribution makes use of the jars in the ++lib++ directory, while the indy jars are available in the ++indy++ directory. You have three things to do:
+If you download the distribution and that you use the command line, it's always the "normal" version of Groovy which is picked up in classpath. This means that whatever command you use (`groovy`, `groovyc`, `groovysh` or `groovyConsole`), invokedynamic support is not available out of the box. To use the invokedynamic version, you have to switch the jars manually. The distribution makes use of the jars in the ++lib++ directory, while the indy jars are available in the ++indy++ directory. You have three things to do:
 
 - remove or rename the groovy-*.jar files in the lib directory
 - replace them with the indy version from the indy directory

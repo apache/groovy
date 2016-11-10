@@ -1,0 +1,466 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Interacting with a SQL database
+
+Groovy's `groovy-sql` module provides a higher-level abstraction over Java's JDBC technology. JDBC itself provides
+a lower-level but fairly comprehensive API which provides uniform access to a whole variety of supported relational database systems.
+We'll use HSQLDB in our examples here but you can alternatively use Oracle, SQL Server, MySQL and a host of others.
+The most frequently used class within the `groovy-sql` module is the `groovy.sql.Sql` class which raises the JDBC
+abstractions up one level. We'll cover that first.
+
+== Connecting to the database
+
+Connecting to a database with Groovy's `Sql` class requires four pieces of information:
+
+* The database uniform resource locator (URL)
+* Username
+* Password
+* The driver class name (which can be derived automatically in some situations)
+
+For our HSQLDB database, the values will be something like that shown in the following table:
+
+[cols="1,1" options="header"]
+|====
+| Property
+| Value
+
+| url
+| `jdbc:hsqldb:mem:yourdb`
+
+| user
+| sa (or your _username_)
+
+| password
+| _yourPassword_
+
+| driver
+| `org.hsqldb.jdbcDriver`
+|====
+
+Consult the documentation for the JDBC driver that you plan to use to determine the correct values for your situation.
+
+The `Sql` class has a `newInstance` factory method which takes these parameters. You would typically use it as follows:
+
+[source,groovy]
+.Connecting to HSQLDB
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_close,indent=0]
+----
+
+If you don't want to have to handle resource handling yourself (i.e. call `close()` manually) then you can use the `withInstance` variation as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB (`withInstance` variation)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_withInstance_p1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_withInstance_p2,indent=0]
+----
+
+=== Connecting with a DataSource
+
+It is often preferred to use a DataSource. You may have one available to you from a connection pool.
+Here we'll use the one provided as part of the HSQLDB driver jar as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB with a DataSource
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_datasource,indent=0]
+----
+
+If you have your own connection pooling, the details will be different, e.g. for Apache Commons DBCP:
+
+[source,groovy]
+.Connecting to HSQLDB with a DataSource using Apache Commons DBCP
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_datasource_dbcp,indent=0]
+----
+
+=== Connecting using @Grab
+
+The previous examples assume that the necessary database driver jar is already on your classpath.
+For a self-contained script you can add `@Grab` statements to the top of the script to automatically download the necessary jar as shown here:
+
+[source,groovy]
+.Connecting to HSQLDB using @Grab
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_connecting_grab,indent=0]
+----
+
+The `@GrabConfig` statement is necessary to make sure the system classloader is used. This ensures that the driver classes and
+system classes like `java.sql.DriverManager` are in the same classloader.
+
+== Executing SQL
+
+You can execute arbitrary SQL commands using the `execute()` method. Let's have a look at using it to create a table.
+
+=== Creating tables
+
+The simplest way to execute SQL is to call the `execute()` method passing the SQL you wish to execute as a String as shown here:
+
+[source,groovy]
+.Creating a table
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_creating_table,indent=0]
+----
+
+There is a variant of this method which takes a GString and another with a list of parameters. There are also other variants with similar names: `executeInsert` and `executeUpdate`.
+We'll see examples of these variants in other examples in this section.
+
+== Basic CRUD operations
+
+The basic operations on a database are Create, Read, Update and Delete (the so-called CRUD operations). We'll examine each of these in turn.
+
+=== Creating/Inserting data
+
+You can use the same `execute()` statement we saw earlier but to insert a row by using a SQL insert statement as follows:
+
+[source,groovy]
+.Inserting a row
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row,indent=0]
+----
+
+You can use a special `executeInsert` method instead of `execute`. This will return a list of all keys generated.
+Both the `execute` and `executeInsert` methods allow you to place '?' placeholders into your SQL string and supply a list of parameters.
+In this case a PreparedStatement is used which avoids any risk of SQL injection. The following example illustrates `executeInsert` using placeholders and parameters:
+
+[source,groovy]
+.Inserting a row using executeInsert with placeholders and parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row_executeInsert,indent=0]
+----
+
+In addition, both the `execute` and `executeInsert` methods allow you to use GStrings. Any '$' placeholders within the SQL are assumed
+to be placeholders. An escaping mechanism exists if you want to supply part of the GString with a variable in a
+position which isn't where normal placeholders go within SQL. See the GroovyDoc for more details.
+Also, `executeInsert` allows you to supply a list of key column names, when multiple keys are returned and you are only interested in some of them.
+ Here is a fragment illustrating key name specification and GStrings:
+
+[source,groovy]
+.Inserting a row using executeInsert with a GString and specifying key names
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_inserting_row_executeInsert_keys,indent=0]
+----
+
+=== Reading rows
+
+Reading rows of data from the database is accomplished using one of several available methods: `query`, `eachRow`, `firstRow` and `rows`.
+
+Use the `query` method if you want to iterate through the `ResultSet` returned by the underlying JDBC API as shown here:
+
+[source,groovy]
+.Reading data using `query`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_query,indent=0]
+----
+
+Use the `eachRow` method if you want if you want a slightly higher-level abstraction which provides a Groovy friendly map-like abstraction for the `ResultSet` as shown here:
+
+[source,groovy]
+.Reading data using `eachRow`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_eachrow,indent=0]
+----
+
+Note that you can use Groovy list-style and map-style notations when accessing the row of data.
+
+Use the `firstRow` method if you for similar functionality as `eachRow` but returning only one row of data as shown here:
+
+[source,groovy]
+.Reading data using `firstRow`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_firstrow,indent=0]
+----
+
+Use the `rows` method if you want to process a list of map-like data structures as shown here:
+
+[source,groovy]
+.Reading data using `rows`
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_rows,indent=0]
+----
+
+Note that the map-like abstraction has case-insensitive keys (hence we can use 'FIRSTNAME' or 'firstname' as the key) and
+also that -ve indices (a standard Groovy feature) works when using an index value (to count column numbers from the right).
+
+You can also use any of the above methods to return scalar values, though typically `firstRow` is all that is required in such cases. An example returning the count of rows is shown here:
+
+[source,groovy]
+.Reading scalar values
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_scalar,indent=0]
+----
+
+=== Updating rows
+
+Updating rows can again be done using the `execute()` method. Just use a SQL update statement as the argument to the method.
+You can insert an author with just a lastname and then update the row to also have a firstname as follows:
+
+[source,groovy]
+.Updating a row
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_updating_execute,indent=0]
+----
+
+There is also a special `executeUpdate` variant which returns the number of rows updated as a result of executing the SQL.
+For example, you can change the lastname of an author as follows:
+
+[source,groovy]
+.Using executeUpdate
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_updating_execute_update,indent=0]
+----
+
+=== Deleting rows
+
+The `execute` method is also used for deleting rows as this example shows:
+
+[source,groovy]
+.Deleting rows
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_deleting_data,indent=0]
+----
+
+== Advanced SQL operations
+
+=== Working with transactions
+
+The easiest way to perform database operations within a transaction is to include the database operation within a `withTransaction` closure as shown in the following example:
+
+[source,groovy]
+.A successful transaction
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_transaction_pass,indent=0]
+----
+
+Here the database starts empty and has two rows after successful completion of the operation. Outside the scope of the
+transaction, the database is never seen as having just one row.
+
+If something goes wrong, any earlier operations within the `withTransaction` block are rolled back.
+We can see that in operation in the following example where we use database metadata (more details coming up shortly) to find the
+maximum allowable size of the `firstname` column and then attempt to enter a firstname one larger than that maximum value as shown here:
+
+[source,groovy]
+.A failed transaction will cause a rollback
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_transaction_fail,indent=0]
+----
+
+Even though the first sql execute succeeds initially, it will be rolled back and the number of rows will remain the same.
+
+=== Using batches
+
+When dealing with large volumes of data, particularly when inserting such data, it can be more efficient to chunk the data into batches. This is done
+using the `withBatch` statement as shown in the following example:
+
+[source,groovy]
+.Batching SQL statements
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_statements,indent=0]
+----
+
+After executing these statements, there will be 7 new rows in the database. In fact, they will have been added in batches
+even though you can't easily tell that after that fact. If you want to confirm what is going on under the covers, you can
+add a little bit of extra logging into your program. Add the following lines before the `withBatch` statement:
+
+[source,groovy]
+.Logging additional SQL information
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_import_for_logging,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_logging,indent=0]
+----
+
+With this extra logging turned on, and the changes made as per the above comment for the logging.properties file, you should see
+output such as:
+
+[source]
+.SQL logging output with batching enable
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_results,indent=0]
+----
+
+We should also note, that any combination of SQL statements can be added to the batch. They don't all have to be
+inserting a new row to the same table.
+
+We noted earlier that to avoid SQL injection, we encourage you to use prepared statements, this is achieved using the
+variants of methods which take GStrings or a list of extra parameters. Prepared statements can be used in combination
+with batches as shown in the following example:
+
+[source,groovy]
+.Batching prepared statements
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_batch_prepared_statements,indent=0]
+----
+
+This provides a much safer option if the data could come from a user such as via a script or a web form. Of course, given
+that a prepared statement is being used, you are limited to a batch of the same SQL operation (insert in our example)
+to the one table.
+
+=== Performing pagination
+
+When presenting large tables of data to a user, it is often convenient to present information a page at
+a time. Many of Groovy's SQL retrieval methods have extra parameters which can be used to select a particular
+page of interest. The starting position and page size are specified as integers as shown in the following example
+using `rows`:
+
+[source,groovy]
+.Retrieving pages of data
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_pagination,indent=0]
+----
+
+=== Fetching metadata
+
+JDBC metadata can be retrieved in numerous ways. Perhaps the most basic approach is to extract the
+metadata from any row as shown in the following example which examines the tablename, column names and column type names:
+
+[source,groovy]
+.Using row metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata,indent=0]
+----
+
+And another slight variant to the previous example, this time also looking at the column label:
+
+[source,groovy]
+.Also using row metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata2,indent=0]
+----
+
+Accessing metadata is quite common, so Groovy also provides variants to many of its methods that let you
+supply a closure that will be called once with the row metadata in addition to the normal row closure
+which is called for each row. The following example illustrates the two closure variant for `eachRow`:
+
+[source,groovy]
+.Using row and metadata closures
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_rs_metadata3,indent=0]
+----
+
+Note that our SQL query will only return one row, so we could have equally used `firstRow` for the previous example.
+
+Finally, JDBC also provides metadata per connection (not just for rows). You can also access such metadata from Groovy as shown in this example:
+
+[source,groovy]
+.Using connection metadata
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_basic_table_metadata,indent=0]
+----
+
+Consult the JavaDoc for your driver to find out what metadata information is available for you to access.
+
+=== Named and named-ordinal parameters
+
+Groovy supports some additional alternative placeholder syntax variants. The GString variants
+are typically preferred over these alternatives but the alternatives are useful for Java integration
+purposes and sometimes in templating scenarios where GStrings might already be in heavy use as part
+of a template. The named parameter variants are much like the String plus list of parameter variants but
+instead of having a list of `?` placeholders followed by a list of parameters, you have one or more
+placeholders having the form `:propName` or `?.propName` and a single map, named arguments or a
+domain object as the parameter. The map or domain object should have a property named `propName`
+corresponding to each supplied placeholder.
+
+Here is an example using the colon form:
+
+[source,groovy]
+.Named parameters (colon form)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named,indent=0]
+----
+
+And another example using the question mark form:
+
+[source,groovy]
+.Named parameters (question mark form)
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named2,indent=0]
+----
+
+If the information you need to supply is spread across multiple maps or domain objects you can
+use the question mark form with an additional ordinal index as shown here:
+
+[source,groovy]
+.Named-ordinal parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named_ordinal1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_named_ordinal2,indent=0]
+----
+
+=== Stored procedures
+
+The exact syntax for creating a stored procedure or function varies slightly between different databases.
+For the HSQLDB database we are using, we can create a stored function which returns the initials of all authors in a table
+as follows:
+
+[source,groovy]
+.Creating a stored function
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc,indent=0]
+----
+
+We can use a SQL `CALL` statement to invoke the function using Groovy's normal SQL retrieval methods.
+Here is an example using `eachRow`.
+
+[source,groovy]
+.Creating a stored procedure or function
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc,indent=0]
+----
+
+Here is the code for creating another stored function, this one taking the lastname as a parameter:
+
+[source,groovy]
+.Creating a stored function with a parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc_param,indent=0]
+----
+
+We can use the placeholder syntax to specify where the parameter belongs and note the special placeholder position to indicate the result:
+
+[source,groovy]
+.Using a stored function with a parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc_param,indent=0]
+----
+
+Finally, here is a stored procedure with input and output parameters:
+
+[source,groovy]
+.Creating a stored procedure with input and output parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_proc_inout,indent=0]
+----
+
+To use the `CONCAT_NAME` stored procedure parameter, we make use of a special `call` method. Any input parameters are simply provided
+as parameters to the method call. For output parameters, the resulting type must be specified as shown here:
+
+[source,groovy]
+.Using a stored procedure with input and output parameters
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc_inout,indent=0]
+----
+
+== Using DataSets
+
+(TBD)

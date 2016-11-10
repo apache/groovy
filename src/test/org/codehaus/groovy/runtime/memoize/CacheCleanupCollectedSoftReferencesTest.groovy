@@ -1,33 +1,32 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.runtime.memoize
+
+import org.junit.Ignore
 
 /**
  * @author Rafael Luque
  */
-public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {   
+@Ignore("do not run consistently on the build server")
+class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
 
-    // TODO delete this once another test below is re-enabled
-    public void testNothing_dummyTestToKeepJUnitTestCollectorHappy() {
-        assert true
-    }
-
-    // TODO re-enable this test once CI server can safely handle it
-    public void manual_testCollectedCacheValuesAreEnqueued() {
+    void testCollectedCacheValuesAreEnqueued() {
 
         Closure cl = { 
             new Integer(it + 1) 
@@ -47,8 +46,7 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         checkCollectedSoftReferenceAreEnqueued(softReference)
     }
 
-    // TODO re-enable this test once CI server can safely handle it
-    public void manual_testCollectedCacheValuesAreRemovedFromCache() {
+    void testCollectedCacheValuesAreRemovedFromCache() {
 
         Closure cl = { 
             new Integer(it + 1) 
@@ -72,7 +70,6 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         assert cache.cache.size() == 1 : 'collected SoftReferences should be removed from cache'
     }
 
-
     private void checkSoftReferenceAreSoftlyReachable(softReference) {
         assert softReference.get() == null : 
             'cache values should be softly reachable and collected before an OOME'
@@ -89,6 +86,5 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         } catch (Throwable e) {
             // Ignore OOME
         }
-
     }
 }

@@ -1,4 +1,25 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Test case for the eachObject method on a file containing
@@ -22,14 +43,11 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
             oos.writeObject(it)
         }
 
-        println("Contents of file with multiple objects: " + file)
         int c = 0
         file.eachObject {
-            print "${it} "
             c++
         }
         assert list.size() == c
-        println ""
         //ensure to remove the created file
         file.delete()
     }
@@ -39,14 +57,11 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
         def oos = new ObjectOutputStream(new FileOutputStream(file))
         oos.writeObject(file)
 
-        println("Contents of file with one object: " + file)
         int c = 0
         file.eachObject {
-            print "${it} "
             c++
         }
         assert c == 1
-        println ""
         //ensure to remove the created file
         file.delete()
     }
@@ -55,14 +70,12 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
         def file = new File(filename)
         def oos = new ObjectOutputStream(new FileOutputStream(file))
 
-        println("Contents of empty file: " + file)
         int c = 0
         file.eachObject {
             print "${it} "
             c++
         }
         assert c == 0
-        println ""
         //ensure to remove the created file
         file.delete()
     }
@@ -74,14 +87,11 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
         oos.writeObject("foo")
         oos.writeObject(null)
 
-        println("Contents of null file: " + file)
         int c = 0
         file.eachObject {
-            print "${it} "
             c++
         }
         assert c == 3
-        println ""
         //ensure to remove the created file
         file.delete()
     }
@@ -89,39 +99,33 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     void testEachDir() {
         def dir = new File(dirname_source)
 
-        println("Directories in: " + dir)
         int c = 0
         dir.eachDir {
-            print "${it} "
             c++
         }
-        println ""
         assert c > 0
     }
 
     void testEachFileMatch() {
         def file = new File(dirname_source)
 
-        print "Files with the text Groovy: "
-        file.eachFileMatch(~"^Groovy.*") {
-            print "${it} "
-        }
-        println ""
-
-        print "Files with the text Closure: "
-        file.eachFileMatch(~"^Closure.*") {
-            print "${it} "
-        }
-        println ""
-
-        print "This file is here: "
         int c = 0
+        file.eachFileMatch(~"^Groovy.*") {
+            c++
+        }
+        assert c > 0
+
+        c = 0
+        file.eachFileMatch(~"^Closure.*") {
+            c++
+        }
+        assert c > 0
+
+        c = 0
         file.eachFileMatch(~"^GroovyClosureMethodsTest.groovy") {
-            print "${it} "
             c++
         }
         assert c == 1
-        println ""
     }
 
     void testEachFileOnNonExistingDir() {
@@ -143,15 +147,13 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testRunAfter() {
-        boolean modifiedByRunAfter = false
+        CountDownLatch latch = new CountDownLatch(1)
         new Timer().runAfter(50) {
-            modifiedByRunAfter = true
+            latch.countDown()
         }
-        assert modifiedByRunAfter == false
-        for(int i = 0; !modifiedByRunAfter && i < 10; i++) {
-           Thread.sleep 100
-        }
-        assert modifiedByRunAfter
+        assert latch.getCount() == 1
+        latch.await(2000L, TimeUnit.MILLISECONDS)
+        assert latch.getCount() == 0
     }
 
     void testSplitEachLine() {
@@ -163,6 +165,19 @@ E F G H
         def all_lines = []
         reader.splitEachLine(" ") { list ->
             all_lines << list
+        }
+        assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
+    }
+
+    void testSplitEachLineVarArgClosure() {
+        String s = """A B C D
+E F G H
+1 2 3 4
+"""
+        Reader reader = new StringReader(s)
+        def all_lines = []
+        reader.splitEachLine(" ") { a, b, c, d ->
+            all_lines << [a, b, c, d]
         }
         assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
     }

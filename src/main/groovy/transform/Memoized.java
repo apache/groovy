@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform;
 
@@ -54,7 +57,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *         memoizedSum(n1, n2)
  *     }
  *
- *     private private$method$mzmoizeSum(int n1, int n2) {
+ *     private private$method$memoizedSum(int n1, int n2) {
  *         println "$n1 + $n2 = ${n1 + n2}"
  *         n1 + n2
  *     }
@@ -81,6 +84,45 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * 2 + 3 = 5
  * 5
  * 5
+ * </pre>
+ * 
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.*
+ *
+ * // Script variable which is changed when increment()
+ * // method is invoked. 
+ * // If cached method call is invoked then the value
+ * // of this variable will not change.
+ * &#64;Field boolean incrementChange = false
+ *
+ * &#64;Memoized 
+ * int increment(int value) {
+ *     incrementChange = true
+ *     value + 1 
+ * }
+ *
+ * // Invoke increment with argument 10.
+ * increment(10)
+ *
+ * // increment is invoked so incrementChange is true.
+ * assert incrementChange
+ *
+ * // Set incrementChange back to false.
+ * incrementChange = false
+ *
+ * // Invoke increment with argument 10.
+ * increment(10)
+ *
+ * // Now the cached method is used and
+ * // incrementChange is not changed.
+ * assert !incrementChange
+ *
+ * // Invoke increment with other argument value.
+ * increment(11)
+ *
+ * // increment is invoked so incrementChange is true.
+ * assert incrementChange
  * </pre>
  * 
  * @author Andrey Bloschetsov

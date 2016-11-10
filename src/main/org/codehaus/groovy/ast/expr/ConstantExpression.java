@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.ast.expr;
 
@@ -22,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * Represents a constant expression such as null, true, false
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ConstantExpression extends Expression {
     // The following fields are only used internally; every occurrence of a user-defined expression of the same kind
@@ -40,7 +42,7 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
     
-    private Object value;
+    private final Object value;
     private String constantName;
 
     public ConstantExpression(Object value) {
@@ -61,6 +63,8 @@ public class ConstantExpression extends Expression {
                     setType(ClassHelper.double_TYPE);
                 } else if (value instanceof Float) {
                     setType(ClassHelper.float_TYPE);
+                } else if (value instanceof Character) {
+                    setType(ClassHelper.char_TYPE);
                 } else {
                     setType(ClassHelper.make(value.getClass()));
                 }

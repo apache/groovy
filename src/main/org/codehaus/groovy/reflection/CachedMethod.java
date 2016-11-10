@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.reflection;
 
@@ -39,7 +42,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     private final Method cachedMethod;
     private int hashCode;
 
-    private static MyComparator comparator = new MyComparator();
+    private static final MyComparator comparator = new MyComparator();
 
     private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
@@ -139,59 +142,61 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return compareToMethod((Method)o);
     }
 
-    private int compareToCachedMethod(CachedMethod m) {
-        if (m == null)
-         return -1;
+    private int compareToCachedMethod(CachedMethod other) {
+        if (other == null)
+            return -1;
 
-        final int strComp = getName().compareTo(m.getName());
+        final int strComp = getName().compareTo(other.getName());
         if (strComp != 0)
-          return strComp;
+            return strComp;
 
-        final int retComp = getReturnType().getName().compareTo(m.getReturnType().getName());
+        final int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
         if (retComp != 0)
-          return retComp;
+            return retComp;
 
-        CachedClass[]  params =   getParameterTypes();
-        CachedClass [] mparams = m.getParameterTypes();
+        CachedClass[] params = getParameterTypes();
+        CachedClass[] otherParams = other.getParameterTypes();
 
-        final int pd = params.length - mparams.length;
+        final int pd = params.length - otherParams.length;
         if (pd != 0)
-          return pd;
+            return pd;
 
-        for (int i = 0; i != params.length; ++i)
-        {
-            final int nameComp = params[i].getName().compareTo(mparams[i].getName());
+        for (int i = 0; i != params.length; ++i) {
+            final int nameComp = params[i].getName().compareTo(otherParams[i].getName());
             if (nameComp != 0)
-              return nameComp;
+                return nameComp;
         }
+
+        final int classComp = cachedClass.toString().compareTo(other.getDeclaringClass().toString());
+        if (classComp != 0)
+            return classComp;
 
         throw new RuntimeException("Should never happen");
     }
 
-    private int compareToMethod(Method m) {
-        if (m == null)
-         return -1;
+    private int compareToMethod(Method other) {
+        if (other == null)
+            return -1;
 
-        final int strComp = getName().compareTo(m.getName());
+        final int strComp = getName().compareTo(other.getName());
         if (strComp != 0)
-          return strComp;
+            return strComp;
 
-        final int retComp = getReturnType().getName().compareTo(m.getReturnType().getName());
+        final int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
         if (retComp != 0)
-          return retComp;
+            return retComp;
 
-        CachedClass[]  params =   getParameterTypes();
-        Class [] mparams = m.getParameterTypes();
+        CachedClass[] params = getParameterTypes();
+        Class[] mparams = other.getParameterTypes();
 
         final int pd = params.length - mparams.length;
         if (pd != 0)
-          return pd;
+            return pd;
 
-        for (int i = 0; i != params.length; ++i)
-        {
+        for (int i = 0; i != params.length; ++i) {
             final int nameComp = params[i].getName().compareTo(mparams[i].getName());
             if (nameComp != 0)
-              return nameComp;
+                return nameComp;
         }
 
         return 0;
@@ -215,14 +220,14 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return cachedMethod.toString();
     }
     
-    private Constructor getConstrcutor(SoftReference<Constructor> ref) {
+    private static Constructor getConstructor(SoftReference<Constructor> ref) {
         if (ref==null) return null;
         return ref.get();
     }
 
     public CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(pogoCallSiteConstructor);
+            Constructor constr = getConstructor(pogoCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compilePogoMethod(this);
@@ -251,7 +256,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(pojoCallSiteConstructor);
+            Constructor constr = getConstructor(pojoCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compilePojoMethod(this);
@@ -279,7 +284,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public CallSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
         if (!skipCompiled) {
-            Constructor constr = getConstrcutor(staticCallSiteConstructor);
+            Constructor constr = getConstructor(staticCallSiteConstructor);
             if (constr==null) {
                 if (CallSiteGenerator.isCompilable(this)) {
                   constr = CallSiteGenerator.compileStaticMethod(this);

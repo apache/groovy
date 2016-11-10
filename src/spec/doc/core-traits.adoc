@@ -1,6 +1,27 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Traits
 
-Traits are a a structural construct of the language which allow:
+Traits are a structural construct of the language which allows:
 
 * composition of behaviors
 * runtime implementation of interfaces
@@ -27,7 +48,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=bird,ind
 <2> instantiate a new `Bird`
 <3> the `Bird` class automatically gets the behavior of the `FlyingAbility` trait
 
-Traits allow a wide range of capabilities, from simple composition to testing, which are described throughfully in this section.
+Traits allow a wide range of capabilities, from simple composition to testing, which are described thoroughly in this section.
 
 == Methods
 === Public methods
@@ -113,7 +134,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_im
 <1> declaration of a normal interface
 <2> add `Named` to the list of implemented interfaces
 <3> declare a class that implements the `Greetable` trait
-<4> implement the missing `greet` method
+<4> implement the missing `name` method
 <5> the `greeting` implementation comes from the trait
 <6> make sure `Person` implements the `Named` interface
 <7> make sure `Person` implements the `Greetable` trait
@@ -142,10 +163,14 @@ will let you do that:
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_private_field,indent=0]
 ----
+<1> declare a private field `count` inside a trait
+<2> declare a public method `count` that increments the counter and returns it
+<3> declare a class that implements the `Counter` trait
+<4> the `count` method can use the private field to keep state
 
 TIP: This is a major difference with http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html[Java 8 virtual extension methods]. While virtual extension methods
-do not carry state, traits can. Also interesting traits in Groovy are supported starting with Java 6, but their implementation do not rely on virtual extension methods. This
-means that even if a trait can be seen from a Java class as a regular interface, this interface will *not* have default methods, only abstract ones.
+do not carry state, traits can. Moreover, traits in Groovy are supported starting with Java 6, because their implementation does not rely on virtual extension methods. This
+means that even if a trait can be seen from a Java class as a regular interface, that interface will *not* have default methods, only abstract ones.
 
 === Public fields
 
@@ -170,12 +195,11 @@ in the implementing class, the public field will appear as:
 String my_package_Foo__bar
 ----
 
-WARNING: While traits support public fields, it is not recommanded to use them and considered as a bad practice.
+WARNING: While traits support public fields, it is not recommended to use them and considered as a bad practice.
 
 == Composition of behaviors
 
-Traits can be used to implement multiple inheritance in a controlled way, avoiding the diamond issue. For example, we
-can have the following traits:
+Traits can be used to implement multiple inheritance in a controlled way. For example, we can have the following traits:
 
 [source,groovy]
 ----
@@ -400,7 +424,7 @@ This works but this approach has drawbacks:
 . the logging logic is bound to a "concrete" handler
 . we have an explicit reference to `DefaultHandler` in the `on` method, meaning that if we happen to change the trait that our class implements, code will be broken
 
-As an alternative, we can write another trait which responsability is limited to logging:
+As an alternative, we can write another trait which responsibility is limited to logging:
 
 [source,groovy]
 -----
@@ -419,6 +443,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerw
 -----
 
 which will print:
+
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert_output,indent=0]
 ----
@@ -435,7 +460,7 @@ that start with `say`:
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sayhandler,indent=0]
 -----
 <1> a handler specific precondition
-<2> if the precondition is not meant, pass the message to the next handler in the chain
+<2> if the precondition is not met, pass the message to the next handler in the chain
 
 Then our final handler looks like this:
 
@@ -449,7 +474,7 @@ Which means:
 
 * messages will first go through the logging handler
 * the logging handler calls `super` which will delegate to the next handler, which is the `SayHandler`
-* if the message starts with `say`, then the hanlder consumes the message
+* if the message starts with `say`, then the handler consumes the message
 * if not, the `say` handler delegates to the next handler in the chain
 
 This approach is very powerful because it allows you to write handlers that do not know each other and yet let you
@@ -478,7 +503,7 @@ not called anymore.
 
 === Semantics of super inside a trait
 
-If a class implements multiple traits and that a call to an unqualified `super` is found, then:
+If a class implements multiple traits and a call to an unqualified `super` is found, then:
 
 . if the class implements another trait, the call delegates to the next trait in the chain
 . if there isn't any trait left in the chain, `super` refers to the super class of the implementing class (_this_)
@@ -505,8 +530,8 @@ is used for `toString`, so that the string representation of the proxy object wh
 == Advanced features
 === SAM type coercion
 
-If a trait defines a single abstract method, it is candidate for SAM type coercion. For example, imagine the following
-trait:
+If a trait defines a single abstract method, it is candidate for SAM (Single Abstract Method) type coercion. For example,
+imagine the following trait:
 
 [source,groovy]
 ----
@@ -587,7 +612,7 @@ the trait in its interface list, the behavior will be borrowed from the trait im
 
 This feature is in particular useful when you don't have access to the super class source code. It can be used to
 mock methods or force a particular implementation of a method in a subclass. It lets you refactor your code to keep
-the overriden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
+the overridden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
 is to override the method in *every* place you would have used the new code.
 
 
@@ -660,7 +685,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfi
 <4> a static method _init_ is made available to the implementing class
 <5> the static field is _remapped_ to avoid the diamond issue
 
-As usual, it is not recommanded to use public fields. Anyway, should you want this, you must understand that the following code would fail:
+As usual, it is not recommended to use public fields. Anyway, should you want this, you must understand that the following code would fail:
 
 [source,groovy]
 -----
@@ -715,13 +740,82 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcoupl
 ----
 
 The reason is that the `sum` method accesses the _fields_ of the trait. So it is using the `x` and `y` values defined
-in the trait. If you want to use the values from the implementing class, then you need to derefencence fields by using
+in the trait. If you want to use the values from the implementing class, then you need to dereference fields by using
 getters and setters, like in this last example:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
 ----
+
+== Self types
+=== Type constraints on traits
+
+Sometimes you will want to write a trait that can only be applied to some type. For example, you may want to apply a
+trait on a class that extends another class which is beyond your control, and still be able to call those methods.
+To illustrate this, let's start with this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_intro,indent=0]
+----
+<1> A `Service` class, beyond your control (in a library, ...) defines a `sendMessage` method
+<2> A `Device` class, beyond your control (in a library, ...)
+<3> Defines a communicating trait for devices that can call the service
+<4> Defines `MyDevice` as a communicating device
+<5> The method from the trait is called, and `id` is resolved
+
+It is clear, here, that the `Communicating` trait can only apply to `Device`. However, there's no explicit
+contract to tell that, because traits cannot extend classes. However, the code compiles and runs perfectly
+fine, because `id` in the trait method will be resolved dynamically. The problem is that there is nothing that
+prevents the trait from being applied to any class which is *not* a `Device`. Any class which has an `id` would
+work, while any class that does not have an `id` property would cause a runtime error.
+
+The problem is even more complex if you want to enable type checking or apply `@CompileStatic` on the trait: because
+the trait knows nothing about itself being a `Device`, the type checker will complain saying that it does not find
+the `id` property.
+
+One possibility is to explicitly add a `getId` method in the trait, but it would not solve all issues. What if a method
+requires `this` as a parameter, and actually requires it to be a `Device`?
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_securityservice,indent=0]
+----
+
+If you want to be able to call this in the trait, then you will explicitly need to cast `this` into a `Device`. This can
+quickly become unreadable with explicit casts to this everywhere.
+
+=== The @SelfType annotation
+
+In order to make this contract explicit, and to make the type checker aware of the _type of itself_, Groovy provides
+a `@SelfType` annotation that will:
+
+* let you declare the types that a class that implements this trait must inherit or implement
+* throw a compile time error if those type constraints are not satisfied
+
+So in our previous example, we can fix the trait using the `@groovy.transform.SelfType` annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_fixed,indent=0]
+----
+
+Now if you try to implement this trait on a class that is *not* a device, a compile-time error will occur:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_compiletimeerror,indent=0]
+----
+
+The error will be:
+
+----
+class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'
+----
+
+In conclusion, self types are a powerful way of declaring constraints on traits without having to declare the contract
+directly in the trait or having to use casts everywhere, maintaining separation of concerns as tight as it should be.
 
 == Limitations
 === Compatibility with AST transformations
@@ -743,3 +837,4 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=prefix_p
 <2> `x` is defined within the trait, prefix decrement is not allowed
 
 A workaround is to use the `+=` operator instead.
+

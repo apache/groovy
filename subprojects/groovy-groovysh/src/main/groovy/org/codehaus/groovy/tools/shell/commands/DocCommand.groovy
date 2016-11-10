@@ -1,30 +1,27 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.console.completer.AggregateCompleter
-import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
-import jline.console.completer.StringsCompleter
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 
 /**
  * The 'doc' command.
@@ -38,8 +35,8 @@ class DocCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':doc'
 
-    private static final String ENV_BROWSER = "BROWSER"
-    private static final String ENV_BROWSER_GROOVYSH = "GROOVYSH_BROWSER"
+    private static final String ENV_BROWSER = 'BROWSER'
+    private static final String ENV_BROWSER_GROOVYSH = 'GROOVYSH_BROWSER'
 
     private static final int TIMEOUT_CONN = 5 * 1000 // ms
     private static final int TIMEOUT_READ = 5 * 1000 // ms
@@ -53,12 +50,12 @@ class DocCommand extends CommandSupport {
      */
     static {
         try {
-            def desktopClass = Class.forName("java.awt.Desktop")
+            def desktopClass = Class.forName('java.awt.Desktop')
             desktop = desktopClass.desktopSupported ? desktopClass.desktop : null
 
             hasAWTDesktopPlatformSupport =
                 desktop != null &&
-                        desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+                        desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == 'Action' }.BROWSE)
 
         } catch (Exception e) {
             hasAWTDesktopPlatformSupport = false
@@ -71,13 +68,12 @@ class DocCommand extends CommandSupport {
     }
 
     @Override
-    Completer getCompleter() {
-        return new AggregateCompleter([
-            new ArgumentCompleter([
-                new StringsCompleter(name, shortcut),
-                new ImportCompleter(shell.packageHelper, shell.interp, false)])])
+    protected List<Completer> createCompleters() {
+        return [new ImportCompleter(shell.packageHelper, shell.interp, false),
+                null]
     }
 
+    @Override
     Object execute(final List<String> args) {
         if (args?.size() == 1) {
             doc(args[0])
@@ -95,7 +91,7 @@ class DocCommand extends CommandSupport {
 
         // Print the URLs.
         // It is useful especially when the browsing fails.
-        urls.each { url -> println url }
+        urls.each { url -> io.out.println url }
 
         browse(urls)
     }
@@ -113,9 +109,9 @@ class DocCommand extends CommandSupport {
         } else if (hasAWTDesktopPlatformSupport) {
             browseWithAWT(urls)
         } else {
-            fail "Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set " +
+            fail 'Browser could not be opened due to missing platform support for "java.awt.Desktop". Please set ' +
                  "a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable referring to the browser binary to " +
-                 "solve this issue."
+                 'solve this issue.'
         }
     }
 
@@ -135,32 +131,31 @@ class DocCommand extends CommandSupport {
     protected void browseWithNativeBrowser(String browser, List urls) {
         try {
             "$browser ${urls.join(' ')}".execute()
-
         } catch (Exception e) {
             // we could be here caused by a IOException, SecurityException or NP Exception
-
             fail "Browser could not be opened (${e}). Please check the $ENV_BROWSER_GROOVYSH or $ENV_BROWSER " +
                  "environment variable."
         }
     }
 
     protected List urlsFor(String className) {
-        def path = className.replaceAll(/\./, '/') + ".html"
+        String groovyVersion = GroovySystem.version
+        def path = className.replaceAll(/\./, '/') + '.html'
 
         def urls = []
         if (className.matches(/^(groovy|org\.codehaus\.groovy|)\..+/)) {
-            def url = new URL("http://groovy.codehaus.org/gapi/$path")
+            def url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/gapi/$path")
             if (sendHEADRequest(url)) {
                 urls << url
             }
         } else {
-            // Don't specify package names not to depend on a version of Java SE.
-            // Java SE includes none-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
-            // and new packages might be added in a future.
+            // Don't specify package names to not depend on a specific version of Java SE.
+            // Java SE includes non-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
+            // and new packages might be added in the future.
             def url = new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/$path")
             if (sendHEADRequest(url)) {
                 urls << url
-                url = new URL("http://groovy.codehaus.org/groovy-jdk/$path")
+                url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/$path")
                 if (sendHEADRequest(url)) {
                     urls << url
                 }
@@ -171,13 +166,19 @@ class DocCommand extends CommandSupport {
     }
 
     private static simpleVersion() {
-        System.getProperty("java.version").tokenize('_')[0]
+        String javaVersion = System.getProperty('java.version')
+        if (javaVersion.startsWith('1.')) {
+            javaVersion.split(/\./)[1]
+        } else {
+            // java 9 and above
+            javaVersion.replaceAll(/-.*/, '').split(/\./)[0]
+        }
     }
 
     protected boolean sendHEADRequest(URL url) {
         try {
             HttpURLConnection conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "HEAD"
+            conn.requestMethod = 'HEAD'
             conn.connectTimeout = TIMEOUT_CONN
             conn.readTimeout = TIMEOUT_READ
             conn.instanceFollowRedirects = true

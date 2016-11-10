@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json;
 
@@ -21,7 +24,7 @@ package groovy.json;
  * To enable the INDEX_OVERLAY parser do this:
  *
  * <code><pre>
- *             parser = new JsonSlurper().setType( JsonParserType.INDEX_OVERLAY );
+ *             parser = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY);
  * </pre></code>
  *
  * INDEX_OVERLAY should be your parser of choice.
@@ -54,7 +57,8 @@ package groovy.json;
  */
 public enum JsonParserType {
 
-    /** Fastest parser, but has pointers (indexes really) to original char buffer.
+    /**
+     * Fastest parser, but has pointers (indexes really) to original char buffer.
      * Care must be used if putting parse maps into a long term cache as members of map
      * maybe index overlay objects pointing to original buffer.
      * You can mitigate these risks by using chop and lazy chop.
@@ -66,7 +70,7 @@ public enum JsonParserType {
      * You do not need chop or lazy chop if you are not putting the map into a long term cache.
      * You do not need chop or lazy chop if you are doing object de-serialization.
      * Recommendation is to use this for JSON buffers under 2MB.
-     * */
+     */
     INDEX_OVERLAY,
     /**
      * Parser uses an abstraction that allows it to handle any size file by using a char [] windowing,
@@ -90,5 +94,5 @@ public enum JsonParserType {
      * INDEX_OVERLAY. It should be on average the fastest known JSON parser on the JVM circa Jan 2014.
      * But not as fast as INDEX_OVERLAY.
      */
-    CHAR_BUFFER;
+    CHAR_BUFFER
 }

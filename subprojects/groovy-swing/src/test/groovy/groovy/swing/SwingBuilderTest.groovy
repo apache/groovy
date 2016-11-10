@@ -1,19 +1,26 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.swing
+
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
 import javax.swing.JToolBar.Separator as JToolBar_Separator
@@ -29,8 +36,21 @@ import javax.swing.text.NumberFormatter
 import java.awt.*
 import javax.swing.*
 
+import static org.junit.Assume.assumeFalse
+
+@RunWith(JUnit4)
 class SwingBuilderTest extends GroovySwingTestCase {
 
+    private static final boolean buildsApacheOrg = new File('.').absolutePath =~ /jenkins|hudson/
+    private static final boolean windows = System.properties['os.name'].toLowerCase().contains('windows')
+
+    private assumeNotOnBuildsApacheOrgAndNotOnWindows() {
+        assumeFalse('''Filechooser seems bugy on Windows e.g.: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6973685
+on builds.apache.org these test fail with: java.lang.NullPointerException: at sun.awt.shell.Win32ShellFolder2.access$200(Win32ShellFolder2.java:72)
+Therefore we ship them on there.''', buildsApacheOrg && windows)
+    }
+
+    @Test
     void testWidgetId() {
         testInEDT {
 
@@ -55,7 +75,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testNamedWidgetCreation() {
+        assumeNotOnBuildsApacheOrgAndNotOnWindows()
+
         testInEDT {
             def topLevelWidgets = [
                     frame: [JFrame, true],
@@ -77,6 +100,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testLayoutCreation() {
         testInEDT {
 
@@ -98,6 +122,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testGridBagFactory() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -120,6 +145,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBorderLayout() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -138,6 +164,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testLayoutConstraintsProperty() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -149,6 +176,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testWidgetCreation() {
         testInEDT {
 
@@ -200,6 +228,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testButtonGroup() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -233,6 +262,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testButtonGroupOnlyForButtons() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -244,6 +274,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testWidget() {
         testInEDT {
 
@@ -256,6 +287,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSplitPane() {
         testInEDT {
 
@@ -278,6 +310,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testNestedWindows() {
         testInEDT {
 
@@ -308,6 +341,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testFrames() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -320,6 +354,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testDialogs() {
         testInEDT {
 
@@ -341,6 +376,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testWindows() {
         testInEDT {
 
@@ -351,6 +387,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testNodeCreation() {
         testInEDT {
 
@@ -371,6 +408,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSetMnemonic() {
         testInEDT {
 
@@ -396,6 +434,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBuilderProperties() {
         testInEDT {
 
@@ -404,6 +443,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testFormattedTextField() {
         testInEDT {
 
@@ -421,6 +461,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testScrollPane() {
         testInEDT {
 
@@ -434,6 +475,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testComboBox() {
         testInEDT {
 
@@ -448,6 +490,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testList() {
         testInEDT {
 
@@ -473,6 +516,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testMisplacedActionsAreIgnored() {
         testInEDT {
 
@@ -491,6 +535,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBoxLayout() {
         testInEDT {
 
@@ -510,6 +555,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testKeystrokesWithinActions() {
         testInEDT {
 
@@ -538,6 +584,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testActionClosures() {
         testInEDT {
 
@@ -578,6 +625,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSetAccelerator() {
         testInEDT {
 
@@ -600,6 +648,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         return action
     }
 
+    @Test
     void testSetAcceleratorShortcuts() {
         testInEDT {
 
@@ -616,6 +665,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBorderLayoutConstraints() {
         testInEDT {
 
@@ -647,6 +697,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSetConstraints() {
         testInEDT {
 
@@ -657,6 +708,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSetToolTipText() {
         testInEDT {
 
@@ -668,6 +720,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testAttributeOrdering() {
         testInEDT {
 
@@ -692,6 +745,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testWidgetPassthroughConstraints() {
         testInEDT {
 
@@ -705,6 +759,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testGROOVY1837ReuseAction() {
         testInEDT {
 
@@ -720,6 +775,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSeparators() {
         testInEDT {
 
@@ -739,6 +795,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testCollectionNodes() {
         testInEDT {
 
@@ -750,6 +807,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testFactoryCornerCases() {
         testInEDT {
 
@@ -766,6 +824,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testFactoryLogging() {
         testInEDT {
 
@@ -778,7 +837,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testEnhancedValueArguments() {
+        assumeNotOnBuildsApacheOrgAndNotOnWindows()
+
         testInEDT {
 
             def swing = new SwingBuilder()
@@ -980,6 +1042,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         instancePass = true
     }
 
+    @Test
     void testEDT() {
         if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
@@ -997,6 +1060,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert instancePass
     }
 
+    @Test
     void testDoLater() {
         if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
@@ -1038,6 +1102,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert instancePass
     }
 
+    @Test
     void testDoOutside() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1081,6 +1146,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testJumbledThreading() {
         if (HeadlessTestSupport.headless) return;
 
@@ -1162,6 +1228,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing != oldSwing
     }
 
+    @Test
     void testParallelBuild() {
         if (HeadlessTestSupport.headless) return;
 
@@ -1186,6 +1253,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert l.parent == null
     }
 
+    @Test
     void testDispose() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1208,6 +1276,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testPackAndShow() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1241,7 +1310,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testContainment() {
+        assumeNotOnBuildsApacheOrgAndNotOnWindows()
+
         testInEDT {
             def swing = new SwingBuilder()
 
@@ -1342,6 +1414,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testMenus() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1387,6 +1460,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testLookAndFeel() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1439,6 +1513,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testMultiLookAndFeel() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1465,6 +1540,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBorders() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1558,6 +1634,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testBorderAttachment() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1584,6 +1661,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testRenderer() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1618,6 +1696,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testNoParent() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1633,6 +1712,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testClientProperties() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1648,6 +1728,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testKeyStrokeAction() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1700,6 +1781,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testAutomaticNameBasedOnIdAttribute() {
         testInEDT {
             def swing = new SwingBuilder()

@@ -1,21 +1,24 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.runtime.MethodClosure
@@ -24,32 +27,39 @@ import java.lang.reflect.Method
 /**
  * Helper to interpret a source buffer.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class Interpreter
+class Interpreter implements Evaluator
 {
     static final String SCRIPT_FILENAME = 'groovysh_evaluate'
-    
+
     private final Logger log = Logger.create(this.class)
 
     private final GroovyShell shell
 
     Interpreter(final ClassLoader classLoader, final Binding binding) {
+        this(classLoader, binding, null)
+    }
+
+    Interpreter(final ClassLoader classLoader, final Binding binding, CompilerConfiguration configuration) {
         assert classLoader
         assert binding
-
-        shell = new GroovyShell(classLoader, binding)
+        if (configuration != null) {
+            shell = new GroovyShell(classLoader, binding, configuration)
+        } else {
+            shell = new GroovyShell(classLoader, binding)
+        }
     }
 
     Binding getContext() {
-        return shell.getContext()
+        return shell.context
     }
 
     GroovyClassLoader getClassLoader() {
-        return shell.getClassLoader()
+        return shell.classLoader
     }
 
+    @Override
     def evaluate(final Collection<String> buffer) {
         assert buffer
 
@@ -90,4 +100,8 @@ class Interpreter
 
         return result
     }
+}
+
+interface Evaluator {
+    def evaluate(final Collection<String> buffer)
 }

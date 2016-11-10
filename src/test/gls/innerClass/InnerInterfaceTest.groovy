@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package gls.innerClass
 
 /**
@@ -51,5 +69,37 @@ class InnerInterfaceTest extends GroovyTestCase {
             assert Foo4422V3.Bar != null
             assert Foo4422V3.Baz != null
         """
+    }
+
+    // GROOVY-5989
+    void testReferenceToInterfaceNestedInterface() {
+        assertScript '''
+            class MyMap extends HashMap {
+                // Entry not just Map.Entry should work on next line
+                Entry firstEntry() { entrySet().iterator().next() }
+                static void main(args) {
+                    def m = new MyMap()
+                    m.a = 42
+                    assert m.firstEntry().toString() == 'a=42'
+                }
+            }
+        '''
+    }
+
+    // GROOVY-5754
+    void testResolveInnerInterface() {
+        assertScript '''
+            class Usage implements Koo {
+              static class MyInner extends Inner {}
+            }
+
+            public interface Koo {
+
+                class Inner {
+                }
+
+            }
+            Koo.Inner
+        '''
     }
 }

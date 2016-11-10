@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.ant;
 
@@ -22,7 +25,6 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline;
@@ -59,13 +61,14 @@ import java.util.Vector;
 public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
     private static final String SUFFIX = "groovy_Ant_task";
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private final LoggingHelper log = new LoggingHelper(this);
 
     /**
      * files to load
      */
-    private Vector<FileSet> filesets = new Vector<FileSet>();
+    private final Vector<FileSet> filesets = new Vector<FileSet>();
 
     /**
      * input file
@@ -102,9 +105,9 @@ public class Groovy extends Java {
      * Used to specify the debug output to print stacktraces in case something fails.
      * TODO: Could probably be reused to specify the encoding of the files to load or other properties.
      */
-    private CompilerConfiguration configuration = new CompilerConfiguration();
+    private final CompilerConfiguration configuration = new CompilerConfiguration();
 
-    private Commandline cmdline = new Commandline();
+    private final Commandline cmdline = new Commandline();
     private boolean contextClassLoader;
 
     /**
@@ -264,6 +267,22 @@ public class Groovy extends Java {
     }
 
     /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     *
+     * @param parameters set to true to generate metadata.
+     */
+    public void setParameters(boolean parameters) {
+        configuration.setParameters(parameters);
+    }
+
+    /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return configuration.getParameters();
+    }
+
+    /**
      * Load the file and then execute it
      */
     public void execute() throws BuildException {
@@ -277,15 +296,6 @@ public class Groovy extends Java {
 
         if (srcFile != null && !srcFile.exists()) {
             throw new BuildException("Source file does not exist!", getLocation());
-        }
-
-        // TODO: any of this used?
-        // deal with the filesets
-        for (int i = 0; i < filesets.size(); i++) {
-            FileSet fs = filesets.elementAt(i);
-            DirectoryScanner ds = fs.getDirectoryScanner(getProject());
-            File srcDir = fs.getDir(getProject());
-            String[] srcFiles = ds.getIncludedFiles();
         }
 
         try {
@@ -419,7 +429,7 @@ public class Groovy extends Java {
                 final Field contextField = propsHandler.getClass().getDeclaredField("context");
                 contextField.setAccessible(true);
                 final Object context = contextField.get(propsHandler);
-                mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+                mavenPom = InvokerHelper.invokeMethod(context, "getProject", EMPTY_OBJECT_ARRAY);
             }
             catch (Exception e) {
                 throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
@@ -23,11 +25,15 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.net.URLClassLoader;
 import java.net.URL;
 import java.net.URISyntaxException;
 
+import groovy.lang.GroovyObject;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -35,7 +41,7 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class JavacJavaCompiler implements JavaCompiler {
-    private CompilerConfiguration config;
+    private final CompilerConfiguration config;
 
     public JavacJavaCompiler(CompilerConfiguration config) {
         this.config = config;
@@ -60,7 +66,6 @@ public class JavacJavaCompiler implements JavaCompiler {
                 Object ret = method.invoke(null, new Object[]{javacParameters});
                 javacReturnValue = (Integer) ret;
             }
-            cu.getConfiguration().getOutput();
         } catch (InvocationTargetException ite) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
         } catch (Exception e) {
@@ -80,7 +85,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
     }
 
-    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+    private static void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
         if (msg != null) {
             header = header + "\n" + msg.getBuffer().toString();
         } else {
@@ -128,14 +133,13 @@ public class JavacJavaCompiler implements JavaCompiler {
         // append classpath if not already defined
         if (!hadClasspath) {
             // add all classpaths that compilation unit sees
-            StringBuilder resultPath = new StringBuilder(DefaultGroovyMethods.join((Iterable)config.getClasspath(), File.pathSeparator));
+            List<String> paths = new ArrayList<String>(config.getClasspath());
             ClassLoader cl = parentClassLoader;
             while (cl != null) {
                 if (cl instanceof URLClassLoader) {
                     for (URL u : ((URLClassLoader) cl).getURLs()) {
                         try {
-                            resultPath.append(File.pathSeparator);
-                            resultPath.append(new File(u.toURI()).getPath());
+                            paths.add(new File(u.toURI()).getPath());
                         } catch (URISyntaxException e) {
                             // ignore it
                         }
@@ -144,6 +148,21 @@ public class JavacJavaCompiler implements JavaCompiler {
                 cl = cl.getParent();
             }
 
+            try {
+                CodeSource codeSource =AccessController.doPrivileged(new PrivilegedAction<CodeSource>() {
+                    @Override
+                    public CodeSource run() {
+                        return GroovyObject.class.getProtectionDomain().getCodeSource();
+                    }
+                });
+                if (codeSource != null) {
+                    paths.add(new File(codeSource.getLocation().toURI()).getPath());
+                }
+            } catch (URISyntaxException e) {
+                // ignore it
+            }
+
+            StringBuilder resultPath = new StringBuilder(DefaultGroovyMethods.join((Iterable) paths, File.pathSeparator));
             paras.add("-classpath");
             paras.add(resultPath.toString());
         }

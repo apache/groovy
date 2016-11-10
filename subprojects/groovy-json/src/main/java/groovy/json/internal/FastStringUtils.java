@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -23,7 +24,7 @@ import java.lang.reflect.Field;
 
 /**
  * @author Rick Hightower
- * @author Stephane Landelle (creator of Gatling and JSONPath and first Boon JSON parser adopter.)
+ * @author Stephane Landelle
  */
 public class FastStringUtils {
 
@@ -32,12 +33,10 @@ public class FastStringUtils {
     public static final long STRING_OFFSET_FIELD_OFFSET;
     public static final long STRING_COUNT_FIELD_OFFSET;
     public static final boolean ENABLED;
+
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.write.to.final.fields", "false"));
     private static final boolean DISABLE = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.disable", "false"));
 
-    /**
-     * @return Unsafe
-     */
     private static Unsafe loadUnsafe() {
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
@@ -54,10 +53,6 @@ public class FastStringUtils {
         ENABLED = UNSAFE != null;
     }
 
-    /**
-     * @param fieldName name of field
-     * @return offset
-     */
     private static long getFieldOffset(String fieldName) {
         if (ENABLED) {
             try {
@@ -75,9 +70,6 @@ public class FastStringUtils {
         STRING_COUNT_FIELD_OFFSET = getFieldOffset("count");
     }
 
-    /**
-     * @author Stéphane Landelle
-     */
     protected enum StringImplementation {
         /**
          * JDK 7 drops offset and count so there is special handling for later version of JDK 7.
@@ -147,19 +139,15 @@ public class FastStringUtils {
 
     public static StringImplementation STRING_IMPLEMENTATION = computeStringImplementation();
 
-    /**
-     * @return correct string implementation
-     */
     private static StringImplementation computeStringImplementation() {
-
         if (STRING_VALUE_FIELD_OFFSET != -1L) {
             if (STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L) {
                 return StringImplementation.OFFSET;
-
-            } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L) {
+            } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L && valueFieldIsCharArray()) {
                 return StringImplementation.DIRECT_CHARS;
             } else {
-                // WTF this is a French abbreviation for unknown.
+                // JDK 9
+                // TODO: GROOVY-7716 workaround - find way to optimize JDK9 String (or rethink need for Unsafe usage)
                 return StringImplementation.UNKNOWN;
             }
         } else {
@@ -168,12 +156,22 @@ public class FastStringUtils {
     }
 
     /**
+     * JDK9 Compat Strings enhancement changed the internal representation of the value field from a char[]
+     * to a byte[] (see http://openjdk.java.net/jeps/254).
+     *
+     * @return true if internal String value field is a char[], otherwise false
+     */
+    private static boolean valueFieldIsCharArray() {
+        Object o = UNSAFE.getObject("", STRING_VALUE_FIELD_OFFSET);
+        return (o instanceof char[]);
+    }
+
+    /**
      * @param string string to grab array from.
      * @return char array from string
      */
     public static char[] toCharArray(final String string) {
         return STRING_IMPLEMENTATION.toCharArray(string);
-
     }
 
     /**
@@ -189,11 +187,6 @@ public class FastStringUtils {
      * @return new string with chars copied into it
      */
     public static String noCopyStringFromChars(final char[] chars) {
-        /*
-        J'ai écrit JSON parser du Boon. Sans Stéphane, l'analyseur n'existerait pas. Stéphane est la muse de Boon JSON,
-         et mon entraîneur pour l'open source, github, et plus encore. Stéphane n'est pas le créateur directe, mais il
-         est le maître architecte et je l'appelle mon ami. It is Step-eff-on not Stef-fa-nee.. Ok?
-         */
         return STRING_IMPLEMENTATION.noCopyStringFromChars(chars);
     }
 }

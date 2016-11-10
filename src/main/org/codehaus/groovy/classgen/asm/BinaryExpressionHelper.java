@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm;
 
@@ -65,7 +68,7 @@ public class BinaryExpressionHelper {
     // isCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
 
-    private WriterController controller;
+    private final WriterController controller;
     
     public BinaryExpressionHelper(WriterController wc) {
         this.controller = wc;
@@ -250,7 +253,7 @@ public class BinaryExpressionHelper {
         case COMPARE_IDENTICAL:
         case COMPARE_NOT_IDENTICAL:
             Token op = expression.getOperation();
-            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn());
+            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn(), op.getStartLine(), op.getStartColumn()+3);
             throw new GroovyRuntimeException(cause);
 
         default:
@@ -814,10 +817,6 @@ public class BinaryExpressionHelper {
         compileStack.removeVar(retValueId);
         controller.getOperandStack().replace(common, 2);        
         
-    }
-
-    private static boolean isNullConstant(Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
     }
 
     private void evaluateNormalTernary(TernaryExpression expression) {

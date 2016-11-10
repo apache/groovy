@@ -1,24 +1,23 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform
 
-/**
- * @author Paulo Poiati
- * @author Paul King
- */
 class CanonicalTransformTest extends GroovyShellTestCase {
 
     void testCanonical() {
@@ -33,20 +32,6 @@ class CanonicalTransformTest extends GroovyShellTestCase {
 
         assertEquals objects[0].hashCode(), objects[1].hashCode()
         assertEquals objects[0], objects[1]
-    }
-
-    void testCanonicalCantAlsoBeImmutable() {
-        def msg = shouldFail(RuntimeException) {
-            assertScript """
-                import groovy.transform.*
-                @Canonical
-                @Immutable
-                class Foo {
-                    String bar
-                }
-            """
-        }
-        assert msg.contains("@Canonical class 'Foo' can't also be @Immutable")
     }
 
     void testCanonicalWithDeclaredConstructor() {
@@ -96,6 +81,30 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             assert array.is(foo.array)
             assert map.is(foo.map)
             assert collection.is(foo.collection)
+        """
+    }
+
+    void testCanonicalWithSuper() {
+        // related to Apache PR#9: "Add includeSuper property to @Canonical annotation"
+        assertScript """
+            import groovy.transform.*
+            @Canonical
+            class Foo {
+              int a
+            }
+            @Canonical(callSuper=true, includeSuperProperties=true, includeNames=true)
+            class Bar extends Foo {
+              int b
+            }
+            @Canonical(callSuper=true, includeSuper=true)
+            @TupleConstructor(includeSuperProperties=true)
+            class Baz extends Foo {
+              int b
+            }
+            def (b1, b2, b3) = [new Bar(a:5, b:20), new Bar(10, 20), new Baz(15, 20)]
+            assert [b1, b2, b3].toString() == '[Bar(b:20, a:5), Bar(b:20, a:10), Baz(20, Foo(15))]'
+            assert b1 != b2
+            assert b1.hashCode() != b2.hashCode()
         """
     }
 
@@ -535,7 +544,7 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             def t = new Tree(4)
             t.left = t
             t.right = t
-            assert t.hashCode() == 3941
+            assert t.hashCode() == 7497
             // not smart enough to handle mutual-recursion yet
             // don't use this annotation in such a scenario
             //
@@ -580,5 +589,4 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             }
         """
     }
-
 }

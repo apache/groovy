@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package gls.innerClass
 
 import gls.CompilableTestSupport
@@ -6,19 +24,19 @@ class InnerClassTest extends CompilableTestSupport {
 
     void testTimerAIC() {
         assertScript """
-            boolean called = false
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
+
+            CountDownLatch called = new CountDownLatch(1)
 
             Timer timer = new Timer()
             timer.schedule(new TimerTask() {
                 void run() {
-                    called = true
+                    called.countDown()
                 }
             }, 0)
-            for(int i = 0; !called && i < 20; i++) {
-                sleep 50
-            }
 
-            assert called
+            assert called.await(10, TimeUnit.SECONDS)
         """
     }
 
@@ -73,7 +91,7 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfInitializerBlockWithinAnAIC () {
+    void testUsageOfInitializerBlockWithinAnAIC() {
         assertScript """
             Object makeObj2(String name) {
                  new Object() {
@@ -106,7 +124,7 @@ class InnerClassTest extends CompilableTestSupport {
             def mods = A.B.modifiers
             assert Modifier.isPublic(mods)
         """
-        
+
         assertScript """
             class A {
                 static class B{}
@@ -253,7 +271,7 @@ class InnerClassTest extends CompilableTestSupport {
         '''
     }
 
-    void testUsageOfOuterFieldOverriden_FAILS() {
+    void testUsageOfOuterFieldOverridden_FAILS() {
         if (notYetImplemented()) return
 
         assertScript """
@@ -281,7 +299,7 @@ class InnerClassTest extends CompilableTestSupport {
             assert bar.foo() == 2
         """
 
-    //TODO: static part
+        //TODO: static part
 
     }
 
@@ -322,7 +340,7 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfOuterMethodOverriden() {
+    void testUsageOfOuterMethodoverridden() {
         assertScript """
             interface Run {
                 def run()
@@ -364,7 +382,7 @@ class InnerClassTest extends CompilableTestSupport {
             assert bar.foo() == 1
         """
     }
-    
+
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed
@@ -380,7 +398,7 @@ class InnerClassTest extends CompilableTestSupport {
             }
         """
     }
-    
+
     void testInnerClassDotThisUsage() {
         assertScript """
             class A{
@@ -423,13 +441,13 @@ class InnerClassTest extends CompilableTestSupport {
             assert b.foo() instanceof B
         """
     }
-    
+
     void testImplicitThisPassingWithNamedArguments() {
         def oc = new MyOuterClass4028()
         assert oc.foo().propMap.size() == 2
     }
 
-    void testThis0 () {
+    void testThis0() {
         assertScript """
 class A {
    static def field = 10
@@ -451,7 +469,7 @@ class A {
      def u (i) { println i + s + field }
    }}"""
     }
-    
+
     void testReferencedVariableInAIC() {
         assertScript """
             interface X{}
@@ -478,6 +496,19 @@ class A {
                 }
             }
         """
+    }
+
+    // GROOVY-5989
+    void testReferenceToOuterClassNestedInterface() {
+        assertScript '''
+            interface Koo { class Inner { } }
+
+            class Usage implements Koo {
+                static class MyInner extends Inner { }
+            }
+
+            assert new Usage() != null
+        '''
     }
 
     // GROOVY-5679
@@ -641,6 +672,59 @@ import org.codehaus.groovy.classgen.Verifier
                 }
             }
             assert new Outer().test() == 1
+        '''
+    }
+
+    void testNestedPropertyHandling() {
+        // GROOVY-6831
+        assertScript '''
+            class Outer {
+                private static List items = []
+                void add() { items.add('Outer') }
+                static class Nested {
+                    void add() { items.add('Nested') }
+                    static class NestedNested {
+                        void add() { items.add('NestedNested') }
+                        void set() { items = ['Overridden'] }
+                    }
+                }
+            }
+            new Outer().add()
+            new Outer.Nested().add()
+            new Outer.Nested.NestedNested().add()
+            assert Outer.items == ["Outer", "Nested", "NestedNested"]
+            new Outer.Nested.NestedNested().set()
+            assert Outer.items == ["Overridden"]
+        '''
+    }
+
+    void testInnerClassOfInterfaceIsStatic() {
+        //GROOVY-7312
+        assertScript '''
+            import java.lang.reflect.Modifier
+            interface Baz {
+                class Pls {}
+            }
+
+            assert Modifier.isStatic(Baz.Pls.modifiers)
+        '''
+    }
+
+    void testInnerClassOfInterfaceIsStaticVariant() {
+        //GROOVY-7312
+        assertScript '''
+            import java.lang.reflect.Modifier
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.control.CompilePhase
+            import org.objectweb.asm.Opcodes
+
+            @ASTTest(phase = CLASS_GENERATION, value = {
+                assert node.innerClasses.every { it.modifiers & Opcodes.ACC_STATIC }
+            })
+            interface Baz {
+                def foo = { "bar" }
+            }
+            null
         '''
     }
 }

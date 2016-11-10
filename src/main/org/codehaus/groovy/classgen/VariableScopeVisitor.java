@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen;
 
@@ -41,19 +44,19 @@ import static java.lang.reflect.Modifier.isFinal;
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private VariableScope currentScope = null;
-    private VariableScope headScope = new VariableScope();
+    private final VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
-    private SourceUnit source;
+    private final SourceUnit source;
     private boolean isSpecialConstructorCall = false;
     private boolean inConstructor = false;
     private final boolean recurseInnerClasses;
 
-    private LinkedList stateStack = new LinkedList();
+    private final LinkedList stateStack = new LinkedList();
 
     private class StateStackElement {
-        VariableScope scope;
-        ClassNode clazz;
-        boolean inConstructor;
+        final VariableScope scope;
+        final ClassNode clazz;
+        final boolean inConstructor;
 
         StateStackElement() {
             scope = VariableScopeVisitor.this.currentScope;
@@ -164,7 +167,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (MethodNode mn : cn.getMethods()) {
             String pName = getPropertyName(mn);
             if (pName != null && pName.equals(name))
-                return new PropertyNode(pName, mn.getModifiers(), getPropertyType(mn), cn, null, null, null);
+                return new PropertyNode(pName, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
         }
 
         for (PropertyNode pn : cn.getProperties()) {
@@ -176,14 +179,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return findClassMember(cn.getOuterClass(), name);
     }
 
-    private ClassNode getPropertyType(MethodNode m) {
-        if (m.getReturnType() != ClassHelper.VOID_TYPE) {
-            return m.getReturnType();
-        }
-        return m.getParameters()[0].getType();
-    }
-
-    private String getPropertyName(MethodNode m) {
+    private static String getPropertyName(MethodNode m) {
         String name = m.getName();
         if (!(name.startsWith("set") || name.startsWith("get"))) return null;
         String pname = name.substring(3);
@@ -389,10 +385,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // TODO handle local variables
     private void checkForFinal(final Expression expression, VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        boolean isFinal = isFinal(v.getModifiers());
-        boolean isParameter = v instanceof Parameter;
-        if (isFinal && isParameter) {
-            addError("Cannot assign a value to final variable '" + v.getName() + "'", expression);
+        if (v != null) {
+            boolean isFinal = isFinal(v.getModifiers());
+            boolean isParameter = v instanceof Parameter;
+            if (isFinal && isParameter) {
+                addError("Cannot assign a value to final variable '" + v.getName() + "'", expression);
+            }
         }
     }
 

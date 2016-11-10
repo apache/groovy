@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package gls.invocation
 
@@ -156,7 +159,7 @@ public class CovariantReturnTest extends CompilableTestSupport {
 
     void testImplementedInterfacesNotInfluencing() {
         // in GROOVY-3229 some methods from Appendable were not correctly recognized
-        // as already being overriden (PrintWriter<Writer<Appenable)
+        // as already being overridden (PrintWriter<Writer<Appenable)
         shouldCompile """
             class IndentWriter extends java.io.PrintWriter {
                public IndentWriter(Writer w)  { super(w, true) }
@@ -174,6 +177,51 @@ public class CovariantReturnTest extends CompilableTestSupport {
                     return [ 42 ]
                 }
             }
+        """
+    }
+
+    //GROOVY-7495
+    void testCovariantMerhodReturnTypeFromParentInterface() {
+        shouldCompile """
+            interface Item {}
+            interface DerivedItem extends Item {}
+
+            interface Base {
+                Item getItem()
+            }
+            class BaseImpl implements Base {
+                Item getItem() { null }
+            }
+
+            interface First extends Base {
+                DerivedItem getItem()
+            }
+
+            class FirstImpl extends BaseImpl implements First {
+                DerivedItem getItem() { null }
+            }
+
+            interface Second extends First {}
+            class SecondImpl extends FirstImpl implements Second {}
+        """
+        shouldCompile """
+            interface A {
+               B foo()
+            }
+            interface B {}
+            interface A2 extends A {
+               B2 foo()
+            }
+            interface B2 extends B {}
+
+            class AA implements A {
+               BB foo() { return new BB() }
+            }
+            class AA2 extends AA implements A2 {
+               BB2 foo() { return new BB2() }
+            }
+            class BB implements B {}
+            class BB2 extends BB implements B2 {}
         """
     }
 

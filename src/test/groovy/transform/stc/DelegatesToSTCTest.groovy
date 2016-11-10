@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
 
@@ -81,6 +84,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             assert o.test() == 2
         '''
     }
+
     void testShouldAcceptMethodCall() {
         assertScript '''
             class ExecSpec {
@@ -401,6 +405,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             persons = Person.findBy { name == 'Cedric' }
         '''
     }
+
     void testDelegatesToInStaticContext2() {
         assertScript '''
             class QueryBuilder {
@@ -750,4 +755,58 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             foo()
         '''
     }
+
+    void testDelegatesToNestedGenericType() {
+        assertScript '''
+            trait Configurable<ConfigObject> {
+                ConfigObject configObject
+
+                void configure(Closure<Void> configSpec) {
+                    configSpec.resolveStrategy = Closure.DELEGATE_FIRST
+                    configSpec.delegate = configObject
+                    configSpec()
+                }
+            }
+            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
+                Configurable<T> obj = (Configurable<T>) clazz.newInstance()
+                obj.configure(configSpec)
+                obj
+            }
+            class Module implements Configurable<ModuleConfig> {
+                String value
+
+                 Module(){
+                    configObject = new ModuleConfig()
+                 }
+
+                 @Override
+                 void configure(Closure<Void> configSpec) {
+                    Configurable.super.configure(configSpec)
+                    value = "${configObject.name}-${configObject.version}"
+                 }
+            }
+            class ModuleConfig {
+                String name
+                String version
+            }
+            def module = configure(Module) {
+                name = 'test'
+                version = '1.0'
+            }
+            assert module.value == 'test-1.0'
+        '''
+    }
+
+    void testDelegatesToWithType2() {
+        assertScript '''
+            public <T> boolean evalAsSet(List<T> list, @DelegatesTo(type="Set<T>") Closure<Boolean> cl) {
+                cl.delegate = list as Set
+                cl()
+            }
+            assert evalAsSet([1,1,2,3]) {
+                size() == 3
+            }
+        '''
+    }
 }
+

@@ -1,11 +1,30 @@
-/**
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
 import groovy.util.GroovyTestCase;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  * Provides unit tests for the {@link EmptyRange} class.
@@ -17,7 +36,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     /**
      * The 'from' value for the {@link Range}.
      */
-    private static final Integer AT = new Integer(17);
+    private static final Integer AT = 17;
 
     /**
      * The {@link Range} to test.
@@ -119,8 +138,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.get(0);
             fail("got value from empty range");
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -132,21 +150,19 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.remove(0);
             fail("removed value from empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#add(int,java.lang.Object)}.
+     * Test method for {@link groovy.lang.EmptyRange#add(int, java.lang.Object)}.
      */
     public void testAddIntObject() {
         try {
-            range.add(0, new Integer(12));
+            range.add(0, 12);
             fail("added value to empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -174,10 +190,9 @@ public class EmptyRangeTest extends GroovyTestCase {
      */
     public void testAddObject() {
         try {
-            range.add(new Integer(12));
+            range.add(12);
             fail("added value to empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -196,21 +211,19 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.remove(AT);
             fail("removed value from empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#addAll(int,java.util.Collection)}.
+     * Test method for {@link groovy.lang.EmptyRange#addAll(int, java.util.Collection)}.
      */
     public void testAddAllIntCollection() {
         try {
             range.addAll(0, new ArrayList());
             fail("added values to empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -222,8 +235,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.addAll(new ArrayList());
             fail("added values to empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -246,8 +258,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.removeAll(new ArrayList());
             fail("removed values from an empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -259,8 +270,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.retainAll(new ArrayList());
             fail("retained values in an empty range");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -275,8 +285,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             iterator.next();
             fail("got next value in an empty range");
-        }
-        catch (NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -289,14 +298,13 @@ public class EmptyRangeTest extends GroovyTestCase {
             final Iterator iterator = range.iterator();
             iterator.remove();
             fail("removed via iterator");
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
             assertTrue("expected exception thrown", true);
         }
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#subList(int,int)}.
+     * Test method for {@link groovy.lang.EmptyRange#subList(int, int)}.
      */
     public void testSubList() {
         final List list = range.subList(0, 0);
@@ -304,8 +312,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.subList(0, 1);
             fail("got sub list in an empty range");
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -321,8 +328,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             iterator.next();
             fail("got next value in an empty range");
-        }
-        catch (NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -338,21 +344,19 @@ public class EmptyRangeTest extends GroovyTestCase {
         try {
             range.listIterator(1);
             fail("got list iterator at index 1");
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             assertTrue("expected exception thrown", true);
         }
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#set(int,java.lang.Object)}.
+     * Test method for {@link groovy.lang.EmptyRange#set(int, java.lang.Object)}.
      */
     public void testSet() {
         try {
             range.set(0, AT);
             fail("got set value 0");
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -366,11 +370,11 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#step(int,groovy.lang.Closure)}.
+     * Test method for {@link groovy.lang.EmptyRange#step(int, groovy.lang.Closure)}.
      */
     public void testStepIntClosure() {
         final List callLog = new ArrayList();
-        final Closure closure = new NumberRangeTest.RecordingClosure(callLog);
+        final Closure closure = new NumberRangeTestCase.RecordingClosure(callLog);
         range.step(1, closure);
         assertEquals("wrong number of calls to closure", 0, callLog.size());
     }
@@ -383,7 +387,7 @@ public class EmptyRangeTest extends GroovyTestCase {
         assertTrue("too many elements", result.isEmpty());
 
         // make sure a new list is returned each time
-        result.add(new Integer(1));
+        result.add(1);
         result = range.step(1);
         assertTrue("too many elements", result.isEmpty());
     }

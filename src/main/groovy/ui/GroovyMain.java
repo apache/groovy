@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.ui;
 
@@ -24,9 +27,8 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyInternalPosixParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -48,13 +50,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.cli.Option.builder;
+
 /**
  * A Command line to execute groovy.
  *
  * @author Jeremy Rayner
  * @author Yuri Schimke
  * @author Roshan Dawrani
- * @version $Revision$
  */
 public class GroovyMain {
 
@@ -142,8 +145,8 @@ public class GroovyMain {
         formatter.printHelp(
             pw,
             80,
-            "groovy [options] [args]",
-            "options:",
+            "groovy [options] [filename] [args]",
+            "The Groovy command line processor.\nOptions:",
             options,
             2,
             4,
@@ -162,100 +165,41 @@ public class GroovyMain {
      * @throws ParseException if there was a problem.
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
-        CommandLineParser parser = new GroovyInternalPosixParser();
+        CommandLineParser parser = new DefaultParser();
         return parser.parse(options, args, true);
     }
 
     /**
-     * Build the options parser.  Has to be synchronized because of the way Options are constructed.
+     * Build the options parser.
      *
      * @return an options parser.
      */
-    @SuppressWarnings("static-access")
-    private static synchronized Options buildOptions() {
-        Options options = new Options();
-        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
-        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
-
-        options.addOption(
-            OptionBuilder.withLongOpt("define").
-            withDescription("define a system property").
-            hasArg(true).
-            withArgName("name=value").
-            create('D'));
-        options.addOption(
-            OptionBuilder.withLongOpt("disableopt").
-            withDescription("disables one or all optimization elements. " +
-                            "optlist can be a comma separated list with the elements: " +
-                            "all (disables all optimizations), " +
-                            "int (disable any int based optimizations)").
-            hasArg(true).
-            withArgName("optlist").
-            create());
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("usage information")
-            .withLongOpt("help")
-            .create('h'));
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("debug mode will print out full stack traces")
-            .withLongOpt("debug")
-            .create('d'));
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("display the Groovy and JVM versions")
-            .withLongOpt("version")
-            .create('v'));
-        options.addOption(
-            OptionBuilder.withArgName("charset")
-            .hasArg()
-            .withDescription("specify the encoding of the files")
-            .withLongOpt("encoding")
-            .create('c'));
-        options.addOption(
-            OptionBuilder.withArgName("script")
-            .hasArg()
-            .withDescription("specify a command line script")
-            .create('e'));
-        options.addOption(
-            OptionBuilder.withArgName("extension")
-            .hasOptionalArg()
-            .withDescription("modify files in place; create backup if extension is given (e.g. \'.bak\')")
-            .create('i'));
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line using implicit 'line' variable")
-            .create('n'));
-        options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line and print result (see also -n)")
-            .create('p'));
-        options.addOption(
-            OptionBuilder.withArgName("port")
-            .hasOptionalArg()
-            .withDescription("listen on a port and process inbound lines (default: 1960)")
-            .create('l'));
-        options.addOption(
-            OptionBuilder.withArgName("splitPattern")
-            .hasOptionalArg()
-            .withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable")
-            .withLongOpt("autosplit")
-            .create('a'));
-        options.addOption(
-            OptionBuilder.withLongOpt("indy")
-            .withDescription("enables compilation using invokedynamic")
-            .create());
-        options.addOption(
-            OptionBuilder.withLongOpt("configscript")
-            .hasArg().withDescription("A script for tweaking the configuration options")
-            .create());
-        options.addOption(
-                OptionBuilder.withLongOpt("basescript")
-                .hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)")
-                .create('b'));
-        return options;
-
+    private static Options buildOptions() {
+        return new Options()
+                .addOption(builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build())
+                .addOption(builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build())
+                .addOption(builder("D").longOpt("define").desc("define a system property").hasArg().argName("name=value").build())
+                .addOption(
+                        builder().longOpt("disableopt")
+                                .desc("disables one or all optimization elements. " +
+                                        "optlist can be a comma separated list with the elements: " +
+                                        "all (disables all optimizations), " +
+                                        "int (disable any int based optimizations)")
+                                .hasArg().argName("optlist").build())
+                .addOption(builder("h").hasArg(false).desc("usage information").longOpt("help").build())
+                .addOption(builder("d").hasArg(false).desc("debug mode will print out full stack traces").longOpt("debug").build())
+                .addOption(builder("v").hasArg(false).desc("display the Groovy and JVM versions").longOpt("version").build())
+                .addOption(builder("c").argName("charset").hasArg().desc("specify the encoding of the files").longOpt("encoding").build())
+                .addOption(builder("e").argName("script").hasArg().desc("specify a command line script").build())
+                .addOption(builder("i").argName("extension").optionalArg(true).desc("modify files in place; create backup if extension is given (e.g. \'.bak\')").build())
+                .addOption(builder("n").hasArg(false).desc("process files line by line using implicit 'line' variable").build())
+                .addOption(builder("p").hasArg(false).desc("process files line by line and print result (see also -n)").build())
+                .addOption(builder("pa").hasArg(false).desc("Generate metadata for reflection on method parameter names (jdk8+ only)").longOpt("parameters").build())
+                .addOption(builder("l").argName("port").optionalArg(true).desc("listen on a port and process inbound lines (default: 1960)").build())
+                .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
+                .addOption(builder().longOpt("indy").desc("enables compilation using invokedynamic").build())
+                .addOption(builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build())
+                .addOption(builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
     }
 
     private static void setSystemPropertyFrom(final String nameValue) {
@@ -302,6 +246,7 @@ public class GroovyMain {
         main.isScriptFile = !line.hasOption('e');
         main.debug = line.hasOption('d');
         main.conf.setDebug(main.debug);
+        main.conf.setParameters(line.hasOption("pa"));
         main.processFiles = line.hasOption('p') || line.hasOption('n');
         main.autoOutput = line.hasOption('p');
         main.editFiles = line.hasOption('i');
@@ -421,6 +366,7 @@ public class GroovyMain {
      * @throws IOException
      * @deprecated
      */
+    @Deprecated
     public String getText(String uriOrFilename) throws IOException {
         if (uriPattern.matcher(uriOrFilename).matches()) {
             try {
@@ -446,17 +392,16 @@ public class GroovyMain {
     protected GroovyCodeSource getScriptSource(boolean isScriptFile, String script) throws IOException, URISyntaxException {
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            if (uriPattern.matcher(script).matches()) {
+            // search for the file and if it exists don't try to use URIs ...
+            File scriptFile = huntForTheScriptFile(script);
+            if (!scriptFile.exists() && uriPattern.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
-            } else {
-                return new GroovyCodeSource(huntForTheScriptFile(script));
             }
-        } else {
-            return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
+            return new GroovyCodeSource( scriptFile );
         }
+        return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
     }
 
-    // TODO remove duplication with GroovyClassLoader#uriPattern
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
     // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext

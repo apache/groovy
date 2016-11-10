@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.reflection;
 
@@ -22,8 +25,6 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.lang.ref.PhantomReference;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -32,18 +33,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handle for all information we want to keep about the class
+ * <p>
+ * This class handles caching internally and its advisable to not store
+ * references directly to objects of this class.  The static factory method
+ * {@link ClassInfo#getClassInfo(Class)} should be used to retrieve an instance
+ * from the cache.  Internally the {@code Class} associated with a {@code ClassInfo}
+ * instance is kept as {@link WeakReference}, so it not safe to reference
+ * and instance without the Class being either strongly or softly reachable.
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo {
+public class ClassInfo implements Finalizable {
 
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
-    public final int hash;
-    private final Class klazz;
+    public final int hash = -1;
+    private final WeakReference<Class<?>> classRef;
 
-    private volatile int version;
+    // TODO: should be able to remove the klazz field once 2.5 becomes the mainline release
+    // Gradle has a cleanup mechanism in place to reflectively access this klazz field.
+    // The klazz field is being kept for compatibility so as to not break builds that depend
+    // on versions of Groovy after the field was changed to a WeakReference (classRef).  It
+    // appears that Gradle only performs the cleanup when it detects a groovy version of 2.4.x,
+    // so the klazz field and placeholder Sentinel class can likely be safely removed once
+    // the release version bumps to 2.5 (or beyond).
+    // See:
+    // https://github.com/gradle/gradle/blob/711f64/subprojects/core/src/main/java/org/gradle/api/internal/classloading/LeakyOnJava7GroovySystemLoader.java#L74
+    private static final class Sentinel {}
+    private static final Class<?> klazz = Sentinel.class;
+
+    private final AtomicInteger version = new AtomicInteger();
 
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
@@ -51,8 +71,8 @@ public class ClassInfo {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
     
-    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
-    private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
     
     private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
 
@@ -68,22 +88,17 @@ public class ClassInfo {
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
-    	this.hash = System.identityHashCode(klazz);
-    	this.klazz = klazz;
-        if (ClassInfo.DebugRef.debug)
-          new DebugRef(klazz);
-        new ClassInfoCleanup(this);
-
+        this.classRef = new WeakReference<Class<?>>(klazz);
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
 
     public int getVersion() {
-        return version;
+        return version.get();
     }
 
     public void incVersion() {
-        version++;
+        version.incrementAndGet();
         VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
@@ -104,6 +119,19 @@ public class ClassInfo {
 	    }
     }
 
+    /**
+     * Returns the {@code Class} associated with this {@code ClassInfo}.
+     * <p>
+     * This method can return {@code null} if the {@code Class} is no longer reachable
+     * through any strong or soft references.  A non-null return value indicates that this
+     * {@code ClassInfo} is valid.
+     *
+     * @return the {@code Class} associated with this {@code ClassInfo}, else {@code null}
+     */
+    public final Class<?> getTheClass() {
+        return classRef.get();
+    }
+
     public CachedClass getCachedClass() {
         return cachedClassRef.get();
     }
@@ -113,32 +141,36 @@ public class ClassInfo {
     }
 
     public static ClassInfo getClassInfo (Class cls) {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.get(cls);
-        return (ClassInfo) globalClassValue.get(cls);
+        return globalClassValue.get(cls);
     }
 
-    private static LocalMap getLocalClassInfoMap() {
-        ThreadLocalMapHandler handler = localMapRef.get();
-        SoftReference<LocalMap> ref=null;
-        if (handler!=null) ref = handler.get();
-        LocalMap map=null;
-        if (ref!=null) map = ref.get();
-        return map;
+    /**
+     * Removes a {@code ClassInfo} from the cache.
+     *
+     * This is useful in cases where the Class is parsed from a script, such as when
+     * using GroovyClassLoader#parseClass, and is executed for its result but the Class
+     * is not retained or cached.  Removing the {@code ClassInfo} associated with the Class
+     * will make the Class and its ClassLoader eligible for garbage collection sooner that
+     * it would otherwise.
+     *
+     * @param cls the Class associated with the ClassInfo to remove
+     *            from cache
+     */
+    public static void remove(Class<?> cls) {
+        globalClassValue.remove(cls);
     }
 
     public static Collection<ClassInfo> getAllClassInfo () {
-        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
-        return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
+        return getAllGlobalClassInfo();
+    }
+
+    public static void onAllClassInfo(ClassInfoAction action) {
+        for (ClassInfo classInfo : getAllGlobalClassInfo()) {
+            action.onClassInfo(classInfo);
+        }
     }
 
     private static Collection<ClassInfo> getAllGlobalClassInfo() {
-        return globalClassSet.values();
-    }
-
-    private static Collection<ClassInfo> getAllLocalClassInfo() {
-        LocalMap map = getLocalClassInfoMap();
-        if (map!=null) return map.values();
         return globalClassSet.values();
     }
 
@@ -147,7 +179,7 @@ public class ClassInfo {
     }
 
     public void setStrongMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -191,7 +223,7 @@ public class ClassInfo {
     }
 
     public void setWeakMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         strongMetaClass = null;
         ManagedReference<MetaClass> newRef = null;
@@ -235,7 +267,7 @@ public class ClassInfo {
             return answer;
         }
 
-        answer = mccHandle.create(klazz, metaClassRegistry);
+        answer = mccHandle.create(classRef.get(), metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
@@ -246,7 +278,7 @@ public class ClassInfo {
         return answer;
     }
     
-    private boolean isValidWeakMetaClass(MetaClass metaClass) {
+    private static boolean isValidWeakMetaClass(MetaClass metaClass) {
         return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
     }
 
@@ -254,13 +286,24 @@ public class ClassInfo {
      * if EMC.enableGlobally() is OFF, return whatever the cached answer is.
      * but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
      */
-    private boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
+    private static boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
         if(metaClass==null) return false;
         boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
         boolean cachedAnswerIsEMC = (metaClass instanceof ExpandoMetaClass);
         return (!enableGloballyOn || cachedAnswerIsEMC);
     }
 
+    /**
+     * Returns the {@code MetaClass} for the {@code Class} associated with this {@code ClassInfo}.
+     * If no {@code MetaClass} exists one will be created.
+     * <p>
+     * It is not safe to call this method without a {@code Class} associated with this {@code ClassInfo}.
+     * It is advisable to aways retrieve a ClassInfo instance from the cache by using the static
+     * factory method {@link ClassInfo#getClassInfo(Class)} to ensure the referenced Class is
+     * strongly reachable.
+     *
+     * @return a {@code MetaClass} instance
+     */
     public final MetaClass getMetaClass() {
         MetaClass answer = getMetaClassForClass();
         if (answer != null) return answer;
@@ -356,11 +399,11 @@ public class ClassInfo {
         if (perInstanceMetaClassMap == null)
           return null;
 
-        return (MetaClass) perInstanceMetaClassMap.get(obj);
+        return perInstanceMetaClassMap.get(obj);
     }
 
     public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
-        version++;
+        version.incrementAndGet();
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
@@ -379,97 +422,6 @@ public class ClassInfo {
         return perInstanceMetaClassMap != null;
     }
 
-    private static final class LocalMap extends HashMap<Class,ClassInfo> {
-
-        private static final int CACHE_SIZE = 5;
-
-        // We use a PhantomReference or a WeakReference for the Thread
-        // because the ThreadLocal manages a map with the thread as key.
-        // If we make a strong reference to the thread here, then it is 
-        // possible, that the map cannot be cleaned. If the number of 
-        // threads is not limited, then this map may consume too much memory
-        // This reference here is unmanaged (queue==null) because if the map 
-        // key gets collected, the reference will too. 
-        private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
-
-        private int nextCacheEntry;
-
-        private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
-        private static final ClassInfo NOINFO = new ClassInfo(Void.class);
-
-        private LocalMap() {
-            for (int i = 0; i < cache.length; i++) {
-                cache[i] = NOINFO;
-            }
-        }
-
-        public ClassInfo get(Class key) {
-            ClassInfo info = getFromCache(key);
-            if (info != null)
-              return info;
-
-            info = super.get(key);
-            if (info != null)
-              return putToCache(info);
-
-            return putToCache((ClassInfo) globalClassValue.get(key));
-        }
-
-        private ClassInfo getFromCache (Class klazz) {
-            for (int i = 0, k = nextCacheEntry-1; i < cache.length; i++, k--) {
-                if (k < 0)
-                  k += CACHE_SIZE;
-
-                final ClassInfo info = cache[k];
-                if (klazz == info.klazz) {
-                    nextCacheEntry = k+1;
-                    if (nextCacheEntry == CACHE_SIZE)
-                      nextCacheEntry = 0;
-                    return info;
-                }
-            }
-            return null;
-        }
-
-        private ClassInfo putToCache (ClassInfo classInfo) {
-            cache [nextCacheEntry++] = classInfo;
-            if (nextCacheEntry == CACHE_SIZE)
-              nextCacheEntry = 0;
-            return classInfo;
-        }
-    }
-
-    private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
-        SoftReference<LocalMap> recentThreadMapRef;
-        
-        protected SoftReference<LocalMap> initialValue() {
-            return new SoftReference(new LocalMap(),null);
-        }
-
-        public SoftReference<LocalMap> get() {
-            SoftReference<LocalMap> mapRef = recentThreadMapRef;
-            LocalMap recent = null;
-            if (mapRef!=null) recent = mapRef.get();
-            // we don't need to handle myThread.get()==null, because in that
-            // case the thread has been collected, meaning the entry for the
-            // thread is invalid anyway, so it is valid if recent has a 
-            // different value. 
-            if (recent != null && recent.myThread.get() == Thread.currentThread()) {
-                return mapRef;
-            } else {
-                SoftReference<LocalMap> ref = super.get();
-                recentThreadMapRef = ref;
-                return ref;
-            }
-        }
-    }
-    
-    private static final WeakReference<ThreadLocalMapHandler> localMapRef;
-    static {
-        ThreadLocalMapHandler localMap = new ThreadLocalMapHandler();
-        localMapRef = new WeakReference<ThreadLocalMapHandler>(localMap,null);
-    }
-
     private static class LazyCachedClassRef extends LazyReference<CachedClass> {
         private final ClassInfo info;
 
@@ -479,7 +431,7 @@ public class ClassInfo {
         }
 
         public CachedClass initValue() {
-            return createCachedClass(info.klazz, info);
+            return createCachedClass(info.classRef.get(), info);
         }
     }
 
@@ -492,46 +444,20 @@ public class ClassInfo {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return new ClassLoaderForClassArtifacts(info.klazz);
-        }
-    }
-    
-    private static class ClassInfoCleanup extends ManagedReference<ClassInfo> {
-
-        public ClassInfoCleanup(ClassInfo classInfo) {
-            super(weakBundle, classInfo);
-        }
-
-        public void finalizeRef() {
-        	ClassInfo classInfo = get();
-        	classInfo.setStrongMetaClass(null);
-        	classInfo.cachedClassRef.clear();
-        	classInfo.artifactClassLoader.clear();
+            return new ClassLoaderForClassArtifacts(info.classRef.get());
         }
     }
 
-    private static class DebugRef extends ManagedReference<Class> {
-        public static final boolean debug = false;
-
-        private static final AtomicInteger count = new AtomicInteger();
-
-        final String name;
-
-        public DebugRef(Class klazz) {
-            super(softBundle, klazz);
-            name = klazz == null ? "<null>" : klazz.getName();
-            count.incrementAndGet();
-        }
-
-        public void finalizeRef() {
-            System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
-            super.finalizeReference();
-        }
+    @Override
+    public void finalizeReference() {
+        setStrongMetaClass(null);
+        cachedClassRef.clear();
+        artifactClassLoader.clear();
     }
-    
+
     private static class GlobalClassSet {
     	
-    	private ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
+    	private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
     	
     	public int size(){
 		return values().size();
@@ -553,5 +479,9 @@ public class ClassInfo {
     		}
     	}
 
+    }
+
+    public static interface ClassInfoAction {
+        void onClassInfo(ClassInfo classInfo);
     }
 }

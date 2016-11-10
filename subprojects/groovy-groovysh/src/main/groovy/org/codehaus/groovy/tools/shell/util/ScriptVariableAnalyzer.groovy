@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.util
 
 import groovy.transform.TypeChecked
@@ -34,8 +36,6 @@ import java.security.CodeSource
 @TypeChecked
 class ScriptVariableAnalyzer {
 
-    protected final Logger log = Logger.create(ScriptVariableAnalyzer.class)
-
     /**
      * define a visitor that visits all variable expressions
      */
@@ -43,6 +43,7 @@ class ScriptVariableAnalyzer {
         Set<String> bound = new HashSet<String>()
         Set<String> unbound = new HashSet<String>()
 
+        @Override
         void visitVariableExpression(VariableExpression expression) {
             // we're not interested in some special implicit variables
             if (!(expression.variable in ['args', 'context', 'this', 'super'])) {
@@ -59,7 +60,7 @@ class ScriptVariableAnalyzer {
 
         @Override
         protected SourceUnit getSourceUnit() {
-            return null;
+            return null
         }
     }
 
@@ -69,13 +70,15 @@ class ScriptVariableAnalyzer {
      */
     static class VisitorSourceOperation extends CompilationUnit.PrimaryClassNodeOperation {
 
-        GroovyClassVisitor visitor
+        final GroovyClassVisitor visitor
 
-        VisitorSourceOperation(GroovyClassVisitor visitor) {
+        VisitorSourceOperation(final GroovyClassVisitor visitor) {
             this.visitor = visitor
         }
 
-        void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+        @Override
+        void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode)
+                throws CompilationFailedException {
             classNode.visitContents(visitor)
         }
     }
@@ -84,23 +87,25 @@ class ScriptVariableAnalyzer {
      * class loader to add our phase operation
      */
     static class VisitorClassLoader extends GroovyClassLoader {
-        GroovyClassVisitor visitor
+        final GroovyClassVisitor visitor
 
-        public VisitorClassLoader(GroovyClassVisitor visitor) {
+        VisitorClassLoader(final GroovyClassVisitor visitor, ClassLoader parent) {
+            super(parent == null ?  Thread.currentThread().getContextClassLoader() : parent)
             this.visitor = visitor
         }
 
-        protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
+        @Override
+        protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(config, source)
             cu.addPhaseOperation(new VisitorSourceOperation(visitor), Phases.CLASS_GENERATION)
             return cu
         }
     }
 
-    static Set<String> getBoundVars(String scriptText) {
+    static Set<String> getBoundVars(final String scriptText, ClassLoader parent) {
         assert scriptText != null
         GroovyClassVisitor visitor = new VariableVisitor()
-        VisitorClassLoader myCL = new VisitorClassLoader(visitor)
+        VisitorClassLoader myCL = new VisitorClassLoader(visitor, parent)
         // simply by parsing the script with our classloader
         // our visitor will be called and will visit all the variables
         myCL.parseClass(scriptText)

@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -43,10 +46,30 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
+import static groovy.transform.Undefined.isUndefined;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyNames;
+
+public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
 
     protected SourceUnit sourceUnit;
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
+     */
+    protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName) {
+        final List<AnnotationNode> copiedAnnotations = new ArrayList<AnnotationNode>();
+        final List<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
+        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, copiedAnnotations, notCopied);
+        for (AnnotationNode annotation : notCopied) {
+            addError(myTypeName + " does not support keeping Closure annotation members.", annotation);
+        }
+        return copiedAnnotations;
+    }
 
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
         if (nodes == null || nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -66,16 +89,17 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return null;
     }
 
-    public String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
+    public static String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof ConstantExpression) {
             Object result = ((ConstantExpression) member).getValue();
+            if (result != null && result instanceof String && isUndefined((String) result)) result = null;
             if (result != null) return result.toString();
         }
         return defaultValue;
     }
 
-    public String getMemberStringValue(AnnotationNode node, String name) {
+    public static String getMemberStringValue(AnnotationNode node, String name) {
         return getMemberStringValue(node, name, null);
     }
 
@@ -94,9 +118,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     public ClassNode getMemberClassValue(AnnotationNode node, String name, ClassNode defaultValue) {
         final Expression member = node.getMember(name);
         if (member != null) {
-            if (member instanceof ClassExpression)
-                return member.getType();
-            if (member instanceof VariableExpression) {
+            if (member instanceof ClassExpression) {
+                if (!isUndefined(member.getType())) return member.getType();
+            } else if (member instanceof VariableExpression) {
                 addError("Error expecting to find class value for '" + name + "' but found variable: " + member.getText() + ". Missing import?", node);
                 return null;
             } else if (member instanceof ConstantExpression) {
@@ -107,6 +131,42 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return defaultValue;
     }
 
+    public static List<String> getMemberStringList(AnnotationNode anno, String name) {
+        Expression expr = anno.getMember(name);
+        if (expr == null) {
+            return null;
+        }
+        if (expr instanceof ListExpression) {
+            List<String> list = new ArrayList<String>();
+            final ListExpression listExpression = (ListExpression) expr;
+            if (isUndefinedMarkerList(listExpression)) {
+                return null;
+            }
+            for (Expression itemExpr : listExpression.getExpressions()) {
+                if (itemExpr != null && itemExpr instanceof ConstantExpression) {
+                    Object value = ((ConstantExpression) itemExpr).getValue();
+                    if (value != null) list.add(value.toString());
+                }
+            }
+            return list;
+        }
+        return tokenize(getMemberStringValue(anno, name));
+    }
+
+    private static boolean isUndefinedMarkerList(ListExpression listExpression) {
+        if (listExpression.getExpressions().size() != 1) return false;
+        Expression itemExpr = listExpression.getExpression(0);
+        if (itemExpr == null) return false;
+        if (itemExpr instanceof ConstantExpression) {
+            Object value = ((ConstantExpression) itemExpr).getValue();
+            if (value instanceof String && isUndefined((String)value)) return true;
+        } else if (itemExpr instanceof ClassExpression && isUndefined(itemExpr.getType())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Deprecated
     public List<String> getMemberList(AnnotationNode anno, String name) {
         List<String> list;
         Expression expr = anno.getMember(name);
@@ -125,6 +185,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
+    @Deprecated
     public List<ClassNode> getClassList(AnnotationNode anno, String name) {
         List<ClassNode> list = new ArrayList<ClassNode>();
         Expression expr = anno.getMember(name);
@@ -138,6 +199,31 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             }
         } else if (expr != null && expr instanceof ClassExpression) {
             ClassNode cn = expr.getType();
+            if (cn != null) list.add(cn);
+        }
+        return list;
+    }
+
+    public List<ClassNode> getMemberClassList(AnnotationNode anno, String name) {
+        List<ClassNode> list = new ArrayList<ClassNode>();
+        Expression expr = anno.getMember(name);
+        if (expr == null) {
+            return null;
+        }
+        if (expr instanceof ListExpression) {
+            final ListExpression listExpression = (ListExpression) expr;
+            if (isUndefinedMarkerList(listExpression)) {
+                return null;
+            }
+            for (Expression itemExpr : listExpression.getExpressions()) {
+                if (itemExpr != null && itemExpr instanceof ClassExpression) {
+                    ClassNode cn = itemExpr.getType();
+                    if (cn != null) list.add(cn);
+                }
+            }
+        } else if (expr instanceof ClassExpression) {
+            ClassNode cn = expr.getType();
+            if (isUndefined(cn)) return null;
             if (cn != null) list.add(cn);
         }
         return list;
@@ -162,10 +248,10 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     public boolean hasAnnotation(ClassNode cNode, ClassNode annotation) {
         List annots = cNode.getAnnotations(annotation);
-        return (annots != null && annots.size() > 0);
+        return (annots != null && !annots.isEmpty());
     }
 
-    protected List<String> tokenize(String rawExcludes) {
+    public static List<String> tokenize(String rawExcludes) {
         return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
 
@@ -173,10 +259,27 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return name.contains("$");
     }
 
-    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
+    public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes) {
+        return shouldSkipUndefinedAware(name, excludes, includes, false);
     }
 
+    public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes, boolean allNames) {
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternalName(name)) ||
+            (includes != null && !includes.contains(name));
+    }
+
+    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return shouldSkip(name, excludes, includes, false);
+    }
+
+    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes, boolean allNames) {
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternalName(name)) ||
+            (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
+
+    @Deprecated
     public static boolean shouldSkipOnDescriptor(boolean checkReturn, Map genericsSpec, MethodNode mNode, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
         String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
@@ -227,7 +330,61 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         return true;
     }
+    public static boolean shouldSkipOnDescriptorUndefinedAware(boolean checkReturn, Map genericsSpec, MethodNode mNode,
+                                                  List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+        String descriptor = mNode.getTypeDescriptor();
+        String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
+        if (excludeTypes != null) {
+            for (ClassNode cn : excludeTypes) {
+                List<ClassNode> remaining = new LinkedList<ClassNode>();
+                remaining.add(cn);
+                Map updatedGenericsSpec = new HashMap(genericsSpec);
+                while (!remaining.isEmpty()) {
+                    ClassNode next = remaining.remove(0);
+                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                        for (MethodNode mn : next.getMethods()) {
+                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                            if (checkReturn) {
+                                String md = correctedMethodNode.getTypeDescriptor();
+                                if (md.equals(descriptor)) return true;
+                            } else {
+                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                                if (md.equals(descriptorNoReturn)) return true;
+                            }
+                        }
+                        remaining.addAll(Arrays.asList(next.getInterfaces()));
+                    }
+                }
+            }
+        }
+        if (includeTypes == null) return false;
+        for (ClassNode cn : includeTypes) {
+            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            remaining.add(cn);
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!remaining.isEmpty()) {
+                ClassNode next = remaining.remove(0);
+                if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                    for (MethodNode mn : next.getMethods()) {
+                        MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                        if (checkReturn) {
+                            String md = correctedMethodNode.getTypeDescriptor();
+                            if (md.equals(descriptor)) return false;
+                        } else {
+                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            if (md.equals(descriptorNoReturn)) return false;
+                        }
+                    }
+                    remaining.addAll(Arrays.asList(next.getInterfaces()));
+                }
+            }
+        }
+        return true;
+    }
 
+    @Deprecated
     protected boolean checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
         if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
             addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
@@ -236,6 +393,15 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return true;
     }
 
+    protected boolean checkIncludeExcludeUndefinedAware(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
+        if (includes != null && excludes != null && !excludes.isEmpty()) {
+            addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
+            return false;
+        }
+        return true;
+    }
+
+    @Deprecated
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
         int found = 0;
         if (includes != null && !includes.isEmpty()) found++;
@@ -245,6 +411,43 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         if (found > 1) {
             addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
         }
+    }
+
+    protected void checkIncludeExcludeUndefinedAware(AnnotationNode node, List<String> excludes, List<String> includes,
+                                        List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
+        int found = 0;
+        if (includes != null) found++;
+        if (excludes != null && !excludes.isEmpty()) found++;
+        if (includeTypes != null) found++;
+        if (excludeTypes != null && !excludeTypes.isEmpty()) found++;
+        if (found > 1) {
+            addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
+        }
+    }
+
+    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields) {
+        if (propertyNameList == null || propertyNameList.isEmpty()) {
+            return true;
+        }
+        final List<String> pNames = getInstancePropertyNames(cNode);
+        boolean result = true;
+        if (includeFields) {
+            final List<String> fNames = getInstanceNonPropertyFieldNames(cNode);
+            for (String pName : propertyNameList) {
+                if (!pNames.contains(pName) && !fNames.contains(pName)) {
+                    addError("Error during " + typeName + " processing: '" + listName + "' property or field '" + pName + "' does not exist.", anno);
+                    result = false;
+                }
+            }
+        } else {
+            for (String pName : propertyNameList) {
+                if (!pNames.contains(pName)) {
+                    addError("Error during " + typeName + " processing: '" + listName + "' property '" + pName + "' does not exist.", anno);
+                    result = false;
+                }
+            }
+        }
+        return result;
     }
 
     /**

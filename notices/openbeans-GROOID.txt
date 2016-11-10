@@ -1,0 +1,9 @@
+This product embeds the OpenBeans jar within its grooid jar artifacts
+OpenBeans includes/uses files from Apache Harmony and the following notice applies
+Copyright 2006, 2010 The Apache Software Foundation.
+Portions of Apache Harmony were originally developed by Intel Corporation and are
+licensed to the Apache Software Foundation under the "Software Grant and Corporate
+Contribution License Agreement" and for which the following copyright notices apply
+    (C) Copyright 2005 Intel Corporation
+    (C) Copyright 2005-2006 Intel Corporation
+    (C) Copyright 2006 Intel Corporation

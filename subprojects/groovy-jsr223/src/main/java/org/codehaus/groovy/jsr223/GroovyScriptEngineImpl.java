@@ -1,41 +1,48 @@
 /*
- * Original source;
- * Copyright 2006 Sun Microsystems, Inc. All rights reserved.
- * Use is subject to license terms.
+ * The initial contribution was derived from the reference implementation
+ * developed by Sun in consultation with the Groovy community. The reference
+ * implementation had the following license header:
  *
- * Redistribution and use in source and binary forms, with or without modification, are 
- * permitted provided that the following conditions are met: Redistributions of source code 
- * must retain the above copyright notice, this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, this list of 
- * conditions and the following disclaimer in the documentation and/or other materials 
- * provided with the distribution. Neither the name of the Sun Microsystems nor the names of 
- * is contributors may be used to endorse or promote products derived from this software 
- * without specific prior written permission. 
-
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY 
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *  Copyright 2006 Sun Microsystems, Inc. All rights reserved.
+ *  Use is subject to license terms.
  *
- * Subsequent changes:
- * Copyright 2006-2012 the original author or authors.
+ *  Redistribution and use in source and binary forms, with or without modification, are
+ *  permitted provided that the following conditions are met: Redistributions of source code
+ *  must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *  Redistributions in binary form must reproduce the above copyright notice, this list of
+ *  conditions and the following disclaimer in the documentation and/or other materials
+ *  provided with the distribution. Neither the name of the Sun Microsystems nor the names of
+ *  is contributors may be used to endorse or promote products derived from this software
+ *  without specific prior written permission.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+ *  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ *  AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ *  OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ *  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ *  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Subsequent modifications by the Groovy community have been done under the Apache License v2:
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.jsr223;
 
@@ -51,7 +58,6 @@ import groovy.lang.Tuple;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.util.ManagedConcurrentValueMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -73,29 +79,28 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 
-import java.lang.Class;
-import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-/*
- * @author Mike Grogan
- * @author A. Sundararajan
+/**
+ * JSR-223 Engine implementation.
+ *
+ * @author Adapted from original by Mike Grogan
+ * @author Adapted from original by A. Sundararajan
  * @author Jim White
  * @author Guillaume Laforge
  * @author Jochen Theodorou
  */
-public class GroovyScriptEngineImpl
-        extends AbstractScriptEngine implements Compilable, Invocable {
+public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Compilable, Invocable {
 
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private ManagedConcurrentValueMap<String, Class> classMap = new ManagedConcurrentValueMap<String, Class>(ReferenceBundle.getSoftBundle());
+    private final ManagedConcurrentValueMap<String, Class<?>> classMap = new ManagedConcurrentValueMap<String, Class<?>>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
+    private final ManagedConcurrentValueMap<String, Closure<?>> globalClosures = new ManagedConcurrentValueMap<String, Closure<?>>(ReferenceBundle.getHardBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -109,12 +114,17 @@ public class GroovyScriptEngineImpl
     }
 
     public GroovyScriptEngineImpl() {
-        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration()));
+        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT)));
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
         if (classLoader == null) throw new IllegalArgumentException("GroovyClassLoader is null");
         this.loader = classLoader;
+    }
+
+    GroovyScriptEngineImpl(GroovyScriptEngineFactory factory) {
+        this();
+        this.factory = factory;
     }
 
     public Object eval(Reader reader, ScriptContext ctx)
@@ -127,7 +137,7 @@ public class GroovyScriptEngineImpl
         try {
             String val = (String) ctx.getAttribute("#jsr223.groovy.engine.keep.globals", ScriptContext.ENGINE_SCOPE);
             ReferenceBundle bundle = ReferenceBundle.getHardBundle();
-            if (val!=null && val.length()>0) {
+            if (val != null && val.length() > 0) {
                 if (val.equalsIgnoreCase("soft")) {
                     bundle = ReferenceBundle.getSoftBundle();
                 } else if (val.equalsIgnoreCase("weak")) {
@@ -140,12 +150,9 @@ public class GroovyScriptEngineImpl
         } catch (ClassCastException cce) { /*ignore.*/ }
 
         try {
-            Class clazz = getScriptClass(script);
+            Class<?> clazz = getScriptClass(script);
             if (clazz == null) throw new ScriptException("Script class is null");
             return eval(clazz, ctx);
-        } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(),
-                    e.getSourceLocator(), e.getLine());
         } catch (Exception e) {
             if (debug) e.printStackTrace();
             throw new ScriptException(e);
@@ -172,11 +179,6 @@ public class GroovyScriptEngineImpl
         try {
             return new GroovyCompiledScript(this,
                     getScriptClass(scriptSource));
-        } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(),
-                    e.getSourceLocator(), e.getLine());
-        } catch (IOException e) {
-            throw new ScriptException(e);
         } catch (CompilationFailedException ee) {
             throw new ScriptException(ee);
         }
@@ -212,49 +214,7 @@ public class GroovyScriptEngineImpl
     }
 
     // package-privates
-    Object eval(Class scriptClass, final ScriptContext ctx) throws ScriptException {
-        // Bindings so script has access to this environment.
-        // Only initialize once.
-        if (null == ctx.getAttribute("context", ScriptContext.ENGINE_SCOPE)) {
-            // add context to bindings
-            ctx.setAttribute("context", ctx, ScriptContext.ENGINE_SCOPE);
-
-            // direct output to ctx.getWriter
-            // If we're wrapping with a PrintWriter here,
-            // enable autoFlush because otherwise it might not get done!
-            final Writer writer = ctx.getWriter();
-            ctx.setAttribute("out", (writer instanceof PrintWriter) ?
-                    writer :
-                    new PrintWriter(writer, true),
-                    ScriptContext.ENGINE_SCOPE);
-
-// Not going to do this after all (at least for now).
-// Scripts can use context.{reader, writer, errorWriter}.
-// That is a modern version of System.{in, out, err} or Console.{reader, writer}().
-//
-//            // New I/O names consistent with ScriptContext and java.io.Console.
-//
-//            ctx.setAttribute("writer", writer, ScriptContext.ENGINE_SCOPE);
-//
-//            // Direct errors to ctx.getErrorWriter
-//            final Writer errorWriter = ctx.getErrorWriter();
-//            ctx.setAttribute("errorWriter", (errorWriter instanceof PrintWriter) ?
-//                                    errorWriter :
-//                                    new PrintWriter(errorWriter),
-//                                    ScriptContext.ENGINE_SCOPE);
-//
-//            // Get input from ctx.getReader
-//            // We don't wrap with BufferedReader here because we expect that if
-//            // the host wants that they do it.  Either way Groovy scripts will
-//            // always have readLine because the GDK supplies it for Reader.
-//            ctx.setAttribute("reader", ctx.getReader(), ScriptContext.ENGINE_SCOPE);
-        }
-
-        // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for differents groovy script
-        if (ctx.getWriter() != null) {
-            ctx.setAttribute("out", new PrintWriter(ctx.getWriter(), true), ScriptContext.ENGINE_SCOPE);
-        }
-
+    Object eval(Class<?> scriptClass, final ScriptContext ctx) throws ScriptException {
         /*
          * We use the following Binding instance so that global variable lookup
          * will be done in the current ScriptContext instance.
@@ -266,6 +226,19 @@ public class GroovyScriptEngineImpl
                     int scope = ctx.getAttributesScope(name);
                     if (scope != -1) {
                         return ctx.getAttribute(name, scope);
+                    }
+                    // Redirect script output to context writer, if out var is not already provided
+                    if ("out".equals(name)) {
+                        Writer writer = ctx.getWriter();
+                        if (writer != null) {
+                            return (writer instanceof PrintWriter) ?
+                                    (PrintWriter) writer :
+                                    new PrintWriter(writer, true);
+                        }
+                    }
+                    // Provide access to engine context, if context var is not already provided
+                    if ("context".equals(name)) {
+                        return ctx;
                     }
                 }
                 throw new MissingPropertyException(name, getClass());
@@ -290,8 +263,7 @@ public class GroovyScriptEngineImpl
                 return scriptClass;
             } else {
                 // it's a script
-                Script scriptObject = (Script) scriptClass.newInstance();
-                scriptObject.setBinding(binding);
+                Script scriptObject = InvokerHelper.createScript(scriptClass, binding);
 
                 // save all current closures into global closures map
                 Method[] methods = scriptClass.getMethods();
@@ -346,20 +318,12 @@ public class GroovyScriptEngineImpl
             }
         } catch (Exception e) {
             throw new ScriptException(e);
-        } finally {
-            // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for different groovy script
-            // Groovy's scripting engine implementation adds those two variables in the binding
-            // but should clean up afterwards
-            ctx.removeAttribute("context", ScriptContext.ENGINE_SCOPE);
-            ctx.removeAttribute("out", ScriptContext.ENGINE_SCOPE);
         }
     }
 
-    Class getScriptClass(String script)
-            throws SyntaxException,
-            CompilationFailedException,
-            IOException {
-        Class clazz = classMap.get(script);
+    Class<?> getScriptClass(String script)
+            throws CompilationFailedException {
+        Class<?> clazz = classMap.get(script);
         if (clazz != null) {
             return clazz;
         }
@@ -405,7 +369,7 @@ public class GroovyScriptEngineImpl
     }
 
     private Object callGlobal(String name, Object[] args, ScriptContext ctx) {
-        Closure closure = globalClosures.get(name);
+        Closure<?> closure = globalClosures.get(name);
         if (closure != null) {
             return closure.call(args);
         } else {
@@ -420,7 +384,7 @@ public class GroovyScriptEngineImpl
     }
 
     // generate a unique name for top-level Script classes
-    private synchronized String generateScriptName() {
+    private static synchronized String generateScriptName() {
         return "Script" + (++counter) + ".groovy";
     }
 
@@ -432,7 +396,7 @@ public class GroovyScriptEngineImpl
         }
         return (T) Proxy.newProxyInstance(
                 clazz.getClassLoader(),
-                new Class[]{clazz},
+                new Class<?>[]{clazz},
                 new InvocationHandler() {
                     public Object invoke(Object proxy, Method m, Object[] args)
                             throws Throwable {
@@ -447,7 +411,7 @@ public class GroovyScriptEngineImpl
         // check whether thread context loader can "see" Groovy Script class
         ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Class c = ctxtLoader.loadClass(Script.class.getName());
+            Class<?> c = ctxtLoader.loadClass(Script.class.getName());
             if (c == Script.class) {
                 return ctxtLoader;
             }
@@ -458,7 +422,7 @@ public class GroovyScriptEngineImpl
         return Script.class.getClassLoader();
     }
 
-    private String readFully(Reader reader) throws ScriptException {
+    private static String readFully(Reader reader) throws ScriptException {
         char[] arr = new char[8 * 1024]; // 8K at a time
         StringBuilder buf = new StringBuilder();
         int numChars;

@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -42,8 +43,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         __index = 0;
         charArray = cs;
         lastIndex = cs.length - 1;
-        Object value = decodeValue();
-        return value;
+        return decodeValue();
     }
 
     protected final boolean hasMore() {
@@ -66,11 +66,9 @@ public class JsonParserCharArray extends BaseJsonParser {
             this.__currentChar = this.charArray[ix];
             __index = ix;
         }
-
     }
 
     protected final char nextChar() {
-
         try {
             if (hasMore()) {
                 __index++;
@@ -93,7 +91,6 @@ public class JsonParserCharArray extends BaseJsonParser {
         for (; index < array.length; index++) {
             c = array[index];
             if (c > 32) {
-
                 return index;
             }
         }
@@ -101,7 +98,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     }
 
     protected final Object decodeJsonObject() {
-
         if (__currentChar == '{') {
             __index++;
         }
@@ -109,13 +105,10 @@ public class JsonParserCharArray extends BaseJsonParser {
         LazyMap map = new LazyMap();
 
         for (; __index < this.charArray.length; __index++) {
-
             skipWhiteSpace();
 
             if (__currentChar == '"') {
-
-                String key =
-                        decodeString();
+                String key = decodeString();
 
                 if (internKeys) {
                     String keyPrime = internedKeysCache.get(key);
@@ -130,7 +123,6 @@ public class JsonParserCharArray extends BaseJsonParser {
                 skipWhiteSpace();
 
                 if (__currentChar != ':') {
-
                     complain("expecting current character to be " + charDescription(__currentChar) + "\n");
                 }
                 __index++;
@@ -141,8 +133,8 @@ public class JsonParserCharArray extends BaseJsonParser {
 
                 skipWhiteSpace();
                 map.put(key, value);
-
             }
+
             if (__currentChar == '}') {
                 __index++;
                 break;
@@ -151,7 +143,6 @@ public class JsonParserCharArray extends BaseJsonParser {
             } else {
                 complain(
                         "expecting '}' or ',' but got current char " + charDescription(__currentChar));
-
             }
         }
 
@@ -166,12 +157,11 @@ public class JsonParserCharArray extends BaseJsonParser {
         return decodeValueInternal();
     }
 
-    private final Object decodeValueInternal() {
+    private Object decodeValueInternal() {
         Object value = null;
         skipWhiteSpace();
 
         switch (__currentChar) {
-
             case '"':
                 value = decodeString();
                 break;
@@ -215,7 +205,6 @@ public class JsonParserCharArray extends BaseJsonParser {
             default:
                 throw new JsonException(exceptionDetails("Unable to determine the " +
                         "current character, it is not a string, number, array, or object"));
-
         }
 
         return value;
@@ -223,8 +212,7 @@ public class JsonParserCharArray extends BaseJsonParser {
 
     int[] endIndex = new int[1];
 
-    private final Object decodeNumber() {
-
+    private Object decodeNumber() {
         Number num = CharScanner.parseJsonNumber(charArray, __index, charArray.length, endIndex);
         __index = endIndex[0];
 
@@ -234,7 +222,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected static final char[] NULL = Chr.chars("null");
 
     protected final Object decodeNull() {
-
         if (__index + NULL.length <= charArray.length) {
             if (charArray[__index] == 'n' &&
                     charArray[++__index] == 'u' &&
@@ -250,7 +237,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected static final char[] TRUE = Chr.chars("true");
 
     protected final boolean decodeTrue() {
-
         if (__index + TRUE.length <= charArray.length) {
             if (charArray[__index] == 't' &&
                     charArray[++__index] == 'r' &&
@@ -259,7 +245,6 @@ public class JsonParserCharArray extends BaseJsonParser {
 
                 __index++;
                 return true;
-
             }
         }
 
@@ -269,7 +254,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected static char[] FALSE = Chr.chars("false");
 
     protected final boolean decodeFalse() {
-
         if (__index + FALSE.length <= charArray.length) {
             if (charArray[__index] == 'f' &&
                     charArray[++__index] == 'a' &&
@@ -286,7 +270,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     private CharBuf builder = CharBuf.create(20);
 
     private String decodeString() {
-
         char[] array = charArray;
         int index = __index;
         char currentChar = array[index];
@@ -317,7 +300,6 @@ public class JsonParserCharArray extends BaseJsonParser {
     }
 
     protected final List decodeJsonArray() {
-
         ArrayList<Object> list = null;
 
         boolean foundEnd = false;
@@ -332,7 +314,6 @@ public class JsonParserCharArray extends BaseJsonParser {
 
             skipWhiteSpace();
 
-
         /* the list might be empty  */
             if (__currentChar == ']') {
                 __index++;
@@ -342,7 +323,6 @@ public class JsonParserCharArray extends BaseJsonParser {
             list = new ArrayList();
 
             while (this.hasMore()) {
-
                 Object arrayItem = decodeValueInternal();
 
                 list.add(arrayItem);
@@ -371,7 +351,6 @@ public class JsonParserCharArray extends BaseJsonParser {
                     foundEnd = true;
                     break;
                 } else {
-
                     String charString = charDescription(c);
 
                     complain(
@@ -379,14 +358,11 @@ public class JsonParserCharArray extends BaseJsonParser {
                                     " but got \nthe current character of  %s " +
                                     " on array index of %s \n", charString, list.size())
                     );
-
                 }
             }
-
         } catch (Exception ex) {
             if (ex instanceof JsonException) {
-                JsonException jsonException = (JsonException) ex;
-                throw jsonException;
+                throw (JsonException) ex;
             }
             throw new JsonException(exceptionDetails("issue parsing JSON array"), ex);
         }
@@ -394,7 +370,6 @@ public class JsonParserCharArray extends BaseJsonParser {
             complain("Did not find end of Json Array");
         }
         return list;
-
     }
 
     protected final char currentChar() {
@@ -408,5 +383,4 @@ public class JsonParserCharArray extends BaseJsonParser {
     public Object parse(char[] chars) {
         return this.decodeFromChars(chars);
     }
-
 }

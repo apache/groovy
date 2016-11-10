@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Semantics
 
 This chapter covers the semantics of the Groovy programming language.
@@ -13,7 +34,7 @@ Variables can be defined using either their type (like `String`) or by using the
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
 ----
 
-`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to the make variable definitions detectable for the Groovy parser.
+`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to make variable definitions detectable for the Groovy parser.
 
 You can think of `def` as an alias of `Object` and you will understand it in an instant.
 
@@ -102,7 +123,7 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=destructuring,inde
 <2> then, we use a multiple assignment to get the individual longitude and latitude values
 <3> and we can finally assert their values.
 
-=== Control structures (WIP)
+=== Control structures
 ==== Conditional structures
 ===== if / else
 
@@ -139,15 +160,13 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=switch_case_exampl
 
 Switch supports the following kinds of comparisons:
 
-* Class case values matches if the switch value is an instance of the class
+* Class case values match if the switch value is an instance of the class
 * Regular expression case values match if the `toString()` representation of the switch value matches the regex
 * Collection case values match if the switch value is contained in the collection. This also includes ranges (since they are Lists)
 * Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
 * If none of the above are used then the case value matches if the case value equals the switch value
 
-NOTE: +default+ must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
-
-NOTE: when using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`)
+NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
 
 ==== Looping structures
 ===== Classic for loop
@@ -187,7 +206,7 @@ Exception handling is the same as Java.
 
 ==== try / catch / finally
 
-You can specify a complete +try-catch-finally+, a +try-catch+, or a +try-finally+ set of blocks.
+You can specify a complete `try-catch-finally`, a `try-catch`, or a `try-finally` set of blocks.
 
 NOTE: Braces are required around each block's body.
 
@@ -216,17 +235,213 @@ try {
 }
 ----
 
-=== Power assertion (TBD)
-=== Labeled statements (TBD)
+=== Power assertion
 
-== Expressions (TBD)
+Unlike Java with which Groovy shares the `assert` keyword, the latter in Groovy behaves very differently. First of all,
+an assertion in Groovy is always executed, independently of the `-ea` flag of the JVM. It makes this a first class choice
+for unit tests. The notion of "power asserts" is directly related to how the Groovy `assert` behaves.
+
+A power assertion is decomposed into 3 parts:
+
+----
+assert [left expression] == [right expression] : (optional message)
+----
+
+The result of the assertion is very different from what you would get in Java. If the assertion is true, then nothing
+happens. If the assertion is false, then it provides a visual representation of the value of each sub-expressions of the
+expression being asserted. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_1,indent=0]
+----
+
+Will yield:
+
+----
+Caught: Assertion failed:
+
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_1,indent=0]
+----
+
+Power asserts become very interesting when the expressions are more complex, like in the next example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_2,indent=0]
+----
+
+Which will print the value for each sub-expression:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_2,indent=0]
+----
+
+In case you don't want a pretty printed error message like above, you can fallback to a custom error message by
+changing the optional message part of the assertion, like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_3,indent=0]
+----
+
+Which will print the following error message:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_3,indent=0]
+----
+
+
+=== Labeled statements
+
+Any statement can be associated with a label. Labels do not impact the semantics of the code and can be used to make
+the code easier to read like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/LabelsTest.groovy[tags=test_labels,indent=0]
+----
+
+Despite not changing the semantics of the the labelled statement, it is possible to use labels in the `break` instruction
+as a target for jump, as in the next example. However, even if this is allowed, this coding style is in general considered
+a bad practice:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/LabelsTest.groovy[tags=label_bad_practice,indent=0]
+----
+
+It is important to understand that by default labels have no impact on the semantics of the code, however they belong to the abstract
+syntax tree (AST) so it is possible for an AST transformation to use that information to perform transformations over
+the code, hence leading to different semantics. This is in particular what the http://spockframework.github.io/spock/docs/current/index.html[Spock Framework]
+does to make testing easier.
+
+== Expressions
+
+(TBD)
+
 
 [[gpath_expressions]]
-=== GPath expressions (TBD)
+=== GPath expressions
+////
+This is covered in {projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc, where the legacy codehaus GPath wiki page
+have been converted.
+Current section should explain what is an GPath expression (not just example, but more like a formal language specification, but kept simple).
 
-== Promotion and coercion (TBD)
+////
 
-=== Number promotion (TBD)
+`GPath` is a path expression language integrated into Groovy which allows parts of nested structured data to be identified. In this
+sense, it has similar aims and scope as XPath does for XML.  GPath is often used in the context of processing XML, but it really applies
+to any object graph.  Where XPath uses a filesystem-like path notation, a tree hierarchy with parts separated by a slash `/`, GPath *use a
+dot-object notation* to perform object navigation.
+
+As an example, you can specify a path to an object or element of interest:
+
+* `a.b.c` -> for XML, yields all the `c` elements inside `b` inside `a`
+* `a.b.c` -> for POJOs, yields the `c` properties for all the `b` properties of `a` (sort of like `a.getB().getC()` in JavaBeans)
+
+In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
+program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
+the XML text, most often with classes like XmlParser or XmlSlurper. See <<{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc#Processing XML,Processing XML>>
+for more in-depth details on consuming XML in Groovy.
+
+[TIP]
+====
+When querying the object graph generated from XmlParser or XmlSlurper, a GPath expression can refer to attributes defined on elements with
+the `@` notation:
+
+* `a["@href"]` -> map-like notation : the href attribute of all the a elements
+* `a.'@href'`  -> property notation : an alternative way of expressing this
+* `a.@href`    -> direct notation : yet another alternative way of expressing this
+====
+
+==== Object navigation
+
+Let's see an example of a GPath expression on a simple _object graph_, the one obtained using java reflection.  Suppose you are in a non-static method of a
+class having another method named `aMethodFoo`
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_1,indent=0]
+----
+
+the following GPath expression will get the name of that method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_2,indent=0]
+----
+
+_More precisely_, the above GPath expression produces a list of String, each being the name of an existing method on `this` where that name ends with `Foo`.
+
+Now, given the following methods also defined in that class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_3,indent=0]
+----
+
+then the following GPath expression will get the names of *(1)* and *(3)*, but not *(2)* or *(0)*:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_4,indent=0]
+----
+
+==== Expression Deconstruction
+
+We can decompose the expression `this.class.methods.name.grep(~/.*Bar/)` to get an idea of how a GPath is evaluated:
+
+`this.class`:: property accessor, equivalent to `this.getClass()` in Java, yields a `Class` object.
+`this.class.methods`:: property accessor, equivalent to `this.getClass().getMethods()`, yields an array of `Method` objects.
+`this.class.methods.name`:: apply a property accessor on each element of an array and produce a list of the results.
+`this.class.methods.name.grep(...)`:: call method `grep` on each element of the list yielded by `this.class.methods.name` and produce a list of the results.
+
+WARNING: A sub-expression like `this.class.methods` yields an array because this is what calling `this.getClass().getMethods()` in Java
+would produce. `GPath` expressions do not have a convention where a `s` means a list or anything like that.
+
+One powerful feature of GPath expression is that property access on a collection is converted to a _property access on each element of the collection_ with
+the results collected into a collection. Therefore, the expression `this.class.methods.name` could be expressed as follows in Java:
+[source,java]
+----
+List<String> methodNames = new ArrayList<String>();
+for (Method method : this.getClass().getMethods()) {
+   methodNames.add(method.getName());
+}
+return methodNames;
+----
+
+Array access notation can also be used in a GPath expression where a collection is present :
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_array_access_1,indent=0]
+----
+
+NOTE: array access are zero-based in GPath expressions
+
+==== GPath for XML navigation
+
+Here is an example with a XML document and various form of GPath expressions:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
+----
+
+<1> There is one `level` node under `root`
+<2> There are two `sublevel` nodes under `root/level`
+<3> There is one element `sublevel` having an attribute `id` with value `1`
+<4> Text value of `key` element of first `keyVal` element of second `sublevel` element under `root/level` is 'anotherKey'
+
+== Promotion and coercion
+
+=== Number promotion
+
+The rules of number promotion are specified in the section on <<_math_operations,math operations>>.
+
+
+[[closure-coercion]]
 === Closure to type coercion
 ==== Assigning a closure to a SAM type
 A SAM type is a type which defines a single abstract method. This includes:
@@ -355,7 +570,7 @@ The type of the exception depends on the call itself:
 
 === String to enum coercion
 
-Groovy allows transparent +String+ (or +GString+) to enum values coercion. Imagine you define the following enum:
+Groovy allows transparent `String` (or `GString`) to enum values coercion. Imagine you define the following enum:
 
 [source,groovy]
 ----
@@ -369,7 +584,7 @@ then you can assign a string to the enum without having to use an explicit `as` 
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment,indent=0]
 ----
 
-It is also possible to use a +GString+ as the value:
+It is also possible to use a `GString` as the value:
 
 [source,groovy]
 ----
@@ -377,7 +592,7 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignm
 ----
 
 
-However, this would throw a runtime error (+IllegalArgumentException+):
+However, this would throw a runtime error (`IllegalArgumentException`):
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment_wrong,indent=0]
@@ -390,7 +605,7 @@ Note that it is also possible to use implicit coercion in switch statements:
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_method,indent=0]
 ----
 
-in particular, see how the `case` use string constants. But if you call a method that uses an enum with a +String+
+in particular, see how the `case` use string constants. But if you call a method that uses an enum with a `String`
 argument, you still have to use an explicit `as` coercion:
 
 [source,groovy]
@@ -400,9 +615,9 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_test,in
 
 === Custom type coercion
 
-It is possible for a class to define custom coercion strategies by implementing the +asType+ method. Custom coercion
+It is possible for a class to define custom coercion strategies by implementing the `asType` method. Custom coercion
 is invoked using the `as` operator and is never implicit. As an example,
-imagine you defined two classes, +Polar+ and +Cartesian+, like in the following example:
+imagine you defined two classes, `Polar` and `Cartesian`, like in the following example:
 
 [source,groovy]
 ----
@@ -412,21 +627,21 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=cartesian_class,ind
 ----
 
 And that you want to convert from polar coordinates to cartesian coordinates. One way of doing this is to define
-the +asType+ method in the +Polar+ class:
+the `asType` method in the `Polar` class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,indent=0]
 ----
 
-which allows you to use the +as+ coercion operator:
+which allows you to use the `as` coercion operator:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_astype_assert,indent=0]
 ----
 
-Putting it all together, the +Polar+ class looks like this:
+Putting it all together, the `Polar` class looks like this:
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_header,indent=0]
@@ -434,7 +649,7 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
 ----
 
-but it is also possible to define +asType+ outside of the +Polar+ class, which can be practical if you want to define
+but it is also possible to define `asType` outside of the `Polar` class, which can be practical if you want to define
 custom coercion strategies for "closed" classes or classes for which you don't own the source code, for example using
 a metaclass:
 
@@ -473,19 +688,158 @@ It is failing because the `as` keyword only works with class literals. Instead, 
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
 ----
 
-== Optionality (TBD)
+== Optionality
 
-=== Optional parentheses (TBD)
-=== Optional semicolons (TBD)
-=== Optional return keyword (TBD)
-=== Optional public keyword (TBD)
+=== Optional parentheses
+
+Method calls can omit the parentheses if there is at least one parameter and there is no ambiguity:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=optional_parentheses,indent=0]
+----
+
+Parentheses are required for method calls without parameters or ambiguous method calls: 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
+----
+
+=== Optional semicolons
+
+In Groovy semicolons at the end of the line can be omitted, if the line contains only a single statement.
+
+This means that:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_with_semicolon,indent=0]
+----
+
+can be more idiomatically written as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_without_semicolon,indent=0]
+----
+
+Multiple statements in a line require semicolons to separate them:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=statements_separated_by_semicolon,indent=0]
+----
+
+=== Optional return keyword
+
+In Groovy, the last expression evaluated in the body of a method or a closure is returned. This means that the `return` keyword is optional.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
+----
+
+Can be shortened to:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
+----
+
+=== Optional public keyword
+
+By default, Groovy classes and methods are `public`. Therefore this class: 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=public_keyword,indent=0]
+----
+
+is identical to this class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
+----
 
 [[Groovy-Truth]]
-== The Groovy Truth (TBD)
+== The Groovy Truth
 
-=== Customizing the truth with asBoolean() methods (TBD)
+Groovy decides whether a expression is true or false by applying the rules given below.
 
-== Typing (WIP)
+=== Boolean expressions
+True if the corresponding Boolean value is `true`.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=boolean_truth,indent=0]
+----
+
+=== Collections and Arrays
+Non-empty Collections and arrays are true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=collection_truth,indent=0]
+----
+
+=== Matchers
+True if the Matcher has at least one match.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=matcher_truth,indent=0]
+----
+
+=== Iterators and Enumerations
+Iterators and Enumerations with further elements are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=iterator_enumeration_truth,indent=0]
+----
+
+=== Maps
+Non-empty Maps are evaluated to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=map_truth,indent=0]
+----
+
+=== Strings
+Non-empty Strings, GStrings and CharSequences are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=string_truth,indent=0]
+----
+
+=== Numbers
+Non-zero numbers are true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=number_truth,indent=0]
+----
+
+=== Object References
+Non-null object references are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=object_truth,indent=0]
+----
+
+=== Customizing the truth with asBoolean() methods
+
+In order to customize whether groovy evaluates your object to `true` or `false` implement the `asBoolean()` method:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_object,indent=0]
+----
+
+Groovy will call this method to coerce your object to a boolean value, e.g.:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_usage,indent=0]
+----
+
+== Typing
 
 === Optional typing
 
@@ -527,9 +881,9 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> both the return type and the parameter types use `def`
 <2> it makes it possible to use the method with `String`
-<3> but also with `int`s since the `plus` method is defined
+<3> but also with `int` since the `plus` method is defined
 
-TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
+TIP: Using the `def` keyword here is recommended to describe the intent of a method which is supposed to work on any
 type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
 equivalent to using `Object`.
 
@@ -543,7 +897,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> if we want to omit the return type, an explicit modifier has to be set.
 <2> it is still possible to use the method with `String`
-<3> and also with `int`s
+<3> and also with `int`
 
 TIP: Omitting types is in general considered a bad practice in method parameters or method return types for public APIs.
 While using `def` in a local variable is not really a problem because the visibility of the variable is limited to the
@@ -579,7 +933,8 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intr
 
 This means that in general, in Groovy, you can't make any assumption about the type of an object beyond its declaration
 type, and even if you know it, you can't determine at compile time what method will be called, or which property will
-be retrieved, and this is *perfectly fine*. This is how dynamic languages work, and it has a lot of interest.
+be retrieved. It has a lot of interest, going from writing DSLs to testing, which is discussed in other sections of this
+manual.
 
 However, if your program doesn't rely on dynamic features and that you come from the static world (in particular, from
 a Java mindset), not catching such "errors" at compile time can be surprising. As we have seen in the previous example,
@@ -680,7 +1035,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -693,7 +1048,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -892,7 +1247,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argp
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -973,7 +1328,7 @@ not in such a case, `@TypeChecked` comes handy:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_type_checked,indent=0]
 ----
 <1> `printLine` is this time a compile-time error
 
@@ -1010,7 +1365,7 @@ When code is annotated with `@TypeChecked`, the compiler performs type inference
 techniques to infer the types of variables, return types, literals, ... so that the code remains as clean as possible even if you activate the
 type checker.
 
-The simplest example is infering the type of a variable:
+The simplest example is inferring the type of a variable:
 
 [source,groovy]
 ----
@@ -1099,7 +1454,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_lite
 
 |[source,groovy]
 ----
-include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
 ----
 |`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
 
@@ -1175,7 +1530,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_up
 <5> but `B` defines an additional `exit` method
 <6> the type of `list` is inferred as "list of the LUB of `A` and `B`"
 <7> so it is possible to call `greet` which is defined on both `A` and `B` through the `Greeter` interface
-<8> and it is possible to call `salut` which is defined on both `A` and `B` through the `Salut` interface
+<8> and it is possible to call `salute` which is defined on both `A` and `B` through the `Salute` interface
 <9> yet calling `exit` is a compile time error because it doesn't belong to the LUB of `A` and `B` (only defined in `B`)
 
 The error message will look like:
@@ -1213,7 +1568,7 @@ cast is *not* necessary. The compiler embeds _instanceof_ inference that makes t
 ===== Flow typing
 
 Flow typing is an important concept of Groovy in type checked mode and an extension of type inference. The idea is that
-the compiler is capable of infering the type of variables in the flow of the code, not just at initialization:
+the compiler is capable of inferring the type of variables in the flow of the code, not just at initialization:
 
 [source,groovy]
 ----
@@ -1279,7 +1634,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_m
 <2> we call the `compute` method with `o`
 <3> and print the result
 
-In Java, this code will output `0`, because method selection is done at compile time and based on the *declared* types.
+In Java, this code will output `Nope`, because method selection is done at compile time and based on the *declared* types.
 So even if `o` is a `String` at runtime, it is still the `Object` version which is called, because `o` has been declared
 as an `Object`. To be short, in Java, declared types are most important, be it variable types, parameter types or return
 types.
@@ -1372,7 +1727,7 @@ on the other side.
 
 ===== Return type inference
 
-The first thing that the type checker is capable of doing is infering the _return type_ of a closure. This is simply
+The first thing that the type checker is capable of doing is inferring the _return type_ of a closure. This is simply
  illustrated in the following example:
 
 [source,groovy]
@@ -1389,8 +1744,8 @@ of a closure: its type is inferred from the body of the closure.
 .Closures vs methods
 ****
 It's worth noting that return type inference is only applicable to closures. While the type checker could do the
-same on a method, it is in practice not desirable: _in general_, methods can be overriden and it is not statically
-possible to make sure that the method which is called is not an overriden version. So flow typing would actually
+same on a method, it is in practice not desirable: _in general_, methods can be overridden and it is not statically
+possible to make sure that the method which is called is not an overridden version. So flow typing would actually
 think that a method returns something, while in reality, it could return something else, like illustrated in the
 following example:
 
@@ -1494,12 +1849,12 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_wo
 <2> it's not necessary to use an explicit type for `it`, which is inferred
 
 The `@ClosureParams` annotation minimally accepts one argument, which is named a _type hint_. A type hint is a class which
-is reponsible for completing type information at compile time for the closure. In this example, the type hint being used
+is responsible for completing type information at compile time for the closure. In this example, the type hint being used
 is `groovy.transform.stc.FirstParam` which indicated to the type checker that the closure will accept one parameter
 whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
 so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
 
-The second argument is optional and named _options_. It's semantics depends on the _type hint_ class. Groovy comes with
+A second optional argument is named _options_. It's semantics depend on the _type hint_ class. Groovy comes with
 various bundled type hints, illustrated in the table below:
 
 [cols="1a,1,4a"]
@@ -1574,10 +1929,11 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typ
 If there are multiple signatures like in the example above, the type checker will *only* be able to infer the types of
 the arguments if the arity of each method is different. In the example above, `firstSignature` takes 2 arguments and
 `secondSignature` takes 1 argument, so the type checker can infer the argument types based on the number of arguments.
+But see the optional resolver class attribute discussed next.
 
 |`FromString`
 |Yes
-|Infers the closure parameter typs from the `options` argument. The `options` argument consists of an array of comma-separated
+|Infers the closure parameter types from the `options` argument. The `options` argument consists of an array of comma-separated
 non-primitive types. Each element of the array corresponds to a single signature, and each comma in an element separate
 parameters of the signature. In short, this is the most generic type hint, and each string of the `options` map is *parsed*
 as if it was a signature literal. While being very powerful, this type hint must be avoided if you can because it increases
@@ -1606,14 +1962,22 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typ
 
 |===
 
-TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't stricly mean that the
+TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't strictly mean that the
 argument which will be passed to the closure *will* be the first (resp. second, third) argument of the method call. It
 only means that the *type* of the parameter of the closure will be the *same* as the type of the first (resp.  second,
  third) argument of the method call.
 
 In short, the lack of the `@ClosureParams` annotation on a method accepting a `Closure` will *not* fail compilation. If
  present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
- and can perform additional type inference. This makes this feature particularily interesting for framework developers.
+ and can perform additional type inference. This makes this feature particularly interesting for framework developers.
+
+A third optional argument is named _conflictResolutionStrategy_. It can reference a class (extending from
+`ClosureSignatureConflictResolver`) that can perform additional resolution of parameter types if more than
+one are found after initial inference calculations are complete. Groovy comes with the a default type resolver
+which does nothing, and another which selects the first signature if multiple are found. The resolver is
+only invoked if more than one signature is found and is by design a post processor. Any statements which need
+injected typing information must pass one of the parameter signatures determined through type hints. The
+resolver then picks among the returned candidate signatures.
 
 ===== `@DelegatesTo`
 
@@ -1621,7 +1985,7 @@ The `@DelegatesTo` annotation is used by the type checker to infer the type of t
 to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
 discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
 
-=== Static compilation (WIP)
+=== Static compilation
 
 ==== Dynamic vs static
 
@@ -1676,7 +2040,7 @@ with `@CompileStatic`:
 ----
 include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_compilestatic,indent=0]
 include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
-run()
+test()
 ----
 
 This is the *only* difference. If we execute this program, this time, there is no runtime error. The `test` method
@@ -1691,7 +2055,7 @@ There are several benefits of using `@CompileStatic` on your code:
 * immunity to <<compilestatic-annotation,monkey patching>>
 * performance improvements
 
-The performance improvements depend on the kind of program you are executing. It it is I/O bound, the difference between
+The performance improvements depend on the kind of program you are executing. If it is I/O bound, the difference between
 statically compiled code and dynamic code is barely noticeable. On highly CPU intensive code, since the bytecode which
 is generated is very close, if not equal, to the one that Java would produce for an equivalent program, the performance
 is greatly improved.
@@ -1701,4 +2065,6 @@ of the dynamic code should be very close to the performance of statically compil
 There is only one way to determine which version you should choose: measuring. The reason is that depending on your program
 *and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
 Groovy is very sensitive to the JVM version in use.
+
+include::type-checking-extensions.adoc[leveloffset=+1]
 

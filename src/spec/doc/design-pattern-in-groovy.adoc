@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Design patterns in Groovy
 
 
@@ -9,45 +30,41 @@ Using http://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design 
 
 == Patterns
 
-:leveloffset: 4
+include::{projectdir}/{specfolder}/design-pattern-abstract-factory.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-abstract-factory.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-adapter.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-adapter.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-bouncer.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-bouncer.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-chain-of-responsibility.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-composite.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-composite.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-decorator.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-decorator.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-delegation.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-delegation.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-flyweight.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-flyweight.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-iterator.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-iterator.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-loan-my-resource.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-loan-my-resource.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-null-object.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-null-object.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-pimp-my-library.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-pimp-my-library.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-proxy.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-proxy.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-singleton.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-singleton.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-state.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-state.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-strategy.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-strategy.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-template-method.adoc[leveloffset=+2]
 
-include::{projectdir}/{specfolder}/design-pattern-template-method.adoc[]
-
-include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[]
-
-:leveloffset: 2
+include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[leveloffset=+2]
 
 == References
 
@@ -61,6 +78,4 @@ include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[]
  * _Discusses Visitor, Builder and other Patterns._
 . Brad Appleton (1999). http://www.bradapp.com/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
  * _One of the most frequently used patterns by many software engineers!_
-. _Design Patterns in Dynamic Languages_ by Neil Ford. Houston Java User’s Group. Examples in Groovy and Ruby. http://www.hjug.org/present/Neal_Ford-Design_Patterns_in_Dynamic_Languages-slides.pdf
-
-See also: <<_refactoring_bwith_groovy,Refactoring with Groovy>>.
+. _Design Patterns in Dynamic Languages_ by Neil Ford. Houston Java User’s Group. Examples in Groovy and Ruby. http://www.oracle.com/technetwork/server-storage/ts-4961-159222.pdf

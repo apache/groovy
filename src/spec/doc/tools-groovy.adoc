@@ -1,0 +1,63 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Running Groovy from the commandline
+
+[[section-groovy-commandline]]
+== groovy, the Groovy command
+
+`groovy` invokes the Groovy command line processor. It allows you to run inline Groovy expressions, and scripts, tests or application within groovy files.
+It plays a similar role to `java` in the Java world but handles inline scripts and rather than invoking class files, it is normally called with scripts
+and will automatically call the Groovy compiler as needed.
+
+The easiest way to run a Groovy script, test or application is to run the following command at your shell prompt:
+
+------------------------
+> groovy MyScript.groovy
+------------------------
+
+The `.groovy` part is optional. The `groovy` command supports a number of command line switches:
+
+[cols="<,<,<,<",options="header,footer"]
+|=======================================================================
+|Short version |Long version |Description |Example
+| -a | --autosplit <splitPattern> | split lines using splitPattern (default '\s') using implicit 'split' variable |
+| -b | --basescript <class> | Base class name for scripts (must derive from Script) |
+| -c | --encoding <charset> | specify the encoding of the files |
+| -cp <path> | -classpath <path> +
+--classpath <path> | Specify the compilation classpath. Must be the first argument. | groovy -cp lib/dep.jar MyScript
+| | --configscript <path> | Advanced compiler configuration script | groovy --configscript config/config.groovy src/Person.groovy
+| -D | --define <name=value> | define a system property |
+| -d | --debug | debug mode will print out full stack traces |
+| | --disableopt <optlist> | disables one or all optimization elements. +
+optlist can be a comma separated list with the elements: +
+all (disables all optimizations), +
+int (disable any int based optimizations) |
+| -e <script> | | specify an inline command line script | groovy -e "println new Date()"
+| -h | --help | Displays usage information for the command line groovy command | groovy --help
+| -i <extension> | | modify files in place; create backup if extension is given (e.g. '.bak') |
+| | --indy | Enables invokedynamic support. Requires Java 7+ | groovy --indy Person.groovy
+| -l <port> | | listen on a port and process inbound lines (default: 1960) |
+| -n | | process files line by line using implicit 'line' variable |
+| -p | | process files line by line and print result (see also -n) |
+| -v | --version | display the Groovy and JVM versions | groovy -v
+| -pa | --parameters | Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. | groovy --parameters Person.groovy
+|=======================================================================

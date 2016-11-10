@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.io
 
@@ -22,7 +25,57 @@ import java.nio.CharBuffer
  */
 class LineColumnReaderTest extends GroovyTestCase {
 
-    def reader = new LineColumnReader(new FileReader(new File('src/test/groovy/io/sample-text-file.txt')))
+    String text = '''L'invitation au voyage
+
+Mon enfant, ma soeur,
+Songe à la douceur
+D'aller là-bas vivre ensemble !
+Aimer à loisir,
+Aimer et mourir
+Au pays qui te ressemble !
+Les soleils mouillés
+De ces ciels brouillés
+Pour mon esprit ont les charmes
+Si mystérieux
+De tes traîtres yeux,
+Brillant à travers leurs larmes.
+
+Là, tout n'est qu'ordre et beauté,
+Luxe, calme et volupté.
+
+Des meubles luisants,
+Polis par les ans,
+Décoreraient notre chambre ;
+Les plus rares fleurs
+Mêlant leurs odeurs
+Aux vagues senteurs de l'ambre,
+Les riches plafonds,
+Les miroirs profonds,
+La splendeur orientale,
+Tout y parlerait
+À l'âme en secret
+Sa douce langue natale.
+
+Là, tout n'est qu'ordre et beauté,
+Luxe, calme et volupté.
+
+Vois sur ces canaux
+Dormir ces vaisseaux
+Dont l'humeur est vagabonde ;
+C'est pour assouvir
+Ton moindre désir
+Qu'ils viennent du bout du monde.
+- Les soleils couchants
+Revêtent les champs,
+Les canaux, la ville entière,
+D'hyacinthe et d'or ;
+Le monde s'endort
+Dans une chaude lumière.
+
+Là, tout n'est qu'ordre et beauté,
+Luxe, calme et volupté.'''
+
+    def reader = new LineColumnReader(new StringReader(text))
 
     void testReadLine() {
         reader.withReader { LineColumnReader r ->

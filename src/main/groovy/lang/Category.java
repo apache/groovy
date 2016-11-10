@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.lang;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -55,12 +57,11 @@ import java.lang.annotation.Target;
  * references again!)
  * <p>
  * Classes conforming to the conventional Groovy category conventions can be used
- * within {@code use} statements or mixed in at compile time with the {@code @Mixin}
- * transformation or at runtime with the {@code mixin} method on classes.
+ * within {@code use} statements or mixed in at runtime with the {@code mixin} method on classes.
  * <p>
  * An example showing a {@code use} statement (allowing fine-grained application of
  * the category methods):
- * <pre>
+ * <pre class="groovyTestCase">
  * {@code @Category}(Integer)
  * class IntegerOps {
  *     def triple() {
@@ -72,8 +73,8 @@ import java.lang.annotation.Target;
  *     assert 25.triple() == 75
  * }
  * </pre>
- * Or, using the {@code @Mixin} flavor for compile-time "mixing in" of the methods:
- * <pre>
+ * Or, "mixing in" your methods at runtime:
+ * <pre class="groovyTestCase">
  * {@code @Category}(List)
  * class Shuffler {
  *     def shuffle() {
@@ -83,25 +84,14 @@ import java.lang.annotation.Target;
  *     }
  * }
  *
- * {@code @Mixin}(Shuffler)
- * class Sentence extends ArrayList {
- *     Sentence(Collection initial) { super(initial) }
- * }
- *
- * def words = ["The", "quick", "brown", "fox"]
- * println new Sentence(words).shuffle()
- * // => [quick, fox, The, brown]       (order will vary)
- * </pre>
- * Or, instead of using {@code @Mixin}, try "mixing in" your methods at runtime:
- * <pre>
- * // ... as before ...
- *
  * class Sentence extends ArrayList {
  *     Sentence(Collection initial) { super(initial) }
  * }
  * Sentence.mixin Shuffler
  *
- * // ... as before ...
+ * def words = ["The", "quick", "brown", "fox"]
+ * println new Sentence(words).shuffle()
+ * // => [quick, fox, The, brown]       (order will vary)
  * </pre>
  *
  * @author Alex Tkachman

@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.ASTNode;
@@ -210,7 +212,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                     ce.getVariableScope().putReferencedLocalVariable((Parameter) parameter.get());
                     Parameter[] params = ce.getParameters();
                     if (params == null) {
-                        params = new Parameter[0];
+                        params = Parameter.EMPTY_ARRAY;
                     } else if (params.length == 0) {
                         params = new Parameter[]{
                                 new Parameter(ClassHelper.OBJECT_TYPE, "it")
@@ -242,7 +244,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         new VariableScopeVisitor(source, true).visitClass(parent);
     }
 
-    private boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
+    private static boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
         boolean valid = true;
         for (FieldNode fieldNode : parent.getFields()) {
             if (!fieldNode.isStatic() && fieldNode.getLineNumber()>0) {
@@ -280,7 +282,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         return node.getText();
     }
 
-    private ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
+    private static ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
         if (value == null || !(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown

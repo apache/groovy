@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import groovy.transform.BaseScript;
@@ -22,6 +24,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
@@ -50,6 +53,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
     public static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final Parameter[] CONTEXT_CTOR_PARAMETERS = {new Parameter(ClassHelper.BINDING_TYPE, "context")};
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -144,9 +148,17 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 cNode.addMethod(methodNode);
             }
         }
+
+        // If the new script base class does not have a contextual constructor (g.l.Binding), then we won't either.
+        // We have to do things this way (and rely on just default constructors) because the logic that generates
+        // the constructors for our script class have already run.
+        if (cNode.getSuperClass().getDeclaredConstructor(CONTEXT_CTOR_PARAMETERS) == null) {
+            ConstructorNode orphanedConstructor = cNode.getDeclaredConstructor(CONTEXT_CTOR_PARAMETERS);
+            cNode.removeConstructor(orphanedConstructor);
+        }
     }
 
-    private boolean isCustomScriptBodyMethod(MethodNode node) {
+    private static boolean isCustomScriptBodyMethod(MethodNode node) {
         return node != null
             && !(node.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE)
                 && "run".equals(node.getName())

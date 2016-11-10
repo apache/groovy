@@ -1,24 +1,26 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 import groovy.text.Template
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
 import java.nio.charset.Charset
-
-/*
- * Copyright 2003-2014 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 class MarkupTemplateEngineSpecTest extends GroovyTestCase {
     private MarkupTemplateEngine engine
@@ -713,13 +715,13 @@ layout 'layout-main.tpl', true,                             // <1>
         templateContents = '''
 // tag::layout_template_inherit_override[]
 layout 'layout-main.tpl', true,                             // <1>
-    title: 'Overriden title',                               // <2>
+    title: 'overridden title',                               // <2>
     bodyContents: contents { p('This is the body') }
 // end::layout_template_inherit_override[]
 '''
         expectedRendered = stripAsciidocMarkup '''
 // tag::layout_expected_3[]
-<html><head><title>Overriden title</title></head><body><p>This is the body</p></body></html>
+<html><head><title>overridden title</title></head><body><p>This is the body</p></body></html>
 // end::layout_expected_3[]
 '''
         assertRendered()

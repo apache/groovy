@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.sql;
 
@@ -67,18 +70,20 @@ import java.util.Set;
  */
 public class DataSet extends Sql {
 
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     private Closure where;
     private Closure sort;
     private boolean reversed = false;
     private DataSet parent;
-    private String table;
+    private final String table;
     private SqlWhereVisitor visitor;
     private SqlOrderByVisitor sortVisitor;
     private String sql;
     private List<Object> params;
     private List<Object> batchData;
     private Set<String> batchKeys;
-    private Sql delegate;
+    private final Sql delegate;
     private boolean withinDataSetBatch = false;
 
     public DataSet(Sql sql, Class type) {
@@ -206,8 +211,8 @@ public class DataSet extends Sql {
         withinDataSetBatch = true;
         closure.call(this);
         withinDataSetBatch = false;
-        if (batchData.size() == 0) {
-            return new int[0];
+        if (batchData.isEmpty()) {
+            return EMPTY_INT_ARRAY;
         }
         Closure transformedClosure = new Closure(null) {
             public void doCall(BatchingPreparedStatementWrapper stmt) throws SQLException {
@@ -227,7 +232,7 @@ public class DataSet extends Sql {
      */
     public void add(Map<String, Object> map) throws SQLException {
         if (withinDataSetBatch) {
-            if (batchData.size() == 0) {
+            if (batchData.isEmpty()) {
                 batchKeys = map.keySet();
             } else {
                 if (!map.keySet().equals(batchKeys)) {
@@ -418,7 +423,7 @@ public class DataSet extends Sql {
         return sortVisitor;
     }
 
-    private void visit(Closure closure, CodeVisitorSupport visitor) {
+    private static void visit(Closure closure, CodeVisitorSupport visitor) {
         if (closure != null) {
             ClassNode classNode = closure.getMetaClass().getClassNode();
             if (classNode == null) {

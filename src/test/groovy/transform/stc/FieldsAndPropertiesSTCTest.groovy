@@ -1,19 +1,24 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
+
+import org.codehaus.groovy.ast.ASTNode
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -563,7 +568,7 @@ class FooWorker {
     }
 }
 
-new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
+new FooWorker().doSomething()''', 'Cannot assign value of type java.util.ArrayList <Integer> to variable of type java.util.List <String>'
     }
 
     void testAICAsStaticProperty() {
@@ -572,6 +577,239 @@ new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot a
                 static x = new Object() {}
             }
             assert Foo.x instanceof Object
+        '''
+    }
+
+    public void testPropertyWithMultipleSetters() {
+        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+            class A {
+                private field
+                void setX(Integer a) {field=a}
+                void setX(String b) {field=b}
+                def getX(){field}
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('test1').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof BinaryExpression
+                    def left = exp.leftExpression
+                    def md = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert md
+                    assert md.name == 'setX'
+                    assert md.parameters[0].originType == Integer_TYPE
+                }
+                lookup('test2').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof BinaryExpression
+                    def left = exp.leftExpression
+                    def md = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert md
+                    assert md.name == 'setX'
+                    assert md.parameters[0].originType == STRING_TYPE
+                }
+            })
+            void testBody() {
+                def a = new A()
+                test1:
+                a.x = 1
+                assert a.x==1
+                test2:
+                a.x = "3"
+                assert a.x == "3"
+            }
+            testBody()
+        '''
+    }
+
+    void testPropertyAssignmentAsExpression() {
+        assertScript '''
+            class Foo {
+                int x = 2
+            }
+            def f = new Foo()
+            def v = f.x = 3
+            assert v == 3
+'''
+    }
+
+    void testPropertyAssignmentInSubClassAndMultiSetter() {
+        10.times {
+            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+
+            public class Activity {
+                int debug
+
+                Activity() {
+                    contentView = 1
+                }
+
+                public void setContentView(Date layoutResID) { debug = 2 }
+                public void setContentView(int layoutResID) { debug = 3 }
+            }
+
+            class MyActivity extends Activity {
+                void foo() {
+                    contentView = 1
+                    assert debug == 3
+                    contentView = new Date()
+                    assert debug == 2
+                }
+            }
+            new MyActivity().foo()
+        '''
+        }
+    }
+
+    void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
+        10.times {
+            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+
+            public class Activity {
+                int debug
+
+                Activity() {
+                    contentView = 1
+                }
+
+                public void setContentView(Date layoutResID) { debug = 2 }
+                public void setContentView(int layoutResID) { debug = 3 }
+            }
+
+            class MyActivity extends Activity {
+            }
+            def activity = new  MyActivity()
+            activity.with {
+                 contentView = 1
+                 assert debug == 3
+                 contentView = new Date()
+                 assert debug == 2
+            }
+        '''
+        }
+    }
+
+    void testShouldAcceptPropertyAssignmentEvenIfSetterOnlyBecauseOfSpecialType() {
+        assertScript '''
+            class BooleanSetterOnly {
+                void setFlag(boolean b) {}
+            }
+
+            def b = new BooleanSetterOnly()
+            b.flag = 'foo'
+        '''
+        assertScript '''
+            class StringSetterOnly {
+                void setFlag(String b) {}
+            }
+
+            def b = new StringSetterOnly()
+            b.flag = false
+        '''
+        assertScript '''
+            class ClassSetterOnly {
+                void setFlag(Class b) {}
+            }
+
+            def b = new ClassSetterOnly()
+            b.flag = 'java.lang.String'
+        '''
+    }
+
+    // GROOVY-6590
+    void testShouldFindStaticPropertyOnPrimitiveType() {
+        assertScript '''
+            int i=1
+            i.MAX_VALUE
+        '''
+        assertScript '''
+            def i="d"
+            i=1
+            i.MAX_VALUE
+        '''
+    }
+
+    void testImplicitPropertyOfDelegateShouldNotPreferField() {
+        assertScript '''
+            Calendar.instance.with {
+                Date d1 = time
+            }
+        '''
+    }
+
+    void testPropertyStyleSetterArgShouldBeCheckedAgainstParamType() {
+        shouldFailWithMessages '''
+            class Foo {
+                Bar bar;
+
+                void setBar(int x) {
+                    this.bar = new Bar(x: x)
+                }
+            }
+
+            class Bar {
+                int x
+            }
+
+            Foo foo = new Foo()
+            foo.bar = new Bar()
+        ''', 'Cannot assign value of type Bar to variable of type int'
+
+        assertScript '''
+            class Foo {
+                Bar bar;
+
+                void setBar(int x) {
+                    this.bar = new Bar(x: x)
+                }
+            }
+
+            class Bar {
+                int x
+            }
+
+            Foo foo = new Foo()
+            foo.bar = 1
+            assert foo.bar.x == 1
+        '''
+    }
+
+    void testPropertyStyleGetterUsageShouldBeCheckedAgainstReturnType() {
+        shouldFailWithMessages '''
+            class Foo {
+                Bar bar;
+
+                int getBar() {
+                    bar.x
+                }
+            }
+
+            class Bar {
+                int x
+            }
+
+            Foo foo = new Foo(bar: new Bar(x: 1))
+            Bar bar = foo.bar
+        ''', 'Cannot assign value of type int to variable of type Bar'
+
+        assertScript '''
+            class Foo {
+                Bar bar;
+
+                int getBar() {
+                    bar.x
+                }
+            }
+
+            class Bar {
+                int x
+            }
+
+            Foo foo = new Foo(bar: new Bar(x: 1))
+            int x = foo.bar
+            assert x == 1
         '''
     }
 

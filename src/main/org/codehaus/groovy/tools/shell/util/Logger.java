@@ -1,24 +1,24 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
-
-import java.io.IOException;
 
 import static org.fusesource.jansi.Ansi.ansi;
 import static org.fusesource.jansi.Ansi.Color;
@@ -28,7 +28,6 @@ import static org.fusesource.jansi.Ansi.Attribute.*;
 /**
  * Provides a very, very basic logging API.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public final class Logger {
@@ -43,9 +42,13 @@ public final class Logger {
     private void log(final String level, Object msg, Throwable cause) {
         assert level != null;
         assert msg != null;
-        
+
         if (io == null) {
-            io = new IO();
+            synchronized (Logger.class) {
+                if (io == null) {
+                    io = new IO();
+                }
+            }
         }
 
         // Allow the msg to be a Throwable, and handle it properly if no cause is given
@@ -67,11 +70,7 @@ public final class Logger {
             cause.printStackTrace(io.out);
         }
 
-        try {
-            io.flush();
-        } catch (IOException io) {
-            throw new RuntimeException(io);
-        }
+        io.flush();
     }
     
     //

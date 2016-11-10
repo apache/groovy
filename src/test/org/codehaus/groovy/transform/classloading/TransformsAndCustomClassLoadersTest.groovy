@@ -1,20 +1,24 @@
 /*
- * Copyright 2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform.classloading
 
+import junit.framework.TestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.ClassNode
@@ -25,6 +29,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GlobalTestTransformClassLoader
+import org.objectweb.asm.ClassVisitor
 
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -39,9 +44,19 @@ import java.lang.annotation.ElementType
  * @author Peter Niederwieser
  */
 class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
-    URL[] urls = collectUrls(getClass().classLoader)
+    URL[] urls = collectUrls(getClass().classLoader) + addGroovyUrls()
     GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (ClassLoader)null))
     GroovyClassLoader transformLoader = new GroovyClassLoader(new URLClassLoader(urls, new GroovyOnlyClassLoader()))
+
+    private static addGroovyUrls() {
+       [
+           GroovyObject.class.protectionDomain.codeSource.location.toURI().toURL(),    // load Groovy runtime
+           ClassVisitor.class.protectionDomain.codeSource.location.toURI().toURL(),    // load asm
+           GroovyTestCase.class.protectionDomain.codeSource.location.toURI().toURL(),  // load Groovy test module
+           TestCase.class.protectionDomain.codeSource.location.toURI().toURL(),        // -"-
+           this.protectionDomain.codeSource.location.toURI().toURL(),                  // load test as well
+       ]
+    }
 
     void setUp() {
         assert dependencyLoader.loadClass(CompilationUnit.class.name) != CompilationUnit

@@ -1,0 +1,1094 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Type checking extensions
+
+== Writing a type checking extension
+
+=== Towards a smarter type checker
+
+Despite being a dynamic language, Groovy can be used with a static type
+checker at compile time, enabled using the <<static-type-checking,@TypeChecked>>
+annotation. In this mode, the compiler becomes
+more verbose and throws errors for, example, typos, non-existent
+methods,… This comes with a few limitations though, most of them coming
+from the fact that Groovy remains inherently a dynamic language. For
+example, you wouldn’t be able to use type checking on code that uses the markup builder:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=intro_stc_extensions,indent=0]
+----
+
+In the previous example, none of the `html`, `head`, `body` or `p` methods
+exist. However if you execute the code, it works because Groovy uses dynamic dispatch
+and converts those method calls at runtime. In this builder, there’s no limitation about
+the number of tags that you can use, nor the attributes, which means there is no chance
+for a type checker to know about all the possible methods (tags) at compile time, unless
+you create a builder dedicated to HTML for example.
+
+Groovy is a platform of choice when it comes to implement internal DSLs. The flexible syntax,
+combined with runtime and compile-time metaprogramming capabilities make Groovy an interesting
+choice because it allows the programmer to focus on the DSL rather than
+on tooling or implementation. Since Groovy DSLs are Groovy code, it’s
+easy to have IDE support without having to write a dedicated plugin for
+example.
+
+In a lot of cases, DSL engines are written in Groovy (or Java) then user
+code is executed as scripts, meaning that you have some kind of wrapper
+on top of user logic. The wrapper may consist, for example, in a
+`GroovyShell` or `GroovyScriptEngine` that performs some tasks transparently
+before running the script (adding imports, applying AST transforms,
+extending a base script,…). Often, user written scripts come to
+production without testing because the DSL logic comes to a point
+where *any* user may write code using the DSL syntax. In the end, a user
+may just ignore that what he writes is actually *code*. This adds some
+challenges for the DSL implementer, such as securing execution of user
+code or, in this case, early reporting of errors.
+
+For example, imagine a DSL which goal is to drive a rover on Mars
+remotely. Sending a message to the rover takes around 15 minutes. If the
+rover executes the script and fails with an error (say a typo), you have
+two problems:
+
+* first, feedback comes only after 30 minutes (the time needed for the
+rover to get the script and the time needed to receive the error)
+* second, some portion of the script has been executed and you may have
+to change the fixed script significantly (implying that you need to know
+the current state of the rover…)
+
+Type checking extensions is a mechanism that will
+allow the developer of a DSL engine to make those scripts safer by
+applying the same kind of checks that static type checking allows on
+regular groovy classes.
+
+The principle, here, is to fail early, that is
+to say fail compilation of scripts as soon as possible, and if possible
+provide feedback to the user (including nice error messages).
+
+In short, the idea behind type checking extensions is to make the compiler
+aware of all the runtime metaprogramming tricks that the DSL uses, so that
+scripts can benefit the same level of compile-time checks as a verbose statically
+compiled code would have. We will see that you can go even further by performing
+checks that a normal type checker wouldn't do, delivering powerful compile-time
+checks for your users.
+
+[[Typecheckingextensions-Howdoesitwork]]
+=== The extensions attribute
+
+The `@TypeChecked` annotation supports an attribute
+named `extensions`. This parameter takes an array of strings
+corresponding to a list of _type checking extensions scripts_. Those
+scripts are found at *compile time* on classpath. For example, you would
+write:
+
+[source,groovy]
+------------------------------------------------------
+@TypeChecked(extensions='/path/to/myextension.groovy')
+void foo() { ...}
+------------------------------------------------------
+
+In that case, the _foo_ methods would be type checked with the rules of
+the normal type checker completed by those found in
+the _myextension.groovy_ script. Note that while internally the type
+checker supports multiple mechanisms to implement type checking
+extensions (including plain old java code), the recommended way is to
+use those type checking extension scripts.
+
+=== A DSL for type checking
+The idea behind type checking extensions is to use a DSL to extend the
+type checker capabilities. This DSL allows you to hook into the
+compilation process, more specifically the type checking phase, using an
+"event-driven" API. For example, when the type checker enters a method
+body, it throws a _beforeVisitMethod_ event that the extension can react to:
+
+[source,groovy]
+--------------------------------------
+beforeVisitMethod { methodNode ->
+ println "Entering ${methodNode.name}"
+}
+--------------------------------------
+
+Imagine that you have this rover DSL at hand. A user would write:
+
+[source,groovy]
+--------------
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
+--------------
+
+If you have a class defined as such:
+
+[source,groovy]
+----------------------------
+include::{projectdir}/src/spec/test/typing/Robot.groovy[tags=example_robot_classdef,indent=0]
+----------------------------
+
+The script can be type checked before being executed using the following
+script:
+
+[source,groovy]
+------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup,indent=0]
+------------------------------------------------------------------------------
+<1> a compiler configuration adds the `@TypeChecked` annotation to all classes
+<2> use the configuration in a `GroovyShell`
+<3> so that scripts compiled using the shell are compiled with `@TypeChecked` without the user having to add it explicitly
+
+Using the compiler configuration above, we can apply _@TypeChecked_
+transparently to the script. In that case, it will fail at compile
+time:
+
+------------------------------------------------------------
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_expected_err,indent=0]
+------------------------------------------------------------
+
+Now, we will slightly update the configuration to include the
+``extensions'' parameter:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_fixed_conf,indent=0]
+----
+
+Then add the following to your classpath:
+
+[source,groovy]
+.robotextension.groovy
+-------------------------------------
+include::{projectdir}/src/spec/test-resources/robotextension.groovy[tags=example_robot_extension,indent=0]
+-------------------------------------
+
+Here, we’re telling the compiler that if an _unresolved variable_ is found
+and that the name of the variable is _robot_, then we can make sure that the type of this
+variable is `Robot`.
+
+[[Typecheckingextensions-TheAPI]]
+=== Type checking extensions API
+
+[[Typecheckingextensions-AST]]
+==== AST
+
+The type checking API is a low level API, dealing with the Abstract
+Syntax Tree. You will have to know your AST well to develop extensions,
+even if the DSL makes it much easier than just dealing with AST code
+from plain Java or Groovy.
+
+[[Typecheckingextensions-Events]]
+==== Events
+
+The type checker sends the following events, to which an extension
+script can react:
+
+[[event-setup]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| setup
+| *Called When*
+| Called after the type checker finished initialization
+
+| *Arguments*
+| none
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/setup.groovy[tags=event,indent=0]
+----
+
+Can be used to perform setup of your extension
+|===
+
+[[event-finish]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| finish
+| *Called When*
+| Called after the type checker completed type checking
+
+| *Arguments*
+| none
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/finish.groovy[tags=event,indent=0]
+----
+
+Can be used to perform additional checks after the type checker has finished its job.
+|===
+
+[[event-unresolvedVariable]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| unresolvedVariable
+| *Called When*
+| Called when the type checker finds an
+  unresolved variable
+| *Arguments*
+| VariableExpression var
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/unresolvedvariable.groovy[tags=event,indent=0]
+----
+
+Allows the developer to help the type checker with user-injected variables.
+|===
+
+[[event-unresolvedProperty]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| unresolvedProperty
+| *Called When*
+| Called when the type checker cannot find
+  a property on the receiver
+| *Arguments*
+| PropertyExpression pexp
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/unresolvedproperty.groovy[tags=event,indent=0]
+----
+
+Allows the developer to handle "dynamic" properties
+|===
+
+[[event-unresolvedAttribute]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| unresolvedAttribute
+| *Called When*
+| Called when the type checker cannot
+  find an attribute on the receiver
+| *Arguments*
+| AttributeExpression aex
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/unresolvedattribute.groovy[tags=event,indent=0]
+----
+
+Allows the developer to handle missing attributes
+|===
+
+[[event-beforeMethodCall]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| beforeMethodCall
+| *Called When*
+| Called before the type checker starts type
+  checking a method call
+| *Arguments*
+| MethodCall call
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/beforemethodcall.groovy[tags=event,indent=0]
+----
+
+Allows you to intercept method calls before the
+type checker performs its own checks. This is useful if you want to
+replace the default type checking with a custom one for a limited scope.
+In that case, you must set the handled flag to true, so that the type
+checker skips its own checks.
+|===
+
+[[event-afterMethodCall]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| afterMethodCall
+| *Called When*
+| Called once the type checker has finished
+  type checking a method call
+| *Arguments*
+| MethodCall call
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/aftermethodcall.groovy[tags=event,indent=0]
+----
+
+Allow you to perform additional checks after the type
+checker has done its own checks. This is in particular useful if you
+want to perform the standard type checking tests but also want to ensure
+additional type safety, for example checking the arguments against each
+other.Note that `afterMethodCall` is called even if you did
+`beforeMethodCall` and set the handled flag to true.
+|===
+
+[[event-onMethodSelection]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| onMethodSelection
+| *Called When*
+| Called by the type checker when it finds
+  a method appropriate for a method call
+| *Arguments*
+| Expression expr, MethodNode node
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/onmethodselection.groovy[tags=event,indent=0]
+----
+
+The type checker works by inferring
+argument types of a method call, then chooses a target method. If it
+finds one that corresponds, then it triggers this event. It is for
+example interesting if you want to react on a specific method call, such
+as entering the scope of a method that takes a closure as argument (as
+in builders).Please note that this event may be thrown for various types
+of expressions, not only method calls (binary expressions for example).
+|===
+
+[[event-methodNotFound]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| methodNotFound
+| *Called When*
+| Called by the type checker when it fails to
+  find an appropriate method for a method call
+| *Arguments*
+| ClassNode receiver, String name, ArgumentListExpression argList, ClassNode[] argTypes,MethodCall call
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/methodnotfound.groovy[tags=event,indent=0]
+----
+
+Unlike `onMethodSelection`, this event is
+sent when the type checker cannot find a target method for a method call
+(instance or static). It gives you the chance to intercept the error
+before it is sent to the user, but also set the target method.For this,
+you need to return a list of `MethodNode`. In most situations, you would
+either return: an empty list, meaning that you didn’t find a
+corresponding method, a list with exactly one element, saying that there’s
+no doubt about the target methodIf you return more than one MethodNode,
+then the compiler would throw an error to the user stating that the
+method call is ambiguous, listing the possible methods.For convenience,
+if you want to return only one method, you are allowed to return it
+directly instead of wrapping it into a list.
+
+|===
+
+[[event-beforeVisitMethod]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| beforeVisitMethod
+| *Called When*
+| Called by the type checker before type
+  checking a method body
+| *Arguments*
+| MethodNode node
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/beforevisitmethod.groovy[tags=event,indent=0]
+----
+
+The type checker will call this method before
+starting to type check a method body. If you want, for example, to
+perform type checking by yourself instead of letting the type checker do
+it, you have to set the handled flag to true.This event can also be used
+to help defining the scope of your extension (for example, applying it
+only if you are inside method foo).
+|===
+
+[[event-afterVisitMethod]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| afterVisitMethod
+| *Called When*
+| Called by the type checker after type
+  checking a method body
+| *Arguments*
+| MethodNode node
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/aftervisitmethod.groovy[tags=event,indent=0]
+----
+
+Gives you the opportunity to perform additional
+checks after a method body is visited by the type checker. This is
+useful if you collect information, for example, and want to perform
+additional checks once everything has been collected.
+|===
+
+[[event-beforeVisitClass]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| beforeVisitClass
+| *Called When*
+| Called by the type checker before type checking a class
+| *Arguments*
+| ClassNode node
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/beforevisitclass.groovy[tags=event,indent=0]
+----
+
+If a class is type checked, then
+before visiting the class, this event will be sent. It is also the case
+for inner classes defined inside a class annotated with `@TypeChecked`. It
+can help you define the scope of your extension, or you can even totally
+replace the visit of the type checker with a custom type checking
+implementation. For that, you would have to set the `handled` flag to
+`true`. 
+|===
+
+[[event-afterVisitClass]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| afterVisitClass
+| *Called When*
+| Called by the type checker after having finished the visit of a type checked class
+| *Arguments*
+| ClassNode node
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/aftervisitclass.groovy[tags=event,indent=0]
+----
+
+Called
+for every class being type checked after the type checker finished its
+work. This includes classes annotated with `@TypeChecked` and any
+inner/anonymous class defined in the same class with is not skipped.
+|===
+
+[[event-incompatibleAssignment]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| incompatibleAssignment
+| *Called When*
+| Called when the type checker thinks
+    that an assignment is incorrect, meaning that the right hand side of an
+    assignment is incompatible with the left hand side
+| *Arguments*
+| ClassNode lhsType, ClassNode rhsType,  Expression assignment
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/incompatibleassignment.groovy[tags=event,indent=0]
+----
+
+Gives the
+developer the ability to handle incorrect assignments. This is for
+example useful if a class overrides `setProperty`, because in that case it
+is possible that assigning a variable of one type to a property of
+another type is handled through that runtime mechanism. In that case, you
+can help the type checker just by telling it that the assignment is
+valid (using `handled` set to `true`).
+|===
+
+[[event-ambiguousMethods]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| ambiguousMethods
+| *Called When*
+| Called when the type checker cannot choose between several candidate methods
+| *Arguments*
+| List<MethodNode> methods,  Expression origin
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/ambiguousmethods.groovy[tags=event,indent=0]
+----
+
+Gives the
+developer the ability to handle incorrect assignments. This is for
+example useful if a class overrides `setProperty`, because in that case it
+is possible that assigning a variable of one type to a property of
+another type is handled through that runtime mechanism. In that case, you
+can help the type checker just by telling it that the assignment is
+valid (using `handled` set to `true`).
+|===
+
+Of course, an extension script may consist of several blocks, and you
+can have multiple blocks responding to the same event. This makes the
+DSL look nicer and easier to write. However, reacting to events is far
+from sufficient. If you know you can react to events, you also need to
+deal with the errors, which implies several _helper_ methods that will
+make things easier.
+
+[[Typecheckingextensions-Workingwithextensions]]
+=== Working with extensions
+
+[[Typecheckingextensions-Supportclasses]]
+==== Support classes
+
+The DSL relies on a support class
+called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
+This class itself
+extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] . Those
+two classes define a number of _helper_ methods that will make working
+with the AST easier, especially regarding type checking. One interesting
+thing to know is that you *have access to the type checker*. This means
+that you can programmatically call methods of the type checker,
+including those that allow you to *throw compilation errors*.
+
+The extension script delegates to
+the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class, meaning that you have
+direct access to the following variables:
+
+* _context_: the type checker context, of type gapi:org.codehaus.groovy.transform.stc.TypeCheckingContext[]
+* _typeCheckingVisitor_: the type checker itself, a gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor[] instance
+* _generatedMethods_: a list of "generated methods", which is in fact the list of "dummy" methods that you can create
+inside a type checking extension using the `newMethod` calls
+
+The type checking context contains a lot of information that is useful
+in context for the type checker. For example, the current stack of
+enclosing method calls, binary expressions, closures, … This information
+is in particular important if you have to know _where_ you are when an
+error occurs and that you want to handle it.
+
+[[Typecheckingextensions-Classnodes]]
+==== Class nodes
+
+Handling class nodes is something that needs particular attention when
+you work with a type checking extension. Compilation works with an
+abstract syntax tree (AST) and the tree may not be complete when you are
+type checking a class. This also means that when you refer to types, you
+must not use class literals such as `String` or `HashSet`, but to class
+nodes representing those types. This requires a certain level of
+abstraction and understanding how Groovy deals with class nodes. To make
+things easier, Groovy supplies several helper methods to deal with class
+nodes. For example, if you want to say "the type for String", you can
+write:
+
+[source,groovy]
+--------------------
+include::{projectdir}/src/spec/test-resources/selfcheck.groovy[tags=classnodefor,indent=0]
+--------------------
+
+You would also note that there is a variant of _classNodeFor_ that takes
+a `String` as an argument, instead of a `Class`. In general, you
+should *not* use that one, because it would create a class node for
+which the name is `String`, but without any method, any property, …
+defined on it. The first version returns a class node that is _resolved_
+but the second one returns one that is _not_. So the latter should be
+reserved for very special cases.
+
+The second problem that you might encounter is referencing a type which
+is not yet compiled. This may happen more often than you think. For
+example, when you compile a set of files together. In that case, if you
+want to say "that variable is of type Foo" but `Foo` is not yet
+compiled, you can still refer to the `Foo` class node
+using `lookupClassNodeFor`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/selfcheck.groovy[tags=lookupclassnodefor,indent=0]
+----
+
+[[Typecheckingextensions-Helpingthetypechecker]]
+==== Helping the type checker
+
+Say that you know that variable `foo` is of type `Foo` and you want to
+tell the type checker about it. Then you can use the `storeType` method,
+which takes two arguments: the first one is the node for which you want
+to store the type and the second one is the type of the node. If you
+look at the implementation of `storeType`, you would see that it
+delegates to the type checker equivalent method, which itself does a lot
+of work to store node metadata. You would also see that storing the type
+is not limited to variables: you can set the type of any expression.
+
+Likewise, getting the type of an AST node is just a matter of
+calling `getType` on that node. This would in general be what you want,
+but there’s something that you must understand:
+
+* `getType` returns the *inferred type* of an expression. This means
+that it will not return, for a variable declared of type `Object` the
+class node for `Object`, but the inferred type of this variable *at this
+point of the code* (flow typing)
+* if you want to access the origin type of a variable (or
+field/parameter), then you must call the appropriate method on the AST
+node
+
+[[Typecheckingextensions-Throwinganerror]]
+==== Throwing an error
+
+To throw a type checking error, you only have to call the
+`addStaticTypeError` method which takes two arguments:
+
+* a _message_ which is a string that will be displayed to the end user
+* an _AST node_ responsible for the error. It’s better to provide the best
+suiting AST node because it will be used to retrieve the line and column
+numbers
+
+[[Typecheckingextensions-isXXXExpression]]
+==== isXXXExpression
+
+It is often required to know the type of an AST node. For readability,
+the DSL provides a special isXXXExpression method that will delegate to
+`x instance of XXXExpression`. For example, instead of writing:
+
+[source,groovy]
+---------------------------------------
+if (node instanceof BinaryExpression) {
+   ...
+}
+---------------------------------------
+
+which requires you to import the `BinaryExpression` class, you can just
+write:
+
+[source,groovy]
+-------------------------------
+if (isBinaryExpression(node)) {
+   ...
+}
+-------------------------------
+
+[[Typecheckingextensions-Virtualmethods]]
+==== Virtual methods
+
+When you perform type checking of dynamic code, you may often face the
+case when you know that a method call is valid but there is no "real"
+method behind it. As an example, take the Grails dynamic finders. You
+can have a method call consisting of a method named _findByName(…)_. As
+there’s no _findByName_ method defined in the bean, the type checker
+would complain. Yet, you would know that this method wouldn’t fail at
+runtime, and you can even tell what is the return type of this method.
+For this case, the DSL supports two special constructs that consist of
+_phantom methods_. This means that you will return a method node that
+doesn’t really exist but is defined in the context of type checking.
+Three methods exist:
+
+* `newMethod(String name, Class returnType)`
+* `newMethod(String name, ClassNode returnType)`
+* `newMethod(String name, Callable<ClassNode> return Type)`
+
+All three variants do the same: they create a new method node which name
+is the supplied name and define the return type of this method.
+Moreover, the type checker would add those methods in
+the `generatedMethods` list (see `isGenerated` below). The reason why we
+only set a name and a return type is that it is only what you need in
+90% of the cases. For example, in the `findByName` example upper, the
+only thing you need to know is that `findByName` wouldn’t fail at
+runtime, and that it returns a domain class. The `Callable` version of
+return type is interesting because it defers the computation of the
+return type when the type checker actually needs it. This is interesting
+because in some circumstances, you may not know the actual return type
+when the type checker demands it, so you can use a closure that will be
+called each time `getReturnType` is called by the type checker on this
+method node. If you combine this with deferred checks, you can achieve
+pretty complex type checking including handling of forward references.
+
+[source,groovy]
+----------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test-resources/newmethod.groovy[tags=newmethod,indent=0]
+----------------------------------------------------------------------------------------------
+
+Should you need more than the name and return type, you can always
+create a new `MethodNode` by yourself.
+
+[[Typecheckingextensions-Scoping]]
+==== Scoping
+
+Scoping is very important in DSL type checking and is one of the reasons
+why we couldn’t use a _pointcut_ based approach to DSL type checking.
+Basically, you must be able to define very precisely when your extension
+applies and when it does not. Moreover, you must be able to handle
+situations that a regular type checker would not be able to handle, such
+as forward references:
+
+[source,groovy]
+---------------------------------------
+point a(1,1)
+line a,b // b is referenced afterwards!
+point b(5,2)
+---------------------------------------
+
+Say for example that you want to handle a builder:
+
+[source,groovy]
+-------------
+builder.foo {
+   bar
+   baz(bar)
+}
+-------------
+
+Your extension, then, should only be active once you’ve entered
+the `foo` method, and inactive outside of this scope. But you could have
+complex situations like multiple builders in the same file or embedded
+builders (builders in builders). While you should not try to fix all
+this from start (you must accept limitations to type checking), the type
+checker does offer a nice mechanism to handle this: a scoping stack,
+using the `newScope` and `scopeExit` methods.
+
+* `newScope` creates a new scope and puts it on top of the stack
+* `scopeExits` pops a scope from the stack
+
+A scope consists of:
+
+* a parent scope
+* a map of custom data
+
+If you want to look at the implementation, it’s simply a `LinkedHashMap`
+(gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingScope[]),
+but it’s quite powerful. For example, you can use such a scope to store
+a list of closures to be executed when you exit the scope. This is how
+you would handle forward references: 
+
+[source,groovy]
+------------------------------------------------------
+include::{projectdir}/src/spec/test-resources/scoping.groovy[tags=newscope,indent=0]
+include::{projectdir}/src/spec/test-resources/scoping.groovy[tags=scopeexit,indent=0]
+------------------------------------------------------
+
+That is to say, that if at some point you are not able to determine the
+type of an expression, or that you are not able to check at this point
+that an assignment is valid or not, you can still make the check later…
+This is a very powerful feature. Now, `newScope` and `scopeExit`
+provide some interesting syntactic sugar:
+
+[source,groovy]
+------------------------------------------------------
+include::{projectdir}/src/spec/test-resources/scoping_alt.groovy[tags=newscope,indent=0]
+------------------------------------------------------
+
+At anytime in the DSL, you can access the current scope
+using `getCurrentScope()` or more simply `currentScope`:
+
+[source,groovy]
+------------------------------------------------------
+include::{projectdir}/src/spec/test-resources/scoping_alt.groovy[tags=currentscope,indent=0]
+------------------------------------------------------
+
+The general schema would then be:
+
+* determine a _pointcut_ where you push a new scope on stack and
+initialize custom variables within this scope
+* using the various events, you can use the information stored in your
+custom scope to perform checks, defer checks,…
+* determine a _pointcut_ where you exit the scope, call `scopeExit`
+and eventually perform additional checks
+
+[[Typecheckingextensions-Otherusefulmethods]]
+==== Other useful methods
+
+For the complete list of helper methods, please refer to
+the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] and 
+gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] classes. However,
+take special attention to those methods:
+
+* `isDynamic`: takes a VariableExpression as argument and returns true
+if the variable is a DynamicExpression, which means, in a script, that
+it wasn’t defined using a type or `def`.
+* `isGenerated`: takes a MethodNode as an argument and tells if the
+method is one that was generated by the type checker extension using
+the `newMethod` method
+* `isAnnotatedBy`: takes an AST node and a Class (or ClassNode), and
+tells if the node is annotated with this class. For example:
+`isAnnotatedBy(node, NotNull)`
+* `getTargetMethod`: takes a method call as argument and returns
+the `MethodNode` that the type checker has determined for it
+* `delegatesTo`: emulates the behaviour of the `@DelegatesTo`
+annotation. It allows you to tell that the argument will delegate to a
+specific type (you can also specify the delegation strategy)
+
+== Advanced type checking extensions
+=== Precompiled type checking extensions
+
+All the examples above use type checking scripts. They are found in source form in classpath, meaning that:
+
+* a Groovy source file, corresponding to the type checking extension, is available on compilation classpath
+* this file is compiled by the Groovy compiler for each source unit being compiled (often, a source unit corresponds
+to a single file)
+
+It is a very convenient way to develop type checking extensions, however it implies a slower compilation phase, because
+of the compilation of the extension itself for each file being compiled. For those reasons, it can be practical to rely
+on a precompiled extension. You have two options to do this:
+
+* write the extension in Groovy, compile it, then use a reference to the extension class instead of the source
+* write the extension in Java, compile it, then use a reference to the extension class
+
+Writing a type checking extension in Groovy is the easiest path. Basically, the idea is that the type checking extension
+script becomes the body of the main method of a type checking extension class, as illustrated here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/PrecompiledExtension.groovy[tags=precompiled_groovy_extension,indent=0]
+----
+<1> extending the `TypeCheckingDSL` class is the easiest
+<2> then the extension code needs to go inside the `run` method
+<3> and you can use the very same events as an extension written in source form
+
+Setting up the extension is very similar to using a source form extension:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=setup_precompiled,indent=0]
+----
+
+The difference is that instead of using a path in classpath, you just specify the fully qualified class name of the
+precompiled extension.
+
+In case you really want to write an extension in Java, then you will not benefit from the type checking extension DSL.
+The extension above can be rewritten in Java this way:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/typing/PrecompiledJavaExtension.java[tags=precompiled_java_extension,indent=0]
+----
+<1> extend the `AbstractTypeCheckingExtension` class
+<2> then override the `handleXXX` methods as required
+
+=== Using @Grab in a type checking extension
+
+It is totally possible to use the `@Grab` annotation in a type checking extension.
+This means you can include libraries that would only be
+available at compile time. In that case, you must understand that you
+would increase the time of compilation significantly (at least, the
+first time it grabs the dependencies).
+
+=== Sharing or packaging type checking extensions
+
+A type checking extension is just a script that need to be on classpath. As such,
+you can share it as is, or bundle it in a jar file that would be added to classpath.
+
+=== Global type checking extensions
+
+While you can configure the compiler to transparently add type checking extensions to your
+script, there is currently no way to apply an extension transparently just by having it on
+classpath.
+
+=== Type checking extensions and @CompileStatic
+
+Type checking extensions are used with `@TypeChecked` but can also be used with `@CompileStatic`. However, you must
+be aware that:
+
+* a type checking extension used with `@CompileStatic` will in general not be sufficient to let the compiler know how
+to generate statically compilable code from "unsafe" code
+* it is possible to use a type checking extension with `@CompileStatic` just to enhance type checking, that is to say
+introduce *more* compilation errors, without actually dealing with dynamic code
+
+Let's explain the first point, which is that even if you use an extension, the compiler will not know how to compile
+your code statically: technically, even if you tell the type checker what is the type of a dynamic
+variable, for example, it would not know how to compile it. Is it `getBinding('foo')`, `getProperty('foo')`,
+`delegate.getFoo()`,…? There's absolutely no direct way to tell the static compiler how to compile such
+code even if you use a type checking extension (that would, again, only give hints about the type).
+
+One possible solution for this particular example is to instruct the compiler to use <<mixed-mode,mixed mode compilation>>.
+The more advanced one is to use <<ast-xform-as-extension,AST transformations during type checking>> but it is far more
+complex.
+
+Type checking extensions allow you to help the type checker where it
+fails, but it also allow you to fail where it doesn’t. In that context,
+it makes sense to support extensions for `@CompileStatic` too. Imagine
+an extension that is capable of type checking SQL queries. In that case,
+the extension would be valid in both dynamic and static context, because
+without the extension, the code would still pass.
+
+[[mixed-mode]]
+=== Mixed mode compilation
+
+In the previous section, we highlighted the fact that you can activate type checking extensions with
+`@CompileStatic`. In that context, the type checker would not complain anymore about some unresolved variables or
+unknown method calls, but it would still wouldn't know how to compile them statically.
+
+Mixed mode compilation offers a third way, which is to instruct the compiler that whenever an unresolved variable
+or method call is found, then it should fall back to a dynamic mode. This is possible thanks to type checking extensions
+and a special `makeDynamic` call.
+
+To illustrate this, let's come back to the `Robot` example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
+----
+
+And let's try to activate our type checking extension using `@CompileStatic` instead of `@TypeChecked`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic,indent=0]
+----
+<1> Apply `@CompileStatic` transparently
+<2> Activate the type checking extension
+
+The script will run fine because the static compiler is told about the type of the `robot` variable, so it is capable
+of making a direct call to `move`. But before that, how did the compiler know how to get the `robot` variable? In fact
+by default, in a type checking extension, setting `handled=true` on an unresolved variable will automatically trigger
+a dynamic resolution, so in this case you don't have anything special to make the compiler use a mixed mode. However,
+let's slightly update our example, starting from the robot script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script_direct,indent=0]
+----
+
+Here you can notice that there is no reference to `robot` anymore. Our extension will not help then because we will not
+be able to instruct the compiler that `move` is done on a `Robot` instance. This example of code can be executed in a
+totally dynamic way thanks to the help of a gapi:groovy.util.DelegatingScript[]:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_dynamic,indent=0]
+----
+<1> we configure the compiler to use a `DelegatingScript` as the base class
+<2> the script source needs to be parsed and will return an instance of `DelegatingScript`
+<3> we can then call `setDelegate` to use a `Robot` as the delegate of the script
+<4> then execute the script. `move` will be directly executed on the delegate
+
+If we want this to pass with `@CompileStatic`, we have to use a type checking extension, so let's update our configuration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic2,indent=0]
+----
+<1> apply `@CompileStatic` transparently
+<2> use an alternate type checking extension meant to recognize the call to `move`
+
+Then in the previous section we have learnt how to deal with unrecognized method calls, so we are able to write this
+extension:
+
+[source,groovy]
+.robotextension2.groovy
+-------------------------------------
+include::{projectdir}/src/spec/test-resources/robotextension2.groovy[tags=example_robot_extension,indent=0]
+-------------------------------------
+<1> if the call is a method call (not a static method call)
+<2> that this call is made on "implicit this" (no explicit `this.`)
+<3> that the method being called is `move`
+<4> and that the call is done with a single argument
+<5> and that argument is of type `int`
+<6> then tell the type checker that the call is valid
+<7> and that the return type of the call is `Robot`
+
+If you try to execute this code, then you could be surprised that it actually fails at runtime:
+
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[tags=robot_runtime_error_cs,indent=0]
+----
+
+The reason is very simple: while the type checking extension is sufficient for `@TypeChecked`, which does not involve
+static compilation, it is not enough for `@CompileStatic` which requires additional information. In this case, you told
+the compiler that the method existed, but you didn't explain to it *what* method it is in reality, and what is the
+receiver of the message (the delegate).
+
+Fixing this is very easy and just implies replacing the `newMethod` call with something else:
+
+[source,groovy]
+.robotextension3.groovy
+-------------------------------------
+include::{projectdir}/src/spec/test-resources/robotextension3.groovy[tags=example_robot_extension,indent=0]
+-------------------------------------
+<1> tell the compiler that the call should be make dynamic
+
+The `makeDynamic` call does 3 things:
+
+* it returns a virtual method just like `newMethod`
+* automatically sets the `handled` flag to `true` for you
+* but also marks the `call` to be done dynamically
+
+So when the compiler will have to generate bytecode for the call to `move`, since it is now marked as a dynamic call,
+it will fallback to the dynamic compiler and let it handle the call. And since the extension tells us that the return
+type of the dynamic call is a `Robot`, subsequent calls will be done statically!
+
+Some would wonder why the static compiler doesn't do this by default without an extension. It is a design decision:
+
+* if the code is statically compiled, we normally want type safety and best performance
+* so if unrecognized variables/method calls are made dynamic, you loose type safety, but also all support for typos at
+compile time!
+
+In short, if you want to have mixed mode compilation, it *has* to be explicit, through a type checking extension, so
+that the compiler, and the designer of the DSL, are totally aware of what they are doing.
+
+`makeDynamic` can be used on 3 kind of AST nodes:
+
+* a method node (`MethodNode`)
+* a variable (`VariableExpression`)
+* a property expression (`PropertyExpression`)
+
+If that is not enough, then it means that static compilation cannot be done directly and that you have to rely on AST
+transformations.
+
+[[ast-xform-as-extension]]
+=== Transforming the AST in an extension
+
+Type checking extensions look very attractive from an AST transformation design point of view: extensions have access
+to context like inferred types, which is often nice to have. And an extension has a direct access to the abstract
+syntax tree. Since you have access to the AST, there is nothing in theory that prevents
+you from modifying the AST. However, we do not recommend you to do so, unless you are an advanced AST transformation
+designer and well aware of the compiler internals:
+
+* First of all, you would explicitly break the contract of type checking, which is to annotate,
+and only annotate the AST. Type checking should *not* modify the AST tree because you wouldn’t be able to
+guarantee anymore that code without the _@TypeChecked_ annotation
+behaves the same without the annotation.
+* If your extension is meant to work with _@CompileStatic_, then you *can* modify the AST because
+this is indeed what _@CompileStatic_ will eventually do. Static compilation doesn’t guarantee the same semantics at
+dynamic Groovy so there is effectively a difference between code compiled with _@CompileStatic_ and code compiled
+with _@TypeChecked_. It’s up to you to choose whatever strategy you want to update the AST, but probably
+using an AST transformation that runs before type checking is easier.
+* if you cannot rely on a transformation that kicks in before the type checker, then you must be *very* careful
+
+WARNING: The type checking phase is the last phase running in the compiler before bytecode generation. All other AST
+transformations run before that and the compiler does a very good job at "fixing" incorrect AST generated before the
+type checking phase. As soon as you perform a transformation during type checking, for example directly in a type
+checking extension, then you have to do all this work of generating a 100% compiler compliant abstract syntax tree by
+yourself, which can easily become complex. That's why we do not recommend to go that way if you are beginning with
+type checking extensions and AST transformations.
+
+=== Examples
+
+Examples of real life type checking extensions are easy to find. You can download the source code for Groovy and
+take a look at the
+https://github.com/apache/groovy/blob/master/src/test/groovy/transform/stc/TypeCheckingExtensionsTest.groovy[TypeCheckingExtensionsTest]
+class which is linked to
+https://github.com/apache/groovy/tree/master/src/test-resources/groovy/transform/stc[various extension scripts].
+
+An example of a complex type checking extension can be found in the link:markup-template-engine.html[Markup Template Engine]
+source code: this template engine relies on a type checking extension and AST transformations to transform templates into
+fully statically compiled code. Sources for this can be found
+https://github.com/apache/groovy/tree/master/subprojects/groovy-templates/src/main/groovy/groovy/text/markup[here].

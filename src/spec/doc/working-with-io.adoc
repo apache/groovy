@@ -1,0 +1,300 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Working with IO
+
+Groovy provides a number of
+link:gdk.html[helper methods] for working
+with I/O. While you could use standard Java code in Groovy to deal with those,
+Groovy provides much more convenient ways to handle files, streams, readers, ...
+
+In particular, you should take a look at methods added to:
+
+* the `java.io.File` class : http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/File.html
+* the `java.io.InputStream` class: http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/InputStream.html
+* the `java.io.OutputStream` class: http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/OutputStream.html
+* the `java.io.Reader` class: http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/Reader.html
+* the `java.io.Writer` class: http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/Writer.html
+* the `java.nio.file.Path` class: http://docs.groovy-lang.org/latest/html/groovy-jdk/java/nio/file/Path.html
+
+The following section focuses on sample idiomatic constructs using helper methods available above but is not meant
+to be a complete description of all available methods. For that, please read the link:gdk.html[GDK API].
+
+== Reading files
+
+As a first example, let's see how you would print all lines of a text file in Groovy:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines,indent=0]
+----
+
+The `eachLine` method is a method added to the `File` class automatically by Groovy and has many variants, for example
+if you need to know the line number, you can use this variant:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines2,indent=0]
+----
+
+If for whatever reason the an exception is thrown in the `eachLine` body, the method makes sure that the resource
+is properly closed. This is true for all I/O resource methods that Groovy adds.
+
+For example in some cases you will prefer to use a `Reader`, but still benefit from the automatic resource management
+from Groovy. In the next example, the reader *will* be closed even if the exception occurs:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=withreader_exception,indent=0]
+----
+
+Should you need to collect the lines of a text file into a list, you can do:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=collect_lines,indent=0]
+----
+
+Or you can even leverage the `as` operator to get the contents of the file into an array of lines:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=lines_as_strings,indent=0]
+----
+
+How many times did you have to get the contents of a file into a `byte[]` and how much code does it require? Groovy
+makes it very easy actually:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=file_bytes,indent=0]
+----
+
+Working with I/O is not limited to dealing with files. In fact, a lot of operations rely on input/output streams,
+hence why Groovy adds a lot of support methods to those, as you can see in the
+http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/InputStream.html[documentation].
+
+As an example, you can obtain an `InputStream` from a `File` very easily:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=newinputstream,indent=0]
+----
+
+However you can see that it requires you to deal with closing the inputstream. In Groovy it is in general a better
+idea to use the `withInputStream` idiom that will take care of that for you:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=withinputstream,indent=0]
+----
+
+== Writing files
+
+Of course in some cases you won't want to read but write a file. One of the options is to use a `Writer`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=withwriter_example,indent=0]
+----
+
+But for such a simple example, using the `<<` operator would have been enough:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=file_leftshift,indent=0]
+----
+
+Of course we do not always deal with text contents, so you could use the `Writer` or directly write bytes as in
+this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=file_setbytes,indent=0]
+----
+
+Of course you can also directly deal with output streams. For example, here is how you would create an output
+stream to write into a file:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=newoutputstream,indent=0]
+----
+
+However you can see that it requires you to deal with closing the output stream. Again it is in general a better
+idea to use the `withOutputStream` idiom that will handle the exceptions and close the stream in any case:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=withoutputstream,indent=0]
+----
+
+== Traversing file trees
+
+In scripting contexts it is a common task to traverse a file tree in order to find some specific files and do
+something with them. Groovy provides multiple methods to do this. For example you can perform something on all files
+of a directory:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfile,indent=0]
+----
+<1> executes the closure code on each file found in the directory
+<2> executes the closure code on files in the directory matching the specified pattern
+
+Often you will have to deal with a deeper hierarchy of files, in which case you can use `eachFileRecurse`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfilerecurse,indent=0]
+----
+<1> executes the closure code on each file or directory found in the directory, recursively
+<2> executes the closure code only on files, but recursively
+
+For more complex traversal techniques you can use the `traverse` method, which requires you to set a special flag
+indicating what to do with the traversal:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=traverse,indent=0]
+----
+<1> if the current file is a directory and its name is `bin`, stop the traversal
+<2> otherwise print the file name and continue
+
+== Data and objects
+
+In Java it is not uncommon to serialize and deserialize data using the `java.io.DataOutputStream` and
+`java.io.DataInputStream` classes respectively. Groovy will make it even easier to deal with them. For example, you could
+serialize data into a file and deserialize it using this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=data_in_out,indent=0]
+----
+
+And similarily, if the data you want to serialize implements the `Serializable` interface, you can proceed with
+an object output stream, as illustrated here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=object_in_out,indent=0]
+----
+
+[[process-management]]
+== Executing External Processes
+
+The previous section described how easy it was to deal with files, readers or streams in Groovy. However in domains
+like system administration or devops it is often required to communicate with external processes.
+
+Groovy provides a simple way to execute command line processes. Simply
+write the command line as a string and call the `execute()` method.
+E.g., on a *nix machine (or a windows machine with appropriate *nix
+commands installed), you can execute this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files,indent=0]
+----
+<1> executes the `ls` command in an external process
+<2> consume the output of the command and retrieve the text
+
+The `execute()` method returns a `java.lang.Process` instance which will
+subsequently allow the in/out/err streams to be processed and the exit
+value from the process to be inspected etc.
+
+e.g. here is the same command as above but we will now process the
+resulting stream a line at a time:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files_line_by_line,indent=0]
+----
+<1> executes the `ls` command in an external process
+<2> for each line of the input stream of the process
+<3> print the line
+
+It is worth noting that `in` corresponds to an input stream to the standard output of the command. `out` will refer
+to a stream where you can send data to the process (its standard input).
+
+Remember that many commands are shell built-ins and need special
+handling. So if you want a listing of files in a directory on a Windows
+machine and write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows,indent=0]
+----
+
+you will receive an `IOException` saying  _Cannot run program "dir":
+CreateProcess error=2, The system cannot find the file specified._
+
+This is because `dir` is built-in to the Windows shell (`cmd.exe`) and
+can’t be run as a simple executable. Instead, you will need to write:
+
+[source,groovy]
+----------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows_fixed,indent=0]
+----------------------------------
+
+Also, because this functionality currently makes use of
+`java.lang.Process` undercover, the deficiencies of that class
+must be taken into consideration. In particular, the javadoc
+for this class says:
+
+________________________________________________________________________
+Because some native platforms only provide limited buffer size for
+standard input and output streams, failure to promptly write the input
+stream or read the output stream of the subprocess may cause the
+subprocess to block, and even deadlock
+________________________________________________________________________
+
+Because of this, Groovy provides some additional helper methods which
+make stream handling for processes easier.
+
+Here is how to gobble all of the output (including the error stream
+output) from your process:
+
+[source,groovy]
+----------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=consumeoutput,indent=0]
+----------------------------------
+
+There are also variations of `consumeProcessOutput` that make use of `StringBuffer`, `InputStream`,
+`OutputStream` etc... For a complete list, please read the
+http://docs.groovy-lang.org/latest/html/groovy-jdk/java/lang/Process.html[GDK API for java.lang.Process]
+
+In addition, these is a `pipeTo` command (mapped to `|`
+to allow overloading) which lets the output stream of one process be fed
+into the input stream of another process.
+
+Here are some examples of use:
+
+[source,groovy]
+.Pipes in action
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_1,indent=0]
+----
+
+[source,groovy]
+.Consuming errors
+----
+include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_2,indent=0]
+----

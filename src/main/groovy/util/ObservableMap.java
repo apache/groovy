@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.util;
 
@@ -54,9 +57,9 @@ import java.util.*;
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableMap implements Map {
-    private Map delegate;
-    private PropertyChangeSupport pcs;
-    private Closure test;
+    private final Map delegate;
+    private final PropertyChangeSupport pcs;
+    private final Closure test;
 
     public static final String SIZE_PROPERTY = "size";
     public static final String CONTENT_PROPERTY = "content";
@@ -237,7 +240,7 @@ public class ObservableMap implements Map {
                     }
                 }
             }
-            if (events.size() > 0) {
+            if (!events.isEmpty()) {
                 fireMultiPropertyEvent(events);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -322,7 +325,7 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
-        private ChangeType type;
+        private final ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
             super(source, propertyName, oldValue, newValue);
@@ -361,7 +364,7 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
-        private Map values = new HashMap();
+        private final Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
             super(source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED);
@@ -377,13 +380,17 @@ public class ObservableMap implements Map {
 
     public static class MultiPropertyEvent extends PropertyEvent {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
-        private PropertyEvent[] events = new PropertyEvent[0];
+        private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
+
+        private final PropertyEvent[] events;
 
         public MultiPropertyEvent(Object source, PropertyEvent[] events) {
             super(source, MULTI_PROPERTY, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI);
             if (events != null && events.length > 0) {
                 this.events = new PropertyEvent[events.length];
                 System.arraycopy(events, 0, this.events, 0, events.length);
+            } else {
+            	this.events = EMPTY_PROPERTY_EVENTS;
             }
         }
 

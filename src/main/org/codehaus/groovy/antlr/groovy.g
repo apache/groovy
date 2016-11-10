@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 // Note: Please don't use physical tabs.  Logical tabs for indent are width 4.
 header {
 package org.codehaus.groovy.antlr.parser;
@@ -186,15 +204,13 @@ import antlr.TokenStreamRecognitionException;
  *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
  *      and have applied the groovy.diff from java.g (1.22) by John Rose
  *      back onto the new root (1.22.4) - Jeremy Rayner (Jan 2005)
- *    o for a map of the task see...
- *      http://groovy.javanicus.com/java-g.png
  *
  * Version 1.22.4.g.2
  *    o mkempf, rkleeb, Dec 2007
  *    o fixed various rules so that they call the correct Create Method
  *      to make sure that the line information are correct
  *
- * This grammar is in the PUBLIC DOMAIN
+ * Based on an original grammar released in the PUBLIC DOMAIN
  */
 
 class GroovyRecognizer extends Parser;
@@ -520,17 +536,6 @@ importStatement
             #importStatement = #(create(IMPORT,"import",first,LT(1)),an,is);}
     ;
 
-// TODO REMOVE
-// A type definition is either a class, interface, enum or annotation with possible additional semis.
-//typeDefinition
-//      options {defaultErrorHandler = true;}
-//      :       m:modifiers!
-//              typeDefinitionInternal[#m]
-//      |       SEMI!
-//      ;
-
-// Added this production, even though 'typeDefinition' seems to be obsolete,
-// as this is referenced by many other parts of the grammar.
 // Protected type definitions production for reuse in other productions
 protected typeDefinitionInternal[AST mods]
     :   cd:classDefinition[#mods]       // inner class
@@ -583,10 +588,6 @@ genericMethod!
         }
     ;
 
-
-// *TODO* We must also audit the various occurrences of warning
-// suppressions like "options { greedy = true; }".
-
 /** A declaration with one declarator and no initialization, like a parameterDeclaration.
  *  Used to parse loops like <code>for (int x in y)</code> (up to the <code>in</code> keyword).
  */
@@ -626,13 +627,6 @@ singleDeclaration
  *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
  *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
  *  between 'println' and 'String'.)
- *
- *   *TODO* The declarationStart production needs to be strengthened to recognize
- *  things like {List<String> foo}.
- *  Right now it only knows how to skip square brackets after the type, not
- *  angle brackets.
- *  This probably turns out to be tricky because of >> vs. > >. If so,
- *  just put a TODO comment in.
  */
 declarationStart!
     :   (     ("def" nls)
@@ -674,23 +668,9 @@ constructorStart!
     ;
 
 
-/** Used only as a lookahead predicate for nested type declarations. */
+/** Used only as a lookahead predicate for nested type definitions. */
 
-/*TODO* The lookahead in typeDeclarationStart needs to skip annotations, not
-just stop at '@', because variable and method declarations can also be
-annotated.
-> typeDeclarationStart!
->     :   (modifier!)* ("class" | "interface" | "enum" | "trait" | AT )
-S.B. something like
->     :   (modifier! | annotationTokens!)* ("class" | "interface" |
-> "enum" )
-(And maybe @interface, if Java 5 allows nested annotation types? Don't
-know offhand.)
-Where annotationTokens can be a quick paren-skipper, as in other
-places: '@' ident '(' balancedTokens ')'.
-*/
-
-typeDeclarationStart!
+typeDefinitionStart!
     :   modifiersOpt! ("class" | "interface" | "enum" | "trait" | AT "interface")
     ;
 
@@ -1022,7 +1002,6 @@ annotationMemberArrayInitializer
         )?
         RCURLY!
     ;
-*OBS*/
 
 // The two things that can initialize an annotation array element are a conditional expression
 // and an annotation (nested annotation array initialisers are not valid)
@@ -1030,6 +1009,7 @@ annotationMemberArrayValueInitializer
     :   conditionalExpression[0]
     |   annotation nls!
     ;
+*OBS*/
 
 superClassClause!
     {Token first = LT(1);}
@@ -1082,8 +1062,6 @@ if (modifiers != null) {
         { currentClass = prevCurrentClass; }
     ;
 
-//TODO - where has superClassClause! production gone???
-
 // Definition of a Java Interface
 interfaceDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                       if (modifiers != null) {
@@ -1124,7 +1102,7 @@ annotationDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                           first.setLine(modifiers.getLine());
                                           first.setColumn(modifiers.getColumn());
                                       }}
-    :   AT "interface" IDENT
+    :   AT "interface" IDENT nls!
         // now parse the body of the annotation
         ab:annotationBlock
         {#annotationDefinition = #(create(ANNOTATION_DEF,"ANNOTATION_DEF",first,LT(1)),
@@ -1214,12 +1192,12 @@ enumConstants
     :
         enumConstant
         (    options {generateAmbigWarnings=false;} :
-            (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
+            (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
         |   nls! COMMA!
             (
-                (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
-            |
                 (nls annotationsOpt IDENT) => nls! enumConstant
+            |
+                (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
             )
         )*
     ;
@@ -1282,7 +1260,7 @@ enumConstantBlock  {Token first = LT(1);}
 // but how to disallow constructors and static initializers...
 enumConstantField! {Token first = LT(1);}
     :   (
-            (typeDeclarationStart)=>
+            (typeDefinitionStart)=>
             mods:modifiersOpt!
             td:typeDefinitionInternal[#mods]
             {#enumConstantField = #td;}
@@ -1373,9 +1351,8 @@ classField!  {Token first = LT(1);}
         dd:declaration
         {#classField = #dd;}
     |
-        //TODO - unify typeDeclaration and typeDefinitionInternal names
-        // type declaration
-        (typeDeclarationStart)=>
+        // type definition
+        (typeDefinitionStart)=>
         mods:modifiersOpt!
         (   td:typeDefinitionInternal[#mods]
                 {#classField = #td;}
@@ -1401,9 +1378,8 @@ interfaceField!
         dg:genericMethod
         {#interfaceField = #dg;}
     |
-        //TODO - unify typeDeclaration and typeDefinitionInternal names
-        // type declaration
-        (typeDeclarationStart)=>
+        // type definition
+        (typeDefinitionStart)=>
         mods:modifiersOpt
         (   td:typeDefinitionInternal[#mods]
             {#interfaceField = #td;}
@@ -1467,7 +1443,10 @@ multipleAssignmentDeclaration {Token first = cloneToken(LT(1));}
         (t:typeSpec[false]!)?
         LPAREN^ nls! typeNamePairs[#mods,first] RPAREN!
         ASSIGN^ nls!
-        assignmentExpression[0]
+        (
+          (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) => multipleAssignment[0]
+          | assignmentExpression[0]
+        )
         {#multipleAssignmentDeclaration=#(create(VARIABLE_DEF,"VARIABLE_DEF",first,LT(1)), #mods, #(create(TYPE,"TYPE",first,LT(1)),#t), #multipleAssignmentDeclaration);}
     ;
 
@@ -1575,7 +1554,6 @@ variableName
 
 /** After some type names, where zero or more empty bracket pairs are allowed.
  *  We use ARRAY_DECLARATOR to represent this.
- *  TODO:  Is there some more Groovy way to view this in terms of the indexed property syntax?
  */
 declaratorBrackets[AST typ]
     :   {#declaratorBrackets=typ;}
@@ -1623,21 +1601,6 @@ arrayInitializer
 initializer
     :   expression
     |   arrayInitializer
-    ;
-*OBS*/
-
-/*OBS???
-// This is the header of a method. It includes the name and parameters
-// for the method.
-// This also watches for a list of exception classes in a "throws" clause.
-ctorHead
-    :   IDENT // the name of the method
-
-        // parse the formal parameter declarations.
-        LPAREN! parameterDeclarationList RPAREN!
-
-        // get the list of exceptions that this method is declared to throw
-        (throwsClause)?
     ;
 *OBS*/
 
@@ -1720,7 +1683,7 @@ multicatch
 variableLengthParameterDeclaration!  {Token first = LT(1);}
     :   pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
 
-        /*OBS* pd:declaratorBrackets[#t]* /
+        pd:declaratorBrackets[#t]
         {#variableLengthParameterDeclaration = #(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1)),
                                                                                             pm, #(create(TYPE,"TYPE",first,LT(1)),t), id);}
     ;
@@ -2012,9 +1975,13 @@ forInClause
 /** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
  *  Support this practice, even though it isn't very Groovy.
  */
-compatibleBodyStatement
+compatibleBodyStatement {Token first = LT(1);}
     :   (LCURLY)=>
         compoundStatement
+    // comma sep decl case converted to multiple statements so must be wrapped in SLIST when single statement occurs after if/while/for
+    |  (declarationStart (varInitializer)? COMMA)=>
+        de:declaration
+        {#compatibleBodyStatement = #(create(SLIST,"CBSLIST",first,LT(1)),de);}
     |
         statement[EOF]
     ;
@@ -2045,11 +2012,6 @@ branchStatement {Token first = LT(1);}
     |   "throw"! throwE:expression[0]!
         {#branchStatement = #(create(LITERAL_throw,"throw",first,LT(1)),throwE);}
 
-
-    // TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
-    // asserts
-    // 1.4+ ...
-    //      |   "assert"^ expression[0] ( COLON! expression[0] )?
 
     // groovy assertion...
     |   "assert"! assertAle: assignmentLessExpression!
@@ -2324,27 +2286,28 @@ commandArgument
 //         nextHigherPrecedenceExpression
 //                 (OPERATOR nextHigherPrecedenceExpression)*
 // which is a standard recursive definition for a parsing an expression.
-// The operators in java have the following precedences:
-//      lowest  ( 15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |=
+// The operators have the following precedences:
+//      lowest  ( 15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |= (assignments)
 //              ( 14)  ?: (conditional expression and elvis)
-//              ( 13)  ||
-//              ( 12)  &&
-//              ( 11)  |
-//              ( 10)  ^
-//              (  9)  &
-//              (8.5)  =~ ==~
-//              (  8)  == != <=> === !==
-//              (  7)  < <= > >= instanceof as in
-//              (  6)  << >> .. ..<
-//              (  5)  +(binary) -(binary)
-//              (  4)  * / %
-//              (  3)  **(power)
-//              (  2)  ++(pre) --(pre) +(unary) -(unary)
-//              (  1)  ~  ! $ (type) ++(post) --(post)
-//                     . ?. *. (dot -- identifier qualification)
-//                     []   () (method call)  {} (closableBlock)  [] (list/map)
-//                     new  () (explicit parenthesis)
-//                     $x (scope escape)
+//              ( 13)  || (logical or)
+//              ( 12)  && (logical and)
+//              ( 11)  | ()binary or
+//              ( 10)  ^ (binary xor)
+//              (  9)  & (binary and)
+//              (8.5)  =~ ==~ (regex find/match)
+//              (  8)  == != <=> === !== (equals, not equals, compareTo)
+//              (  7)  < <= > >= instanceof as in (relational, in, instanceof, type coercion)
+//              (  6)  << >> >>> .. ..< (shift, range)
+//              (  5)  + - (addition, subtraction)
+//              (  4)  * / % (multiply div modulo)
+//              (  3)  ++ -- + - (pre dec/increment, unary signs)
+//              (  2)  ** (power)
+//              (  1)  ~ ! $ (type) (negate, not, typecast)
+//                     ?. * *. *: (safe dereference, spread, spread-dot, spread-map)
+//                     . .& .@ (member access, method closure, field/attribute access)
+//                     [] ++ -- (list/map/array index, post inc/decrement)
+//                     () {} [] (method call, closableBlock, list/map literal)
+//                     new () (object creation, explicit parenthesis)
 //
 // the last two are not usually on a precedence chart; I put them in
 // to point out that new has a higher precedence than '.', so you
@@ -2362,10 +2325,10 @@ commandArgument
 // in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression[int lc_stmt]
     :
-        (LPAREN typeSpec[true] RPAREN expression[lc_stmt])=>
-            lp:LPAREN^ {#lp.setType(TYPECAST);} typeSpec[true] RPAREN!
-            expression[lc_stmt]
-    |
+//        (LPAREN typeSpec[true] RPAREN expression[lc_stmt])=>
+//            lp:LPAREN^ {#lp.setType(TYPECAST);} typeSpec[true] RPAREN!
+//            expression[lc_stmt]
+//    |
        (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) =>
         m:multipleAssignment[lc_stmt] {#expression=#m;}
     |   assignmentExpression[lc_stmt]
@@ -2374,7 +2337,10 @@ expression[int lc_stmt]
 multipleAssignment[int lc_stmt] {Token first = cloneToken(LT(1));}
     :   LPAREN^ nls! listOfVariables[null,null,first] RPAREN!
         ASSIGN^ nls!
-        assignmentExpression[lc_stmt]
+        (
+          (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) => multipleAssignment[lc_stmt]
+          | assignmentExpression[lc_stmt]
+        )
     ;
 
 
@@ -2492,24 +2458,6 @@ pathElement[AST prefix] {Token operator = LT(1);}
         // since the bracket operator is transformed into a method call.
         ipa:indexPropertyArgs[prefix]!
         {   #pathElement = #ipa;  }
-/*    |
-        (DOT nls "this") => DOT! nls! thisPart:"this"!
-        { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,thisPart); }
-/*NYI*
-    |   DOT^ nls! "this"
-
-    |   DOT^ nls! "super"
-        (   // (new Outer()).super()  (create enclosing instance)
-            lp3:LPAREN^ argList RPAREN!
-            {#lp3.setType(SUPER_CTOR_CALL);}
-        |   DOT^ IDENT
-            (   lps:LPAREN^ {#lps.setType(METHOD_CALL);}
-                argList
-                RPAREN!
-            )?
-        )
-    |   DOT^ nls! newExpression
-*NYI*/
     ;
 
 pathElementStart!
@@ -2549,7 +2497,7 @@ namePart  {Token first = LT(1);}
 
 /*
  * Allowed keywords after dot (as a member name) and before colon (as a label).
- * Includes all Java keywords plus "in" and "as".
+ * Includes all Java keywords plus "as", "def", "in", and "trait".
  */
 keywordPropertyNames
     :   (
@@ -2822,20 +2770,7 @@ multiplicativeExpression[int lc_stmt]
     |    (  powerExpressionNotPlusMinus[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
     ;
 
-// math power operator (**) (level 3)
-powerExpression[int lc_stmt]
-    :   unaryExpression[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
-    ;
-
-// math power operator (**) (level 3)
-// (without ++(prefix)/--(prefix)/+(unary)/-(unary))
-// The different rules are needed to avoid ambiguous selection
-// of alternatives.
-powerExpressionNotPlusMinus[int lc_stmt]
-    :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
-    ;
-
-// ++(prefix)/--(prefix)/+(unary)/-(unary) (level 2)
+// ++(prefix)/--(prefix)/+(unary)/-(unary) (level 3)
 unaryExpression[int lc_stmt]
     :   INC^ nls! unaryExpression[0]
     |   DEC^ nls! unaryExpression[0]
@@ -2844,11 +2779,22 @@ unaryExpression[int lc_stmt]
     |   unaryExpressionNotPlusMinus[lc_stmt]
     ;
 
+// math power operator (**) (level 2)
+powerExpression[int lc_stmt]
+    :   unaryExpression[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
+    ;
+
+// math power operator (**) (level 2)
+// (without ++(prefix)/--(prefix)/+(unary)/-(unary))
+// The different rules are needed to avoid ambiguous selection
+// of alternatives.
+powerExpressionNotPlusMinus[int lc_stmt]
+    :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
+    ;
+
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus[int lc_stmt]
-    :   //BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
-    //|
-        BNOT^ nls! unaryExpression[0]
+    :   BNOT^ nls! unaryExpression[0]
     |   LNOT^ nls! unaryExpression[0]
     |   (   // subrule allows option to shut off warnings
             options {
@@ -2876,7 +2822,7 @@ unaryExpressionNotPlusMinus[int lc_stmt]
         )
     ;
 
-// qualified names, array expressions, method invocation, post inc/dec
+// qualified names, array expressions, method invocation, post inc/dec (level 1)
 postfixExpression[int lc_stmt]
     :
         pathExpression[lc_stmt]
@@ -2894,9 +2840,6 @@ postfixExpression[int lc_stmt]
 // the basic element of an expression
 primaryExpression {Token first = LT(1);}
     :   IDENT
-        /*OBS*  //keywords can follow dot in Groovy; no need for this special case
-        ( options {greedy=true;} : DOT^ "class" )?
-        *OBS*/
     |   constant
     |   newExpression
     |   "this"
@@ -2906,14 +2849,7 @@ primaryExpression {Token first = LT(1);}
     |   closableBlockConstructorExpression
     |   listOrMapConstructorExpression
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
-//deprecated    |   scopeEscapeExpression               // $x
     |   builtInType
-    /*OBS*  //class names work fine as expressions
-            // look for int.class and int[].class
-    |   bt:builtInType!
-        declaratorBrackets[bt]
-        DOT^ nls! "class"
-    *OBS*/
     ;
 
 // Note:  This is guaranteed to be an EXPR AST.
@@ -3550,17 +3486,20 @@ options {
     }
 
     protected boolean atValidDollarEscape() throws CharStreamException {
-        // '$' (('*')? ('{' | LETTER)) =>
+        // '$' (('{' | LETTER) =>
         int k = 1;
         char lc = LA(k++);
         if (lc != '$')  return false;
         lc = LA(k++);
-        if (lc == '*')  lc = LA(k++);
         return (lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)));
     }
 
     protected boolean atDollarDollarEscape() throws CharStreamException {
         return LA(1) == '$' && LA(2) == '$';
+    }
+
+    protected boolean atMultiCommentStart() throws CharStreamException {
+        return LA(1) == '/' && LA(2) == '*';
     }
 
     protected boolean atDollarSlashEscape() throws CharStreamException {
@@ -3827,9 +3766,9 @@ options {
 // multiple-line comments
 ML_COMMENT
 options {
-    paraphrase="a comment";
+    paraphrase="a multi-line comment";
 }
-    :   "/*"
+    :   { atMultiCommentStart() }? "/*"
         (   /*  '\r' '\n' can be matched in one alternative or by matching
                 '\r' in one iteration and '\n' in another. I am trying to
                 handle any flavor of newline that comes in, but the language
@@ -3926,28 +3865,30 @@ options {
     paraphrase="a multiline regular expression literal";
 }
         {int tt=0;}
-    :   {allowRegexpLiteral()}?
-        '/'!
-        {++suppressNewline;}
-        //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
-        // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
-        // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
-        (
-            REGEXP_SYMBOL
-            tt=REGEXP_CTOR_END[true]
-        |   {!atValidDollarEscape()}? '$'
-            tt=REGEXP_CTOR_END[true]
-        |   '$'!
-            {
-                // Yes, it's a regexp constructor, and we've got a value part.
-                tt = STRING_CTOR_START;
-                stringCtorState = SCS_VAL + SCS_RE_TYPE;
-            }
-        )
-        {$setType(tt);}
+    :   { !atMultiCommentStart() }?
+        (   {allowRegexpLiteral()}?
+            '/'!
+            {++suppressNewline;}
+            //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
+            // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
+            // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
+            (
+                REGEXP_SYMBOL
+                tt=REGEXP_CTOR_END[true]
+            |   {!atValidDollarEscape()}? '$'
+                tt=REGEXP_CTOR_END[true]
+            |   '$'!
+                {
+                    // Yes, it's a regexp constructor, and we've got a value part.
+                    tt = STRING_CTOR_START;
+                    stringCtorState = SCS_VAL + SCS_RE_TYPE;
+                }
+            )
+            {$setType(tt);}
 
-    |   DIV                 {$setType(DIV);}
-    |   DIV_ASSIGN          {$setType(DIV_ASSIGN);}
+        |   ( '/' ~'=' ) => DIV {$setType(DIV);}
+        |   DIV_ASSIGN {$setType(DIV_ASSIGN);}
+        )
     ;
 
 DOLLAR_REGEXP_LITERAL
@@ -3961,9 +3902,16 @@ options {
         (
             DOLLAR_REGEXP_SYMBOL
             tt=DOLLAR_REGEXP_CTOR_END[true]
-        | {!atValidDollarEscape()}? '$'
+        | {!atValidDollarEscape() && !atDollarSlashEscape() && !atDollarDollarEscape()}? '$'
             tt=DOLLAR_REGEXP_CTOR_END[true]
-        | '$'!
+        |
+            ('$' '/') => ESCAPED_SLASH
+            tt=DOLLAR_REGEXP_CTOR_END[true]
+        |
+            ('$' '$') => ESCAPED_DOLLAR
+            tt=DOLLAR_REGEXP_CTOR_END[true]
+        |
+            '$'!
             {
                 // Yes, it's a regexp constructor, and we've got a value part.
                 tt = STRING_CTOR_START;
@@ -4045,14 +3993,11 @@ options {
     paraphrase="a multiline regular expression character";
 }
     :
-        (
-            ~('*'|'/'|'$'|'\\'|'\n'|'\r'|'\uffff')
-        |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
-        |   '\\' '/'                   { $setText('/'); }
-        |   STRING_NL[true]
-        |!  '\\' ONE_NL[false]
-        )
-        ('*')*      // stars handled specially to avoid ambig. on /**/
+        ~('/'|'$'|'\\'|'\n'|'\r'|'\uffff')
+    |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
+    |   '\\' '/'                   { $setText('/'); }
+    |   STRING_NL[true]
+    |!  '\\' ONE_NL[false]
     ;
 
 protected
@@ -4061,13 +4006,11 @@ options {
     paraphrase="a multiline dollar escaping regular expression character";
 }
     :
-        (
-            ~('$' | '\\' | '/' | '\n' | '\r' | '\uffff')
-        |   { LA(2)!='\n' && LA(2)!='\r' }? '\\'               // backslash only escapes EOL
-        |   ('/' ~'$') => '/'                                  // allow a slash if not followed by a $
-        |   STRING_NL[true]
-        |!  '\\' ONE_NL[false]
-        )
+        ~('$' | '\\' | '/' | '\n' | '\r' | '\uffff')
+    |   { LA(2)!='\n' && LA(2)!='\r' }? '\\'               // backslash only escapes EOL
+    |   ('/' ~'$') => '/'                                  // allow a slash if not followed by a $
+    |   STRING_NL[true]
+    |!  '\\' ONE_NL[false]
     ;
 
 // escape sequence -- note that this is protected; it can only be called
@@ -4190,18 +4133,6 @@ options {
                 ttype = IDENT;
             }
 
-        /* The grammar allows a few keywords to follow dot.
-         * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
-            if (ttype != IDENT && lastSigTokenType == DOT) {
-                // A few keywords can follow a dot:
-                switch (ttype) {
-                case LITERAL_this: case LITERAL_super: case LITERAL_class:
-                    break;
-                default:
-                    ttype = LITERAL_in;  // the poster child for bad dotted names
-                }
-            }
-        */
             $setType(ttype);
 
             // check if "assert" keyword is enabled
@@ -4256,24 +4187,6 @@ options {
 }
     {boolean isDecimal=false; Token t=null;}
     :
-/*OBS*
-        '.' {_ttype = DOT;}
-        (
-            (('0'..'9')+ (EXPONENT)? (f1:FLOAT_SUFFIX {t=f1;})?
-            {
-                if (t != null && t.getText().toUpperCase().indexOf('F')>=0) {
-                    _ttype = NUM_FLOAT;
-                }
-                else {
-                    _ttype = NUM_DOUBLE; // assume double
-                }
-            })
-        |
-            // JDK 1.5 token for variable length arguments
-            (".." {_ttype = TRIPLE_DOT;})
-        )?
-    |
-*OBS*/
         // TODO:  This complex pattern seems wrong.  Verify or fix.
         (   '0' {isDecimal = true;} // special case for just '0'
             (   // hex digits

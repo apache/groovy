@@ -1,3 +1,23 @@
+<!--
+
+     Licensed to the Apache Software Foundation (ASF) under one
+     or more contributor license agreements.  See the NOTICE file
+     distributed with this work for additional information
+     regarding copyright ownership.  The ASF licenses this file
+     to you under the Apache License, Version 2.0 (the
+     "License"); you may not use this file except in compliance
+     with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an
+     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+     specific language governing permissions and limitations
+     under the License.
+
+-->
 <project name="CustomGroovyDocTestProject" basedir="../../../..">
     <property name="test" location="src/test/groovy"/>
     <property name="target" location="target"/>
@@ -16,10 +36,10 @@
                    packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
                    use="true" windowtitle="GroovyDoc" private="false">
             <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://docs.oracle.com/javase/7/docs/api/"/>
-            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
-            <link packages="org.junit.,junit.framework." href="http://junit.org/javadoc/latest"/>
+            <link packages="org.apache.tools.ant." href="http://docs.groovy-lang.org/docs/ant/api/"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.org/junit4/javadoc/latest/"/>
             <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
-            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+            <link packages="org.codehaus.gmaven." href="http://groovy.github.io/gmaven/apidocs/"/>
         </groovydoc>
     </target>
 
@@ -34,10 +54,10 @@
                 fileEncoding="UTF-16LE">
 
             <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://docs.oracle.com/javase/7/docs/api/"/>
-            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
-            <link packages="org.junit.,junit.framework." href="http://junit.org/javadoc/latest"/>
+            <link packages="org.apache.tools.ant." href="http://docs.groovy-lang.org/docs/ant/api/"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.org/junit4/javadoc/latest/"/>
             <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
-            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+            <link packages="org.codehaus.gmaven." href="http://groovy.github.io/gmaven/apidocs/"/>
         </groovydoc>
     </target>
 </project>

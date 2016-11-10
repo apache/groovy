@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
  package groovy
 
@@ -32,27 +35,28 @@ public class SpreadDotTest extends GroovyTestCase {
         def m2 = ["a":11, "b":22]
         def m3 = ["a":111, "b":222]
         def x = [m1,m2,m3]
-        println x*.a
-        println x*."a"
+        assert x*.a == [1, 11, 111]
+        assert x*."a" == [1, 11, 111]
         assert x == [m1, m2, m3]
 
         def m4 = null
         x << m4
-        println x*.a
-        println x*."a"
+        assert x*.a == [1, 11, 111, null]
+        assert x*."a" == [1, 11, 111, null]
         assert x == [m1, m2, m3, null]
 
+        Date checkDate = new Date()
         def d = new SpreadDotDemo()
         x << d
-        println x*."a"
+        assert x*."a"[4] >= checkDate
         assert x == [m1, m2, m3, null, d]
 
         def y = new SpreadDotDemo2()
-        println y."a"
-        println y.a
+        assert y."a" == 'Attribute Get a'
+        assert y.a == 'Attribute Get a'
 
         x << y
-        println x*."a"
+        assert x*."a"[5] == 'Attribute Get a'
         assert x == [m1, m2, m3, null, d, y]
     }
 

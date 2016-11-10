@@ -1,21 +1,28 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell
 
+import jline.TerminalFactory
+import jline.UnixTerminal
+import jline.UnsupportedTerminal
+import jline.WindowsTerminal
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -37,19 +44,26 @@ import org.fusesource.jansi.AnsiConsole
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Main
 {
-    final Groovysh groovysh;
+    final Groovysh groovysh
 
     /**
      * @param io: may just be new IO(), which is the default
      */
-    public Main(IO io) {
+    Main(IO io) {
         Logger.io = io
         groovysh = new Groovysh(io)
+    }
+
+    /**
+     * @param io: may just be new IO(), which is the default
+     */
+    Main(IO io, CompilerConfiguration configuration) {
+        Logger.io = io
+        groovysh = new Groovysh(io, configuration)
     }
 
     Groovysh getGroovysh() {
@@ -60,21 +74,23 @@ class Main
      * create a Main instance, configures it according to CLI arguments, and starts the shell.
      * @param main must have a Groovysh member that has an IO member.
      */
-    public static void main(final String[] args) {
-        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
-        MessageSource messages = new MessageSource(Main.class)
-        cli.classpath(messages['cli.option.classpath.description'])
-        cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
-        cli.h(longOpt: 'help', messages['cli.option.help.description'])
-        cli.V(longOpt: 'version', messages['cli.option.version.description'])
-        cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
-        cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
-        cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
-        cli.e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
-        cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
-        cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
-        cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
-
+    static void main(final String[] args) {
+        CliBuilder cli = new CliBuilder(usage: 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
+        MessageSource messages = new MessageSource(Main)
+        cli.with {
+            classpath(messages['cli.option.classpath.description'])
+            cp(longOpt: 'classpath', messages['cli.option.cp.description'])
+            h(longOpt: 'help', messages['cli.option.help.description'])
+            V(longOpt: 'version', messages['cli.option.version.description'])
+            v(longOpt: 'verbose', messages['cli.option.verbose.description'])
+            q(longOpt: 'quiet', messages['cli.option.quiet.description'])
+            d(longOpt: 'debug', messages['cli.option.debug.description'])
+            e(longOpt: 'evaluate', args: 1, argName: 'CODE', optionalArg: false, messages['cli.option.evaluate.description'])
+            C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
+            D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
+            T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
+            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+        }
         OptionAccessor options = cli.parse(args)
 
         if (options == null) {
@@ -96,11 +112,11 @@ class Main
         if (options.hasOption('C')) {
             def value = options.getOptionValue('C')
             if (value != null) {
-                suppressColor = !Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+                suppressColor = !Boolean.valueOf(value).booleanValue() // For JDK 1.4 compat
             }
         }
 
-        String type ='auto'
+        String type = TerminalFactory.AUTO
         if (options.hasOption('T')) {
             type = options.getOptionValue('T')
         }
@@ -136,13 +152,15 @@ class Main
             io.verbosity = IO.Verbosity.QUIET
         }
 
-        String evalString = null;
+        String evalString = null
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
+        def configuration = new CompilerConfiguration()
+        configuration.setParameters((boolean) options.hasOption("pa"))
 
         List<String> filenames = options.arguments()
-        Main main = new Main(io);
+        Main main = new Main(io, configuration)
         main.startGroovysh(evalString, filenames)
     }
 
@@ -196,30 +214,27 @@ class Main
      */
     static void setTerminalType(String type, boolean suppressColor) {
         assert type != null
-        
-        type = type.toLowerCase();
-        boolean enableAnsi = true;
+
+        type = type.toLowerCase()
+        boolean enableAnsi = true
         switch (type) {
-            case 'auto':
-                type = null;
-                break;
-
-            case 'unix':
-                type = 'jline.UnixTerminal'
+            case TerminalFactory.AUTO:
+                type = null
                 break
-
-            case 'win':
-            case 'windows':
-                type = 'jline.WindowsTerminal'
+            case TerminalFactory.UNIX:
+                type = UnixTerminal.canonicalName
                 break
-
-            case 'false':
-            case 'off':
-            case 'none':
-                type = 'jline.UnsupportedTerminal'
+            case TerminalFactory.WIN:
+            case TerminalFactory.WINDOWS:
+                type = WindowsTerminal.canonicalName
+                break
+            case TerminalFactory.FALSE:
+            case TerminalFactory.OFF:
+            case TerminalFactory.NONE:
+                type = UnsupportedTerminal.canonicalName
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-                enableAnsi = false;
-                break;
+                enableAnsi = false
+                break
             default:
                 // Should never happen
                 throw new IllegalArgumentException("Invalid Terminal type: $type")
@@ -232,7 +247,7 @@ class Main
         }
 
         if (type != null) {
-            System.setProperty('jline.terminal', type)
+            System.setProperty(TerminalFactory.JLINE_TERMINAL, type)
         }
     }
 

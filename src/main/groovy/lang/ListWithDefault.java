@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
@@ -53,7 +56,7 @@ public final class ListWithDefault<T> implements List<T> {
         return initClosure != null ? (Closure) initClosure.clone() : null;
     }
 
-    public static <T> List<T> newInstance(List<T> items, boolean lazyDefaultValues, Closure initClosure) {
+    public static <T> ListWithDefault<T> newInstance(List<T> items, boolean lazyDefaultValues, Closure initClosure) {
         if (items == null)
             throw new IllegalArgumentException("Parameter \"items\" must not be null");
         if (initClosure == null)
@@ -195,7 +198,7 @@ public final class ListWithDefault<T> implements List<T> {
         return (T) initClosure.call(new Object[]{idx});
     }
 
-    private int normaliseIndex(int index, int size) {
+    private static int normaliseIndex(int index, int size) {
         if (index < 0) {
             index += size;
         }
@@ -248,7 +251,7 @@ public final class ListWithDefault<T> implements List<T> {
      * @param toIndex   upper endpoint of the subList (exclusive)
      * @return a view of a specified range within this list, keeping all lazy list settings
      */
-    public List<T> subList(int fromIndex, int toIndex) {
+    public ListWithDefault<T> subList(int fromIndex, int toIndex) {
         return new ListWithDefault<T>(delegate.subList(fromIndex, toIndex), lazyDefaultValues, (Closure) initClosure.clone());
     }
 }

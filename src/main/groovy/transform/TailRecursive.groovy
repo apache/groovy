@@ -1,17 +1,20 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform
 
@@ -27,7 +30,8 @@ import java.lang.annotation.Target
  * since the JVM cannot do this itself. This works for both static and non-static methods.
  * <p/>
  * It allows you to write a method like this:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.TailRecursive
  * class Target {
  *      {@code @TailRecursive}
  *      long sumUp(long number, long sum = 0) {
@@ -54,6 +58,24 @@ import java.lang.annotation.Target
  * <li>Non trivial continuation passing style examples do not work.
  * <li>Probably many unrecognized edge cases.
  * </ul>
+ * 
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.TailRecursive
+ *
+ * &#64;TailRecursive
+ * long sizeOfList(list, counter = 0) {
+ *     if (list.size() == 0) {
+ *         counter
+ *     } else {
+ *        sizeOfList(list.tail(), counter + 1) 
+ *     }
+ * }
+ *
+ * // Without &#64;TailRecursive a StackOverFlowError
+ * // is thrown.
+ * assert sizeOfList(1..10000) == 10000
+ * </pre>
  *
  * @author Johannes Link
  * @since 2.3

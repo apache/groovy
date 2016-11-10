@@ -1,24 +1,27 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
@@ -62,7 +65,7 @@ import java.util.*;
  */
 public class CompileStack implements Opcodes {
     /**
-     * @todo remove optimization of this.foo -> this.@foo
+     * TODO: remove optimization of this.foo -> this.@foo
      *
      */
 
@@ -92,7 +95,7 @@ public class CompileStack implements Opcodes {
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
     private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
-    private LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
+    private final LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
 
     private Label thisStartLabel, thisEndLabel;
 
@@ -102,9 +105,9 @@ public class CompileStack implements Opcodes {
     private final LinkedList stateStack = new LinkedList();
 
     // handle different states for the implicit "this"
-    private LinkedList<Boolean> implicitThisStack = new LinkedList();
+    private final LinkedList<Boolean> implicitThisStack = new LinkedList<Boolean>();
     // handle different states for being on the left hand side
-    private LinkedList<Boolean> lhsStack = new LinkedList();
+    private final LinkedList<Boolean> lhsStack = new LinkedList<Boolean>();
     {
         implicitThisStack.add(false);
         lhsStack.add(false);
@@ -120,14 +123,14 @@ public class CompileStack implements Opcodes {
     // in a loop where foo is a label.
     private final Map namedLoopContinueLabel = new HashMap();
     private String className;
-    private LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
-    private LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
+    private final LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
+    private final LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
     // stores if on left-hand-side during compilation
     private boolean lhs;
     // stores if implicit or explicit this is used.
     private boolean implicitThis;
-    private WriterController controller;
-    private boolean inSpecialConstructallCall;
+    private final WriterController controller;
+    private boolean inSpecialConstructorCall;
 
     protected static class LabelRange {
         public Label start;
@@ -137,7 +140,7 @@ public class CompileStack implements Opcodes {
     public static class BlockRecorder {
         private boolean isEmpty = true;
         public Runnable excludedStatement;
-        public LinkedList<LabelRange> ranges;
+        public final LinkedList<LabelRange> ranges;
         public BlockRecorder() {
             ranges = new LinkedList<LabelRange>();
         }
@@ -168,7 +171,7 @@ public class CompileStack implements Opcodes {
         final Map stackVariables;
         final Map currentBlockNamedLabels;
         final LinkedList<BlockRecorder> finallyBlocks;
-        final boolean inSpecialConstructallCall;
+        final boolean inSpecialConstructorCall;
 
         StateStackElement() {
             scope = CompileStack.this.scope;
@@ -177,7 +180,7 @@ public class CompileStack implements Opcodes {
             stackVariables = CompileStack.this.stackVariables;
             currentBlockNamedLabels = CompileStack.this.currentBlockNamedLabels;
             finallyBlocks = CompileStack.this.finallyBlocks;
-            inSpecialConstructallCall = CompileStack.this.inSpecialConstructallCall;
+            inSpecialConstructorCall = CompileStack.this.inSpecialConstructorCall;
         }
     }
 
@@ -192,7 +195,7 @@ public class CompileStack implements Opcodes {
     }
 
     private void popState() {
-        if (stateStack.size()==0) {
+        if (stateStack.isEmpty()) {
              throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
         }
         StateStackElement element = (StateStackElement) stateStack.removeLast();
@@ -201,7 +204,7 @@ public class CompileStack implements Opcodes {
         breakLabel = element.breakLabel;
         stackVariables = element.stackVariables;
         finallyBlocks = element.finallyBlocks;
-        inSpecialConstructallCall = element.inSpecialConstructallCall;
+        inSpecialConstructorCall = element.inSpecialConstructorCall;
     }
 
     public Label getContinueLabel() {
@@ -216,7 +219,12 @@ public class CompileStack implements Opcodes {
         final BytecodeVariable head = (BytecodeVariable) temporaryVariables.removeFirst();
         if (head.getIndex() != tempIndex) {
             temporaryVariables.addFirst(head);
+            MethodNode methodNode = controller.getMethodNode();
+            if (methodNode==null) {
+                methodNode = controller.getConstructorNode();
+            }
             throw new GroovyBugError(
+                    "In method "+ (methodNode!=null?methodNode.getText():"<unknown>") + ", " +
                     "CompileStack#removeVar: tried to remove a temporary " +
                     "variable with index "+ tempIndex + " in wrong order. " +
                     "Current temporary variables=" + temporaryVariables);
@@ -380,7 +388,6 @@ public class CompileStack implements Opcodes {
         usedVariables.clear();
         scope = null;
         finallyBlocks.clear();
-        mv=null;
         resetVariableIndex(false);
         superBlockNamedLabels.clear();
         currentBlockNamedLabels.clear();
@@ -563,8 +570,8 @@ public class CompileStack implements Opcodes {
     private void makeLocalVariablesOffset(Parameter[] paras,boolean isInStaticContext) {
         resetVariableIndex(isInStaticContext);
 
-        for (int i = 0; i < paras.length; i++) {
-            makeNextVariableID(paras[i].getType(),false);
+        for (Parameter para : paras) {
+            makeNextVariableID(para.getType(), false);
         }
         localVariableOffset = nextVariableIndex;
 
@@ -578,16 +585,16 @@ public class CompileStack implements Opcodes {
 
         makeLocalVariablesOffset(paras,isInStaticContext);
 
-        for (int i = 0; i < paras.length; i++) {
-            String name = paras[i].getName();
+        for (Parameter para : paras) {
+            String name = para.getName();
             BytecodeVariable answer;
-            ClassNode type = paras[i].getType();
-            if (paras[i].isClosureSharedVariable()) {
-                boolean useExistingReference = paras[i].getNodeMetaData(ClosureWriter.UseExistingReference.class) != null;
-                answer = defineVar(name, paras[i].getOriginType(), true, useExistingReference);
+            ClassNode type = para.getType();
+            if (para.isClosureSharedVariable()) {
+                boolean useExistingReference = para.getNodeMetaData(ClosureWriter.UseExistingReference.class) != null;
+                answer = defineVar(name, para.getOriginType(), true, useExistingReference);
                 answer.setStartLabel(startLabel);
                 if (!useExistingReference) {
-                    controller.getOperandStack().load(type,currentVariableIndex);
+                    controller.getOperandStack().load(type, currentVariableIndex);
                     controller.getOperandStack().box();
 
                     // GROOVY-4237, the original variable should always appear
@@ -597,7 +604,7 @@ public class CompileStack implements Opcodes {
                     // reference will be used
                     Label newStart = new Label();
                     controller.getMethodVisitor().visitLabel(newStart);
-                    BytecodeVariable var = new BytecodeVariable(currentVariableIndex, paras[i].getOriginType(), name, currentVariableIndex);
+                    BytecodeVariable var = new BytecodeVariable(currentVariableIndex, para.getOriginType(), name, currentVariableIndex);
                     var.setStartLabel(startLabel);
                     var.setEndLabel(newStart);
                     usedVariables.add(var);
@@ -624,7 +631,7 @@ public class CompileStack implements Opcodes {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 
-    private void pushInitValue(ClassNode type, MethodVisitor mv) {
+    private static void pushInitValue(ClassNode type, MethodVisitor mv) {
         if (ClassHelper.isPrimitiveType(type)) {
             if (type==ClassHelper.long_TYPE) {
                 mv.visitInsn(LCONST_0);
@@ -650,10 +657,8 @@ public class CompileStack implements Opcodes {
     public BytecodeVariable defineVariable(Variable v, boolean initFromStack) {
         return defineVariable(v, v.getOriginType(), initFromStack);
     }
+
     public BytecodeVariable defineVariable(Variable v, ClassNode variableType, boolean initFromStack) {
-        //TODO: any usage of this method should have different operand stack handing
-        //      then the remove(1) here and there in this one can be removed and others
-        //      can be changed
         String name = v.getName();
         BytecodeVariable answer = defineVar(name, variableType, v.isClosureSharedVariable(), v.isClosureSharedVariable());
         stackVariables.put(name, answer);
@@ -664,7 +669,16 @@ public class CompileStack implements Opcodes {
         ClassNode type = answer.getType().redirect();
         OperandStack operandStack = controller.getOperandStack();
 
-        if (!initFromStack) pushInitValue(type, mv);
+        if (!initFromStack) {
+            if (ClassHelper.isPrimitiveType(v.getOriginType()) && ClassHelper.getWrapper(v.getOriginType()) == variableType) {
+                pushInitValue(v.getOriginType(), mv);
+                operandStack.push(v.getOriginType());
+                operandStack.box();
+                operandStack.remove(1);
+            } else {
+                pushInitValue(type, mv);
+            }
+        }
         operandStack.push(answer.getType());
         if (answer.isHolder())  {
             operandStack.box();
@@ -754,7 +768,7 @@ public class CompileStack implements Opcodes {
     }
 
     private void applyBlockRecorder(List<BlockRecorder> blocks) {
-        if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
+        if (blocks.isEmpty() || blocks.size()==visitedBlocks.size()) return;
 
         MethodVisitor mv = controller.getMethodVisitor();
 
@@ -841,11 +855,11 @@ public class CompileStack implements Opcodes {
     }
 
     public boolean isInSpecialConstructorCall() {
-        return inSpecialConstructallCall;
+        return inSpecialConstructorCall;
     }
 
     public void pushInSpecialConstructorCall() {
         pushState();
-        inSpecialConstructallCall = true;
+        inSpecialConstructorCall = true;
     }
 }

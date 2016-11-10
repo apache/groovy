@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.completion
 
 import groovy.transform.CompileStatic
@@ -24,10 +26,10 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCandidate> {
 
-    private final String value;
-    private final List<String> jAnsiCodes = [];
+    private final String value
+    private final List<String> jAnsiCodes
 
-    ReflectionCompletionCandidate(String value, String... jAnsiCodes) {
+    ReflectionCompletionCandidate(final String value, final String... jAnsiCodes) {
         this.value = value
         this.jAnsiCodes = new ArrayList<>(Arrays.asList(jAnsiCodes))
     }
@@ -47,16 +49,16 @@ class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCa
         if (hasBracket == otherBracket) {
             this.value.compareTo(o.value)
         } else if (hasBracket && ! otherBracket) {
-            return -1;
+            return -1
         } else {
-            return 1;
+            return 1
         }
 
     }
 
     @Override
     String toString() {
-        return value;
+        return value
     }
 
     @Override
@@ -64,14 +66,13 @@ class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCa
         return value.hashCode()
     }
 
+    @Override
     boolean equals(o) {
         if (this.is(o)) return true
         if (getClass() != o.class) return false
 
         ReflectionCompletionCandidate that = (ReflectionCompletionCandidate) o
 
-        if (value != that.value) return false
-
-        return true
+        return value == that.value
     }
 }

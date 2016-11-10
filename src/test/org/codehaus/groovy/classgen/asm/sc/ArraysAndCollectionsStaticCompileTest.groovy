@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.sc
 
@@ -61,7 +64,7 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
     // GROOVY-5988
     void testMapArraySetPropertyAssignment() {
         assertScript '''
-            Map<String, String> props(Object p) {
+            Map<String, Object> props(Object p) {
                 Map<String, Object> props = [:]
 
                 for(String property in p.properties.keySet()){
@@ -75,6 +78,63 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert map['class'] == 'TEST'
             assert map['bytes'] == 'TEST'
         '''
+    }
+
+    // GROOVY-7656
+    void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
+        try {
+            assertScript '''
+                class Foo {
+                    static void test() {
+                        def list = [1, 2]
+                        def lengths = [list << 3]*.size()
+                        assert lengths == [3]
+                        assert list == [1, 2, 3]
+                    }
+                }
+                Foo.test()
+            '''
+        } finally {
+            assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
+        }
+    }
+
+    //GROOVY-7442
+    void testSpreadDotOperatorWithinAssert() {
+        assertScript '''
+            def myMethod(String a, String b) {
+                assert [a, b]*.size() == [5, 5]
+            }
+
+            myMethod('hello', 'world')
+        '''
+    }
+
+    //GROOVY-7688
+    void testSpreadSafeMethodCallReceiversWithSideEffectsShouldNotBeVisitedTwice() {
+        try {
+            assertScript '''
+                class Foo {
+                    static void test() {
+                        def list = ['a', 'b']
+                        def lengths = list.toList()*.length()
+                        assert lengths == [1, 1]
+                    }
+                }
+                Foo.test()
+            '''
+        } finally {
+            assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
+        }
+    }
+
+    @Override
+    void testForInLoop() {
+        try {
+            super.testForInLoop()
+        } finally {
+            println astTrees
+        }
     }
 }
 

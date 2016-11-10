@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
@@ -22,6 +24,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,11 +38,11 @@ import java.util.Map;
  * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    private List<String> javaSources;
-    private JavaStubGenerator stubGenerator;
+    private final List<String> javaSources;
+    private final JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
-    private File generationGoal;
-    private boolean keepStubs;
+    private final File generationGoal;
+    private final boolean keepStubs;
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration, null, null);
@@ -62,7 +65,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
-                if (javaSources.size() != 0) {
+                if (!javaSources.isEmpty()) {
                     VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                     scopeVisitor.visitClass(node);
                     new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node, source);
@@ -71,11 +74,18 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 }
             }
         }, Phases.CONVERSION);
+        addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
+            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                ASTTransformationCollectorCodeVisitor collector =
+                        new ASTTransformationCollectorCodeVisitor(source, JavaAwareCompilationUnit.this.getTransformLoader());
+                collector.visitClass(classNode);
+            }
+        }, Phases.CONVERSION);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 try {
-                    if (javaSources.size() != 0) stubGenerator.generateClass(classNode);
+                    if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
                 } catch (FileNotFoundException fnfe) {
                     source.addException(fnfe);
                 }
@@ -86,7 +96,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public void gotoPhase(int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
         // compile Java and clean up
-        if (phase == Phases.SEMANTIC_ANALYSIS && javaSources.size() > 0) {
+        if (phase == Phases.SEMANTIC_ANALYSIS && !javaSources.isEmpty()) {
             for (ModuleNode module : getAST().getModules()) {
                 module.setImportsResolved(false);
             }

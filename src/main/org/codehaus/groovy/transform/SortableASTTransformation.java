@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -77,9 +80,11 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     }
 
     private void createSortable(AnnotationNode annotation, ClassNode classNode) {
-        List<String> includes = getMemberList(annotation, "includes");
-        List<String> excludes = getMemberList(annotation, "excludes");
-        if (!checkIncludeExclude(annotation, excludes, includes, MY_TYPE_NAME)) return;
+        List<String> includes = getMemberStringList(annotation, "includes");
+        List<String> excludes = getMemberStringList(annotation, "excludes");
+        if (!checkIncludeExcludeUndefinedAware(annotation, excludes, includes, MY_TYPE_NAME)) return;
+        if (!checkPropertyList(classNode, includes, "includes", annotation, MY_TYPE_NAME, false)) return;
+        if (!checkPropertyList(classNode, excludes, "excludes", annotation, MY_TYPE_NAME, false)) return;
         if (classNode.isInterface()) {
             addError(MY_TYPE_NAME + " cannot be applied to interface " + classNode.getName(), annotation);
         }
@@ -101,7 +106,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
-    private void implementComparable(ClassNode classNode) {
+    private static void implementComparable(ClassNode classNode) {
         if (!classNode.implementsInterface(COMPARABLE_TYPE)) {
             classNode.addInterface(makeClassSafeWithGenerics(Comparable.class, classNode));
         }
@@ -191,17 +196,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         for (PropertyNode property : classNode.getProperties()) {
             String propertyName = property.getName();
             if (property.isStatic() ||
-                    excludes.contains(propertyName) ||
-                    !includes.isEmpty() && !includes.contains(propertyName)) continue;
+                    (excludes != null && excludes.contains(propertyName)) ||
+                    includes != null && !includes.contains(propertyName)) continue;
             properties.add(property);
-        }
-        for (String name : includes) {
-            checkKnownProperty(annotation, name, properties);
         }
         for (PropertyNode pNode : properties) {
             checkComparable(pNode);
         }
-        if (!includes.isEmpty()) {
+        if (includes != null) {
             Comparator<PropertyNode> includeComparator = new Comparator<PropertyNode>() {
                 public int compare(PropertyNode o1, PropertyNode o2) {
                     return new Integer(includes.indexOf(o1.getName())).compareTo(includes.indexOf(o2.getName()));
@@ -220,13 +222,4 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 pNode.getName() + "' must be Comparable", pNode);
     }
 
-    private void checkKnownProperty(AnnotationNode annotation, String name, List<PropertyNode> properties) {
-        for (PropertyNode pNode: properties) {
-            if (name.equals(pNode.getName())) {
-                return;
-            }
-        }
-        addError("Error during " + MY_TYPE_NAME + " processing: tried to include unknown property '" +
-                name + "'", annotation);
-    }
 }

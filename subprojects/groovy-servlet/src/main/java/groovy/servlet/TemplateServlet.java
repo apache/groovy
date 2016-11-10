@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.servlet;
 
@@ -102,7 +105,6 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author Christian Stein
  * @author Guillaume Laforge
- * @version 2.0
  * @see TemplateServlet#setVariables(ServletBinding)
  */
 public class TemplateServlet extends AbstractHttpServlet {
@@ -115,15 +117,11 @@ public class TemplateServlet extends AbstractHttpServlet {
      */
     private static class TemplateCacheEntry {
 
-        Date date;
+        final Date date;
         long hit;
         long lastModified;
         long length;
-        Template template;
-
-        public TemplateCacheEntry(File file, Template template) {
-            this(file, template, false); // don't get time millis for sake of speed
-        }
+        final Template template;
 
         public TemplateCacheEntry(File file, Template template, boolean timestamp) {
             if (template == null) {
@@ -167,7 +165,6 @@ public class TemplateServlet extends AbstractHttpServlet {
             }
             return "Hit #" + hit + " since " + date;
         }
-
     }
 
     /**
@@ -226,7 +223,7 @@ public class TemplateServlet extends AbstractHttpServlet {
                 template = entry.template;
             } else {
                 if (verbose) {
-                    log("Cached template " + key + " needs recompiliation! " + entry);
+                    log("Cached template " + key + " needs recompilation! " + entry);
                 }
             }
         } else {
@@ -241,7 +238,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     /**
      * Compile the template and store it in the cache.
      * @param key a unique key for the template, such as a file's absolutePath or a URL.
-     * @param reader a reader for the template's source.
+     * @param inputStream an InputStream for the template's source.
      * @param file a file to be used to determine if the cached template is stale. May be null.
      * @return the created template.
      * @throws Exception Any exception when creating the template.
@@ -300,7 +297,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException If the request specified an invalid template source file
      */
     protected Template getTemplate(File file) throws ServletException {
-
         String key = file.getAbsolutePath();
         Template template = findCachedTemplate(key, file);
 
@@ -332,7 +328,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException If the request specified an invalid template source URL
      */
     protected Template getTemplate(URL url) throws ServletException {
-
         String key = url.toString();
         Template template = findCachedTemplate(key, null);
 
@@ -418,7 +413,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException if the HTTP request cannot be handled
      */
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
         if (verbose) {
             log("Creating/getting cached template...");
         }
@@ -430,7 +424,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         long getMillis;
         String name;
         
-        File file = super.getScriptUriAsFile(request);
+        File file = getScriptUriAsFile(request);
         if (file != null) {
             name = file.getName();
             if (!file.exists()) {
@@ -445,7 +439,7 @@ public class TemplateServlet extends AbstractHttpServlet {
             template = getTemplate(file);
             getMillis = System.currentTimeMillis() - getMillis;
         } else {
-            name = super.getScriptUri(request);
+            name = getScriptUri(request);
             URL url = servletContext.getResource(name);
             getMillis = System.currentTimeMillis();
             template = getTemplate(url);
@@ -503,6 +497,5 @@ public class TemplateServlet extends AbstractHttpServlet {
         if (verbose) {
             log("Template \"" + name + "\" request responded. [create/get=" + getMillis + " ms, make=" + makeMillis + " ms]");
         }
-
     }
 }

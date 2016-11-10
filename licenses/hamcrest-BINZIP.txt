@@ -1,0 +1,4 @@
+Hamcrest License (needed when using optional JUnit dependency)
+
+This product bundles the Hamcrest jar, which is available under a
+BSD license.  For details, see licenses/hamcrest-license.

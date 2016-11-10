@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -57,7 +58,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     protected final Value decodeJsonObjectLazyFinalParse() {
-
         char[] array = charArray;
 
         if (__currentChar == '{')
@@ -102,7 +102,6 @@ public class JsonFastParser extends JsonParserCharArray {
 
                     complain(
                             "expecting '}' or ',' but got current char " + charDescription(__currentChar));
-
             }
         }
         return value;
@@ -113,11 +112,9 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeValueOverlay() {
-
         skipWhiteSpace();
 
         switch (__currentChar) {
-
             case '"':
                 return decodeStringOverlay();
 
@@ -125,10 +122,10 @@ public class JsonFastParser extends JsonParserCharArray {
                 return decodeJsonObjectLazyFinalParse();
 
             case 't':
-                return decodeTrue() == true ? ValueContainer.TRUE : ValueContainer.FALSE;
+                return decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
 
             case 'f':
-                return decodeFalse() == false ? ValueContainer.FALSE : ValueContainer.TRUE;
+                return !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
 
             case 'n':
                 return decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
@@ -158,14 +155,16 @@ public class JsonFastParser extends JsonParserCharArray {
         }
     }
 
-    private final Value decodeNumberOverlay(final boolean minus) {
-
+    private Value decodeNumberOverlay(final boolean minus) {
         char[] array = charArray;
 
         final int startIndex = __index;
         int index = __index;
         char currentChar;
         boolean doubleFloat = false;
+        boolean foundDot = false;
+        boolean foundSign = false;
+        boolean foundExp = false;
 
         if (minus && index + 1 < array.length) {
             index++;
@@ -180,10 +179,39 @@ public class JsonFastParser extends JsonParserCharArray {
             } else if (isDelimiter(currentChar)) {
                 break;
             } else if (isDecimalChar(currentChar)) {
+                switch (currentChar) {
+                    case DECIMAL_POINT:
+                        if (foundDot || foundExp) { complain("unexpected character " + currentChar); }
+                        foundDot = true;
+                        break;
+                    case LETTER_E:
+                    case LETTER_BIG_E:
+                        if (foundExp) { complain("unexpected character " + currentChar); }
+                        foundExp = true;
+                        break;
+                    case MINUS:
+                    case PLUS:
+                        if (foundSign || !foundExp) { complain("unexpected character " + currentChar); }
+                        if (foundExp && array[index - 1] != LETTER_E && array[index - 1] != LETTER_BIG_E) {
+                            complain("unexpected character " + currentChar);
+                        }
+                        foundSign = true;
+                        break;
+                }
                 doubleFloat = true;
+            } else {
+                complain("unexpected character " + currentChar);
             }
             index++;
             if (index >= array.length) break;
+        }
+
+        // Handle the case where the exponential number ends without the actual exponent
+        if (foundExp) {
+            char prevChar = array[index - 1];
+            if (prevChar == LETTER_E || prevChar == LETTER_BIG_E || prevChar == MINUS || prevChar == PLUS) {
+                complain("unexpected character " + currentChar);
+            }
         }
 
         __index = index;
@@ -191,13 +219,10 @@ public class JsonFastParser extends JsonParserCharArray {
 
         Type type = doubleFloat ? Type.DOUBLE : Type.INTEGER;
 
-        NumberValue value = new NumberValue(chop, type, startIndex, __index, this.charArray);
-
-        return value;
+        return new NumberValue(chop, type, startIndex, __index, this.charArray);
     }
 
     private Value decodeStringOverlay() {
-
         char[] array = charArray;
         int index = __index;
         char currentChar = charArray[index];
@@ -226,7 +251,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayOverlay() {
-
         char[] array = charArray;
         if (__currentChar == '[') {
             __index++;

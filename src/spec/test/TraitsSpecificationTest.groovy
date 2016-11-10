@@ -1,21 +1,23 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-
-/*
- * Copyright 2003-2014 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * Specification tests for the traits feature
@@ -72,7 +74,8 @@ def p = new Person()
 assert p.greeting() == 'Hello, Bob!'                    // <5>
 assert p instanceof Named                               // <6>
 assert p instanceof Greetable                           // <7>
-// end::trait_implementing_interface[]'''
+// end::trait_implementing_interface[]
+'''
     }
 
     void testTraitWithProperty() {
@@ -84,7 +87,8 @@ class Person implements Named {}            // <2>
 def p = new Person(name: 'Bob')             // <3>
 assert p.name == 'Bob'                      // <4>
 assert p.getName() == 'Bob'                 // <5>
-// end::trait_with_property[]'''
+// end::trait_with_property[]
+'''
     }
 
     void testCompositionOfTraits() {
@@ -127,7 +131,8 @@ def d = new Duck()
 assert d.fly() == "I'm flying!"                         // <3>
 assert d.quack() == "Quack!"                            // <4>
 assert d.speak() == "Quack!"                            // <5>
-// end::quackingduck[]'''
+// end::quackingduck[]
+'''
     }
 
     void testPrivateMethodInTrait() {
@@ -163,6 +168,7 @@ trait Counter {
 class Foo implements Counter {}             // <3>
 def f = new Foo()
 assert f.count() == 1                       // <4>
+assert f.count() == 2
 // end::trait_with_private_field[]
 '''
     }
@@ -175,7 +181,8 @@ trait Named {
 class Person implements Named {}            // <2>
 def p = new Person()                        // <3>
 p.Named__name = 'Bob'                       // <4>
-// end::trait_with_public_field[]'''
+// end::trait_with_public_field[]
+'''
     }
 
     void testRemappedName() {
@@ -195,7 +202,8 @@ class Duck implements SpeakingDuck {
 }
 def d = new Duck()
 assert d.speak() == 'Quack!'                        // <3>
-// end::ducktyping[]'''
+// end::ducktyping[]
+'''
     }
 
     void testTraitInheritance() {
@@ -236,10 +244,10 @@ trait DynamicObject {                               // <1>
         name.toUpperCase()
     }
     def propertyMissing(String prop) {
-        props['prop']
+        props[prop]
     }
     void setProperty(String prop, Object value) {
-        props['prop'] = value
+        props[prop] = value
     }
 }
 
@@ -254,7 +262,8 @@ d.foo = 'bar'                                       // <6>
 assert d.foo == 'bar'                               // <7>
 assert d.existingMethod() == 'ok'                   // <8>
 assert d.someMethod() == 'SOMEMETHOD'               // <9>
-// end::dynamicobject[]'''
+// end::dynamicobject[]
+'''
     }
 
     void testDefaultMultipleInheritanceResolution() {
@@ -271,7 +280,8 @@ class C implements A,B {}               // <3>
 // tag::multiple_inherit_default_assert[]
 def c = new C()
 assert c.exec() == 'B'
-// end::multiple_inherit_default_assert[]'''
+// end::multiple_inherit_default_assert[]
+'''
     }
 
     void testUserMultipleInheritanceResolution() {
@@ -287,7 +297,8 @@ class C implements A,B {
 }
 def c = new C()
 assert c.exec() == 'A'                  // <2>
-// end::multiple_inherit_user[]'''
+// end::multiple_inherit_user[]
+'''
     }
 
     void testRuntimeCoercion() {
@@ -312,7 +323,8 @@ s.extra()
 def s = new Something() as Extra                        // <1>
 s.extra()                                               // <2>
 s.doSomething()                                         // <3>
-// end::runtime_success[]'''
+// end::runtime_success[]
+'''
     }
 
     void testWithTraits() {
@@ -355,7 +367,8 @@ Greeter greeter = { 'Alice' }               // <1>
 // tag::sam_trait_method[]
 void greet(Greeter g) { println g.greet() } // <1>
 greet { 'Alice' }                           // <2>
-// end::sam_trait_method[]'''
+// end::sam_trait_method[]
+'''
     }
 
     void testTraitOverrideBehavior() {
@@ -440,7 +453,8 @@ def p = new Person(name: 'Alice')
 assert p.name == 'Alice'                                // <3>
 def p2 = p as Bob                                       // <4>
 assert p2.name == 'Bob'                                 // <5>
-// end::runtime_forceoverride[]'''
+// end::runtime_forceoverride[]
+'''
     }
 
     void testDifferenceWithMixin() {
@@ -453,7 +467,8 @@ assert o.methodFromA() == 'A'                   // <4>
 assert o.methodFromB() == 'B'                   // <5>
 assert o instanceof A                           // <6>
 assert !(o instanceof B)                        // <7>
-// end::diff_mixin[]'''
+// end::diff_mixin[]
+'''
     }
 
     void testMeaningOfThis() {
@@ -469,7 +484,8 @@ foo.whoAmI()
 // end::meaningofthis_snippet[]
 // tag::meaningofthis_assert[]
 assert foo.whoAmI().is(foo)
-// end::meaningofthis_assert[]'''
+// end::meaningofthis_assert[]
+'''
     }
 
     void testPublicStaticFieldInTrait() {
@@ -571,7 +587,8 @@ use(PC) {
     def expect = """// tag::handlerwithlogger_assert_output[]
 Seeing test logging with payload [:]
 Received test logging with payload [:]
-// end::handlerwithlogger_assert_output[]"""
+// end::handlerwithlogger_assert_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 }
@@ -614,7 +631,8 @@ Seeing foo with payload [:]
 Received foo with payload [:]
 Seeing sayHello with payload [:]
 I say Hello!
-// end::implementinghandler_output[]"""
+// end::implementinghandler_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 }
@@ -632,7 +650,8 @@ def expect = """// tag::alternatehandler_output[]
 Seeing foo with payload [:]
 Received foo with payload [:]
 I say Hello!
-// end::alternatehandler_output[]"""
+// end::alternatehandler_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 PC.reset()
@@ -707,6 +726,104 @@ def elem = new Elem()
 assert elem.f() == 7
 // end::intcouple_impl_override_directgetter[]
 '''
+    }
+
+    void testSelfType() {
+        assertScript '''
+// tag::selftype_intro[]
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {       // <1>
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }                                                  // <2>
+
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        CommunicationService.sendMessage(id, to.id, message)                // <3>
+    }
+}
+
+class MyDevice extends Device implements Communicating {}                   // <4>
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')                                             // <5>
+// end::selftype_intro[]
+
+// tag::selftype_securityservice[]
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+// end::selftype_securityservice[]
+'''
+
+
+        assertScript '''import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+// tag::selftype_fixed[]
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+// end::selftype_fixed[]
+
+class MyDevice extends Device implements Communicating {}
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+
+'''
+
+        def message = shouldFail '''import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+
+// tag::selftype_compiletimeerror[]
+class MyDevice implements Communicating {} // forgot to extend Device
+// end::selftype_compiletimeerror[]
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+
+'''
+        assert message.contains("class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'")
     }
 
     static class PrintCategory {

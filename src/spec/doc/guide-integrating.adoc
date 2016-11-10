@@ -1,4 +1,26 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Integrating Groovy in a Java application
+
 == Groovy integration mechanisms
 
 The Groovy language proposes several ways to integrate itself into applications (Java or even Groovy) at runtime, from
@@ -202,7 +224,7 @@ a directory with the following script inside:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[tags=greeter,indent=0]
 ----
 
 then you can execute this code using a `GroovyScriptEngine`:
@@ -232,7 +254,7 @@ Hello, world!
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[tags=greeter,indent=0]
 ----
 
 And the message should change to:
@@ -251,7 +273,7 @@ the same directory, without interrupting the executing script:
 [source,groovy]
 .Depencency.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[tags=dependency,indent=0]
 ----
 
 and update the `ReloadingTest` script like this:
@@ -259,7 +281,7 @@ and update the `ReloadingTest` script like this:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[tags=greeter,indent=0]
 ----
 
 And this time, the message should change to:
@@ -277,7 +299,7 @@ And as a last test, you can update the `Dependency.groovy` file without touching
 [source,groovy]
 .Depencency.groovy
 ----
-include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[]
+include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[tags=dependency,indent=0]
 ----
 
 And you should observe that the dependent file was reloaded:
@@ -296,14 +318,10 @@ Ultimately, it is possible to perform more operations during compilation by rely
 compilation and would let you introduce new steps or even stop compilation at various phases. This is for example how
 stub generation is done, for the joint compiler.
 
-However, overriding `CompilationUnit` is not recommanded and should only be done if no other standard solution works.
+However, overriding `CompilationUnit` is not recommended and should only be done if no other standard solution works.
 
-:leveloffset: 3
-include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[]
-:leveloffset: 2
+include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[leveloffset=+1]
 
-:leveloffset: 3
-include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[]
-:leveloffset: 2
+include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[leveloffset=+1]
 
 

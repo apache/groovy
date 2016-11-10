@@ -1,20 +1,25 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.jsr223
 
+import javax.script.Invocable
+import javax.script.ScriptContext
 import javax.script.ScriptEngineManager
 import javax.script.ScriptEngine
 import javax.script.ScriptEngineFactory
@@ -30,6 +35,8 @@ import javax.script.SimpleScriptContext
  */
 class JSR223Test extends GroovyTestCase {
     protected ScriptEngineManager manager
+
+    static final Object[] EMPTY_ARGS = new Object[0]
 
     protected void setUp() {
         manager = new ScriptEngineManager()
@@ -148,4 +155,69 @@ class JSR223Test extends GroovyTestCase {
 
         assert instance.class.isAssignableFrom(clazz)
     }
+
+    void testInvokeFunctionRedirectsOutputToContextWriter() {
+        def engine = manager.getEngineByName('groovy')
+        StringWriter writer = new StringWriter()
+        engine.getContext().setWriter(writer)
+        String code = 'def myFunction() { print "Hello World!" }'
+        engine.eval(code)
+        ((Invocable) engine).invokeFunction('myFunction', EMPTY_ARGS)
+        assert writer.toString() == 'Hello World!'
+
+        // make sure changes to writer are handled
+        writer = new StringWriter()
+        StringWriter writer2 = new StringWriter()
+        engine.getContext().setWriter(writer2)
+        ((Invocable) engine).invokeFunction('myFunction', EMPTY_ARGS)
+        assert writer.toString() == ''
+        assert writer2.toString() == 'Hello World!'
+    }
+
+    void testInvokeFunctionRedirectsOutputToContextOut() {
+        def engine = manager.getEngineByName('groovy')
+        StringWriter writer = new StringWriter()
+        StringWriter unusedWriter = new StringWriter()
+        engine.getContext().setWriter(unusedWriter)
+        engine.put('out', writer)
+        String code = 'def myFunction() { print "Hello World!" }'
+        engine.eval(code)
+        ((Invocable) engine).invokeFunction('myFunction', EMPTY_ARGS)
+        assert unusedWriter.toString() == ''
+        assert writer.toString() == 'Hello World!'
+
+        // make sure changes to writer are handled
+        writer = new StringWriter()
+        StringWriter writer2 = new StringWriter()
+        engine.put('out', writer2)
+        ((Invocable) engine).invokeFunction('myFunction', EMPTY_ARGS)
+        assert unusedWriter.toString() == ''
+        assert writer.toString() == ''
+        assert writer2.toString() == 'Hello World!'
+    }
+
+    void testEngineContextAccessibleToScript() {
+        def engine = manager.getEngineByName('groovy')
+        ScriptContext engineContext = engine.getContext()
+        engine.put('theEngineContext', engineContext)
+        String code = '[answer: theEngineContext.is(context)]'
+        assert engine.eval(code).answer == true
+    }
+
+    void testContextBindingOverridesEngineContext() {
+        def engine = manager.getEngineByName('groovy')
+        ScriptContext engineContext = engine.getContext()
+        def otherContext = [foo: 'bar']
+        engine.put('context', otherContext)
+        engine.put('theEngineContext', engineContext)
+        String code = '[answer: context.is(theEngineContext) ? "wrong" : context.foo]'
+        assert engine.eval(code).answer == 'bar'
+    }
+
+    void testScriptFactorySameAsEngineFactory() {
+        ScriptEngineFactory factory = new GroovyScriptEngineFactory()
+        ScriptEngine engine = factory.getScriptEngine()
+        assert engine.getFactory() == factory
+    }
+
 }

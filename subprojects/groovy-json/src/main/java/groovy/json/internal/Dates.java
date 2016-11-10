@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -32,23 +33,7 @@ public class Dates {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(time);
         calendar.setTimeZone(UTC_TIME_ZONE);
-        long utcNow = calendar.getTime().getTime();
-        return utcNow;
-    }
-
-    private static Date internalDate(TimeZone tz, int year, int month, int day, int hour, int minute, int second) {
-
-        Calendar calendar = Calendar.getInstance();
-
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month - 1);
-        calendar.set(Calendar.DAY_OF_MONTH, day);
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, second);
-        calendar.setTimeZone(tz);
-
-        return calendar.getTime();
+        return calendar.getTime().getTime();
     }
 
     private static Date internalDate(TimeZone tz, int year, int month, int day, int hour,
@@ -71,7 +56,7 @@ public class Dates {
 
     public static Date toDate(TimeZone tz, int year, int month, int day,
                               int hour, int minute, int second) {
-        return internalDate(tz, year, month, day, hour, minute, second);
+        return internalDate(tz, year, month, day, hour, minute, second, 0);
     }
 
     public static Date toDate(TimeZone tz, int year, int month, int day,
@@ -84,10 +69,9 @@ public class Dates {
     public static final int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
     public static Date fromISO8601(char[] charArray, int from, int to) {
-
         try {
             if (isISO8601(charArray, from, to)) {
-                int year = CharScanner.parseIntFromTo(charArray, from + 0, from + 4);
+                int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
                 int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
                 int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
                 int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
@@ -98,33 +82,24 @@ public class Dates {
                 TimeZone tz = null;
 
                 if (charArray[from + 19] == 'Z') {
-
                     tz = TimeZone.getTimeZone("GMT");
-
                 } else {
-
-                    StringBuilder builder = new StringBuilder(9);
-                    builder.append("GMT");
-                    builder.append(charArray, from + 19, 6);
-                    String tzStr = builder.toString();
+                    String tzStr = "GMT" + String.valueOf(charArray, from + 19, 6);
                     tz = TimeZone.getTimeZone(tzStr);
-
                 }
                 return toDate(tz, year, month, day, hour, minute, second);
-
             } else {
                 return null;
             }
         } catch (Exception ex) {
             return null;
         }
-
     }
 
     public static Date fromJsonDate(char[] charArray, int from, int to) {
         try {
             if (isJsonDate(charArray, from, to)) {
-                int year = CharScanner.parseIntFromTo(charArray, from + 0, from + 4);
+                int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
                 int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
                 int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
                 int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
@@ -138,14 +113,12 @@ public class Dates {
                 TimeZone tz = TimeZone.getTimeZone("GMT");
 
                 return toDate(tz, year, month, day, hour, minute, second, miliseconds);
-
             } else {
                 return null;
             }
         } catch (Exception ex) {
             return null;
         }
-
     }
 
     public static boolean isISO8601(char[] charArray, int start, int to) {
@@ -154,11 +127,9 @@ public class Dates {
 
         if (length == SHORT_ISO_8601_TIME_LENGTH) {
             valid &= (charArray[start + 19] == 'Z');
-
         } else if (length == LONG_ISO_8601_TIME_LENGTH) {
             valid &= (charArray[start + 19] == '-' || charArray[start + 19] == '+');
             valid &= (charArray[start + 22] == ':');
-
         } else {
             return false;
         }
@@ -179,19 +150,13 @@ public class Dates {
         final int length = to - start;
 
         try {
+            return length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
+                    || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'));
 
-            if (length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
-                    || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'))
-                    ) {
-                return true;
-            }
-
-            return false;
         } catch (Exception ex) {
             ex.printStackTrace();
             return false;
         }
-
     }
 
     public static boolean isJsonDate(char[] charArray, int start, int to) {
@@ -202,7 +167,7 @@ public class Dates {
             return false;
         }
 
-        valid &= (charArray[start + 19] == '.');
+        valid &= (charArray[start + 19] == '.' || charArray[start + 19] == '+');
 
         if (!valid) {
             return false;
@@ -216,5 +181,4 @@ public class Dates {
 
         return valid;
     }
-
 }

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.control.SourceUnit
@@ -28,9 +30,11 @@ import antlr.collections.AST
 import antlr.RecognitionException
 import antlr.TokenStreamException
 
+import java.util.regex.Pattern
+
 
 interface Parsing {
-    ParseStatus parse(final Collection<String> buffer);
+    ParseStatus parse(final Collection<String> buffer)
 }
 
 /**
@@ -50,7 +54,7 @@ class Parser
         String flavor = Preferences.getParserFlavor()
 
         log.debug("Using parser flavor: $flavor")
-        
+
         switch (flavor) {
             case Preferences.PARSER_RELAXED:
                 delegate = new RelaxedParser()
@@ -66,7 +70,7 @@ class Parser
                 break
         }
     }
-    
+
     ParseStatus parse(final Collection<String> buffer) {
         return delegate.parse(buffer)
     }
@@ -83,6 +87,7 @@ final class RelaxedParser implements Parsing
 
     private String[] tokenNames
 
+    @Override
     ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
@@ -103,12 +108,12 @@ final class RelaxedParser implements Parsing
             switch (e.getClass()) {
                 case TokenStreamException:
                 case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.getClass().getName()})")
-    
+                    log.debug("Parse incomplete: $e (${e.getClass().name})")
+
                     return new ParseStatus(ParseCode.INCOMPLETE)
 
                 default:
-                    log.debug("Parse error: $e (${e.getClass().getName()})")
+                    log.debug("Parse error: $e (${e.getClass().name})")
 
                     return new ParseStatus(e)
             }
@@ -121,10 +126,10 @@ final class RelaxedParser implements Parsing
 
         def parser = GroovyRecognizer.make(lexer)
         parser.setSourceBuffer(sourceBuffer)
-        tokenNames = parser.getTokenNames()
+        tokenNames = parser.tokenNames
 
         parser.compilationUnit()
-        return parser.getAST()
+        return parser.AST
     }
 }
 
@@ -133,10 +138,12 @@ final class RelaxedParser implements Parsing
  */
 final class RigidParser implements Parsing
 {
+    private static final Pattern ANNOTATION_PATTERN = Pattern.compile('^@[a-zA-Z_][a-zA-Z_0-9]*(.*)$')
     static final String SCRIPT_FILENAME = 'groovysh_parse'
 
     private final Logger log = Logger.create(this.class)
 
+    @Override
     ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
@@ -156,7 +163,13 @@ final class RigidParser implements Parsing
             return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (CompilationFailedException e) {
-            //
+            // During a shell session often a user will hit enter without having completed a class definition
+            // for the parser this means it will raise some kind of compilation exception.
+            // The following code has to attempt to hide away all such exceptions that are due to the code being
+            // incomplete, but show all exceptions due to the code being incorrect.
+            // Unexpected EOF is most common for incomplete code, however there are several other situations
+            // where the code is incomplete, but the Exception is raised without failedWithUnexpectedEOF().
+
             // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
             //
             // class a {               <--- is true here
@@ -164,13 +177,14 @@ final class RigidParser implements Parsing
             //
 
             if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
- 
+
                 // HACK: Super insane hack... we detect a syntax error, but might still ignore
                 // it depending on the line ending
-                if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim())) {
+                if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim()) ||
+                        isAnnotationExpression(e, buffer[-1].trim()) ||
+                        hasUnmatchedOpenBracketOrParen(source)) {
                     log.debug("Ignoring parse failure; might be valid: $e")
-                }
-                else {
+                } else {
                     error = e
                 }
             }
@@ -187,13 +201,38 @@ final class RigidParser implements Parsing
         log.debug('Parse incomplete')
         return new ParseStatus(ParseCode.INCOMPLETE)
     }
-    
-    private boolean ignoreSyntaxErrorForLineEnding(String line) {
-        def lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
-        for(String lineEnding in lineEndings) {
-            if(line.endsWith(lineEnding)) return true
+
+    static boolean ignoreSyntaxErrorForLineEnding(String line) {
+        def final lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
+        for (String lineEnding in lineEndings) {
+            if (line.endsWith(lineEnding)) {
+                return true
+            }
         }
         return false
+    }
+
+    static boolean hasUnmatchedOpenBracketOrParen(String source) {
+        if (!source) {
+            return false
+        }
+        int parens = 0
+        int brackets = 0
+        for (ch in source) {
+            switch(ch) {
+                case '[': ++brackets; break;
+                case ']': --brackets; break;
+                case '(': ++parens; break;
+                case ')': --parens; break;
+                default:
+                    break
+            }
+        }
+        return (brackets > 0 || parens > 0)
+    }
+
+    static boolean isAnnotationExpression(CompilationFailedException e, String line) {
+        return e.getMessage().contains('unexpected token: @') && ANNOTATION_PATTERN.matcher(line).find()
     }
 }
 
@@ -214,6 +253,7 @@ final class ParseCode
         this.code = code
     }
 
+    @Override
     String toString() {
         return code
     }

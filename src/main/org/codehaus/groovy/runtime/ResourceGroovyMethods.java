@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime;
 
@@ -24,6 +27,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import groovy.util.CharsetToolkit;
 
@@ -36,8 +40,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -85,6 +92,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Sergei Egorov
  */
 public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -369,7 +377,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(File self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
     }
 
@@ -388,7 +396,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -410,7 +418,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -430,7 +438,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(File self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -451,7 +459,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
     }
 
@@ -470,7 +478,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -492,7 +500,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, String regex, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -512,7 +520,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -605,7 +613,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(URL url) throws IOException {
-        return getText(url, CharsetToolkit.getDefaultSystemCharset().toString());
+        return getText(url, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
     /**
@@ -627,7 +635,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static String getText(URL url, Map parameters) throws IOException {
-        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().toString());
+        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
     /**
@@ -688,6 +696,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Read the content of this URL and returns it as a byte[].
+     * The default connection parameters can be modified by adding keys to the
+     * <i>parameters map</i>:
+     * <ul>
+     * <li>connectTimeout : the connection timeout</li>
+     * <li>readTimeout : the read timeout</li>
+     * <li>useCaches : set the use cache property for the URL connection</li>
+     * <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     * <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
+     *
+     * @param url        URL to read content from
+     * @param parameters connection parameters
+     * @return the byte[] from that URL
+     * @throws IOException if an IOException occurs.
+     * @since 2.4.4
+     */
+    public static byte[] getBytes(URL url, Map parameters) throws IOException {
+        return IOGroovyMethods.getBytes(configuredInputStream(parameters, url));
+    }
+
+
+    /**
      * Write the bytes from the byte array to the File.
      *
      * @param file  the file to write to
@@ -700,7 +731,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the File.
+     * Write the text to the File without writing a BOM.
      *
      * @param file a File
      * @param text the text to write to the File
@@ -708,18 +739,23 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new FileWriter(file);
-            writer.write(text);
-            writer.flush();
+        write(file, text, false);
+    }
 
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+    /**
+     * Write the text to the File.  If the default charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to write to the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(File file, String text, boolean writeBom) throws IOException {
+        write(file, text, Charset.defaultCharset().name(), writeBom);
     }
 
     /**
@@ -800,7 +836,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the File, using the specified encoding.
+     * Write the text to the File without writing a BOM,
+     * using the specified encoding.
      *
      * @param file    a File
      * @param text    the text to write to the File
@@ -809,10 +846,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text, String charset) throws IOException {
+        write(file, text, charset, false);
+    }
+
+    /**
+     * Write the text to the File, using the specified encoding.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to write to the File
+     * @param charset  the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(File file, String text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
             FileOutputStream out = new FileOutputStream(file);
-            writeUTF16BomIfRequired(charset, out);
+            if (writeBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+            }
             writer = new OutputStreamWriter(out, charset);
             writer.write(text);
             writer.flush();
@@ -826,7 +882,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the File.
+     * Append the text at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param text the text to append at the end of the File
@@ -834,22 +890,27 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new FileWriter(file, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+        append(file, text, false);
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text at the end of the File.  If the default
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param text     the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Object text, boolean writeBom) throws IOException {
+        append(file, text, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param reader the Reader supplying the text to append at the end of the File
@@ -857,11 +918,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3
      */
     public static void append(File file, Reader reader) throws IOException {
-        appendBuffered(file, reader);
+        append(file, reader, false);
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text supplied by the Writer at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param writer the Writer supplying the text to append at the end of the File
@@ -869,13 +930,33 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3
      */
     public static void append(File file, Writer writer) throws IOException {
-         appendBuffered(file, writer);
+         append(file, writer, false);
     }
-    
-    private static void appendBuffered(File file, Object text) throws IOException {
+
+    /**
+     * Append the text supplied by the Writer at the end of the File.  If the default
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param file     a File
+     * @param writer   the Writer supplying the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Writer writer, boolean writeBom) throws IOException {
+        appendBuffered(file, writer, writeBom);
+    }
+
+    private static void appendBuffered(File file, Object text, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, true);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, Charset.defaultCharset().name());
+            }
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -888,7 +969,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append bytes to the end of a File.
+     * Append bytes to the end of a File.  It <strong>will not</strong> be
+     * interpreted as text.
      *
      * @param file  a File
      * @param bytes the byte array to append to the end of the File
@@ -929,7 +1011,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the File, using a specified encoding.
+     * Append the text at the end of the File without writing a BOM,
+     * using a specified encoding.
      *
      * @param file    a File
      * @param text    the text to append at the end of the File
@@ -938,11 +1021,30 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text, String charset) throws IOException {
+        append(file, text, charset, false);
+    }
+
+    /**
+     * Append the text at the end of the File, using a specified encoding.  If
+     * the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file     a File
+     * @param text     the text to append at the end of the File
+     * @param charset  the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Object text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             FileOutputStream out = new FileOutputStream(file, true);
-            if (!file.exists()) {
-                writeUTF16BomIfRequired(charset, out);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, charset);
             InvokerHelper.write(writer, text);
@@ -955,37 +1057,96 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             closeWithWarning(writer);
         }
     }
-    
+
     /**
-     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * Append the text supplied by the Writer at the end of the File
+     * without writing a BOM, using a specified encoding.
      *
-     * @param file a File
-     * @param writer the Writer supplying the text to append at the end of the File
+     * @param file    a File
+     * @param writer  the Writer supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
      * @since 2.3
      */
     public static void append(File file, Writer writer, String charset) throws IOException {
-        appendBuffered(file, writer, charset);
+        append(file, writer, charset, false);
     }
-    
+
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file    a File
+     * @param writer  the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Writer writer, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, writer, charset, writeBom);
+    }
+
     /**
      * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
      *
-     * @param file a File
-     * @param reader the Reader supplying the text to append at the end of the File
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Reader reader, boolean writeBom) throws IOException {
+        append(file, reader, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Reader at the end of the File
+     * without writing a BOM, using a specified encoding.
+     *
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
      * @since 2.3
      */
     public static void append(File file, Reader reader, String charset) throws IOException {
-        appendBuffered(file, reader, charset);
+        append(file, reader, charset, false);
     }
-    
-    private static void appendBuffered(File file, Object text, String charset) throws IOException {
+
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file    a File
+     * @param reader  the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write a BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(File file, Reader reader, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, reader, charset, writeBom);
+    }
+
+    private static void appendBuffered(File file, Object text, String charset, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, charset, true);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+            }
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -1488,6 +1649,56 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Relative path to file.
+     *
+     * @param self  the <code>File</code> to calculate the path from
+     * @param to    the <code>File</code> to calculate the path to
+     * @return the relative path between the files
+     */
+    public static String relativePath(File self, File to) throws IOException {
+        String fromPath = self.getCanonicalPath();
+        String toPath = to.getCanonicalPath();
+
+        // build the path stack info to compare
+        String[] fromPathStack = getPathStack(fromPath);
+        String[] toPathStack = getPathStack(toPath);
+
+        if (0 < toPathStack.length && 0 < fromPathStack.length) {
+            if (!fromPathStack[0].equals(toPathStack[0])) {
+                // not the same device (would be "" on Linux/Unix)
+
+                return getPath(Arrays.asList(toPathStack));
+            }
+        } else {
+            // no comparison possible
+            return getPath(Arrays.asList(toPathStack));
+        }
+
+        int minLength = Math.min(fromPathStack.length, toPathStack.length);
+        int same = 1; // Used outside the for loop
+
+        // get index of parts which are equal
+        while (same < minLength && fromPathStack[same].equals(toPathStack[same])) {
+            same++;
+        }
+
+        List<String> relativePathStack = new ArrayList<String>();
+
+        // if "from" part is longer, fill it up with ".."
+        // to reach path which is equal to both paths
+        for (int i = same; i < fromPathStack.length; i++) {
+            relativePathStack.add("..");
+        }
+
+        // fill it up path with parts which were not equal
+        for (int i = same; i < toPathStack.length; i++) {
+            relativePathStack.add(toPathStack[i]);
+        }
+
+        return getPath(relativePathStack);
+    }
+
+    /**
      * Converts this File to a {@link groovy.lang.Writable}.
      *
      * @param file a File
@@ -1714,9 +1925,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
+     * Helper method to create a buffered writer for a file without writing a BOM.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1726,27 +1935,43 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
+        return newWriter(file, charset, append, false);
+    }
+
+    /**
+     * Helper method to create a buffered writer for a file.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream before the writer
+     * is returned.
+     *
+     * @param file    a File
+     * @param charset the name of the encoding used to write in this file
+     * @param append  true if in append mode
+     * @param writeBom whether to write a BOM
+     * @return a BufferedWriter
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static BufferedWriter newWriter(File file, String charset, boolean append, boolean writeBom) throws IOException {
+        boolean shouldWriteBom = writeBom && !file.exists();
         if (append) {
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
+            FileOutputStream stream = new FileOutputStream(file, append);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+            }
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         } else {
-            // first write the Byte Order Mark for Unicode encodings
             FileOutputStream stream = new FileOutputStream(file);
-            writeUTF16BomIfRequired(charset, stream);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+            }
             return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         }
     }
 
-    private static void writeUTF16BomIfRequired(final String charset, final OutputStream stream) throws IOException {
-        if ("UTF-16BE".equals(charset)) {
-            writeUtf16Bom(stream, true);
-        } else if ("UTF-16LE".equals(charset)) {
-            writeUtf16Bom(stream, false);
-        }
-    }
-
     /**
-     * Creates a buffered writer for this file, writing data using the given
-     * encoding.
+     * Creates a buffered writer for this file, writing data without writing a
+     * BOM, using a specified encoding.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -1756,24 +1981,6 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BufferedWriter newWriter(File file, String charset) throws IOException {
         return newWriter(file, charset, false);
-    }
-
-    /**
-     * Write a Byte Order Mark at the beginning of the file
-     *
-     * @param stream    the FileOutputStream to write the BOM to
-     * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    private static void writeUtf16Bom(OutputStream stream, boolean bigEndian) throws IOException {
-        if (bigEndian) {
-            stream.write(-2);
-            stream.write(-1);
-        } else {
-            stream.write(-1);
-            stream.write(-2);
-        }
     }
 
     /**
@@ -1793,7 +2000,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new BufferedWriter for this file, passes it to the closure, and
      * ensures the stream is flushed and closed after the closure returns.
-     * The writer will use the given charset encoding.
+     * The writer will use the given charset encoding.  If the given charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the requisite byte
+     * order mark is written to the stream when the writer is created.
      *
      * @param file    a File
      * @param charset the charset used
@@ -1807,8 +2016,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new BufferedWriter which will append to this
-     * file.  The writer is passed to the closure and will be closed before
+     * Create a new BufferedWriter which will append to this file.  If the
+     * given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream when the writer is
+     * created.  The writer is passed to the closure and will be closed before
      * this method returns.
      *
      * @param file    a File
@@ -1850,7 +2061,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create a new PrintWriter for this file, using specified
-     * charset.
+     * charset.  If the given charset is "UTF-16BE" or "UTF-16LE" (or an
+     * equivalent alias), the requisite byte order mark is written to the
+     * stream before the writer is returned.
      *
      * @param file    a File
      * @param charset the charset
@@ -1878,8 +2091,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
+     * Create a new PrintWriter with a specified charset for this file.  If the
+     * given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream when the writer is
+     * created.  The writer is passed to the closure, and will be closed
      * before this method returns.
      *
      * @param file    a File
@@ -1968,9 +2183,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             if (parameters.containsKey("requestProperties")) {
                 @SuppressWarnings("unchecked")
-                Map<String, String> properties = (Map<String, String>) parameters.get("requestProperties");
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                Map<String, CharSequence> properties = (Map<String, CharSequence>) parameters.get("requestProperties");
+                for (Map.Entry<String, CharSequence> entry : properties.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue().toString());
                 }
             }
 
@@ -2356,4 +2571,47 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         return new URL(self);
     }
 
+    /**
+     * Gets all names of the path as an array of <code>String</code>s.
+     *
+     * @param path to get names from
+     * @return <code>String</code>s, never <code>null</code>
+     */
+    private static String[] getPathStack(String path) {
+        String normalizedPath = path.replace(File.separatorChar, '/');
+
+        return normalizedPath.split("/");
+    }
+
+    /**
+     * Gets path from a <code>List</code> of <code>String</code>s.
+     *
+     * @param pathStack <code>List</code> of <code>String</code>s to be concatenated as a path.
+     * @return <code>String</code>, never <code>null</code>
+     */
+    private static String getPath(List pathStack) {
+        // can safely use '/' because Windows understands '/' as separator
+        return getPath(pathStack, '/');
+    }
+
+    /**
+     * Gets path from a <code>List</code> of <code>String</code>s.
+     *
+     * @param pathStack     <code>List</code> of <code>String</code>s to be concated as a path.
+     * @param separatorChar <code>char</code> to be used as separator between names in path
+     * @return <code>String</code>, never <code>null</code>
+     */
+    private static String getPath(final List pathStack, final char separatorChar) {
+        final StringBuilder buffer = new StringBuilder();
+
+        final Iterator iter = pathStack.iterator();
+        if (iter.hasNext()) {
+            buffer.append(iter.next());
+        }
+        while (iter.hasNext()) {
+            buffer.append(separatorChar);
+            buffer.append(iter.next());
+        }
+        return buffer.toString();
+    }
 }

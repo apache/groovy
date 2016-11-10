@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.ant;
 
@@ -36,7 +39,7 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyInternalPosixParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
@@ -114,6 +117,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * <li>keepStubs</li>
  * <li>forceLookupUnnamedFiles</li>
  * <li>configscript</li>
+ * <li>parameters</li>
  * </ul>
  * And these nested tasks:
  * <ul>
@@ -158,17 +162,12 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * &lt;/project&gt;
  * </pre>
  * <p>
- * Based heavily on the Javac implementation in Ant.
+ * Based heavily on the implementation of the Javac task in Apache Ant.
  * <p>
  * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hein Meling
- * @author <a href="mailto:russel.winder@concertant.com">Russel Winder</a>
- * @author Danno Ferrin
- * @author Paul King
  */
 public class Groovyc extends MatchingTask {
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path src;
@@ -201,7 +200,7 @@ public class Groovyc extends MatchingTask {
     private Javac javac;
     private boolean jointCompilation;
 
-    private List<File> temporaryFiles = new ArrayList<File>(2);
+    private final List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
     private boolean forceLookupUnnamedFiles;
@@ -210,6 +209,11 @@ public class Groovyc extends MatchingTask {
     private String configscript;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
+
+    /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     */
+    private boolean parameters = false;
 
     /**
      * Adds a path for source compilation.
@@ -281,20 +285,27 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Sets the bytecode compatibility mode
+     * Sets the bytecode compatibility mode. The parameter can take
+     * one of the values <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
      *
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
-        if (CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
-            this.targetBytecode = version;
+        
+        for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
+            if (allowedJdk.equals(version)) {
+                this.targetBytecode = version;
+                break;
+            }
         }
     }
 
     /**
      * Retrieves the compiler bytecode compatibility mode.
      *
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * @return bytecode compatibility mode. Can be one of the values
+     *         <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or
+     *         <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
@@ -800,6 +811,22 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     *
+     * @param parameters set to true to generate metadata.
+     */
+    public void setParameters(boolean parameters) {
+        this.parameters = parameters;
+    }
+
+    /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return this.parameters;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -1030,6 +1057,13 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * Add "groovyc" parameters to the commandLineList, based on the ant configuration.
+     *
+     * @param commandLineList
+     * @param jointOptions
+     * @param classpath
+     */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
         commandLineList.add("--classpath");
         commandLineList.add(classpath.toString());
@@ -1047,6 +1081,9 @@ public class Groovyc extends MatchingTask {
         }
         if (stacktrace) {
             commandLineList.add("-e");
+        }
+        if (parameters) {
+            commandLineList.add("--parameters");
         }
         if (useIndy) {
             commandLineList.add("--indy");
@@ -1135,7 +1172,7 @@ public class Groovyc extends MatchingTask {
         try {
             Options options = FileSystemCompiler.createCompilationOptions();
 
-            CommandLineParser cliParser = new GroovyInternalPosixParser();
+            CommandLineParser cliParser = new DefaultParser();
 
             CommandLine cli;
             cli = cliParser.parse(options, commandLine);
@@ -1151,7 +1188,7 @@ public class Groovyc extends MatchingTask {
             String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
             boolean fileNameErrors = filenames == null;
 
-            fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
+            fileNameErrors = fileNameErrors || !FileSystemCompiler.validateFiles(filenames);
 
             if (targetBytecode != null) {
                 configuration.setTargetBytecode(targetBytecode);
@@ -1252,7 +1289,7 @@ public class Groovyc extends MatchingTask {
         }
         ClassLoader parent = getIncludeantruntime()
                 ? getClass().getClassLoader()
-                : new AntClassLoader(new RootLoader(new URL[0], null), getProject(), getClasspath());
+                : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);

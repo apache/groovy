@@ -1,10 +1,27 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy.bugs
 
 /**
  * Test to fix the issue GROOVY-843.
  *
  * @author Pilho Kim
- * @version $Revision$
  */
 
 public class PropertyNameBug extends GroovyTestCase {
@@ -13,10 +30,6 @@ public class PropertyNameBug extends GroovyTestCase {
         map.put("foo.bar", "FooBar")
         map.put("foo.bar-bar", "FooBar-Bar")
         map.put("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!", "Any character")
-
-        println("foo.bar1 = ${map.get("foo.bar1")}")
-        println("foo.bar-bar = ${map.get("foo.bar-bar")}")
-        println("Specical Character Test: ${map.get("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!")}")
     }
 
     void testNonJavaIdentifierChacactersWithGroovySyntax() {
@@ -24,10 +37,6 @@ public class PropertyNameBug extends GroovyTestCase {
         map."foo.bar" = "FooBar"
         map."foo.bar-bar" = "FooBar-Bar"
         map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!" = "Any character"
-
-        println("foo.bar1 = ${map."foo.bar1"}")
-        println("foo.bar-bar = ${map."foo.bar-bar"}")
-        println("Specical Character Test: ${map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!"}")
     }
 }
 

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
 
@@ -687,6 +690,39 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testIsGetterAsPropertyFromSuperInterface() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        boolean foo(Lower impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo({ true } as Lower)
+        '''
+    }
+
+    void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImpl() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { boolean isBar() { true } }
+        boolean foo(Foo impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo(new Foo())
+        '''
+    }
+
+    void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
+        assertScript '''interface Upper { boolean isBar() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { boolean isBar() { true } }
+        class Bar extends Foo {}
+        boolean foo(Bar impl) {
+            impl.bar // isBar() called with the property notation
+        }
+        assert foo(new Bar())
+        '''
+    }
+
     // GROOVY-5580: getName variant
     void testGetNameFromSuperInterface() {
         assertScript '''interface Upper { String getName() }
@@ -1035,6 +1071,52 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             try { new Tester()}
             catch(groovy.lang.MissingPropertyException expected) {}
             '''
+    }
+
+    //GROOVY-7813
+    void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
+        shouldFailWithMessages '''
+            class Foo {
+                def bar() { 2 }
+
+                static class Baz {
+                    def doBar() { bar() }
+                }
+            }
+            null
+        ''', 'Non static method Foo#bar cannot be called from static context'
+    }
+
+    void testStaticOuterMethodCanBeCalledFromStaticClass() {
+        assertScript '''
+            class Foo {
+                static def bar() { 2 }
+
+                static class Baz {
+                    def doBar() {
+                        bar()
+                    }
+                }
+            }
+            assert new Foo.Baz().doBar() == 2
+        '''
+    }
+
+    void testInheritedMethodCanBeCalledFromStaticClass() {
+        assertScript '''
+            class Bar {
+                def bar() { 1 }
+            }
+
+            class Foo {
+                static class Baz extends Bar {
+                    def doBar() {
+                        bar()
+                    }
+                }
+            }
+            assert new Foo.Baz().doBar() == 1
+        '''
     }
 
     static class MyMethodCallTestClass {

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform.trait;
 
@@ -19,6 +22,7 @@ import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -27,8 +31,11 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -37,11 +44,14 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -68,6 +78,13 @@ import java.util.Set;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
+    public static final String DO_DYNAMIC = TraitReceiverTransformer.class+".doDynamic";
+    public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class+".replacement";
+
+    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
+
+    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
+
     private SourceUnit unit;
     private CompilationUnit compilationUnit;
 
@@ -82,9 +99,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             if (!checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME)) return;
             checkNoConstructor(cNode);
             checkExtendsClause(cNode);
+            generateMethodsWithDefaultArgs(cNode);
             replaceExtendsByImplements(cNode);
             createHelperClass(cNode);
         }
+    }
+
+    private static void generateMethodsWithDefaultArgs(final ClassNode cNode) {
+        DefaultArgsMethodsAdder adder = new DefaultArgsMethodsAdder();
+        adder.addDefaultParameterMethods(cNode);
     }
 
     private void checkExtendsClause(final ClassNode cNode) {
@@ -116,11 +139,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             addError("Error processing trait '" + cNode.getName() + "'. " +
                     " Constructors are not allowed.", cNode);
         }
-    }
-
-    private static void fixGenerics(MethodNode mn, ClassNode cNode) {
-        if (!cNode.isUsingGenerics()) return;
-        mn.setGenericsTypes(cNode.getGenericsTypes());
     }
 
     private void createHelperClass(final ClassNode cNode) {
@@ -207,9 +225,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (fieldHelper != null) {
             unit.getAST().addClass(fieldHelper);
         }
+
+        // resolve scope (for closures)
+        resolveScope(helper);
+        if (fieldHelper!=null) {
+            resolveScope(fieldHelper);
+        }
     }
 
-    private MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
+    private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
         MethodNode initializer = new MethodNode(
                 isStatic?Traits.STATIC_INIT_METHOD:Traits.INIT_METHOD,
                 ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
@@ -218,8 +242,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
-        fixGenerics(initializer, cNode);
         helper.addMethod(initializer);
+
+        // Cannot add static compilation of init method because of GROOVY-7217, see example 2 of test case
+        //AnnotationNode an = new AnnotationNode(TraitComposer.COMPILESTATIC_CLASSNODE);
+        //initializer.addAnnotation(an);
+        //cNode.addTransform(StaticCompileTransformation.class, an);
+
         return initializer;
     }
 
@@ -228,6 +257,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 unit, compilationUnit.getTransformLoader()
         );
         collector.visitClass(helper);
+        // Perform an additional phase which has to be done *after* type checking
+        compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
+            @Override
+            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
+                if (classNode==helper) {
+                    PostTypeCheckingExpressionReplacer replacer = new PostTypeCheckingExpressionReplacer(source);
+                    replacer.visitClass(helper);
+                }
+            }
+        }, CompilePhase.INSTRUCTION_SELECTION.getPhaseNumber());
     }
 
     /**
@@ -235,7 +274,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
      * @param cNode the trait class node
      * @param helper the helper class node
      */
-    private void copyClassAnnotations(final ClassNode cNode, final ClassNode helper) {
+    private static void copyClassAnnotations(final ClassNode cNode, final ClassNode helper) {
         List<AnnotationNode> annotations = cNode.getAnnotations();
         for (AnnotationNode annotation : annotations) {
             if (!annotation.getClassNode().equals(Traits.TRAIT_CLASSNODE)) {
@@ -254,7 +293,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void generatePropertyMethods(final ClassNode cNode) {
+    private static void generatePropertyMethods(final ClassNode cNode) {
         for (PropertyNode node : cNode.getProperties()) {
             processProperty(cNode, node);
         }
@@ -314,7 +353,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode getter =
                     new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
-            fixGenerics(getter, cNode);
             cNode.addMethod(getter);
 
             if (ClassHelper.boolean_TYPE == node.getType() || ClassHelper.Boolean_TYPE == node.getType()) {
@@ -322,7 +360,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 MethodNode secondGetter =
                         new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
-                fixGenerics(secondGetter, cNode);
                 cNode.addMethod(secondGetter);
             }
         }
@@ -333,7 +370,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode setter =
                     new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
-            fixGenerics(setter, cNode);
             cNode.addMethod(setter);
         }
     }
@@ -357,11 +393,24 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             ExpressionStatement initCode = new ExpressionStatement(initialExpression);
             processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
             BlockStatement code = (BlockStatement) selectedMethod.getCode();
-            MethodCallExpression mce = new MethodCallExpression(
-                    new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
-                    Traits.helperSetterName(field),
-                    initCode.getExpression()
-            );
+            MethodCallExpression mce;
+            if (field.isStatic()) {
+                mce = new MethodCallExpression(
+                        new ClassExpression(INVOKERHELPER_CLASSNODE),
+                        "invokeStaticMethod",
+                        new ArgumentListExpression(
+                                thisObject,
+                                new ConstantExpression(Traits.helperSetterName(field)),
+                                initCode.getExpression()
+                        )
+                );
+            } else {
+                mce = new MethodCallExpression(
+                        new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
+                        Traits.helperSetterName(field),
+                        new CastExpression(field.getOriginType(),initCode.getExpression())
+                );
+            }
             mce.setImplicitThis(false);
             mce.setSourcePosition(initialExpression);
             code.addStatement(new ExpressionStatement(mce));
@@ -370,7 +419,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         fieldHelper.addMethod(
                 Traits.helperSetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
-                ClassHelper.VOID_TYPE,
+                field.getOriginType(),
                 new Parameter[]{new Parameter(field.getOriginType(), "val")},
                 ClassNode.EMPTY_ARRAY,
                 null
@@ -419,7 +468,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
-        mNode.addAnnotations(methodNode.getAnnotations());
+        mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
+        mNode.setGenericsTypes(methodNode.getGenericsTypes());
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         } else {
@@ -433,13 +483,24 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return mNode;
     }
 
-    private Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
+    private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
+        for (AnnotationNode annotation : annotations) {
+            if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
+                result.add(annotation);
+            }
+        }
+
+        return result;
+    }
+
+    private static Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
         final ClassNode rawType = traitClass.getPlainNodeReference();
         ClassNode type = createReceiverType(isStatic, rawType);
         return new Parameter(type, isStatic?Traits.STATIC_THIS_OBJECT:Traits.THIS_OBJECT);
     }
 
-    private ClassNode createReceiverType(final boolean isStatic, final ClassNode rawType) {
+    private static ClassNode createReceiverType(final boolean isStatic, final ClassNode rawType) {
         ClassNode type;
         if (isStatic) {
             // Class<TraitClass>
@@ -468,4 +529,36 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }
+
+    private static class DefaultArgsMethodsAdder extends Verifier {
+
+        @Override
+        public void addDefaultParameterMethods(final ClassNode node) {
+            setClassNode(node);
+            super.addDefaultParameterMethods(node);
+        }
+    }
+
+    private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
+        private final SourceUnit sourceUnit;
+
+        private PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {
+            this.sourceUnit = sourceUnit;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return sourceUnit;
+        }
+
+        @Override
+        public Expression transform(final Expression exp) {
+            Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
+            if (replacement!=null) {
+                return replacement;
+            }
+            return super.transform(exp);
+        }
+    }
+
 }

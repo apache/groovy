@@ -1,18 +1,21 @@
 /*
-* Copyright 2003-2012 the original author or authors.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy.transform
 
 import org.codehaus.groovy.ast.*;
@@ -370,6 +373,90 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert data[2][1].value == "Jochen"
             assert data[3][0] == GroovyDeveloper
             assert data[3][1].value == "Guillaume"
+        """
+    }
+
+    void testAnnotationCollectorModePreferCollector() {
+        assertScript """
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_COLLECTOR)
+            @interface ToStringNames {}
+
+            @ToString(excludes='prop1')
+            @ToStringNames(excludes='prop2')
+            class Dummy1 { String prop1, prop2 }
+
+            @ToString(excludes='prop1')
+            @ToStringNames
+            class Dummy2 { String prop1, prop2 }
+
+            assert new Dummy1(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy1(prop1:hello)'
+            assert new Dummy2(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy2(prop1:hello, prop2:goodbye)'
+        """
+    }
+
+    void testAnnotationCollectorModePreferCollectorMerged() {
+        assertScript """
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_COLLECTOR_MERGED)
+            @interface ToStringNames {}
+
+            @ToString(excludes='prop1')
+            @ToStringNames(excludes='prop2')
+            class Dummy1 { String prop1, prop2 }
+
+            @ToString(excludes='prop1')
+            @ToStringNames
+            class Dummy2 { String prop1, prop2 }
+
+            assert new Dummy1(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy1(prop1:hello)'
+            assert new Dummy2(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy2(prop2:goodbye)'
+        """
+    }
+
+    void testAnnotationCollectorModePreferCollectorExplicit() {
+        assertScript """
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT)
+            @interface ToStringNames {}
+
+            @ToString(excludes='prop1')
+            @ToStringNames(excludes='prop2')
+            class Dummy1 { String prop1, prop2 }
+
+            @ToString(excludes='prop1')
+            @ToStringNames
+            class Dummy2 { String prop1, prop2 }
+
+            assert new Dummy1(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy1(goodbye)'
+            assert new Dummy2(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy2(goodbye)'
+        """
+    }
+
+    void testAnnotationCollectorModePreferCollectorExplicitMerged() {
+        assertScript """
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
+            @interface ToStringNames {}
+
+            @ToString(excludes='prop1')
+            @ToStringNames(excludes='prop2')
+            class Dummy1 { String prop1, prop2 }
+
+            @ToString(excludes='prop1')
+            @ToStringNames
+            class Dummy2 { String prop1, prop2 }
+
+            assert new Dummy1(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy1(prop2:goodbye)'
+            assert new Dummy2(prop1: 'hello', prop2: 'goodbye').toString() == 'Dummy2(prop2:goodbye)'
         """
     }
 }

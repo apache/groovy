@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy
 
@@ -43,10 +46,10 @@ class GStringTest extends GroovyTestCase {
 
         check("hello $name how are you?", teststr)
         check("hello ${name} how are you?", teststr)
-        check("hello ${println "feep"; name} how are you?", teststr)
+        check("hello ${(name + '  ').trim()} how are you?", teststr)
         check(/hello $name how are you?/, teststr)
         check(/hello ${name} how are you?/, teststr)
-        check(/hello ${println "feep"; name} how are you?/, teststr)
+        check(/hello ${(name + '  ').trim()} how are you?/, teststr)
     }
 
     void testWithVariableAtEnd() {
@@ -235,12 +238,12 @@ class GStringTest extends GroovyTestCase {
         assertEquals(w.buffer.toString(), "5")
         assertEquals(g4.toString(), "5")
         try {
-            println g5
+            w << g5
             fail("should throw a GroovyRuntimeException")
         } catch (GroovyRuntimeException e) {
         }
         try {
-            println g5.toString()
+            g5.toString()
             fail("should throw a GroovyRuntimeException")
         } catch (GroovyRuntimeException e) {
         }
@@ -566,5 +569,15 @@ class GStringTest extends GroovyTestCase {
 
         assert gstring.bytes == string.bytes
         assert gstring.getBytes('UTF-8') ==  string.getBytes('UTF-8')
+    }
+
+    /**
+     * GROOVY-7377: Interpolated variable followed by asterisk in slashy-string causes compiler error
+     */
+    void testSlashyStringWithInterpolatedVariableFollowedByAsterisk() {
+        assert Eval.me('''def foo='bar'; /$foo*baz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /${foo}*baz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /$foo\u002abaz/''') == 'bar*baz'
+        assert Eval.me('''def foo='bar'; /${foo}\u002abaz/''') == 'bar*baz'
     }
 }

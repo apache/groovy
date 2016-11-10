@@ -1,28 +1,60 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Getting started
 
 == Download
 
 In this download area, you will be able to download the distribution (binary and source), the Windows installer and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic <<gvm-the-groovy-environment-manager,instructions>> can be found below.
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://sdkman.io/[SDKMAN!] (The Software Development Kit Manager) to download and configure any **Groovy** version of your choice. Basic <<SDKMAN,instructions>> can be found below.
 
 === Stable
 
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-{groovy-full-version}.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-{groovy-full-version}.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
+- **Download zip**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://bintray.com/artifact/download/groovy/maven/groovy-src-{groovy-full-version}.zip[Source Release]
+- **Download documentation**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
-You can learn more about this version in the http://groovy.codehaus.org/Groovy+{groovy-short-version}+release+notes[release notes] or in the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
+You can learn more about this version in the http://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the http://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
 If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
 === Snapshots
 
-For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our http://snapshots.repository.codehaus.org/org/codehaus/groovy/groovy-all/[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Codehaus' snapshot repository.
+For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
+
+=== Prerequisites
+
+Groovy {groovy-short-version} requires Java 6+ with full support up to Java 8.
+There are currently some known issues for some aspects when using Java 9 snapshots.
+The `groovy-nio` module requires Java 7+.
+Using Groovy's invokeDynamic features require Java 7+ but we recommend Java 8.
+
+The Groovy CI server is also useful to look at to confirm supported Java versions for different Groovy releases.
+The test suite (getting close to 10000 tests) runs for the currently supported streams of Groovy across
+all the main versions of Java each stream supports.
 
 == Maven Repository
 
-If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the http://repository.codehaus.org/org/codehaus/groovy[codehaus maven repository].
+If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the https://oss.jfrog.org/oss-release-local/org/codehaus/groovy[JCenter maven repository].
 
 === Stable Release
 
@@ -32,32 +64,29 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |Maven
 |Explanation
 
-|\'org.codehaus.groovy:groovy:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy</artifactId> 
 <version>{groovy-full-version}</version>
-|Just the core of groovy without the modules (see below). Treats Antlr, ASM, etc. as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars.
+|Just the core of groovy without the modules (see below).
 
-|\'org.codehaus.groovy:groovy-$module:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy-$module:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-$module</artifactId>
 <version>{groovy-full-version}</version>
 |"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
 
-|\'org.codehaus.groovy:groovy-all:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy-all:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-all</artifactId>
 <version>{groovy-full-version}</version>
-|The core plus all the modules. Also includes jar versions of Antlr, ASM, Commons-CLI and Retrotranslator runtime. Allows you or your other dependencies (e.g. Hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
+|The core plus all the modules. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
 
-To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
+To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append &#39;:indy' for Gradle or <classifier>indy</classifier> for Maven.
 
-=== Snapshot Releases
-
-In addition to the stable and milestone releases you can find intermediate SNAPSHOT releases at the http://snapshots.repository.codehaus.org/org/codehaus/groovy[codehaus snapshot maven repository].
-
-== GVM (the Groovy enVironment Manager)
+[[SDKMAN]]
+== SDKMAN! (The Software Development Kit Manager)
 
 This tool makes installing Groovy on any Bash platform (Mac OSX, Linux, Cygwin, Solaris or FreeBSD) very easy.
 
@@ -65,7 +94,7 @@ Simply open a new terminal and enter:
 
 [source,shell]
 ----
-$ curl -s get.gvmtool.net | bash
+$ curl -s get.sdkman.io | bash
 ----
 
 Follow the instructions on-screen to complete installation.
@@ -74,14 +103,14 @@ Open a new terminal or type the command:
 
 [source,shell]
 ----
-$ source "$HOME/.gvm/bin/gvm-init.sh"
+$ source "$HOME/.sdkman/bin/sdkman-init.sh"
 ----
 
 Then install the latest stable Groovy:
 
 [source,shell]
 ----
-$ gvm install groovy
+$ sdk install groovy
 ----
 
 After installation is complete and you've made it your default version, test it with:
@@ -121,24 +150,24 @@ If you're on Windows, you can also use the link:TODO-Windows+NSIS-Installer[NSIS
 
 === Other Distributions
 
-You may download other distributions of Groovy from http://dist.codehaus.org/groovy/distributions/[this site].
+You may download other distributions of Groovy from https://bintray.com/groovy/maven[this site].
 
 === Source Code
 
-If you prefer to live on the bleeding edge, you can also grab the https://github.com/groovy/groovy-core[source code from GitHub].
+If you prefer to live on the bleeding edge, you can also grab the https://github.com/apache/groovy[source code from GitHub].
 
 === IDE plugin
 
-If you are an IDE user, you can just grab the latest link:tools/tools-ide.html[IDE plugin] and follow the plugin installation instructions.
+If you are an IDE user, you can just grab the latest link:tools-ide.html[IDE plugin] and follow the plugin installation instructions.
 
 == Install Binary
 
 These instructions describe how to install a binary distribution of **Groovy**.
 
 * First, <<download-groovy,Download>> a binary distribution of Groovy and unpack it into some file on your local file system.
-* Set your ++GROOVY_HOME++ environment variable to the directory you unpacked the distribution.
-* Add ++GROOVY_HOME/bin++ to your ++PATH++ environment variable.
-* Set your ++JAVA_HOME++ environment variable to point to your JDK. On OS X this is ++/Library/Java/Home++, on other unixes its often ++/usr/java++ etc. If you've already installed tools like Ant or Maven you've probably already done this step.
+* Set your `GROOVY_HOME` environment variable to the directory you unpacked the distribution.
+* Add `GROOVY_HOME/bin` to your `PATH` environment variable.
+* Set your `JAVA_HOME` environment variable to point to your JDK. On OS X this is `/Library/Java/Home`, on other unixes its often `/usr/java` etc. If you've already installed tools like Ant or Maven you've probably already done this step.
 
 You should now have Groovy installed properly. You can test this by typing the following in a command shell:
 
@@ -147,7 +176,7 @@ You should now have Groovy installed properly. You can test this by typing the f
 groovysh
 ----
 
-Which should create an interactive groovy shell where you can type Groovy statements. Or to run the link:tools/tools-groovyconsole.html[Swing interactive console] type:
+Which should create an interactive groovy shell where you can type Groovy statements. Or to run the <<{projectdir}/subprojects/groovy-console/{specfolder}/groovy-console.adoc,Swing interactive console>> type:
 
 [source,shell]
 ----

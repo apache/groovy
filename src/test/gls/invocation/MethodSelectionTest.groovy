@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package gls.invocation
 
@@ -425,6 +428,73 @@ public class MethodSelectionTest extends CompilableTestSupport {
           assert 1 == exp.takeNumber(new MyInteger("3"))
           assert 2 == exp.takeBigDecimal(new MyDecimal("3.0"))
           assert 3 == exp.takeBigInteger(new MyInteger("3"))
+      '''
+  }
+
+  // GROOVY-7655
+  void testOverloadAndSuper() {
+      assertScript '''
+        class A {
+            boolean aCalled = false
+            def myMethod( def item ) {
+                aCalled = true
+            }
+        }
+
+        class B extends A {
+            boolean bCalled = false
+            def myMethod( def item ) {
+                super.myMethod( item+"B" )
+                bCalled = true
+            }
+        }
+
+        class C extends B {
+            boolean cCalled = false
+            def cMethod( def item ) {
+                super.myMethod( item )
+                cCalled = true
+            }
+        }
+
+        def c = new C()
+        c.cMethod( "stuff" )
+
+        assert c.aCalled
+        assert c.bCalled
+        assert c.cCalled
+      '''
+      assertScript '''
+        class A {
+            boolean aCalled = false
+            def myMethod( def item ) {
+                aCalled = true
+            }
+        }
+
+        class B extends A {
+            boolean bCalled = false
+            def myMethod( def item ) {
+                super.myMethod( item+"B" )
+                bCalled = true
+            }
+        }
+
+        class C extends B { }
+        class D extends C {
+            boolean dCalled = false
+            def dMethod( def item ) {
+                super.myMethod( item )
+                dCalled = true
+            }
+        }
+
+        def d = new D()
+        d.dMethod( "stuff" )
+
+        assert d.aCalled
+        assert d.bCalled
+        assert d.dCalled
       '''
   }
 }

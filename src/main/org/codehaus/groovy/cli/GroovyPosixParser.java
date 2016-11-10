@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.cli;
 
 import org.apache.commons.cli.Option;
@@ -26,15 +28,16 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * DO NOT USE. Hacked version until Commons CLI 1.3 is released.
- * NOTE: this is a mirror copy of org.apache.commons.cli.GroovyInternalPosixParser
- * DON'T MAKE CHANGES without keeping the other file in sync!
- * The class GroovyPosixParser provides an implementation of the
- * {@link org.apache.commons.cli.Parser#flatten(org.apache.commons.cli.Options,String[],boolean) flatten} method.
+ * This is a hacked version of Commons CLI 1.2 PosixParser with some bug fixes added.
+ * We aren't aware of any use cases where it isn't now preferable to use the
+ * Commons CLI 1.3 DefaultParser but this class is retained for the time being for
+ * backwards compatibility if someone is relying on this class's exact functionality.
  *
  * @author John Keyes (john at integralsource.com)
  * @author Paul King (Groovy hacks/fixes)
+ * @deprecated use the DefaultParser from Commons CLI
  */
+@Deprecated
 public class GroovyPosixParser extends Parser
 {
     /** holder for flattened tokens */

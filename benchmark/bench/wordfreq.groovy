@@ -1,5 +1,5 @@
-﻿/*
- * The Great Computer Language Shootout
+/**
+ * The Computer Language Shootout
  * http://shootout.alioth.debian.org/
  *
  * contributed by Jochen Hinrichsen
@@ -13,7 +13,7 @@ System.in.eachLine() { line ->
     line.split("\\W").each() { word ->
         def s = word.toLowerCase()
         def entry = dict[s]
-        dict[s] = (entry == null) ? 1 : entry+1
+        dict[s] = (entry == null) ? 1 : entry + 1
     }
 }
 
@@ -21,7 +21,7 @@ System.in.eachLine() { line ->
 // sort for multiple properties: [ it.value, it.key ]
 assert dict != null
 assert dict.values() != null
-assert (dict.values().sort({ l, r -> r <=> l})) != null
-dict.values().sort({ l, r -> r <=> l}).each() { value ->
+assert (dict.values().sort({ l, r -> r <=> l })) != null
+dict.values().sort({ l, r -> r <=> l }).each() { value ->
     println "${value.toString().padLeft(8)}"
 }

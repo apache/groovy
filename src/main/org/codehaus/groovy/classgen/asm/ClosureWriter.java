@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm;
 
@@ -74,8 +77,14 @@ public class ClosureWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode classNode = controller.getClassNode();
         AsmClassGenerator acg = controller.getAcg();
-        
-        ClassNode closureClass = getOrAddClosureClass(expression, 0);
+
+        // generate closure as public class to make sure it can be properly invoked by classes of the
+        // Groovy runtime without circumventing JVM access checks (see CachedMethod for example).
+        int mods = ACC_PUBLIC;
+        if (classNode.isInterface()) {
+            mods |= ACC_STATIC;
+        }
+        ClassNode closureClass = getOrAddClosureClass(expression, mods);
         String closureClassinternalName = BytecodeHelper.getClassInternalName(closureClass);
         List constructors = closureClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
@@ -167,7 +176,7 @@ public class ClosureWriter {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
         MethodNode methodNode = controller.getMethodNode();
-        String name = outerClass.getName() + "$"
+        String name = classNode.getName() + "$"
                 + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode); // add a more informative name
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
@@ -211,7 +220,9 @@ public class ClosureWriter {
         if (parameters.length > 1
                 || (parameters.length == 1
                 && parameters[0].getType() != null
-                && parameters[0].getType() != ClassHelper.OBJECT_TYPE)) {
+                && parameters[0].getType() != ClassHelper.OBJECT_TYPE
+                && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType().getComponentType())))
+        {
 
             // let's add a typesafe call method
             MethodNode call = answer.addMethod(
@@ -286,7 +297,7 @@ public class ClosureWriter {
         return answer;
     }
 
-    private void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
+    private static void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
         CodeVisitorSupport visitor = new CodeVisitorSupport() {
             @Override
             public void visitVariableExpression(VariableExpression expression) {
@@ -310,7 +321,7 @@ public class ClosureWriter {
      * same method, in this case the constructor. A closure should not
      * have more than one constructor!
      */
-    private void removeInitialValues(Parameter[] params) {
+    private static void removeInitialValues(Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
                 Parameter p = new Parameter(params[i].getType(), params[i].getName());

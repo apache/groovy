@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.sc
 
@@ -179,7 +182,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
                 assert b.isSetterCalled() == true
                 assert b.x == 2
             '''
-        assert astTrees['B'][1].contains('INVOKEVIRTUAL A.setX')
+        assert astTrees['B'][1].contains('INVOKEVIRTUAL B.setX')
     }
 
     void testDirectReadFieldFromSameClass() {
@@ -257,7 +260,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
                     b.usingGetter()
                     assert b.isGetterCalled() == true
                 '''
-        assert astTrees['B'][1].contains('INVOKEVIRTUAL A.getX')
+        assert astTrees['B'][1].contains('INVOKEVIRTUAL B.getX')
     }
 
     void testUseAttributeExternal() {
@@ -429,4 +432,268 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
         '''
     }
 
+    @Override
+    void testPropertyWithMultipleSetters() {
+        // we need to override the test because the AST is going to be changed
+        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
+            class A {
+                private field
+                void setX(Integer a) {field=a}
+                void setX(String b) {field=b}
+                def getX(){field}
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('test1').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof ListOfExpressionsExpression
+                }
+                lookup('test2').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof ListOfExpressionsExpression
+                }
+            })
+            void testBody() {
+                def a = new A()
+                test1:
+                a.x = 1
+                assert a.x==1
+                test2:
+                a.x = "3"
+                assert a.x == "3"
+            }
+            testBody()
+            '''
+    }
+
+    void testCallSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
+        try {
+            assertScript '''
+            class Multi {
+               void setOut(int a) {}
+            }
+
+            void foo() {
+               def m = new Multi()
+               try {
+               } finally {
+                  m.out = 1
+               }
+            }
+            foo()
+            '''
+        } finally {
+            assert astTrees.values().any {
+                it.toString().contains 'INVOKEVIRTUAL Multi.setOut (I)V'
+            }
+        }
+    }
+
+    void testCallMultiSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
+        try {
+            assertScript '''
+            class Multi {
+               void setOut(int a) {}
+               void setOut(String a) {}
+            }
+
+            void foo() {
+               def m = new Multi()
+               try {
+               } finally {
+                  m.out = 1
+                  m.out = 'foo'
+               }
+            }
+            foo()
+            '''
+        } finally {
+            assert astTrees.values().any {
+                def code = it.toString()
+                code.contains('INVOKEVIRTUAL Multi.setOut (I)V') &&
+                        code.contains('INVOKEVIRTUAL Multi.setOut (Ljava/lang/String;)V')
+            }
+        }
+    }
+
+    //GROOVY-7698
+    void testSafePropertyStyleSetterCalls() {
+        assertScript '''
+            class Foo {
+                private String id
+
+                void setId(String id) {
+                    this.id = id
+                }
+            }
+            Foo foo = null
+            foo?.id = 'new'
+        '''
+    }
+
+    void testPrivateFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private String s
+                    Closure c = { this.s = 'abc' }
+
+                    void test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testImplicitPrivateFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private String s
+                    Closure c = { s = 'abc' }
+
+                    String test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testPrivateStaticFieldMutationInClosureUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class Foo {
+                    private static String s
+                    Closure c = { s = 'abc' }
+
+                    String test() {
+                        c()
+                        assert s == 'abc'
+                    }
+                }
+                new Foo().test()
+            '''
+        } finally {
+            assert astTrees['Foo$_closure1'][1].contains('INVOKESTATIC Foo.pfaccess$00 (LFoo;Ljava/lang/String;)Ljava/lang/String')
+        }
+    }
+
+    void testPrivateFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    void test() {
+                        def aic = new Runnable() { void run() { A.this.x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testImplicitPrivateFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    void test() {
+                        def aic = new Runnable() { void run() { x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testPrivateStaticFieldMutationInAICUsesBridgeMethod() {
+        try {
+            assertScript '''
+                class A {
+                    private static int x
+                    void test() {
+                        def aic = new Runnable() { void run() { x = 666 } }
+                        aic.run()
+                        assert x == 666
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+        }
+    }
+
+    void testMultiplePrivateFieldMutatorBridgeMethods() {
+        try {
+            assertScript '''
+                class A {
+                    private int x
+                    private String y
+                    Closure mutate = { x = 1; y = 'abc' }
+
+                    void test() {
+                        mutate()
+                        assert x == 1
+                        assert y == 'abc'
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$00 (LA;I)I')
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$01 (LA;Ljava/lang/String;)Ljava/lang/String;')
+        }
+    }
+
+    void testPrivateFieldBridgeMethodsAreGeneratedAsNecessary() {
+        try {
+            assertScript '''
+                class A {
+                    private int accessed = 0
+                    private String mutated
+                    private String accessedAndMutated = ''
+                    Closure c = {
+                        println accessed
+                        mutated = 'abc'
+                        println accessedAndMutated
+                        accessedAndMutated = 'def'
+                    }
+
+                    void test() {
+                        c()
+                        assert mutated == 'abc'
+                        assert accessedAndMutated == 'def'
+                    }
+                }
+                new A().test()
+            '''
+        } finally {
+            assert !astTrees['A'][1].contains('pfaccess$00') // no mutator bridge method for 'accessed'
+            assert !astTrees['A'][1].contains('pfaccess$1') // no accessor bridge method for 'mutated'
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$2 (LA;)Ljava/lang/String;')
+            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$02 (LA;Ljava/lang/String;)Ljava/lang/String;')
+        }
+    }
 }

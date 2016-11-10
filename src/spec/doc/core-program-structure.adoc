@@ -1,35 +1,46 @@
-= Program structure (Anto Aravinth)
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Program structure
 
 This chapter covers the program structure of the Groovy programming language.
 
-== Package name (TBD)
+== Package names
 
-== Imports (TBD)
+Package names play exactly the same role as in Java. They allows us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed. 
 
-=== Default imports (TBD)
-=== Simple import (TBD)
-=== Star import (TBD)
-=== Static import (TBD)
-=== Static star import (TBD)
-=== Import aliasing (TBD)
-
-== Scripts versus classes
-
-Package name plays exactly the same role as they used to play in Java. They allows us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed. 
-
-Defining a package is very similar to java, as you can see 
+Defining a package is very similar to Java:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=package_statement,indent=0]
 ----
 
-To refer the class ++Foo++ in the ++com.yoursite.com++ package then you need to use ++com.yoursite.com.Foo++ in your code else you can use ++import++ statement as we can see now. 
+To refer to some class `Foo` in the `com.yoursite.com` package you will need to use the fully qualified name `com.yoursite.com.Foo`, or else you can use an `import` statement as we'll see below.
 
 == Imports
 
-In order to refer any class you need a reference for it. Groovy follows Java's notion of allowing ++import++ statement to resolve the class references. Groovy provides several builder classes, 
-one such class is ++MarkupBuilder++. ++MarkupBuilder++ is inside the package ++groovy.xml++, in order to use this class, you need to ++import++ it as shown:
+In order to refer to any class you need a qualified reference to its package. Groovy follows Java's notion of allowing `import` statement to resolve class references.
+
+For example, Groovy provides several builder classes, such as `MarkupBuilder`. `MarkupBuilder` is inside the package `groovy.xml` so in order to use this class, you need to `import` it as shown:
 
 [source,groovy]
 ----
@@ -45,7 +56,9 @@ Default imports are the imports that Groovy language provides by default. For ex
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=default_import,indent=0]
 ----
 
-The same code in Java needs an import statement to ++Date++ class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
+The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. 
+
+The below imports are added by groovy for you:
 
 [source,groovy]
 ----
@@ -58,11 +71,12 @@ import groovy.util.*
 import java.math.BigInteger
 import java.math.BigDecimal
 ----
-	
+
+This is done because the classes from these packages are most commonly used. By importing these boilerplate code is reduced.
 
 === Simple import
 
-Simple import is an import, where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is the simple import, which directly refer the class inside the package.
+A simple import is an import statement where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is a simple import which directly refers to a class inside a package.
 
 [source,groovy]
 ----
@@ -71,87 +85,183 @@ include::{projectdir}/src/spec/test/PackageTest.groovy[tags=import_statement,ind
 
 === Star import
 
-Groovy (like Java) provides a special way to import all classes from a package using ++*++, they are called as Star import. ++MarkupBuilder++ is class which is in package ++groovy.xml++, another class called ++StreamingMarkupBuilder++ is in the same package. Consider the case, where you need to use two classes, then you can do:
+Groovy, like Java, provides a special way to import all classes from a package using `*`, the so called star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=multiple_import,indent=0]
 ----
 
-Thats a perfectly valid code. But with ++*++ import, we can do the same like this:
+That's perfectly valid code. But with a `*` import, we can achieve the same effect with just one line. The star imports all the classes under package `groovy.xml`:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=star_import,indent=0]
 ----
 
-where, ++*++ does imports all the class under package ++groovy.xml++. Using ++*++ import can clutters your local namespace. But with groovy type aliasing, this can be solved easily. 
+One problem with `*` imports is that they can clutter your local namespace. But with the kinds of aliasing provided by Groovy, this can be solved easily. 
 
 === Static import
 
-Groovy's static import capability allows you to reference imported classes as if they were static methods in your own class. This is similar to Java's static import capability but works with Java 1.4 and above and is a little more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types. If you have the same types, the imported class takes precedence. Here is a sample of its usage:
+Groovy's static import capability allows you to reference imported classes as if they were static methods in your own class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_imports,indent=0]
 ----
 
-As you can see, now we can able to refer the static variable ++FALSE++ in our code base cleanly. 
+This is similar to Java's static import capability but is a more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types:
 
-Static imports along with ++as++ keyword can make elegant solution. Consider you want to get the ++Calendar++ instance, using ++getInstance()++ method. Its a static method, so we can do a static import. But instead of calling ++getInstance()++ everytime, we can do this which can increase code readability:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_import_same_method_name_different_parameter_type,indent=0]
+----
+<1> static import of method
+<2> declaration of method with same name as method statically imported above, but with a different parameter type
+<3> compile error in java, but is valid groovy code
+
+If you have the same types, the imported class takes precedence.
+
+=== Static import aliasing
+
+Static imports with the `as` keyword provide an elegant solution to namespace problems. Suppose you want to get a `Calendar` instance, using its `getInstance()` method. It's a static method, so we can use a static import. But instead of calling `getInstance()` every time, which can be misleading when separated from its class name, we can import it with an alias, to increase code readability:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_importswithas,indent=0]
 ----
 
-Thats clean and sweet!
+Now, that's clean!
 
 === Static star import
 
-Its very similar to the star import that we have seen earlier. It will import all the static methods from the given class. For example, lets say we need to calculate sin and cos for our application. 
-The class ++java.lang.Math++ has static methods named ++sin++,++cos++ which fits our need. With help of static star import, we can do:
+A static star import is very similar to the regular star import. It will import all the static methods from the given class.
+
+For example, lets say we need to calculate sines and cosines for our application. 
+The class `java.lang.Math` has static methods named `sin` and `cos` which fit our need. With the help of a static star import, we can do:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_importswithstar,indent=0]
 ----
 
-As you can see, we were able to access the methods ++sin++,++cos++ directly, instead like ++Math.sin++.
+As you can see, we were able to access the methods `sin` and `cos` directly, without the `Math.` prefix.
 
 === Import aliasing
 
-With type aliasing, we can refer to a fully qualified class name with the name of your choice. This can be done with ++as++ keyword in Groovy. 
+With type aliasing, we can refer to a fully qualified class name using a name of our choice. This can be done with the `as` keyword, as before.
 
-Consider the class with the following library code:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/thirdpartylib/MultiplyTwo.groovy[tags=third_party_lib,indent=0]
-----
-
-and we have some existing code using this library:
+For example we can import `java.sql.Date` as `SQLDate` and use it in the same file as `java.util.Date` without having to use the fully qualified name of either class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=using_third_party_lib,indent=0]
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=alias_import,indent=0]
 ----
 
-Obviously, the ++result++ variable contains the wrong result. And assume you have used this library through out your code-base. Groovy has an elegant way to fix this issue.
+== Scripts versus classes
 
-With the type aliasing in place, we can fix the bug using the below code:
+=== public static void main vs script
+Groovy supports both scripts and classes. Take the following code for example:
+
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_class_with_main_method,indent=0]
+----
+<1> define a `Main` class, the name is arbitrary
+<2> the `public static void main(String[])` method is usable as the main method of the class
+<3> the main body of the method
+
+This is typical code that you would find coming from Java, where code *has* to be embedded into a class to be executable.
+Groovy makes it easier, the following code is equivalent:
+
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script,indent=0]
+----
+
+A script can be considered as a class without needing to declare it, with some differences.
+
+=== Script class
+
+A gapi:groovy.lang.Script[script] is always compiled into a class. The Groovy compiler will compile the class for you,
+with the body of the script copied into a `run` method. The previous example is therefore compiled as if it was the
+following:
+
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script_equiv,indent=0]
+----
+<1> The `Main` class extends the `groovy.lang.Script` class
+<2> `groovy.lang.Script` requires a `run` method returning a value
+<3> the script body goes into the `run` method
+<4> the `main` method is automatically generated
+<5> and delegates the execution of the script on the `run` method
+
+If the script is in a file, then the base name of the file is used to determine the name of the generated script class.
+In this example, if the name of the file is `Main.groovy`, then the script class is going to be `Main`.
+
+=== Methods
+
+It is possible to define methods into a script, as illustrated here:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=fixing_thrid_party_lib,indent=0]
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
 ----
 
-Thats it! Notice how Groovy allowed us to use ++as++ keyword to solve the typical problem. 
+You can also mix methods and code. The generated script class will carry all methods into the script class, and
+assemble all script bodies into the `run` method:
 
-With Type aliasing we can able to solve the name collision problem ( which can occur with ++*++ imports) elegantly.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly,indent=0]
+----
+<1> script begins
+<2> a method is defined within the script body
+<3> and script continues
 
-== Initializers (TBD)
+This code is internally converted into:
 
-=== Static initializers (TBD)
-=== Instance initializers (TBD)
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
+----
+<1> the `power` method is copied as is into the generated script class
+<2> first statement is copied into the `run` method
+<3> second statement is copied into the `run` method
 
+TIP: Even if Groovy creates a class from your script, it is totally transparent for the user. In particular, scripts
+are compiled to bytecode, and line numbers are preserved. This implies that if an exception is thrown in a script,
+the stack trace will show line numbers corresponding to the original script, not the generated code that we have shown.
+
+=== Variables
+
+Variables in a script do not require a type definition. This means that this script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=script_with_variables,indent=0]
+----
+
+will behave the same as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=script_with_untyped_variables,indent=0]
+----
+
+However there is a semantic difference between the two:
+
+* if the variable is declared as in the first example, it is a _local variable_. It will be declared in the `run`
+method that the compiler will generate and will *not* be visible outside of the script main body. In particular, such
+a variable will *not* be visible in other methods of the script
+* if the variable is undeclared, it goes into the gapi:groovy.lang.Script#getBinding()[script binding]. The binding is
+visible from the methods, and is especially important if you use a script to interact with an application and need to
+share data between the script and the application. Readers might refer to the 
+<<guide-integrating.adoc#_integrating_groovy_in_a_java_application,integration guide>> for more information.
+
+TIP: If you want a variable to become a field of the class without going into the `Binding`, you can use the
+<<core-metaprogramming.adoc#xform-Field,@Field annotation>>.

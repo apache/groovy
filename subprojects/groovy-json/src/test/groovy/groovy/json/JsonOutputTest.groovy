@@ -1,21 +1,25 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json
 
 import static groovy.json.JsonOutput.toJson
+
 import groovy.transform.Canonical
 
 /**
@@ -23,11 +27,11 @@ import groovy.transform.Canonical
  * @author Andrey Bloschetsov
  */
 class JsonOutputTest extends GroovyTestCase {
-    
+
     // Check for GROOVY-5918
     void testExpando() {
-        assert toJson( new Expando( a:42 ) ) == '{"a":42}'
-        assert new JsonBuilder( new Expando( a:42 ) ).toString() == '{"a":42}'
+        assert toJson(new Expando(a: 42)) == '{"a":42}'
+        assert new JsonBuilder(new Expando(a: 42)).toString() == '{"a":42}'
     }
 
     void testBooleanValues() {
@@ -61,24 +65,25 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(100) == "100"
         assert toJson(100) == "100"
 
-        assert toJson((short)100) == "100"
-        assert toJson((byte)100) == "100"
+        assert toJson((short) 100) == "100"
+        assert toJson((byte) 100) == "100"
 
         // Long
         assert toJson(1000000000000000000) == "1000000000000000000"
+
         // BigInteger
         assert toJson(1000000000000000000000000) == "1000000000000000000000000"
 
         // BigDecimal
         assert toJson(0.0) == "0.0"
-        assert toJson(0.0) == "0.0"
 
         // Double
         assert toJson(Math.PI) == "3.141592653589793"
+
         // Float
         assert toJson(1.2345f) == "1.2345"
 
-        // exponant
+        // exponent
         assert toJson(1234.1234e12) == "1.2341234E+15"
 
         shouldFail { toJson(Double.NaN) }
@@ -132,7 +137,7 @@ class JsonOutputTest extends GroovyTestCase {
 //        assert toJson("/") == '"\\/"'
         assert toJson("\\") == '"\\\\"'
 
-        assert toJson("\u0001") == '"\\u0001"' 
+        assert toJson("\u0001") == '"\\u0001"'
         assert toJson("\u0002") == '"\\u0002"'
         assert toJson("\u0003") == '"\\u0003"'
         assert toJson("\u0004") == '"\\u0004"'
@@ -189,7 +194,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson([name: 'Guillaume', age: 33, address: [line1: "1 main street", line2: "", zip: 1234], pets: ['dog', 'cat']]) ==
                 '{"name":"Guillaume","age":33,"address":{"line1":"1 main street","line2":"","zip":1234},"pets":["dog","cat"]}'
 
-        assert toJson([[:],[:]]) == '[{},{}]'
+        assert toJson([[:], [:]]) == '[{},{}]'
     }
 
     void testClosure() {
@@ -265,14 +270,15 @@ class JsonOutputTest extends GroovyTestCase {
             }""".stripIndent()
     }
 
-    private stripWhiteSpace( String str ) {
-      return str.replaceAll( ~/\s/, '' )
+    private stripWhiteSpace(String str) {
+        return str.replaceAll(~/\s/, '')
     }
+
     void testPrettyPrintStringZeroLen() {
-      def tree = [ myStrings: [ str3:'abc', str0:'' ] ]
-      def result   = stripWhiteSpace( new JsonBuilder( tree ).toPrettyString() )
-      def expected = stripWhiteSpace( '{ "myStrings":{ "str3":"abc","str0":"" } }' )
-      assert result == expected
+        def tree = [myStrings: [str3: 'abc', str0: '']]
+        def result = stripWhiteSpace(new JsonBuilder(tree).toPrettyString())
+        def expected = stripWhiteSpace('{ "myStrings":{ "str3":"abc","str0":"" } }')
+        assert result == expected
     }
 
     void testPrettyPrintDoubleQuoteEscape() {
@@ -290,10 +296,10 @@ class JsonOutputTest extends GroovyTestCase {
         def city = new JsonCity("Paris", [
                 new JsonDistrict(1, [
                         new JsonStreet("Saint-Honore", JsonStreetKind.street),
-                        new JsonStreet("de l'Opera",   JsonStreetKind.avenue)
+                        new JsonStreet("de l'Opera", JsonStreetKind.avenue)
                 ] as JsonStreet[]),
                 new JsonDistrict(2, [
-                        new JsonStreet("des Italiens",   JsonStreetKind.boulevard),
+                        new JsonStreet("des Italiens", JsonStreetKind.boulevard),
                         new JsonStreet("Bonne Nouvelle", JsonStreetKind.boulevard)
                 ] as JsonStreet[])
         ])
@@ -344,16 +350,16 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(m) == '{"a":1}'
     }
 
-	void testObjectWithDeclaredPropertiesField() {
-		def person = new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"])
-		def json = toJson(person)
-		assert json == '{"properties":{"state":"fluffy","color":"white"},"name":"pillow"}'
-	}
-	
-	void testGROOVY5494() {
-		def json = toJson(new JsonFoo(name: "foo"))
-		assert json == '{"properties":0,"name":"foo"}'
-	}
+    void testObjectWithDeclaredPropertiesField() {
+        def person = new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"])
+        def json = toJson(person)
+        assert json == '{"properties":{"state":"fluffy","color":"white"},"name":"pillow"}'
+    }
+
+    void testGROOVY5494() {
+        def json = toJson(new JsonFoo(name: "foo"))
+        assert json == '{"properties":0,"name":"foo"}'
+    }
 
     void testCharacter() {
         assert toJson('a' as char) == '"a"'
@@ -367,6 +373,59 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(1 as char) == '"\\u0001"'
         assert toJson('\u0002' as char) == '"\\u0002"'
     }
+
+    void testEmptyValue() {
+        assert toJson('') == '""'
+        assert toJson(['']) == '[""]'
+        assert toJson(['': '']) == '{"":""}'
+        assert toJson(new Expando('': '')) == '{"":""}'
+    }
+
+    void testSpecialCharEscape() {
+        // Map
+        assert toJson(['"': 0]) == '{"\\"":0}'
+        assert toJson(['\b': 0]) == '{"\\b":0}'
+        assert toJson(['\f': 0]) == '{"\\f":0}'
+        assert toJson(['\n': 0]) == '{"\\n":0}'
+        assert toJson(['\r': 0]) == '{"\\r":0}'
+        assert toJson(['\t': 0]) == '{"\\t":0}'
+        assert toJson(['\\': 0]) == '{"\\\\":0}'
+        assert toJson([(1 as char): 0]) == '{"\\u0001":0}'
+        assert toJson(['\u0002': 0]) == '{"\\u0002":0}'
+
+        // Expando
+        assert toJson(new Expando('"': 0)) == '{"\\"":0}'
+        assert toJson(new Expando('\b': 0)) == '{"\\b":0}'
+        assert toJson(new Expando('\f': 0)) == '{"\\f":0}'
+        assert toJson(new Expando('\n': 0)) == '{"\\n":0}'
+        assert toJson(new Expando('\r': 0)) == '{"\\r":0}'
+        assert toJson(new Expando('\t': 0)) == '{"\\t":0}'
+        assert toJson(new Expando('\\': 0)) == '{"\\\\":0}'
+        assert toJson(new Expando((1 as char): 0)) == '{"\\u0001":0}'
+        assert toJson(new Expando('\u0002': 0)) == '{"\\u0002":0}'
+
+        // Closure
+        assert toJson({'"' 0}) == '{"\\"":0}'
+        assert toJson({'\b' 0}) == '{"\\b":0}'
+        assert toJson({'\f' 0}) == '{"\\f":0}'
+        assert toJson({'\n' 0}) == '{"\\n":0}'
+        assert toJson({'\r' 0}) == '{"\\r":0}'
+        assert toJson({'\t' 0}) == '{"\\t":0}'
+        assert toJson({'\\' 0}) == '{"\\\\":0}'
+        assert toJson({'\1' 0}) == '{"\\u0001":0}'
+        assert toJson({'\u0002' 0}) == '{"\\u0002":0}'
+    }
+
+    void testFile() {
+        def file  = File.createTempFile('test', 'file-json')
+        file.deleteOnExit()
+        assert toJson(file)
+
+        def dir = File.createTempDir()
+        dir.deleteOnExit()
+        assert toJson(dir)
+    }
+
 }
 
 @Canonical
@@ -388,13 +447,13 @@ class JsonStreet {
 }
 
 class JsonObject {
-	String name
-	Map properties
+    String name
+    Map properties
 }
 
 class JsonFoo {
-	String name
-	int getProperties() { return 0 }
+    String name
+    int getProperties() { return 0 }
 }
 
 enum JsonStreetKind {

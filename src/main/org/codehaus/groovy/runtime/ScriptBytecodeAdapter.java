@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime;
 
@@ -33,7 +36,6 @@ import java.util.regex.Pattern;
  * A static helper class to interface bytecode and runtime
  *
  * @author Jochen Theodorou
- * @version $Revision$
  */
 public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {};
@@ -45,14 +47,16 @@ public class ScriptBytecodeAdapter {
     //                   exception handling
     //  --------------------------------------------------------
     public static Throwable unwrap(GroovyRuntimeException gre) {
-        if (gre instanceof MissingPropertyExceptionNoStack) {
-            MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
-            return new MissingPropertyException(noStack.getProperty(), noStack.getType());
-        }
+        if (gre.getCause()==null) {
+            if (gre instanceof MissingPropertyExceptionNoStack) {
+                MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
+                return new MissingPropertyException(noStack.getProperty(), noStack.getType());
+            }
 
-        if (gre instanceof MissingMethodExceptionNoStack) {
-            MissingMethodExceptionNoStack noStack = (MissingMethodExceptionNoStack) gre;
-            return new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
+            if (gre instanceof MissingMethodExceptionNoStack) {
+                MissingMethodExceptionNoStack noStack = (MissingMethodExceptionNoStack) gre;
+                return new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
+            }
         }
 
         Throwable th = gre;
@@ -627,10 +631,13 @@ public class ScriptBytecodeAdapter {
                 return new IntRange(inclusive, ifrom, ito);
             } // else fall through for EmptyRange
         }
+        if (!inclusive && compareEqual(from, to)) {
+            return new EmptyRange((Comparable) from);
+        }
+        if (from instanceof Number && to instanceof Number) {
+            return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), inclusive);
+        }
         if (!inclusive) {
-            if (compareEqual(from, to)) {
-                return new EmptyRange((Comparable) from);
-            }
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
             } else {
@@ -639,6 +646,11 @@ public class ScriptBytecodeAdapter {
         }
 
         return new ObjectRange((Comparable) from, (Comparable) to);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Number & Comparable> T comparableNumber(Number n) {
+        return (T) n;
     }
 
     //assert
@@ -665,6 +677,18 @@ public class ScriptBytecodeAdapter {
     }
 
     public static boolean compareEqual(Object left, Object right) {
+        if (left==right) return true;
+        Class<?> leftClass = left==null?null:left.getClass();
+        Class<?> rightClass = right==null?null:right.getClass();
+        if (leftClass ==Integer.class && rightClass==Integer.class) {
+            return left.equals(right);
+        }
+        if (leftClass ==Double.class && rightClass==Double.class) {
+            return left.equals(right);
+        }
+        if (leftClass ==Long.class && rightClass==Long.class) {
+            return left.equals(right);
+        }
         return DefaultTypeTransformation.compareEqual(left, right);
     }
 
@@ -682,18 +706,62 @@ public class ScriptBytecodeAdapter {
     }
 
     public static boolean compareLessThan(Object left, Object right) {
+        Class<?> leftClass = left==null?null:left.getClass();
+        Class<?> rightClass = right==null?null:right.getClass();
+        if (leftClass ==Integer.class && rightClass==Integer.class) {
+            return (Integer) left < (Integer) right;
+        }
+        if (leftClass ==Double.class && rightClass==Double.class) {
+            return (Double) left < (Double) right;
+        }
+        if (leftClass ==Long.class && rightClass==Long.class) {
+            return (Long) left < (Long) right;
+        }
         return compareTo(left, right).intValue() < 0;
     }
 
     public static boolean compareLessThanEqual(Object left, Object right) {
+        Class<?> leftClass = left==null?null:left.getClass();
+        Class<?> rightClass = right==null?null:right.getClass();
+        if (leftClass ==Integer.class && rightClass==Integer.class) {
+            return (Integer) left <= (Integer) right;
+        }
+        if (leftClass ==Double.class && rightClass==Double.class) {
+            return (Double) left <= (Double) right;
+        }
+        if (leftClass ==Long.class && rightClass==Long.class) {
+            return (Long) left <= (Long) right;
+        }
         return compareTo(left, right).intValue() <= 0;
     }
 
     public static boolean compareGreaterThan(Object left, Object right) {
+        Class<?> leftClass = left==null?null:left.getClass();
+        Class<?> rightClass = right==null?null:right.getClass();
+        if (leftClass ==Integer.class && rightClass==Integer.class) {
+            return (Integer) left > (Integer) right;
+        }
+        if (leftClass ==Double.class && rightClass==Double.class) {
+            return (Double) left > (Double) right;
+        }
+        if (leftClass ==Long.class && rightClass==Long.class) {
+            return (Long) left > (Long) right;
+        }
         return compareTo(left, right).intValue() > 0;
     }
 
     public static boolean compareGreaterThanEqual(Object left, Object right) {
+        Class<?> leftClass = left==null?null:left.getClass();
+        Class<?> rightClass = right==null?null:right.getClass();
+        if (leftClass ==Integer.class && rightClass==Integer.class) {
+            return (Integer) left >= (Integer) right;
+        }
+        if (leftClass ==Double.class && rightClass==Double.class) {
+            return (Double) left >= (Double) right;
+        }
+        if (leftClass ==Long.class && rightClass==Long.class) {
+            return (Long) left >= (Long) right;
+        }
         return compareTo(left, right).intValue() >= 0;
     }
 
@@ -727,7 +795,11 @@ public class ScriptBytecodeAdapter {
             } else if (value.getClass().isArray()) {
                 ret.addAll(DefaultTypeTransformation.primitiveArrayToList(value));
             } else {
-                throw new IllegalArgumentException("cannot spread the type " + value.getClass().getName() + " with value " + value);
+                String error = "cannot spread the type " + value.getClass().getName() + " with value " + value;
+                if (value instanceof Map) {
+                    error += ", did you mean to use the spread-map operator instead?";
+                }
+                throw new IllegalArgumentException(error);
             }
             spreadPos++;
         }

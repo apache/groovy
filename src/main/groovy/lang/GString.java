@@ -1,20 +1,24 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
@@ -38,7 +42,6 @@ import java.util.regex.Pattern;
  * couldn't resist :)
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
@@ -53,7 +56,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     };
 
-    private Object[] values;
+    private final Object[] values;
 
     public GString(Object values) {
         this.values = (Object[]) values;
@@ -110,11 +113,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         stringList.toArray(newStrings);
         Object[] newValues = valueList.toArray();
 
-        return new GString(newValues) {
-            public String[] getStrings() {
-                return newStrings;
-            }
-        };
+        return new GStringImpl(newValues, newStrings);
     }
 
     public GString plus(String that) {
@@ -139,13 +138,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             newStrings[lastIndex] = that;
         }
 
-        final String[] finalStrings = newStrings;
-        return new GString(newValues) {
-
-            public String[] getStrings() {
-                return finalStrings;
-            }
-        };
+        return new GStringImpl(newValues, newStrings);
     }
 
     public int getValueCount() {

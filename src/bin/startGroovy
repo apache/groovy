@@ -1,4 +1,22 @@
 # -*- mode:sh -*-
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
 
 ##############################################################################
 ##                                                                          ##
@@ -48,6 +66,7 @@ earlyInit
 cygwin=false
 msys=false
 darwin=false
+nonstop=false
 case "`uname`" in
   CYGWIN* )
     cygwin=true
@@ -57,6 +76,9 @@ case "`uname`" in
     ;;
   MINGW* )
     msys=true
+    ;;
+  NONSTOP* )
+    nonstop=true
     ;;
 esac
 
@@ -161,7 +183,7 @@ if [ -z "$JAVA_HOME" ] ; then
 fi
 
 # Increase the maximum file descriptors if we can.
-if [ "$cygwin" = "false" -a "$darwin" = "false" ] ; then
+if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
     MAX_FD_LIMIT=`ulimit -H -n`
     if [ $? -eq 0 ] ; then
         if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ] ; then
@@ -261,18 +283,18 @@ startGroovy ( ) {
     if $useprofiler ; then
         runProfiler
     else
-        exec "$JAVACMD" $JAVA_OPTS \
-            -classpath "$STARTER_CLASSPATH" \
-            -Dscript.name="$SCRIPT_PATH" \
-            -Dprogram.name="$PROGNAME" \
-            -Dgroovy.starter.conf="$GROOVY_CONF" \
-            -Dgroovy.home="$GROOVY_HOME" \
-            -Dtools.jar="$TOOLS_JAR" \
+        eval exec "\"\$JAVACMD\"" $JAVA_OPTS \
+            -classpath "\"\$STARTER_CLASSPATH\"" \
+            -Dscript.name="\"\$SCRIPT_PATH\"" \
+            -Dprogram.name="\"\$PROGNAME\"" \
+            -Dgroovy.starter.conf="\"\$GROOVY_CONF\"" \
+            -Dgroovy.home="\"\$GROOVY_HOME\"" \
+            -Dtools.jar="\"\$TOOLS_JAR\"" \
             $STARTER_MAIN_CLASS \
             --main $CLASS \
-            --conf "$GROOVY_CONF" \
-            --classpath "$CP" \
-            "$@"
+            --conf "\"\$GROOVY_CONF\"" \
+            --classpath "\"\$CP\"" \
+            "\"\$@\""
     fi
 }
 

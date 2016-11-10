@@ -1,26 +1,57 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TestName
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+import static org.junit.Assume.assumeTrue
+
 /**
- * @author Paul King
- * @author Tim Yates
+ * Tests for the @Immutable transform.
  */
+@RunWith(JUnit4)
 class ImmutableTransformTest extends GroovyShellTestCase {
 
+    @Rule public TestName nameRule = new TestName()
+
+    @Before
+    void setUp() {
+        super.setUp()
+        // check java version requirements
+        def v = System.getProperty("java.specification.version")
+        assert v
+        assumeTrue('Test requires jre8+', nameRule.methodName.endsWith('_vm8').implies(new BigDecimal(v) >= 1.8))
+    }
+
+    @After
+    void tearDown() {
+        super.tearDown()
+    }
+
+    @Test
     void testImmutable() {
         def objects = evaluate('''
             import groovy.transform.Immutable
@@ -39,6 +70,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert objects[0].nums.class.name.contains("Unmodifiable")
     }
 
+    @Test
     void testImmutableClonesListAndCollectionFields() {
         def objects = evaluate("""
             import groovy.transform.Immutable
@@ -62,6 +94,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertTrue objects[1].otherNums.class.name.contains("Unmodifiable")
     }
 
+    @Test
     void testImmutableField() {
         def person = evaluate("""
             import groovy.transform.Immutable
@@ -75,6 +108,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         }
     }
 
+    @Test
     void testCloneableField() {
         def (originalDolly, lab) = evaluate("""
             import groovy.transform.Immutable
@@ -102,6 +136,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert clonedDolly2.name == clonedDolly.name
     }
 
+    @Test
     void testCloneableFieldNotCloneableObject() {
         def cls = shouldFail(CloneNotSupportedException) {
             def objects = evaluate("""
@@ -124,20 +159,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert cls == 'Dolly'
     }
 
-    void testImmutableCantAlsoBeMutable() {
-        def msg = shouldFail(RuntimeException) {
-            assertScript """
-                import groovy.transform.*
-                @Immutable
-                @Canonical
-                class Foo {
-                    String bar
-                }
-            """
-        }
-        assert msg.contains("@Canonical class 'Foo' can't also be @Immutable")
-    }
-
+    @Test
     void testImmutableListProp() {
         def objects = evaluate("""
             import groovy.transform.Immutable
@@ -157,6 +179,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert objects[0].nums.size() == 2
     }
 
+    @Test
     void testImmutableAsMapKey() {
         assertScript """
             import groovy.transform.Immutable
@@ -170,6 +193,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testImmutableWithOnlyMap() {
         assertScript """
             import groovy.transform.Immutable
@@ -180,6 +204,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testImmutableWithPrivateStaticFinalField() {
         assertScript """
           @groovy.transform.Immutable class Foo {
@@ -189,6 +214,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
       """
     }
 
+    @Test
     void testImmutableWithInvalidPropertyName() {
         def msg = shouldFail(MissingPropertyException) {
             assertScript """
@@ -200,6 +226,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert msg.contains('No such property: missing for class: Simple')
     }
 
+    @Test
     void testImmutableWithHashMap() {
         assertScript """
             import groovy.transform.Immutable
@@ -218,6 +245,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testDefaultValuesAreImmutable_groovy6293() {
         assertScript """
             import groovy.transform.Immutable
@@ -229,6 +257,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testNoArgConstructor_groovy6473() {
         assertScript """
             import groovy.transform.Immutable
@@ -240,6 +269,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testImmutableEquals() {
         assertScript """
             import groovy.transform.Immutable
@@ -257,6 +287,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testExistingToString() {
         assertScript """
             import groovy.transform.Immutable
@@ -280,6 +311,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testExistingEquals() {
         assertScript """
             import groovy.transform.Immutable
@@ -322,6 +354,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testExistingHashCode() {
         assertScript """
             import groovy.transform.Immutable
@@ -356,6 +389,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testBuiltinImmutables() {
         assertScript '''
             import java.awt.Color
@@ -375,6 +409,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testPrivateFieldAssignedViaConstructor() {
         assertScript '''
             import groovy.transform.Immutable
@@ -398,6 +433,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testPrivateFinalFieldAssignedViaConstructorShouldCauseError() {
         shouldFail(ReadOnlyPropertyException) {
             evaluate '''
@@ -410,6 +446,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         }
     }
 
+    @Test
     void testImmutableWithImmutableFields() {
         assertScript '''
             import groovy.transform.Immutable
@@ -420,6 +457,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testImmutableWithConstant() {
         assertScript '''
             import groovy.transform.Immutable
@@ -435,6 +473,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testStaticsAllowed_ThoughUsuallyBadDesign() {
         // design here is questionable as getDescription() method is not idempotent
         assertScript '''
@@ -465,6 +504,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testImmutableToStringVariants() {
         assertScript '''
             import groovy.transform.*
@@ -486,6 +526,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testImmutableUsageOnInnerClasses() {
         assertScript '''
             import groovy.transform.Immutable
@@ -503,6 +544,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testKnownImmutableClassesWithNamedParameters() {
         assertScript '''
             import groovy.transform.*
@@ -518,6 +560,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testKnownImmutableClassesWithExplicitConstructor() {
         assertScript '''
             @groovy.transform.Immutable(knownImmutableClasses = [Address])
@@ -533,6 +576,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testKnownImmutableClassesWithCoercedConstruction() {
         assertScript '''
             @groovy.transform.Immutable(knownImmutableClasses = [Address])
@@ -544,10 +588,11 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             // ok, not really immutable but deem it such for the purpose of this test
             @groovy.transform.Canonical class Address { String street }
 
-            assert new Person(first: 'John', last: 'Doe', address: ['Street']).toString() == 'Person(John, Doe, Address(Street))\'
+            assert new Person(first: 'John', last: 'Doe', address: ['Street']).toString() == 'Person(John, Doe, Address(Street))'
         '''
     }
 
+    @Test
     void testKnownImmutableClassesMissing() {
         def msg = shouldFail(RuntimeException) {
             evaluate '''
@@ -567,6 +612,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-5828
+    @Test
     void testKnownImmutableCollectionClass() {
         assertScript '''
             @groovy.transform.Immutable
@@ -583,6 +629,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-5828
+    @Test
     void testKnownImmutables() {
         assertScript '''
             // ok, Items not really immutable but pretend so for the purpose of this test
@@ -598,6 +645,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-5449
+    @Test
     void testShouldNotThrowNPE() {
         def msg = shouldFail(RuntimeException) {
             evaluate '''
@@ -607,10 +655,11 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
         }
-        assert msg.contains('@Immutable processor doesn\'t know how to handle field \'name\' of type \'java.lang.Object or def\'')
+        assert msg.contains("@Immutable processor doesn't know how to handle field 'name' of type 'java.lang.Object or def'")
     }
 
     // GROOVY-6192
+    @Test
     void testWithEqualsAndHashCodeASTOverride() {
         assertScript '''
             import groovy.transform.*
@@ -627,7 +676,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-6354
-    public void testCopyWith() {
+    @Test
+    void testCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |class Person {
@@ -662,7 +712,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert !alice.is( tim )
     }
 
-    public void testGenericsCopyWith() {
+    @Test
+    void testGenericsCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |class Person {
@@ -685,7 +736,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert !alice.is( tim )
     }
 
-    public void testWithPrivatesCopyWith() {
+    @Test
+    void testWithPrivatesCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith=true)
             |class Foo {
@@ -715,7 +767,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert alice.full() == 'Alice Yates (ali)'
     }
 
-    public void testStaticWithPrivatesCopyWith() {
+    @Test
+    void testStaticWithPrivatesCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith=true)
             |@groovy.transform.CompileStatic
@@ -746,7 +799,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert alice.full() == 'Alice Yates (ali)'
     }
 
-    public void testTypedWithPrivatesCopyWith() {
+    @Test
+    void testTypedWithPrivatesCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith=true)
             |@groovy.transform.TypeChecked
@@ -777,7 +831,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert alice.full() == 'Alice Yates (ali)'
     }
 
-    public void testStaticCopyWith() {
+    @Test
+    void testStaticCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.CompileStatic
@@ -813,7 +868,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert !alice.is( tim )
     }
 
-    public void testTypedCopyWith() {
+    @Test
+    void testTypedCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.TypeChecked
@@ -849,7 +905,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert !alice.is( tim )
     }
 
-    public void testCopyWithSkipping() {
+    @Test
+    void testCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |class Person {
@@ -870,7 +927,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert result.first == [ 'tim', 'tim' ]
     }
 
-    public void testStaticCopyWithSkipping() {
+    @Test
+    void testStaticCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.CompileStatic
@@ -892,7 +950,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert result.first == [ 'tim', 'tim' ]
     }
 
-    public void testTypedCopyWithSkipping() {
+    @Test
+    void testTypedCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
                 '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.TypeChecked
@@ -912,5 +971,70 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         def result = tim.copyWith( 2 )
         assert result.size() == 2
         assert result.first == [ 'tim', 'tim' ]
+    }
+
+    // GROOVY-7227
+    @Test
+    void testKnownImmutablesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+               import groovy.transform.Immutable
+               @Immutable(knownImmutables=['sirName'])
+               class Person {
+                   String surName
+               }
+               new Person(surName: "Doe")
+           """
+        }
+        assert message.contains("Error during @Immutable processing: 'knownImmutables' property 'sirName' does not exist.")
+    }
+
+    // GROOVY-7162
+    @Test
+    void testImmutableWithSuperClass() {
+        assertScript '''
+            import groovy.transform.*
+
+            @EqualsAndHashCode
+            class Person {
+                String name
+            }
+
+            @Immutable
+            @TupleConstructor(includeSuperProperties=true)
+            @EqualsAndHashCode(callSuper=true)
+            @ToString(includeNames=true, includeSuperProperties=true)
+            class Athlete extends Person {
+                String sport
+            }
+
+            def d1 = new Athlete('Michael Jordan', 'BasketBall')
+            def d2 = new Athlete(name: 'Roger Federer', sport: 'Tennis')
+            assert d1 != d2
+            assert d1.toString() == 'Athlete(sport:BasketBall, name:Michael Jordan)'
+            assert d2.toString() == 'Athlete(sport:Tennis, name:Roger Federer)'
+        '''
+    }
+
+    // GROOVY-7600
+    @Test
+    void testImmutableWithOptional_vm8() {
+        assertScript '''
+            @groovy.transform.Immutable class Person {
+                String name
+                Optional<String> address
+            }
+            def p = new Person('Joe', Optional.of('Home'))
+            assert p.toString() == 'Person(Joe, Optional[Home])'
+            assert p.address.get() == 'Home'
+        '''
+        shouldFail(MultipleCompilationErrorsException) {
+            evaluate '''
+            @groovy.transform.Immutable class Person {
+                String name
+                Optional<Date> address
+            }
+            '''
+        }
     }
 }

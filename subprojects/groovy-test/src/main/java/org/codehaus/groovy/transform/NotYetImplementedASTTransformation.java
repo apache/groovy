@@ -1,30 +1,47 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 
 /**
  * Handles generation of code for the {@code @NotYetImplemented} annotation.
@@ -63,7 +80,7 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
             statements.addAll(((BlockStatement) statement).getStatements());
         }
 
-        if (statements.size() == 0) return;
+        if (statements.isEmpty()) return;
 
         BlockStatement rewrittenMethodCode = new BlockStatement();
 
@@ -74,17 +91,17 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
     }
 
     private TryCatchStatement tryCatchAssertionFailedError(AnnotationNode annotationNode, MethodNode methodNode, ArrayList<Statement> statements) {
-        TryCatchStatement tryCatchStatement = new TryCatchStatement(new BlockStatement(statements, methodNode.getVariableScope()), EmptyStatement.INSTANCE);
-        tryCatchStatement.addCatch(new CatchStatement(new Parameter(CATCHED_THROWABLE_TYPE, "ex"), ReturnStatement.RETURN_NULL_OR_VOID));
+        TryCatchStatement tryCatchStatement = new TryCatchStatement(
+                block(methodNode.getVariableScope(), statements),
+                EmptyStatement.INSTANCE);
+        tryCatchStatement.addCatch(catchS(param(CATCHED_THROWABLE_TYPE, "ex"), ReturnStatement.RETURN_NULL_OR_VOID));
         return tryCatchStatement;
     }
 
     private Statement throwAssertionFailedError(AnnotationNode annotationNode) {
-        ThrowStatement throwStatement = new ThrowStatement(
-                new ConstructorCallExpression(ASSERTION_FAILED_ERROR_TYPE,
-                        new ArgumentListExpression(
-                                new ConstantExpression("Method is marked with @NotYetImplemented but passes unexpectedly"))));
-
+        Statement throwStatement = throwS(
+                ctorX(ASSERTION_FAILED_ERROR_TYPE,
+                        args(constX("Method is marked with @NotYetImplemented but passes unexpectedly"))));
         throwStatement.setSourcePosition(annotationNode);
 
         return throwStatement;

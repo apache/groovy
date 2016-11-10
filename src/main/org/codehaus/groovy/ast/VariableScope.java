@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.ast;
 
@@ -26,7 +29,6 @@ import java.util.Map;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jochen Theodorou
- * @version $Revision$
  */
 public class VariableScope  {
     private Map<String, Variable> declaredVariables = Collections.emptyMap();
@@ -96,17 +98,17 @@ public class VariableScope  {
     public VariableScope copy() {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
-        if (declaredVariables.size() > 0) {
+        if (!declaredVariables.isEmpty()) {
           copy.declaredVariables = new HashMap<String, Variable>();
           copy.declaredVariables.putAll(declaredVariables);
         }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
-        if (referencedClassVariables.size() > 0) {
+        if (!referencedClassVariables.isEmpty()) {
             copy.referencedClassVariables = new HashMap<String, Variable>();
             copy.referencedClassVariables.putAll(referencedClassVariables);
         }
-        if (referencedLocalVariables.size() > 0) {
+        if (!referencedLocalVariables.isEmpty()) {
             copy.referencedLocalVariables = new HashMap<String, Variable>();
             copy.referencedLocalVariables.putAll(referencedLocalVariables);
         }
@@ -175,5 +177,27 @@ public class VariableScope  {
      */
     public Iterator<Variable> getReferencedClassVariablesIterator() {
         return getReferencedClassVariables().values().iterator();
+    }
+
+    /**
+     * Gets a map containing the variables declared in this scope.
+     * This map cannot be modified.
+     * @return a map containing the declared variable references
+     */
+    public Map<String, Variable> getDeclaredVariables() {
+        if (declaredVariables == Collections.EMPTY_MAP) {
+            return declaredVariables;
+        } else {
+            return Collections.unmodifiableMap(declaredVariables);
+        }
+    }
+
+    /**
+     * Gets an iterator for the declared class variables. The remove
+     * operation is not supported.
+     * @return an iterator for the declared variables
+     */
+    public Iterator<Variable> getDeclaredVariablesIterator() {
+        return getDeclaredVariables().values().iterator();
     }
 }

@@ -1,0 +1,256 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= The <groovy> Ant Task
+
+Executes a series of Groovy statements from http://ant.apache.org/[Apache Ant].
+Statements can either be read in from a text file using the `src` attribute or from between the enclosing Groovy tags.
+
+== Required taskdef
+
+Assuming `groovy-all-VERSION.jar` is in `my.classpath` you will need to declare this task in the `build.xml` prior to using it:
+
+[source,xml]
+----
+<taskdef name="groovy"
+         classname="org.codehaus.groovy.ant.Groovy"
+         classpathref="my.classpath"/>
+<groovy>
+----
+
+== <groovy> attributes
+
+[cols="<1,<2,<1",options="header,footer"]
+|============================================
+|Attribute|Description|Required
+|src|File containing Groovy statements. The directory containing the file is added to the classpath.| Yes, unless statements enclosed within tags
+|classpath|The classpath to use.|No
+|classpathref|The classpath to use, given as reference to a PATH defined elsewhere.|No
+|output|Set the output file; defaults to the Ant log.|No
+|fork|If enabled the script will be executed in another JVM (disabled by default).|No
+|scriptBaseClass|The name of the base class for scripts.|No
+|indy|If enabled the script will be executed with `invokedynamic` (disabled by default).|No
+|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
+|============================================
+
+== Parameters specified as nested elements
+=== <classpath>
+
+Groovy's classpath attribute is a PATH like structure and can also be set via a nested classpath element.
+
+=== <arg>
+
+Arguments can be set via one or more nested <arg> elements using the standard Ant http://ant.apache.org/manual/using.html#arg[command line conventions].
+
+== Available bindings
+
+A number of bindings are in scope for use within your Groovy statements.
+
+[cols="<1,<5",options="header,footer"]
+|============================================
+|Name|Description
+|ant|an instance of `AntBuilder` that knows about the current ant project
+|project|the current ant project
+|properties|a `Map` of ant properties
+|target|the owning target that invoked this groovy script
+|task|the wrapping task, can access anything needed in `org.apache.tools.ant.Task`
+|args|command line arguments, if any
+|============================================
+
+== Examples
+
+Hello world, version 1:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<groovy>
+println "Hello World"
+</groovy>
+---------------------------------------------------------------------------------
+
+Hello world, version 2:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<groovy>
+ant.echo "Hello World"
+</groovy>
+---------------------------------------------------------------------------------
+
+List all xml files in the current directory:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<groovy>
+xmlfiles = new File(".").listFiles().findAll{ it =~ "\.xml$" }
+xmlfiles.sort().each { println it.toString() }
+</groovy>
+---------------------------------------------------------------------------------
+
+List all xml files within a jar:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<zipfileset id="found" src="foobar.jar"
+            includes="**/*.xml"/>
+<groovy>
+    project.references.found.each {
+        println it.name
+    }
+</groovy>
+---------------------------------------------------------------------------------
+
+Run a script:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<groovy src="/some/directory/some/file.groovy">
+  <classpath>
+    <pathelement location="/my/groovy/classes/directory"/>
+  </classpath>
+</groovy>
+---------------------------------------------------------------------------------
+
+Find all `Builder` classes having an `org.*` package within a directory of jars:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<property name="local.target" value="C:/Projects/GroovyExamples"/>
+<groovy>
+import java.util.jar.JarFile
+def classes = []
+def resourceNamePattern = /org\/.*\/.*Builder.class/
+def jarNamePattern = /.*(beta|commons).*jar$/
+ 
+def libdir = new File("${properties['local.target']}/lib")
+libdir.listFiles().grep(~jarNamePattern).each { candidate ->
+    new JarFile(candidate).entries().each { entry ->
+        if (entry.name ==~ resourceNamePattern) classes += entry.name
+    }
+}
+properties["builder-classes"] = classes.join(' ')
+</groovy>
+<echo message='${builder-classes}'/>
+---------------------------------------------------------------------------------
+
+Which might result in something like:
+[source]
+---------------------------------------------------------------------------------
+org/apache/commons/cli/PatternOptionBuilder.class org/apache/commons/cli/OptionBuilder.class org/codehaus/groovy/tools/groovydoc/GroovyRootDocBuilder.class org/custommonkey/xmlunit/HTMLDocumentBuilder.class org/custommonkey/xmlunit/TolerantSaxDocumentBuilder.class
+---------------------------------------------------------------------------------
+
+FileScanner version of above (with a slight variation on collecting the names):
+
+[source,xml]
+---------------------------------------------------------------------------------
+<groovy>
+import java.util.jar.JarFile
+def resourceNamePattern = /org\/.*\/.*Builder.class/
+def candidates = ant.fileScanner {
+    fileset(dir: '${local.target}/lib') {
+        include(name: '*beta*.jar')
+        include(name: '*commons*.jar')
+    }
+}
+def classes = candidates.collect {
+    new JarFile(it).entries().collect { it.name }.findAll {
+        it ==~ resourceNamePattern
+    }
+}.flatten()
+properties["builder-classes"] = classes.join(' ')
+</groovy>
+---------------------------------------------------------------------------------
+
+Calling out to a web service from your Ant script:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SOAP example" default="main" basedir=".">
+    <property environment="env"/>
+    <property name="celsius" value="0"/>
+    <target name="main">
+        <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy">
+            <classpath>
+                <fileset dir="${env.GROOVY_HOME}" includes="embeddable/groovy-all-*.jar,lib/ivy*.jar"/>
+            </classpath>
+        </taskdef>
+        <groovy>
+            @Grab('org.codehaus.groovy.modules:groovyws:0.5.1')
+            import groovyx.net.ws.WSClient
+            def url = 'http://www.w3schools.com/webservices/tempconvert.asmx?WSDL'
+            def proxy = new WSClient(url, this.class.classLoader)
+            proxy.initialize()
+            ant.echo "I'm freezing at ${properties.celsius} degrees Celsius"
+            properties.result = proxy.CelsiusToFahrenheit(properties.celsius)
+        </groovy>
+        <antcall target="results"/>
+    </target>
+    <target name="results">
+        <echo message="I'm freezing at ${result} degrees Fahrenheit"/>
+    </target>
+</project>
+---------------------------------------------------------------------------------
+
+Which will output the following (along with some informational messages):
+
+[source]
+---------------------------------------------------------------------------------
+main:
+     ...
+     [echo] I'm freezing at 0 degrees Celsius
+results:
+     [echo] I'm freezing at 32 degrees Fahrenheit
+
+BUILD SUCCESSFUL
+---------------------------------------------------------------------------------
+
+Setting arguments:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<target name="run">
+    <groovy>
+        <arg line="1 2 3"/>
+        <arg value="4 5"/>
+        println args.size()
+        println args[2]
+        args.each{ ant.echo(message:it) }
+    </groovy>
+</target>
+---------------------------------------------------------------------------------
+
+Output:
+
+[source]
+---------------------------------------------------------------------------------
+Buildfile: build.xml
+ 
+run:
+   [groovy] 4
+   [groovy] 3
+     [echo] 1
+     [echo] 2
+     [echo] 3
+     [echo] 4 5
+ 
+BUILD SUCCESSFUL
+---------------------------------------------------------------------------------

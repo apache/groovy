@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.util
 
@@ -135,9 +138,9 @@ class XmlSlurperTest extends GroovyTestCase {
             <ChildElement ItemId="FirstItemId" two:ItemId="SecondItemId">Child element data</ChildElement>
         </RootElement>"""
         def root = new XmlSlurper().parseText(xml).declareNamespace(one:"http://www.ivan.com/ns1", two: "http://www.ivan.com/ns2")
+        // Default namespace declarations do not apply to attribute names, see https://www.w3.org/TR/xml-names/#defaulting
         assert root.ChildElement.@ItemId == 'FirstItemId'
-        assert root.ChildElement.@ItemId[0].namespaceURI() == 'http://www.ivan.com/ns1'
-        assert root.ChildElement.@'one:ItemId' == 'FirstItemId'
+        assert root.ChildElement.@ItemId[0].namespaceURI() == ''
         assert root.ChildElement.@'two:ItemId' == 'SecondItemId'
         assert root.ChildElement.@'two:ItemId'[0].namespaceURI() == 'http://www.ivan.com/ns2'
     }
@@ -211,5 +214,18 @@ class XmlSlurperTest extends GroovyTestCase {
 
         // execute a DGM on the Iterable
         assert root.first() == 'Child element data'
+    }
+
+    // GROOVY-7781
+    void testNamespacedAttributesAccessedWithDifferentPrefix() {
+        def xml = '''
+        <x:root xmlns:x="blah">
+            <x:child x:id="1">c</x:child>
+        </x:root>
+        '''
+
+        def root = new XmlSlurper(false, true).parseText(xml).declareNamespace(t: 'blah')
+        assert root.'t:child'.text() == 'c'
+        assert root.'t:child'.@'t:id' == '1'
     }
 }

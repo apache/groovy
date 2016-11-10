@@ -1,5 +1,22 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy.json
-
 
 /**
  * Created by Richard on 2/2/14.
@@ -11,27 +28,26 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
     }
 
     void testNullEmptyMalformedPayloads() {
-        shouldFail(IllegalArgumentException) { parser.parseText(null)   }
-        shouldFail(IllegalArgumentException) { parser.parseText("")     }
+        shouldFail(IllegalArgumentException) { parser.parseText(null) }
+        shouldFail(IllegalArgumentException) { parser.parseText("") }
 
-        shouldFail(JsonException) { parser.parseText("[")           }
-        shouldFail(JsonException) { parser.parseText('{"')          }
-        shouldFail(JsonException) { parser.parseText("[a")           }
-        shouldFail(JsonException) { parser.parseText('{a"')          }
-        shouldFail(JsonException) { parser.parseText("[\"a\"")           }
-        shouldFail(JsonException) { parser.parseText('{"a"')          }
-
+        shouldFail(JsonException) { parser.parseText("[") }
+        shouldFail(JsonException) { parser.parseText('{"') }
+        shouldFail(JsonException) { parser.parseText("[a") }
+        shouldFail(JsonException) { parser.parseText('{a"') }
+        shouldFail(JsonException) { parser.parseText("[\"a\"") }
+        shouldFail(JsonException) { parser.parseText('{"a"') }
     }
 
     void testObjectWithSimpleValues() {
         assert parser.parseText('{"a": 1, "b" : true , "c":false, "d": null}') == [a: 1, b: true, c: false, d: null]
 
-         parser.parseText('{true}')
-         shouldFail { parser.parseText('{"a"}') }
-         parser.parseText('{"a":true')
-         parser.parseText('{"a":}')
-         shouldFail {parser.parseText('{"a":"b":"c"}') }
-         parser.parseText('{:true}')
+        parser.parseText('{true}')
+        shouldFail { parser.parseText('{"a"}') }
+        parser.parseText('{"a":true')
+        parser.parseText('{"a":}')
+        shouldFail {parser.parseText('{"a":"b":"c"}') }
+        parser.parseText('{:true}')
     }
 
     void testArrayOfArrayWithSimpleValues() {
@@ -69,9 +85,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
     }
 
     void testLaxCommentsAndKeys() {
-
         String jsonString = """
-
             {
             foo:bar,    //look mom no quotes
             'foo1': 'bar1',  //I can do single quotes if I want to
@@ -84,11 +98,18 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
             flag2 : false,
             strings : [we, are, string, here, us, roar],
             he said : '"fire all your guns at once baby, and explode into the night"',
+            "going deeper" : [
+                "nestedArrays", // needs comments
+                "anotherThing" // commented
+                // only one comment
+                ,
+                "a last thing" // explain that too
+            ],
             the : end
             }
         """
 
-        Map <String, Object> map = parser.parseText(jsonString)
+        Map<String, Object> map = parser.parseText(jsonString)
         assert map.foo == "bar"
         assert map.foo1 == "bar1"
         assert map.foo2 == "bar2"
@@ -100,4 +121,50 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         assert map["he said"] == '"fire all your guns at once baby, and explode into the night"'
         assert map.the == "end"
     }
+
+    @Override
+    void testInvalidNumbers() {
+        // should be parsed as Strings
+        assert parser.parseText('{"num": 1a}').num == '1a'
+        assert parser.parseText('{"num": -1a}').num == '-1a'
+        assert parser.parseText('[98ab9]')[0] == '98ab9'
+        assert parser.parseText('[12/25/1980]')[0] == '12/25/1980'
+        assert parser.parseText('{"num": 1980-12-25}').num == '1980-12-25'
+        assert parser.parseText('{"num": 1.2ee5}').num == '1.2ee5'
+        assert parser.parseText('{"num": 1.2EE5}').num == '1.2EE5'
+        assert parser.parseText('{"num": 1.2Ee5}').num == '1.2Ee5'
+        assert parser.parseText('{"num": 1.2e++5}').num == '1.2e++5'
+        assert parser.parseText('{"num": 1.2e--5}').num == '1.2e--5'
+        assert parser.parseText('{"num": 1.2e+-5}').num == '1.2e+-5'
+        assert parser.parseText('{"num": 1.2+e5}').num == '1.2+e5'
+        assert parser.parseText('{"num": 1.2E5+}').num == '1.2E5+'
+        assert parser.parseText('{"num": 1.2e5+}').num == '1.2e5+'
+        assert parser.parseText('{"num": 37e-5.5}').num == '37e-5.5'
+        assert parser.parseText('{"num": 6.92e}').num == '6.92e'
+        assert parser.parseText('{"num": 6.92E}').num == '6.92E'
+        assert parser.parseText('{"num": 6.92e-}').num == '6.92e-'
+        assert parser.parseText('{"num": 6.92e+}').num == '6.92e+'
+        assert parser.parseText('{"num": 6+}').num == '6+'
+        assert parser.parseText('{"num": 6-}').num == '6-'
+    }
+
+    void testGroovy7728() {
+        String jsonString = '''
+            {
+                "enterpriseDomain": "@example.com"
+                ,"enterpriseId": "123456"
+                ,"clientId": "abcdefghijklmnopqrstuvwxyz123456"
+                ,"clientSecret": "abcdefghijklmnopqrstuvwxyz123456"
+                ,"keyId": "12345678"
+                ,"keyFileName": "/etc/PrintToBox/PrintToBox_private_key.pem"
+                ,"keyPassword": "12345678901234567890"
+                // ,"appUserId": "123456789"
+
+                //  Optional parameters with defaults shown
+                // ,"baseFolderName": "PrintToBox"
+            }
+        '''
+        assert !parser.parseText(jsonString).containsKey('appUserId')
+    }
+
 }

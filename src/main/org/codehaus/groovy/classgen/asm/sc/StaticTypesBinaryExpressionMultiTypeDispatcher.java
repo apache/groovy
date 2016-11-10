@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
@@ -21,11 +24,10 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -35,6 +37,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
@@ -45,105 +48,21 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.*;
  * It is able to generate optimized bytecode for some operations using JVM instructions when available.
  *
  * @author Cedric Champeau
+ * @author Jochen Theodorou
  */
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
+    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", new Parameter[0]);
 
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
     }
 
-    private int incValue(Token token) {
-        switch (token.getType()) {
-            case Types.PLUS_PLUS:
-                return 1;
-            case Types.MINUS_MINUS:
-                return -1;
-        }
-        return 0;
-    }
-
- /*   @Override
-    public void evaluatePrefixMethod(final PrefixExpression expression) {
-        final Expression src = expression.getExpression();
-        ListOfExpressionsExpression list = new ListOfExpressionsExpression();
-        list.addExpression(new BinaryExpression(
-                src,
-                Token.newSymbol(Types.EQUAL, -1, -1),
-                new BinaryExpression(
-                        src,
-                        Token.newSymbol(Types.MINUS, -1, -1),
-                        new ConstantExpression(1)
-                )
-        ));
-        list.addExpression(src);
-        list.setSourcePosition(expression);
-        list.visit(getController().getAcg());
-        if (true) return;
-        if (src instanceof VariableExpression) {
-            final WriterController controller = getController();
-            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
-            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
-                BytecodeExpression bytecode = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
-                        if (WideningCategories.isIntCategory(type)) {
-                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
-                            mv.visitIntInsn(ILOAD, variable.getIndex());
-                        } else if (WideningCategories.isLongCategory(type)) {
-                            mv.visitIntInsn(LLOAD, variable.getIndex());
-                            mv.visitInsn(LCONST_1);
-                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
-                            mv.visitVarInsn(LSTORE, variable.getIndex());
-                            mv.visitVarInsn(LLOAD, variable.getIndex());
-                        }
-                    }
-                };
-                bytecode.setType(type);
-                bytecode.visit(controller.getAcg());
-                return;
-            }
-        }
-        super.evaluatePrefixMethod(expression);
-    }
-
-    @Override
-    public void evaluatePostfixMethod(final PostfixExpression expression) {
-        final Expression src = expression.getExpression();
-        if (src instanceof VariableExpression) {
-            final WriterController controller = getController();
-            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
-            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
-                BytecodeExpression bytecode = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
-                        if (WideningCategories.isIntCategory(type)) {
-                            mv.visitIntInsn(ILOAD, variable.getIndex());
-                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
-                        } else if (WideningCategories.isLongCategory(type)) {
-                            mv.visitIntInsn(LLOAD, variable.getIndex());
-                            mv.visitInsn(DUP2);
-                            mv.visitInsn(LCONST_1);
-                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
-                            mv.visitVarInsn(LSTORE, variable.getIndex());
-                        }
-                    }
-                };
-                bytecode.setType(type);
-                bytecode.visit(controller.getAcg());
-                return;
-            }
-        }
-        super.evaluatePostfixMethod(expression);
-    }
-*/
     @Override
     protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
-        MethodNode mn = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        MethodNode mn = orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         WriterController controller = getController();
         OperandStack operandStack = controller.getOperandStack();
         if (mn!=null) {
@@ -334,7 +253,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
         if (!isAttribute) {
             String setter = "set" + MetaClassHelper.capitalize(property);
-            MethodNode setterMethod = receiverType.getSetterMethod(setter);
+            MethodNode setterMethod = receiverType.getSetterMethod(setter, false);
             ClassNode declaringClass = setterMethod!=null?setterMethod.getDeclaringClass():null;
             if (isThisExpression && declaringClass!=null && declaringClass.equals(controller.getClassNode())) {
                 // this.x = ... shouldn't use a setter if in the same class
@@ -357,17 +276,72 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 }
             }
             if (setterMethod != null) {
-                MethodCallExpression call = new MethodCallExpression(
+                Expression call = StaticPropertyAccessHelper.transformToSetterCall(
                         receiver,
-                        setter,
-                        arguments
+                        setterMethod,
+                        arguments,
+                        implicitThis,
+                        safe,
+                        spreadSafe,
+                        true, // to be replaced with a proper test whether a return value should be used or not
+                        message
                 );
-                call.setImplicitThis(implicitThis);
-                call.setSafe(safe);
-                call.setSpreadSafe(spreadSafe);
-                call.setMethodTarget(setterMethod);
                 call.visit(controller.getAcg());
                 return true;
+            }
+            if (isThisExpression && !controller.isInClosure()) {
+                receiverType = controller.getClassNode();
+            }
+            if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, property, arguments, safe, spreadSafe, implicitThis)) return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean makeSetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        WriterController controller = getController();
+        FieldNode field = receiverType.getField(fieldName);
+        ClassNode outerClass = receiverType.getOuterClass();
+        if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
+            Expression pexp;
+            if (controller.isInClosure()) {
+                MethodCallExpression mce = new MethodCallExpression(
+                    new VariableExpression("this"),
+                    "getThisObject",
+                    ArgumentListExpression.EMPTY_ARGUMENTS
+                );
+                mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
+                mce.setImplicitThis(true);
+                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                pexp = new CastExpression(controller.getOutermostClass(),mce);
+            } else {
+                pexp = new PropertyExpression(
+                    new ClassExpression(outerClass),
+                    "this"
+                );
+                ((PropertyExpression)pexp).setImplicitThis(true);
+            }
+            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
+            pexp.setSourcePosition(receiver);
+            return makeSetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, arguments, safe, spreadSafe, true);
+        }
+        ClassNode classNode = controller.getClassNode();
+        if (field != null && Modifier.isPrivate(field.getModifiers())
+            && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
+            && !receiverType.equals(classNode)) {
+            Map<String, MethodNode> mutators = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
+            if (mutators != null) {
+                MethodNode methodNode = mutators.get(fieldName);
+                if (methodNode != null) {
+                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
+                        new ArgumentListExpression(field.isStatic()?new ConstantExpression(null):receiver, arguments));
+                        mce.setMethodTarget(methodNode);
+                        mce.setSafe(safe);
+                        mce.setSpreadSafe(spreadSafe);
+                    mce.setImplicitThis(implicitThis);
+                    mce.visit(controller.getAcg());
+                    return true;
+                }
             }
         }
         return false;
@@ -379,30 +353,14 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode arrayComponentType = arrayType.getComponentType();
         int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
-        AsmClassGenerator acg = getController().getAcg();
 
         if (bew.arraySet(true) && arrayType.isArray()) {
-            OperandStack operandStack   =   getController().getOperandStack();
-
-            // load the array
-            receiver.visit(acg);
-            operandStack.doGroovyCast(arrayType);
-
-            // load index
-            index.visit(acg);
-            operandStack.doGroovyCast(int_TYPE);
-
-            // load rhs
-            rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(arrayComponentType);
-
-            // store value in array
-            bew.arraySet(false);
-
-            // load return value && correct operand stack stack
-            operandStack.remove(3);
-            rhsValueLoader.visit(acg);
+            super.assignToArray(parent, receiver, index, rhsValueLoader);
         } else {
+            /******
+            / This code path is needed because ACG creates array access expressions
+            *******/
+
             WriterController controller = getController();
             StaticTypeCheckingVisitor visitor = new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode());
             // let's replace this assignment to a subscript operator with a
@@ -413,7 +371,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             ArgumentListExpression ae = new ArgumentListExpression(index, rhsValueLoader);
             if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
                 // GROOVY-6061
-                Expression right = ((BinaryExpression) parent).getRightExpression();
                 rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
                         controller.getTypeChooser().resolveType(parent, controller.getClassNode()));
             }
@@ -424,7 +381,11 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             );
             mce.setSourcePosition(parent);
             visitor.visitMethodCallExpression(mce);
+            OperandStack operandStack = controller.getOperandStack();
+            int height = operandStack.getStackLength();
             mce.visit(controller.getAcg());
+            operandStack.pop();
+            operandStack.remove(operandStack.getStackLength()-height);
             // return value of assignment
             rhsValueLoader.visit(controller.getAcg());
         }

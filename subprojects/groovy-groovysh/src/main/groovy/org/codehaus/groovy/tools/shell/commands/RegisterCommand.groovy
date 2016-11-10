@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
@@ -25,19 +27,19 @@ import org.codehaus.groovy.tools.shell.Command
  * Registers a class as a new groovysh command.
  * Requires the command to have matching constructors (shell) or (shell, name, alias).
  *
- * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommand
     extends CommandSupport
 {
-    public static final String COMMAND_NAME = ':register'
+    static final String COMMAND_NAME = ':register'
 
     RegisterCommand(final Groovysh shell) {
-        super(shell, COMMAND_NAME, ":rc")
+        super(shell, COMMAND_NAME, ':rc')
     }
 
-    public Object execute(List<String> args) {
+    @Override
+    Object execute(final List<String> args) {
         assert args != null
 
         if (args.size() < 1) {
@@ -46,9 +48,9 @@ class RegisterCommand
 
         String classname = args.get(0)
 
-        Class type = getClassLoader().loadClass(classname)
+        Class type = classLoader.loadClass(classname)
 
-        Command command = null;
+        Command command = null
 
         if (args.size() == 1) {                   // use default name
             command = type.newInstance(shell) as Command

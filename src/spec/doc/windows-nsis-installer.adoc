@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Windows NSIS-Installer
 
 
@@ -11,11 +32,11 @@ The installer first copies the groovy files to where the user wants,
 
 image::assets/img/outdir.png[]
 
-then asks for permission to create a variable ++GROOVY_HOME++ and to add the respective bin directory (++%GROOVY_HOME%/bin++) to the path, if no reference to groovy already exists in it.
+then asks for permission to create a variable `GROOVY_HOME` and to add the respective bin directory (`%GROOVY_HOME%/bin` to the path, if no reference to groovy already exists in it.
 
 image::assets/img/variables.jpg[]
 
-The user can decide whether to put these into the user or system environment (on Win 95 and Win 98 this information is appended to the autoexec.bat instead) i.e., whether the installation will be for the current user or for all users. Then the installer checks for the existence of ++JAVA_HOME++. If it doesn't exist, a message box points out the potential problem.
+The user can decide whether to put these into the user or system environment (on Win 95 and Win 98 this information is appended to the autoexec.bat instead) i.e., whether the installation will be for the current user or for all users. Then the installer checks for the existence of `JAVA_HOME`. If it doesn't exist, a message box points out the potential problem.
 
 Next the user can decide whether or not to install the native launcher,
 
@@ -34,7 +55,7 @@ As you can see in the screen shots (they are clickable thumbnails), currently en
 
 Oh, and whatever you do, do not use the command line option -russel.
 
-The french translation has been contributed by Xavier Mehaut and Tugduall Grall, the spanisch translation by Andres Almiray, and the tranlation to brazilian portuguese has been provided by Marcos Silva Pereira.
+The french translation has been contributed by Xavier Mehaut and Tugduall Grall, the spanish translation by Andres Almiray, and the translation to brazilian portuguese has been provided by Marcos Silva Pereira.
 
 Thank you very much for your help.
 

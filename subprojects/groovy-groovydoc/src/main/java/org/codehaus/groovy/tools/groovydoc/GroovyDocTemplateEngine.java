@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
 
@@ -39,16 +42,15 @@ import java.util.Properties;
  * Process Groovydoc templates.
  */
 public class GroovyDocTemplateEngine {
-    private TemplateEngine engine;
-    private GroovyDocTool tool; // TODO use it or lose it
-    private ResourceManager resourceManager;
-    private Properties properties;
-    private Map<String, Template> docTemplates; // cache
-    private List<String> docTemplatePaths; // once per documentation set
-    private Map<String, Template> packageTemplates; // cache
-    private List<String> packageTemplatePaths; // once per package
-    private Map<String, Template> classTemplates; // cache
-    private List<String> classTemplatePaths; // once per class
+    private final TemplateEngine engine;
+    private final ResourceManager resourceManager;
+    private final Properties properties;
+    private final Map<String, Template> docTemplates; // cache
+    private final List<String> docTemplatePaths; // once per documentation set
+    private final Map<String, Template> packageTemplates; // cache
+    private final List<String> packageTemplatePaths; // once per package
+    private final Map<String, Template> classTemplates; // cache
+    private final List<String> classTemplatePaths; // once per class
 
     public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager, String classTemplate) {
         this(tool, resourceManager, new String[]{}, new String[]{}, new String[]{classTemplate}, new Properties());
@@ -59,7 +61,6 @@ public class GroovyDocTemplateEngine {
                                    String[] packageTemplates,
                                    String[] classTemplates,
                                    Properties properties) {
-        this.tool = tool;
         this.resourceManager = resourceManager;
         this.properties = properties;
         this.docTemplatePaths = Arrays.asList(docTemplates);
@@ -86,6 +87,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing class template for: " + classDoc.getFullPathName());
             e.printStackTrace();
         }
         return templateWithBindingApplied;
@@ -104,6 +106,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing package template for: " + packageDoc.name());
             e.printStackTrace();
         }
         return templateWithBindingApplied;
@@ -122,6 +125,7 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
+            System.out.println("Error processing root doc template");
             e.printStackTrace();
         }
         return templateWithBindingApplied;
@@ -138,29 +142,6 @@ public class GroovyDocTemplateEngine {
     Iterator<String> docTemplatesIterator() {
         return docTemplatePaths.iterator();
     }
-
-/*
-    String applyClassTemplatesWithVelocity(GroovyClassDoc classDoc) {
-//        Iterator templates = classTemplates.iterator();
-//        while (templates.hasNext)
-        String templatePath = (String) classTemplates.get(0); // todo (iterate)
-            
-        String templateWithBindingApplied = "";
-        try {
-//            Template t = new GStringTemplateEngine().createTemplate(template);
-            VelocityTemplateEngine t = new VelocityTemplateEngine(new File(".").getAbsolutePath());
-
-            Map binding = new HashMap();
-            binding.put("classDoc", classDoc);
-            
-//            templateWithBindingApplied = t.make(binding).toString();
-            templateWithBindingApplied = t.apply(templatePath,binding);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return templateWithBindingApplied;
-    }
-*/
 
     public void copyBinaryResource(String template, String destFileName) {
         if (resourceManager instanceof ClasspathResourceManager) {

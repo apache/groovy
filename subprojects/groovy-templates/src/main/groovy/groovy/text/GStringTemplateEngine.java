@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.text;
 
@@ -90,6 +93,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 public class GStringTemplateEngine extends TemplateEngine {
     private final ClassLoader parentLoader;
     private static AtomicInteger counter = new AtomicInteger();
+    private static final boolean reuseClassLoader = Boolean.getBoolean("groovy.GStringTemplateEngine.reuseClassLoader");
 
     public GStringTemplateEngine() {
         this(GStringTemplate.class.getClassLoader());
@@ -116,12 +120,14 @@ public class GStringTemplateEngine extends TemplateEngine {
          * to the writer passed as a parameter
          * <p>
          * For example:
-         * <p>
+         * <pre>
          * '<%= "test" %> of expr and <% test = 1 %>${test} script.'
+         * </pre>
          * <p>
          * would compile into:
-         * <p>
+         * <pre>
          * { out -> out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
+         * </pre>
          *
          * @param reader
          * @param parentLoader
@@ -178,7 +184,8 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             templateExpressions.append("}}");
 
-            final GroovyClassLoader loader = parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
+            // Use a new class loader by default for each class so each class can be independently garbage collected
+            final GroovyClassLoader loader = reuseClassLoader && parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
                     (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {
                             return new GroovyClassLoader(parentLoader);
@@ -230,7 +237,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parse a <% .... %> section
+         * Parse a &lt;% .... %&gt; section
          * if we are writing a GString close and append ';'
          * then write the section as a statement
          *
@@ -265,7 +272,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parse a <%= .... %> expression
+         * Parse a &lt;%= .... %&gt; expression
          *
          * @param reader
          * @param writingString

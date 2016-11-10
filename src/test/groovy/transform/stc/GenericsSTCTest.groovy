@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
 
@@ -198,7 +201,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
-    void testCompatibleGenericAssignmentWithInferrence() {
+    void testCompatibleGenericAssignmentWithInference() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
         ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
@@ -491,7 +494,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         }
         new ClassB()
-        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <java.lang.Object extends java.lang.Object>]'
+        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-5516
@@ -986,6 +989,116 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCorrectlyBoundedByWildcardGenericParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends List<?>> void bar(T a) {}
+            }
+            Foo.bar(['abc'])
+        '''
+    }
+
+    void testCorrectlyBoundedByExtendsGenericParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends List<? extends CharSequence>> void bar(T a) {}
+            }
+            Foo.bar(['abc'])
+        '''
+    }
+
+    void testCorrectlyBoundedBySuperGenericParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends List<? super CharSequence>> void bar(T a) {}
+            }
+            Foo.bar([new Object()])
+        '''
+    }
+
+    void testCorrectlyBoundedByExtendsPlaceholderParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends List<? extends CharSequence>> void bar(T a) {}
+            }
+            class Baz {
+                static <T extends List<? extends String>> void qux(T a) {
+                    Foo.bar(a)
+                }
+            }
+            Baz.qux(['abc'])
+        '''
+    }
+
+    void testCorrectlyBoundedBySuperPlaceholderParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends List<? super CharSequence>> void bar(T a) {}
+            }
+            class Baz {
+                static <T extends List<? super Object>> void qux(T a) {
+                    Foo.bar(a)
+                }
+            }
+            Baz.qux([new Object()])
+        '''
+    }
+
+    void testCorrectlyBoundedSubtypeGenericParameterType() {
+        assertScript '''
+            class Foo {
+                static <T extends Collection<? extends CharSequence>> void bar(T a) {}
+            }
+            Foo.bar(['abc'])
+        '''
+    }
+
+    void testOutOfBoundsByExtendsGenericParameterType() {
+        shouldFailWithMessages '''
+            class Foo {
+                static <T extends List<? extends CharSequence>> void bar(T a) {}
+            }
+            Foo.bar([new Object()])
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.Object>]'
+    }
+
+    void testOutOfBoundsBySuperGenericParameterType() {
+        shouldFailWithMessages '''
+            class Foo {
+                static <T extends List<? super CharSequence>> void bar(T a) {}
+            }
+            Foo.bar(['abc'])
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.String>]'
+    }
+
+    void testOutOfBoundsByExtendsPlaceholderParameterType() {
+        shouldFailWithMessages '''
+            class Foo {
+                static <T extends List<? extends CharSequence>> void bar(T a) {}
+            }
+            class Baz {
+                static <T extends List<Object>> void qux(T a) {
+                    Foo.bar(a)
+                }
+            }
+            Baz.qux([new Object()])
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [T]'
+    }
+
+    void testOutOfBoundsBySuperPlaceholderParameterType() {
+        shouldFailWithMessages '''
+            class Foo {
+                static <T extends List<? super CharSequence>> void bar(T a) {}
+            }
+            class Baz {
+                static <T extends List<String>> void qux(T a) {
+                    Foo.bar(a)
+                }
+            }
+            Baz.qux(['abc'])
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [T]'
+    }
+
     // GROOVY-5721
     void testExtractComponentTypeFromSubclass() {
         assertScript '''
@@ -1195,7 +1308,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Done extends Base<Done> { }
             class Next<H, T extends Base<T>> extends Base<Next<H, T>> {
                 H head; T tail
-                static Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
+                static <H, T extends Base<T>> Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
                 String toString() { "Next($head, ${tail.toString()})" }
             }
 
@@ -1429,11 +1542,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6135
     void testGenericField() {
         assertScript '''
-            import javax.xml.ws.Holder
-
-            Holder<Integer> holder = new Holder<Integer>()
-            holder.value = 5
-            assert holder.value > 4
+            class MyClass {
+                static void main(args) {
+                    Holder<Integer> holder = new Holder<Integer>()
+                    holder.value = 5
+                    assert holder.value > 4
+                }
+                private static class Holder<T> {
+                    T value
+                }
+            }
         '''
     }
 
@@ -1639,6 +1757,76 @@ assert result == 'ok'
             }
             Wrapper w = new Wrapper()
             assert new Foo<Wrapper>().doIt([w]) == w
+        '''
+    }
+
+    void testReturnTypeChecking() {
+        shouldFailWithMessages '''
+            class Foo {
+                List<String> run() {
+                    [11, 12]
+                }
+            }
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Integer> to: java.util.List <String>'
+    }
+
+    void testBoundedReturnTypeChecking() {
+        assertScript '''
+            class Foo {
+                List<? extends Serializable> run() {
+                    [1, 'a']
+                }
+            }
+            null
+        '''
+    }
+
+    // GROOVY-7691
+    @NotYetImplemented
+    void testCovariantGenericField() {
+        assertScript '''
+            abstract class AbstractNumberWrapper<S extends Number> {
+                protected final S number;
+
+                AbstractNumberWrapper(S number) {
+                    this.number = number
+                }
+            }
+            class LongWrapper<S extends Long> extends AbstractNumberWrapper<S> {
+                LongWrapper(S longNumber) {
+                    super(longNumber)
+                }
+
+                S getValue() {
+                    return number;
+                }
+            }
+            assert new LongWrapper<Long>(42L).value == 42L
+        '''
+    }
+
+    //GROOVY-7804
+    void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
+        assertScript '''
+            interface Supplier<T> {
+                public <T> T get()
+            }
+
+            static <T> T doGet(Supplier<T> supplier) { supplier.get() }
+
+            assert doGet { -> 'foo' } == 'foo'
+        '''
+    }
+
+    //GROOVY-7713
+    void testClosureReturnNull() {
+        assertScript '''
+            Closure<String> cl = {
+                if (hashCode() > 0) {
+                    return null
+                }
+                'foo'
+            }
         '''
     }
 

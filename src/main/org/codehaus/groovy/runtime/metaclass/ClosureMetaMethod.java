@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime.metaclass;
 
@@ -38,6 +41,7 @@ import java.util.List;
  */
 public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private final Closure callable;
     private final CachedMethod doCall;
     private final String name;
@@ -121,7 +125,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     
     private static MetaMethod adjustParamTypesForStdMethods(MetaMethod metaMethod, String methodName) {
         Class[] nativeParamTypes = metaMethod.getNativeParameterTypes();
-        nativeParamTypes = (nativeParamTypes != null) ? nativeParamTypes : new Class[0];
+        nativeParamTypes = (nativeParamTypes != null) ? nativeParamTypes : EMPTY_CLASS_ARRAY;
         // for methodMissing, first parameter should be String type - to allow overriding of this method without
         // type String explicitly specified for first parameter (missing method name) - GROOVY-2951
         if("methodMissing".equals(methodName) && nativeParamTypes.length == 2 && nativeParamTypes[0] != String.class) {

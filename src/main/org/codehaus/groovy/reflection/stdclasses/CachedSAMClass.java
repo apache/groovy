@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.reflection.stdclasses;
 
@@ -40,9 +43,10 @@ import org.codehaus.groovy.transform.trait.Traits;
 
 public class CachedSAMClass extends CachedClass {
 
-    private static final int ABSTRACT_STATIC_PRIVATE = 
+    private static final int ABSTRACT_STATIC_PRIVATE =
             Modifier.ABSTRACT|Modifier.PRIVATE|Modifier.STATIC;
     private static final int VISIBILITY = 5; // public|protected
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Method method;
 
     public CachedSAMClass(Class klazz, ClassInfo classInfo) {
@@ -104,7 +108,7 @@ public class CachedSAMClass extends CachedClass {
         } catch (java.security.AccessControlException ace) {
             // swallow and do as if no method is available
         }
-        return new Method[0];
+        return EMPTY_METHOD_ARRAY;
     }
 
     private static void getAbstractMethods(Class c, List<Method> current) {
@@ -153,6 +157,14 @@ public class CachedSAMClass extends CachedClass {
      * @return null if nothing was found, the method otherwise
      */
     public static Method getSAMMethod(Class<?> c) {
+      try {
+        return getSAMMethodImpl(c);
+      } catch (NoClassDefFoundError ignore) {
+        return null;
+      }
+    }
+
+    private static Method getSAMMethodImpl(Class<?> c) {
         // SAM = single public abstract method
         // if the class is not abstract there is no abstract method
         if (!Modifier.isAbstract(c.getModifiers())) return null;

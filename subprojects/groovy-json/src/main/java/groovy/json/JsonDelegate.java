@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json;
 
@@ -29,7 +32,7 @@ import java.util.*;
  */
 public class JsonDelegate extends GroovyObjectSupport {
 
-    private Map<String, Object> content = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> content = new LinkedHashMap<String, Object>();
 
     /**
      * Intercepts calls for setting a key and value for a JSON object
@@ -44,9 +47,10 @@ public class JsonDelegate extends GroovyObjectSupport {
 
             if (arr.length == 1) {
                 val = arr[0];
-            } else if (arr.length == 2 && arr[0] instanceof Collection && arr[1] instanceof Closure) {
+            } else if (isIterableOrArrayAndClosure(arr)) {
                 Closure<?> closure = (Closure<?>) arr[1];
-                Iterator<?> iterator = ((Collection) arr[0]).iterator();
+                Iterator<?> iterator = (arr[0] instanceof Iterable) ?
+                        ((Iterable) arr[0]).iterator() : Arrays.asList((Object[])arr[0]).iterator();
                 List<Object> list = new ArrayList<Object>();
                 while (iterator.hasNext()) {
                     list.add(curryDelegateAndGetContent(closure, iterator.next()));
@@ -59,6 +63,13 @@ public class JsonDelegate extends GroovyObjectSupport {
         content.put(name, val);
 
         return val;
+    }
+
+    private static boolean isIterableOrArrayAndClosure(Object[] args) {
+        if (args.length != 2 || !(args[1] instanceof Closure)) {
+            return false;
+        }
+        return ((args[0] instanceof Iterable) || (args[0] != null && args[0].getClass().isArray()));
     }
 
     /**

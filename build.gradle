@@ -1,9 +1,21 @@
-apply from: 'gradle/filter.gradle'
-apply from: 'gradle/indy.gradle'
-
-if (JavaVersion.current().java6Compatible) {
-    apply from: 'gradle/bintray.gradle'
-}
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 
 buildscript {
     repositories {
@@ -12,18 +24,51 @@ buildscript {
             name 'Bintray Asciidoctor repo'
             url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
         }
+        maven{
+            name 'Bintray Javadoc Hotfix repo'
+            url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
+        }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.3'
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
-        classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1'
+        // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.2'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
+        classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
+        //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
+        //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
+        classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
+        classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
+
+        classpath files("lib/antlr4-gradle-plugin-0.1.2-SNAPSHOT.jar");
     }
 }
 
+plugins {
+    id 'com.gradle.build-scan' version '1.2'
+    id 'me.champeau.buildscan-recipes' version '0.1.0'
+}
+
+buildScan {
+    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    licenseAgree = 'yes'
+    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
+    recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
+    recipes 'git-status', 'gc-stats'
+}
+
+apply from: 'gradle/filter.gradle'
+apply from: 'gradle/indy.gradle'
+apply from: 'gradle/bintray.gradle'
+apply plugin: 'javadocHotfix'
+apply plugin: "com.github.jk1.dependency-license-report"
+
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
+indyBanner()
 
 // TODO use antlr plugin
 //apply plugin: 'antlr'
@@ -32,18 +77,21 @@ allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
-    sourceCompatibility = 1.6
-    targetCompatibility = 1.6
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
         jcenter()
+        maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
     apply plugin: 'groovy'
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
-    apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
+    if (JavaVersion.current().java7Compatible) {
+        apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
+    }
 }
 
 // todo: use the conventional "resources" directory for classpath resources
@@ -82,7 +130,6 @@ subprojects {
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'http://www.aQute.biz/repo' } // tools
     maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
 }
 
@@ -97,31 +144,33 @@ configurations {
 }
 
 ext {
-    antVersion = '1.9.4'
-    asmVersion = '5.0.3'
+    antVersion = '1.9.7'
+    asmVersion = '6.0_ALPHA'
     antlrVersion = '2.7.7'
-    bndVersion = '0.0.401'
-    checkstyleVersion = '4.4'
+    bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
-    commonsCliVersion = '1.2'
+    commonsCliVersion = '1.3.1'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    ivyVersion = '2.4.0-rc1'
-    jansiVersion = '1.11'
+    gradleVersion = '3.1'
+    ivyVersion = '2.4.0'
+    jansiVersion = '1.13'
     jarjarVersion = '1.3'
-    jlineVersion = '2.12'
+    jlineVersion = '2.14.2'
     jmockVersion = '1.2.0'
-    logbackVersion = '1.1.2'
+    logbackVersion = '1.1.7'
     log4jVersion = '1.2.17'
-    log4j2Version = '2.0-rc1'
+    log4j2Version = '2.3' // 2.4 requires Java 7
     luceneVersion = '4.7.2'
+    openbeansVersion = '1.0'
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
-    simianVersion = '2.2.4'
-    slf4jVersion = '1.7.6'
-    xmlunitVersion = '1.5'
-    xstreamVersion = '1.4.7'
+    slf4jVersion = '1.7.21'
+    xmlunitVersion = '1.6'
+    xstreamVersion = '1.4.9'
+    spockVersion = '1.0-groovy-2.4'
+    antlr4Version = '4.5.3'
 }
 
 dependencies {
@@ -138,24 +187,15 @@ dependencies {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
+        exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    compile files("lib/openbeans-1.0.jar")
+    compile "com.googlecode:openbeans:$openbeansVersion"
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
     compile files("${buildDir}/generated-classes")
 
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
-        exclude(group: 'xpp3', module: 'xpp3_min')
-        exclude(group: 'junit', module: 'junit')
-        exclude(group: 'jmock', module: 'jmock')
-    }
-    compile "org.fusesource.jansi:jansi:$jansiVersion"
-    compile("org.apache.ivy:ivy:$ivyVersion") {
-        transitive = false
-    }
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
@@ -169,10 +209,8 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
-    tools("checkstyle:checkstyle:$checkstyleVersion") {
-        exclude(module: 'junit')
-    }
-    tools "redhill:simian:$simianVersion"
+    tools "org.jboss.bridger:bridger:$bridgerVersion"
+
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
         exclude(module: 'asm')
@@ -180,10 +218,10 @@ dependencies {
     }
     tools "org.ow2.asm:asm-all:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
-    tools "biz.aQute:bnd:$bndVersion"
 
     examplesCompile project(':groovy-test')
     examplesCompile project(':groovy-swing')
+
     examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
     examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
@@ -208,6 +246,7 @@ dependencies {
 
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
+    testCompile project(':groovy-macro')
 }
 
 ext.generatedDirectory = "${buildDir}/generated-sources"
@@ -224,22 +263,12 @@ sourceSets {
             }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         groovy {
             srcDirs = [
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
-            if (!JavaVersion.current().isJava7Compatible()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
         }
         resources {
             srcDirs = ['src/main', 'src/tools', 'src/resources']
@@ -262,18 +291,10 @@ sourceSets {
         resources {
             srcDirs = ['src/test-resources']
         }
-        output.classesDir = "$buildDir/test-classes" as File
     }
     tools {
-        groovy {
-            srcDirs = ['src/tools']
-        }
-        resources {
-            srcDirs = ['src/tools']
-        }
-        compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
+        compileClasspath = sourceSets.main.runtimeClasspath + configurations.tools
         runtimeClasspath = output + compileClasspath
-        output.classesDir = "$buildDir/tools-classes" as File
     }
     examples {
         groovy {
@@ -283,7 +304,6 @@ sourceSets {
             srcDirs = ['src/examples']
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
-        output.classesDir = "$buildDir/examples-classes" as File
     }
 }
 
@@ -303,6 +323,15 @@ processResources.doLast {
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
         into sourceSets.main.output.classesDir
+    }
+}
+
+tasks.withType(Jar) {
+    doFirst {
+        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+        }
+        ant.echo('Bridger: ' + ant.properties.stdout)
     }
 }
 
@@ -337,6 +366,7 @@ task ensureGrammars {
 }
 
 apply from: 'gradle/utils.gradle'
+apply from: 'gradle/wrapper.gradle'
 
 ext.modules = {
     subprojects
@@ -364,7 +394,7 @@ task dgmConverter(dependsOn:compileJava) {
 }
 
 compileJava {
-    dependsOn ensureGrammars, exceptionUtils
+    dependsOn ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
@@ -389,7 +419,7 @@ task bootstrapJar {
         )
     }
     inputs.property('indy', useIndy())
-    inputs.files fileTree('src')
+    inputs.files sourceSets.main.allJava
     outputs.file archivePath
 }
 
@@ -397,8 +427,13 @@ compileGroovy.dependsOn bootstrapJar
 
 allprojects {
 
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
     tasks.withType(GroovyCompile) {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
+        groovyOptions.encoding = 'UTF-8'
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
                 rootProject.bootstrapJar.archivePath
@@ -411,12 +446,17 @@ allprojects {
         tasks.withType(GroovyCompile) {
             logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
             groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
+            sourceCompatibility = 1.8
+            targetCompatibility = 1.8
         }
         tasks.withType(JavaCompile) {
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
+            if (project.name=='performance') {
+                sourceCompatibility = 1.8
+                targetCompatibility = 1.8
+            } else {
+                sourceCompatibility = 1.8
+                targetCompatibility = 1.8
+            }
         }
         jar {
             classifier = 'indy'
@@ -435,18 +475,39 @@ apply from: 'gradle/assemble.gradle'
 apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-apply from: 'gradle/codehaus.gradle'
 apply from: 'gradle/quality.gradle'
+apply from: 'gradle/jdk9.gradle'
+
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-if (!JavaVersion.current().java7Compatible) {
+if (!JavaVersion.current().java8Compatible) {
     logger.lifecycle '''
     **************************************** WARNING **********************************************
     ****** You are running the build with an older JDK. NEVER try to release with 1.6.       ******
-    ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
+    ****** You must use a JDK 1.8+ in order to compile all features of the language.         ******
     ***********************************************************************************************
 '''
 }
+
+licenseReport {
+    excludeGroups = [
+            'com.googlecode', // openbeans has no pom but is ASLv2
+            'org.multiverse'  // we never include this optional dependency of an optional dependency
+    ]
+}
+
+// UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
+//task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
+//    source = fileTree(dir:"src").include ("**/*.java",'**/*.groovy','**/*.html','**/*.css','**/*.xml','**/*.properties','**/*.properties')
+//}
+//
+//task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
+//    source = files(fileTree(dir:projectDir).include('**/*.gradle'),fileTree('buildSrc').include('**/*.groovy'))
+//}
+//
+//licenseFormat.dependsOn licenseFormatCustom
+//licenseFormat.dependsOn licenseFormatGradle
+//

@@ -1,3 +1,24 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Syntax
 
 This chapter covers the syntax of the Groovy programming language.
@@ -8,8 +29,8 @@ but enhances it with specific constructs for Groovy, and allows certain simplifi
 
 === Single line comment
 
-Single line comments start with +//+ and can be found at any position in the line.
-The characters following +//+, till the end of the line, are considered part of the comment.
+Single line comments start with `//` and can be found at any position in the line.
+The characters following `//`, till the end of the line, are considered part of the comment.
 
 [source,groovy]
 ----
@@ -18,9 +39,9 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=single_line_comment,i
 
 === Multiline comment
 
-A multiline comment starts with +/\*+ and can be found at any position in the line.
-The characters following +/*+ will be considered part of the comment, including new line characters,
-up to the first +*/+ closing the comment.
+A multiline comment starts with `/\*` and can be found at any position in the line.
+The characters following `/*` will be considered part of the comment, including new line characters,
+up to the first `*/` closing the comment.
 Multiline comments can thus be put at the end of a statement, or even inside a statement.
 
 [source,groovy]
@@ -30,8 +51,8 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multiline_comment,ind
 
 === GroovyDoc comment
 
-Similarly to multiline comments, GroovyDoc comments are multiline, but start with +/\**+ and end with +*/+.
-Lines following the first GroovyDoc comment line can optionally start with a star +*+.
+Similarly to multiline comments, GroovyDoc comments are multiline, but start with `/\**` and end with `*/`.
+Lines following the first GroovyDoc comment line can optionally start with a star `*`.
 Those comments are associated with:
 
 * type definitions (classes, interfaces, enums, annotations),
@@ -53,14 +74,14 @@ So you'll be able to use the same tags as with JavaDoc.
 
 Beside the single line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
 which allows scripts to be run directly from the command-line, provided you have installed the Groovy distribution
-and the +groovy+ command is available on the +PATH+.
+and the `groovy` command is available on the `PATH`.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
 ----
 
-NOTE: The +#+ character must be the first character of the file. Any indentation would yield a compilation error.
+NOTE: The `#` character must be the first character of the file. Any indentation would yield a compilation error.
 
 == Keywords
 
@@ -110,9 +131,11 @@ The following list represents all the keywords of the Groovy language:
 |throw
 
 |throws
+|trait
 |true
 |try
-|while
+
+|while | | |
 
 |===
 
@@ -158,7 +181,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=keywords_valid_id_aft
 === Quoted identifiers
 
 Quoted identifiers appear after the dot of a dotted expression.
-For instance, the +name+ part of the +person.name+ expression can be quoted with +person."name"+ or +person.\'name'+.
+For instance, the `name` part of the `person.name` expression can be quoted with `person."name"` or `person.'name'`.
 This is particularly interesting when certain identifiers contain illegal characters that are forbidden by the Java Language Specification,
 but which are allowed by Groovy when quoted. For example, characters like a dash, a space, an exclamation mark, etc.
 
@@ -187,19 +210,19 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstrin
 == Strings
 
 Text literals are represented in the form of chain of characters called strings.
-Groovy lets you instantiate +java.lang.String+ objects, as well as GStrings (+groovy.lang.GString+)
+Groovy lets you instantiate `java.lang.String` objects, as well as GStrings (`groovy.lang.GString`)
 which are also called _interpolated strings_ in other programming languages.
 
 === Single quoted string
 
-Single quoted strings are a series of characters surounded by single quotes:
+Single quoted strings are a series of characters surrounded by single quotes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
-NOTE: Single quoted strings are plain +java.lang.String+ and don't support interpolation.
+NOTE: Single quoted strings are plain `java.lang.String` and don't support interpolation.
 
 === String concatenation
 
@@ -212,14 +235,14 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_plus,indent=0]
 
 === Triple single quoted string
 
-Triple single quoted strings are a series of characters surrounded by single quotes:
+Triple single quoted strings are a series of characters surrounded by triplets of single quotes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_0,indent=0]
 ----
 
-NOTE: Triple single quoted strings are plain +java.lang.String+ and don't support interpolation.
+NOTE: Triple single quoted strings are plain `java.lang.String` and don't support interpolation.
 
 Triple single quoted strings are multiline.
 You can span the content of the string across line boundaries without the need to split the string in several pieces, without contatenation or newline escape characters:
@@ -230,8 +253,8 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_1,inden
 ----
 
 If your code is indented, for example in the body of the method of a class, your string will contain the whitespace of the indentation.
-The Groovy Development Kit contains methods for stripping out the indentation with the +String#stripIndent()+ method,
-and with the +String#stripMargin()+ method that takes a delimiter character to identify the text to remove from the beginning of a string.
+The Groovy Development Kit contains methods for stripping out the indentation with the `String#stripIndent()` method,
+and with the `String#stripMargin()` method that takes a delimiter character to identify the text to remove from the beginning of a string.
 
 When creating a string as follows:
 
@@ -298,7 +321,7 @@ Some special characters also use the backslash as escape character:
 
 ==== Unicode escape sequence
 
-For characters that are not present on your keyboard, you can use unicode escape sequances: 
+For characters that are not present on your keyboard, you can use unicode escape sequences: 
 a backslash, followed by 'u', then 4 hexadecimal digits.
 
 For example, the Euro currency symbol can be represented with:
@@ -317,8 +340,8 @@ Double quoted strings are a series of characters surrounded by double quotes:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_5,indent=0]
 ----
 
-NOTE: Double quoted strings are plain +java.lang.String+ if there's no interpolated expression, 
-but are +groovy.lang.GString+ instances if interpolation is present.
+NOTE: Double quoted strings are plain `java.lang.String` if there's no interpolated expression,
+but are `groovy.lang.GString` instances if interpolation is present.
 
 NOTE: To escape a double quote, you can use the backslash character: +"A double quote: \""+.
 
@@ -326,8 +349,8 @@ NOTE: To escape a double quote, you can use the backslash character: +"A double 
 
 Any Groovy expression can be interpolated in all string literals, apart from single and triple single quoted strings.
 Interpolation is the act of replacing a placeholder in the string with its value upon evaluation of the string.
-The placeholder expressions are surrounded by +${}+ or prefixed with +$+ for dotted expressions.
-The expression value inside the placeholder is evaluated to its string representation when the GString is passed to a method taking a String as argument by calling +toString()+ on that expression.
+The placeholder expressions are surrounded by `${}` or prefixed with `$` for dotted expressions.
+The expression value inside the placeholder is evaluated to its string representation when the GString is passed to a method taking a String as argument by calling `toString()` on that expression.
 
 Here, we have a string with a placeholder referencing a local variable:
 
@@ -344,18 +367,18 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_2,indent=0]
 ----
 
 [NOTE]
-Not only expressions are actually allowed in between the +${}+ placeholder. Statements are also allowed, but a statement's value is just +null+. 
+Not only expressions are actually allowed in between the `${}` placeholder. Statements are also allowed, but a statement's value is just `null`.
 So if several statements are inserted in that placeholder, the last one should somehow return a meaningful value to be inserted. 
 For instance, +"The sum of 1 and 2 is equal to ${def a = 1; def b = 2; a + b}"+ is supported and works as expected but a good practice is usually to stick to simple expressions inside GString placeholders.
 
-In addition to +${}+ placeholders, we can also use a lone +$+ sign prefixing a dotted expression:
+In addition to `${}` placeholders, we can also use a lone `$` sign prefixing a dotted expression:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3,indent=0]
 ----
 
-But only dotted expressions of the form +a.b+, +a.b.c+, etc, are valid, but expressions that would contain parentheses like method calls, curly braces for closures, or arithmetic operators would be invalid.
+But only dotted expressions of the form `a.b`, `a.b.c`, etc, are valid, but expressions that would contain parentheses like method calls, curly braces for closures, or arithmetic operators would be invalid.
 Given the following variable definition of a number:
 
 [source,groovy]
@@ -363,17 +386,17 @@ Given the following variable definition of a number:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_4,indent=0]
 ----
 
-The following statement will throw a +groovy.lang.MissingPropertyException+ because Groovy believes you're trying to access the +toString+ property of that number, which doesn't exist:
+The following statement will throw a `groovy.lang.MissingPropertyException` because Groovy believes you're trying to access the `toString` property of that number, which doesn't exist:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 ----
 
-NOTE: You can think of +"$number.toString()"+ as being interpreted by the parser as +"${number.toString}()"+.
+NOTE: You can think of `"$number.toString()"` as being interpreted by the parser as `"${number.toString}()"`.
 
-If you need to escape the +$+ or +${}+ placeholders in a GString so they appear as is without interpolation, 
-you just need to use a +\+ backslash character to escape the dollar sign:
+If you need to escape the `$` or `${}` placeholders in a GString so they appear as is without interpolation,
+you just need to use a `\` backslash character to escape the dollar sign:
 
 [source,groovy]
 ----
@@ -382,18 +405,18 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_6,indent=0]
 
 ==== Special case of interpolating closure expressions
 
-So far, we've seen we could interpolate arbitrary expressions inside the +${}+ placeholder, but there is a special case and notation for closure expressions. When the placeholder contains an arrow, +${->}+, the expression is actually a closure expression -- you can think of it as a closure with a dollar prepended in front of it:
+So far, we've seen we could interpolate arbitrary expressions inside the `${}` placeholder, but there is a special case and notation for closure expressions. When the placeholder contains an arrow, `${->}`, the expression is actually a closure expression -- you can think of it as a closure with a dollar prepended in front of it:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_1,indent=0]
 ----
 <1> The closure is a parameterless closure which doesn't take arguments.
-<2> Here, the closure takes a single +java.io.StringWriter+ argument, to which you can append content  with the +<<+ leftShift operator.
+<2> Here, the closure takes a single `java.io.StringWriter` argument, to which you can append content  with the `<<` leftShift operator.
 In either case, both placeholders are embedded closures.
 
 In appearance, it looks like a more verbose way of defining expressions to be interpolated,
-but closure have an interesting advantage over mere expressions: lazy evaluation.
+but closures have an interesting advantage over mere expressions: lazy evaluation.
 
 Let's consider the following sample:
 
@@ -401,10 +424,10 @@ Let's consider the following sample:
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_2,indent=0]
 ----
-<1> We define a +number+ variable containing +1+ that we then interpolate within two GStrings, 
-as an expression in +eagerGString+ and as a closure in +lazyGString+.
-<2> We expect the resulting string to contain the same string value of 1 for +eagerGString+.
-<3> Similarily for +lazyGString+
+<1> We define a `number` variable containing `1` that we then interpolate within two GStrings,
+as an expression in `eagerGString` and as a closure in `lazyGString`.
+<2> We expect the resulting string to contain the same string value of 1 for `eagerGString`.
+<3> Similarly for `lazyGString`
 <4> Then we change the value of the variable to a new number
 <5> With a plain interpolated expression, the value was actually bound at the time of creation of the GString.
 <6> But with a closure expression, the closure is called upon each coercion of the GString into String,
@@ -412,13 +435,13 @@ resulting in an updated string containing the new number value.
 
 [NOTE]
 An embedded closure expression taking more than one parameter will generate an exception at runtime.
-Only closures with zero or one paramaters are allowed.
+Only closures with zero or one parameters are allowed.
 
-==== Inteoperability with Java
+==== Interoperability with Java
 
-When a method (whether implemented in Java or Groovy) expects a +java.lang.String+, 
-but we pass a +groovy.lang.GString+ instance, 
-the +toString()+ method of the GString is automatically and transparently called.
+When a method (whether implemented in Java or Groovy) expects a `java.lang.String`,
+but we pass a `groovy.lang.GString` instance,
+the `toString()` method of the GString is automatically and transparently called.
 
 [source,groovy]
 ----
@@ -427,7 +450,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=java_gstring_interop_
 <1> We create a GString variable
 <2> We double check it's an instance of the GString
 <3> We then pass that GString to a method taking a String as parameter
-<4> The signature of the +takeString()+ method explicitly says its sole parameter is a String
+<4> The signature of the `takeString()` method explicitly says its sole parameter is a String
 <5> We also verify that the parameter is indeed a String and not a GString.
 
 ==== GString and String hashCodes
@@ -466,7 +489,7 @@ NOTE: Neither double quotes nor single quotes need be escaped in triple double q
 
 === Slashy string
 
-Beyond the usual quoted strings, Groovy offers slashy strings, which use +/+ as delimiters.
+Beyond the usual quoted strings, Groovy offers slashy strings, which use `/` as delimiters.
 Slashy strings are particularly useful for defining regular expressions and patterns, 
 as there is no need to escape backslashes.
 
@@ -508,9 +531,11 @@ That's why the following assert would actually not compile as it would look like
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
 ----
 
+NOTE: As slashy strings were mostly designed to make regexp easier so a few things that are errors in GStrings like `$()` will work with slashy strings.
+
 === Dollar slashy string
 
-Dollar slashy strings are multiline GStrings delimited with an opening +$/+ and and a closing +/$+.
+Dollar slashy strings are multiline GStrings delimited with an opening `$/` and and a closing `/$`.
 The escaping character is the dollar sign, and it can escape another dollar, or a forward slash.
 But both dollar and forward slashes don't need to be escaped, except to escape the dollar of a string subsequence that would start like a GString placeholder sequence, or if you need to escape a sequence that would start like a closing dollar slashy string delimiter.
 
@@ -532,40 +557,40 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=dollar_slashy_1,inden
 |Escape character
 
 |Single quoted
-|+\'...'+
+|`'...'`
 |icon:check-empty[]
 |icon:check-empty[]
-|+\+
+|`\`
 
 |Triple single quoted
-|+\'''...\'''+
+|`'''...'''`
 |icon:check-empty[]
 |icon:check[]
-|+\+
+|`\`
 
 |Double quoted
-|+"..."+
+|`"..."`
 |icon:check[]
 |icon:check-empty[]
-|+\+
+|`\`
 
 |Triple double quoted
-|+"""..."""+
+|`"""..."""`
 |icon:check[]
 |icon:check[]
-|+\+
+|`\`
 
 |Slashy
-|+/.../+
+|`/.../`
 |icon:check[]
 |icon:check[]
-|+\+
+|`\`
 
 |Dollar slashy
-|+$/.../$+
+|`$/.../$`
 |icon:check[]
 |icon:check[]
-|+$+
+|`$`
 |====
 
 === Characters
@@ -577,8 +602,8 @@ However, you can be explicit about making a Groovy string an actual character, b
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=char,indent=0]
 ----
-<1> by being explicit when declaring a variable holding the character by specifying the +char+ type
-<2> by using type coercion with the +as+ operator
+<1> by being explicit when declaring a variable holding the character by specifying the `char` type
+<2> by using type coercion with the `as` operator
 <3> by using a cast to char operation
 
 NOTE: The first option [conum,data-value=1]_1_ is interesting when the character is held in a variable,
@@ -586,18 +611,18 @@ while the other two ([conum,data-value=2]_2_ and [conum,data-value=3]_3_) are mo
 
 == Numbers
 
-Groovy supports different kinds of integral literals and decimal literals, backed by the usual +Number+ types of Java.
+Groovy supports different kinds of integral literals and decimal literals, backed by the usual `Number` types of Java.
 
 === Integral literals
 
 The integral literal types are the same as in Java:
 
-* +byte+
-* +char+
-* +short+
-* +int+
-* +long+
-* +java.lang.BigInteger+
+* `byte`
+* `char`
+* `short`
+* `int`
+* `long`
+* `java.lang.BigInteger`
 
 You can create integral numbers of those types with the following declarations:
 
@@ -606,7 +631,7 @@ You can create integral numbers of those types with the following declarations:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=int_decl,indent=0]
 ----
 
-If you use optional typing by using the +def+ keyword, the type of the integral number will vary:
+If you use optional typing by using the `def` keyword, the type of the integral number will vary:
 it'll adapt to the capacity of the type that can hold that number.
 
 For positive numbers:
@@ -625,9 +650,11 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,ind
 
 ==== Alternative non-base 10 representations
 
+Numbers can also be represented in binary, octal, hexadecimal and decimal bases.
+
 ===== Binary literal
 
-In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the ++0b++ prefix:
+Binary numbers start with a `0b` prefix:
 
 [source,groovy]
 ----
@@ -636,7 +663,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=binary_literal_exampl
 
 ===== Octal literal
 
-Octal numbers are specified in the typical format of ++0++ followed by octal digits.
+Octal numbers are specified in the typical format of `0` followed by octal digits.
 
 [source,groovy]
 ----
@@ -645,7 +672,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=octal_literal_example
 
 ===== Hexadecimal literal
 
-Hexadecimal numbers are specified in the typical format of ++0x++ followed by hex digits.
+Hexadecimal numbers are specified in the typical format of `0x` followed by hex digits.
 
 [source,groovy]
 ----
@@ -656,9 +683,9 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=hexadecimal_literal_e
 
 The decimal literal types are the same as in Java:
 
-* +float+
-* +double+
-* +java.lang.BigDecimal+
+* `float`
+* `double`
+* `java.lang.BigDecimal`
 
 You can create decimal numbers of those types with the following declarations:
 
@@ -667,7 +694,7 @@ You can create decimal numbers of those types with the following declarations:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_decl,indent=0]
 ----
 
-Decimals can use exponents, with the +e+ or +E+ exponent letter, followed by an optional sign,
+Decimals can use exponents, with the `e` or `E` exponent letter, followed by an optional sign,
 and a integral number representing the exponent:
 
 [source,groovy]
@@ -675,9 +702,9 @@ and a integral number representing the exponent:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_exp,indent=0]
 ----
 
-Conveniently for exact decimal number calculations, Groovy choses +java.lang.BigDecimal+ as its decimal number type.
-In addition, both +float+ and +double+ are supported, but require an explicit type declaration, type coercion or suffix.
-Even if +BigDecimal+ is the default for decimal numbers, such literals are accepted in methods or closures taking +float+ or +double+ as parameter types.
+Conveniently for exact decimal number calculations, Groovy choses `java.lang.BigDecimal` as its decimal number type.
+In addition, both `float` and `double` are supported, but require an explicit type declaration, type coercion or suffix.
+Even if `BigDecimal` is the default for decimal numbers, such literals are accepted in methods or closures taking `float` or `double` as parameter types.
 
 NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
 
@@ -700,22 +727,22 @@ We can force a number (including binary, octals and hexadecimals) to have a spec
 |Suffix
 
 |BigInteger
-|+G+ or +g+
+|`G` or `g`
 
 |Long
-|+L+ or +l+
+|`L` or `l`
 
 |Integer
-|+I+ or +i+
+|`I` or `i`
 
 |BigDecimal
-|+G+ or +g+
+|`G` or `g`
 
 |Double
-|+D+ or +d+
+|`D` or `d`
 
 |Float
-|+F+ or +f+
+|`F` or `f`
 |====
 
 Examples:
@@ -732,11 +759,12 @@ and what their resulting types are.
 
 Division and power binary operations aside (covered below),
 
-* binary operations between +byte+, +char+, +short+ and +int+ result in +int+
-* binary operations involving +long+ with +byte+, +char+, +short+ and +int+ result in +long+
-* binary operations involving +BigInteger+ and any other integral type result in +BigInteger+
-* binary operations between +float+, +double+ and +BigDecimal+ result in +double+
-* binary operations between two +BigDecimal+ result in +BigDecimal+
+* binary operations between `byte`, `char`, `short` and `int` result in `int`
+* binary operations involving `long` with `byte`, `char`, `short` and `int` result in `long`
+* binary operations involving `BigInteger` and any other integral type result in `BigInteger`
+* binary operations involving `BigDecimal` with `byte`, `char`, `short`, `int` and `BigInteger` result in `BigDecimal`
+* binary operations between `float`, `double` and `BigDecimal` result in `double`
+* binary operations between two `BigDecimal` result in `BigDecimal`
 
 The following table summarizes those rules:
 
@@ -762,7 +790,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *char*
 | 
@@ -773,7 +801,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *short*
 | 
@@ -784,7 +812,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *int*
 | 
@@ -795,7 +823,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *long*
 | 
@@ -806,7 +834,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *BigInteger*
 | 
@@ -817,7 +845,7 @@ The following table summarizes those rules:
 | BigInteger
 | double
 | double
-| double
+| BigDecimal
 
 | *float*
 | 
@@ -854,48 +882,48 @@ The following table summarizes those rules:
 |====
 
 [NOTE]
-Thanks Groovy's operator overloading, the usual arithmetic operators work as well with +BigInteger+ and +BigDecimal+,
-unlike in Java where you have to use explict methods for operating on those numbers.
+Thanks to Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
+unlike in Java where you have to use explicit methods for operating on those numbers.
 
 [[integer_division]]
 ==== The case of the division operator
 
-The division operators +/+ (and +/=+ for division and assignment) produce a +double+ result 
-if either operand is a +float+ or +double+, and a +BigDecimal+ result otherwise 
-(when both operands are any combination of an integral type +short+, +char+, +byte+, +int+, +long+,
-+BigInteger+ or +BigDecimal+).
+The division operators `/` (and `/=` for division and assignment) produce a `double` result
+if either operand is a `float` or `double`, and a `BigDecimal` result otherwise
+(when both operands are any combination of an integral type `short`, `char`, `byte`, `int`, `long`,
+`BigInteger` or `BigDecimal`).
 
-+BigDecimal+ division is performed with the +divide()+ method if the division is exact
-(ie. yielding a result that can be represented within the bounds of the same precision and scale),
-or using a +MathContext+ with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision] 
+`BigDecimal` division is performed with the `divide()` method if the division is exact
+(i.e. yielding a result that can be represented within the bounds of the same precision and scale),
+or using a `MathContext` with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision]
 of the maximum of the two operands' precision plus an extra precision of 10,
 and a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#scale()[scale] 
 of the maximum of 10 and the maximum of the operands' scale.
 
 [NOTE]
-For integer division like in Java, you should use the +intdiv()+ method,
+For integer division like in Java, you should use the `intdiv()` method,
 as Groovy doesn't provide a dedicated integer division operator symbol.
 
 [[power_operator]]
 ==== The case of the power operator
 
-The power operation is represented by the +**+ operator, with two parameters: the base and the exponent.
+The power operation is represented by the `**` operator, with two parameters: the base and the exponent.
 The result of the power operation depends on its operands, and the result of the operation
 (in particular if the result can be represented as an integral value).
 
 The following rules are used by Groovy's power operation to determine the resulting type:
 
 * If the exponent is a decimal value
-** if the result can be represented as an +Integer+, then return an +Integer+
-** else if the result can be represented as a +Long+, then return a +Long+
-** otherwise return a +Double+
+** if the result can be represented as an `Integer`, then return an `Integer`
+** else if the result can be represented as a `Long`, then return a `Long`
+** otherwise return a `Double`
 * If the exponent is an integral value
-** if the exponent is strictly negative, then return an +Integer+, +Long+ or +Double+ if the result value fits in that type
+** if the exponent is strictly negative, then return an `Integer`, `Long` or `Double` if the result value fits in that type
 ** if the exponent is positive or zero
-*** if the base is a +BigDecimal+, then return a +BigDecimal+ result value
-*** if the base is a +BigInteger+, then return a +BigInteger+ result value
-*** if the base is an +Integer+, then return an +Integer+ if the result value fits in it, otherwise a +BigInteger+
-*** if the base is a +Long+, then return a +Long+ if the result value fits in it, otherwise a +BigInteger+
+*** if the base is a `BigDecimal`, then return a `BigDecimal` result value
+*** if the base is a `BigInteger`, then return a `BigInteger` result value
+*** if the base is an `Integer`, then return an `Integer` if the result value fits in it, otherwise a `BigInteger`
+*** if the base is a `Long`, then return a `Long` if the result value fits in it, otherwise a `BigInteger`
 
 We can illustrate those rules with a few examples:
 
@@ -906,7 +934,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_power,indent=0
 
 == Booleans
 
-Boolean is a special data type that is used to represent truth values: ++true++ and ++false++.
+Boolean is a special data type that is used to represent truth values: `true` and `false`.
 Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
 
 Boolean values can be stored in variables, assigned into fields, just like any other data type:
@@ -916,7 +944,7 @@ Boolean values can be stored in variables, assigned into fields, just like any o
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 ----
 
-++true++ and ++false++ are the only two primitive boolean values.
+`true` and `false` are the only two primitive boolean values.
 But more complex boolean expressions can be represented using <<_bitwise_and_logical_operators,logical operators>>.
 
 In addition, Groovy has <<_the_groovy_truth,special rules>> (often referred to as _Groovy Truth_)
@@ -925,8 +953,8 @@ for coercing non-boolean objects to a boolean value.
 == Lists
 
 Groovy uses a comma-separated list of values, surrounded by square brackets, to denote lists.
-Groovy lists are plain JDK +java.util.List+, as Groovy doesn't define its own collection classes.
-The concrete list implementation used when defining list literals are +java.util.ArrayList+ by default,
+Groovy lists are plain JDK `java.util.List`, as Groovy doesn't define its own collection classes.
+The concrete list implementation used when defining list literals are `java.util.ArrayList` by default,
 unless you decide to specify otherwise, as we shall see later on.
 
 [source,groovy]
@@ -934,8 +962,8 @@ unless you decide to specify otherwise, as we shall see later on.
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_1,indent=0]
 ----
 <1> We define a list numbers delimited by commas and surrounded by square brackets, and we assign that list into a variable
-<2> The list is an instance of Java's +java.util+List+ interface
-<3> The size of the list can be queried with the +size()+ method, and shows our list contains 3 elements
+<2> The list is an instance of Java's `java.util.List` interface
+<3> The size of the list can be queried with the `size()` method, and shows our list contains 3 elements
 
 In the above example, we used a homogeneous list, but you can also create lists containing values of heterogeneous types:
 
@@ -945,29 +973,29 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_2,indent=0]
 ----
 <1> Our list here contains a number, a string and a boolean value
 
-We mentioned that by default, list literals are actually instances of +java.util.ArrayList+, 
+We mentioned that by default, list literals are actually instances of `java.util.ArrayList`,
 but it is possible to use a different backing type for our lists, 
-thanks to using type coercion with the +as+ operator, or with explicit type declaration for your variables:
+thanks to using type coercion with the `as` operator, or with explicit type declaration for your variables:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=coercion_of_list,indent=0]
 ----
-<1> We use coercion with the +as+ operator to explicitly request a +java.util.LinkedList+ implementation
-<2> We can say that the variable holding the list literal is of type +java.util.LinkedList+
+<1> We use coercion with the `as` operator to explicitly request a `java.util.LinkedList` implementation
+<2> We can say that the variable holding the list literal is of type `java.util.LinkedList`
 
-You can access elements of the list with the +[]+ subscript operator (both for reading and setting values)
+You can access elements of the list with the `[]` subscript operator (both for reading and setting values)
 with positive indices or negative indices to access elements from the end of the list, as well as with ranges,
-and use the +<<+ leftShift operator to append elements to a list:
+and use the `<<` leftShift operator to append elements to a list:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
 ----
-<1> Access the first element of the list (zeroth-based counting)
+<1> Access the first element of the list (zero-based counting)
 <2> Access the last element of the list with a negative index: -1 is the first element from the end of the list
 <3> Use an assignment to set a new value for the third element of the list
-<4> Use the +<<+ leftShift operator to append an element at the end of the list
+<4> Use the `<<` leftShift operator to append an element at the end of the list
 <5> Access two elements at once, returning a new list containing those two elements
 <6> Use a range to access a range of values from the list, from a start to an end element position
 
@@ -991,7 +1019,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_1,indent=0]
 ----
 <1> Define an array of strings using explicit variable type declaration
 <2> Assert that we created an array of strings
-<3> Create an array of ints with the +as+ operator
+<3> Create an array of ints with the `as` operator
 <4> Assert that we created an array of primitive ints
 
 You can also create multi-dimensional arrays:
@@ -1027,16 +1055,16 @@ and the whole keys and values surrounded by square brackets.
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=map_def_access,indent=0]
 ----
 <1> We define a map of string color names, associated with their hexadecimal-coded html colors
-<2> We use the subscript notation to check the content associated with the +red+ key
+<2> We use the subscript notation to check the content associated with the `red` key
 <3> We can also use the property notation to assert the color green's hexadecimal representation
-<4> Similarily, we can use the subscript notation to add a new key/value pair
-<5> Or the property notation, to add the +yellow+ color
+<4> Similarly, we can use the subscript notation to add a new key/value pair
+<5> Or the property notation, to add the `yellow` color
 
 [NOTE]
 When using names for the keys, we actually define string keys in the map.
 
 [NOTE]
-Groovy creates maps that are actually instances of +java.util.LinkedHashMap+.
+Groovy creates maps that are actually instances of `java.util.LinkedHashMap`.
 
 If you try to access a key which is not present in the map:
 
@@ -1045,7 +1073,7 @@ If you try to access a key which is not present in the map:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=unknown_key,indent=0]
 ----
 
-You will retrieve a +null+ result.
+You will retrieve a `null` result.
 
 In the examples above, we used string keys, but you can also use values of other types as keys:
 
@@ -1062,9 +1090,9 @@ But consider the case you want to pass a variable in lieu of the key, to have th
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_1,indent=0]
 ----
-<1> The +key+ associated with the +\'Guillaume'+ name will actually be the +"key"+ string, not the value associated with the +key+ variable
-<2> The map doesn't contain the +\'name'+ key
-<3> Instead, the map contains a +\'key'+ key
+<1> The `key` associated with the `'Guillaume'` name will actually be the `"key"` string, not the value associated with the `key` variable
+<2> The map doesn't contain the `'name'` key
+<3> Instead, the map contains a `'key'` key
 
 [NOTE]
 You can also pass quoted strings as well as keys: +["name": "Guillaume"]+.
@@ -1077,9 +1105,6 @@ When you need to pass variable values as keys in your map definitions, you must 
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
 ----
-<1> This time, we surround the +key+ variable with parentheses, to instruct the parser we are passing a variable rather than defining a string key
-<2> The map does contain the +name+ key
-<3> But the map doesn't contain the +key+ key as before
-
-
-
+<1> This time, we surround the `key` variable with parentheses, to instruct the parser we are passing a variable rather than defining a string key
+<2> The map does contain the `name` key
+<3> But the map doesn't contain the `key` key as before

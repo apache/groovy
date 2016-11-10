@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime;
 
@@ -37,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
-    private static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
+    private static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -69,8 +72,7 @@ public class GroovyCategorySupport {
         private Map<String, String> propertySetterMap;
 
         private void newScope () {
-            atomicCategoryUsageCounter.incrementAndGet();
-            categoriesInUse = atomicCategoryUsageCounter.get();
+            categoriesInUse = atomicCategoryUsageCounter.incrementAndGet();
             DefaultMetaClassInfo.setCategoryUsed(true);
             VMPluginFactory.getPlugin().invalidateCallSites();
             level++;
@@ -93,8 +95,7 @@ public class GroovyCategorySupport {
                 }
             }
             level--;
-            atomicCategoryUsageCounter.getAndDecrement();
-            categoriesInUse = atomicCategoryUsageCounter.get();
+            categoriesInUse = atomicCategoryUsageCounter.decrementAndGet();
             VMPluginFactory.getPlugin().invalidateCallSites();
             if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
             if (level == 0) {
@@ -293,7 +294,7 @@ public class GroovyCategorySupport {
 
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
-        ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
+        final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
         public ThreadCategoryInfo getInfo() {
             final SoftReference reference = get();

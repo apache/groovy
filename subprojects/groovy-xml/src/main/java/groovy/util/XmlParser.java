@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.util;
 
@@ -54,7 +57,7 @@ import java.util.Map;
  * most simple use cases of processing XML.
  * <p>
  * Example usage:
- * <pre>
+ * <pre class="groovyTestCase">
  * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
  * def rootNode = new XmlParser().parseText(xml)
  * assert rootNode.name() == 'root'
@@ -69,9 +72,9 @@ import java.util.Map;
 public class XmlParser implements ContentHandler {
 
     private StringBuilder bodyText = new StringBuilder();
-    private List<Node> stack = new ArrayList<Node>();
+    private final List<Node> stack = new ArrayList<Node>();
     private Locator locator;
-    private XMLReader reader;
+    private final XMLReader reader;
     private Node parent;
 
     private boolean trimWhitespace = false;
@@ -127,7 +130,7 @@ public class XmlParser implements ContentHandler {
         reader = parser.getXMLReader();
     }
 
-    private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
+    private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
         }

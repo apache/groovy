@@ -1,0 +1,241 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= groovydoc, the Groovy & Java documentation generator
+
+GroovyDoc is a tool responsible for generating documentation from your code. It acts like the Javadoc tool in the
+Java world but is capable of handling both `groovy` and `java` files. The distribution comes with two ways of generating
+documentation: from <<Groovydoc-CommandLine,command line>> or from <<Groovydoc-Ant,Apache Ant>>. Other build tools
+like Maven or Gradle also offer wrappers for Groovydoc.
+
+[[Groovydoc-CommandLine]]
+== The groovydoc command line tool
+
+The `groovydoc` command line can be invoked to generate groovydocs:
+
+----
+groovydoc [options] [packagenames] [sourcefiles]
+----
+
+where options must be picked from the following table:
+
+[cols="2,2,5",options="header,footer"]
+|=======================================================================
+|Short version |Long version |Description
+|-author | |Include @author paragraphs (currently not used)
+|-charset <charset>| |Charset for cross-platform viewing of generated documentation
+|-classpath, -cp | --classpath |Specify where to find the class files - must be
+first argument
+|-d |--destdir <dir> |Destination directory for output files
+| |--debug|Enable debug output
+|-doctitle <html> | |Include title for the overview page
+|-exclude <pkglist>| | Specify a list of packages to exclude
+(separated by colons for all operating systems)
+|-fileEncoding <charset>| |Charset for generated documentation files
+|-footer <html> | |Include footer text for each page
+|-header <html> | |Include header text for each page
+|-help|--help|Display help message
+|-nomainforscripts| |Don't include the implicit 'public static void
+main' method for scripts
+|-noscripts| |Don't process Groovy Scripts
+|-notimestamp| |Don't include timestamp within hidden comment in generated HTML
+|-noversionstamp| |Don't include Groovy version within hidden comment in generated HTML
+|-overview <file>| |Read overview documentation from HTML file
+|-package| |Show package/protected/public classes and members
+|-private| |Show all classes and members
+|-protected| |Show protected/public classes and members (default)
+|-public| |Show only public classes and members
+|-quiet| |Suppress superfluous output
+|-sourcepath <pathlist>| |Specify where to find source files (dirs
+separated by platform path separator)
+|-stylesheetfile <path>| |File to change style of the generated documentation
+|-verbose| |Enable verbose output
+| |--version|Display the version
+|-windowtitle <text>| |Browser window title for the documentation
+|=======================================================================
+
+[[Groovydoc-Ant]]
+== The groovydoc Ant task
+
+The `groovydoc` Ant task allows generating groovydocs from an Ant build.
+
+[[ThegroovydocAnttask-Requiredtaskdef]]
+=== Required taskdef
+
+Assuming `groovy-all-{groovyversion}.jar` is in _my.classpath_ you will need to
+declare this task at some point in the build.xml prior to the groovydoc
+task being invoked.
+
+[source,xml]
+-----------------------------------------------------------
+<taskdef name         = "groovydoc"
+         classname    = "org.codehaus.groovy.ant.Groovydoc"
+         classpathref = "my.classpath"/>
+-----------------------------------------------------------
+
+[[ThegroovydocAnttask-groovydocAttributes]]
+=== <groovydoc> Attributes
+
+[cols="1,2,1",options="header,footer"]
+|=======================================================================
+|Attribute |Description |Required
+|destdir |Location to store the class files. |Yes
+|sourcepath |The sourcepath to use. |No
+|packagenames |Comma separated list of package files (with terminating
+wildcard). |No
+|use |Create class and package usage pages. |No
+|windowtitle |Browser window title for the documentation (text). |No
+|doctitle |Include title for the package index(first) page (html-code).
+|No
+|header |Include header text for each page (html-code). |No
+|footer |Include footer text for each page (html-code). |No
+|overview |Read overview documentation from HTML file. |No
+|private |Show all classes and members (i.e. including private ones) if
+set to ``true''. |No
+|=======================================================================
+
+[[ThegroovydocAnttask-groovydocNestedElements]]
+=== <groovydoc> Nested Elements
+
+[[ThegroovydocAnttask-link]]
+==== link
+
+Create link to groovydoc/javadoc output at the given URL.
+
+[cols="<,<,<",options="header,footer"]
+|=======================================================
+|Attribute |Description |Required
+|packages |Comma separated list of package prefixes |Yes
+|href |Base URL of external site |Yes
+|=======================================================
+
+[[ThegroovydocAnttask-Example1-groovydocAnttask]]
+==== Example #1 - <groovydoc> Ant task
+
+[source,xml]
+----------------------------------------------------------------------------------------------------------------
+<taskdef name           = "groovydoc"
+         classname      = "org.codehaus.groovy.ant.Groovydoc"
+         classpathref   = "path_to_groovy_all"/>
+
+<groovydoc destdir      = "${docsDirectory}/gapi"
+           sourcepath   = "${mainSourceDirectory}"
+           packagenames = "**.*"
+           use          = "true"
+           windowtitle  = "${title}"
+           doctitle     = "${title}"
+           header       = "${title}"
+           footer       = "${docFooter}"
+           overview     = "src/main/overview.html"
+           private      = "false">
+        <link packages="java.,org.xml.,javax.,org.xml." href="http://docs.oracle.com/javase/8/docs/api/"/>
+        <link packages="org.apache.tools.ant."          href="http://docs.groovy-lang.org/docs/ant/api/"/>
+        <link packages="org.junit.,junit.framework."    href="http://junit.org/junit4/javadoc/latest/"/>
+        <link packages="groovy.,org.codehaus.groovy."   href="http://docs.groovy-lang.org/latest/html/api/"/>
+        <link packages="org.codehaus.gmaven."           href="http://groovy.github.io/gmaven/apidocs/"/>
+</groovydoc>
+----------------------------------------------------------------------------------------------------------------
+
+[[ThegroovydocAnttask-Example2-ExecutinggroovydocfromGroovy]]
+==== Example #2 - Executing <groovydoc> from Groovy
+
+[source,groovy]
+--------------------------------------------------------------------------------------------------------------
+def ant = new AntBuilder()
+ant.taskdef(name: "groovydoc", classname: "org.codehaus.groovy.ant.Groovydoc")
+ant.groovydoc(
+    destdir      : "${docsDirectory}/gapi",
+    sourcepath   : "${mainSourceDirectory}",
+    packagenames : "**.*",
+    use          : "true",
+    windowtitle  : "${title}",
+    doctitle     : "${title}",
+    header       : "${title}",
+    footer       : "${docFooter}",
+    overview     : "src/main/overview.html",
+    private      : "false") {
+        link(packages:"java.,org.xml.,javax.,org.xml.",href:"http://docs.oracle.com/javase/8/docs/api/")
+        link(packages:"groovy.,org.codehaus.groovy.",  href:"http://docs.groovy-lang.org/latest/html/api/")
+        link(packages:"org.apache.tools.ant.",         href:"http://docs.groovy-lang.org/docs/ant/api/")
+        link(packages:"org.junit.,junit.framework.",   href:"http://junit.org/junit4/javadoc/latest/")
+        link(packages:"org.codehaus.gmaven.",          href:"http://groovy.github.io/gmaven/apidocs/")
+}
+--------------------------------------------------------------------------------------------------------------
+
+=== Custom templates
+
+The `groovydoc` Ant task supports custom templates, but it requires two steps:
+
+. A custom groovydoc class
+. A new groovydoc task definition
+
+==== Custom Groovydoc class
+
+The first step requires you to extend the `Groovydoc` class, like in the following example:
+
+[source,java]
+----
+package org.codehaus.groovy.tools.groovydoc;
+
+import org.codehaus.groovy.ant.Groovydoc;
+
+/**
+ * Overrides GroovyDoc's default class template - for testing purpose only.
+ *
+ * @author Andre Steingress
+ */
+public class CustomGroovyDoc extends Groovydoc {
+
+    @Override
+    protected String[] getClassTemplates() {
+        return new String[]{"org/codehaus/groovy/tools/groovydoc/testfiles/classDocName.html"};
+    }
+}
+----
+
+You can override the following methods:
+
+* `getClassTemplates` for class-level templates
+* `getPackageTemplates` for package-level templates
+* `getDocTemplates` for top-level templates
+
+You can find the list of default templates in the `org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo`
+class.
+
+==== Using the custom groovydoc task
+
+Once you've written the class, using it is just a matter of redefining the `groovydoc` task:
+
+[source,xml]
+----
+<taskdef name           = "groovydoc"
+         classname      = "org.codehaus.groovy.ant.CustomGroovyDoc"
+         classpathref   = "path_to_groovy_all"/>
+----
+
+Please note that template customization is provided as is. APIs are subject to change, so you must consider this as a
+fragile feature.
+
+[[Groovydoc-GMavenPlus]]
+== GMavenPlus Maven Plugin
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with goals that
+support GroovyDoc generation.
+

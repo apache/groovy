@@ -1,6 +1,29 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 [[section-grape]]
 = Dependency management with Grape
+
 == Quick start
+
 === Add a Dependency
 
 Grape is a JAR dependency manager embedded into Groovy. Grape lets you quickly add maven repository dependencies to your
@@ -20,7 +43,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.JdbcTemplate
 --------------------------------------------------------------------
 
-Note that we are using an annotated import here, which is the recommanded way. You can also search for
+Note that we are using an annotated import here, which is the recommended way. You can also search for
 dependencies on http://mvnrepository.com[mvnrepository.com] and it will
 provide you the `@Grab` annotation form of the `pom.xml` entry.
 
@@ -88,7 +111,7 @@ groovy.grape.Grape.grab(group:'org.springframework', module:'spring', version:'2
 
 If you are behind a firewall and/or need to use Groovy/Grape through a
 proxy server, you can specify those settings on the command like via the
-http.proxyHost and http.proxyPort system properties:
+`http.proxyHost` and `http.proxyPort` system properties:
 
 -------------------------------------------------------------------------
 groovy -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080 yourscript.groovy
@@ -105,14 +128,17 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 === Logging
 
 If you want to see what Grape is doing set the system property
-``groovy.grape.report.downloads'' to ``true'' (e.g. add
-``-Dgroovy.grape.report.downloads=true'' to JAVA_OPTS) and Grape will
+`groovy.grape.report.downloads` to `true` (e.g. add
+`-Dgroovy.grape.report.downloads=true` to invocation or JAVA_OPTS) and Grape will
 print the following infos to System.error:
 
 * Starting resolve of a dependency
 * Starting download of an artifact
 * Retrying download of an artifact
 * Download size and time for downloaded artifacts
+
+To log with even more verbosity, increase the Ivy log level
+(defaults to `-1`). For example `-Divy.message.logger.level=4`.
 
 [[Grape-Detail]]
 == Detail
@@ -124,7 +150,7 @@ module system for Groovy. This allows a developer to write a script with
 an essentially arbitrary library requirement, and ship just the script.
 Grape will, at runtime, download as needed and link the named libraries
 and all dependencies forming a transitive closure when the script is run
-from existing repositories such as JCenter, Ibiblio, Codehaus, and java.net.
+from existing repositories such as JCenter, Ibiblio and java.net.
 
 Grape follows the Ivy conventions for module version identification,
 with naming change.
@@ -174,8 +200,8 @@ annotated script element).
 [[Grape-MultipleGrapeAnnotations]]
 === Multiple Grape Annotations
 
-In order to use a Grape annotation multiple times on the same node you must use the
-`@Grapes` annotation, e.g.:
+In early versions of Groovy, if you wanted to use a Grab annotation multiple times
+on the same node you had to use the `@Grapes` annotation, e.g.:
 
 [source,groovy]
 ---------------------------------------------------------------------------------
@@ -187,12 +213,22 @@ class Example {
 }
 ---------------------------------------------------------------------------------
 
-Otherwise you’ll encounter the following error:
+Otherwise you’d encounter the following error:
 
 ------------------------------------------------------
 Cannot specify duplicate annotation on the same member
 ------------------------------------------------------
 
+But in recent versions, @Grapes is purely optional.
+
+Technical notes:
+
+* Originally, Groovy stored the Grab annotations for access at runtime
+and duplicates aren't allowed in the bytecode. In current versions, @Grab has only
+SOURCE retention, so the multiple occurrences aren't an issue.
+* Future versions of Grape may support using the Grapes annotation to
+provide a level of structuring, e.g. allowing a GrabExclude or GrabResolver
+annotation to apply to only a subset of the Grab annotations.
 
 [[Grape-Methodcall]]
 === Method call
@@ -209,9 +245,6 @@ import groovy.grape.Grape
 Grape.grab(group:'com.jidesoft', module:'jide-oss', version:'[2.2.0,)')
 Grape.grab([group:'org.apache.ivy', module:'ivy', version:'2.0.0-beta1', conf:['default', 'optional']],
      [group:'org.apache.ant', module:'ant', version:'1.7.0'])
-
-// endorsed Groovy Module
-// FUTURE grab('Scriptom')
 -------------------------------------------------------------------------------------------------------
 
 * Multiple calls to grab in the same context with the same parameters
@@ -330,70 +363,14 @@ groovy -Dgrape.root=/repo/grape yourscript.groovy
 [[Grape-CustomizeIvysettings]]
 ==== Customize Ivy settings
 
-//TODO expand on discussion of grapeConfig.xml
-
 You can customize the ivy settings that Grape uses by creating a
 ~/.groovy/grapeConfig.xml file. If no such file exists,
-http://svn.codehaus.org/groovy/tags/GROOVY_1_6_0/src/main/groovy/grape/defaultGrapeConfig.xml[here]
-are the default settings used by Grape:
-
-[source,xml]
----------------------------------------------------------------------------------------------------------------------
-<ivysettings>
-  <settings defaultResolver="downloadGrapes"/>
-  <resolvers>
-    <chain name="downloadGrapes">
-      <filesystem name="cachedGrapes">
-        <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
-      </filesystem>
-      <!-- todo add 'endorsed groovy extensions' resolver here -->
-      <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
-      <ibiblio name="ibiblio" m2compatible="true"/>
-      <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
-    </chain>
-  </resolvers>
-</ivysettings>
----------------------------------------------------------------------------------------------------------------------
+https://github.com/apache/groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
+are the default settings used by Grape.
 
 For more information on how to customize these settings, please refer to
-the http://ant.apache.org/ivy/history/latest-release/settings.html[Ivy
+the https://ant.apache.org/ivy/history/latest-milestone/index.html[Ivy
 documentation].
-
-[[Grape-AddyourlocalMaven2repository]]
-==== Add your local Maven2 repository
-
-If you find yourself wanting to reuse artifacts that you already have
-locally in your Maven2 repository, then you can add this line to your
-~/.groovy/grapeConfig.xml:
-
-[source,xml]
-------------------------------------------------------------------------------------
-<ibiblio name="local" root="file:${user.home}/.m2/repository/" m2compatible="true"/>
-------------------------------------------------------------------------------------
-
-And further customize your Grape configuration:
-
-[source,xml]
------------------------------------------------------------------------------------------------------------------------------
-<?xml version="1.0"?>
-<ivysettings>
-    <settings defaultResolver="downloadGrapes"/>
-    <resolvers>
-        <chain name="downloadGrapes">
-            <!-- todo add 'endorsed groovy extensions' resolver here -->
-            <ibiblio name="local" root="file:${user.home}/.m2/repository/" m2compatible="true"/>
-            <filesystem name="cachedGrapes">
-                <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-                <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
-            </filesystem>
-            <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
-            <ibiblio name="ibiblio" m2compatible="true"/>
-            <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
-        </chain>
-    </resolvers>
-</ivysettings>
------------------------------------------------------------------------------------------------------------------------------
 
 [[Grape-MoreExamples]]
 === More Examples
@@ -402,10 +379,10 @@ Using Apache Commons Collections:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-// create and use a primitive array
+// create and use a primitive array list
+@Grab(group='commons-primitives', module='commons-primitives', version='1.0')
 import org.apache.commons.collections.primitives.ArrayIntList
 
-@Grab(group='commons-primitives', module='commons-primitives', version='1.0')
 def createEmptyInts() { new ArrayIntList() }
 
 def ints = createEmptyInts()
@@ -418,11 +395,11 @@ Using TagSoup:
 
 [source,groovy]
 ------------------------------------------------------------------------
-// find the PDF links in the Java 1.5.0 documentation
-@Grab(group='org.ccil.cowan.tagsoup', module='tagsoup', version='0.9.7')
+// find the PDF links of the Java specifications
+@Grab(group='org.ccil.cowan.tagsoup', module='tagsoup', version='1.2.1')
 def getHtml() {
     def parser = new XmlParser(new org.ccil.cowan.tagsoup.Parser())
-    parser.parse("http://java.sun.com/j2se/1.5.0/download-pdf.html")
+    parser.parse("https://docs.oracle.com/javase/specs/")
 }
 html.body.'**'.a.@href.grep(~/.*\.pdf/).each{ println it }
 ------------------------------------------------------------------------
@@ -431,9 +408,6 @@ Using Google Collections:
 
 [source,groovy]
 -------------------------------------------------------------------------------------------------------
-// Google Collections example
-
-
 import com.google.common.collect.HashBiMap
 @Grab(group='com.google.code.google-collections', module='google-collect', version='snapshot-20080530')
 def getFruit() { [grape:'purple', lemon:'yellow', orange:'orange'] as HashBiMap }
@@ -445,18 +419,16 @@ Launching a Jetty server to serve Groovy templates:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------
-@Grapes([
-    @Grab(group='org.eclipse.jetty.aggregate', module='jetty-server', version='8.1.7.v20120910'),
-    @Grab(group='org.eclipse.jetty.aggregate', module='jetty-servlet', version='8.1.7.v20120910'),
-    @Grab(group='javax.servlet', module='javax.servlet-api', version='3.0.1')])
-
+@Grab('org.eclipse.jetty.aggregate:jetty-server:8.1.19.v20160209')
+@Grab('org.eclipse.jetty.aggregate:jetty-servlet:8.1.19.v20160209')
+@Grab('javax.servlet:javax.servlet-api:3.0.1')
 import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.*
-import groovy.servlet.*
+import org.eclipse.jetty.servlet.ServletContextHandler
+import groovy.servlet.TemplateServlet
 
 def runServer(duration) {
     def server = new Server(8080)
-    def context = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
+    def context = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS)
     context.resourceBase = "."
     context.addServlet(TemplateServlet, "*.gsp")
     server.start()
@@ -468,11 +440,11 @@ runServer(10000)
 --------------------------------------------------------------------------------------------------
 
 Grape will download Jetty and its dependencies on first launch of this
-script, and cache them. We’re creating a new Jetty Server on port 8080,
+script, and cache them. We create a new Jetty Server on port 8080,
 then expose Groovy’s TemplateServlet at the root of the context — Groovy
 comes with its own powerful template engine mechanism. We start the
 server and let it run for a certain duration. Each time someone will hit
-http://localhost:8080/somepage.gsp, it will display the somepage.gsp
++http://localhost:8080/somepage.gsp+, it will display the somepage.gsp
 template to the user — those template pages should be situated in the
 same directory as this server script.
 

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy
 
@@ -256,5 +259,68 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             class YYY implements YYY {}
         """
         shouldNotCompile scriptStr
+    }
+
+    void testAbstractClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            abstract class X {
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testAbstractClassWithPrivateAbstractMethods() {
+        def msg = shouldNotCompile """
+            abstract class X {
+                private abstract void y()
+                private abstract void z()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Method 'z' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testAbstractNestedClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            class Z {
+                abstract class X {
+                    private abstract void y()
+                }
+            }
+        """
+        assert msg.contains("Method 'y' from class 'Z\$X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testClassWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            class X {
+                private abstract void y()
+            }
+        """
+        assert !msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Can't have an abstract method in a non-abstract class. The class 'X' must be declared abstract or the method 'void y()' must be implemented.")
+    }
+
+    void testEnumWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            enum X {
+                CONST {
+                    private void y() { }
+                }
+
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+    }
+
+    void testInterfaceWithPrivateAbstractMethod() {
+        def msg = shouldNotCompile """
+            interface X {
+                private abstract void y()
+            }
+        """
+        assert msg.contains("Method 'y' is private but should be public in interface 'X'.")
     }
 }

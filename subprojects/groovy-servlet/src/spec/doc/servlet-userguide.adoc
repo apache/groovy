@@ -1,0 +1,94 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Servlet support
+
+You can write (Java) Servlets in Groovy (called Groovlets).
+
+There is also a `GroovyServlet`.
+
+This feature will automatically compile your .groovy source files, turn them into bytecode, load the Class and cache it until you change the source file.
+
+Here's a simple example to show you the kind of things you can do from a Groovlet.
+
+Notice the use of implicit variables to access the session, output and request. Also notice that this is more like a script as it does not have a class wrapper.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-servlet/src/spec/test/servlet/GroovyServletTest.groovy[tags=example,indent=0]
+----
+
+Or, do the same thing using MarkupBuilder:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-servlet/src/spec/test/servlet/GroovyServletTest.groovy[tags=example_markup_builder,indent=0]
+----
+
+== Implicit variables
+
+The following variables are ready for use in Groovlets:
+
+[options="header",cols="1,1,1a"]
+|============================================
+|variable name|bound to|note
+|request|ServletRequest|-
+|response|ServletResponse|-
+|context|ServletContext|-
+|application|ServletContext|-
+|session|getSession(false)|can be null! see <1>
+|params||a Map object
+|headers||a Map object
+|out|response.getWriter()|see <2>
+|sout|response.getOutputStream()|see <2>
+|html|new MarkupBuilder(out)|see <2>
+|json|new StreamingJsonBuilder(out)|see <2>
+|============================================
+1. The session variable is only set, if there was already a session object. See the `if (session == null)` checks in the examples above.
+2. These variables cannot be re-assigned inside a `Groovlet`. They are bound on first access, allowing to e.g. calling methods on the `response` object before using `out`.
+
+== Setting up groovylets
+
+Add the following to your `web.xml`:
+[source,xml]
+--------------------------------------------------------------------------------------------------
+<servlet>
+    <servlet-name>Groovy</servlet-name>
+    <servlet-class>groovy.servlet.GroovyServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>Groovy</servlet-name>
+    <url-pattern>*.groovy</url-pattern>
+</servlet-mapping>
+--------------------------------------------------------------------------------------------------
+
+Then put the required groovy jar files into `WEB-INF/lib`.
+
+Now put the .groovy files in, say, the root directory (i.e. where you would put your html files). The `GroovyServlet` takes care of compiling the .groovy files.
+
+So for example using tomcat you could edit `tomcat/conf/server.xml` like this:
+[source,xml]
+--------------------------------------------------------------------------------------------------
+<Context path="/groovy" docBase="c:/groovy-servlet"/>
+--------------------------------------------------------------------------------------------------
+
+Then access it with http://localhost:8080/groovy/hello.groovy

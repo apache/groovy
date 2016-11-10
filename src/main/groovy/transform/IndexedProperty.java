@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -60,6 +62,39 @@ import java.lang.annotation.Target;
  * visibility can be specified) or you will receive a compile-time error message.
  * The normal Groovy property getters and setters will also be created.
  * <p>
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.IndexedProperty
+ *
+ * class Group {
+ *     String name
+ *     List members = []
+ * }
+ *
+ * class IndexedGroup {
+ *     String name
+ *     &#64;IndexedProperty List members = []
+ * }
+ *
+ * def group = new Group(name: 'Groovy')
+ * group.members[0] = 'mrhaki'
+ * group.members[1] = 'Hubert'
+ * assert 2 == group.members.size()
+ * assert ['mrhaki', 'Hubert'] == group.members
+ *
+ * try {
+ *     group.setMembers(0, 'hubert') // Not index property
+ * } catch (MissingMethodException e) {
+ *     assert e
+ * }
+ *
+ * def indexedGroup = new IndexedGroup(name: 'Grails')
+ * indexedGroup.members[0] = 'mrhaki'
+ * indexedGroup.setMembers 1, 'Hubert'
+ * assert 2 == indexedGroup.members.size()
+ * assert 'mrhaki' == indexedGroup.getMembers(0)
+ * assert 'Hubert' == indexedGroup.members[1]
+ * </pre>
  *
  * @author Paul King
  * @since 1.7.3

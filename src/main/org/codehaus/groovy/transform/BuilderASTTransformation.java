@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.transform;
 
@@ -35,13 +38,12 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 
 /**
  * Handles generation of code for the {@link Builder} annotation.
- *
- * @author Marcin Grzejszczak
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
@@ -76,9 +78,13 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes) {
+            return getPropertyInfoFromClassNode(cNode, includes, excludes, false);
+        }
+
+        protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
             List<PropertyInfo> props = new ArrayList<PropertyInfo>();
             for (FieldNode fNode : getInstancePropertyFields(cNode)) {
-                if (shouldSkip(fNode.getName(), excludes, includes)) continue;
+                if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;
@@ -94,8 +100,12 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         protected boolean unsupportedAttribute(BuilderASTTransformation transform, AnnotationNode anno, String memberName, String extraMessage) {
             Object memberValue = transform.getMemberValue(anno, memberName);
+            if (memberValue != null && memberValue instanceof String && isUndefined((String) memberValue)) return false;
             if (memberValue == null) {
                 memberValue = transform.getMemberClassValue(anno, memberName);
+                if (memberValue != null && isUndefined((ClassNode) memberValue)) {
+                    memberValue = null;
+                }
             }
             if (memberValue != null) {
                 String message = extraMessage.length() == 0 ? "" : " " + extraMessage;
@@ -124,24 +134,36 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected boolean getIncludeExclude(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> excludes, List<String> includes) {
-            List<String> directExcludes = transform.getMemberList(anno, "excludes");
+            List<String> directExcludes = transform.getMemberStringList(anno, "excludes");
             if (directExcludes != null) excludes.addAll(directExcludes);
-            List<String> directIncludes = transform.getMemberList(anno, "includes");
-            if (directIncludes != null) includes.addAll(directIncludes);
-            if (includes.isEmpty() && excludes.isEmpty()) {
-                if (transform.hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
-                    AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
+            List<String> directIncludes = transform.getMemberStringList(anno, "includes");
+            if (directIncludes != null) {
+                includes.clear();
+                includes.addAll(directIncludes);
+            }
+            if (directIncludes == null && excludes.isEmpty()) {
+                if (transform.hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
+                    AnnotationNode tupleConstructor = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
                     if (excludes.isEmpty()) {
-                        List<String>  canonicalExcludes = transform.getMemberList(canonical, "excludes");
-                        if (canonicalExcludes != null) excludes.addAll(canonicalExcludes);
+                        List<String>  tupleExcludes = transform.getMemberStringList(tupleConstructor, "excludes");
+                        if (tupleExcludes != null) excludes.addAll(tupleExcludes);
                     }
                     if (includes.isEmpty()) {
-                        List<String>  canonicalIncludes = transform.getMemberList(canonical, "includes");
-                        if (canonicalIncludes != null) includes.addAll(canonicalIncludes);
+                        List<String>  tupleIncludes = transform.getMemberStringList(tupleConstructor, "includes");
+                        if (tupleIncludes != null) {
+                            includes.clear();
+                            includes.addAll(tupleIncludes);
+                        }
                     }
                 }
             }
-            return transform.checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            List<String> includesToCheck = includes.size() == 1 && isUndefined(includes.get(0)) ? null : includes;
+            return transform.checkIncludeExcludeUndefinedAware(anno, excludes, includesToCheck, MY_TYPE_NAME);
+        }
+
+        protected List<FieldNode> getFields(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee) {
+           boolean includeSuperProperties = transform.memberHasValue(anno, "includeSuperProperties", true);
+           return includeSuperProperties ? getSuperPropertyFields(buildee) : getInstancePropertyFields(buildee);
         }
 
         protected static class PropertyInfo {

@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -27,6 +28,8 @@ import java.util.*;
  * @author Rick Hightower
  */
 public class LazyMap extends AbstractMap<String, Object> {
+
+    static final String JDK_MAP_ALTHASHING_SYSPROP = System.getProperty("jdk.map.althashing.threshold");
 
     /* Holds the actual map that will be lazily created. */
     private Map<String, Object> map;
@@ -45,11 +48,20 @@ public class LazyMap extends AbstractMap<String, Object> {
     public LazyMap(int initialSize) {
         keys = new String[initialSize];
         values = new Object[initialSize];
-
     }
 
     public Object put(String key, Object value) {
         if (map == null) {
+            for (int i = 0; i < size; i++) {
+                String curKey = keys[i];
+                if ((key == null && curKey == null)
+                     || (key != null && key.equals(curKey))) {
+                    Object val = values[i];
+                    keys[i] = key;
+                    values[i] = value;
+                    return val;
+                }
+            }
             keys[size] = key;
             values[size] = value;
             size++;
@@ -101,9 +113,8 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     private void buildIfNeeded() {
         if (map == null) {
-
-            /** added to avoid hash collision attack. */
-            if (Sys.is1_7OrLater() && System.getProperty("jdk.map.althashing.threshold") != null) {
+            // added to avoid hash collision attack
+            if (Sys.is1_8OrLater() || (Sys.is1_7() && JDK_MAP_ALTHASHING_SYSPROP != null)) {
                 map = new LinkedHashMap<String, Object>(size, 0.01f);
             } else {
                 map = new TreeMap<String, Object>();
@@ -138,15 +149,11 @@ public class LazyMap extends AbstractMap<String, Object> {
     public Set<String> keySet() {
         buildIfNeeded();
         return map.keySet();
-
     }
 
     public Collection<Object> values() {
-
         buildIfNeeded();
-
         return map.values();
-
     }
 
     public boolean equals(Object o) {
@@ -160,13 +167,11 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     public String toString() {
-
         buildIfNeeded();
         return map.toString();
     }
 
     protected Object clone() throws CloneNotSupportedException {
-
         if (map == null) {
             return null;
         } else {
@@ -188,11 +193,8 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     public static <V> V[] grow(V[] array) {
-        Object newArray = Array.newInstance(array.getClass().getComponentType(),
-                array.length * 2);
+        Object newArray = Array.newInstance(array.getClass().getComponentType(), array.length * 2);
         System.arraycopy(array, 0, newArray, 0, array.length);
         return (V[]) newArray;
     }
-
 }
-

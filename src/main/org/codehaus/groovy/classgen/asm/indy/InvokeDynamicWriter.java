@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm.indy;
 
@@ -74,7 +77,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
                 "bootstrap",
                 BSM_METHOD_TYPE_DESCRIPTOR);
 
-    private WriterController controller;
+    private final WriterController controller;
 
     public InvokeDynamicWriter(WriterController wc) {
         super(wc);
@@ -154,7 +157,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
     }
     
-    private int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
+    private static int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
         int ret = 0;
         if (safe)                           ret |= SAFE_NAVIGATION;
         if (adapter==invokeMethodOnCurrent) ret |= THIS_CALL;
@@ -167,7 +170,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeIndyCall(invokeMethod, receiver, false, false, message, arguments);
     }
 
-    private int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
+    private static int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
         int flags = 0;
         if (implicitThis)   flags |= IMPLICIT_THIS;
         if (groovyObject)   flags |= GROOVY_OBJECT;
@@ -225,7 +228,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
     @Override
     public void castNonPrimitiveToBool(ClassNode sourceType) {
-        writeIndyCast(sourceType, ClassHelper.boolean_TYPE);;
+        writeIndyCast(sourceType, ClassHelper.boolean_TYPE);
     }
 
 }

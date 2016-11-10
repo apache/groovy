@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.ASTNode;
@@ -24,7 +26,9 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -41,6 +45,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -56,9 +61,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @Lazy annotation
- *
- * @author Alex Tkachman
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LazyASTTransformation extends AbstractASTTransformation {
@@ -73,16 +75,21 @@ public class LazyASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof FieldNode) {
             final FieldNode fieldNode = (FieldNode) parent;
-            visitField(node, fieldNode);
+            visitField(this, node, fieldNode);
         }
     }
 
-    static void visitField(AnnotationNode node, FieldNode fieldNode) {
+    static void visitField(ErrorCollecting xform, AnnotationNode node, FieldNode fieldNode) {
         final Expression soft = node.getMember("soft");
-        final Expression init = getInitExpr(fieldNode);
+        final Expression init = getInitExpr(xform, fieldNode);
 
-        fieldNode.rename("$" + fieldNode.getName());
+        String backingFieldName = "$" + fieldNode.getName();
+        fieldNode.rename(backingFieldName);
         fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+        PropertyNode pNode = fieldNode.getDeclaringClass().getProperty(backingFieldName);
+        if (pNode != null) {
+            fieldNode.getDeclaringClass().getProperties().remove(pNode);
+        }
 
         if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
             createSoft(fieldNode, init);
@@ -114,7 +121,17 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         final String fullName = declaringClass.getName() + "$" + fieldType.getNameWithoutPackage() + "Holder_" + fieldNode.getName().substring(1);
         final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, ClassHelper.OBJECT_TYPE);
         final String innerFieldName = "INSTANCE";
-        holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType, initExpr);
+
+        // we have two options:
+        // (1) embed initExpr within holder class but redirect field access/method calls to declaring class members
+        // (2) keep initExpr within a declaring class method that is only called by the holder class
+        // currently we have gone with (2) for simplicity with only a slight memory footprint increase in the declaring class
+        final String initializeMethodName = (fullName + "_initExpr").replace('.', '_');
+        declaringClass.addMethod(initializeMethodName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType,
+                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(initExpr));
+        holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType,
+                callX(declaringClass, initializeMethodName));
+
         final Expression innerField = propX(classX(holderClass), innerFieldName);
         declaringClass.getModule().addClass(holderClass);
         body.addStatement(returnS(innerField));
@@ -146,8 +163,12 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
-        final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
-        fieldNode.getDeclaringClass().addMethod(name, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        String propName = MetaClassHelper.capitalize(fieldNode.getName().substring(1));
+        fieldNode.getDeclaringClass().addMethod("get" + propName, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        if (ClassHelper.boolean_TYPE.equals(type)) {
+            fieldNode.getDeclaringClass().addMethod("is" + propName, visibility, type,
+                    Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt(callThisX("get" + propName)));
+        }
     }
 
     private static void createSoft(FieldNode fieldNode, Expression initExpr) {
@@ -205,11 +226,15 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         return fieldNode.isStatic() ? classX(fieldNode.getDeclaringClass()) : varX("this");
     }
 
-    private static Expression getInitExpr(FieldNode fieldNode) {
+    private static Expression getInitExpr(ErrorCollecting xform, FieldNode fieldNode) {
         Expression initExpr = fieldNode.getInitialValueExpression();
         fieldNode.setInitialValueExpression(null);
 
-        if (initExpr == null) {
+        if (initExpr == null || initExpr instanceof EmptyExpression) {
+            if (fieldNode.getType().isAbstract()) {
+                xform.addError("You cannot lazily initialize '" + fieldNode.getName() + "' from the abstract class '" +
+                        fieldNode.getType().getName() + "'", fieldNode);
+            }
             initExpr = ctorX(fieldNode.getType());
         }
 

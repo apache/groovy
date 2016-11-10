@@ -1,19 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Derived from Boon all rights granted to Groovy project for this fork.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal;
 
@@ -21,7 +22,7 @@ import groovy.json.JsonException;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author Rick Hightower
@@ -45,7 +46,6 @@ public class Exceptions {
     }
 
     public static <T> T handle(Class<T> clazz, java.lang.Exception e) {
-
         if (e instanceof JsonInternalException) {
             throw (JsonInternalException) e;
         }
@@ -53,7 +53,6 @@ public class Exceptions {
     }
 
     public static <T> T handle(Class<T> clazz, String message, Throwable e) {
-
         throw new JsonInternalException(message, e);
     }
 
@@ -76,7 +75,6 @@ public class Exceptions {
         }
 
         public void printStackTrace(PrintStream s) {
-
             s.println(this.getMessage());
             if (getCause() != null) {
                 s.println("This Exception was wrapped, the original exception\n" +
@@ -85,7 +83,6 @@ public class Exceptions {
             } else {
                 super.printStackTrace(s);
             }
-
         }
 
         public String getMessage() {
@@ -108,7 +105,6 @@ public class Exceptions {
             } else {
                 return super.getStackTrace();
             }
-
         }
 
         public Throwable getCause() {
@@ -116,7 +112,6 @@ public class Exceptions {
         }
 
         public void printStackTrace(PrintWriter s) {
-
             s.println(this.getMessage());
 
             if (getCause() != null) {
@@ -129,7 +124,6 @@ public class Exceptions {
         }
 
         public void printStackTrace() {
-
             System.err.println(this.getMessage());
 
             if (getCause() != null) {
@@ -154,11 +148,9 @@ public class Exceptions {
         }
 
         return buffer.toString();
-
     }
 
     public static String sputs(CharBuf buf, Object... messages) {
-
         int index = 0;
         for (Object message : messages) {
             if (index != 0) {
@@ -169,7 +161,7 @@ public class Exceptions {
             if (message == null) {
                 buf.add("<NULL>");
             } else if (message.getClass().isArray()) {
-                buf.add(Arrays.asList(message).toString());
+                buf.add(Collections.singletonList(message).toString());
             } else {
                 buf.add(message.toString());
             }
@@ -177,13 +169,10 @@ public class Exceptions {
         buf.add('\n');
 
         return buf.toString();
-
     }
 
     public static String sputs(Object... messages) {
         CharBuf buf = CharBuf.create(100);
         return sputs(buf, messages);
     }
-
 }
-

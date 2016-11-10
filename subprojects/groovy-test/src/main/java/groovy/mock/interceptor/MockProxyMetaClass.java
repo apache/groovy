@@ -1,23 +1,24 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.mock.interceptor;
 
 import groovy.lang.*;
-
-import java.beans.IntrospectionException;
 
 /**
  * The ProxyMetaClass for the MockInterceptor.
@@ -41,14 +42,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
-    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) throws IntrospectionException {
+    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) {
         this(registry, theClass, adaptee, false);
     }
 
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
-    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee, boolean interceptConstruction) throws IntrospectionException {
+    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee, boolean interceptConstruction) {
         super(registry, theClass, adaptee);
         this.interceptConstruction = interceptConstruction;
     }
@@ -56,14 +57,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     /**
      * convenience factory method for the most usual case.
      */
-    public static MockProxyMetaClass make(Class theClass) throws IntrospectionException {
+    public static MockProxyMetaClass make(Class theClass) {
         return make(theClass, false);
     }
 
     /**
      * convenience factory method allowing interceptConstruction to be set.
      */
-    public static MockProxyMetaClass make(Class theClass, boolean interceptConstruction) throws IntrospectionException {
+    public static MockProxyMetaClass make(Class theClass, boolean interceptConstruction) {
         MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new MockProxyMetaClass(metaRegistry, theClass, meta, interceptConstruction);

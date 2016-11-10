@@ -1,34 +1,52 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.ast.tools;
 
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
+import groovy.transform.stc.IncorrectTypeHintException;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.antlr.AntlrParserPlugin;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.ParserException;
+import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility methods to deal with generic types.
@@ -174,6 +192,7 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      * @deprecated Use #parameterizeType instead
      */
+    @Deprecated
     public static ClassNode parameterizeInterfaceGenerics(final ClassNode hint, final ClassNode target) {
         return parameterizeType(hint, target);
     }
@@ -188,8 +207,11 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      */
     public static ClassNode parameterizeType(final ClassNode hint, final ClassNode target) {
-        if (hint.isArray() && target.isArray()) {
-            return parameterizeType(hint.getComponentType(), target.getComponentType()).makeArray();
+        if (hint.isArray()) {
+            if (target.isArray()) {
+                return parameterizeType(hint.getComponentType(), target.getComponentType()).makeArray();
+            }
+            return target;
         }
         if (!target.equals(hint) && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(target, hint)) {
             ClassNode nextSuperClass = ClassHelper.getNextSuperClass(target, hint);
@@ -269,10 +291,29 @@ public class GenericsUtils {
     }
 
     public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type) {
-        if (type.isArray()) {
-            return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType()).makeArray();
+        return correctToGenericsSpecRecurse(genericsSpec, type, new ArrayList<String>());
+    }
+
+    /**
+     * @since 2.4.1
+     */
+    public static ClassNode[] correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode[] types) {
+        if (types==null || types.length==1) return types;
+        ClassNode[] newTypes = new ClassNode[types.length];
+        boolean modified = false;
+        for (int i=0; i<types.length; i++) {
+            newTypes[i] = correctToGenericsSpecRecurse(genericsSpec, types[i], new ArrayList<String>());
+            modified = modified || (types[i]!=newTypes[i]);
         }
-        if (type.isGenericsPlaceHolder()) {
+        if (!modified) return types;
+        return newTypes;
+    }
+
+    public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type, List<String> exclusions) {
+        if (type.isArray()) {
+            return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType(), exclusions).makeArray();
+        }
+        if (type.isGenericsPlaceHolder() && !exclusions.contains(type.getUnresolvedName())) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
             if (type != null && type.isGenericsPlaceHolder() && type.getGenericsTypes() == null) {
@@ -283,7 +324,7 @@ public class GenericsUtils {
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         GenericsType[] oldgTypes = type.getGenericsTypes();
-        GenericsType[] newgTypes = new GenericsType[0];
+        GenericsType[] newgTypes = GenericsType.EMPTY_ARRAY;
         if (oldgTypes != null) {
             newgTypes = new GenericsType[oldgTypes.length];
             for (int i = 0; i < newgTypes.length; i++) {
@@ -296,20 +337,21 @@ public class GenericsUtils {
                     }
                 } else if (oldgType.isWildcard()) {
                     ClassNode oldLower = oldgType.getLowerBound();
-                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
+                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower, exclusions):null;
                     ClassNode[] oldUpper = oldgType.getUpperBounds();
                     ClassNode[] upper = null;
                     if (oldUpper!=null) {
                         upper = new ClassNode[oldUpper.length];
                         for (int j = 0; j < oldUpper.length; j++) {
-                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
+                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j], exclusions);
                         }
                     }
                     GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
+                    fixed.setName(oldgType.getName());
                     fixed.setWildcard(true);
                     newgTypes[i] = fixed;
                 } else {
-                    newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec,correctToGenericsSpec(genericsSpec, oldgType)));
+                    newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec,correctToGenericsSpec(genericsSpec, oldgType), exclusions));
                 }
             }
         }
@@ -366,6 +408,18 @@ public class GenericsUtils {
             ret.clear();
             for (int i = 0; i < spec.length; i++) {
                 ret.put(newGts[i].getName(), spec[i]);
+            }
+        }
+        return ret;
+    }
+
+    public static Map<String,ClassNode> addMethodGenerics(MethodNode current, Map<String,ClassNode> oldSpec) {
+        Map<String,ClassNode> ret = new HashMap<String,ClassNode>(oldSpec);
+        // ret starts with the original type specs, now add gts for the current method if any
+        GenericsType[] sgts = current.getGenericsTypes();
+        if (sgts != null) {
+            for (GenericsType sgt : sgts) {
+                ret.put(sgt.getName(), sgt.getType());
             }
         }
         return ret;
@@ -441,5 +495,118 @@ public class GenericsUtils {
                 extractSuperClassGenerics(ui.getGenericsTypes(), di.getGenericsTypes(), spec);
             }
         }
+    }
+
+    public static ClassNode[] parseClassNodesFromString(
+            final String option,
+            final SourceUnit sourceUnit,
+            final CompilationUnit compilationUnit,
+            final MethodNode mn,
+            final ASTNode usage) {
+        GroovyLexer lexer = new GroovyLexer(new StringReader("DummyNode<" + option + ">"));
+        final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
+        try {
+            rn.classOrInterfaceType(true);
+            final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
+            AntlrParserPlugin plugin = new AntlrParserPlugin() {
+                @Override
+                public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) throws ParserException {
+                    ref.set(makeTypeWithArguments(rn.getAST()));
+                    return null;
+                }
+            };
+            plugin.buildAST(null, null, null);
+            ClassNode parsedNode = ref.get();
+            // the returned node is DummyNode<Param1, Param2, Param3, ...)
+            GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
+            if (parsedNodeGenericsTypes == null) {
+                return null;
+            }
+            ClassNode[] signature = new ClassNode[parsedNodeGenericsTypes.length];
+            for (int i = 0; i < parsedNodeGenericsTypes.length; i++) {
+                final GenericsType genericsType = parsedNodeGenericsTypes[i];
+                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
+            }
+            return signature;
+        } catch (RecognitionException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        } catch (TokenStreamException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        } catch (ParserException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        }
+        return null;
+    }
+
+    private static ClassNode resolveClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage, final ClassNode parsedNode) {
+        ClassNode dummyClass = new ClassNode("dummy",0, ClassHelper.OBJECT_TYPE);
+        dummyClass.setModule(new ModuleNode(sourceUnit));
+        dummyClass.setGenericsTypes(mn.getDeclaringClass().getGenericsTypes());
+        MethodNode dummyMN = new MethodNode(
+                "dummy",
+                0,
+                parsedNode,
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                EmptyStatement.INSTANCE
+        );
+        dummyMN.setGenericsTypes(mn.getGenericsTypes());
+        dummyClass.addMethod(dummyMN);
+        ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
+            @Override
+            public void addError(final String msg, final ASTNode expr) {
+                sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
+            }
+        };
+        visitor.startResolving(dummyClass, sourceUnit);
+        return dummyMN.getReturnType();
+    }
+
+    /**
+     * transforms generics types from an old context to a new context using the given spec. This method assumes
+     * all generics types will be placeholders. WARNING: The resulting generics types may or may not be placeholders
+     * after the transformation.
+     * @param genericsSpec the generics context information spec
+     * @param oldPlaceHolders the old placeholders
+     * @return the new generics types
+     */
+    public static GenericsType[] applyGenericsContextToPlaceHolders(Map<String, ClassNode> genericsSpec, GenericsType[] oldPlaceHolders) {
+        if (oldPlaceHolders==null || oldPlaceHolders.length==0) return oldPlaceHolders;
+        if (genericsSpec.isEmpty()) return oldPlaceHolders;
+        GenericsType[] newTypes = new GenericsType[oldPlaceHolders.length];
+        for (int i=0; i<oldPlaceHolders.length; i++) {
+            GenericsType old = oldPlaceHolders[i];
+            if (!old.isPlaceholder()) throw new GroovyBugError("Given generics type "+old+" must be a placeholder!");
+            ClassNode fromSpec = genericsSpec.get(old.getName());
+            if (fromSpec!=null) {
+                if (fromSpec.isGenericsPlaceHolder()) {
+                    ClassNode[] upper = new ClassNode[]{fromSpec.redirect()};
+                    newTypes[i] = new GenericsType(fromSpec, upper, null);
+                } else {
+                    newTypes[i] = new GenericsType(fromSpec);
+                }
+            } else {
+                ClassNode[] upper = old.getUpperBounds();
+                ClassNode[] newUpper = upper;
+                if (upper!=null && upper.length>0) {
+                    ClassNode[] upperCorrected = new ClassNode[upper.length];
+                    for (int j=0;j<upper.length;j++) {
+                        upperCorrected[i] = correctToGenericsSpecRecurse(genericsSpec,upper[j]);
+                    }
+                    upper = upperCorrected;
+                }
+                ClassNode lower = old.getLowerBound();
+                ClassNode newLower = correctToGenericsSpecRecurse(genericsSpec,lower);
+                if (lower==newLower && upper==newUpper) {
+                    newTypes[i] = oldPlaceHolders[i];
+                } else {
+                    ClassNode newPlaceHolder = ClassHelper.make(old.getName());
+                    GenericsType gt = new GenericsType(newPlaceHolder, newUpper, newLower);
+                    gt.setPlaceholder(true);
+                    newTypes[i] = gt;
+                }
+            }
+        }
+        return newTypes;
     }
 }

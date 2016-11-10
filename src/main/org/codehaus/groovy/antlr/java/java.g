@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 // Note: Please don't use physical tabs.  Logical tabs for indent are width 4.
 header {
 package org.codehaus.groovy.antlr.java;
@@ -182,7 +200,7 @@ import antlr.LexerSharedInputState;
  *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
  *      and have made some changes to enable use by java2groovy tool (Jan 2007)
  *
- * This grammar is in the PUBLIC DOMAIN
+ * Based on an original grammar released in the PUBLIC DOMAIN
  */
 
 class JavaRecognizer extends Parser;
@@ -352,7 +370,7 @@ classTypeSpec[boolean addImagNode]  {Token first = LT(1);}
 
 // A non-built in type name, with possible type parameters
 classOrInterfaceType[boolean addImagNode]  {Token first = LT(1);}
-	:	IDENT^ (typeArguments)?
+	:	IDENT^ (typeArguments|typeArgumentsDiamond)?
 		(options{greedy=true;}: // match as many as possible
 			DOT^
 			IDENT (typeArguments)?
@@ -383,6 +401,12 @@ wildcardType
 	:	q:QUESTION^ {#q.setType(WILDCARD_TYPE);}
 		(("extends" | "super")=> typeArgumentBounds)?
 	;
+
+typeArgumentsDiamond
+{Token first = LT(1);}
+    :   LT! GT!
+    {#typeArgumentsDiamond = #(create(TYPE_ARGUMENTS, "TYPE_ARGUMENTS",first,LT(1)), #typeArgumentsDiamond);}
+    ;
 
 // Type arguments to a class or interface type
 typeArguments
@@ -1196,10 +1220,25 @@ finallyClause
 	:	"finally"^ compoundStatement
 	;
 
-// an exception handler
-handler
-	:	"catch"^ LPAREN! parameterDeclaration RPAREN! compoundStatement
-	;
+// an exception handler borrowed from groovy.g to handle Java7+ multi-catch
+handler {Token first = LT(1);}
+    :   "catch"! LPAREN! pd:multicatch! RPAREN! handlerCs:compoundStatement!
+        {#handler = #(create(LITERAL_catch,"catch",first,LT(1)),pd,handlerCs);}
+    ;
+
+multicatch_types
+{Token first = LT(1);}
+    :
+        classOrInterfaceType[false]
+        (
+            BOR! classOrInterfaceType[false]
+        )*
+    ;
+
+multicatch
+{Token first = LT(1);}
+    :   (FINAL)? (m:multicatch_types) id:IDENT!
+    ;
 
 
 // expressions

@@ -1,21 +1,21 @@
-
 /*
- * $Id:$
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Copyright (c) 2007 James P. White
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *
- * See the License for the specific language governing permissions and limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.control;
 
 import groovy.util.GroovyTestCase;
@@ -64,7 +64,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             assertNotNull(listCP);
             assertEquals(0, listCP.size());
         }
-        assertNotNull(config.getOutput());
         assertNull(config.getTargetDirectory());
         assertEquals(".groovy", config.getDefaultScriptExtension());
         assertNull(config.getJointCompilationOptions());
@@ -76,15 +75,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
     }
 
     private static String getVMVersion() {
-        try {
-            Class.forName("java.lang.annotation.Annotation");
-            return CompilerConfiguration.POST_JDK5;
-        }
-        catch(Exception ex) {
-            // IGNORE
-        }
-
-        return CompilerConfiguration.PRE_JDK5;
+        return CompilerConfiguration.POST_JDK5;
     }
 
     public void testSetViaSystemProperties() {
@@ -110,7 +101,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             assertNotNull(listCP);
             assertEquals(0, listCP.size());
         }
-        assertNotNull(config.getOutput());
         assertNull(config.getTargetDirectory());
         assertEquals(".groovy", config.getDefaultScriptExtension());
         assertNull(config.getJointCompilationOptions());
@@ -122,6 +112,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         init.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         init.setDebug(true);
+        init.setParameters(true);
         init.setVerbose(false);
         init.setTolerance(720);
         init.setMinimumRecompilationInterval(234);
@@ -131,9 +122,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         init.setRecompileGroovySource(true);
         init.setClasspath("File1" + File.pathSeparator + "Somewhere");
 
-        final PrintWriter initOut = new PrintWriter(System.out);
-        init.setOutput(initOut);
-
         final File initTDFile = new File("A wandering path");
         init.setTargetDirectory(initTDFile);
         init.setDefaultScriptExtension(".jpp");
@@ -142,11 +130,12 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         initJoint.put("somekey", "somevalue");
         init.setJointCompilationOptions(initJoint);
 
-        final ParserPluginFactory initPPF = ParserPluginFactory.newInstance(true);
+        final ParserPluginFactory initPPF = ParserPluginFactory.newInstance();
         init.setPluginFactory(initPPF);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(true, init.getDebug());
+        assertEquals(true, init.getParameters());
         assertEquals(false, init.getVerbose());
         assertEquals(720, init.getTolerance());
         assertEquals(234, init.getMinimumRecompilationInterval());
@@ -159,7 +148,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             assertEquals("File1", listCP.get(0));
             assertEquals("Somewhere", listCP.get(1));
         }
-        assertEquals(initOut, init.getOutput());
         assertEquals(initTDFile, init.getTargetDirectory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
         assertEquals(initJoint, init.getJointCompilationOptions());
@@ -181,7 +169,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             assertEquals("File1", listCP.get(0));
             assertEquals("Somewhere", listCP.get(1));
         }
-        assertEquals(initOut, config.getOutput());
         assertEquals(initTDFile, config.getTargetDirectory());
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertEquals(initJoint, config.getJointCompilationOptions());
@@ -194,6 +181,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         init.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         init.setDebug(false);
+        init.setParameters(false);
         init.setVerbose(true);
         init.setTolerance(55);
         init.setMinimumRecompilationInterval(975);
@@ -203,14 +191,12 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         init.setRecompileGroovySource(false);
         init.setClasspath("");
 
-        final PrintWriter initOut = new PrintWriter(System.out);
-        init.setOutput(initOut);
-
         final File initTDFile = new File("A wandering path");
         init.setTargetDirectory(initTDFile);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(false, init.getDebug());
+        assertEquals(false, init.getParameters());
         assertEquals(true, init.getVerbose());
         assertEquals(55, init.getTolerance());
         assertEquals(975, init.getMinimumRecompilationInterval());
@@ -223,7 +209,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             assertNotNull(listCP);
             assertEquals(0, listCP.size());
         }
-        assertEquals(initOut, init.getOutput());
         assertEquals(initTDFile, init.getTargetDirectory());
 
         final CompilerConfiguration config = new CompilerConfiguration(init);
@@ -241,7 +226,6 @@ public class CompilerConfigurationTest extends GroovyTestCase {
             final List listCP = config.getClasspath();
             assertEquals(0, listCP.size());
         }
-        assertEquals(initOut, config.getOutput());
         assertEquals(initTDFile, config.getTargetDirectory());
     }
 }

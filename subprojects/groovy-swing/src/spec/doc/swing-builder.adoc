@@ -1,0 +1,59 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+[[swingbuilder]]
+= SwingBuilder
+
+`SwingBuilder` allows you to create full-fledged Swing GUIs in a declarative and concise fashion. It accomplishes this by employing a common idiom in Groovy, builders.
+Builders handle the busywork of creating complex objects for you, such as instantiating children, calling Swing methods, and attaching these children to their parents.
+As a consequence, your code is much more readable and maintainable, while still allowing you access to the full range of Swing components.
+
+Here's a simple example of using `SwingBuilder`:
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=simple_example,indent=0]
+----
+
+Here is what it will look like:
+
+image::assets/img/SwingBuilder001.gif[]
+
+This hierarchy of components would normally be created through a series of repetitive instantiations, setters, and finally attaching this child to its respective parent.
+Using `SwingBuilder`, however, allows you to define this hierarchy in its native form, which makes the interface design understandable simply by reading the code.
+
+The flexibility shown here is made possible by leveraging the many programming features built-in to Groovy, such as closures, implicit constructor calling, import aliasing, and string interpolation. 
+Of course, these do not have to be fully understood in order to use `SwingBuilder`; as you can see from the code above, their uses are intuitive.
+
+Here is a slightly more involved example, with an example of `SwingBuilder` code re-use via a closure.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=more_involved_example,indent=0]
+----
+
+Here's another variation that relies on observable beans and binding:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=observable_binding_example,indent=0]
+----
+
+<<core-metaprogramming.adoc#xform-Bindable,@Bindable>> is one of the core AST Transformations. It generates all the required boilerplate code to turn a simple bean into an observable one. The `bind()` node creates appropriate `PropertyChangeListeners` that will update the interested parties whenever a `PropertyChangeEvent` is fired.

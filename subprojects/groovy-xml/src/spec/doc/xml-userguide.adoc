@@ -1,0 +1,579 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Processing XML
+
+== Parsing XML
+
+=== XmlParser and XmlSlurper
+
+The most commonly used approach for parsing XML with Groovy is to use
+one of:
+
+* `groovy.util.XmlParser`
+* `groovy.util.XmlSlurper`
+
+Both have the same approach to parse an xml. Both come with a bunch of
+overloaded parse methods plus some special methods such as `parseText`,
+parseFile and others. For the next example we will use the `parseText`
+method. It parses a XML `String` and recursively converts it to a list
+or map of objects.
+
+[source,groovy]
+.XmlSlurper
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testParseText,indent=0]
+----
+
+<1> Parsing the XML an returning the root node as a GPathResult
+<2> Checking we're using a GPathResult
+<3> Traversing the tree in a GPath style
+
+[source,groovy]
+.XmlParser
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testParseText,indent=0]
+----
+
+<1> Parsing the XML an returning the root node as a Node
+<2> Checking we're using a Node
+<3> Traversing the tree in a GPath style
+
+Let's see the *similarities* between `XMLParser` and `XMLSlurper` first:
+
+* Both are based on `SAX` so they both are low memory footprint
+* Both can update/transform the XML
+
+But they have key *differences*:
+
+* `XmlSlurper` evaluates the structure lazily. So if you update the xml
+you'll have to evaluate the whole tree again.
+* `XmlSlurper` returns `GPathResult` instances when parsing XML
+* `XmlParser` returns `Node` objects when parsing XML
+
+When to use one or the another?
+
+NOTE: There is a discussion at
+http://stackoverflow.com/questions/7558019/groovy-xmlslurper-vs-xmlparser[StackOverflow]. The
+conclusions written here are based partially on this entry.
+
+* *If you want to transform an existing document to another* then
+`XmlSlurper` will be the choice
+* *If you want to update and read at the same time* then `XmlParser` is
+the choice.
+
+The rationale behind this is that every time you create a node with
+`XmlSlurper` it won't be available until you parse the document again
+with another `XmlSlurper` instance.  Need to read just a few nodes
+XmlSlurper is for you ".
+
+* *If you just have to read a few nodes* `XmlSlurper` should be your
+choice, since it will not have to create a complete structure in
+memory"
+
+In general both classes perform similar way. Even the way of using
+GPath expressions with them are the same (both use `breadthFirst()` and
+`depthFirst()` expressions). So I guess it depends on the write/read
+frequency.
+
+=== DOMCategory
+
+There is another way of parsing XML documents with Groovy with the
+used of `groovy.xml.dom.DOMCategory` which is a category class which
+adds GPath style operations to Java's DOM classes.
+
+NOTE: Java has in-built support for DOM processing of XML using classes
+representing the various parts of XML documents, e.g. `Document`,
+`Element`, `NodeList`, `Attr` etc. For more information about these classes,
+refer to the respective JavaDocs.
+
+Having a XML like the following:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategory.groovy[tags=testXML,indent=0]
+----
+
+You can parse it using 'groovy.xml.DOMBuilder` and
+`groovy.xml.dom.DOMCategory`.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategory.groovy[tags=testExample1,indent=0]
+----
+
+<1> Parsing the XML
+<2> Creating `DOMCategory` scope to be able to use helper method calls
+
+== GPath
+
+The most common way of querying XML in Groovy is using `GPath`:
+
+__GPath is a path expression language integrated into Groovy which
+allows parts of nested structured data to be identified. In this
+sense, it has similar aims and scope as XPath does for XML. The two
+main places where you use GPath expressions is when dealing with
+nested POJOs or when dealing with XML__
+
+It is similar to http://en.wikipedia.org/wiki/XPath[XPath]
+expressions and you can use it not only with XML but also with POJO
+classes. As an example, you can specify a path to an object or element
+of interest:
+
+* `a.b.c` -> for XML, yields all the `<c>` elements inside `<b>` inside `<a>`
+* `a.b.c` -> all POJOs, yields the `<c>` properties for all the `<b>`
+  properties of `<a>` (sort of like a.getB().getC() in JavaBeans)
+
+For XML, you can also specify attributes, e.g.:
+
+* `a["@href"]` -> the href attribute of all the a elements
+* `a.'@href'` -> an alternative way of expressing this
+* `a.@href` -> an alternative way of expressing this when using XmlSlurper
+
+Let's illustrate this with an example:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=books,indent=0]
+----
+
+=== Simply traversing the tree
+
+First thing we could do is to get a value using POJO's notation. Let's
+get the first book's author's name
+
+[source,groovy]
+.Getting node value
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testGettingANodeText,indent=0]
+----
+
+First we parse the document with `XmlSlurper` and the we have to
+consider the returning value as the root of the XML document, so in
+this case is "response".
+
+That's why we start traversing the document from response and then
+`value.books.book[0].author`. Note that in `XPath` the node arrays starts
+in [1] instead of [0], but because `GPath` is Java-based it begins at
+index 0.
+
+In the end we'll have the instance of the `author` node and because we
+wanted the text inside that node we should be calling the `text()`
+method.  The `author` node is an instance of `GPathResult` type and
+`text()` a method giving us the content of that node as a String.
+
+When using `GPath` with an xml parsed with `XmlSlurper` we'll have as a
+result a `GPathResult` object. `GPathResult` has many other convenient
+methods to convert the text inside a node to any other type such as:
+
+* `toInteger()`
+* `toFloat()`
+* `toBigInteger()`
+* ...
+
+All these methods try to convert a `String` to the appropriate type.
+
+If we were using a XML parsed with `XmlParser` we could be dealing with
+instances of type `Node`. But still all the actions applied to
+`GPathResult` in these examples could be applied to a Node as
+well. Creators of both parsers took into account `GPath` compatibility.
+
+Next step is to get the some values from a given node's attribute. In the following sample
+we want to get the first book's author's id. We'll be using two different approaches. Let's see the code first:
+
+[source,groovy]
+.Getting an attribute's value
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testGettingAnAttributeText,indent=0]
+----
+
+<1> Getting the first book node
+<2> Getting the book's id attribute `@id`
+<3> Getting the book's id attribute with `map notation` `['@id']`
+<4> Getting the value as a String
+<5> Getting the value of the attribute as an `Integer`
+
+As you can see there are two types of notations to get attributes,
+the
+
+* _direct notation_ with `@nameoftheattribute`
+* _map notation_ using `['@nameoftheattribute']`
+
+Both of them are equally valid.
+
+=== Speed things up with breadthFirst and depthFirst
+
+If you ever have used XPath you may have used expressions like
+
+* `//` : Look everywhere
+* `/following-sibling::othernode` : Look for a node "othernode" in the same level
+
+More or less we have their counterparts in `GPath` with the methods
+`breadthFirst()` and `depthFirst()`.
+
+The first example shows a simple use of `breadthFirst()`. The creators of
+this methods created a shorter syntax for it using the symbol `*`.
+
+[source,groovy]
+.breadthFirst()
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testBreadthFirst1,indent=0]
+----
+
+This test searches for any node at the same level of the "books" node
+first, and *only if* it couldn't find the node we were looking for,
+then it will look deeper in the tree, always taking into account the
+given the expression inside the closure.
+
+The expression says *_Look for any node with a tag name
+equals 'book' having an id with a value of '2'_*.
+
+But what if we would like to look for a given value
+without having to know exactly where it is. Let's say that the
+only thing we know is the id of the author "Lewis Carroll" . How are
+we going to be able to find that book? `depthFirst()` is the solution:
+
+[source,groovy]
+.depthFirst()
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
+----
+
+`depthFirst()` is the same as looking something *everywhere in the
+tree from this point down*. In this case we've used the method
+`find(Closure cl)` to find just the first occurrence.
+
+What if we want to collect all book's titles?
+
+[source,groovy]
+.depthFirst()
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst2,indent=0]
+----
+
+It is worth mentioning again that there are some useful methods
+converting a node's value to an integer, float... etc. Those methods
+could be convenient when doing comparisons like this:
+
+[source,groovy]
+.helpers
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testHelpers,indent=0]
+----
+
+In this case the number 2 has been hardcoded but imagine that value
+could have come from any other source (database... etc.).
+
+== Creating XML
+
+The most commonly used approach for creating XML with Groovy is to use
+a builder, i.e. one of:
+
+* `groovy.xml.MarkupBuilder`
+* `groovy.xml.StreamingMarkupBuilder`
+
+=== MarkupBuilder
+
+Here is an example of using Groovy's MarkupBuilder to create a new XML file:
+
+[source,groovy]
+.Creating Xml with MarkupBuilder
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=createCarsTest,indent=0]
+----
+
+<1> Create an instance of `MarkupBuilder`
+<2> Start creating the XML tree
+<3> Create an instance of `XmlSlurper` to traverse and test the
+generated XML
+
+Let's take a look a little bit closer:
+
+[source,groovy]
+.Creating XML elements
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml1,indent=0]
+----
+
+<1> We're creating a reference string to compare against
+<2> The `xmlWriter` instance is used by `MarkupBuilder` to convert the
+xml representation to a String instance eventually
+<3> The `xmlMarkup.movie(...)` call will create a XML node with a tag
+called `movie` and with content `the godfather`.
+
+[source,groovy]
+.Creating XML elements with attributes
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml2,indent=0]
+----
+
+<1> This time in order to create both attributes and node content you
+can create as many map entries as you like and finally add a value
+to set the node's content
+
+NOTE: The value could be any `Object`, the value will be serialized to its
+`String` representation.
+
+[source,groovy]
+.Creating XML nested elements
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml3,indent=0]
+----
+
+<1> A closure represents the children elements of a given node. Notice
+this time instead of using a String for the attribute we're using a
+number.
+
+Sometimes you may want to use a specific namespace in your xml documents:
+
+[source,groovy]
+.Namespace aware
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testNamespaceAware,indent=0]
+----
+
+<1> Creating a node with a given namespace `xmlns:x`
+<2> Creating a `XmlSlurper` registering the namespace to be able to
+test the XML we just created
+
+What about having some more meaningful example. We may want to
+generate more elements, to have some logic when creating our XML:
+
+[source,groovy]
+.Mix code
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse1,indent=0]
+----
+
+<1> Generating elements from a range
+<2> Using a conditional for creating a given element
+
+Of course the instance of a builder can be passed as a parameter to
+refactor/modularize your code:
+
+[source,groovy]
+.Mix code
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse2,indent=0]
+----
+
+<1> In this case we've created a Closure to handle the creation of a list of movies
+<2> Just using the `buildMovieList` function when necessary
+
+=== StreamingMarkupBuilder
+
+The class `groovy.xml.StreamingMarkupBuilder` is a builder class for
+creating XML markup. This implementation uses a
+`groovy.xml.streamingmarkupsupport.StreamingMarkupWriter` to handle
+output.
+
+[source,groovy]
+.Using StreamingMarkupBuilder
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testSimpleExample,indent=0]
+----
+
+<1> Note that `StreamingMarkupBuilder.bind` returns a `Writable`
+instance that may be used to stream the markup to a Writer
+<2> We're capturing the output in a String to parse it again an check
+the structure of the generated XML with `XmlSlurper`.
+
+=== MarkupBuilderHelper
+
+The `groovy.xml.MarkupBuilderHelper` is, as its name reflects, a
+helper for `groovy.xml.MarkupBuilder`.
+
+This helper normally can be accessed from within an instance of class
+`groovy.xml.MarkupBuilder` or an instance of
+`groovy.xml.StreamingMarkupBuilder`.
+
+This helper could be handy in situations when you may want to:
+
+* Produce a comment in the output
+* Produce an XML processing instruction in the output
+* Produce an XML declaration in the output
+* Print data in the body of the current tag, escaping XML entities
+* Print data in the body of the current tag
+
+In both `MarkupBuilder` and `StreamingMarkupBuilder` this helper is
+accessed by the property `mkp`:
+
+[source,groovy]
+.Using MarkupBuilder's 'mkp'
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testMkp1,indent=0]
+----
+
+<1> Using `mkp` to create a comment in the XML
+<2> Using `mkp` to generate an escaped value
+<3> Checking both assumptions were true
+
+Here is another example to show the use of `mkp` property accessible
+from within the `bind` method scope when using
+`StreamingMarkupBuilder`:
+
+[source,groovy]
+.Using StreamingMarkupBuilder's 'mkp'
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testMkp,indent=0]
+----
+
+<1> If we want to generate a escaped value for the name attribute with
+`mkp.yield`
+<2> Checking the values later on with `XmlSlurper`
+
+=== DOMToGroovy
+
+Suppose we have an existing XML document and we want to automate
+generation of the markup without having to type it all in? We just
+need to use `org.codehaus.groovy.tools.xml.DOMToGroovy` as shown in
+the following example:
+
+[source,groovy]
+.Building MarkupBuilder from DOMToGroovy
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testDOMToGroovy,indent=0]
+----
+
+<1> Creating `DOMToGroovy` instance 
+<2> Converts the XML to `MarkupBuilder` calls which are available in the output `StringWriter`
+<3> Using `output` variable to create the whole MarkupBuilder 
+<4> Back to XML string
+
+== Manipulating XML
+
+In this chapter you'll see the different ways of adding / modifying /
+removing nodes using `XmlSlurper` or `XmlParser`. The xml we are going
+to be handling is the following:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=responseBookXml,indent=0]
+----
+
+=== Adding nodes
+
+The main difference between `XmlSlurper` and `XmlParser` is that when
+former creates the nodes they won't be available until the document's
+been evaluated again, so you should parse the transformed document
+again in order to be able to see the new nodes. So keep that in mind
+when choosing any of both approaches.
+
+If you needed to see a node right after creating it then `XmlParser`
+should be your choice, but if you're planning to do many changes to
+the XML and send the result to another process maybe `XmlSlurper` would
+be more efficient.
+
+You can't create a new node directly using the `XmlSlurper` instance,
+but you can with `XmlParser`. The way of creating a new node from
+XmlParser is through its method `createNode(..)`
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testAddingNodes1,indent=0]
+----
+
+The `createNode()` method receives the following parameters:
+
+* parent node (could be null)
+* The qualified name for the tag (In this case we only use the local
+  part without any namespace). We're using an instance of
+  `groovy.xml.QName`
+* A map with the tag's attributes (None in this particular case)
+
+Anyway you won't normally be creating a node from the parser instance
+but from the parsed XML instance. That is from a `Node` or a
+`GPathResult` instance.
+
+Take a look at the next example. We are parsing the xml with `XmlParser`
+and then creating a new node from the parsed document's instance
+(Notice the method here is slightly different in the way it receives
+the parameters):
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testAddingNodes2,indent=0]
+----
+
+When using `XmlSlurper`, `GPathResult` instances don't have `createNode()`
+method.
+
+=== Modifying / Removing nodes
+
+We know how to parse the document, add new nodes, now I want to change
+a given node's content. Let's start using `XmlParser` and `Node`. This
+example changes the first book information to actually another book.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testModifyingNodes1,indent=0]
+----
+
+When using `replaceNode()` the closure we pass as parameter should
+follow the same rules as if we were using `groovy.xml.MarkupBuilder`:
+
+Here's the same example using `XmlSlurper`:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testModifyingNodes1,indent=0]
+----
+
+Notice how using `XmlSlurper` we have to parse the transformed document
+again in order to find the created nodes. In this particular example
+could be a little bit annoying isn't it?
+
+Finally both parsers also use the same approach for adding a new
+attribute to a given attribute. This time again the difference is
+whether you want the new nodes to be available right away or
+not. First `XmlParser`:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testSettingAttributes1,indent=0]
+----
+
+And `XmlSlurper`:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testSettingAttributes1,indent=0]
+----
+
+When using `XmlSlurper`, adding a new attribute does *not* require you to perform a new evaluation.
+
+=== Printing XML
+
+==== XmlUtil
+
+Sometimes is useful to get not only the value of a given node but the
+node itself (for instance to add this node to another XML).
+
+For that you can use `groovy.xml.XmlUtil` class. It has several static
+methods to serialize the xml fragment from several type of sources
+(Node, GPathResult, String...)
+
+[source,groovy]
+.Getting a node as a string
+----
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlUtilTest.groovy[tags=testGettingANode,indent=0]
+----
+

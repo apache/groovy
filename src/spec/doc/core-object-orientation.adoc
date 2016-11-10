@@ -1,49 +1,909 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Object orientation
+:jls: http://docs.oracle.com/javase/specs/jls/se8/html/
 
 This chapter covers the object orientation of the Groovy programming language.
 
-== Types (TBD)
+== Types
 
-=== Primitive types (TBD)
+=== Primitive types
 
-=== Class (TBD)
-==== Normal class (TBD)
-==== Static class (TBD)
-==== Inner class (TBD)
-===== Anonymous inner class (TBD)
-==== Abstract class (TBD)
+Groovy supports the same primitive types as those defined by the {jls}[Java Language Specification]:
 
-=== Interface (TBD)
+* integral types: `byte` (8 bit), `short` (16 bit), `int` (32 bit) and `long` (64 bit)
+* floating-point types: `float` (32 bit) and `double` (64 bit)
+* `boolean` type (exactly `true` or `false`)
+* `char` type (16 bit, usable as a numeric type, representing an UTF-16 code)
 
-=== Annotation (TBD)
+While Groovy declares and stores primitive fields and variables as primitives, because it uses Objects for
+everything, it autowraps references to primitives. Just like Java, the wrappers it uses are
 
-==== Closure annotation parameters (TBD)
-==== Meta-annotations (TBD)
-==== Annotation placement (TBD)
+[cols="1,1" options="header"]
+.primitive wrappers
+|====
+| Primitive type
+| Wrapper class
 
-=== Constructors (TBD)
+| boolean
+| Boolean
 
-==== Named argument constructor (TBD)
+| char
+| Character
 
-=== Methods (TBD)
+| short
+| Short
 
-==== Method definition (TBD)
-==== Named arguments (TBD)
-==== Default arguments (TBD)
-==== Varargs (TBD)
-==== Method selection algorithm (TBD)
-==== Exception declaration (TBD)
+| int
+| Integer
 
-=== Fields and properties (TBD)
+| long
+| Long
 
-==== Fields (TBD)
-==== Properties (TBD)
+| float
+| Float
 
-=== Inheritance (TBD)
+| double
+| Double
+|====
+
+Here's an example using `int`
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=primitive_references,indent=0]
+----
+
+Now you may be concerned that this means every time you use a mathematical operator on a reference to a primitive
+that you'll incur the cost of unboxing and reboxing the primitive. But this is not the case, as Groovy will compile
+your operators into their link:core-operators.html#_operator-overloading[method equivalents] and uses those instead.
+Additionally, Groovy will automatically unbox to a primitive when calling a Java method that takes a primitive
+parameter and automatically box primitive method return values from Java. However, be aware there are some
+link:core-differences-java.html#_primitives_and_wrappers[differences] from Java's method resolution.
+
+=== Class
+
+Groovy classes are very similar to Java classes, being compatible to those ones at JVM level. They may have methods and fields/properties, which can have the same modifiers (public, protected, private, static, etc) as Java classes.
+
+Here are key aspects of Groovy classes, that are different from their Java counterparts:
+
+* Public fields are turned into properties automatically, which results in less verbose code,
+without so many getter and setter methods. More on this aspect will be covered in the <<fields,fields and properties section>>.
+* Their declarations and any property or method without an access modifier are public.
+* Classes do not need to have the same name of the files where they are defined.
+* One file may contain one or more classes (but if a file contains no classes, it is considered a script).
+
+The following code presents an example class.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,indent=0]
+----
+<1> class beginning, with the name `Person`
+<2> string field and property named `name`
+<3> method definition
+
+
+==== Normal class
+
+Normal classes refer to classes which are top level and concrete. This means they can be instantiated without restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be suppressed). Classes are instantiated by calling their constructors, using the `new` keyword, as in the following snippet.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,indent=0]
+----
+
+
+==== Inner class
+
+Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, a inner class can access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class,indent=0]
+----
+<1> the inner class is instantiated and its method gets called
+<2> inner class definition, inside its enclosing class
+<3> even being private, a field of the enclosing class is accessed by the inner class
+
+There are some reasons for using inner classes:
+
+ * They increase encapsulation by hiding the inner class from other classes, which do not need to know about it. This also leads to cleaner packages and workspaces.
+ * They provide a good organization, by grouping classes that are used by only one class.
+ * They lead to more maintainable codes, since inner classes are near the classes that use them.
+
+In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this with the usage of threads, which are very common.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
+----
+
+Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
+
+
+===== Anonymous inner class
+
+The last example of inner class can be simplified with an anonymous inner class. The same functionality can be achieved with the following code.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
+----
+<1> comparing with the last example of previous section, the `new Inner2()` was replaced by `new Runnable()` along with all its implementation
+<2> the method `start` is invoked normally
+
+Thus, there was no need to define a new class to be used just once.
+
+
+==== Abstract class
+
+Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members include fields/properties and abstract or concrete methods. Abstract methods do not have implementation, and must be implemented by concrete subclasses.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=abstract_class,indent=0]
+----
+<1> abstract classes must be declared with `abstract` keyword
+<2> abstract methods must also be declared with `abstract` keyword
+
+Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one class can implement several interfaces, whereas it can extend just one class, abstract or not. 
+
+=== Interface
+
+An interface defines a contract that a class needs to conform to. An interface only defines a list of methods that need
+to be implemented, but does not define the methods implementation.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_def_1,indent=0]
+----
+<1> an interface needs to be declared using the `interface` keyword
+<2> an interface only defines method signatures
+
+Methods of an interface are always *public*. It is an error to use `protected` or `private` methods in interfaces:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=protected_forbidden,indent=0]
+----
+<1> Using `protected` is a compile-time error
+
+A class _implements_ an interface if it defines the interface in its `implements` list or if any of its superclasses
+does:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_implements,indent=0]
+----
+<1> The `SystemGreeter` declares the `Greeter` interface using the `implements` keyword
+<2> Then implements the required `greet` method
+<3> Any instance of `SystemGreeter` is also an instance of the `Greeter` interface
+
+An interface can extend another interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=extended_interface,indent=0]
+----
+<1> the `ExtendedGreeter` interface extends the `Greeter` interface using the `extends` keyword
+
+It is worth noting that for a class to be an instance of an interface, it has to be explicit. For example, the following
+class defines the `greet` method as it is declared in the `Greeter` interface, but does not declare `Greeter` in its
+interfaces:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=no_structural_interface,indent=0]
+----
+
+In other words, Groovy does not define structural typing. It is however possible to make an instance of an object
+implement an interface at runtime, using the `as` coercion operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_coercion,indent=0]
+----
+<1> create an instance of `DefaultGreeter` that does not implement the interface
+<2> coerce the instance into a `Greeter` at runtime
+<3> the coerced instance implements the `Greeter` interface
+
+You can see that there are two distinct objects: one is the source object, a `DefaultGreeter` instance, which does not
+implement the interface. The other is an instance of `Greeter` that delegates to the coerced object.
+
+TIP: Groovy interfaces do not support default implementation like Java 8 interfaces. If you are looking for something
+similar (but not equal), <<_traits,traits>> are close to interfaces, but allow default implementation as well as other
+important features described in this manual.
+
+=== Constructors
+
+Constructors are special methods used to initialize an object with a specific state. As with normal methods,
+it is possible for a class to declare more than one constructor, so long as each constructor has a unique
+type signature. If an object doesn't require any parameters during construction, it may use a _no-arg_ constructor.
+If no constructors are supplied, an empty no-arg constructor will be provided by the Groovy compiler. For constructors
+with parameters, Groovy supports two invocation styles: using positional parameters or named parameters.
+The former style is similar to how you would use Java constructors, while the second way
+allows one to specify parameter names when invoking the constructor.
+
+==== Positional argument constructor
+
+To create an object by using positional argument constructors, the respective class needs to declare one or more
+constructors. In the case of multiple constructors, each must have a unique type signature. The constructors can also
+added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
+
+Typically, once at least one constructor is declared, the class can only be instantiated by having one of its
+constructors called. It is worth noting that, in this case, you can't normally create the class with named parameters.
+Groovy does support named parameters so long as the class contains a no-arg constructor or a constructor which takes
+a single `Map` argument - see the next section for details.
+
+There are three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword.
+The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as`
+keyword and by statically typing the variable.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_positional_parameters,indent=0]
+----
+<1> Constructor declaration
+<2> Constructor invocation, classic Java way
+<3> Constructor usage, using coercion with `as` keyword
+<4> Constructor usage, using coercion in assignment
+
+
+==== Named argument constructor
+
+If no (or a no-arg) constructor is declared, it is possible to create objects by passing parameters in the form of a
+map (property/value pairs). This can be in handy in cases where one wants to allow several combinations of parameters.
+Otherwise, by using traditional positional parameters it would be necessary to declare all possible constructors.
+Having a constructor taking a single `Map` argument is also supported - such a constructor may also be added using
+the gapi:groovy.transform.MapConstructor[] annotation.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_named_parameters,indent=0]
+----
+<1> No constructor declared
+<2> No parameters given in the instantiation
+<3> `name` parameter given in the instantiation
+<4> `age` parameter given in the instantiation
+<5> `name` and `age` parameters given in the instantiation
+
+It is important to highlight, however, that this approach gives more power to the constructor caller,
+while imposing an increased responsibility on the caller to get the names and value types correct.
+Thus, if greater control is desired, declaring constructors using positional parameters might be preferred.
+
+Notes:
+
+* While the example above supplied no constructor, you can also supply a no-arg constructor
+or a constructor with a single `Map` argument as previously mentioned.
+* You can support both named and positional construction
+by supply both positional constructors as well as a no-arg or Map constructor.
+* When no (or a no-arg) constructor is declared, Groovy replaces the named constructor call by a call
+to the no-arg constructor followed by calls to the setter for each supplied named property. So, you
+might be better off using the Map constructor if your properties are declared as `final` (since they
+must be set in the constructor rather than after the fact with setters).
+
+
+=== Methods
+
+Groovy methods are quite similar to other languages. Some peculiarities will be shown in the next subsections. 
+
+==== Method definition
+
+A method is defined with a return type or with the `def` keyword, to make the return type untyped. A method can also receive any number of arguments, which may not have their types explicitly declared. Java modifiers can be used normally, and if no visibility modifier is provided, the method is public.
+
+Methods in Groovy always return some value. If no `return` statement is provided, the value evaluated in the last line executed will be returned. For instance, note that none of the following methods uses the `return` keyword.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=method_definition ,indent=0]
+----
+<1> Method with no return type declared and no parameter
+<2> Method with explicit return type and no parameter
+<3> Method with a parameter with no type defined
+<4> Static method with a String parameter
+
+==== Named arguments
+
+Like constructors, normal methods can also be called with named arguments. They need to receive the parameters as a map. In the method body, the values can be accessed as in normal maps (`map.key`).
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
+----
+
+==== Default arguments
+
+Default arguments make parameters optional. If the argument is not supplied, the method assumes a default value.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=default_arguments ,indent=0]
+----
+
+Note that no mandatory parameter can be defined after a default parameter is present, only other default parameters.
+
+==== Varargs
+
+Groovy supports methods with a variable number of arguments. They are defined like this: `def foo(p1, ..., pn, T... args)`.
+Here `foo` supports `n` arguments by default, but also an unspecified number of further arguments exceeding `n`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_example,indent=0]
+----
+
+This example defines a method `foo`, that can take any number of arguments, including no arguments at all.
+`args.length` will return the number of arguments given. Groovy allows `T[]` as a alternative notation to `T...`.
+That means any method with an array as last parameter is seen by Groovy as a method that can take a variable number of arguments.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_notation,indent=0]
+----
+
+If a method with varargs is called with `null` as the vararg parameter, then the argument will be `null` and not an array of length one with `null` as the only element.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_null_parameter,indent=0]
+----
+
+If a varargs method is called with an array as an argument, then the argument will be that array instead of an array of length one containing the given array as the only element.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_parameter,indent=0]
+----
+
+Another important point are varargs in combination with method overloading. In case of method overloading Groovy will select the most specific method.
+For example if a method `foo` takes a varargs argument of type `T` and another method `foo` also takes one argument of type `T`, the second method is preferred.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_method_overloading,indent=0]
+----
+
+==== Method selection algorithm
+
+(TBD)
+
+==== Exception declaration
+
+Groovy automatically allows you to treat checked exceptions like unchecked exceptions.
+This means that you don't need to declare any checked exceptions that a method may throw
+as shown in the following example which can throw a `FileNotFoundException` if the file isn't found:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=idiomatic_method_declaration,indent=0]
+----
+
+Nor will you be required to surround the call to the `badRead` method in the previous example within a try/catch
+block - though you are free to do so if you wish.
+
+If you wish to declare any exceptions that your code might throw (checked or otherwise) you are free to do so.
+Adding exceptions won't change how the code is used from any other Groovy code but can be seen as documentation
+for the human reader of your code. The exceptions will become part of the method declaration in the bytecode,
+so if your code might be called from Java, it might be useful to include them.
+Using an explicit checked exception declaration is illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=checked_method_declaration,indent=0]
+----
+
+=== Fields and properties
+
+[[fields]]
+==== Fields
+
+A field is a member of a class or a trait which:
+
+* a mandatory _access modifier_ (`public`, `protected`, or `private`)
+* one or more optional _modifiers_ (`static`, `final`, `synchronized`)
+* an optional _type_
+* a mandatory _name_
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_declaration,indent=0]
+----
+<1> a `private` field named `id`, of type `int`
+<2> a `protected` field named `description`, of type `String`
+<3> a `public static final` field named _DEBUG_ of type `boolean`
+
+A field may be initialized directly at declaration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_initialization,indent=0]
+----
+<1> the private field `id` is initialized with `IDGenerator.next()`
+
+It is possible to omit the type declaration of a field. This is however considered a bad practice and in general it
+is a good idea to use strong typing for fields:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=typing_fields,indent=0]
+----
+<1> the field `mapping` doesn't declare a type
+<2> the field `mapping` has a strong type
+
+The difference between the two is important if you want to use optional type checking later. It is also important
+for documentation. However in some cases like scripting or if you want to rely on duck typing it may be interesting
+to omit the type.
+
+[[properties]]
+==== Properties
+
+A property is a combination of a private field and getters/setters. You can define a property with:
+
+* an *absent* access modifier (no `public`, `protected` or `final`)
+* one or more optional _modifiers_ (`static`, `final`, `synchronized`)
+* an optional _type_
+* a mandatory _name_
+
+Groovy will then generate the getters/setters appropriately. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_definition,indent=0]
+----
+<1> creates a backing `private String name` field, a `getName` and a `setName` method
+<2> creates a backing `private int age` field, a `getAge` and a `setAge` method
+
+If a property is declared `final`, no setter is generated:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,indent=0]
+----
+<1> defines a read-only property of type `String`
+<2> defines a read-only property of type `int`
+<3> assigns the `name` parameter to the `name` field
+<4> assigns the `age` parameter to the `age` field
+
+Properties are accessed by name and will call the getter or setter transparently, unless the code is in the class
+which defines the property:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=property_access,indent=0]
+----
+<1> `this.name` will directly access the field because the property is accessed from within the class that defines it
+<2> similarily a read access is done directly on the `name` field
+<3> write access to the property is done outside of the `Person` class so it will implicitly call `setName`
+<4> read access to the property is done outside of the `Person` class so it will implicitly call `getName`
+<5> this will call the `name` method on `Person` which performs a direct access to the field
+<6> this will call the `wonder` method on `Person` which performs a direct read access to the field
+
+It is worth noting that this behavior of accessing the backing field directly is done in order to prevent a stack
+overflow when using the property access syntax within a class that defines the property.
+
+It is possible to list the properties of a class thanks to the meta `properties` field of an instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_meta,indent=0]
+----
+
+By convention, Groovy will recognize properties even if there is no backing field, if there are getters or setters
+that follow the Java Beans specification. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,indent=0]
+----
+<1> reading `p.name` is allowed because there is a pseudo-property `name`
+<2> reading `p.age` is allowed because there is a pseudo-readonly property `age`
+<3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
+
+This syntactic sugar is at the core of many DSLs written in Groovy.
+
+=== Annotation
+
+[[ann-definition]]
+==== Annotation definition
+
+An annotation is a kind of special interface dedicated at annotating elements of the code. An annotation is a type which
+superinterface is the jdk:java.lang.annotation.Annotation[Annotation] interface. Annotations are declared in a very
+similar way to interfaces, using the `@interface` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=define_annotation,indent=0]
+----
+
+An annotation may define members in the form of methods without bodies and an optional default value. The possible
+member types are limited to:
+
+* primitive types
+* jdk:java.lang.String[Strings]
+* jdk:java.lang.Class[Classes]
+* an jdk:java.lang.Enum[enumeration]
+* another jdk:java.lang.annotation.Annotation[annotation type]
+* or any array of the above
+
+For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_int,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_enum,indent=0]
+----
+<1> an annotation defining a `value` member of type `String`
+<2> an annotation defining a `value` member of type `String` with a default value of `something`
+<3> an annotation defining a `step` member of type the primitive type `int`
+<4> an annotation defining a `appliesTo` member of type `Class`
+<5> an annotation defining a `value` member which type is an array of another annotation type
+<6> an annotation defining a `dayOfWeek` member which type is the enumeration type `DayOfWeek`
+
+Unlike in the Java language, in Groovy, an annotation can be used to alter the semantics of the language. It is especially
+true of AST transformations which will generate code based on annotations.
+
+[[ann-placement]]
+==== Annotation placement
+
+An annotation can be applied on various elements of the code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
+----
+<1> `@SomeAnnotation` applies to the `someMethod` method
+<2> `@SomeAnnotation` applies to the `SomeClass` class
+<3> `@SomeAnnotation` applies to the `var` variable
+
+In order to limit the scope where an annotation can be applied, it is necessary to declare it on the annotation
+definition, using the jdk:java.lang.annotation.Target[Target] annotation. For example, here is how you would
+declare that an annotation can be applied to a class or a method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_target,indent=0]
+----
+<1> the `@Target` annotation is meant to annotate an annotation with a scope.
+<2> `@SomeAnnotation` will therefore only be allowed on `TYPE` or `METHOD`
+
+The list of possible targets is available in the jdk:java.lang.annotation.ElementType[ElementType enumeration].
+
+WARNING: Groovy does not support the jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_PARAMETER] and
+jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_USE] element types which were introduced in Java 8.
+
+==== Annotation member values
+
+When an annotation is used, it is required to set at least all members that do not have a default value. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+----
+
+However it is possible to omit `value=` in the declaration of the value of an annotation if the member `value` is the
+only one being set:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
+----
+<1> we can omit the `statusCode` because it has a default value, but `value` needs to be set
+<2> since `value` is the only mandatory member without a default, we can omit `value=`
+<3> if both `value` and `statusCode` need to be set, it is required to use `value=` for the default `value` member
+
+==== Retention policy
+
+The visibility of an annotation depends on its retention policy. The retention policy of an annotation is set using
+the jdk:java.lang.annotation.Retention[Retention] annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_retention,indent=0]
+----
+<1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
+<2> so `@SomeAnnotation` will have a `SOURCE` retention
+
+The list of possible retention targets and description is available in the
+jdk:java.lang.annotation.RetentionPolicy[RetentionPolicy] enumeration. The
+choice usually depends on whether you want an annotation to be visible at
+compile time or runtime.
+
+==== Closure annotation parameters
+
+An interesting feature of annotations in Groovy is that you can use a closure as an annotation value. Therefore
+annotations may be used with a wide variety of expressions and still have IDE support. For example, imagine a
+framework where you want to execute some methods based on environmental constraints like the JDK version or the OS.
+One could write the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_example,indent=0]
+----
+
+For the `@OnlyIf` annotation to accept a `Closure` as an argument, you only have to declare the `value` as a `Class`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_def,indent=0]
+----
+
+To complete the example, let's write a sample runner that would use that information:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
+----
+<1> create a new instance of the class passed as an argument (the task class)
+<2> emulate an environment which is JDK 6 and not Windows
+<3> iterate on all declared methods of the task class
+<4> if the method is public and takes no-argument
+<5> try to find the `@OnlyIf` annotation
+<6> if it is found get the `value` and create a new `Closure` out of it
+<7> set the `delegate` of the closure to our environment variable
+<8> call the closure, which is the annotation closure. It will return a `boolean`
+<9> if it is `true`, call the method
+<10> if the method is not annotated with `@OnlyIf`, execute the method anyway
+<11> after that, return the task object
+
+Then the runner can be used this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
+----
+
+==== Meta-annotations
+
+===== Declaring meta-annotations
+
+Meta-annotations, also known as annotation aliases are annotations that
+are replaced at compile time by other annotations (one meta-annotation
+is an alias for one or more annotations). Meta-annotations can be used to
+reduce the size of code involving multiple annotations.
+
+Let’s start with a simple example. Imagine you have the `@Service`
+and `@Transactional` annotations and that you want to annotate a class
+with both:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class,indent=0]
+----
+
+Given the multiplication of annotations that you could add to the same class, a meta-annotation
+could help by reducing the two annotations with a single one having the very same semantics. For example,
+we might want to write this instead:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class2,indent=0]
+----
+<1> `@TransactionalService` is a meta-annotation
+
+A meta-annotation is declared as a regular annotation but annotated with `@AnnotationCollector` and the
+list of annotations it is collecting. In our case, the `@TransactionalService` annotation can be written:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=metaann_ts,indent=0]
+----
+<1> annotate the meta-annotation with `@Service`
+<2> annotate the meta-annotation with `@Transactional`
+<3> annotate the meta-annotation with `@AnnotationCollector`
+
+[[meta-ann-behavior]]
+===== Behavior of meta-annotations
+
+Groovy supports both _precompiled_ and _source form_
+meta-annotations. This means that your meta-annotation _may_ be
+precompiled, or you can have it in the same source tree as the one you
+are currently compiling.
+
+INFO: Meta-annotations are a Groovy-only feature. There is
+no chance for you to annotate a Java class with a meta-annotation and
+hope it will do the same as in Groovy. Likewise, you cannot write a
+meta-annotation in Java: both the meta-annotation definition *and* usage
+have to be Groovy code. But you can happily collect Java annotations
+and Groovy annotations within your meta-annotation.
+
+When the Groovy compiler encounters a class annotated with a
+meta-annotation, it *replaces* it with the collected annotations. So,
+in our previous example, it will
+replace `@TransactionalService` with `@Transactional` and `@Service`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotations_expanded,indent=0]
+----
+
+The conversion from a meta-annotation to the collected annotations is performed during the
+_semantic analysis_ compilation phase. 
+
+In addition to replacing the alias with the collected annotations, a meta-annotation is capable of
+processing them, including arguments.
+
+[[meta-ann-members]]
+===== Meta-annotation parameters
+
+Meta-annotations can collect annotations which have parameters. To illustrate this,
+we will imagine two annotations, each of them accepting one argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+----
+
+And suppose that you want create a meta-annotation named `@Explosive`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_explosive,indent=0]
+----
+
+By default, when the annotations are replaced, they will get the
+annotation parameter values *as they were defined in the alias*. More interesting,
+the meta-annotation supports overriding specific values:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=example_bomb,indent=0]
+----
+<1> the `after` value provided as a parameter to `@Explosive` overrides the one defined in the `@Timeout` annotation
+
+If two annotations define the same parameter name, the default processor
+will copy the annotation value to all annotations that accept this parameter:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_same_values,indent=0]
+----
+<1> the `@Foo` annotation defines the `value` member of type `String`
+<2> the `@Bar` annotation also defines the `value` member of type `String`
+<3> the `@FooBar` meta-annotation aggregates `@Foo` and `@Bar`
+<4> class `Bob` is annotated with `@Foo` and `@Bar`
+<5> the value of the `@Foo` annotation on `Bob` is `a`
+<6> while the value of the `@Bar` annotation on `Bob` is `b`
+<7> class `Joe` is annotated with `@FooBar`
+<8> then the value of the `@Foo` annotation on `Joe` is `a`
+<9> and the value of the `@Bar` annotation on `Joe` is also `a`
+
+In the second case, the meta-annotation value was copied in
+both `@Foo` and `@Bar` annotations.
+
+WARNING: It is a compile time error if the collected annotations define the same members
+with incompatible types. For example if on the previous example `@Foo` defined a value of
+type `String` but `@Bar` defined a value of type `int`.
+
+It is however possible to customize the behavior of meta-annotations and describe how collected
+annotations are expanded. We'll look at how to do that shortly but first there is an advanced
+processing option to cover.
+
+[[handling_duplicate_annotations]]
+===== Handling duplicate annotations
+
+The `@AnnotationCollector` annotation supports a `mode` parameter which can be used to
+alter how the default processor handles annotation replacement in the presence of
+duplicate annotations.
+
+INFO: Custom processors (discussed next) may or may not support this parameter.
+
+As an example, suppose you create a meta-annotation containing the `@ToString` annotation
+and then place your meta-annotation on a class that already has an explicit `@ToString`
+annotation. Should this be an error? Should both annotations be applied? Does one take
+priority over the other? There is no correct answer. In some scenarios it might be
+quite appropriate for any of these answers to be correct. So, rather than trying to
+preempt one correct way to handle the duplicate annotation issue, Groovy let's you
+write your own custom meta-annotation processors (covered next) and let's you write
+whatever checking logic you like within AST transforms - which are a frequent target for
+aggregating. Having said that, by simply setting the `mode`, a number of commonly
+expected scenarios are handled automatically for you within any extra coding.
+The behavior of the `mode` parameter is determined by the `AnnotationCollectorMode`
+enum value chosen and is summarized in the following table.
+
+|================================
+| Mode | Description
+| DUPLICATE | Annotations from the annotation collection will always be inserted. After all transforms have been run, it will be an error if multiple annotations (excluding those with SOURCE retention) exist.
+| PREFER_COLLECTOR | Annotations from the collector will be added and any existing annotations with the same name will be removed.
+| PREFER_COLLECTOR_MERGED | Annotations from the collector will be added and any existing annotations with the same name will be removed but any new parameters found within existing annotations will be merged into the added annotation.
+| PREFER_EXPLICIT | Annotations from the collector will be ignored if any existing annotations with the same name are found.
+| PREFER_EXPLICIT_MERGED | Annotations from the collector will be ignored if any existing annotations with the same name are found but any new parameters on the collector annotation will be added to existing annotations.
+|================================
+
+[[meta-ann-processor]]
+===== Custom annotation processors
+
+A custom annotation processor will let you choose how to expand a
+meta-annotation into collected annotations. The behaviour of the meta-annotation is,
+in this case, totally up to you. To do this, you must:
+
+* create a meta-annotation processor, extending gapi:org.codehaus.groovy.transform.AnnotationCollectorTransform[AnnotationCollectorTransform]
+* declare the processor to be used in the meta-annotation declaration
+
+To illustrate this, we are going to explore how the meta-annotation `@CompileDynamic` is implemented.
+
+`@CompileDynamic` is a meta-annotation that expands itself
+to `@CompileStatic(TypeCheckingMode.SKIP)`. The problem is that the
+default meta annotation processor doesn’t support enums and the
+annotation value `TypeCheckingMode.SKIP` is one.
+
+The naive implementation here would not work:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_naive,indent=0]
+----
+
+Instead, we will define it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_def_fixed,indent=0]
+----
+
+The first thing you may notice is that our interface is no longer
+annotated with `@CompileStatic`. The reason for this is that we rely on
+the `processor` parameter instead, that references a class which
+will *generate* the annotation.
+
+Here is how the custom processor is implemented:
+
+[source,groovy]
+.CompileDynamicProcessor.groovy
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_processor,indent=0]
+----
+<1> our custom processor is written in Groovy, and for better compilation performance, we use static compilation
+<2> the custom processor has to extend gapi:org.codehaus.groovy.transform.AnnotationCollectorTransform[AnnotationCollectorTransform]
+<3> create a class node representing the `@CompileStatic` annotation type
+<4> create a class node representing the `TypeCheckingMode` enum type
+<5> `collector` is the `@AnnotationCollector` node found in the meta-annotation. Usually unused.
+<6> `aliasAnnotationUsage` is the meta-annotation being expanded, here it is `@CompileDynamic`
+<7> `aliasAnnotated` is the node being annotated with the meta-annotation
+<8> `sourceUnit` is the `SourceUnit` being compiled
+<9> we create a new annotation node for `@CompileStatic`
+<10> we create an expression equivalent to `TypeCheckingMode.SKIP`
+<11> we add that expression to the annotation node, which is now `@CompileStatic(TypeCheckingMode.SKIP)`
+<12> return the generated annotation
+
+In the example, the `visit` method is the only method which has to be overridden. It is meant to return a list of
+annotation nodes that will be added to the node annotated with the meta-annotation. In this example, we return a
+single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
+
+=== Inheritance
+
+(TBD)
+
 
 [[generics]]
-=== Generics (TBD)
+=== Generics
 
-:leveloffset: 3
-include::{projectdir}/src/spec/doc/core-traits.adoc[]
-:leveloffset: 0
+(TBD)
+
+
+include::{projectdir}/src/spec/doc/core-traits.adoc[leveloffset=+1]
+

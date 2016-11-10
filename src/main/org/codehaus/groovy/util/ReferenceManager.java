@@ -1,21 +1,25 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.util;
 
 import java.lang.ref.ReferenceQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReferenceManager {
@@ -69,33 +73,56 @@ public class ReferenceManager {
         return new ReferenceManager(queue);
     }
     public static ReferenceManager createCallBackedManager(ReferenceQueue queue) {
-        return new ReferenceManager(queue){
-            @Override
-            public void removeStallEntries() {
-                ReferenceQueue queue = getReferenceQueue();
-                for(;;) {
-                    java.lang.ref.Reference r = queue.poll();
-                    if (r==null) break;
-                    
-                    if (r instanceof Reference) {
-                        Reference ref = (Reference) r;
-                        Finalizable holder = ref.getHandler();
-                        if (holder!=null) holder.finalizeReference();
-                    }
-                    r.clear();
-                    r=null;
+        return new CallBackedManager(queue);
+    }
+
+    private static class CallBackedManager extends ReferenceManager {
+
+        private static final ConcurrentHashMap<ReferenceQueue, ReferenceManager> queuesInProcess =
+                new ConcurrentHashMap<ReferenceQueue, ReferenceManager>(4, 0.9f, 2);
+
+        public CallBackedManager(ReferenceQueue queue) {
+            super(queue);
+        }
+
+        @Override
+        public void removeStallEntries() {
+            ReferenceQueue queue = getReferenceQueue();
+            if (queuesInProcess.putIfAbsent(queue, this) == null) {
+                try {
+                    removeStallEntries0(queue);
+                } finally {
+                    queuesInProcess.remove(queue);
                 }
             }
-            @Override
-            public void afterReferenceCreation(Reference r) {
-                removeStallEntries();
+        }
+
+        private static void removeStallEntries0(ReferenceQueue queue) {
+            for(;;) {
+                java.lang.ref.Reference r = queue.poll();
+                if (r==null) break;
+
+                if (r instanceof Reference) {
+                    Reference ref = (Reference) r;
+                    Finalizable holder = ref.getHandler();
+                    if (holder!=null) holder.finalizeReference();
+                }
+                r.clear();
+                r=null;
             }
-            @Override
-            public String toString() {
-                return "ReferenceManager(callback)";
-            }
-        };
+        }
+
+        @Override
+        public void afterReferenceCreation(Reference r) {
+            removeStallEntries();
+        }
+
+        @Override
+        public String toString() {
+            return "ReferenceManager(callback)";
+        }
     }
+
     public static ReferenceManager createThresholdedIdlingManager(final ReferenceQueue queue, final ReferenceManager callback, final int threshold) {
         if (threshold<0) throw new IllegalArgumentException("threshold must not be below 0.");
        
@@ -117,7 +144,16 @@ public class ReferenceManager {
                 int count = refCnt.incrementAndGet();
                 if (count>threshold || count<0) {
                     manager = callback;
+                    callback.afterReferenceCreation(r);
                 }
+            }
+            @Override
+            public void removeStallEntries() {
+                manager.removeStallEntries();
+            }
+            @Override
+            public void stopThread() {
+                manager.stopThread();
             }
             @Override
             public String toString() {
@@ -144,21 +180,20 @@ public class ReferenceManager {
     public String toString() {
         return "ReferenceManager(idling)";
     }
-    
-    private static final ReferenceBundle SOFT_BUNDLE, WEAK_BUNDLE;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
-        SOFT_BUNDLE = new ReferenceBundle(manager, ReferenceType.SOFT);
-        WEAK_BUNDLE = new ReferenceBundle(manager, ReferenceType.WEAK);
-    }
-    
+
+    /**
+     * @deprecated use {@link ReferenceBundle#getSoftBundle()}
+     */
+    @Deprecated
     public static ReferenceBundle getDefaultSoftBundle() {
-        return SOFT_BUNDLE;
+        return ReferenceBundle.getSoftBundle();
     }
-    
+
+    /**
+     * @deprecated use {@link ReferenceBundle#getWeakBundle()}
+     */
+    @Deprecated
     public static ReferenceBundle getDefaultWeakBundle() {
-        return WEAK_BUNDLE;
+        return ReferenceBundle.getWeakBundle();
     }
 }

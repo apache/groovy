@@ -1,21 +1,25 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.util;
 
 import groovy.lang.Binding;
+import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -36,7 +40,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * }
  *
  * CompilerConfiguration cc = new CompilerConfiguration();
- * cc.setScriptBaseClass(DelegatingScript.class);
+ * cc.setScriptBaseClass(DelegatingScript.class.getName());
  * GroovyShell sh = new GroovyShell(cl,new Binding(),cc);
  * DelegatingScript script = (DelegatingScript)sh.parse(new File("my.dsl"))
  * script.setDelegate(new MyDSL());
@@ -104,7 +108,10 @@ public abstract class DelegatingScript extends Script {
     @Override
     public Object invokeMethod(String name, Object args) {
         try {
-            return metaClass.invokeMethod(delegate,name,args);
+            if (delegate instanceof GroovyObject) {
+                return ((GroovyObject) delegate).invokeMethod(name, args);
+            }
+            return metaClass.invokeMethod(delegate, name, args);
         } catch (MissingMethodException mme) {
             return super.invokeMethod(name, args);
         }

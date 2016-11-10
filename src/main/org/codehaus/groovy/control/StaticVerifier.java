@@ -1,38 +1,51 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.ClassNodeUtils.isInnerClass;
+
 /**
  * Verifier to check non-static access in static contexts
- *
- * @author Jochen Theodorou
- * @author Paul King
- * @author <a href="mailto:roshandawrani@codehaus.org">Roshan Dawrani</a>
  */
 public class StaticVerifier extends ClassCodeVisitorSupport {
     private boolean inSpecialConstructorCall;
-    private boolean inPropertyExpression;
+    private boolean inPropertyExpression; // TODO use it or lose it
     private boolean inClosure;
     private MethodNode currentMethod;
     private SourceUnit source;
@@ -73,7 +86,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
             final HashSet<String> exceptions = new HashSet<String>();
-            for (Parameter param : node.getParameters()) {
+            for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {
                     param.getInitialExpression().visit(new CodeVisitorSupport() {
@@ -85,6 +98,20 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                                 addVariableError(ve);
                             }
                         }
+
+                        @Override
+                        public void visitMethodCallExpression(MethodCallExpression call) {
+                            Expression objectExpression = call.getObjectExpression();
+                            if (objectExpression instanceof VariableExpression) {
+                                VariableExpression ve = (VariableExpression) objectExpression;
+                                if (ve.isThisExpression()) {
+                                    addError("Can't access instance method '" + call.getMethodAsString() + "' for a constructor parameter default value", param);
+                                    return;
+                                }
+                            }
+                            super.visitMethodCallExpression(call);
+                        }
+
                         @Override
                         public void visitClosureExpression(ClosureExpression expression) {
                             //skip contents, because of dynamic scope
@@ -98,6 +125,16 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression mce) {
+        if (inSpecialConstructorCall && !isInnerClass(currentMethod.getDeclaringClass())) {
+            Expression objectExpression = mce.getObjectExpression();
+            if (objectExpression instanceof VariableExpression) {
+                VariableExpression ve = (VariableExpression) objectExpression;
+                if (ve.isThisExpression()) {
+                    addError("Can't access instance method '" + mce.getMethodAsString() + "' before the class is constructed", mce);
+                    return;
+                }
+            }
+        }
         super.visitMethodCallExpression(mce);
     }
 
@@ -146,7 +183,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                 "' but left out brackets in a place not allowed by the grammar.", ve);
     }
 
-    private FieldNode getDeclaredOrInheritedField(ClassNode cn, String fieldName) {
+    private static FieldNode getDeclaredOrInheritedField(ClassNode cn, String fieldName) {
         ClassNode node = cn;
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);

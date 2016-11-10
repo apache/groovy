@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools.shell
 
@@ -20,169 +23,219 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.TokenUtilTest
-import org.codehaus.groovy.tools.shell.util.JAnsiHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.fusesource.jansi.AnsiOutputStream
 
 class GroovyshTest extends GroovyTestCase {
 
-    IO testio
-    ByteArrayOutputStream mockOut
-    ByteArrayOutputStream mockErr
+    protected IO testio
+    protected ByteArrayOutputStream mockOut
+    protected ByteArrayOutputStream mockErr
 
+    @Override
     void setUp() {
         super.setUp()
-        mockOut = new ByteArrayOutputStream();
-        mockErr = new ByteArrayOutputStream();
+        mockOut = new ByteArrayOutputStream()
+        mockErr = new ByteArrayOutputStream()
         testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
         testio.setVerbosity(IO.Verbosity.INFO)
     }
 
     void testCompleteExpr() {
         Groovysh groovysh = new Groovysh(testio)
-        groovysh.execute("x = 3")
+        groovysh.execute('x = 3')
         assert mockOut.toString().length() > 0
-        assert " 3\n" == mockOut.toString().normalize()[-3..-1]
+        assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
+    }
+
+    protected Groovysh createGroovysh() {
+        return new Groovysh(testio) {
+            @Override
+            protected String getPreference(String key, String theDefault) {
+                if (key == INTERPRETER_MODE_PREFERENCE_KEY) {
+                    return 'false'
+                }
+                return super.getPreference(key, theDefault)
+            }
+        }
     }
 
     void testClassDef() {
-        Groovysh groovysh = new Groovysh(testio)
-        groovysh.execute("class Foo {}")
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('class MyFooTestClass{ String foo }')
         assert mockOut.toString().length() > 0
-        assert " true\n" == mockOut.toString().normalize()[-6..-1]
+        assert ' true\n' == mockOut.toString().normalize()[-6..-1]
+        groovysh.execute('m = new MyFooTestClass()')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert mockOut.toString().normalize().contains('MyFooTestClass@')
     }
 
+
     void testmethodDef() {
-        Groovysh groovysh = new Groovysh(testio)
-        groovysh.execute("int foo() {42}")
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('int foo() {42}')
         assert mockOut.toString().length() > 0
-        assert " true\n" == mockOut.toString().normalize()[-6..-1]
+        assert ' true\n' == mockOut.toString().normalize()[-6..-1]
     }
 
 
 
     void testIncompleteExpr() {
-        Groovysh groovysh = new Groovysh(testio)
-        groovysh.execute("def x() {")
-        assert "" == mockOut.toString()
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('def x() {')
+        assert '' == mockOut.toString()
     }
 
     void testBadExpr() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         try {
-            groovysh.execute("x}")
-            fail()
+            groovysh.execute('x}')
+            fail('expected MultipleCompilationErrorsException ')
         } catch (MultipleCompilationErrorsException e) {
-            assert "" == mockOut.toString()
+            assert '' == mockOut.toString()
         }
     }
 
+    void testIncompleteBracketMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('a = [')
+        groovysh.execute('1,')
+        groovysh.execute('2,')
+        groovysh.execute('3')
+        groovysh.execute(']')
+        groovysh.execute('a.size() == 3')
+        assert mockOut.toString().contains('true')
+    }
+
+    void testIncompleteParenMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('mc = { num1, num2 -> num1 + num2 }')
+        groovysh.execute('mc(3')
+        groovysh.execute(',')
+        groovysh.execute('7')
+        groovysh.execute(') == 10')
+        assert mockOut.toString().contains('true')
+    }
+
+    void testIncompleteBraceMultilineExpr() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('mc = {')
+        groovysh.execute('3')
+        groovysh.execute('}')
+        groovysh.execute('mc() == 3')
+        assert mockOut.toString().contains('true')
+    }
+
     void testMissingPropertyExpr() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         // this is a special case, e.g. happens for Gradle DefaultExtraPropertiesExtension
         // assert no fail
-        groovysh.execute("x = new Object() {public Object getProperty(String name) {throw new MissingPropertyException('From test', name, null)}}")
+        groovysh.execute(/x = new Object() {public Object getProperty(String name) {throw new MissingPropertyException('From test', name, null)}}/)
     }
 
     void testDisplayBuffer() {
-        Groovysh groovysh = new Groovysh(testio)
-        groovysh.displayBuffer(["foo", "bar"])
+        Groovysh groovysh = createGroovysh()
+        groovysh.displayBuffer(['foo', 'bar'])
         def out = mockOut.toString().normalize()
         // was 20 on my windows box after normalize()
         // is it relying on other preference settings?
 //        assertEquals(34, out.length())
-        assert out.contains("foo\n")
-        assert out.contains("bar\n")
+        assert out.contains('foo\n')
+        assert out.contains('bar\n')
     }
 
     void testDefaultErrorHook() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultErrorHook(new Throwable() {
             StackTraceElement[] stackTrace = [
-                    new StackTraceElement("fooClass", "fooMethod", "fooFile", 42),
-                    new StackTraceElement(Interpreter.SCRIPT_FILENAME, "run", "scriptFile", 42)]
+                    new StackTraceElement('fooClass', 'fooMethod', 'fooFile', 42),
+                    new StackTraceElement(Interpreter.SCRIPT_FILENAME, 'run', 'scriptFile', 42)]
         })
-        assert "" == mockOut.toString()
-        assert mockErr.toString().contains("foo")
+        assert '' == mockOut.toString()
+        assert mockErr.toString().contains('org.codehaus.groovy.tools.shell.GroovyshTest$')
+        assert mockErr.toString().contains('fooClass')
+        assert mockErr.toString().contains('foo')
         assert ! mockErr.toString().contains(Interpreter.SCRIPT_FILENAME)
-        assert ! mockErr.toString().contains("...")
+        assert ! mockErr.toString().contains('...')
     }
 
     void testDefaultResultHookStringArray() {
-        Groovysh groovysh = new Groovysh(testio)
-        groovysh.defaultResultHook("foo bar".split())
-        assert mockOut.toString().trim().endsWith("[foo, bar]")
-        assert "" == mockErr.toString()
+        Groovysh groovysh = createGroovysh()
+        groovysh.defaultResultHook('foo bar'.split())
+        assert mockOut.toString().trim().endsWith('[foo, bar]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultHookObjectArray() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook(Object.fields)
-        assert mockOut.toString().trim().endsWith("[]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultPrimitive() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook(3)
-        assert mockOut.toString().trim().endsWith("3")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('3')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultNull() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook(null)
-        assert mockOut.toString().trim().endsWith("null")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('null')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultList() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook([])
-        assert mockOut.toString().trim().endsWith("[]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultSet() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook([42] as Set)
-        assert mockOut.toString().trim().endsWith("[42]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[42]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultArray() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook([42] as int[])
-        assert mockOut.toString().trim().endsWith("[42]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[42]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultMapEmpty() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook([:])
-        assert mockOut.toString().trim().endsWith("[:]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[:]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultMap() {
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         groovysh.defaultResultHook(['class': 'foo'])
-        assert mockOut.toString().trim().endsWith("[class:foo]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[class:foo]')
+        assert '' == mockErr.toString()
     }
 
     void testDefaultResultConfigObject() {
         // ConfigObject are like maps
-        Groovysh groovysh = new Groovysh(testio)
+        Groovysh groovysh = createGroovysh()
         ConfigObject co = new ConfigObject()
-        co.put("class", "foo")
+        co.put('class', 'foo')
         groovysh.defaultResultHook(co)
-        assert mockOut.toString().trim().endsWith("[class:foo]")
-        assert "" == mockErr.toString()
+        assert mockOut.toString().trim().endsWith('[class:foo]')
+        assert '' == mockErr.toString()
     }
 
     void testFindCommandDuplicate() {
-        Groovysh groovysh = new Groovysh(testio)
-        CommandSupport command = new CommandSupport(groovysh, "import", "imp") {
+        Groovysh groovysh = createGroovysh()
+        CommandSupport command = new CommandSupport(groovysh, 'import', 'imp') {
             @Override
             Object execute(List args) {
                 return null
@@ -197,75 +250,86 @@ class GroovyshTest extends GroovyTestCase {
     }
 
     void testFindCommandFoo() {
-        Groovysh groovysh = new Groovysh(testio)
-        assertNull(groovysh.findCommand(" foo import "))
-        assert !groovysh.isExecutable(" foo import ")
-        CommandSupport command2 = new CommandSupport(groovysh, "foo", "/foo") {
+        Groovysh groovysh = createGroovysh()
+        assertNull(groovysh.findCommand(' foo import '))
+        assert !groovysh.isExecutable(' foo import ')
+        CommandSupport command2 = new CommandSupport(groovysh, 'foo', '/foo') {
             @Override
             Object execute(List args) {
                 return null
             }
         }
         groovysh.register(command2)
-        assert command2 == groovysh.findCommand(" foo bar ")
-        assert groovysh.isExecutable(" foo import ")
+        assert command2 == groovysh.findCommand(' foo bar ')
+        assert groovysh.isExecutable(' foo import ')
         List accumulateArgs = []
-        assert command2 == groovysh.findCommand(" foo bar ", accumulateArgs)
+        assert command2 == groovysh.findCommand(' foo bar ', accumulateArgs)
         assert accumulateArgs == ['bar']
         accumulateArgs = []
-        assert command2 == groovysh.findCommand(" foo bar baz", accumulateArgs)
+        assert command2 == groovysh.findCommand(' foo bar baz', accumulateArgs)
         assert accumulateArgs == ['bar', 'baz']
-        assert groovysh.isExecutable(" foo import ")
-        assert command2 == groovysh.findCommand(" /foo bar ")
-        assertNull(groovysh.findCommand(" bar foo "))
+        assert groovysh.isExecutable(' foo import ')
+        assert command2 == groovysh.findCommand(' /foo bar ')
+        assertNull(groovysh.findCommand(' bar foo '))
     }
 
     void testExecuteCommandFoo() {
-        Groovysh groovysh = new Groovysh(testio)
-        assertNull(groovysh.findCommand(" foo import "))
-        assert ! groovysh.isExecutable(" foo import ")
-        CommandSupport command2 = new CommandSupport(groovysh, "foo", "/foo") {
+        Groovysh groovysh = createGroovysh()
+        assertNull(groovysh.findCommand(' foo import '))
+        assert ! groovysh.isExecutable(' foo import ')
+        CommandSupport command2 = new CommandSupport(groovysh, 'foo', '/foo') {
             @Override
             Object execute(List args) {
-                throw new CommandException(this, "Test Command failure")
+                throw new CommandException(this, 'Test Command failure')
             }
         }
         groovysh.register(command2)
         // also assert CommandException caught
-        assertNull(groovysh.execute(" foo import "))
-        assert mockErr.toString().contains("Test Command failure")
-        assert 1 == mockErr.toString().count("\n")
-        assert "" == mockOut.toString()
+        assertNull(groovysh.execute(' foo import '))
+        assert mockErr.toString().contains('Test Command failure')
+        assert 1 == mockErr.toString().count('\n')
+        assert '' == mockOut.toString()
     }
 
     void testGetIndentLevel() {
-        Groovysh groovysh = new Groovysh(testio)
-        assert "" == groovysh.getIndentPrefix()
-        groovysh.buffers.buffers.add(["Foo {"])
+        Groovysh groovysh = createGroovysh()
+        assert '' == groovysh.indentPrefix
+        groovysh.buffers.buffers.add(['Foo {'])
         groovysh.buffers.select(1)
-        assert " " * groovysh.indentSize == groovysh.getIndentPrefix()
-        groovysh.buffers.buffers.add(["Foo {{"])
+        assert ' ' * groovysh.indentSize == groovysh.indentPrefix
+        groovysh.buffers.buffers.add(['Foo {{'])
         groovysh.buffers.select(2)
-        assert " " * groovysh.indentSize * 2 == groovysh.getIndentPrefix()
+        assert ' ' * groovysh.indentSize * 2 == groovysh.indentPrefix
     }
 
     void testLoadUserScript() {
         final File file = createTemporaryGroovyScriptFile('1 / 0')
-        Groovysh groovysh = new Groovysh(testio) {
+        Groovysh groovysh = new Groovysh() {
             @Override
             File getUserStateDirectory() {
-                return file.getParentFile()
+                return file.parentFile
             }
         }
         try {
-            groovysh.loadUserScript(file.getName())
+            groovysh.loadUserScript(file.name)
             fail('Expected ArithmeticException')
         } catch (ArithmeticException e) {}
     }
 
+    void testImports() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('import java.rmi.Remote ')
+        assert mockOut.toString().length() > 0
+        assert 'java.rmi.Remote\n' == mockOut.toString().normalize()[-('java.rmi.Remote\n'.length())..-1]
+        groovysh.execute('Remote r')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert 'null\n' == mockOut.toString().normalize()[-5..-1]
+    }
+
     static File createTemporaryGroovyScriptFile(content) {
-        String testName = "GroovyshTest" + System.currentTimeMillis()
-        File groovyCode = new File(System.getProperty("java.io.tmpdir"), testName)
+        String testName = 'GroovyshTest' + System.currentTimeMillis()
+        File groovyCode = new File(System.getProperty('java.io.tmpdir'), testName)
         groovyCode.write(content)
         groovyCode.deleteOnExit()
         return groovyCode
@@ -277,40 +341,37 @@ class GroovyshTest extends GroovyTestCase {
  */
 class GroovyshInterpreterModeTest extends GroovyshTest {
 
-    @Override
-    void setUp() {
-        super.setUp()
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
-    }
-
-    @Override
-    void tearDown() {
-        super.tearDown()
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'false')
+    protected Groovysh createGroovysh() {
+        return new Groovysh(testio) {
+            @Override
+            protected String getPreference(String key, String theDefault) {
+                if (key == INTERPRETER_MODE_PREFERENCE_KEY) {
+                    return 'true'
+                }
+                return super.getPreference(key, theDefault)
+            }
+        }
     }
 
     void testBoundVar() {
-        Groovysh groovysh = new Groovysh(testio)
-        // default is false
+        Groovysh groovysh = createGroovysh()
 
-        groovysh.execute("int x = 3")
+        groovysh.execute('int x = 3')
         assert mockOut.toString().length() > 0
-        assert " 3\n" == mockOut.toString().normalize()[-3..-1]
-        groovysh.execute("x")
+        assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
+        groovysh.execute('x')
         assert mockOut.toString().length() > 0
-        assert " 3\n" == mockOut.toString().normalize()[-3..-1]
+        assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
     }
 
     void testBoundVarmultiple() {
-        Groovysh groovysh = new Groovysh(testio)
-        // default is false
-        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
-        groovysh.execute("int x, y, z")
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('int x, y, z')
         assert mockOut.toString().length() > 0
-        assert " 0\n" == mockOut.toString().normalize()[-3..-1]
-        groovysh.execute("y")
+        assert ' 0\n' == mockOut.toString().normalize()[-3..-1]
+        groovysh.execute('y')
         assert mockOut.toString().length() > 0
-        assert " 0\n" == mockOut.toString().normalize()[-3..-1]
+        assert ' 0\n' == mockOut.toString().normalize()[-3..-1]
     }
 
 }
@@ -322,16 +383,16 @@ class GroovyshCompletorTest extends GroovyTestCase {
         IO testio
         ByteArrayOutputStream mockOut
         ByteArrayOutputStream mockErr
-        mockOut = new ByteArrayOutputStream();
-        mockErr = new ByteArrayOutputStream();
+        mockOut = new ByteArrayOutputStream()
+        mockErr = new ByteArrayOutputStream()
         testio = new IO(
                 new ByteArrayInputStream(),
                 mockOut,
                 mockErr)
-        testio.out.println("mockResult")
-        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString(), mockOut.toString().contains('mockResult'))
-        testio.err.println("mockErrResult")
-        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString(), mockErr.toString().contains('mockErrResult'))
+        testio.out.println('mockResult')
+        assertTrue('stdout=' + mockOut.toString() + '\nstderr=' + mockErr.toString(), mockOut.toString().contains('mockResult'))
+        testio.err.println('mockErrResult')
+        assertTrue('stdout=' + mockOut.toString() + '\nstderr=' + mockErr.toString(), mockErr.toString().contains('mockErrResult'))
     }
 
     void testLiveClass() {
@@ -348,26 +409,33 @@ class GroovyshCompletorTest extends GroovyTestCase {
                 """\
 import ${ReflectionCompletor.getCanonicalName()}
 class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0};
-int priv;
-static int priv2;
-public int foo;
-public static int bar;
-int foom(){1};
-static int barm(){2}}
+  int compareTo(Object) {0};
+  int priv;
+  static int priv2;
+  public int foo;
+  public static int bar;
+  int foom(){1};
+  static int barm(){2};
+  static int getPriv3(){3};
+  private int getPriv4(){4};
+  int getPriv5(){5};
+}
 ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
 """])
         assert candResult
         assert candResult.size() > 0
-        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert [] == result.findAll({it.startsWith("_")})
-        assert [] == result.findAll({it.startsWith("super\$")})
-        assert [] == result.findAll({it.startsWith("this\$")})
-        assert ! ('foo' in result)
-        assert ! ('priv' in result)
-        assert ! ('priv2' in result)
+        List<String> result = candResult*.value
+        assert [] == result.findAll({ it.startsWith('_') })
+        assert [] == result.findAll({ it.startsWith('super$') })
+        assert [] == result.findAll({ it.startsWith('this$') })
+        assert !('foo' in result)
+        assert !('priv' in result)
+        assert ('priv2' in result)
+        assert ('priv3' in result)
+        assert !('priv4' in result)
+        assert !('priv5' in result)
         assert 'barm()' in result
-        assert ! ('foom()' in result)
+        assert !('foom()' in result)
 
     }
 
@@ -388,22 +456,28 @@ class Foo extends HashSet implements Comparable {
   int compareTo(Object) {0};
   int priv;
   static int priv2;
-  public int foo;
-  public static int bar;
+  private int foo;
+  static int bar;
   int foom(){1};
   static int barm(){2}
+  static int getPriv3(){3};
+  private int getPriv4(){4};
+  int getPriv5(){5};
 }
 ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
 """])
         assertNotNull(candResult)
         assert candResult.size() > 0
-        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert [] == result.findAll({it.startsWith("_")})
-        assert [] == result.findAll({it.startsWith("super\$")})
-        assert [] == result.findAll({it.startsWith("this\$")})
-        assert ! ('bar' in result)
-        assert ! ('priv' in result)
-        assert ! ('priv2' in result)
+        List<String> result = candResult*.value
+        assert [] == result.findAll({ it.startsWith('_') })
+        assert [] == result.findAll({ it.startsWith('super$') })
+        assert [] == result.findAll({ it.startsWith('this$') })
+        assert !('bar' in result)
+        assert ('priv' in result)
+        assert !('priv2' in result)
+        assert !('priv3' in result)
+        assert !('priv4' in result)
+        assert ('priv5' in result)
         assert 'foom()' in result
         assert !('barm()' in result)
     }
@@ -412,14 +486,14 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         // tests that import are taken into account when evaluating for completion
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
-        def result = groovysh.execute("import " + GroovyException.name)
+        def result = groovysh.execute('import ' + GroovyException.name)
         assert result == GroovyException.canonicalName
         ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
 
-        compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
+        compl.complete(TokenUtilTest.tokenList('GroovyException.'), candidates)
         assert candidates.size() == 0
-        compl.complete(TokenUtilTest.tokenList("GroovyException.find"), candidates)
+        compl.complete(TokenUtilTest.tokenList('GroovyException.find'), candidates)
         assert candidates.size() > 0
     }
 
@@ -429,8 +503,53 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
         ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
-        compl.complete(TokenUtilTest.tokenList("['a':3, 'b':4]."), candidates)
+        compl.complete(TokenUtilTest.tokenList(/['a':3, 'b':4]./), candidates)
         assert candidates.size() > 1
-        assert candidates.reverse().subList(0, 2).collect({String it -> JAnsiHelper.stripAnsi(it)}) == ['b', 'a']
+        assert candidates.reverse().subList(0, 3).collect({ String it -> stripAnsi(it) }) == ['empty', 'b', 'a']
+    }
+
+    /**
+    * copied from jline2 ConsoleReader
+    */
+    private static CharSequence stripAnsi(final CharSequence str) {
+        if (str == null) return ''
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream()
+            AnsiOutputStream aos = new AnsiOutputStream(baos)
+            aos.write(str.toString().bytes)
+            aos.flush()
+            return baos.toString()
+        } catch (IOException e) {
+            return str
+        }
+    }
+
+}
+
+
+
+class GroovyshUtilsTest extends GroovyTestCase {
+
+    void testIsTypeOrMethodDeclaration() {
+        List<String> buffer = []
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['foo']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['foo()']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['123']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['def foo() {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['public static void bar() {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['public class Foo {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['interface Foo {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['enum Foo {VAL1, VAL2}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
     }
 }

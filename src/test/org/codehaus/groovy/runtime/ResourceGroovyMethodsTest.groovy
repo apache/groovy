@@ -1,34 +1,46 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime
 
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import static org.junit.Assert.assertEquals
 
-class ResourceGroovyMethodsTest extends GroovyTestCase {
+class ResourceGroovyMethodsTest {
 
+	@Rule
+	public TemporaryFolder temporaryFolder = new TemporaryFolder()
+
+	@Test
 	void test_Should_write_String_to_File_using_default_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		String text = 'Hello World'
 		
 		ResourceGroovyMethods.write(file, text)
 		
 		assert file.text == text
 	}
-	
+
+	@Test
 	void test_Should_write_String_to_File_using_specified_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		String text = "؁"
 		String encoding = 'UTF-8'
 		
@@ -36,9 +48,21 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.getText(encoding) == text
 	}
-	
+
+	@Test
+	void test_Should_write_String_and_bom_to_File_using_specified_encoding() {
+		File file = temporaryFolder.newFile()
+		String text = "؁"
+		String encoding = 'UTF-16LE'
+
+		ResourceGroovyMethods.write(file, text, encoding, true)
+
+		assert file.getBytes() == [-1, -2, 1, 6] as byte[]
+	}
+
+	@Test
 	void test_Should_append_ByteArray_to_File() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		byte[] bytes = ' World'.bytes
 		
@@ -46,18 +70,20 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.text == 'Hello World'
 	}
-	
+
+	@Test
 	void test_Should_append_String_to_File_using_default_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		
 		ResourceGroovyMethods.append(file, ' World')
 		
 		assert file.text == 'Hello World'
 	}
-	
+
+	@Test
 	void test_Should_append_text_supplied_by_Reader_to_File_using_default_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		Reader reader = new StringReader(' World')
 		
@@ -65,9 +91,10 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.text == 'Hello World'
 	}
-	
+
+	@Test
 	void test_Should_append_text_supplied_by_Writer_to_File_using_default_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		
 		Writer writer = new StringWriter()
@@ -77,9 +104,10 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.text == 'Hello World'
 	}
-	
+
+	@Test
 	void test_Should_append_String_to_File_using_specified_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 		
@@ -87,9 +115,10 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.getText(encoding) == '؁ ؁'
 	}
-	
+
+	@Test
 	void test_Should_append_text_supplied_by_Reader_to_File_using_specified_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 		Reader reader = new CharArrayReader([' ','؁'] as char[])
@@ -98,9 +127,10 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		
 		assert file.getText(encoding) == '؁ ؁'
 	}
-	
+
+	@Test
 	void test_Should_append_text_supplied_by_Writer_to_File_using_specified_encoding() {
-		File file = createDeleteOnExitTempFile()
+		File file = temporaryFolder.newFile()
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 		
@@ -113,6 +143,59 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		assert file.getText(encoding) == '؁ ؁'
 	}
 
+	@Test
+	void test_Should_write_String_to_File_using_specified_encoding_with_bom() {
+		File file = temporaryFolder.newFile()
+		String text = "؁"
+		String encoding = 'UTF-16LE'
+
+		ResourceGroovyMethods.write(file, text, encoding, true)
+
+		assert file.getBytes() == [-1, -2, 1, 6] as byte[]
+	}
+
+	@Test
+	void test_Should_append_String_to_File_using_specified_encoding_with_bom() {
+		File file = temporaryFolder.newFile()
+		file.delete()
+		String encoding = 'UTF-16LE'
+		file.append('؁', encoding, true)
+
+		ResourceGroovyMethods.append(file, ' ؁', encoding, true)
+
+		assert file.getBytes() == [-1, -2, 1, 6, 32, 0, 1, 6] as byte[]
+	}
+
+	@Test
+	void test_Should_append_text_supplied_by_Reader_to_File_using_specified_encoding_with_bom() {
+		File file = temporaryFolder.newFile()
+		file.delete()
+		String encoding = 'UTF-16LE'
+		file.append('؁', encoding, true)
+		Reader reader = new CharArrayReader([' ','؁'] as char[])
+
+		ResourceGroovyMethods.append(file, reader, encoding, true)
+
+		assert file.getBytes() == [-1, -2, 1, 6, 32, 0, 1, 6] as byte[]
+	}
+
+	@Test
+	void test_Should_append_text_supplied_by_Writer_to_File_using_specified_encoding_with_bom() {
+		File file = temporaryFolder.newFile()
+		file.delete()
+		String encoding = 'UTF-16LE'
+		file.append('؁', encoding, true)
+
+		Writer writer = new CharArrayWriter()
+		writer.append(' ')
+		writer.append('؁')
+
+		ResourceGroovyMethods.append(file, writer, encoding, true)
+
+		assert file.getBytes() == [-1, -2, 1, 6, 32, 0, 1, 6] as byte[]
+	}
+
+	@Test
 	void testFileDirectorySizeExceptions() {
 		try {
 			ResourceGroovyMethods.directorySize(new File("doesn't exist"))
@@ -131,6 +214,7 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		tempFile.delete()
 	}
 
+	@Test
 	void testDirectorySize() {
 		File tempFile = File.createTempFile("__testDirectorySize__", "")
 		delete(tempFile)
@@ -158,6 +242,15 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		assertEquals(totalSize, ResourceGroovyMethods.directorySize(testDir))
 		delete(testDir)
 	}
+
+	@Test
+    void testRelativePath() {
+        assertEquals("b", ResourceGroovyMethods.relativePath(new File("a"), new File("a/b")))
+        assertEquals("b/a", ResourceGroovyMethods.relativePath(new File("a"), new File("a/b/a")))
+        assertEquals("../b", ResourceGroovyMethods.relativePath(new File("a"), new File("b")))
+        assertEquals("../../b", ResourceGroovyMethods.relativePath(new File("a/b"), new File("b")))
+        assertEquals("", ResourceGroovyMethods.relativePath(new File("a"), new File("a")))
+    }
 
 	/**
 	 * Creates empty file of size specified.
@@ -211,11 +304,5 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		if (file.exists()) {
 			throw new RuntimeException(String.format("[%s] is not deleted", file.getAbsolutePath()))
 		}
-	}
-	
-	File createDeleteOnExitTempFile() {
-		File tempFile = File.createTempFile("tmp", "txt")
-		tempFile.deleteOnExit()
-		return tempFile
 	}
 }

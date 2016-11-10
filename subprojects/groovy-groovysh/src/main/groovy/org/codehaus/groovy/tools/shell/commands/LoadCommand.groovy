@@ -1,21 +1,24 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
@@ -23,7 +26,6 @@ import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 /**
  * The 'load' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class LoadCommand
@@ -37,10 +39,12 @@ class LoadCommand
         alias('.', ':.')
     }
 
-    protected List createCompleters() {
-        return [ new FileNameCompleter(true, true) ]
+    @Override
+    protected List<Completer> createCompleters() {
+        return [ new FileNameCompleter(true) ]
     }
 
+    @Override
     Object execute(final List<String> args) {
         assert args != null
 
@@ -51,7 +55,7 @@ class LoadCommand
         for (source in args) {
             URL url
 
-            log.debug("Attempting to load: \"$url\"")
+            log.debug("Attempting to load: \"$source\"")
 
             try {
                 url = new URL("$source")
@@ -77,7 +81,10 @@ class LoadCommand
             io.out.println("Loading: $url")
         }
 
-        url.eachLine { String it ->
+        url.eachLine { String it, int lineNumber ->
+            if (lineNumber == 1 && it.startsWith('#!')) {
+                return
+            }
             shell << it as String
         }
     }

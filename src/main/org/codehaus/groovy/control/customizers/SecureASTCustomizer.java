@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.control.customizers;
 
 import org.codehaus.groovy.ast.*;
@@ -33,11 +35,11 @@ import java.util.*;
  * want to allow arithmetic operations in a groovy shell, you can configure this customizer to restrict package imports,
  * method calls and so on.
  * <p>
- * Most of the securization options found in this class work with either blacklist or whitelist. This means that, for a
+ * Most of the security customization options found in this class work with either blacklist or whitelist. This means that, for a
  * single option, you can set a whitelist OR a blacklist, but not both. You can mix whitelist/blacklist strategies for
  * different options. For example, you can have import whitelist and tokens blacklist.
  * <p>
- * The recommanded way of securing shells is to use whitelists because it is guaranteed that future features of the
+ * The recommended way of securing shells is to use whitelists because it is guaranteed that future features of the
  * Groovy language won't be allowed by defaut. Using blacklists, you can limit the features of the languages by opting
  * out, but new language features would require you to update your configuration.
  * <p>
@@ -554,7 +556,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             if (clNode!=classNode) {
                 checkMethodDefinitionAllowed(clNode);
                 for (MethodNode methodNode : clNode.getMethods()) {
-                    if (!methodNode.isSynthetic()) {
+                    if (!methodNode.isSynthetic() && methodNode.getCode() != null) {
                         methodNode.getCode().visit(visitor);
                     }
                 }
@@ -564,7 +566,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         List<MethodNode> methods = filterMethods(classNode);
         if (isMethodDefinitionAllowed) {
             for (MethodNode method : methods) {
-                if (method.getDeclaringClass()==classNode) method.getCode().visit(visitor);
+                if (method.getDeclaringClass()==classNode && method.getCode() != null) method.getCode().visit(visitor);
             }
         }
     }
@@ -575,7 +577,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (!methods.isEmpty()) throw new SecurityException("Method definitions are not allowed");
     }
     
-    private List<MethodNode> filterMethods(ClassNode owner) {
+    private static List<MethodNode> filterMethods(ClassNode owner) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {

@@ -1,28 +1,38 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is a general adapter to map a call to a Java interface
@@ -32,8 +42,18 @@ import java.lang.reflect.Proxy;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
-    private Object delegate;
+    private final Object delegate;
     private static final long serialVersionUID = 1162833717190835227L;
+    private final ConcurrentHashMap<Method, Object> handleCache;
+    {
+        if (VMPluginFactory.getPlugin().getVersion() >= 7) {
+            handleCache = new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
+        } else {
+            handleCache = null;
+        }
+    }
+
+    private MetaClass metaClass;
 
     /**
      * Creates a ConversionHandler with an delegate.
@@ -42,7 +62,9 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @throws IllegalArgumentException if the given delegate is null
      */
     public ConversionHandler(Object delegate) {
-        if (delegate == null) throw new IllegalArgumentException("delegate must not be null");
+        if (delegate == null) {
+            throw new IllegalArgumentException("delegate must not be null");
+        }
         this.delegate = delegate;
     }
 
@@ -58,15 +80,19 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
     /**
      * This method is a default implementation for the invoke method given in
      * InvocationHandler. Any call to a method with a declaring class that is
-     * not Object, excluding toString(), is redirected to invokeCustom.
+     * not Object, excluding toString() and default methods is redirected to invokeCustom.
+     * <p>
      * Methods like equals and hashcode are called on the class itself instead
      * of the delegate because they are considered fundamental methods that should
      * not be overwritten. The toString() method gets special treatment as it is
      * deemed to be a method that you might wish to override when called from Groovy.
-     * <p>
+     * Interface default methods from Java 8 on the other hand are considered being
+     * default implementations you don't normally want to change. So they are called
+     * directly too
+     * </p><p>
      * In many scenarios, it is better to overwrite the invokeCustom method where
      * the core Object related methods are filtered out.
-     *
+     *</p>
      * @param proxy  the proxy
      * @param method the method
      * @param args   the arguments
@@ -76,18 +102,41 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        if (handleCache != null && isDefaultMethod(method)) {
+            VMPlugin plugin = VMPluginFactory.getPlugin();
+            Object handle = handleCache.get(method);
+            if (handle == null) {
+                handle = plugin.getInvokeSpecialHandle(method, proxy);
+                handleCache.put(method, handle);
+            }
+            return plugin.invokeHandle(handle, args);
+        }
+
         if (!checkMethod(method)) {
             try {
+                if (method.getDeclaringClass() == GroovyObject.class) {
+                    if ("getMetaClass".equals(method.getName())) {
+                        return getMetaClass(proxy);
+                    } else if ("setMetaClass".equals(method.getName())) {
+                        return setMetaClass((MetaClass) args[0]);
+                    }
+                }
                 return invokeCustom(proxy, method, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         }
+
         try {
             return method.invoke(this, args);
         } catch (InvocationTargetException ite) {
             throw ite.getTargetException();
         }
+    }
+
+    protected boolean isDefaultMethod(Method method) {
+        return ((method.getModifiers() & (Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC)) ==
+                Modifier.PUBLIC) && method.getDeclaringClass().isInterface();
     }
 
     protected boolean checkMethod(Method method) {
@@ -159,4 +208,17 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
         return Object.class.equals(method.getDeclaringClass());
     }
 
+    private MetaClass setMetaClass(MetaClass mc) {
+        metaClass = mc;
+        return mc;
+    }
+
+    private MetaClass getMetaClass(Object proxy) {
+        MetaClass mc = metaClass;
+        if (mc == null) {
+            mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(proxy);
+            metaClass = mc;
+        }
+        return mc;
+    }
 }

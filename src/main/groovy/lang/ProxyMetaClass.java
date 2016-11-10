@@ -1,25 +1,26 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
-import java.beans.IntrospectionException;
-
 /**
  * As subclass of MetaClass, ProxyMetaClass manages calls from Groovy Objects to POJOs.
- * It enriches MetaClass with the feature of making method invokations interceptable by
+ * It enriches MetaClass with the feature of making method invocations interceptable by
  * an Interceptor. To this end, it acts as a decorator (decorator pattern) allowing
  * to add or withdraw this feature at runtime.
  * See groovy/lang/InterceptorTest.groovy for details.
@@ -41,7 +42,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
     /**
      * convenience factory method for the most usual case.
      */
-    public static ProxyMetaClass getInstance(Class theClass) throws IntrospectionException {
+    public static ProxyMetaClass getInstance(Class theClass) {
         MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new ProxyMetaClass(metaRegistry, theClass, meta);
@@ -50,7 +51,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
-    public ProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) throws IntrospectionException {
+    public ProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) {
         super(registry, theClass);
         this.adaptee = adaptee;
         if (null == adaptee) throw new IllegalArgumentException("adaptee must not be null");
@@ -119,6 +120,21 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         return doCall(object, methodName, arguments, interceptor, new Callable() {
             public Object call() {
                 return adaptee.invokeMethod(object, methodName, arguments);
+            }
+        });
+    }
+
+    /**
+     * Call invokeMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
+     * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
+     * The method call is suppressed if Interceptor.doInvoke() returns false.
+     * See Interceptor for details.
+     */
+    @Override
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
+        return doCall(object, methodName, arguments, interceptor, new Callable() {
+            public Object call() {
+                return adaptee.invokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
             }
         });
     }

@@ -1,0 +1,54 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Contributors
+
+The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
+
+* https://github.com/mojavelinux[Dan Allen]
+* https://github.com/and-dmitry[Dmitry Andreychuk]
+* http://hamletdarcy.blogspot.fr/[Hamlet D'Arcy]
+* https://github.com/anshbansal[Aseem Bansal]
+* https://github.com/bura[Andrey Bloschetsov]
+* https://github.com/JBrownVisualSpection[J Brown]
+* https://github.com/jeffbrown[Jeff Scott Brown]
+* http://twitter.com/CedricChampeau[Cédric Champeau]
+* https://github.com/tobia[Tobia Conforto]
+* https://github.com/ddimtirov[Dimitar Dimitrov]
+* http://twitter.com/werdnagreb[Andrew Eisenberg]
+* https://github.com/erdi[Marcin Erdmann]
+* https://github.com/christoph-frick[Christoph Frick]
+* http://twitter.com/marioggar[Mario García]
+* https://github.com/davidmichaelkarr[David Michael Karr]
+* http://twitter.com/paulk_asert[Paul King]
+* http://twitter.com/glaforge[Guillaume Laforge]
+* http://twitter.com/pledbrook[Peter Ledbrook]
+* http://grantmcconnaughey.github.io/[Grant McConnaughey]
+* https://github.com/dnahodil[David Nahodil]
+* https://github.com/jnorthr[James Northrop]
+* https://github.com/marcpa00[Marc Paquette]
+* https://github.com/michaelss[Michael Schuenck]
+* https://github.com/PascalSchumacher[Pascal Schumacher]
+* https://github.com/shils[Shil Sinha]
+* https://github.com/stavytskyi[Maksym Stavytskyi]
+* https://twitter.com/asteingr[André Steingreß]
+* https://github.com/EPadronU[Edinson Padrón Urdaneta]
+* https://github.com/keeganwitt[Keegan Witt]

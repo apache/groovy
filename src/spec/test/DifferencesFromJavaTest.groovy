@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 class DifferencesFromJavaTest extends GroovyTestCase {
     void testMultiMethods() {
         assertScript '''import static org.junit.Assert.*
@@ -102,17 +104,19 @@ new A.B()
 '''
         assertScript '''
 // tag::innerclass_2[]
-boolean called = false
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
+CountDownLatch called = new CountDownLatch(1)
 
 Timer timer = new Timer()
 timer.schedule(new TimerTask() {
     void run() {
-        called = true
+        called.countDown()
     }
 }, 0)
-sleep 100
 
-assert called
+assert called.await(10, TimeUnit.SECONDS)
 // end::innerclass_2[]
 '''
         assertScript '''
@@ -144,5 +148,43 @@ def y = new Y()
 def x = Y.createX(y)
 assert (x.'this$0').is(y)
 '''
+    }
+
+    void testStringsAndCharsGotchas() {
+        assertScript '''
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+
+// tag::type_depends_on_quoting_AND_whether_we_actually_interpolate[]
+assert 'c'.getClass()==String
+assert "c".getClass()==String
+assert "c${1}".getClass() in GString
+// end::type_depends_on_quoting_AND_whether_we_actually_interpolate[]
+// tag::single_char_strings_are_autocasted[]
+char a='a'
+assert Character.digit(a, 16)==10 : 'But Groovy does boxing'
+assert Character.digit((char) 'a', 16)==10
+
+try {
+  assert Character.digit('a', 16)==10
+  assert false: 'Need explicit cast'
+} catch(MissingMethodException e) {
+}
+// end::single_char_strings_are_autocasted[]
+// tag::chars_c_vs_groovy_cast[]
+// for single char strings, both are the same
+assert ((char) "c").class==Character
+assert ("c" as char).class==Character
+
+// for multi char strings they are not
+try {
+  ((char) 'cx') == 'c'
+  assert false: 'will fail - not castable'
+} catch(GroovyCastException e) {
+}
+assert ('cx' as char) == 'c'
+assert 'cx'.asType(char) == 'c'
+// end::chars_c_vs_groovy_cast[]
+        '''
+
     }
 }

@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.control;
 
@@ -32,6 +35,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.AnnotationCollectorTransform;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.TraitComposer;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -183,6 +187,16 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                if (!classNode.isSynthetic()) {
+                    GenericsVisitor genericsVisitor = new GenericsVisitor(source);
+                    genericsVisitor.visitClass(classNode);
+                }
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
                 TraitComposer.doExtendTraits(classNode, source, CompilationUnit.this);
@@ -224,6 +238,17 @@ public class CompilationUnit extends ProcessingUnit {
                 ecv.visitClass(classNode);
             }
         }, Phases.CANONICALIZATION);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                Object callback = classNode.getNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK);
+                if (callback instanceof PrimaryClassNodeOperation) {
+                    ((PrimaryClassNodeOperation) callback).call(source, context, classNode);
+                    classNode.removeNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK);
+                }
+            }
+        }, Phases.INSTRUCTION_SELECTION);
 
         // apply configuration customizers if any
         if (configuration != null) {
@@ -651,7 +676,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-    private PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
+    private final PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             staticImportVisitor.visitClass(classNode, source);
         }
@@ -660,7 +685,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs convert() on a single SourceUnit.
      */
-    private SourceUnitOperation convert = new SourceUnitOperation() {
+    private final SourceUnitOperation convert = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             source.convert();
             CompilationUnit.this.ast.addModule(source.getAST());
@@ -672,7 +697,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-    private GroovyClassOperation output = new GroovyClassOperation() {
+    private final GroovyClassOperation output = new GroovyClassOperation() {
         public void call(GroovyClass gclass) throws CompilationFailedException {
             String name = gclass.getName().replace('.', File.separatorChar) + ".class";
             File path = new File(configuration.getTargetDirectory(), name);
@@ -709,7 +734,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     /* checks if all needed classes are compiled before generating the bytecode */
-    private SourceUnitOperation compileCompleteCheck = new SourceUnitOperation() {
+    private final SourceUnitOperation compileCompleteCheck = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             List<ClassNode> classes = source.ast.getClasses();
             for (ClassNode node : classes) {
@@ -752,7 +777,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs classgen() on a single ClassNode.
      */
-    private PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
+    private final PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
         public boolean needSortedInput() {
             return true;
         }
@@ -760,11 +785,6 @@ public class CompilationUnit extends ProcessingUnit {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
             optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
-
-            if(!classNode.isSynthetic()) {
-                GenericsVisitor genericsVisitor = new GenericsVisitor(source);
-                genericsVisitor.visitClass(classNode);
-            }
 
             //
             // Run the Verifier on the outer class
@@ -891,7 +911,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Marks a single SourceUnit with the current phase,
      * if it isn't already there yet.
      */
-    private SourceUnitOperation mark = new SourceUnitOperation() {
+    private final SourceUnitOperation mark = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             if (source.phase < phase) {
                 source.gotoPhase(phase);
@@ -948,7 +968,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     /**
-     * An callback interface for use in the applyToSourceUnits loop driver.
+     * An callback interface for use in the applyToPrimaryClassNodes loop driver.
      */
     public abstract static class PrimaryClassNodeOperation {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
@@ -962,7 +982,7 @@ public class CompilationUnit extends ProcessingUnit {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 
-    private int getSuperClassCount(ClassNode element) {
+    private static int getSuperClassCount(ClassNode element) {
         int count = 0;
         while (element != null) {
             count++;
@@ -1011,15 +1031,13 @@ public class CompilationUnit extends ProcessingUnit {
         return sorted;
     }
 
-    private List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
+    private static List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
         List<ClassNode> sorted = new ArrayList<ClassNode>(unsorted.size());
         for (int i = 0; i < unsorted.size(); i++) {
             int min = -1;
             for (int j = 0; j < unsorted.size(); j++) {
                 if (index[j] == -1) continue;
-                if (min == -1) {
-                    min = j;
-                } else if (index[j] < index[min]) {
+                if (min == -1 || index[j] < index[min]) {
                     min = j;
                 }
             }

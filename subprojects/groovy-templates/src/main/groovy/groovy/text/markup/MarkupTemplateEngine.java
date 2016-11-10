@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.text.markup;
 
@@ -60,7 +63,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     static final ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
     static final String MODELTYPES_ASTKEY = "MTE.modelTypes";
 
-    private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.(\\p{Alnum}+)");
+    private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.([\\p{Alnum}.]+)$");
 
     private static final boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
 
@@ -71,6 +74,10 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final TemplateConfiguration templateConfiguration;
     private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
     private final TemplateResolver templateResolver;
+
+    public MarkupTemplateEngine() {
+        this(new TemplateConfiguration());
+    }
 
     public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
         this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
@@ -194,7 +201,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         @SuppressWarnings("unchecked")
         public MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
             String name = sourceName != null ? sourceName : "GeneratedMarkupTemplate" + counter.getAndIncrement();
-            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, ""), modelTypes);
+            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, "x"), modelTypes);
             this.modeltypes = modelTypes;
         }
 

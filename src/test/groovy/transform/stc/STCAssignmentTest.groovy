@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc
 
@@ -141,7 +144,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             long a = Long.MAX_VALUE
             int b = a
-        ''', 'Possible loose of precision from long to int'
+        ''', 'Possible loss of precision from long to int'
     }
 
     void testPossibleLooseOfPrecision2() {
@@ -159,7 +162,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision4() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
-        ''', 'Possible loose of precision from int to byte'
+        ''', 'Possible loss of precision from int to byte'
     }
 
     void testPossibleLooseOfPrecision5() {
@@ -171,7 +174,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision6() {
         shouldFailWithMessages '''
             short b = 32768 // will not fit in a short
-        ''', 'Possible loose of precision from int to short'
+        ''', 'Possible loss of precision from int to short'
     }
 
     void testPossibleLooseOfPrecision7() {
@@ -195,7 +198,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision10() {
         shouldFailWithMessages '''
             int b = 32768.1d
-        ''', 'Possible loose of precision from double to int'
+        ''', 'Possible loss of precision from double to int'
     }
 
     void testCastIntToShort() {
@@ -805,6 +808,27 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             Object o
             int[] array = o
         ''', 'Cannot assign value of type java.lang.Object to variable of type int[]'
+    }
+
+    // GROOVY-7015
+    void testAssingmentToSuperclassFieldWithDifferingGenerics() {
+        assertScript '''
+            class Base {}
+            class Derived extends Base {
+                public String sayHello() { "hello"}
+            }
+
+            class GBase<T extends Base> {
+                T myVar;
+            }
+            class GDerived extends GBase<Derived> {
+                GDerived() { myVar = new Derived(); }
+                public String method() {myVar.sayHello()}
+            }
+
+            GDerived d = new GDerived();
+            assert d.method() == "hello"
+        '''
     }
 }
 

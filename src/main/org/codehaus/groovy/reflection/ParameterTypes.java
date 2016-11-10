@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.reflection;
 
@@ -172,7 +175,7 @@ public class ParameterTypes
      * and if the method is a vargs method. This method will then transform the given
      * arguments to make the method callable
      *
-     * @param argumentArray the arguments used to call the method
+     * @param argumentArrayOrig the arguments used to call the method
      * @param paramTypes    the types of the parameters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArrayOrig, CachedClass[] paramTypes) {
@@ -247,7 +250,7 @@ public class ParameterTypes
         return false;
     }
 
-    private boolean isValidExactMethod(Class[] arguments, CachedClass[] pt) {
+    private static boolean isValidExactMethod(Class[] arguments, CachedClass[] pt) {
         // lets check the parameter types match
         int size = pt.length;
         for (int i = 0; i < size; i++) {
@@ -294,7 +297,7 @@ public class ParameterTypes
         return MetaClassHelper.isAssignableFrom(toTestAgainst, component);
     }
 
-    private boolean isValidVarargsMethod(Class[] arguments, int size, CachedClass[] pt, int paramMinus1) {
+    private static boolean isValidVarargsMethod(Class[] arguments, int size, CachedClass[] pt, int paramMinus1) {
         // first check normal number of parameters
         for (int i = 0; i < paramMinus1; i++) {
             if (pt[i].isAssignableFrom(arguments[i])) continue;
@@ -366,7 +369,7 @@ public class ParameterTypes
         return false;
     }
 
-    private Class getArgClass(Object arg) {
+    private static Class getArgClass(Object arg) {
         Class cls;
         if (arg == null) {
             cls = null;

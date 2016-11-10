@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
@@ -23,10 +26,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Pilho Kim
- * @version $Revision$
  */
 public class MetaBeanProperty extends MetaProperty {
 
@@ -119,7 +118,7 @@ public class MetaBeanProperty extends MetaProperty {
     /**
      * Gets the visibility modifiers for the property as defined by the getter and setter methods.
      *
-     * @return the visibility modifer of the getter, the setter, or both depending on which exist
+     * @return the visibility modifier of the getter, the setter, or both depending on which exist
      */
     public int getModifiers() {
         MetaMethod getter = getGetter();
@@ -138,7 +137,7 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     /**
-     * Sets the field of this propery
+     * Sets the field of this property
      *
      * @param field
      */

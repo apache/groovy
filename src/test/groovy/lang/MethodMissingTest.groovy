@@ -1,24 +1,26 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang
 
 /**
  * Tests for method missing handling in Groovy
-
- * @author Graeme Rocher
+ *
  * @since 1.5
  */
 class MethodMissingTest extends GroovyTestCase {
@@ -103,7 +105,7 @@ class MethodMissingTest extends GroovyTestCase {
         sw.withPrintWriter { pw ->
             exception.printStackTrace(pw)
             assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
-            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@????>]")
+            assert sw.toString().contains("is applicable for argument types: (Broken) values: [<Broken@????>]")
             assert !sw.toString().contains("toString broken")
         }
         sw = new StringWriter()
@@ -111,7 +113,7 @@ class MethodMissingTest extends GroovyTestCase {
         sw.withPrintWriter { pw ->
             exception.printStackTrace(pw)
             assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
-            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@9>]")
+            assert sw.toString().contains("is applicable for argument types: (Broken) values: [<Broken@9>]")
             assert !sw.toString().contains("toString broken")
         }
     }

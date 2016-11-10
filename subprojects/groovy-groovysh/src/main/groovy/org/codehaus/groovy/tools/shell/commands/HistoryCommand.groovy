@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.commands
 
 import jline.console.history.History
@@ -24,7 +26,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * The 'history' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HistoryCommand
@@ -37,24 +38,27 @@ class HistoryCommand
         super(shell, COMMAND_NAME, ':H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
 
+    @Override
     protected List createCompleters() {
         def loader = {
             def list = []
-
-            getFunctions().each { String fun -> list << fun }
+            list.addAll(functions)
 
             return list
         }
 
+        SimpleCompletor subCommandsCompletor = new SimpleCompletor(loader)
+        subCommandsCompletor.setWithBlank(false)
         return [
-            new SimpleCompletor(loader),
+            subCommandsCompletor,
             null
         ]
     }
 
+    @Override
     Object execute(List<String> args) {
         if (!history) {
-            fail("Shell does not appear to be interactive; Can not query history")
+            fail('Shell does not appear to be interactive; Can not query history')
         }
 
         super.execute(args)
@@ -66,7 +70,7 @@ class HistoryCommand
     def do_show = {
         Iterator<History.Entry> histIt = history.iterator()
         while (histIt.hasNext()) {
-            History.Entry next = histIt.next();
+            History.Entry next = histIt.next()
             if (next) {
                 io.out.println(" @|bold ${next.index().toString().padLeft(3, ' ')}|@  ${next.value()}")
             }
@@ -97,7 +101,7 @@ class HistoryCommand
         String line
 
         if (!args || ((List)args).size() != 1) {
-            fail("History recall requires a single history identifer")
+            fail('History recall requires a single history identifer')
         }
 
         String ids = ((List<String>)args)[0]
@@ -113,14 +117,14 @@ class HistoryCommand
                 // has been added to history before it actually gets executed
                 // so we need to shift by one
                 id--
-            };
+            }
 
             Iterator<History.Entry> listEntryIt = history.iterator()
             if (listEntryIt.hasNext()) {
                 History.Entry next = listEntryIt.next()
                 if (id < next.index() -1) {
                     // not using id on purpose, as might be decremented
-                    fail("Unknown index:" + ids)
+                    fail("Unknown index: $ids")
                 } else if (id == next.index() -1) {
                     line = shell.evictedLine
                 } else if (next.index() == id) {

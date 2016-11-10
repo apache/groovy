@@ -1,6 +1,27 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
 = Compiling Groovy
 
-
+[[section-groovyc-compiler]]
 == groovyc, the Groovy compiler
 
 `groovyc` is the Groovy compiler command line tool. It allows you to compile Groovy sources into bytecode. It plays
@@ -15,26 +36,26 @@ a number of command line switches:
 
 [cols="<,<,<,<",options="header,footer"]
 |=======================================================================
-|Short version |Long version |Description |Example
-|-cp |-classpath, --classpath | Specify the compilation classpath. Must be the first
-argument. | groovyc -cp lib/dep.jar MyClass.groovy
-| |--sourcepath* |Directory where to find source files|groovyc -sourcepath src script.groovy
-| |--temp |Temporary directory for the compiler |
-| |--encoding |Encoding of the source files |groovyc -encoding utf-8 script.groovy
-| |--help |Displays help for the command line groovyc tool |groovyc --help
-|-v|--version|Displays the compiler version|groovyc -v
-|-e|--exception|Displays the stack trace in case of compilation error|groovyc -e script.groovy
-|-j|--jointCompilation*|Enables joint compilation|groovyc -j A.groovy B.java
-|-b|--basescript|Base class name for scripts (must derive from Script)|
-|-indy|--indy|Enables invokedynamic support. Requires Java 7+|groovyc --indy Person.groovy
-||--configscript|Advanced compiler configuration script|groovyc --configscript config/config.groovy src/Person.groovy
-|-Jproperty=value||Properties to be passed to `javac` if joint compilation is enabled|groovyc -j -Jtarget=1.5 -Jsource=1.5 A.groovy B.java
-|-Fflag||Flags to be passed to `javac` if joint compilation is enabled|groovyc -j -Fnowarn A.groovy B.java
+| Short version | Long version | Description | Example
+| -cp | -classpath, --classpath | Specify the compilation classpath. Must be the first argument. | groovyc -cp lib/dep.jar MyClass.groovy
+| | --sourcepath | Directory where to find source files. Not used anymore. Specifying this parameter will have no effect. |
+| | --temp | Temporary directory for the compiler |
+| | --encoding | Encoding of the source files | groovyc --encoding utf-8 script.groovy
+| | --help | Displays help for the command line groovyc tool | groovyc --help
+| -d | | Specify where to place generated class files. | groovyc -d target Person.groovy 
+| -v | --version | Displays the compiler version | groovyc -v
+| -e | --exception | Displays the stack trace in case of compilation error | groovyc -e script.groovy
+| -j | --jointCompilation* | Enables joint compilation | groovyc -j A.groovy B.java
+| -b | --basescript | Base class name for scripts (must derive from Script)|
+| -indy | --indy | Enables invokedynamic support. Requires Java 7+ | groovyc --indy Person.groovy
+| | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
+| -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
+| -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
+| -pa | --parameters | Generates metadata for reflection on method parameter names. Requires Java 8+. | groovyc --parameters Person.groovy
+| @argfile | | Read options and source files from specified file. | groovyc @conf/args
 |=======================================================================
 
 *Notes:*
-
-* `sourcepath` is not used anymore. Specifying this parameter will have no effect on compilation.
 * for a full description of joint compilation, see <<section-jointcompilation,the joint compilation section>>.
 
 == Ant task
@@ -136,6 +157,8 @@ you need to set this flag to true. Defaults to false. |No
 
 |configscript |Set the configuration file used to customize the compilation configuration. |No
 
+|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
+
 |=======================================================================
 
 *Example:*
@@ -164,7 +187,7 @@ you need to set this flag to true. Defaults to false. |No
 * For path structures see for example
 http://ant.apache.org/manual/using.html#path
 * For usages of the javac task see
-http://ant.apache.org/manual/CoreTasks/javac.html
+https://ant.apache.org/manual/Tasks/javac.html
 * The nested javac task behaves more or less as documented for the
 top-level `javac` task. `srcdir`, `destdir`, `classpath`, `encoding` for the
 nested `javac` task are taken from the enclosing `groovyc` task. If these
@@ -200,13 +223,29 @@ the enclosing `groovyc` task.
 
 More details about joint compilation can be found in the <<section-jointcompilation,joint compilation>> section.
 
+[[Gant]]
+== Gant
+https://github.com/Gant/Gant[Gant] is a tool for scripting Ant tasks using Groovy
+instead of XML to specify the logic. As such, it has exactly the same features
+as the Groovyc Ant task.
+
+[[Gradle]]
+== Gradle
+http://www.gradle.org/[Gradle] is a build tool that allows you to leverage the
+flexibility of http://ant.apache.org/[Ant], while keeping the simplicity of
+convention over configuration that tools like http://maven.apache.org/[Maven]
+offer. Builds are specified using a Groovy DSL, which offers great flexibility
+and succinctness.
+
 == Maven integration
 There are several approaches to compiling Groovy code in your Maven
-projects. <<section-gmaven,GMaven>> is the
-most flexible and feature rich, but it has some difficulties with joint
-Java-Groovy projects and it is no longer under active development. The
-<<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>> sidesteps the joint compilation issues. Read
-<<Groovy-EclipsecompilerpluginforMaven-WhyanotherGroovycompilerforMavenWhataboutGMaven, this>>
+projects. <<section-gmavenplus,GMavenPlus>> is the
+most flexible and feature rich, but like most Groovy compiler tools, it can
+have difficulties with joint Java-Groovy projects (for the same reason
+<<section-gmaven,GMaven>> and <<Gradle>> can have issues).
+The <<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>>
+sidesteps the joint compilation issues. Read
+https://github.com/groovy/groovy-eclipse/wiki/Groovy-Eclipse-Maven-plugin#why-another-groovy-compiler-for-maven-what-about-gmaven[this]
 for a deeper discussion of the benefits and disadvantages of the two
 approaches.
 
@@ -309,81 +348,51 @@ execute the jar phase bundling up all of your compiled production
 classes into a jar after all of the unit tests pass. For more detail on
 Maven build phases consult the Maven2 documentation.
 
-== GMaven and GMavenPlus
+=== GMaven and GMavenPlus
 [[section-gmaven]]
-=== GMaven
-GMaven is a separate project and documentation for http://docs.codehaus.org/display/GMAVEN[GMaven] can
-be found http://docs.codehaus.org/display/GMAVEN[here].
-
-*Example:*
-
-[source,xml]
-----
-<dependencies>
-    <dependency>
-        <groupId>org.codehaus.gmaven.runtime</groupId>
-        <artifactId>gmaven-runtime-default</artifactId>
-    </dependency>
-</dependencies>
-
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.codehaus.gmaven</groupId>
-            <artifactId>gmaven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>generateStubs</goal>
-                        <goal>compile</goal>
-                        <goal>generateTestStubs</goal>
-                        <goal>testCompile</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
-</build>
-----
+==== GMaven
+https://github.com/groovy/gmaven[GMaven] is the original Maven plugin
+for Groovy, supporting both compiling and scripting Groovy.
 
 *Important:*
 
-You should be aware that GMaven is *not supported anymore* and has problems with <<section-jointcompilation,joint compilation>>.
-Should you need joint compilation, we advise that you use the <<section-groovyeclipse,Groovy Eclipse maven plugin>>.
+You should be aware that GMaven is *not supported anymore* and can have
+difficulties with <<section-jointcompilation,joint compilation>>.
+<<section-gmavenplus,GMavenPlus>> can be a good replacement, but if you
+are having problems with joint compilation, you might consider the
+<<section-groovyeclipse,Groovy Eclipse maven plugin>>.
 
 [[section-gmavenplus]]
-=== GMavenPlus
+==== GMavenPlus
 
-https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of <<section-gmaven,GMaven>> which is in active development. It does not support all the features
-of <<section-gmaven,GMaven>> but supports newer versions of Groovy, invokedynamic, as well as joint compilation, through stubs (which
-means it has the same potential issues as <<section-gmaven,GMaven>>). The main advantage over its predecessor is that
-it compiles with recent versions of the compiler and supports choosing what version of Groovy is used.
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of
+<<section-gmaven,GMaven>> and is in active development. It supports most of the
+features of GMaven (a couple notable exceptions being
+http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html[mojo Javadoc tags]
+and support for older Groovy versions). Its joint compilation uses stubs (which
+means it has the same potential issues as <<GMaven>> and <<Gradle>>). The main
+advantages over its predecessor are that it supports recent Groovy versions,
+InvokeDynamic, Groovy on Android, GroovyDoc, and configuration scripts.
 
 [[section-gmaven2]]
-=== GMaven2
+==== GMaven 2
 
-See http://groovy.github.io/gmaven/[GMaven 2]
-
-Unlike the name seems to indicate, http://groovy.github.io/gmaven/[GMaven 2] is not aimed at replacing
-<<section-gmaven,GMaven>>. In fact, it's a rewrite of the scripting features of the GMaven plugin. Interestingly,
-it supports the missing features of <<section-gmavenplus,GMavenPlus>>, that is to say:
-
-* Script execution
-* Command-line shell access
-* GUI console access
-
-So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse plugin>> or <<section-gmavenplus,GMavenPlus>>.
+Unlike the name might seem to suggest, http://groovy.github.io/gmaven/[GMaven 2]
+is not aimed at replacing <<section-gmaven,GMaven>>. In fact, it removes the
+non-scripting features of the GMaven plugin. It has not yet had any release and
+appears to be inactive currently.
 
 [[section-groovyeclipse]]
+=== The Groovy Eclipse Maven plugin
 
-:leveloffset: 3
-
-include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[]
-
-:leveloffset: 1
+https://github.com/groovy/groovy-eclipse/wiki/Groovy-Eclipse-Maven-plugin[Groovy-Eclipse]
+provides a compiler plugin for Maven. Using the compiler
+plugin, it is possible to compile your maven projects using the
+Groovy-Eclipse compiler. One feature unavailable elsewhere is
+stubless joint compilation.
 
 [[section-jointcompilation]]
-=== Joint compilation
+== Joint compilation
 
 Joint compilation means that the Groovy compiler will parse the
 Groovy source files, create stubs for all of them, invoke the Java
@@ -399,3 +408,58 @@ It is important to know that if you don't enable joint compilation and try to co
 Java source files with the Groovy compiler, the Java source files will be compiled as
 if they were Groovy sources. In some situations, this might work since most of the Java
 syntax is compatible with Groovy, but semantics would be different.
+
+[[section-android]]
+== Android support
+
+It is possible to write an Android application in Groovy. However this requires a special
+version of the compiler, meaning that you cannot use the regular
+<<section-groovyc-compiler,groovyc tool>> to target Android bytecode. In particular, Groovy
+provides specific JAR files for Android, which have a classifier of `grooid`. In order to make
+things easier, a https://github.com/groovy/groovy-android-gradle-plugin[Gradle plugin] adds
+support for the Groovy language in the Android Gradle toolchain.
+
+The plugin can be applied like this:
+
+```groovy
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.1.2'
+        classpath 'org.codehaus.groovy:groovy-android-gradle-plugin:1.0.0'
+    }
+}
+
+apply plugin: 'groovyx.android'
+```
+
+Then you will need to add a dependency on the `grooid` version of the Groovy compiler:
+
+```groovy
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'
+}
+```
+
+Note that if a Groovy jar does not provide a `grooid` classifier alternative, then it means
+that the jar is directly compatible with Android. In that case, you can add the dependency directly
+like this:
+
+```groovy
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'       // requires the grooid classifier
+    compile ('org.codehaus.groovy:groovy-json:2.4.7') {     // no grooid version available
+        transitive = false                                  // so do not depend on non-grooid version
+    }
+}
+```
+
+Note that the `transitive=false` parameter for `groovy-json` will let Gradle download the JSON support jar
+without adding a dependency onto the normal jar of Groovy.
+
+Please make sure to go to the https://github.com/groovy/groovy-android-gradle-plugin[plugin homepage] in order to
+find the latest documentation and version.
+

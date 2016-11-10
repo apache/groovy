@@ -1,21 +1,25 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.sql
 
 import javax.sql.DataSource
+import java.sql.CallableStatement
 
 import static groovy.sql.SqlTestConstants.*
 
@@ -290,6 +294,44 @@ class SqlCallTest extends GroovyTestCase {
         assert lastRows[0].id == 5
         assert lastRows[0].firstname == 'Lino'
         assert lastRows[0].lastname == 'Ventura'
+    }
+
+    void testCallWithStatementCaching() {
+        String sqlText = '{call FindByFirst(?, ?)}'
+        CallableStatement statement = null
+        sql.withStatement { statement = (CallableStatement)it }
+
+        sql.cacheStatements = false
+        sql.call sqlText, ['James', Sql.VARCHAR]
+        assert statement.isClosed()
+        assert sql.@statementCache.isEmpty()
+
+        sql.cacheStatements = true
+        sql.call sqlText, ['James', Sql.VARCHAR]
+        assert !statement.isClosed()
+        assert sql.@statementCache.containsKey(sqlText)
+        assert sql.@statementCache[sqlText].is(statement)
+    }
+
+    void testCallWithRowsStatementCaching() {
+        String sqlText = '{call FindByFirst(?, ?)}'
+        CallableStatement statement = null
+        sql.withStatement { statement = (CallableStatement)it }
+
+        sql.cacheStatements = false
+        sql.call sqlText, ['James', Sql.VARCHAR], { ans ->
+            // no-op
+        }
+        assert statement.isClosed()
+        assert sql.@statementCache.isEmpty()
+
+        sql.cacheStatements = true
+        sql.call sqlText, ['James', Sql.VARCHAR], { ans ->
+            // no-op
+        }
+        assert !statement.isClosed()
+        assert sql.@statementCache.containsKey(sqlText)
+        assert sql.@statementCache[sqlText].is(statement)
     }
 
 }

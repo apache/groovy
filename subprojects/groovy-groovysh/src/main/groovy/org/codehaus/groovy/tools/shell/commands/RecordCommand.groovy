@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -23,7 +25,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'record' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class RecordCommand
@@ -91,15 +92,15 @@ class RecordCommand
         } else if (args.size() == 1) {
             file = new File(args[0] as String)
         } else {
-            fail("Too many arguments. Usage: record start [filename]")
+            fail('Too many arguments. Usage: record start [filename]')
         }
 
         if (file.parentFile) file.parentFile.mkdirs()
 
         writer = file.newPrintWriter()
-        writer.println("// OPENED: " + new Date())
+        writer.println('// OPENED: ' + new Date())
         writer.flush()
-        
+
         io.out.println("Recording session to: \"$file\"")
 
         return file
@@ -107,10 +108,10 @@ class RecordCommand
 
     def do_stop = {
         if (!isRecording()) {
-            fail("Not recording")
+            fail('Not recording')
         }
 
-        writer.println("// CLOSED: " + new Date())
+        writer.println('// CLOSED: ' + new Date())
         writer.flush()
 
         writer.close()
@@ -126,7 +127,7 @@ class RecordCommand
 
     def do_status = {
         if (!isRecording()) {
-            io.out.println("Not recording")
+            io.out.println('Not recording')
 
             return null
         }

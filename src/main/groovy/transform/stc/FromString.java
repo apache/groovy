@@ -1,43 +1,32 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform.stc;
 
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
-import org.codehaus.groovy.antlr.AntlrParserPlugin;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.ParserException;
-import org.codehaus.groovy.syntax.Reduction;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -84,64 +73,8 @@ public class FromString extends ClosureSignatureHint {
      * @param usage
      * @return a class node if it could be parsed and resolved, null otherwise
      */
-    private ClassNode[] parseOption(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
-        GroovyLexer lexer = new GroovyLexer(new StringReader("DummyNode<"+option+">"));
-        final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
-        try {
-            rn.classOrInterfaceType(true);
-            final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
-            AntlrParserPlugin plugin = new AntlrParserPlugin() {
-                @Override
-                public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) throws ParserException {
-                    ref.set(makeTypeWithArguments(rn.getAST()));
-                    return null;
-                }
-            };
-            plugin.buildAST(null, null, null);
-            ClassNode parsedNode = ref.get();
-            // the returned node is DummyNode<Param1, Param2, Param3, ...)
-            GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
-            if (parsedNodeGenericsTypes==null) {
-                return null;
-            }
-            ClassNode[] signature = new ClassNode[parsedNodeGenericsTypes.length];
-            for (int i = 0; i < parsedNodeGenericsTypes.length; i++) {
-                final GenericsType genericsType = parsedNodeGenericsTypes[i];
-                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
-            }
-            return signature;
-        } catch (RecognitionException e) {
-            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
-        } catch (TokenStreamException e) {
-            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
-        } catch (ParserException e) {
-            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
-        }
-        return null;
-    }
-
-    private ClassNode resolveClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage, final ClassNode parsedNode) {
-        ClassNode dummyClass = new ClassNode("dummy",0, ClassHelper.OBJECT_TYPE);
-        dummyClass.setModule(new ModuleNode(sourceUnit));
-        dummyClass.setGenericsTypes(mn.getDeclaringClass().getGenericsTypes());
-        MethodNode dummyMN = new MethodNode(
-                "dummy",
-                0,
-                parsedNode,
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                EmptyStatement.INSTANCE
-        );
-        dummyMN.setGenericsTypes(mn.getGenericsTypes());
-        dummyClass.addMethod(dummyMN);
-        ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
-            @Override
-            protected void addError(final String msg, final ASTNode expr) {
-                sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
-            }
-        };
-        visitor.startResolving(dummyClass, sourceUnit);
-        return dummyMN.getReturnType();
+    private static ClassNode[] parseOption(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
+        return GenericsUtils.parseClassNodesFromString(option, sourceUnit, compilationUnit, mn, usage);
     }
 
 }

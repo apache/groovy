@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.servlet;
 
@@ -62,7 +65,7 @@ import javax.servlet.http.HttpServletRequest;
  * <p>
  * In order to support class-loading-troubles-debugging with Tomcat 4 or
  * higher, you can log the class loader responsible for loading some classes.
- * See <a href="http://jira.codehaus.org/browse/GROOVY-861">GROOVY-861</a> for details.
+ * See <a href="https://issues.apache.org/jira/browse/GROOVY-861">GROOVY-861</a> for details.
  * The servlet init parameter name is:
  * <pre>
  * log.GROOVY861 = false(default) | true
@@ -167,7 +170,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         this.logGROOVY861 = false;
     }
 
-
     protected void generateNamePrefixOnce () {
         URI uri = null;
 
@@ -176,7 +178,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
         try {
             URL res = servletContext.getResource("/");
-            if (res != null) { uri = res.toURI();}
+            if (res != null) { uri = res.toURI(); }
         } catch (MalformedURLException ignore) {
         } catch (URISyntaxException ignore) {
         }
@@ -195,14 +197,14 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     protected String removeNamePrefix(String name) throws ResourceException {
         if (namePrefix == null) {
-          generateNamePrefixOnce();
+            generateNamePrefixOnce();
         }
         if (name.startsWith(namePrefix)) {//usualy name has text
-          return name.substring(namePrefix.length());
-        }//i else
+            return name.substring(namePrefix.length());
+        }
         return name;
     }
-    
+
     /**
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
@@ -210,8 +212,11 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         name = removeNamePrefix(name).replace('\\', '/');
 
         //remove the leading / as we are trying with a leading / now
-        if (name.startsWith("WEB-INF/groovy/")) { name = name.substring(15);//just for uniformity
-        } else if (name.startsWith("/")) { name = name.substring(1);}
+        if (name.startsWith("WEB-INF/groovy/")) {
+            name = name.substring(15);//just for uniformity
+        } else if (name.startsWith("/")) {
+            name = name.substring(1);
+        }
 
         /*
         * Try to locate the resource and return an opened connection to it.
@@ -239,7 +244,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      */
     protected String getScriptUri(HttpServletRequest request) {
         /*
-         * Log some debug information for http://jira.codehaus.org/browse/GROOVY-861
+         * Log some debug information for https://issues.apache.org/jira/browse/GROOVY-861
          */
         if (logGROOVY861) {
             log("Logging request class and its class loader:");

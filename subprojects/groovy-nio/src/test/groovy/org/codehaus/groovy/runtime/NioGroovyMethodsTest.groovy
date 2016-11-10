@@ -1,80 +1,224 @@
-/**
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.runtime
 
 import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 
 import groovy.io.FileType
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
+/**
+ * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ */
 class NioGroovyMethodsTest extends Specification {
 
-    def testPathSize() {
+    @Rule
+    TemporaryFolder temporaryFolder
 
+    def testShouldAppendByteArrayToFile() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        byte[] bytes = ' World'.bytes
+        path.append(bytes)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendStringToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        path.append(' World')
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        Reader reader = new StringReader(' World')
+        path.append(reader)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingDefaultEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        path.write('Hello')
+        Writer writer = new StringWriter()
+        writer.append(' World')
+        path.append(writer)
+
+        then:
+        path.text == 'Hello World'
+    }
+
+    def testShouldAppendStringToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        path.append(' ؁', encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        path.append(reader, encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncoding() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        String encoding = 'UTF-8'
+        path.write('؁', encoding)
+        Writer writer = new CharArrayWriter()
+        writer.append(' ')
+        writer.append('؁')
+        path.append(writer, encoding)
+
+        then:
+        path.getText(encoding) == '؁ ؁'
+    }
+
+    def testShouldAppendStringToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        path.append(' ؁', encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        path.append(reader, encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
+
+    def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncodingWithBom() {
+        when:
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        String encoding = 'UTF-16LE'
+        path.write('؁', encoding, true)
+        Writer writer = new CharArrayWriter()
+        writer.append(' ')
+        writer.append('؁')
+        path.append(writer, encoding, true)
+
+        then:
+        byte[] bytes = NioGroovyMethods.getBytes(path)
+        bytes[0] == -1 as byte
+        bytes[1] == -2 as byte
+        String string = path.getText(encoding)
+        string.substring(1, string.size()) == '؁ ؁'
+    }
+
+    def testPathSize() {
         when:
         def str = 'Hello world!'
-        Path path = Files.createTempFile('test-size', null)
-        Files.copy( new ByteArrayInputStream(str.getBytes()), path, StandardCopyOption.REPLACE_EXISTING )
+        def path = temporaryFolder.newFile().toPath()
+        Files.copy(new ByteArrayInputStream(str.getBytes()), path, StandardCopyOption.REPLACE_EXISTING)
 
         then:
         path.size() == str.size()
-
-        cleanup:
-        Files.deleteIfExists(path)
     }
 
     def testNewObjectOutputStream() {
-
         setup:
         def str = 'Hello world!'
-        Path path = Paths.get('new_obj_out_stream')
+        def path = temporaryFolder.newFile().toPath()
 
         when:
-        def out = path.newObjectOutputStream()
-        out.writeObject(str)
-        out.flush()
-        def stream = new ObjectInputStream(new FileInputStream(path.toFile()))
+        def outputStream = path.newObjectOutputStream()
+        outputStream.writeObject(str)
+        outputStream.close()
+        def inputStream = new ObjectInputStream(new FileInputStream(path.toFile()))
 
         then:
-        stream.readObject() == str
+        inputStream.readObject() == str
 
         cleanup:
-        stream.close()
-        Files.deleteIfExists(path)
+        inputStream.close()
     }
 
     def testNewObjectInputStream() {
-
         setup:
         def str = 'Hello world!'
-        def path = Paths.get('new_obj_in_stream')
-        def stream = new ObjectOutputStream(new FileOutputStream(path.toFile()))
-        stream.writeObject(str)
-        stream.close()
+        def path = temporaryFolder.newFile().toPath()
+        def outputStream = new ObjectOutputStream(new FileOutputStream(path.toFile()))
+        outputStream.writeObject(str)
+        outputStream.close()
 
         when:
-        def obj = path.newObjectInputStream()
+        def inputStream = path.newObjectInputStream()
 
         then:
-        obj.readObject() == str
+        inputStream.readObject() == str
 
         cleanup:
-        obj.close()
-        Files.deleteIfExists(path)
+        inputStream.close()
     }
 
     def testEachObject() {
-
         setup:
         def str1 = 'alpha'
         def str2 = 'beta'
         def str3 = 'delta'
-        def path = Paths.get('new_obj_in_stream')
+        def path = temporaryFolder.newFile().toPath()
         def stream = new ObjectOutputStream(new FileOutputStream(path.toFile()))
         stream.writeObject(str1)
         stream.writeObject(str2)
@@ -83,42 +227,28 @@ class NioGroovyMethodsTest extends Specification {
 
         when:
         def list = []
-        path.eachObject() { list << it }
+        path.eachObject { list << it }
 
         then:
-        list.size()==3
-        list[0]==str1
-        list[1]==str2
-        list[2]==str3
-
-        cleanup:
-        Files.deleteIfExists(path)
+        list == [str1, str2, str3]
     }
 
-    def testEachLine() {
-
+    def testReadLines() {
         setup:
-        def file = new File('test_each_file')
+        def file = temporaryFolder.newFile()
         file.text = 'alpha\nbeta\ndelta'
 
         when:
         def lines = file.toPath().readLines()
 
         then:
-        lines.size()==3
-        lines[0]=='alpha'
-        lines[1]=='beta'
-        lines[2]=='delta'
-
-        cleanup:
-        file?.delete()
+        lines == ['alpha', 'beta', 'delta']
     }
 
     def testNewReader() {
-
         setup:
-        final str = 'Hello world!'
-        def file = new File('test_new_reader')
+        def str = 'Hello world!'
+        def file = temporaryFolder.newFile()
         file.text = str
 
         when:
@@ -128,71 +258,72 @@ class NioGroovyMethodsTest extends Specification {
         then:
         line == str
         reader.readLine() == null
-
-        cleanup:
-        file?.delete()
     }
 
     def testGetBytes() {
-
         when:
-        def file = new File('test_getBytes')
+        def file = temporaryFolder.newFile()
         file.text = 'Hello world!'
-        def path = file.toPath()
 
         then:
-        path.getBytes() == 'Hello world!'.getBytes()
-
-        cleanup:
-        file?.delete()
+        file.toPath().getBytes() == 'Hello world!'.getBytes()
     }
 
     def testSetBytes() {
-
         when:
-        def file = new File('test_setBytes')
+        def file = temporaryFolder.newFile()
+        file.text = 'Hello world!'
         file.toPath().setBytes('Ciao mundo!'.getBytes())
 
         then:
         file.text == 'Ciao mundo!'
-
-        cleanup:
-        file?.delete()
     }
 
     def testSetText() {
-
         when:
-        def file = new File('test_setBytes')
+        def file = temporaryFolder.newFile()
         file.toPath().setText('Ciao mundo!')
         // invoke twice to make sure that the content is truncated by the setText method
         file.toPath().setText('Hello world!')
+
         then:
         file.text == 'Hello world!'
-
-        cleanup:
-        file?.delete()
-
     }
 
-    def testWrite( )  {
-
+    def testWrite()  {
         when:
-        String str = 'Hello there!'
-        def file = new File('test_write')
+        def str = 'Hello world!'
+        def file = temporaryFolder.newFile()
         file.toPath().write(str)
 
         then:
-        file.text == 'Hello there!'
+        file.text == 'Hello world!'
+    }
 
-        cleanup:
-        file?.delete()
+    def testWriteWithEncoding()  {
+        when:
+        def str = 'Hello world!'
+        def file = temporaryFolder.newFile()
+        file.toPath().write('Ciao mundo!')
+        file.toPath().write(str, 'UTF-8')
+
+        then:
+        file.text == str
+    }
+
+    def testWriteWithEncodingAndBom() {
+        when:
+        def str = '؁'
+        def file = temporaryFolder.newFile()
+        file.toPath().write(str, 'UTF-16LE', true)
+
+        then:
+        assert file.getBytes() == [-1, -2, 1, 6] as byte[]
     }
 
     def testAppendObject() {
-
         setup:
-        def file = new File('test_appendObject')
+        def file = temporaryFolder.newFile()
         file.text = 'alpha'
 
         when:
@@ -200,15 +331,11 @@ class NioGroovyMethodsTest extends Specification {
 
         then:
         file.text == 'alpha-gamma'
-
-        cleanup:
-        file.delete()
     }
 
     def testAppendBytes() {
-
         setup:
-        def file = new File('test_appendBytes')
+        def file = temporaryFolder.newFile()
         file.text = 'alpha'
 
         when:
@@ -216,209 +343,215 @@ class NioGroovyMethodsTest extends Specification {
 
         then:
         file.text == 'alpha-beta'
-
-        cleanup:
-        file.delete()
     }
 
     def testAppendInputStream() {
-
         setup:
-        def file = new File('test_appendStream')
+        def file = temporaryFolder.newFile()
         file.text = 'alpha'
 
         when:
-        file.toPath().append( new ByteArrayInputStream('-delta'.getBytes()) )
+        file.toPath().append(new ByteArrayInputStream('-delta'.getBytes()))
 
         then:
         file.text == 'alpha-delta'
-
-        cleanup:
-        file.delete()
     }
 
     def testLeftShift() {
         setup:
-        def file = Paths.get('test-shift')
-        Files.deleteIfExists(file)
-        when:
-        file << 'Hello '
-        file << 'world!'
-        then:
-        file.text == 'Hello world!'
-        cleanup:
-        Files.deleteIfExists(file)
+        def path = temporaryFolder.newFile().toPath()
 
+        when:
+        path << 'Hello '
+        path << 'world!'
+
+        then:
+        path.text == 'Hello world!'
     }
 
     def testEachFile() {
-
         setup:
-        def folder = Files.createTempDirectory('test')
+        def folder = temporaryFolder.newFolder('test').toPath()
         def file1 = Files.createTempFile(folder, 'file_1_', null)
         def file2 = Files.createTempFile(folder, 'file_2_', null)
         def file3 = Files.createTempFile(folder, 'file_X_', null)
-        // sub-folder with two files
         def sub1 = Files.createTempDirectory(folder, 'sub1_')
         def file4  = Files.createTempFile(sub1, 'file_4_', null)
         def file5  = Files.createTempFile(sub1, 'file_5_', null)
-        // sub-sub-folder with one file
         def sub2 = Files.createTempDirectory(sub1, 'sub2_')
         def file6  = Files.createTempFile(sub2, 'file_6_', null)
 
         when:
-        Set result = []
-        folder.eachFile() { result << it }
+        def result1 = []
+        folder.eachFile { result1 << it }
 
         then:
-        result == [file1, file2, file3, sub1] as Set
+        result1.sort() == [file1, file2, file3, sub1].sort()
 
         when:
-        Set result2 = []
+        def result2 = []
         folder.eachFile(FileType.FILES) { result2 << it }
 
         then:
-        result2 == [file1, file2, file3] as Set
+        result2.sort() == [file1, file2, file3].sort()
 
         when:
-        Set result3 = []
+        def result3 = []
         folder.eachFile(FileType.DIRECTORIES) { result3 << it }
 
         then:
-        result3 == [sub1]  as Set
+        result3 == [sub1]
 
         when:
-        Set result4 = []
+        def result4 = []
         folder.eachFileMatch(FileType.FILES, ~/file_\d_.*/) { result4 << it }
 
         then:
-        result4 == [file1, file2] as Set
+        result4.sort() == [file1, file2].sort()
 
         when:
-        Set result5 = []
+        def result5 = []
         folder.eachFileMatch(FileType.DIRECTORIES, ~/sub\d_.*/) { result5 << it }
 
         then:
-        result5 == [sub1] as Set
+        result5 == [sub1]
 
         when:
-        Set result6 = []
+        def result6 = []
         folder.eachFileRecurse(FileType.FILES) { result6 << it }
 
         then:
-        result6 == [file1, file2, file3, file4, file5, file6] as Set
+        result6.sort() == [file1, file2, file3, file4, file5, file6].sort()
 
         when:
-        Set result7 = []
+        def result7 = []
         folder.eachFileRecurse(FileType.DIRECTORIES) { result7 << it }
 
         then:
-        result7 == [sub1, sub2] as Set
-
-        cleanup:
-        folder?.toFile()?.deleteDir()
+        result7.sort() == [sub1, sub2].sort()
     }
 
     def testEachDir() {
-
         setup:
-        def folder = Files.createTempDirectory('test')
+        def folder = temporaryFolder.newFolder('test').toPath()
         def sub1 = Files.createTempDirectory(folder, 'sub_1_')
         def sub2 = Files.createTempDirectory(folder, 'sub_2_')
         def sub3 = Files.createTempDirectory(folder, 'sub_X_')
         def sub4 = Files.createTempDirectory(sub2, 'sub_2_4_')
         def sub5 = Files.createTempDirectory(sub2, 'sub_2_5_')
-        def file1 = Files.createTempFile(folder, 'file1', null)
-        def file2 = Files.createTempFile(folder, 'file2', null)
+        Files.createTempFile(folder, 'file1', null)
+        Files.createTempFile(folder, 'file2', null)
 
-        // test *eachDir*
         when:
-        def result = []
-        folder.eachDir { result << it }
+        def result1 = []
+        folder.eachDir { result1 << it }
 
         then:
-        result as Set == [ sub1, sub2, sub3 ] as Set
+        result1.sort() == [sub1, sub2, sub3].sort()
 
-        // test *eachMatchDir*
         when:
         def result2 = []
-        folder.eachDirMatch( ~/sub_\d_.*+/ ) { result2 << it }
+        folder.eachDirMatch(~/sub_\d_.*+/) { result2 << it }
 
         then:
-        result2 as Set == [ sub1, sub2 ] as Set
+        result2.sort() == [sub1, sub2].sort()
 
         when:
         def result3 = []
         folder.eachDirRecurse { result3 << it }
 
         then:
-        result3 as Set == [ sub1, sub2, sub4, sub5, sub3 ] as Set
-
-        cleanup:
-        folder?.deleteDir()
+        result3.sort() == [sub1, sub2, sub3, sub4, sub5].sort()
     }
 
-
     def testAppendUTF16LE() {
-
         setup:
-        final temp = Files.createTempDirectory('utf-test')
-        final path = temp.resolve('path_UTF-16LE.txt')
-        final file = new File( temp.toFile(), 'file_UTF-LE.txt')
-        final HELLO = 'Hello world!'
+        def path = temporaryFolder.newFile().toPath()
+        Files.delete(path)
+        def file = temporaryFolder.newFile()
+        file.delete()
+        def str = 'Hello world!'
 
         // save using a File, thus uses ResourcesGroovyMethods
         when:
-        file.append( HELLO, 'UTF-16LE' )
+        file.append(str, 'UTF-16LE')
+
         then:
-        file.getText('UTF-16LE') == HELLO
+        file.getText('UTF-16LE') == str
 
         // now test append method using the Path
         when:
-        path.append('Hello ', 'UTF-16LE')
-        path.append('world!', 'UTF-16LE')
+        path.append(str, 'UTF-16LE')
+
         then:
-        path.getText('UTF-16LE') == HELLO
-        file.toPath().getText('UTF-16LE') == HELLO
+        path.getText('UTF-16LE') == str
+        file.toPath().getText('UTF-16LE') == str
 
         // append the content of a reader, thus using the 'appendBuffered' version
         when:
-        path.append( new StringReader(' - Hola Mundo!'), 'UTF-16LE' )
+        path.append(new StringReader(' - Hola Mundo!'), 'UTF-16LE')
+
         then:
         path.getText('UTF-16LE') == 'Hello world! - Hola Mundo!'
+    }
 
-        cleanup:
-        temp.toFile().deleteDir()
+    def testWriteUTF16LE() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
 
+        when:
+        path.write(str, 'UTF-16LE')
+
+        then:
+        path.getText('UTF-16LE') == str
+    }
+
+    def testWriteUTF16LEWithBom() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
+
+        when:
+        path.write(str, 'UTF-16LE', true)
+
+        then:
+        assert NioGroovyMethods.getBytes(path) == [-1, -2, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33, 0] as byte[]
     }
 
     def testWriteUTF16BE() {
-
         setup:
-        final temp = Files.createTempDirectory('utf-test')
-        final path = temp.resolve('path_UTF-16BE.txt')
-        final HELLO = 'Hello world!'
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
 
         when:
-        path.write(HELLO, 'UTF-16BE')
+        path.write(str, 'UTF-16BE')
+
         then:
-        path.getText('UTF-16BE') == HELLO
+        path.getText('UTF-16BE') == str
+    }
 
-        cleanup:
-        temp.toFile().deleteDir()
+    def testWriteUTF16BEWithBom() {
+        setup:
+        def path = temporaryFolder.newFile().toPath()
+        def str = 'Hello world!'
 
+        when:
+        path.write(str, 'UTF-16BE', true)
+
+        then:
+        assert NioGroovyMethods.getBytes(path) == [-2, -1, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33] as byte[]
     }
 
     def testWithCloseable() {
-
         setup:
-        final closeable = new DummyCloseable()
+        def closeable = new DummyCloseable()
 
         when:
         def closeableParam = null
         def result = closeable.withCloseable {
             closeableParam = it
-            return 123
+            123
         }
 
         then:
@@ -427,10 +560,26 @@ class NioGroovyMethodsTest extends Specification {
         closeable.closed
     }
 
-    def testWithCloseableAndException() {
-
+    def testWithAutoCloseable() {
         setup:
-        final closeable = new ExceptionDummyCloseable()
+            def closeable = new DummyAutoCloseable()
+
+        when:
+            def closeableParam = null
+            def result = closeable.withAutoCloseable {
+                closeableParam = it
+                123
+            }
+
+        then:
+            closeableParam == closeable
+            result == 123
+            closeable.closed
+    }
+
+    def testWithCloseableAndException() {
+        setup:
+        def closeable = new ExceptionDummyCloseable()
 
         when:
         closeable.close()
@@ -441,17 +590,26 @@ class NioGroovyMethodsTest extends Specification {
 }
 
 class DummyCloseable implements Closeable {
-    boolean closed = false;
+    boolean closed = false
 
     @Override
     void close() throws IOException {
-        closed = true;
+        closed = true
+    }
+}
+
+class DummyAutoCloseable implements AutoCloseable {
+    boolean closed = false
+
+    @Override
+    void close() throws IOException {
+        closed = true
     }
 }
 
 class ExceptionDummyCloseable implements Closeable {
     @Override
     void close() throws IOException {
-        throw new IOException("boom badaboom")
+        throw new IOException('boom badaboom')
     }
 }

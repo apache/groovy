@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package groovy
 
 class ArrayTest extends GroovyTestCase {
@@ -440,5 +458,51 @@ class ArrayTest extends GroovyTestCase {
         doSomething(l)
         assert l[0]==1
         assert l[1]==5
+    }
+
+    void testJoin() {
+        def a1 = [false, true] as boolean[]
+        def a2 = [1 as byte, 2 as byte] as byte[]
+        def a3 = ["a".charAt(0), "b".charAt(0)] as char[]
+        def a4 = [1 as double, 2 as double] as double[]
+        def a5 = [1 as float, 2 as float] as float[]
+        def a6 = [1 as int, 2 as int] as int[]
+        def a7 = [1 as long, 2 as long] as long[]
+        def a8 = [1 as short, 2 as short] as short[]
+
+        assert "false, true" == a1.join(", ")
+        assert "1, 2" == a2.join(", ")
+        assert "a, b" == a3.join(", ")
+        assert "1.0, 2.0" == a4.join(", ")
+        assert "1.0, 2.0" == a5.join(", ")
+        assert "1, 2" == a6.join(", ")
+        assert "1, 2" == a7.join(", ")
+        assert "1, 2" == a8.join(", ")
+    }
+
+    void testSum() {
+        def a1 = [1, 2, 3] as byte[]
+        def a2 = [1, 2, 3] as short[]
+        def a3 = [1, 2, 3] as int[]
+        def a4 = [1, 2, 3] as long[]
+        def a5 = [1, 2, 3] as char[]
+        def a6 = [1, 2, 3] as float[]
+        def a7 = [1, 2, 3] as double[]
+
+        assert ((byte) 6) == a1.sum()
+        assert ((short) 6) == a2.sum()
+        assert ((int) 6) == a3.sum()
+        assert ((long) 6) == a4.sum()
+        assert ((char) 6) == a5.sum()
+        assert ((float) 6) == a6.sum()
+        assert ((double) 6) == a7.sum()
+
+        assert ((byte) 10) == a1.sum((byte) 4)
+        assert ((short) 10) == a2.sum((short) 4)
+        assert ((int) 10) == a3.sum(4)
+        assert ((long) 10) == a4.sum(4)
+        assert ((char) 10) == a5.sum((char) 4)
+        assert ((float) 10) == a6.sum(4)
+        assert ((double) 10) == a7.sum(4)
     }
 }

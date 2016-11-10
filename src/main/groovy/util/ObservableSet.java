@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package groovy.util;
 
 import groovy.lang.Closure;
@@ -59,9 +61,9 @@ import java.util.*;
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableSet<E> implements Set<E> {
-    private Set<E> delegate;
-    private PropertyChangeSupport pcs;
-    private Closure test;
+    private final Set<E> delegate;
+    private final PropertyChangeSupport pcs;
+    private final Closure test;
 
     public static final String SIZE_PROPERTY = "size";
     public static final String CONTENT_PROPERTY = "content";
@@ -234,7 +236,7 @@ public class ObservableSet<E> implements Set<E> {
                     values.add(element);
                 }
             }
-            if (values.size() > 0) {
+            if (!values.isEmpty()) {
                 fireMultiElementAddedEvent(values);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -249,6 +251,10 @@ public class ObservableSet<E> implements Set<E> {
         }
 
         List values = new ArrayList();
+        // GROOVY-7822 use Set for O(1) performance for contains
+        if (!(c instanceof Set)) {
+            c = new HashSet<Object>(c);
+        }
         for (Object element : delegate) {
             if (!c.contains(element)) {
                 values.add(element);
@@ -299,7 +305,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     protected class ObservableIterator<E> implements Iterator<E> {
-        private Iterator<E> iterDelegate;
+        private final Iterator<E> iterDelegate;
         private final Stack<E> stack = new Stack<E>();
 
         public ObservableIterator(Iterator<E> iterDelegate) {
@@ -368,7 +374,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class ElementClearedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.CLEARED);
@@ -383,7 +389,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_ADD);
@@ -398,7 +404,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_REMOVE);

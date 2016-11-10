@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.vmplugin.v5;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -45,6 +47,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -58,7 +61,7 @@ import java.util.List;
  * @author Jochen Theodorou
  */
 public class Java5 implements VMPlugin {
-    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
 
     public void setAdditionalClassInformation(ClassNode cn) {
@@ -81,15 +84,16 @@ public class Java5 implements VMPlugin {
     }
 
     private GenericsType configureTypeVariableDefinition(TypeVariable tv) {
-        ClassNode base = configureTypeVariableReference(tv);
+        return configureTypeVariableDefinition(configureTypeVariableReference(tv.getName()), configureTypes(tv.getBounds()));
+    }
+
+    public static GenericsType configureTypeVariableDefinition(ClassNode base, ClassNode[] cBounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
-        Type[] tBounds = tv.getBounds();
         GenericsType gt;
-        if (tBounds.length == 0) {
+        if (cBounds == null || cBounds.length == 0) {
             gt = new GenericsType(base);
         } else {
-            ClassNode[] cBounds = configureTypes(tBounds);
             gt = new GenericsType(base, cBounds, null);
             gt.setName(base.getName());
             gt.setPlaceholder(true);
@@ -115,7 +119,7 @@ public class Java5 implements VMPlugin {
         } else if (type instanceof GenericArrayType) {
             return configureGenericArray((GenericArrayType) type);
         } else if (type instanceof TypeVariable) {
-            return configureTypeVariableReference((TypeVariable) type);
+            return configureTypeVariableReference(((TypeVariable) type).getName());
         } else if (type instanceof Class) {
             return configureClass((Class) type);
         } else if (type==null) {
@@ -125,7 +129,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private ClassNode configureClass(Class c) {
+    private static ClassNode configureClass(Class c) {
         if (c.isPrimitive()) {
             return ClassHelper.make(c);
         } else {
@@ -165,10 +169,10 @@ public class Java5 implements VMPlugin {
         return base;
     }
 
-    private ClassNode configureTypeVariableReference(TypeVariable tv) {
-        ClassNode cn = ClassHelper.makeWithoutCaching(tv.getName());
+    public static ClassNode configureTypeVariableReference(String name) {
+        ClassNode cn = ClassHelper.makeWithoutCaching(name);
         cn.setGenericsPlaceHolder(true);
-        ClassNode cn2 = ClassHelper.makeWithoutCaching(tv.getName());
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
         cn2.setGenericsPlaceHolder(true);
         GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
         cn.setGenericsTypes(gts);
@@ -207,18 +211,16 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
+    public static void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
-        if (!type.isResolved()) return;
-        Class clazz = type.getTypeClass();
-        if (clazz == Retention.class) {
+        if ("java.lang.annotation.Retention".equals(type.getName())) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
             PropertyExpression pe = (PropertyExpression) exp;
             String name = pe.getPropertyAsString();
             RetentionPolicy policy = RetentionPolicy.valueOf(name);
             setRetentionPolicy(policy, root);
-        } else if (clazz == Target.class) {
+        } else if ("java.lang.annotation.Target".equals(type.getName())) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
             ListExpression le = (ListExpression) exp;
@@ -300,7 +302,7 @@ public class Java5 implements VMPlugin {
         return null;
     }
 
-    private void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
+    private static void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
         switch (value) {
             case RUNTIME:
                 node.setRuntimeRetention(true);
@@ -316,7 +318,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private int getElementCode(ElementType value) {
+    private static int getElementCode(ElementType value) {
         switch (value) {
             case TYPE:
                 return AnnotationNode.TYPE_TARGET;
@@ -334,12 +336,15 @@ public class Java5 implements VMPlugin {
                 return AnnotationNode.ANNOTATION_TARGET;
             case PACKAGE:
                 return AnnotationNode.PACKAGE_TARGET;
-            default:
-                throw new GroovyBugError("unsupported Target " + value);
+        }
+        if ("MODULE".equals(value.name())) {
+            return AnnotationNode.TYPE_TARGET;
+        } else {
+            throw new GroovyBugError("unsupported Target " + value);
         }
     }
 
-    private void setMethodDefaultValue(MethodNode mn, Method m) {
+    private static void setMethodDefaultValue(MethodNode mn, Method m) {
         Object defaultValue = m.getDefaultValue();
         ConstantExpression cExp = ConstantExpression.NULL;
         if (defaultValue!=null) cExp = new ConstantExpression(defaultValue);
@@ -387,6 +392,8 @@ public class Java5 implements VMPlugin {
             }
         } catch (NoClassDefFoundError e) {
             throw new NoClassDefFoundError("Unable to load class "+classNode.toString(false)+" due to missing dependency "+e.getMessage());
+        } catch (MalformedParameterizedTypeException e) {
+            throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
         }
     }
 
@@ -452,5 +459,20 @@ public class Java5 implements VMPlugin {
     }
 
     public void invalidateCallSites() {}
+
+    @Override
+    public Object getInvokeSpecialHandle(Method m, Object receiver){
+        throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 wot private access to Lookup");
+    }
+
+    @Override
+    public int getVersion() {
+        return 5;
+    }
+
+    @Override
+    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
+        throw new GroovyBugError("invokeHandle requires at least JDK 7");
+    }
 }
 

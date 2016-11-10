@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm;
 
@@ -33,8 +36,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class OperandStack {
 
-    private WriterController controller;
-    private ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
+    private final WriterController controller;
+    private final ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
 
     public OperandStack(WriterController wc) {
         this.controller = wc;        
@@ -73,7 +76,7 @@ public class OperandStack {
     /**
      * returns true for long and double
      */
-    private boolean isTwoSlotType(ClassNode type) {
+    private static boolean isTwoSlotType(ClassNode type) {
         return type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE;
     }
 
@@ -119,7 +122,7 @@ public class OperandStack {
      * convert primitive (not boolean) to boolean or byte.
      * type needs to be a primitive type (not checked) 
      */
-    private void primitive2b(MethodVisitor mv, ClassNode type) {
+    private static void primitive2b(MethodVisitor mv, ClassNode type) {
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         // for the various types we make first a 
@@ -333,14 +336,12 @@ public class OperandStack {
                 return;
             }
             box();
-        } else if (primTop) {
-            // top is primitive, target is not
-            // so box and do groovy cast
-            controller.getInvocationWriter().castToNonPrimitiveIfNecessary(top, targetType);
         } else if (primTarget) {
             // top is not primitive so unbox
             // leave that BH#doCast later
         } else {
+            // top might be primitive, target is not
+            // so let invocation writer box if needed and do groovy cast otherwise
             controller.getInvocationWriter().castToNonPrimitiveIfNecessary(top, targetType);
         }
 
@@ -504,12 +505,13 @@ public class OperandStack {
         if (boxing) box(); 
     }
 
-    private void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
+    private static void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
         boolean isInt = ClassHelper.int_TYPE.equals(type);
         boolean isShort = ClassHelper.short_TYPE.equals(type);
         boolean isByte = ClassHelper.byte_TYPE.equals(type);
-        if (isInt || isShort || isByte) {
-            int val = isInt?(Integer)value:isShort?(Short)value:(Byte)value;
+        boolean isChar = ClassHelper.char_TYPE.equals(type);
+        if (isInt || isShort || isByte || isChar) {
+            int val = isInt?(Integer)value:isShort?(Short)value:isChar?(Character)value:(Byte)value;
             switch (val) {
                 case 0:
                     mv.visitInsn(ICONST_0);

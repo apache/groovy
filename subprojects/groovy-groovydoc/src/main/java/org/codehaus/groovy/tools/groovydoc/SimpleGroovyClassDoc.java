@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
 
@@ -250,7 +253,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         result.add(this);
         Set<GroovyClassDoc> next = new HashSet<GroovyClassDoc>();
         next.addAll(Arrays.asList(this.interfaces()));
-        while (next.size() > 0) {
+        while (!next.isEmpty()) {
             Set<GroovyClassDoc> temp = next;
             next = new HashSet<GroovyClassDoc>();
             for (GroovyClassDoc t : temp) {
@@ -282,7 +285,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private Class getClassOf(String next) {
         try {
-            return Class.forName(next.replace("/", "."));
+            return Class.forName(next.replace("/", "."), false, getClass().getClassLoader());
         } catch (Throwable t) {
             return null;
         }
@@ -606,7 +609,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private Class resolveFromJavaLang(String name) {
         try {
-            return Class.forName("java.lang." + name);
+            return Class.forName("java.lang." + name, false, getClass().getClassLoader());
         } catch (NoClassDefFoundError e) {
             // ignore
         } catch (ClassNotFoundException e) {
@@ -647,7 +650,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (candidate != null) {
                 try {
                     // TODO cache these??
-                    return Class.forName(candidate);
+                    return Class.forName(candidate, false, getClass().getClassLoader());
                 } catch (NoClassDefFoundError e) {
                     // ignore
                 } catch (ClassNotFoundException e) {
@@ -662,7 +665,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         String candidate = name.replace('/', '.');
         try {
             // TODO cache these??
-            return Class.forName(candidate);
+            return Class.forName(candidate, false, getClass().getClassLoader());
         } catch (NoClassDefFoundError e) {
             // ignore
         } catch (ClassNotFoundException e) {
@@ -913,7 +916,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             while (matcher.find()) {
                 String tagName = matcher.group(1);
                 String tagBody = matcher.group(2);
-                String encodedBody = encodeAngleBrackets(tagBody);
+                String encodedBody = Matcher.quoteReplacement(encodeAngleBrackets(tagBody));
                 String replacement = "{@" + tagName + " " + encodedBody + "}";
                 matcher.appendReplacement(sb, replacement);
             }

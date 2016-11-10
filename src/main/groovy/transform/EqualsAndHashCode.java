@@ -1,17 +1,20 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.transform;
 
@@ -26,7 +29,7 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in creating appropriate {@code equals()} and {@code hashCode()} methods.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.EqualsAndHashCode
  * {@code @EqualsAndHashCode}
  * class Person {
@@ -80,7 +83,8 @@ import java.lang.annotation.Target;
  * to be used in limited cases where its purpose is for overriding implementation details rather than
  * creating a derived type with different behavior. This is useful when using JPA Proxies for example or
  * as shown in the following examples:
- * <pre>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.*
  * {@code @Canonical} class IntPair { int x, y }
  * def p1 = new IntPair(1, 2)
  *
@@ -156,7 +160,7 @@ import java.lang.annotation.Target;
  * </pre>
  * There is also support for including or excluding fields/properties by name when constructing
  * the equals and hashCode methods as shown here:
- * <pre>
+ * <pre class="groovyTestCase">
  * import groovy.transform.*
  * {@code @EqualsAndHashCode}(excludes="z")
  * {@code @TupleConstructor}
@@ -169,7 +173,7 @@ import java.lang.annotation.Target;
  *
  * {@code @EqualsAndHashCode}(excludes=["y", "z"])
  * {@code @TupleConstructor}
- * public class Point2D {
+ * public class Point1D {
  *     int x, y, z
  * }
  *
@@ -189,6 +193,31 @@ import java.lang.annotation.Target;
  * infinite recursion but the algorithm used may not suit your scenario, so use with caution if
  * you have such structures.
  * A future version of this transform may better handle some additional recursive scenarios.
+ * <p>More examples:</p>
+ * <pre class="groovyTestCase">
+ * import groovy.transform.EqualsAndHashCode
+ *
+ * &#64;EqualsAndHashCode(includeFields=true)
+ * class User {
+ *     String name
+ *     boolean active
+ *     List likes
+ *     private int age = 37
+ * }
+ *
+ * def user = new User(name: 'mrhaki', active: false, likes: ['Groovy', 'Java'])
+ * def mrhaki = new User(name: 'mrhaki', likes: ['Groovy', 'Java'])
+ * def hubert = new User(name: 'Hubert Klein Ikkink', likes: ['Groovy', 'Java'])
+ *
+ * assert user == mrhaki
+ * assert mrhaki != hubert
+ *
+ * Set users = new HashSet()
+ * users.add user
+ * users.add mrhaki
+ * users.add hubert
+ * assert users.size() == 2
+ * </pre>
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
  * @author Paul King
@@ -210,8 +239,11 @@ public @interface EqualsAndHashCode {
      * List of field and/or property names to include within the equals and hashCode calculations.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
+     * The default value is a special marker value indicating that no includes are defined; all fields
+     * and/or properties are included if 'includes' remains undefined and 'excludes' is explicitly or
+     * implicitly an empty list.
      */
-    String[] includes() default {};
+    String[] includes() default {Undefined.STRING};
 
     /**
      * Whether to cache hashCode calculations. You should only set this to true if
@@ -233,4 +265,12 @@ public @interface EqualsAndHashCode {
      * Generate a canEqual method to be used by equals.
      */
     boolean useCanEqual() default true;
+
+    /**
+     * Whether to include all fields and/or properties in equals and hashCode calculations, including those
+     * with names that are considered internal.
+     *
+     * @since 2.5.0
+     */
+    boolean allNames() default false;
 }

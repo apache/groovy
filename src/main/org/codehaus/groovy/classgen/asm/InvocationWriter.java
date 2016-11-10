@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen.asm;
 
@@ -30,6 +33,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
@@ -45,6 +49,7 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethod", true, false);
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
+    public static final MethodCaller castToVargsArray = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
     private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE,"name")});
 
     // type conversions
@@ -58,7 +63,7 @@ public class InvocationWriter {
     // constructor calls with this() and super()
     static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
-    private WriterController controller;
+    private final WriterController controller;
     
     public InvocationWriter(WriterController wc) {
         this.controller = wc;
@@ -146,25 +151,46 @@ public class InvocationWriter {
                 argumentsToRemove++;
             } else {
                 mv.visitIntInsn(ALOAD,0);
+                operandStack.push(classNode);
+                argumentsToRemove++;
             }
         }
 
         int stackSize = operandStack.getStackLength();
-        loadArguments(args.getExpressions(), target.getParameters());
-
 
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):target.getDeclaringClass();
-        if (opcode==INVOKEVIRTUAL
-                && target.isPublic()
-                && (!Modifier.isPublic(declaringClass.getModifiers())
-                && !receiverType.equals(declaringClass))
-                && receiverType.isDerivedFrom(declaringClass)
-                && !receiverType.getPackageName().equals(classNode.getPackageName())) {
-            // package private class, public method
-            // see GROOVY-6962
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):declaringClass;
+        if (opcode == INVOKEVIRTUAL && ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
+            // avoid using a narrowed type if the method is defined on object because it can interfere
+            // with delegate type inference in static compilation mode and trigger a ClassCastException
+            receiverType = declaringClass;
         }
+        if (opcode == INVOKEVIRTUAL) {
+            if (!receiverType.equals(declaringClass)
+                    && !ClassHelper.OBJECT_TYPE.equals(declaringClass)
+                    && !receiverType.isArray()
+                    && !receiverType.isInterface()
+                    && !ClassHelper.isPrimitiveType(receiverType) // e.g int.getClass()
+                    && receiverType.isDerivedFrom(declaringClass)) {
+
+                owner = BytecodeHelper.getClassInternalName(receiverType);
+                ClassNode top = operandStack.getTopOperand();
+                if (!receiverType.equals(top)) {
+                    mv.visitTypeInsn(CHECKCAST, owner);
+                }
+            } else if (target.isPublic()
+                    && (!Modifier.isPublic(declaringClass.getModifiers())
+                    && !receiverType.equals(declaringClass))
+                    && receiverType.isDerivedFrom(declaringClass)
+                    && !receiverType.getPackageName().equals(classNode.getPackageName())) {
+                // package private class, public method
+                // see GROOVY-6962
+                owner = BytecodeHelper.getClassInternalName(receiverType);
+            }
+        }
+
+        loadArguments(args.getExpressions(), target.getParameters());
+
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
         mv.visitMethodInsn(opcode, owner, methodName, desc, opcode == INVOKEINTERFACE);
         ClassNode ret = target.getReturnType().redirect();
@@ -307,6 +333,11 @@ public class InvocationWriter {
             ConstantExpression.NULL.visit(acg);
         } else {
             sender.visit(acg);
+        }
+
+        String methodName = getMethodName(message);
+        if (adapter == invokeMethodOnSuper && methodName != null) {
+            controller.getSuperMethodNames().add(methodName);
         }
         
         // receiver
@@ -606,7 +637,7 @@ public class InvocationWriter {
         }
     }
 
-    private List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
+    private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
         List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
         Comparator comp = new Comparator() {
@@ -661,7 +692,6 @@ public class InvocationWriter {
     private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-
         call.getArguments().visit(controller.getAcg());
         // keep Object[] on stack
         mv.visitInsn(DUP);
@@ -732,23 +762,31 @@ public class InvocationWriter {
 
             ConstructorNode cn = constructorIt.next();
             String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+
             // unwrap the Object[] and make transformations if needed
             // that means, to duplicate the Object[], make a cast with possible
             // unboxing and then swap it with the Object[] for each parameter
+            // vargs need special attention and transformation though
             Parameter[] parameters = cn.getParameters();
-            for (int p = 0; p < parameters.length; p++) {
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                mv.visitInsn(DUP);
-                BytecodeHelper.pushConstant(mv, p);
-                mv.visitInsn(AALOAD);
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                ClassNode type = parameters[p].getType();
-                operandStack.doGroovyCast(type);
-                operandStack.swap();
-                operandStack.remove(2);
+            int lengthWithoutVargs = parameters.length;
+            if (parameters.length>0 && parameters[parameters.length-1].getType().isArray()) {
+                lengthWithoutVargs--;
             }
-            // at the end we remove the Object[]
-            mv.visitInsn(POP);
+            for (int p = 0; p < lengthWithoutVargs; p++) {
+                loadAndCastElement(operandStack, mv, parameters, p);
+            }
+            if (parameters.length>lengthWithoutVargs) {
+                ClassNode type = parameters[lengthWithoutVargs].getType();
+                BytecodeHelper.pushConstant(mv, lengthWithoutVargs);
+                controller.getAcg().visitClassExpression(new ClassExpression(type));
+                operandStack.remove(1);
+                castToVargsArray.call(mv);
+                BytecodeHelper.doCast(mv, type);
+            } else {
+                // at the end we remove the Object[]
+                // the vargs case simply the last swap so no pop is needed
+                mv.visitInsn(POP);
+            }
             // make the constructor call
             mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
             mv.visitJumpInsn(GOTO, afterSwitch);
@@ -776,6 +814,18 @@ public class InvocationWriter {
             operandStack.push(callNode); // for call result
         }
         mv.visitInsn(POP);
+    }
+
+    private static void loadAndCastElement(OperandStack operandStack, MethodVisitor mv, Parameter[] parameters, int p) {
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        mv.visitInsn(DUP);
+        BytecodeHelper.pushConstant(mv, p);
+        mv.visitInsn(AALOAD);
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        ClassNode type = parameters[p].getType();
+        operandStack.doGroovyCast(type);
+        operandStack.swap();
+        operandStack.remove(2);
     }
 
     // we match only on the number of arguments, not anything else

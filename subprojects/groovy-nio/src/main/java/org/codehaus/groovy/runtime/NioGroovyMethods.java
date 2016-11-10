@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.runtime;
 
 import static java.nio.file.StandardOpenOption.APPEND;
@@ -24,6 +26,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
@@ -36,7 +39,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.io.Closeable;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -48,6 +50,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import groovy.io.FileType;
@@ -57,7 +60,9 @@ import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -108,6 +113,8 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
 
+    private static final Logger LOG = Logger.getLogger(NioGroovyMethods.class.getName());
+
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Path</code>.
      *
@@ -128,7 +135,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static ObjectOutputStream newObjectOutputStream(Path self) throws IOException {
-        return new ObjectOutputStream( Files.newOutputStream(self) );
+        return new ObjectOutputStream(Files.newOutputStream(self));
     }
 
     /**
@@ -143,7 +150,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T withObjectOutputStream(Path self, @ClosureParams(value=SimpleType.class, options="java.io.ObjectOutputStream") Closure<T> closure) throws IOException {
+    public static <T> T withObjectOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectOutputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectOutputStream(self), closure);
     }
 
@@ -156,7 +163,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static ObjectInputStream newObjectInputStream(Path self) throws IOException {
-        return new ObjectInputStream( Files.newInputStream(self) );
+        return new ObjectInputStream(Files.newInputStream(self));
     }
 
     /**
@@ -169,7 +176,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static ObjectInputStream newObjectInputStream(Path self, final ClassLoader classLoader) throws IOException {
-        return IOGroovyMethods.newObjectInputStream( Files.newInputStream(self), classLoader );
+        return IOGroovyMethods.newObjectInputStream(Files.newInputStream(self), classLoader);
     }
 
     /**
@@ -197,7 +204,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T withObjectInputStream(Path path, @ClosureParams(value=SimpleType.class, options="java.io.ObjectInputStream") Closure<T> closure) throws IOException {
+    public static <T> T withObjectInputStream(Path path, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectInputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectInputStream(path), closure);
     }
 
@@ -213,7 +220,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T withObjectInputStream(Path self, ClassLoader classLoader, @ClosureParams(value=SimpleType.class, options="java.io.ObjectInputStream") Closure<T> closure) throws IOException {
+    public static <T> T withObjectInputStream(Path self, ClassLoader classLoader, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectInputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectInputStream(self, classLoader), closure);
     }
 
@@ -229,7 +236,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(Path, int, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T eachLine(Path self, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Path self, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(self, 1, closure);
     }
 
@@ -246,7 +253,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(Path, String, int, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T eachLine(Path self, String charset, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Path self, String charset, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(self, charset, 1, closure);
     }
 
@@ -263,7 +270,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T eachLine(Path self, int firstLine, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Path self, int firstLine, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
         return IOGroovyMethods.eachLine(newReader(self), firstLine, closure);
     }
 
@@ -281,7 +288,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T eachLine(Path self, String charset, int firstLine, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Path self, String charset, int firstLine, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
         return IOGroovyMethods.eachLine(newReader(self, charset), firstLine, closure);
     }
 
@@ -302,7 +309,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T splitEachLine(Path self, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Path self, String regex, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
     }
 
@@ -321,7 +328,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T splitEachLine(Path self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Path self, Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -343,7 +350,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T splitEachLine(Path self, String regex, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Path self, String regex, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -363,7 +370,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T splitEachLine(Path self, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Path self, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -429,7 +436,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static byte[] getBytes(Path self) throws IOException {
-        return IOGroovyMethods.getBytes( Files.newInputStream(self) );
+        return IOGroovyMethods.getBytes(Files.newInputStream(self));
     }
 
     /**
@@ -441,11 +448,11 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void setBytes(Path self, byte[] bytes) throws IOException {
-        IOGroovyMethods.setBytes( Files.newOutputStream(self), bytes);
+        IOGroovyMethods.setBytes(Files.newOutputStream(self), bytes);
     }
 
     /**
-     * Write the text to the Path.
+     * Write the text to the Path without writing a BOM .
      *
      * @param self a Path
      * @param text the text to write to the Path
@@ -453,18 +460,23 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void write(Path self, String text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new OutputStreamWriter(Files.newOutputStream(self), Charset.defaultCharset());
-            writer.write(text);
-            writer.flush();
+        write(self, text, false);
+    }
 
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+    /**
+     * Write the text to the Path.  If the default charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param self     a Path
+     * @param text     the text to write to the Path
+     * @param writeBom whether to write the BOM
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(Path self, String text, boolean writeBom) throws IOException {
+        write(self, text, Charset.defaultCharset().name(), writeBom);
     }
 
     /**
@@ -545,7 +557,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write the text to the Path, using the specified encoding.
+     * Write the text to the Path without writing a BOM, using the specified encoding.
      *
      * @param self    a Path
      * @param text    the text to write to the Path
@@ -554,9 +566,30 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void write(Path self, String text, String charset) throws IOException {
+        write(self, text, charset, false);
+    }
+
+    /**
+     * Write the text to the Path, using the specified encoding.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param self     a Path
+     * @param text     the text to write to the Path
+     * @param charset  the charset used
+     * @param writeBom whether to write a BOM
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void write(Path self, String text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.forName(charset));
+            OutputStream out = Files.newOutputStream(self);
+            if (writeBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+            }
+            writer = new OutputStreamWriter(out, Charset.forName(charset));
             writer.write(text);
             writer.flush();
 
@@ -569,7 +602,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the Path.
+     * Append the text at the end of the Path without writing a BOM.
      *
      * @param self a Path
      * @param text the text to append at the end of the Path
@@ -577,22 +610,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path self, Object text) throws IOException {
-        Writer writer = null;
-        try {
-            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+        append(self, text, Charset.defaultCharset().name(), false);
     }
 
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text supplied by the Writer at the end of the File without
+     * writing a BOM.
      *
      * @param file a Path
      * @param reader the Reader supplying the text to append at the end of the File
@@ -600,11 +623,11 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path file, Reader reader) throws IOException {
-        appendBuffered(file, reader);
+        append(file, reader, Charset.defaultCharset().name());
     }
 
     /**
-     * Append the text supplied by the Writer at the end of the File.
+     * Append the text supplied by the Writer at the end of the File without writing a BOM.
      *
      * @param file a File
      * @param writer the Writer supplying the text to append at the end of the File
@@ -612,26 +635,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path file, Writer writer) throws IOException {
-        appendBuffered(file, writer);
-    }
-
-    private static void appendBuffered(Path file, Object text) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
+        append(file, writer, Charset.defaultCharset().name());
     }
 
     /**
-     * Append bytes to the end of a Path.
+     * Append bytes to the end of a Path.  It <strong>will not</strong> be
+     * interpreted as text.
      *
      * @param self  a Path
      * @param bytes the byte array to append to the end of the Path
@@ -672,7 +681,24 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append the text at the end of the Path, using a specified encoding.
+     * Append the text at the end of the Path.  If the default charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias) and
+     * <code>writeBom</code> is <code>true</code>, the requisite byte order
+     * mark is written to the file before the text.
+     *
+     * @param self    a Path
+     * @param text    the text to append at the end of the Path
+     * @param writeBom whether to write the BOM
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path self, Object text, boolean writeBom) throws IOException {
+        append(self, text, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text at the end of the Path without writing a BOM, using a specified
+     * encoding.
      *
      * @param self    a Path
      * @param text    the text to append at the end of the Path
@@ -681,10 +707,33 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path self, Object text, String charset) throws IOException {
+        append(self, text, charset, false);
+    }
+
+    /**
+     * Append the text at the end of the Path, using a specified encoding.  If
+     * the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param self     a Path
+     * @param text     the text to append at the end of the Path
+     * @param charset  the charset used
+     * @param writeBom whether to write the BOM
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path self, Object text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
+            Charset resolvedCharset = Charset.forName(charset);
+            boolean shouldWriteBom = writeBom && !self.toFile().exists();
             OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
-            writer = new OutputStreamWriter(out, Charset.forName(charset));
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, resolvedCharset);
+            }
+            writer = new OutputStreamWriter(out, resolvedCharset);
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -698,6 +747,24 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @param writeBom whether to write the BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path file, Writer writer, boolean writeBom) throws IOException {
+        append(file, writer, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File without writing a BOM,
+     * using a specified encoding.
      *
      * @param file a File
      * @param writer the Writer supplying the text to append at the end of the File
@@ -706,11 +773,47 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path file, Writer writer, String charset) throws IOException {
-        appendBuffered(file, writer, charset);
+        appendBuffered(file, writer, charset, false);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write the BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path file, Writer writer, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, writer, charset, writeBom);
     }
 
     /**
      * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @param writeBom whether to write the BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path file, Reader reader, boolean writeBom) throws IOException {
+        appendBuffered(file, reader, Charset.defaultCharset().name(), writeBom);
+    }
+
+    /**
+     * Append the text supplied by the Reader at the end of the File without writing
+     * a BOM, using a specified encoding.
      *
      * @param file a File
      * @param reader the Reader supplying the text to append at the end of the File
@@ -719,13 +822,35 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path file, Reader reader, String charset) throws IOException {
-        appendBuffered(file, reader, charset);
+        append(file, reader, charset, false);
     }
 
-    private static void appendBuffered(Path file, Object text, String charset) throws IOException {
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already
+     * exist, the requisite byte order mark is written to the file before the
+     * text is appended.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @param writeBom whether to write the BOM
+     * @throws IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static void append(Path file, Reader reader, String charset, boolean writeBom) throws IOException {
+        appendBuffered(file, reader, charset, writeBom);
+    }
+
+    private static void appendBuffered(Path file, Object text, String charset, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
+            boolean shouldWriteBom = writeBom && !file.toFile().exists();
             writer = newWriter(file, charset, true);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+            }
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -765,12 +890,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @since 2.3.0
      */
-    public static void eachFile(final Path self, final FileType fileType, @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") final Closure closure) throws IOException {
+    public static void eachFile(final Path self, final FileType fileType, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
             //throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
 
         // TODO GroovyDoc doesn't parse this file as our java.g doesn't handle this JDK7 syntax
-        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             for (Path path : stream) {
                 if (fileType == FileType.ANY ||
                         (fileType != FileType.FILES && Files.isDirectory(path)) ||
@@ -807,7 +932,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachDir(Path self, @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
+    public static void eachDir(Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
         eachFile(self, FileType.DIRECTORIES, closure);
     }
 
@@ -824,10 +949,10 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @since 2.3.0
      */
-    public static void eachFileRecurse(final Path self, final FileType fileType, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
+    public static void eachFileRecurse(final Path self, final FileType fileType, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
             // throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
-        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             for (Path path : stream) {
                 if (Files.isDirectory(path)) {
                     if (fileType != FileType.FILES) closure.call(path);
@@ -895,7 +1020,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.io.FileType
      * @since 2.3.0
      */
-    public static void traverse(final Path self, final Map<String, Object> options, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure)
+    public static void traverse(final Path self, final Map<String, Object> options, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure)
             throws IOException {
             // throws FileNotFoundException, IllegalArgumentException {
         Number maxDepthNumber = DefaultGroovyMethods.asType(options.remove("maxDepth"), Number.class);
@@ -974,7 +1099,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #traverse(Path, java.util.Map, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void traverse(final Path self, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure)
+    public static void traverse(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure)
             throws IOException {
         traverse(self, new HashMap<String, Object>(), closure);
     }
@@ -998,7 +1123,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         traverse(self, options, visit);
     }
 
-    private static FileVisitResult traverse(final Path self, final Map<String, Object> options, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure, final int maxDepth)
+    private static FileVisitResult traverse(final Path self, final Map<String, Object> options, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure, final int maxDepth)
             throws IOException {
         checkDir(self);
         final Closure pre = (Closure) options.get("preDir");
@@ -1010,11 +1135,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         final Object excludeNameFilter = options.get("excludeNameFilter");
         final Closure sort = (Closure) options.get("sort");
 
-        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
-
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             final Iterator<Path> itr = stream.iterator();
             List<Path> files = new LinkedList<Path>();
-            while(itr.hasNext()) { files.add(itr.next()); }
+            while (itr.hasNext()) {
+                files.add(itr.next());
+            }
 
             if (sort != null) files = DefaultGroovyMethods.sort(files, sort);
 
@@ -1070,7 +1196,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachFileRecurse(Path self, @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
+    public static void eachFileRecurse(Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
         eachFileRecurse(self, FileType.ANY, closure);
     }
 
@@ -1086,7 +1212,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachDirRecurse(final Path self, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException { //throws FileNotFoundException, IllegalArgumentException {
+    public static void eachDirRecurse(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException { //throws FileNotFoundException, IllegalArgumentException {
         eachFileRecurse(self, FileType.DIRECTORIES, closure);
     }
 
@@ -1118,17 +1244,16 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @since 2.3.0
      */
-    public static void eachFileMatch(final Path self, final FileType fileType, final Object nameFilter, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException {
+    public static void eachFileMatch(final Path self, final FileType fileType, final Object nameFilter, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
             // throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
-        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             Iterator<Path> itr = stream.iterator();
             BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
-            while ( itr.hasNext() ) {
+            while (itr.hasNext()) {
                 Path currentPath = itr.next();
                 if ((fileType != FileType.FILES && Files.isDirectory(currentPath)) ||
-                        (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath)))
-                {
+                        (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
                     if (bmi.invoke(nameFilter, currentPath.getFileName().toString()))
                         closure.call(currentPath);
                 }
@@ -1150,7 +1275,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachFileMatch(final Path self, final Object nameFilter, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException {
+    public static void eachFileMatch(final Path self, final Object nameFilter, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
             // throws FileNotFoundException, IllegalArgumentException {
         eachFileMatch(self, FileType.ANY, nameFilter, closure);
     }
@@ -1169,7 +1294,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachDirMatch(final Path self, final Object nameFilter, final @ClosureParams(value=SimpleType.class, options="java.nio.file.Path") Closure closure) throws IOException {  // throws FileNotFoundException, IllegalArgumentException {
+    public static void eachDirMatch(final Path self, final Object nameFilter, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {  // throws FileNotFoundException, IllegalArgumentException {
         eachFileMatch(self, FileType.DIRECTORIES, nameFilter, closure);
     }
 
@@ -1196,8 +1321,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             return false;
 
         // delete contained files
-        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
-
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             for (Path path : stream) {
                 if (Files.isDirectory(path)) {
                     if (!deleteDir(path)) {
@@ -1211,8 +1335,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             // now delete directory itself
             Files.delete(self);
             return true;
-        }
-        catch( IOException e ) {
+        } catch (IOException e) {
             return false;
         }
     }
@@ -1230,7 +1353,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             Files.move(self, Paths.get(newPathName));
             return true;
-        } catch(IOException e) {
+        } catch (IOException e) {
             return false;
         }
     }
@@ -1248,7 +1371,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             Files.move(self, Paths.get(newPathName));
             return true;
-        } catch(IOException e) {
+        } catch (IOException e) {
             return false;
         }
     }
@@ -1332,14 +1455,15 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withReader(Path self, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.Reader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(self), closure);
     }
 
     /**
      * Create a new BufferedReader for this file using the specified charset and then
      * passes it into the closure, ensuring the reader is closed after the
-     * closure returns.
+     * closure returns.  The writer will use the given charset encoding,
+     * but will not write a BOM.
      *
      * @param self    a file object
      * @param charset the charset for this input stream
@@ -1348,7 +1472,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withReader(Path self, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.Reader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(self, charset), closure);
     }
 
@@ -1361,7 +1485,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static BufferedOutputStream newOutputStream(Path self) throws IOException {
-        return new BufferedOutputStream( Files.newOutputStream(self) );
+        return new BufferedOutputStream(Files.newOutputStream(self));
     }
 
     /**
@@ -1387,7 +1511,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Object withOutputStream(Path self, @ClosureParams(value=SimpleType.class, options="java.io.OutputStream") Closure closure) throws IOException {
+    public static Object withOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.OutputStream") Closure closure) throws IOException {
         return IOGroovyMethods.withStream(newOutputStream(self), closure);
     }
 
@@ -1402,7 +1526,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Object withInputStream(Path self, @ClosureParams(value=SimpleType.class, options="java.io.InputStream") Closure closure) throws IOException {
+    public static Object withInputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.InputStream") Closure closure) throws IOException {
         return IOGroovyMethods.withStream(newInputStream(self), closure);
     }
 
@@ -1417,7 +1541,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T withDataOutputStream(Path self, @ClosureParams(value=SimpleType.class, options="java.io.DataOutputStream") Closure<T> closure) throws IOException {
+    public static <T> T withDataOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.DataOutputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newDataOutputStream(self), closure);
     }
 
@@ -1432,7 +1556,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static <T> T withDataInputStream(Path self, @ClosureParams(value=SimpleType.class, options="java.io.DataInputStream") Closure<T> closure) throws IOException {
+    public static <T> T withDataInputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.DataInputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newDataInputStream(self), closure);
     }
 
@@ -1459,16 +1583,14 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static BufferedWriter newWriter(Path self, boolean append) throws IOException {
-        if( append ) {
+        if (append) {
             return Files.newBufferedWriter(self, Charset.defaultCharset(), CREATE, APPEND);
         }
         return Files.newBufferedWriter(self, Charset.defaultCharset());
     }
 
     /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
+     * Helper method to create a buffered writer for a file without writing a BOM.
      *
      * @param self    a Path
      * @param charset the name of the encoding used to write in this file
@@ -1478,14 +1600,42 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static BufferedWriter newWriter(Path self, String charset, boolean append) throws IOException {
-        if (append) {
-            return Files.newBufferedWriter(self, Charset.forName(charset), CREATE, APPEND);
-        }
-        return Files.newBufferedWriter(self, Charset.forName(charset) );
+        return newWriter(self, charset, append, false);
     }
 
     /**
-     * Creates a buffered writer for this file, writing data using the given
+     * Helper method to create a buffered writer for a file.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias), the
+     * requisite byte order mark is written to the stream before the writer
+     * is returned.
+     *
+     * @param self     a Path
+     * @param charset  the name of the encoding used to write in this file
+     * @param append   true if in append mode
+     * @param writeBom whether to write a BOM
+     * @return a BufferedWriter
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static BufferedWriter newWriter(Path self, String charset, boolean append, boolean writeBom) throws IOException {
+        boolean shouldWriteBom = writeBom && !self.toFile().exists();
+        if (append) {
+            BufferedWriter writer = Files.newBufferedWriter(self, Charset.forName(charset), CREATE, APPEND);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+            }
+            return writer;
+        } else {
+            OutputStream out = Files.newOutputStream(self);
+            if (shouldWriteBom) {
+                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+            }
+            return new BufferedWriter(new OutputStreamWriter(out, Charset.forName(charset)));
+        }
+    }
+
+    /**
+     * Creates a buffered writer for this file without writing a BOM, writing data using the given
      * encoding.
      *
      * @param self    a Path
@@ -1501,6 +1651,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new BufferedWriter for this file, passes it to the closure, and
      * ensures the stream is flushed and closed after the closure returns.
+     * The writer will not write a BOM.
      *
      * @param self    a Path
      * @param closure a closure
@@ -1508,14 +1659,14 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriter(Path self, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
-        return IOGroovyMethods.withWriter(newWriter(self), closure);
+    public static <T> T withWriter(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return withWriter(self, Charset.defaultCharset().name(), closure);
     }
 
     /**
      * Creates a new BufferedWriter for this file, passes it to the closure, and
      * ensures the stream is flushed and closed after the closure returns.
-     * The writer will use the given charset encoding.
+     * The writer will use the given charset encoding, but will not write a BOM.
      *
      * @param self    a Path
      * @param charset the charset used
@@ -1524,14 +1675,35 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriter(Path self, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
-        return IOGroovyMethods.withWriter(newWriter(self, charset), closure);
+    public static <T> T withWriter(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return withWriter(self, charset, false, closure);
+    }
+
+    /**
+     * Creates a new BufferedWriter for this file, passes it to the closure, and
+     * ensures the stream is flushed and closed after the closure returns.
+     * The writer will use the given charset encoding.  If the given charset is
+     * "UTF-16BE" or "UTF-16LE" (or an equivalent alias), <code>writeBom</code>
+     * is <code>true</code>, and the file doesn't already exist, the requisite
+     * byte order mark is written to the stream when the writer is created.
+     *
+     * @param self    a Path
+     * @param charset the charset used
+     * @param writeBom whether to write the BOM
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static <T> T withWriter(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(newWriter(self, charset, false, writeBom), closure);
     }
 
     /**
      * Create a new BufferedWriter which will append to this
      * file.  The writer is passed to the closure and will be closed before
-     * this method returns.
+     * this method returns.  The writer will use the given charset encoding,
+     * but will not write a BOM.
      *
      * @param self    a Path
      * @param charset the charset used
@@ -1540,13 +1712,34 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriterAppend(Path self, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
-        return IOGroovyMethods.withWriter(newWriter(self, charset, true), closure);
+    public static <T> T withWriterAppend(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return withWriterAppend(self, charset, false, closure);
+    }
+
+    /**
+     * Create a new BufferedWriter which will append to this
+     * file.  The writer is passed to the closure and will be closed before
+     * this method returns.  The writer will use the given charset encoding.
+     * If the given charset is "UTF-16BE" or "UTF-16LE" (or an equivalent alias),
+     * <code>writeBom</code> is <code>true</code>, and the file doesn't already exist,
+     * the requisite byte order mark is written to the stream when the writer is created.
+     *
+     * @param self    a Path
+     * @param charset the charset used
+     * @param writeBom whether to write the BOM
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 2.5.0
+     */
+    public static <T> T withWriterAppend(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(newWriter(self, charset, true, writeBom), closure);
     }
 
     /**
      * Create a new BufferedWriter for this file in append mode.  The writer
      * is passed to the closure and is closed after the closure returns.
+     * The writer will not write a BOM.
      *
      * @param self    a Path
      * @param closure a closure
@@ -1554,8 +1747,8 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriterAppend(Path self, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
-        return IOGroovyMethods.withWriter(newWriter(self, true), closure);
+    public static <T> T withWriterAppend(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+        return withWriterAppend(self, Charset.defaultCharset().name(), closure);
     }
 
     /**
@@ -1595,7 +1788,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withPrintWriter(Path self, @ClosureParams(value=SimpleType.class, options="java.io.PrintWriter") Closure<T> closure) throws IOException {
+    public static <T> T withPrintWriter(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.PrintWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newPrintWriter(self), closure);
     }
 
@@ -1611,7 +1804,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withPrintWriter(Path self, String charset, @ClosureParams(value=SimpleType.class, options="java.io.PrintWriter") Closure<T> closure) throws IOException {
+    public static <T> T withPrintWriter(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.PrintWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newPrintWriter(self, charset), closure);
     }
 
@@ -1624,7 +1817,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static BufferedInputStream newInputStream(Path self) throws IOException { // throws FileNotFoundException {
-        return new BufferedInputStream( Files.newInputStream(self) );
+        return new BufferedInputStream(Files.newInputStream(self));
     }
 
     /**
@@ -1636,7 +1829,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static DataInputStream newDataInputStream(Path self) throws IOException { // throws FileNotFoundException {
-        return new DataInputStream( Files.newInputStream(self) );
+        return new DataInputStream(Files.newInputStream(self));
     }
 
     /**
@@ -1648,7 +1841,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachByte(Path self, @ClosureParams(value=SimpleType.class, options="byte") Closure closure) throws IOException {
+    public static void eachByte(Path self, @ClosureParams(value = SimpleType.class, options = "byte") Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
         IOGroovyMethods.eachByte(is, closure);
     }
@@ -1663,7 +1856,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, int, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachByte(Path self, int bufferLen, @ClosureParams(value=FromString.class, options="byte[],Integer") Closure closure) throws IOException {
+    public static void eachByte(Path self, int bufferLen, @ClosureParams(value = FromString.class, options = "byte[],Integer") Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
         IOGroovyMethods.eachByte(is, bufferLen, closure);
     }
@@ -1680,7 +1873,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Writable filterLine(Path self, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
+    public static Writable filterLine(Path self, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
         return IOGroovyMethods.filterLine(newReader(self), closure);
     }
 
@@ -1697,7 +1890,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Writable filterLine(Path self, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
+    public static Writable filterLine(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
         return IOGroovyMethods.filterLine(newReader(self, charset), closure);
     }
 
@@ -1713,7 +1906,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void filterLine(Path self, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String")  Closure closure) throws IOException {
+    public static void filterLine(Path self, Writer writer, @ClosureParams(value = SimpleType.class, options = "java.lang.String")  Closure closure) throws IOException {
         IOGroovyMethods.filterLine(newReader(self), writer, closure);
     }
 
@@ -1730,7 +1923,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void filterLine(Path self, Writer writer, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
+    public static void filterLine(Path self, Writer writer, String charset, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
         IOGroovyMethods.filterLine(newReader(self, charset), writer, closure);
     }
 
@@ -1752,7 +1945,48 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     @Deprecated
-    public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
+    public static <T> T withCloseable(Closeable self, @ClosureParams(value = SimpleType.class, options = "java.io.Closeable") Closure<T> action) throws IOException {
         return IOGroovyMethods.withCloseable(self, action);
     }
+
+    /**
+     * Allows this autocloseable to be used within the closure, ensuring that it
+     * is closed once the closure has been executed and before this method returns.
+     *
+     * @param self the AutoCloseable
+     * @param action the closure taking the AutoCloseable as parameter
+     * @return the value returned by the closure
+     * @throws Exception if an Exception occurs.
+     * @since 2.5.0
+     */
+    public static <T, U extends AutoCloseable> T withAutoCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
+        try {
+            T result = action.call(self);
+
+            AutoCloseable temp = self;
+            self = null;
+            temp.close();
+
+            return result;
+        } finally {
+            closeWithWarning(self);
+        }
+    }
+
+    /**
+     * Close the AutoCloseable. Logging a warning if any problems occur.
+     *
+     * @param c the thing to close
+     */
+    public static void closeWithWarning(AutoCloseable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (Exception e) {
+                LOG.warning("Caught exception during close(): " + e);
+            }
+        }
+    }
+
+
 }

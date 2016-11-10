@@ -1,22 +1,23 @@
 /*
- * Copyright 2007-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
@@ -73,7 +74,7 @@ public class GroovyDocTool {
         }
     }
 
-    public void add(List<String> filenames) throws RecognitionException, TokenStreamException, IOException {
+    public void add(List<String> filenames) throws IOException {
         if (templateEngine != null) {
             // only print out if we are being used for template generation
             log.debug("Loading source files for " + filenames);
@@ -101,7 +102,7 @@ public class GroovyDocTool {
         }
     }
 
-    String getPath(String filename) {
+    static String getPath(String filename) {
         String path = new File(filename).getParent();
         // path length of 1 indicates that probably is 'default package' i.e. "/"
         if (path == null || (path.length() == 1 && !Character.isJavaIdentifierStart(path.charAt(0)))) {
@@ -110,7 +111,7 @@ public class GroovyDocTool {
         return path;
     }
 
-    String getFile(String filename) {
+    static String getFile(String filename) {
         return new File(filename).getName();
     }
 

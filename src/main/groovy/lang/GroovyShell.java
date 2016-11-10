@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.lang;
 
@@ -41,15 +44,14 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Paul King
- * @version $Revision$
  */
 public class GroovyShell extends GroovyObjectSupport {
 
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
 
-    private Binding context;
+    private final Binding context;
     private int counter;
-    private CompilerConfiguration config;
+    private final CompilerConfiguration config;
     private GroovyClassLoader loader;
 
     public static void main(String[] args) {
@@ -243,23 +245,39 @@ public class GroovyShell extends GroovyObjectSupport {
      * }
      */
     private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {
+        // Always set the "args" property, regardless of what path we take in the code.
+        // Bad enough to have side effects but worse if their behavior is wonky.
+        context.setProperty("args", args);
+
         if (scriptClass == null) {
             return null;
         }
+
+        //TODO: This logic mostly duplicates InvokerHelper.createScript.  They should probably be unified.
+
         if (Script.class.isAssignableFrom(scriptClass)) {
             // treat it just like a script if it is one
-            Script script  = null;
             try {
-                script = (Script) scriptClass.newInstance();
+                Constructor constructor = scriptClass.getConstructor(Binding.class);
+                Script script = (Script) constructor.newInstance(context);
+                return script.run();
             } catch (InstantiationException e) {
                 // ignore instantiation errors,, try to do main
             } catch (IllegalAccessException e) {
                // ignore instantiation errors, try to do main
-            }
-            if (script != null) {
-                script.setBinding(context);
-                script.setProperty("args", args);
-                return script.run();
+            } catch (NoSuchMethodException e) {
+                try {
+                    // Fallback for non-standard "Scripts" that don't have contextual constructor.
+                    Script script = (Script) scriptClass.newInstance();
+                    script.setBinding(context);
+                    return script.run();
+                } catch (InstantiationException e1) {
+                    // ignore instantiation errors, try to do main
+                } catch (IllegalAccessException e1) {
+                    // ignore instantiation errors, try to do main
+                }
+            } catch (InvocationTargetException e) {
+                // ignore instantiation errors, try to do main
             }
         }
         try {
@@ -306,7 +324,7 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
-    private Object runRunnable(Class scriptClass, String[] args) {
+    private static Object runRunnable(Class scriptClass, String[] args) {
         Constructor constructor = null;
         Runnable runnable = null;
         Throwable reason = null;
@@ -351,7 +369,7 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private Object runJUnit3Test(Class scriptClass) {
+    private static Object runJUnit3Test(Class scriptClass) {
         try {
             Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite", new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
@@ -368,7 +386,7 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private Object runJUnit3TestSuite(Class scriptClass) {
+    private static Object runJUnit3TestSuite(Class scriptClass) {
         try {
             Object testSuite = InvokerHelper.invokeStaticMethod(scriptClass, "suite", new Object[]{});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
@@ -388,7 +406,7 @@ public class GroovyShell extends GroovyObjectSupport {
 
     /**
      * Utility method to check through reflection if the class appears to be a
-     * JUnit 3.8.x test, i.e.&nsbp;checks if it extends JUnit 3.8.x's TestCase.
+     * JUnit 3.8.x test, i.e. checks if it extends JUnit 3.8.x's TestCase.
      *
      * @param scriptClass the class we want to check
      * @return true if the class appears to be a test
@@ -415,7 +433,7 @@ public class GroovyShell extends GroovyObjectSupport {
 
      /**
      * Utility method to check through reflection if the class appears to be a
-     * JUnit 3.8.x test suite, i.e.&nsbp;checks if it extends JUnit 3.8.x's TestSuite.
+     * JUnit 3.8.x test suite, i.e. checks if it extends JUnit 3.8.x's TestSuite.
      *
      * @param scriptClass the class we want to check
      * @return true if the class appears to be a test
@@ -442,18 +460,12 @@ public class GroovyShell extends GroovyObjectSupport {
 
     /**
      * Utility method to check via reflection if the parsed class appears to be a JUnit4
-     * test, i.e.&nsbp;checks whether it appears to be using the relevant JUnit 4 annotations.
+     * test, i.e. checks whether it appears to be using the relevant JUnit 4 annotations.
      *
      * @param scriptClass the class we want to check
      * @return true if the class appears to be a test
      */
     private boolean isJUnit4Test(Class scriptClass) {
-        // if we are running under Java 1.4 don't bother trying to check
-        char version = System.getProperty("java.version").charAt(2);
-        if (version < '5') {
-            return false;
-        }
-
         // check if there are appropriate class or method annotations
         // that suggest we have a JUnit 4 test
         boolean isTest = false;
@@ -534,7 +546,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, new String[list.size()]);
+        return run(in, fileName, (String[]) list.toArray(new String[list.size()]));
     }
 
     /**
@@ -570,7 +582,6 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
-        script.setBinding(context);
         return script.run();
     }
 
@@ -649,7 +660,6 @@ public class GroovyShell extends GroovyObjectSupport {
         Script script = null;
         try {
             script = parse(in, fileName);
-            script.setBinding(context);
             return script.run();
         } finally {
             if (script != null) {

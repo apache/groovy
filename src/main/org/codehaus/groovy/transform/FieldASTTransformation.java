@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import groovy.lang.Lazy;
@@ -23,6 +25,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -38,6 +41,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
@@ -45,6 +49,13 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles transformation for the @Field annotation.
@@ -96,6 +107,10 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
+            String setterName = "set" + MetaClassHelper.capitalize(variableName);
+            cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
+                    stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
+            ));
 
             // GROOVY-4833 : annotations that are not Groovy transforms should be transferred to the generated field
             // GROOVY-6112 : also copy acceptable Groovy transforms
@@ -103,7 +118,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             for (AnnotationNode annotation : annotations) {
                 // GROOVY-6337 HACK: in case newly created field is @Lazy
                 if (annotation.getClassNode().equals(LAZY_TYPE)) {
-                    LazyASTTransformation.visitField(annotation, fieldNode);
+                    LazyASTTransformation.visitField(this, annotation, fieldNode);
                 }
                 final ClassNode annotationClassNode = annotation.getClassNode();
                 if (notTransform(annotationClassNode) || acceptableTransform(annotation)) {
@@ -120,7 +135,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         }
     }
 
-    private boolean acceptableTransform(AnnotationNode annotation) {
+    private static boolean acceptableTransform(AnnotationNode annotation) {
         // TODO also check for phase after sourceUnit.getPhase()? but will be ignored anyway?
         // TODO we should only copy those annotations with FIELD_TARGET but haven't visited annotations
         // and gathered target info at this phase, so we can't do this:
@@ -129,7 +144,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         return !annotation.getClassNode().equals(MY_TYPE);
     }
 
-    private boolean notTransform(ClassNode annotationClassNode) {
+    private static boolean notTransform(ClassNode annotationClassNode) {
         return annotationClassNode.getAnnotations(ASTTRANSFORMCLASS_TYPE).isEmpty();
     }
 

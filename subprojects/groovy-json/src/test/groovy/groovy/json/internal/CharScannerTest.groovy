@@ -1,21 +1,22 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package groovy.json.internal
-
-import static Chr.chars
 
 class CharScannerTest extends GroovyTestCase {
 
@@ -60,7 +61,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseIntMax() {
-
         int i = 0
         i = CharScanner.parseInt(("" + Integer.MAX_VALUE).toCharArray())
         assert i == Integer.MAX_VALUE
@@ -85,7 +85,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseDouble() {
-
         String str = "123456789"
         double num =
             CharScanner.parseJsonNumber(str.toCharArray(), 0, str.length()).doubleValue()
@@ -93,7 +92,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseDoubleNegative() {
-
         String str = "-1.23456789E8"
         double num =
             (Double) CharScanner.parseJsonNumber(str.toCharArray(), 0, str.length())
@@ -227,7 +225,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseLong() {
-
         String str = "12345678910"
         long l1 = CharScanner.parseLongFromTo(str.toCharArray(), 0, str.length())
         assert l1 == 12345678910L
@@ -245,405 +242,44 @@ class CharScannerTest extends GroovyTestCase {
         assert l1 == 12345678910L
     }
 
-    void testAutoSplitThisEndsInSpace() {
+    void testParseIntFromTo() {
+        String str = "123456789"
+        int i = CharScanner.parseIntFromTo(str.toCharArray(), 0, str.length())
+        assert i == 123456789
 
-        def letters = chars("This is a string ")
-        def splitted = CharScanner.split(letters, ' ' as char)
+        str = "abc-123456789"
+        i = CharScanner.parseIntFromTo(str.toCharArray(), 3, str.length())
+        assert i == -123456789
 
-        assertEquals(
-                4,
-                splitted.length
-        )
+        str = "abcdefghijklmnopqrstuvwxyz56789"
+        i = CharScanner.parseIntFromTo(str.toCharArray(), 26, str.length())
+        assert i == 56789
 
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
+        str = "abcdefghijklmnopqrstuvwxyz-6789mymilkshakemakestheboysintheyard"
+        i = CharScanner.parseIntFromTo(str.toCharArray(), 26, 31)
+        assert i == -6789
     }
 
-    void testAutoSplitThis() {
-
-        def letters =
-            chars("This is a string")
-
-        def splitted = CharScanner.split(letters, ' ' as char)
-
-        assertEquals(
-                4,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testAutoSplitThisStartSpace() {
-        def letters =
-            chars(" This is a string")
-
-        def splitted = CharScanner.split(letters, ' ' as char)
-
-        assertEquals(
-                5,
-                splitted.length
-        )
-
-        assertEquals(
-                0,
-                splitted[0].length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[4] as char[]
-        )
-
-        assertArrayEquals(
-                [chars(""), chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testAutoSplitThisByTabOrSpace() {
-
-        def letters =
-            chars("This\tis a string")
-        def splitted = CharScanner.splitByChars(letters, '\t' as char, ' ' as char)
-
-        assertEquals(
-                4,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testAutoSplitThis3DoubleSpaceAfterA() {
-
-        def letters =
-            chars("This is a  string")
-
-
-        def splitted = CharScanner.split(letters, ' ' as char)
-
-        assertEquals(
-                5,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertEquals(
-                0,
-                splitted[3].length
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[4] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars(""), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testSplitThisEndsInSpace() {
-
-        def letters =
-            chars("This is a string ")
-
-        def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
-
-        assertEquals(
-                4,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testSplitThis() {
-
-        def letters =
-            chars("This is a string")
-
-        def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
-
-        assertEquals(
-                4,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testSplitThisStartSpace() {
-        def letters =
-            chars(" This is a string")
-
-        def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
-
-        assertEquals(
-                5,
-                splitted.length
-        )
-
-        assertEquals(
-                0,
-                splitted[0].length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[4] as char[]
-        )
-
-        assertArrayEquals(
-                [chars(""), chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testSplitThisByTabOrSpace() {
-        def letters =
-            chars("This\tis a string")
-
-        def splitted = CharScanner.splitExact(letters, 10, '\t' as char, ' ' as char)
-
-        assertEquals(
-                4,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[3] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars("string")] as char[][],
-                splitted
-        )
-    }
-
-    void testSplitThis3DoubleSpaceAfterA() {
-        def letters =
-            chars("This is a  string")
-
-        def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
-
-        assertEquals(
-                5,
-                splitted.length
-        )
-
-        assertArrayEquals(
-                chars("This"),
-                splitted[0] as char[]
-        )
-
-        assertArrayEquals(
-                chars("is"),
-                splitted[1] as char[]
-        )
-
-        assertArrayEquals(
-                chars("a"),
-                splitted[2] as char[]
-        )
-
-        assertEquals(
-                0,
-                splitted[3].length
-        )
-
-        assertArrayEquals(
-                chars("string"),
-                splitted[4] as char[]
-        )
-
-        assertArrayEquals(
-                [chars("This"), chars("is"), chars("a"), chars(""), chars("string")] as char[][],
-                splitted
-        )
+    void testParseJsonNumberToDecimal() {
+        def num = CharScanner.parseJsonNumber('123.40'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == 123.40G
+        assert num.scale() == 2
+
+        num = CharScanner.parseJsonNumber('-123.400'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == -123.400G
+        assert num.scale() == 3
+
+        num = CharScanner.parseJsonNumber('3.7e-5'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == 0.000037G
+        assert num.scale() == 6
+
+        num = CharScanner.parseJsonNumber('-1.25E+7'.toCharArray())
+        assert num instanceof BigDecimal
+        assert num == -12500000.0G
+        assert num.scale() == -5
     }
 
     protected assertArrayEquals(char[] expected, char[] actual) {

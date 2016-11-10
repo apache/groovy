@@ -1,22 +1,23 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.ast;
 
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import groovy.lang.*;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -27,6 +28,8 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -69,7 +72,8 @@ public class ClassHelper {
         MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
         PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
         SCRIPT_TYPE = makeCached(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
-        
+        BINDING_TYPE = makeCached(Binding.class),
+
         boolean_TYPE = makeCached(boolean.class),     char_TYPE = makeCached(char.class),
         byte_TYPE = makeCached(byte.class),           int_TYPE = makeCached(int.class),
         long_TYPE = makeCached(long.class),           short_TYPE = makeCached(short.class),
@@ -85,25 +89,19 @@ public class ClassHelper {
         void_WRAPPER_TYPE = makeCached(Void.class),   METACLASS_TYPE = makeCached(MetaClass.class),
         Iterator_TYPE = makeCached(Iterator.class),
 
+        Enum_Type = makeWithoutCaching(Enum.class),
+        Annotation_TYPE = makeCached(Annotation.class),
+        ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
+
         // uncached constants.
         CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),        
         GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
         GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
         GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
-        GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
-        
-        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
-        Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
-        ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type)
+        GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class)
         ;
-        
-        
-    static {
-        Enum_Type.isPrimaryNode = false;
-        Annotation_TYPE.isPrimaryNode = false;
-    }
     
-    private static ClassNode[] types = new ClassNode[] {
+    private static final ClassNode[] types = new ClassNode[] {
         OBJECT_TYPE,
         boolean_TYPE, char_TYPE, byte_TYPE, short_TYPE,
         int_TYPE, long_TYPE, double_TYPE, float_TYPE,

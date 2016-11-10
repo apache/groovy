@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package gls.annotations
 
@@ -41,13 +44,13 @@ class AnnotationTest extends CompilableTestSupport {
         """
     }
 
-    void testCannotAnnotateAnotationDefinitionIfTargetIsNotOfType() {
+    void testCannotAnnotateAnnotationDefinitionIfTargetIsNotOfTypeOrAnnotationType() {
         shouldNotCompile """
             import java.lang.annotation.*
             import static java.lang.annotation.ElementType.*
 
-            // all target elements except ANNOTATION_TYPE
-            @Target([CONSTRUCTOR, METHOD, FIELD, LOCAL_VARIABLE, PACKAGE, PARAMETER, TYPE])
+            // all target elements except ANNOTATION_TYPE and TYPE
+            @Target([CONSTRUCTOR, METHOD, FIELD, LOCAL_VARIABLE, PACKAGE, PARAMETER])
             @interface MyAnnotation { }
 
             @MyAnnotation
@@ -121,11 +124,21 @@ class AnnotationTest extends CompilableTestSupport {
     }
 
     void testArrayDefault() {
-        shouldNotCompile """
-            @interface X {
-                String[] x() default "1" // must be list
+        // GROOVY-4811
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface Temp {
+                String[] bar() default '1' // coerced to list as per Java but must be correct type
             }
-        """
+
+            @Temp
+            class Bar {}
+
+            assert Bar.getAnnotation(Temp).bar() == ['1']
+        '''
 
         shouldNotCompile """
             @interface X {
@@ -629,8 +642,11 @@ class AnnotationTest extends CompilableTestSupport {
                 double d4() default 2.3 as double
             }
             @Foo method() {}
-            assert getClass().getMethod('method').getAnnotation(Foo).toString()[5..-2].tokenize(', ').sort().join('|') ==
-                    'b=6|c1=A|c2=B|c3=C|c4=D|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0|f2=1.1|f3=1.2|f4=1.3|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5'
+            def string = getClass().getMethod('method').getAnnotation(Foo).toString()[5..-2].tokenize(', ').sort().join('|')
+            assert string == 'b=6|c1=A|c2=B|c3=C|c4=D|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0|f2=1.1|f3=1.2|f4=1.3|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5' ||
+                    // changed in some jdk9 versions
+                   string == "b=6|c1='A'|c2='B'|c3='C'|c4='D'|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0f|f2=1.1f|f3=1.2f|f4=1.3f|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5"
+
         '''
     }
 
@@ -646,5 +662,41 @@ class AnnotationTest extends CompilableTestSupport {
             }
             assert GroovyEnum.class.getField('BAD').isAnnotationPresent(XmlEnumValue)
         '''
+    }
+
+    // GROOVY-7151
+    void testAnnotateAnnotationDefinitionWithAnnotationWithTypeTarget() {
+        shouldCompile codeWithMetaAnnotationWithTarget("TYPE")
+    }
+
+    void testAnnotateAnnotationDefinitionWithAnnotationWithAnnotationTypeTarget() {
+        shouldCompile codeWithMetaAnnotationWithTarget("ANNOTATION_TYPE")
+    }
+
+    // GROOVY-7806
+    void testNewlinesAllowedBeforeBlock() {
+        shouldCompile '''
+            @interface ANNOTATION_A
+            {
+            }
+        '''
+    }
+
+    //Parametrized tests in Spock would allow to make it much more readable
+    private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
+        """
+            import java.lang.annotation.*
+            import static java.lang.annotation.RetentionPolicy.*
+            import static java.lang.annotation.ElementType.*
+
+            @Retention(RUNTIME)
+            @Target(${targetElementTypeName})
+            @interface Import {}
+
+            @Retention(RUNTIME)
+            @Target([FIELD])
+            @Import
+            @interface EnableFeature { }
+        """
     }
 }

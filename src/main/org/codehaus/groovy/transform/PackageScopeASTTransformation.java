@@ -1,19 +1,21 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import groovy.transform.PackageScope;
@@ -36,7 +38,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -68,7 +70,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         Expression value = node.getMember("value");
         if (parent instanceof ClassNode) {
             List<groovy.transform.PackageScopeTarget> targets;
-            if (value == null) targets = Arrays.asList(legacyMode ? PackageScopeTarget.FIELDS: PackageScopeTarget.CLASS);
+            if (value == null) targets = Collections.singletonList(legacyMode ? PackageScopeTarget.FIELDS : PackageScopeTarget.CLASS);
             else targets = determineTargets(value);
             visitClassNode((ClassNode) parent, targets);
             parent.getAnnotations();
@@ -132,7 +134,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void visitFieldNode(FieldNode fNode) {
+    private static void visitFieldNode(FieldNode fNode) {
         final ClassNode cNode = fNode.getDeclaringClass();
         final List<PropertyNode> pList = cNode.getProperties();
         PropertyNode foundProp = null;
@@ -148,19 +150,19 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void revertVisibility(FieldNode fNode) {
+    private static void revertVisibility(FieldNode fNode) {
         fNode.setModifiers(fNode.getModifiers() & ~ACC_PRIVATE);
     }
 
-    private void revertVisibility(MethodNode mNode) {
+    private static void revertVisibility(MethodNode mNode) {
         mNode.setModifiers(mNode.getModifiers() & ~ACC_PUBLIC);
     }
 
-    private void revertVisibility(ClassNode cNode) {
+    private static void revertVisibility(ClassNode cNode) {
         cNode.setModifiers(cNode.getModifiers() & ~ACC_PUBLIC);
     }
 
-    private List<groovy.transform.PackageScopeTarget> determineTargets(Expression expr) {
+    private static List<groovy.transform.PackageScopeTarget> determineTargets(Expression expr) {
         List<groovy.transform.PackageScopeTarget> list = new ArrayList<groovy.transform.PackageScopeTarget>();
         if (expr instanceof PropertyExpression) {
             list.add(extractTarget((PropertyExpression) expr));
@@ -176,7 +178,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         return list;
     }
 
-    private groovy.transform.PackageScopeTarget extractTarget(PropertyExpression expr) {
+    private static groovy.transform.PackageScopeTarget extractTarget(PropertyExpression expr) {
         Expression oe = expr.getObjectExpression();
         if (oe instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) oe;

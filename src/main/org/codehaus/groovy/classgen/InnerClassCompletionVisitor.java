@@ -1,17 +1,20 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
 package org.codehaus.groovy.classgen;
 
@@ -69,7 +72,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             thisField = innerClass.getField("this$0");
             if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
                 // add dummy constructor
-                innerClass.addConstructor(ACC_PUBLIC, new Parameter[0], null, null);
+                innerClass.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
         }
         if (node.isEnum() || node.isInterface()) return;
@@ -86,15 +89,15 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         super.visitConstructor(node);
     }
 
-    private String getTypeDescriptor(ClassNode node, boolean isStatic) {
+    private static String getTypeDescriptor(ClassNode node, boolean isStatic) {
         return BytecodeHelper.getTypeDescription(getClassNode(node, isStatic));
     }
 
-    private String getInternalName(ClassNode node, boolean isStatic) {
+    private static String getInternalName(ClassNode node, boolean isStatic) {
         return BytecodeHelper.getClassInternalName(getClassNode(node, isStatic));
     }
 
-    private void addDispatcherMethods(ClassNode classNode) {
+    private static void addDispatcherMethods(ClassNode classNode) {
         final int objectDistance = getObjectDistance(classNode);
 
         // since we added an anonymous inner class we should also
@@ -174,7 +177,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
         final int objectDistance = getObjectDistance(outerClass);
 
-        // add method dispatcher
+        // add missing method dispatcher
         Parameter[] parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "args")
@@ -211,7 +214,25 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property getter dispatcher
+        // add static missing method dispatcher
+        methodName = "$static_methodMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setMethodDispatcherCode(block, new ClassExpression(outerClass), parameters);
+        method.setCode(block);
+
+        // add property setter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "val")
@@ -232,7 +253,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         block = new BlockStatement();
         if (isStatic) {
-            setPropertySetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
         } else {
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
@@ -248,7 +269,25 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
         method.setCode(block);
 
-        // add property setter dispatcher
+        // add static property missing setter dispatcher
+        methodName = "$static_propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.VOID_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
+        method.setCode(block);
+
+        // add property getter dispatcher
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name")
         };
@@ -268,7 +307,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         block = new BlockStatement();
         if (isStatic) {
-            setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+            setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
         } else {
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
@@ -281,6 +320,24 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                     })
             );
         }
+        method.setCode(block);
+
+        // add static property missing getter dispatcher
+        methodName = "$static_propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
+        method = node.addSyntheticMethod(
+                methodName,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
         method.setCode(block);
     }
 
@@ -299,7 +356,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
     }
 
-    private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+    private static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
         if (cn.isEnum() || cn.isInterface()) return false;
         if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
         if (!(cn instanceof InnerClassNode)) return false;
@@ -390,7 +447,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         return namePrefix;
     }
 
-    private ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
+    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
         if (code == null) return null;
 
         final List<Statement> statementList = code.getStatements();

@@ -1,19 +1,21 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 /*
  * @todo multi threaded compiling of the same class but with different roots
  * for compilation... T1 compiles A, which uses B, T2 compiles B... mark A and B
@@ -32,6 +34,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -41,7 +44,6 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -57,9 +59,10 @@ import java.util.regex.Pattern;
  * @author Bing Ran
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @version $Revision$
  */
 public class GroovyClassLoader extends URLClassLoader {
+
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
@@ -125,7 +128,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param useConfigurationClasspath determines if the configurations classpath should be added
      */
     public GroovyClassLoader(ClassLoader parent, CompilerConfiguration config, boolean useConfigurationClasspath) {
-        super(new URL[0], parent);
+        super(EMPTY_URL_ARRAY, parent);
         if (config == null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
         if (useConfigurationClasspath) {
@@ -175,7 +178,7 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.addClassNode(classNode);
             unit.setClassgenCallback(collector);
             unit.compile(Phases.CLASS_GENERATION);
-            definePackage(collector.generatedClass.getName());
+            definePackageInternal(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
             throw new RuntimeException(e);
@@ -228,6 +231,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
+    @Deprecated
     public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
         // For generic input streams, provide a catch-all codebase of GroovyScript
         // Security for these classes can be administered via policy grants with
@@ -299,14 +303,14 @@ public class GroovyClassLoader extends URLClassLoader {
         for (Object o : collector.getLoadedClasses()) {
             Class clazz = (Class) o;
             String clazzName = clazz.getName();
-            definePackage(clazzName);
+            definePackageInternal(clazzName);
             setClassCacheEntry(clazz);
             if (clazzName.equals(mainClass)) answer = clazz;
         }
         return answer;
     }
 
-    private void validate(GroovyCodeSource codeSource) {
+    private static void validate(GroovyCodeSource codeSource) {
         if (codeSource.getFile() == null) {
             if (codeSource.getScriptText() == null) {
                 throw new IllegalArgumentException("Script text to compile cannot be null!");
@@ -314,7 +318,7 @@ public class GroovyClassLoader extends URLClassLoader {
         }
     }
 
-    private void definePackage(String className) {
+    private void definePackageInternal(String className) {
         int i = className.lastIndexOf('.');
         if (i != -1) {
             String pkgName = className.substring(0, i);
@@ -806,7 +810,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * where two scripts were sitting in a directory with spaces in its name.  The code would fail
      * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.
      */
-    private String decodeFileName(String fileName) {
+    private static String decodeFileName(String fileName) {
         String decodedFile = fileName;
         try {
             decodedFile = URLDecoder.decode(fileName, "UTF-8");
@@ -818,11 +822,11 @@ public class GroovyClassLoader extends URLClassLoader {
         return decodedFile;
     }
 
-    private boolean isFile(URL ret) {
+    private static boolean isFile(URL ret) {
         return ret != null && ret.getProtocol().equals("file");
     }
 
-    private File getFileForUrl(URL ret, String filename) {
+    private static File getFileForUrl(URL ret, String filename) {
         String fileWithoutPackage = filename;
         if (fileWithoutPackage.indexOf('/') != -1) {
             int index = fileWithoutPackage.lastIndexOf('/');
@@ -831,7 +835,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return fileReallyExists(ret, fileWithoutPackage);
     }
 
-    private File fileReallyExists(URL ret, String fileWithoutPackage) {
+    private static File fileReallyExists(URL ret, String fileWithoutPackage) {
         File path;
         try {
             /* fix for GROOVY-5809 */ 
@@ -902,47 +906,48 @@ public class GroovyClassLoader extends URLClassLoader {
     public void addClasspath(final String path) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
+
+                URI newURI;
                 try {
-                    // As the java.net.URL Javadoc says, the recommended way to get a URL is via URI.
-                    // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html
-                    // "Note, the URI class does perform escaping of its component fields in certain circumstances.
-                    // The recommended way to manage the encoding and decoding of URLs is to use URI, and to convert
-                    // between these two classes using toURI() and URI.toURL()."
-                    // A possibly better approach here is to construct a URI and then resolve it against
-                    // a URI for the current working directory.
-                    // But we use this string match for now so everyone can see it doesn't hurt file-only classpaths.
-                    URI newURI;
-                    if (!URI_PATTERN.matcher(path).matches()) {
-                        newURI = new File(path).toURI();
-                    } else {
-                        newURI = new URI(path);
-                    }
-                    URL[] urls = getURLs();
-                    for (URL url : urls) {
-                        // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
-                        // That is a violation of RFC and just plain evil.
-                        // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
-                        // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
-                        // "Since hosts comparison requires name resolution, this operation is a blocking operation.
-                        // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
+                    newURI = new URI(path);
+                    // check if we can create a URL from that URI
+                    newURI.toURL();
+                } catch (URISyntaxException e) {
+                    // the URI has a false format, so lets try it with files ...
+                    newURI=new File(path).toURI();
+                } catch (MalformedURLException e) {
+                    // the URL has a false format, so lets try it with files ...
+                    newURI=new File(path).toURI();
+                } catch (IllegalArgumentException e) {
+                    // the URL is not absolute, so lets try it with files ...
+                    newURI=new File(path).toURI();
+                }
+
+                URL[] urls = getURLs();
+                for (URL url : urls) {
+                    // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
+                    // That is a violation of RFC and just plain evil.
+                    // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
+                    // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
+                    // "Since hosts comparison requires name resolution, this operation is a blocking operation.
+                    // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
+                    try {
                         if (newURI.equals(url.toURI())) return null;
+                    } catch (URISyntaxException e) {
+                        // fail fast! if we got a malformed URI the Classloader has to tell it
+                        throw new RuntimeException( e );
                     }
+                }
+                try {
                     addURL(newURI.toURL());
                 } catch (MalformedURLException e) {
-                    //TODO: fail through ?
-                } catch (URISyntaxException e) {
-                    // Just doing the same thing...
+                    // fail fast! if we got a malformed URL the Classloader has to tell it
+                    throw new RuntimeException( e );
                 }
                 return null;
             }
         });
     }
-
-    // TODO remove duplication with GroovyMain#uriPattern
-    // RFC2396
-    // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-    // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
-    private static final Pattern URI_PATTERN = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * <p>Returns all Groovy classes loaded by this class loader.
@@ -965,11 +970,20 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public void clearCache() {
         synchronized (classCache) {
+            for (Class cl : classCache.values()) {
+                InvokerHelper.removeClass(cl);
+            }
             classCache.clear();
         }
         synchronized (sourceCache) {
             sourceCache.clear();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        clearCache();
     }
 
     private static class TimestampAdder extends CompilationUnit.PrimaryClassNodeOperation implements Opcodes {
