@@ -89,7 +89,7 @@ public class BinaryExpression extends Expression {
 
     public String getText() {
         if (operation.getType() == Types.LEFT_SQUARE_BRACKET) {
-            return leftExpression.getText() + "[" + rightExpression.getText() + "]";
+            return leftExpression.getText() + (safe ? "?" : "") + "[" + rightExpression.getText() + "]";
         }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
