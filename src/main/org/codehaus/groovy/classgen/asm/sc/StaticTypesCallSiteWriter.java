@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -626,12 +627,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         ClassNode classNode = controller.getClassNode();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);
         ClassNode aType = typeChooser.resolveType(arguments, classNode);
-        if (trySubscript(receiver, message, arguments, rType, aType)) {
+        if (trySubscript(receiver, message, arguments, rType, aType, safe)) {
             return;
         }
         // new try with flow type instead of declaration type
         rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (rType!=null && trySubscript(receiver, message, arguments, rType, aType)) {
+        if (rType!=null && trySubscript(receiver, message, arguments, rType, aType, safe)) {
             return;
         }
         // todo: more cases
@@ -642,7 +643,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 "a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
-    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType) {
+    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType, boolean safe) {
         if (getWrapper(rType).isDerivedFrom(Number_TYPE)
                 && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
             if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
@@ -690,6 +691,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                             "getAt",
                             arguments
                     );
+
+                    call.setSafe(safe);
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(getAtNode);
@@ -716,6 +719,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                             message,
                             arguments
                     );
+
+                    call.setSafe(safe);
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(methodNode);
@@ -729,6 +734,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                             "get",
                             arguments
                     );
+
+                    call.setSafe(safe);
                     call.setMethodTarget(MAP_GET_METHOD);
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);

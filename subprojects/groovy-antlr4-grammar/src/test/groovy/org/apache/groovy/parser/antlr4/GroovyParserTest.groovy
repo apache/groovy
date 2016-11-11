@@ -222,6 +222,7 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - SafeIndex"() {
         doRunAndTest('core/SafeIndex_01x.groovy');
+        doRunAndTest('core/SafeIndex_02x.groovy');
     }
 
 
