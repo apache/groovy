@@ -27,6 +27,9 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
+import static org.codehaus.groovy.runtime.EncodingGroovyMethodsSupport.TRANSLATE_TABLE;
+import static org.codehaus.groovy.runtime.EncodingGroovyMethodsSupport.TRANSLATE_TABLE_URLSAFE;
+
 /**
  * This class defines all the encoding/decoding groovy methods which enhance
  * the normal JDK classes when inside the Groovy environment.
@@ -35,6 +38,8 @@ import java.io.Writer;
 public class EncodingGroovyMethods {
 
     private static final char[] T_TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
+
+    private static final char[] T_TABLE_URLSAFE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=".toCharArray();
 
     private static final String CHUNK_SEPARATOR = "\r\n";
 
@@ -76,18 +81,22 @@ public class EncodingGroovyMethods {
      * @since 1.5.7
      */
     public static Writable encodeBase64(final byte[] data, final boolean chunked) {
+        return encodeBase64(data, chunked, false, true);
+    }
+
+    private static Writable encodeBase64(final byte[] data, final boolean chunked, final boolean urlSafe, final boolean pad) {
         return new Writable() {
             public Writer writeTo(final Writer writer) throws IOException {
                 int charCount = 0;
                 final int dLimit = (data.length / 3) * 3;
-
+                final char[] table = urlSafe ? T_TABLE_URLSAFE : T_TABLE;
                 for (int dIndex = 0; dIndex != dLimit; dIndex += 3) {
                     int d = ((data[dIndex] & 0XFF) << 16) | ((data[dIndex + 1] & 0XFF) << 8) | (data[dIndex + 2] & 0XFF);
 
-                    writer.write(T_TABLE[d >> 18]);
-                    writer.write(T_TABLE[(d >> 12) & 0X3F]);
-                    writer.write(T_TABLE[(d >> 6) & 0X3F]);
-                    writer.write(T_TABLE[d & 0X3F]);
+                    writer.write(table[d >> 18]);
+                    writer.write(table[(d >> 12) & 0X3F]);
+                    writer.write(table[(d >> 6) & 0X3F]);
+                    writer.write(table[d & 0X3F]);
 
                     if (chunked && ++charCount == 19) {
                         writer.write(CHUNK_SEPARATOR);
@@ -102,10 +111,16 @@ public class EncodingGroovyMethods {
                         d |= (data[dLimit + 1] & 0XFF) << 8;
                     }
 
-                    writer.write(T_TABLE[d >> 18]);
-                    writer.write(T_TABLE[(d >> 12) & 0X3F]);
-                    writer.write((dLimit + 1 < data.length) ? T_TABLE[(d >> 6) & 0X3F] : '=');
-                    writer.write('=');
+                    writer.write(table[d >> 18]);
+                    writer.write(table[(d >> 12) & 0X3F]);
+                    if (pad) {
+                        writer.write((dLimit + 1 < data.length) ? T_TABLE[(d >> 6) & 0X3F] : '=');
+                        writer.write('=');
+                    } else {
+                        if (dLimit + 1 < data.length) {
+                            writer.write(table[(d >> 6) & 0X3F]);
+                        }
+                    }
                     if (chunked && charCount != 0) {
                         writer.write(CHUNK_SEPARATOR);
                     }
@@ -142,6 +157,74 @@ public class EncodingGroovyMethods {
     }
 
     /**
+     * Produce a Writable object which writes the Base64 URL and Filename Safe encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 URL and Filename Safe encoding see <code>RFC 4648 - Section 5
+     * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
+     * <p>
+     * The method omits padding and is equivalent to calling
+     * {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)} with a
+     * value of {@code false}.
+     *
+     * @param data Byte array to be encoded
+     * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
+     * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)
+     * @since 2.5
+     */
+    public static Writable encodeBase64Url(Byte[] data) {
+        return encodeBase64Url(data, false);
+    }
+
+    /**
+     * Produce a Writable object which writes the Base64 URL and Filename Safe encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 URL and Filename Safe encoding see <code>RFC 4648 - Section 5
+     * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
+     *
+     * @param data Byte array to be encoded
+     * @param pad whether or not the encoded data should be padded
+     * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
+     * @since 2.5
+     */
+    public static Writable encodeBase64Url(Byte[] data, boolean pad) {
+        return encodeBase64Url(DefaultTypeTransformation.convertToByteArray(data), pad);
+    }
+
+    /**
+     * Produce a Writable object which writes the Base64 URL and Filename Safe encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 URL and Filename Safe encoding see <code>RFC 4648 - Section 5
+     * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
+     * <p>
+     * The method omits padding and is equivalent to calling
+     * {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(byte[], boolean)} with a
+     * value of {@code false}.
+     *
+     * @param data Byte array to be encoded
+     * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
+     * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(byte[], boolean)
+     * @since 2.5
+     */
+    public static Writable encodeBase64Url(final byte[] data) {
+        return encodeBase64Url(data, false);
+    }
+
+    /**
+     * Produce a Writable object which writes the Base64 URL and Filename Safe encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 URL and Filename Safe encoding see <code>RFC 4648 - Section 5
+     * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
+     *
+     * @param data Byte array to be encoded
+     * @param pad whether or not the encoded data should be padded
+     * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
+     * @since 2.5
+     */
+    public static Writable encodeBase64Url(final byte[] data, final boolean pad) {
+        return encodeBase64(data, false, true, pad);
+    }
+
+    /**
      * Decode the String from Base64 into a byte array.
      *
      * @param value the string to be decoded
@@ -149,14 +232,29 @@ public class EncodingGroovyMethods {
      * @since 1.0
      */
     public static byte[] decodeBase64(String value) {
+        return decodeBase64(value, false);
+    }
+
+    /**
+     * Decodes a Base64 URL and Filename Safe encoded String into a byte array.
+     *
+     * @param value the string to be decoded
+     * @return the decoded bytes as an array
+     * @since 2.5
+     */
+    public static byte[] decodeBase64Url(String value) {
+        return decodeBase64(value, true);
+    }
+
+    private static byte[] decodeBase64(String value, boolean urlSafe) {
         int byteShift = 4;
         int tmp = 0;
         boolean done = false;
         final StringBuilder buffer = new StringBuilder();
-
+        final byte[] table = urlSafe ? TRANSLATE_TABLE_URLSAFE : TRANSLATE_TABLE;
         for (int i = 0; i != value.length(); i++) {
             final char c = value.charAt(i);
-            final int sixBit = (c < 123) ? EncodingGroovyMethodsSupport.TRANSLATE_TABLE[c] : 66;
+            final int sixBit = (c < 123) ? table[c] : 66;
 
             if (sixBit < 64) {
                 if (done)
