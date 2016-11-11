@@ -1,0 +1,1 @@
+package def.in.as.trait;

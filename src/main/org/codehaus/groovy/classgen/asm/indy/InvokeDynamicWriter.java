@@ -166,8 +166,8 @@ public class InvokeDynamicWriter extends InvocationWriter {
     }
 
     @Override
-    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        makeIndyCall(invokeMethod, receiver, false, false, message, arguments);
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments, boolean safe) {
+        makeIndyCall(invokeMethod, receiver, false, safe, message, arguments);
     }
 
     private static int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {

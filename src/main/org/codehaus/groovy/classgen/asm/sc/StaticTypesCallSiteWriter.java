@@ -621,7 +621,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
+    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, boolean safe) {
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);

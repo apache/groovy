@@ -100,7 +100,11 @@ public class DeclarationExpression extends BinaryExpression {
      * @throws ClassCastException if the left hand side is not a VariableExpression (and is probably a multiple assignment statement).
      */
     public VariableExpression getVariableExpression() {
-        return (VariableExpression) this.getLeftExpression();
+        Expression leftExpression = this.getLeftExpression();
+
+        return leftExpression instanceof VariableExpression
+                    ? (VariableExpression) leftExpression
+                    : null;
     }
     
     /**
@@ -116,7 +120,11 @@ public class DeclarationExpression extends BinaryExpression {
      *
      */
     public TupleExpression getTupleExpression() {
-        return (TupleExpression) this.getLeftExpression();
+        Expression leftExpression = this.getLeftExpression();
+
+        return leftExpression instanceof TupleExpression
+                    ? (TupleExpression) leftExpression
+                    : null;
     }
     
     /**

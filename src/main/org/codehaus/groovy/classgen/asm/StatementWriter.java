@@ -18,40 +18,17 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ClosureListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.EmptyExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.stmt.AssertStatement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.BreakStatement;
-import org.codehaus.groovy.ast.stmt.CaseStatement;
-import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.stmt.ContinueStatement;
-import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.SwitchStatement;
-import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
-import org.codehaus.groovy.ast.stmt.ThrowStatement;
-import org.codehaus.groovy.ast.stmt.TryCatchStatement;
-import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.Iterator;
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -218,18 +195,7 @@ public class StatementWriter {
         }
     }
 
-    public void writeWhileLoop(WhileStatement loop) {
-        controller.getAcg().onLineNumber(loop,"visitWhileLoop");
-        writeStatementLabel(loop);
-
-        MethodVisitor mv = controller.getMethodVisitor();
-
-        controller.getCompileStack().pushLoop(loop.getStatementLabels());
-        Label continueLabel = controller.getCompileStack().getContinueLabel();
-        Label breakLabel = controller.getCompileStack().getBreakLabel();
-
-        mv.visitLabel(continueLabel);
-        BooleanExpression bool = loop.getBooleanExpression();
+    private void visitConditionOfLoopingStatement(BooleanExpression bool, Label breakLabel, MethodVisitor mv) {
         boolean boolHandled = false;
         if (bool.getExpression() instanceof ConstantExpression) {
             ConstantExpression constant = (ConstantExpression) bool.getExpression();
@@ -246,7 +212,21 @@ public class StatementWriter {
             bool.visit(controller.getAcg());
             controller.getOperandStack().jump(IFEQ, breakLabel);
         }
+    }
 
+    public void writeWhileLoop(WhileStatement loop) {
+        controller.getAcg().onLineNumber(loop,"visitWhileLoop");
+        writeStatementLabel(loop);
+
+        MethodVisitor mv = controller.getMethodVisitor();
+
+        controller.getCompileStack().pushLoop(loop.getStatementLabels());
+        Label continueLabel = controller.getCompileStack().getContinueLabel();
+        Label breakLabel = controller.getCompileStack().getBreakLabel();
+
+        mv.visitLabel(continueLabel);
+
+        this.visitConditionOfLoopingStatement(loop.getBooleanExpression(), breakLabel, mv);
         loop.getLoopBlock().visit(controller.getAcg());
 
         mv.visitJumpInsn(GOTO, continueLabel);
@@ -262,14 +242,15 @@ public class StatementWriter {
         MethodVisitor mv = controller.getMethodVisitor();
 
         controller.getCompileStack().pushLoop(loop.getStatementLabels());
-        Label breakLabel = controller.getCompileStack().getBreakLabel();
         Label continueLabel = controller.getCompileStack().getContinueLabel();
+        Label breakLabel = controller.getCompileStack().getBreakLabel();
+
         mv.visitLabel(continueLabel);
 
         loop.getLoopBlock().visit(controller.getAcg());
+        this.visitConditionOfLoopingStatement(loop.getBooleanExpression(), breakLabel, mv);
 
-        loop.getBooleanExpression().visit(controller.getAcg());
-        controller.getOperandStack().jump(IFEQ, continueLabel);
+        mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
 
         controller.getCompileStack().pop();

@@ -23,23 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
-import org.codehaus.groovy.ast.expr.EmptyExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PostfixExpression;
-import org.codehaus.groovy.ast.expr.PrefixExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.TernaryExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
@@ -55,6 +39,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class BinaryExpressionHelper {
     //compare
+    private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
+    private static final MethodCaller compareNotIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotIdentical");
     private static final MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
     private static final MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
     private static final MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
@@ -251,10 +237,12 @@ public class BinaryExpressionHelper {
             break;
 
         case COMPARE_IDENTICAL:
+            evaluateCompareExpression(compareIdenticalMethod, expression);
+            break;
+
         case COMPARE_NOT_IDENTICAL:
-            Token op = expression.getOperation();
-            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn(), op.getStartLine(), op.getStartColumn()+3);
-            throw new GroovyRuntimeException(cause);
+            evaluateCompareExpression(compareNotIdenticalMethod, expression);
+            break;
 
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
@@ -526,7 +514,7 @@ public class BinaryExpressionHelper {
 
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
-        controller.getInvocationWriter().makeSingleArgumentCall(receiver, message, arguments);
+        controller.getInvocationWriter().makeSingleArgumentCall(receiver, message, arguments, binExp.isSafe());
         compileStack.popLHS();        
     }
 

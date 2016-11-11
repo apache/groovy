@@ -38,14 +38,13 @@ class EqualsTest extends GroovyShellTestCase {
     }
 
     void testIdentical() {
-        shouldFail {
-            shell.evaluate """
-                    def x = []
-                    def y = []
+        assert 'a' === 'a'
+        assert null === null
 
-                    assert y !== x
-            """
-        }
+        def x = []
+        def y = []
+        assert y !== x
+
     }
 
 }

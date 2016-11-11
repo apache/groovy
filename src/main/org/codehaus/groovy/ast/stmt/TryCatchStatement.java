@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a try { ... } catch () finally {} statement in Groovy
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class TryCatchStatement extends Statement {
 
     private Statement tryStatement;
+    private List<ExpressionStatement> resourceStatements = new ArrayList<ExpressionStatement>();
     private List<CatchStatement> catchStatements = new ArrayList<CatchStatement>();
     private Statement finallyStatement;
     
@@ -43,7 +45,11 @@ public class TryCatchStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitTryCatchFinally(this);
     }
-    
+
+    public List<ExpressionStatement> getResourceStatements() {
+        return resourceStatements;
+    }
+
     public List<CatchStatement> getCatchStatements() {
         return catchStatements;
     }
@@ -56,6 +62,14 @@ public class TryCatchStatement extends Statement {
         return tryStatement;
     }
 
+    public void addResource(ExpressionStatement resourceStatement) {
+        if (!(resourceStatement.getExpression() instanceof DeclarationExpression)) {
+            throw new IllegalArgumentException("resourceStatement should be a variable declaration statement");
+        }
+
+        resourceStatements.add(resourceStatement);
+    }
+
     public void addCatch(CatchStatement catchStatement) {
         catchStatements.add(catchStatement);
     }
@@ -66,6 +80,16 @@ public class TryCatchStatement extends Statement {
     public CatchStatement getCatchStatement(int idx) {
         if (idx >= 0 && idx < catchStatements.size()) {
             return catchStatements.get(idx);
+        }
+        return null;
+    }
+
+    /**
+     * @return the resource statement of the given index or null
+     */
+    public ExpressionStatement getResourceStatement(int idx) {
+        if (idx >= 0 && idx < resourceStatements.size()) {
+            return resourceStatements.get(idx);
         }
         return null;
     }

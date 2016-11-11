@@ -1,0 +1,3 @@
+trait B {
+    def z()
+}
