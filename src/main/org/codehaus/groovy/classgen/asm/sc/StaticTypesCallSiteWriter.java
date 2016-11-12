@@ -660,7 +660,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             writeStringPlusCall(receiver, message, arguments);
             return true;
         } else if ("getAt".equals(message)) {
-            if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
+            if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE) && !safe) {
                 writeArrayGet(receiver, arguments, rType, aType);
                 return true;
             } else {
