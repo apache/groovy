@@ -313,11 +313,11 @@ You can use named parameters with the default constructor (first the constructor
 def server = new Server(name: "Obelix", cluster: aCluster)
 ----
 
-== Using with() for repeated operations on the same bean
+== Using `with()` and `tap()` for repeated operations on the same bean
 
 Named-parameters with the default constructor is interesting when creating new instances,
 but what if you are updating an instance that was given to you, do you have to repeat the 'server' prefix again and again?
-No, thanks to the with() method that Groovy adds on all objects of any kind:
+No, thanks to the `with()` and `tap()` methods that Groovy adds on all objects of any kind:
 
 [source,groovy]
 ----
@@ -338,6 +338,25 @@ server.with {
     sessionCount = 3
     start()
     stop()
+}
+----
+
+As with any closure in Groovy, the last statement is considered the return value.  In the example above this is the result of `stop()`.  To use this as a builder, that just returns the incoming object, there is also `tap()`:
+
+[source,groovy]
+----
+def person = new Person().with {
+    name = "Ada Lovelace"
+    it // Note the explicit return
+}
+----
+
+vs:
+
+[source,groovy]
+----
+def person = new Person().tap {
+    name = "Ada Lovelace"
 }
 ----
 
