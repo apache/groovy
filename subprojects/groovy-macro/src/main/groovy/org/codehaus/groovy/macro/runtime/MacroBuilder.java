@@ -33,8 +33,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.macro.transform.MacroInvocationTrap;
 import org.codehaus.groovy.macro.transform.MacroTransformation;
 
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -44,27 +44,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 public enum MacroBuilder {
     INSTANCE;
 
-    public <T> T macro(String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
+    public <T> T macro(String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(false, source, context, resultClass);
     }
 
-    public <T> T macro(boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
+    public <T> T macro(boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(CompilePhase.CONVERSION, asIs, source, context, resultClass);
     }
 
-    public <T> T macro(CompilePhase compilePhase, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
+    public <T> T macro(CompilePhase compilePhase, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(compilePhase, false, source, context, resultClass);
     }
 
     private final static AtomicInteger COUNTER = new AtomicInteger();
 
     @SuppressWarnings("unchecked")
-    public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
+    public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         boolean isClosure = source.startsWith("{");
         final String label = isClosure ?"__synthesized__label__" + COUNTER.incrementAndGet() + "__:":"";
         final String labelledSource = label + source;
-        final int linesOffset = 1;
-        final int columnsOffset = label.length() + (isClosure?1:0); // +1 because of {
 
         List<ASTNode> nodes = (new AstBuilder()).buildFromString(compilePhase, true, labelledSource);
 
@@ -75,21 +73,22 @@ public enum MacroBuilder {
                 if (!statements.isEmpty()) {
                     BlockStatement closureBlock = (BlockStatement) statements.get(0);
 
-                    performSubstitutions(linesOffset, columnsOffset, context, closureBlock);
+                    performSubstitutions(context, closureBlock);
 
 
                     return (T) getMacroValue(closureBlock, asIs);
                 }
             }
             if (node instanceof ClassNode) {
-                performSubstitutions(linesOffset, columnsOffset, context, node);
+                performSubstitutions(context, node);
                 return (T) node;
             }
         }
         return null;
     }
 
-    private static void performSubstitutions(final int linesOffset, final int columnsOffset, final Map<MacroSubstitutionKey, Closure<Expression>> context, final ASTNode astNode) {
+    private static void performSubstitutions(final List<Closure<Expression>> context, final ASTNode astNode) {
+        final Iterator<Closure<Expression>> iterator = context.iterator();
         ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
             public Expression transform(Expression expression) {
                 if (!(expression instanceof MethodCallExpression)) {
@@ -102,9 +101,7 @@ public enum MacroBuilder {
                     return super.transform(expression);
                 }
 
-                MacroSubstitutionKey key = new MacroSubstitutionKey(call, linesOffset, columnsOffset);
-
-                return context.get(key).call();
+                return iterator.next().call();
             }
 
             @Override
