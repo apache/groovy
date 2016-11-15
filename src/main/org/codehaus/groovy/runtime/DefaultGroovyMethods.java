@@ -197,12 +197,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *   return it
      * }
      * </pre>
+     * The other typical usage, uses the self object while creating some value:
+     * <pre>
+     * def fullName = person.with{ "$firstName $lastName" }
+     * </pre>
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
      * @return result of calling the closure
+     * @see #with(Object, boolean, Closure)
+     * @see #tap(Object, Closure)
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     public static <T,U> T with(
             @DelegatesTo.Target("self") U self,
             @DelegatesTo(value=DelegatesTo.Target.class,
@@ -210,11 +217,61 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     strategy=Closure.DELEGATE_FIRST)
             @ClosureParams(FirstParam.class)
             Closure<T> closure) {
+        return (T) with(self, false, (Closure<Object>)closure);
+    }
+
+    /**
+     * Allows the closure to be called for the object reference self.
+     * <p/>
+     * Any method invoked inside the closure will first be invoked on the
+     * self reference. For exampe, the following method calls to the append()
+     * method are invoked on the StringBuilder instance and then, because
+     * 'returning' is true, the self instance is returned:
+     * <pre class="groovyTestCase">
+     * def b = new StringBuilder().with(true) {
+     *   append('foo')
+     *   append('bar')
+     * }
+     * assert b.toString() == 'foobar'
+     * </pre>
+     * The returning parameter is commonly set to true when using with to simplify object
+     * creation, such as this example:
+     * <pre>
+     * def p = new Person().with(true) {
+     *   firstName = 'John'
+     *   lastName = 'Doe'
+     * }
+     * </pre>
+     * Alternatively, 'tap' is an alias for 'with(true)', so that method can be used instead.
+     *
+     * The other main use case for with is when returning a value calculated using self as shown here:
+     * <pre>
+     * def fullName = person.with(false){ "$firstName $lastName" }
+     * </pre>
+     * Alternatively, 'with' is an alias for 'with(false)', so the boolean parameter can be ommitted instead.
+     *
+     * @param self      the object to have a closure act upon
+     * @param returning if true, return the self object; otherwise, the result of calling the closure
+     * @param closure   the closure to call on the object
+     * @return the self object or the result of calling the closure depending on 'returning'
+     * @see #with(Object, Closure)
+     * @see #tap(Object, Closure)
+     * @since 2.5.0
+     */
+    public static <T,U extends T, V extends T> T with(
+            @DelegatesTo.Target("self") U self,
+            boolean returning,
+            @DelegatesTo(value=DelegatesTo.Target.class,
+                    target="self",
+                    strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class)
+            Closure<T> closure) {
         @SuppressWarnings("unchecked")
-        final Closure<T> clonedClosure = (Closure<T>) closure.clone();
+        final Closure<V> clonedClosure = (Closure<V>) closure.clone();
         clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
         clonedClosure.setDelegate(self);
-        return clonedClosure.call(self);
+        V result = clonedClosure.call(self);
+        return returning ? self : result;
     }
 
     /**
@@ -242,8 +299,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
      * @return self
+     * @see #with(Object, boolean, Closure)
+     * @see #with(Object, Closure)
      * @since 2.5.0
      */
+    @SuppressWarnings("unchecked")
     public static <T,U> U tap(
             @DelegatesTo.Target("self") U self,
             @DelegatesTo(value=DelegatesTo.Target.class,
@@ -251,12 +311,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     strategy=Closure.DELEGATE_FIRST)
             @ClosureParams(FirstParam.class)
             Closure<T> closure) {
-        @SuppressWarnings("unchecked")
-        final Closure<T> clonedClosure = (Closure<T>) closure.clone();
-        clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        clonedClosure.setDelegate(self);
-        clonedClosure.call(self);
-        return self;
+        return (U) with(self, true, (Closure<Object>)closure);
     }
 
     /**

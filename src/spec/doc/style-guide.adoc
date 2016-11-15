@@ -347,7 +347,7 @@ As with any closure in Groovy, the last statement is considered the return value
 ----
 def person = new Person().with {
     name = "Ada Lovelace"
-    it // Note the explicit return
+    it // Note the explicit mention of it as the return value
 }
 ----
 
@@ -359,6 +359,8 @@ def person = new Person().tap {
     name = "Ada Lovelace"
 }
 ----
+
+Note: you can also use `with(true)` instead of `tap()` and `with(false)` instead of `with()`.
 
 == Equals and `==`
 
