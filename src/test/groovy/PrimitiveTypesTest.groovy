@@ -86,7 +86,7 @@ class PrimitiveTypesTest extends GroovyTestCase {
 
     void testBigInteger2BigDecimal() {
         BigInteger big = new BigInteger(Long.MAX_VALUE)
-        assert big.longValueExact() == testMethod(big).longValueExact()
+        assert big.longValue() == testMethod(big).longValueExact()
     }
 
     private testMethod(BigDecimal bd) {
