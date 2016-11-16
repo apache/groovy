@@ -38,7 +38,8 @@ class Groovy7994Bug extends GroovyTestCase {
                         String aicGo() { new Other(name).text + new Other(Outer.this.name).text + new Other(getName()).text }
                         String staticMethodGo() { Other.foo(name) + Other.foo(Outer.this.name) + Other.foo(getName()) }
                         String instanceMethodGo() { new Other().bar(name) + new Other().bar(getName()) }
-                        String methodWithClosureGo() { new Other().with { bar(name) + bar(getName()) } }
+                        // uncomment below if GROOVY-7990 is ported to GROOVY_2_4_X
+                        //String methodWithClosureGo() { new Other().with { bar(name) + bar(getName()) } }
                         String propGo() { new Other(prop).text + new Other(getProp()).text }
                     }
                 }
@@ -62,7 +63,8 @@ class Groovy7994Bug extends GroovyTestCase {
             assert o.makeAIC().propGo() == 'String:wally|String:wally|'
             assert o.makeAIC().staticMethodGo() == 'String|sally:String|sally:String|sally:'
             assert o.makeAIC().instanceMethodGo() == 'String|sally:String|sally:'
-            assert o.makeAIC().methodWithClosureGo() == 'String|sally:String|sally:'
+            // uncomment below if GROOVY-7990 is ported to GROOVY_2_4_X
+            //assert o.makeAIC().methodWithClosureGo() == 'String|sally:String|sally:'
             assert new Outer.Inner(o).innerGo() == 'String:sally|String:sally|String:sally|'
         '''
     }
