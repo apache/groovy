@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.reflection.stdclasses;
 
-import org.codehaus.groovy.reflection.ClassInfo;
-
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
  * @author Alex.Tkachman
@@ -37,6 +37,10 @@ public class BigDecimalCachedClass extends DoubleCachedClass {
     public Object coerceArgument(Object argument) {
         if (argument instanceof BigDecimal) {
             return argument;
+        } else if (argument instanceof Long) {
+            return new BigDecimal((Long) argument);
+        } else if (argument instanceof BigInteger) {
+            return new BigDecimal((BigInteger) argument);
         }
 
         if (argument instanceof Number) {

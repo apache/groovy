@@ -18,9 +18,14 @@
  */
 package groovy
 
+import java.nio.charset.StandardCharsets
+
 class Base64Test extends GroovyTestCase {
     String testString = '\u00A71234567890-=\u00B1!@\u00A3\$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;\'\\ASDFGHJKL:"|`zxcvbnm,./~ZXCVBNM<>?\u0003\u00ff\u00f0\u000f'
     byte[] testBytes = testString.getBytes("ISO-8859-1")
+
+    // Test bytes that have both the 62nd and 63rd base64 alphabet in the encoded string
+    static final byte[] testBytesChar62And63 = new BigInteger('4bf7ce5201fe239ab42ebead5acd8fa3', 16).toByteArray()
 
     void testCodec() {
         // turn the bytes back into a string for later comparison
@@ -61,5 +66,147 @@ class Base64Test extends GroovyTestCase {
     void testNonChunked() {
         def encodedBytes = testBytes.encodeBase64().toString()
         assert encodedBytes == 'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31hc2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4/A//wDw=='
+    }
+
+    void testRfc4648Section10Encoding() {
+        assert b64('') == ''
+        assert b64('f') == 'Zg=='
+        assert b64('fo') == 'Zm8='
+        assert b64('foo') == 'Zm9v'
+        assert b64('foob') == 'Zm9vYg=='
+        assert b64('fooba') == 'Zm9vYmE='
+        assert b64('foobar') == 'Zm9vYmFy'
+    }
+
+    void testRfc4648Section10Decoding() {
+        assert decodeB64('') == ''
+
+        assert decodeB64('Zg') == 'f'
+        assert decodeB64('Zg==') == 'f'
+
+        assert decodeB64('Zm8') == 'fo'
+        assert decodeB64('Zm8=') == 'fo'
+
+        assert decodeB64('Zm9v') == 'foo'
+
+        assert decodeB64('Zm9vYg') == 'foob'
+        assert decodeB64('Zm9vYg==') == 'foob'
+
+        assert decodeB64('Zm9vYmE') == 'fooba'
+        assert decodeB64('Zm9vYmE=') == 'fooba'
+
+        assert decodeB64('Zm9vYmFy') == 'foobar'
+    }
+
+    void testRfc4648Section10EncodingUrlSafe() {
+        assert b64url('') == ''
+        assert b64url('f') == 'Zg'
+        assert b64url('fo') == 'Zm8'
+        assert b64url('foo') == 'Zm9v'
+        assert b64url('foob') == 'Zm9vYg'
+        assert b64url('fooba') == 'Zm9vYmE'
+        assert b64url('foobar') == 'Zm9vYmFy'
+    }
+
+    void testRfc4648Section10EncodingUrlSafeWithPadding() {
+        assert b64url('', true) == ''
+        assert b64url('f', true) == 'Zg=='
+        assert b64url('fo', true) == 'Zm8='
+        assert b64url('foo', true) == 'Zm9v'
+        assert b64url('foob', true) == 'Zm9vYg=='
+        assert b64url('fooba', true) == 'Zm9vYmE='
+        assert b64url('foobar', true) == 'Zm9vYmFy'
+    }
+
+    void testRfc4648Section10DecodingUrlSafe() {
+        assert decodeB64url('') == ''
+
+        assert decodeB64url('Zg') == 'f'
+        assert decodeB64url('Zg==') == 'f'
+
+        assert decodeB64url('Zm8') == 'fo'
+        assert decodeB64url('Zm8=') == 'fo'
+
+        assert decodeB64url('Zm9v') == 'foo'
+
+        assert decodeB64url('Zm9vYg') == 'foob'
+        assert decodeB64url('Zm9vYg==') == 'foob'
+
+        assert decodeB64url('Zm9vYmE') == 'fooba'
+        assert decodeB64url('Zm9vYmE=') == 'fooba'
+
+        assert decodeB64url('Zm9vYmFy') == 'foobar'
+    }
+
+    void testEncodingWithChar62And63() {
+        assert testBytesChar62And63.encodeBase64().toString() == 'S/fOUgH+I5q0Lr6tWs2Pow=='
+    }
+
+    void testUrlSafeEncodingWithChar62And63() {
+        assert testBytesChar62And63.encodeBase64Url().toString() == 'S_fOUgH-I5q0Lr6tWs2Pow'
+        assert testBytesChar62And63.encodeBase64Url(true).toString() == 'S_fOUgH-I5q0Lr6tWs2Pow=='
+    }
+
+    void testDecodingWithChar62And63() {
+        assert 'S/fOUgH+I5q0Lr6tWs2Pow=='.decodeBase64() == testBytesChar62And63
+        assert 'S/fOUgH+I5q0Lr6tWs2Pow'.decodeBase64() == testBytesChar62And63
+    }
+
+    void testUrlSafeDecodingWithChar62And63() {
+        assert 'S_fOUgH-I5q0Lr6tWs2Pow=='.decodeBase64Url() == testBytesChar62And63
+        assert 'S_fOUgH-I5q0Lr6tWs2Pow'.decodeBase64Url() == testBytesChar62And63
+    }
+
+    void testUrlSafeEncodingByDefaultOmitsPadding() {
+        assert testBytes.encodeBase64Url().toString() ==
+                'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31h' +
+                'c2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4_A__wDw'
+    }
+
+    void testUrlSafeEncodingWithPadding() {
+        assert testBytes.encodeBase64Url(true).toString() ==
+                'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31h' +
+                'c2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4_A__wDw=='
+    }
+
+    void testDecodingNonBase64Alphabet() {
+        shouldFail {
+            decodeB64('S_fOUgH-I5q0Lr6tWs2Pow==')
+        }
+    }
+
+    void testUrlSafeDecodingNonUrlSafeAlphabet() {
+        shouldFail {
+            decodeB64url('S/fOUgH+I5q0Lr6tWs2Pow==')
+        }
+    }
+
+    void testDecodingWithInnerPad() {
+        shouldFail {
+            decodeB64('Zm9v=YmE=')
+        }
+    }
+
+    void testUrlSafeDecodingWithInnerPad() {
+        shouldFail {
+            decodeB64url('Zm9v=YmE=')
+        }
+    }
+
+    // Test helper methods
+    private static String b64(String s) {
+        s.getBytes(StandardCharsets.UTF_8).encodeBase64().toString()
+    }
+
+    private static String b64url(String s, boolean pad=false) {
+        s.getBytes(StandardCharsets.UTF_8).encodeBase64Url(pad).toString()
+    }
+
+    private static String decodeB64(String s) {
+        new String(s.decodeBase64(), StandardCharsets.UTF_8)
+    }
+
+    private static String decodeB64url(String s) {
+        new String(s.decodeBase64Url(), StandardCharsets.UTF_8)
     }
 }

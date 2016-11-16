@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.util.ProxyGenerator;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -34,7 +33,6 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.ConvertedClosure;
@@ -49,8 +47,9 @@ public class TypeTransformers {
 	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle 
         TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
-        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY,
-        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY, TO_SAMTRAIT_PROXY;
+        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, AS_ARRAY,
+        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY, TO_SAMTRAIT_PROXY,
+        DOUBLE_TO_BIG_DEC, DOUBLE_TO_BIG_DEC_WITH_CONVERSION, LONG_TO_BIG_DEC, BIG_INT_TO_BIG_DEC;
     static {
         try {
             TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
@@ -62,13 +61,18 @@ public class TypeTransformers {
             TO_DOUBLE   = LOOKUP.findVirtual(Number.class, "doubleValue",   MethodType.methodType(Double.TYPE));
 
             // BigDecimal conversion is done by using the double value
-            // if the given number.
-            MethodHandle tmp = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, Double.TYPE));
-            TO_BIG_DEC  = MethodHandles.filterReturnValue(TO_DOUBLE, tmp);
+            DOUBLE_TO_BIG_DEC = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, Double.TYPE));
+            DOUBLE_TO_BIG_DEC_WITH_CONVERSION  = MethodHandles.filterReturnValue(TO_DOUBLE, DOUBLE_TO_BIG_DEC);
+
+            // BigDecimal conversion is done by using the double value
+            LONG_TO_BIG_DEC = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, Long.TYPE));
+
+            // BigDecimal conversion is done by using the double value
+            BIG_INT_TO_BIG_DEC = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, BigInteger.class));
+
 
             // BigInteger conversion is done by using the string representation
-            // if the given number
-            tmp = LOOKUP.findConstructor(BigInteger.class, MethodType.methodType(Void.TYPE, String.class));
+            MethodHandle tmp = LOOKUP.findConstructor(BigInteger.class, MethodType.methodType(Void.TYPE, String.class));
             TO_BIG_INT  = MethodHandles.filterReturnValue(TO_STRING, tmp);
 
             // generic array to array conversion
@@ -220,7 +224,15 @@ public class TypeTransformers {
         } else if (param == BigInteger.class) {
             return TO_BIG_INT;
         } else if (param == BigDecimal.class) {
-            return TO_BIG_DEC;
+            if (arg instanceof Double) {
+                return DOUBLE_TO_BIG_DEC;
+            } else if (arg instanceof Long) {
+                return LONG_TO_BIG_DEC;
+            } else if (arg instanceof BigInteger) {
+                return BIG_INT_TO_BIG_DEC;
+            } else {
+                return DOUBLE_TO_BIG_DEC_WITH_CONVERSION;
+            }
         } else if (param == Short.class) {
             return TO_SHORT;
         } else {

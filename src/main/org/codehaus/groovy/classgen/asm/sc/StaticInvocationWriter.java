@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -186,7 +187,16 @@ public class StaticInvocationWriter extends InvocationWriter {
     /**
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
+    @Deprecated
     protected boolean tryBridgeMethod(MethodNode target, Expression receiver, boolean implicitThis, TupleExpression args) {
+        return tryBridgeMethod(target, receiver, implicitThis, args, null);
+    }
+
+    /**
+     * Attempts to make a direct method call on a bridge method, if it exists.
+     */
+    protected boolean tryBridgeMethod(MethodNode target, Expression receiver, boolean implicitThis,
+                                      TupleExpression args, ClassNode thisClass) {
         ClassNode lookupClassNode;
         if (target.isProtected()) {
             lookupClassNode = controller.getClassNode();
@@ -203,8 +213,22 @@ public class StaticInvocationWriter extends InvocationWriter {
         MethodNode bridge = bridges==null?null:bridges.get(target);
         if (bridge != null) {
             Expression fixedReceiver = receiver;
-            if (implicitThis && !controller.isInClosure()) {
-                fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
+            if (implicitThis) {
+                if (!controller.isInClosure()) {
+                    fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
+                } else if (thisClass != null) {
+                    ClassNode current = thisClass.getOuterClass();
+                    fixedReceiver = new VariableExpression("thisObject", current);
+                    // adjust for multiple levels of nesting if needed
+                    while (current != null && current instanceof InnerClassNode && !lookupClassNode.equals(current)) {
+                        FieldNode thisField = current.getField("this$0");
+                        current = current.getOuterClass();
+                        if (thisField != null) {
+                            fixedReceiver = new PropertyExpression(fixedReceiver, "this$0");
+                            fixedReceiver.setType(current);
+                        }
+                    }
+                }
             }
             ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):fixedReceiver);
             for (Expression expression : args.getExpressions()) {
@@ -261,7 +285,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && controller.isInClosure()
                     && !target.isPublic()
                     && target.getDeclaringClass() != classNode) {
-                if (!tryBridgeMethod(target, receiver, implicitThis, args)) {
+                if (!tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                     // replace call with an invoker helper call
                     ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
                     MethodCallExpression mce = new MethodCallExpression(
@@ -281,6 +305,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
                 return true;
             }
+            Expression fixedReceiver = null;
+            boolean fixedImplicitThis = implicitThis;
             if (target.isPrivate()) {
                 if (tryPrivateMethod(target, implicitThis, receiver, args, classNode)) return true;
             } else if (target.isProtected()) {
@@ -295,16 +321,36 @@ public class StaticInvocationWriter extends InvocationWriter {
                     controller.getSourceUnit().addError(
                             new SyntaxException("Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),
                                     src.getLineNumber(), src.getColumnNumber(), src.getLastLineNumber(), src.getLastColumnNumber()));
-                } else if (!node.isDerivedFrom(target.getDeclaringClass()) && tryBridgeMethod(target, receiver, implicitThis, args)) {
+                } else if (!node.isDerivedFrom(target.getDeclaringClass()) && tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                     return true;
+                }
+            } else if (target.isPublic() && receiver != null) {
+                if (implicitThis
+                        && !classNode.isDerivedFrom(target.getDeclaringClass())
+                        && !classNode.implementsInterface(target.getDeclaringClass())
+                        && classNode instanceof InnerClassNode && controller.isInClosure()) {
+                    ClassNode current = classNode.getOuterClass();
+                    fixedReceiver = new VariableExpression("thisObject", current);
+                    // adjust for multiple levels of nesting if needed
+                    while (current != null && current instanceof InnerClassNode && !classNode.equals(current)) {
+                        FieldNode thisField = current.getField("this$0");
+                        current = current.getOuterClass();
+                        if (thisField != null) {
+                            fixedReceiver = new PropertyExpression(fixedReceiver, "this$0");
+                            fixedReceiver.setType(current);
+                            fixedImplicitThis = false;
+                        }
+                    }
                 }
             }
             if (receiver != null) {
-                if (!(receiver instanceof VariableExpression) || !((VariableExpression) receiver).isSuperExpression()) {
+                boolean callToSuper = receiver instanceof VariableExpression && ((VariableExpression) receiver).isSuperExpression();
+                if (!callToSuper) {
+                    fixedReceiver = fixedReceiver == null ? receiver : fixedReceiver;
                     // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead
                     // then replace the top operand type
-                    Expression checkCastReceiver = new CheckcastReceiverExpression(receiver, target);
-                    return super.writeDirectMethodCall(target, implicitThis, checkCastReceiver, args);
+                    Expression checkCastReceiver = new CheckcastReceiverExpression(fixedReceiver, target);
+                    return super.writeDirectMethodCall(target, fixedImplicitThis, checkCastReceiver, args);
                 }
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
@@ -316,7 +362,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
                 && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
                 && !declaringClass.equals(classNode)) {
-            if (tryBridgeMethod(target, receiver, implicitThis, args)) {
+            if (tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                 return true;
             } else if (declaringClass != classNode) {
                 controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +

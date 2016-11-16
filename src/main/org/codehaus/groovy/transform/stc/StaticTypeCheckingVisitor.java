@@ -1250,9 +1250,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode))
                     return true;
 
-                MethodNode getter = current.getGetterMethod("get" + capName);
+                MethodNode getter = findGetter(current, "get" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = current.getGetterMethod("is" + capName);
+                if (getter == null) getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 final String setterName = "set" + capName;
                 List<MethodNode> setters = findSetters(current, setterName, false);
@@ -1360,6 +1360,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return true;
         }
         return foundGetterOrSetter;
+    }
+
+    private MethodNode findGetter(ClassNode current, String name, boolean searchOuterClasses) {
+        MethodNode getterMethod = current.getGetterMethod(name);
+        if (getterMethod == null && searchOuterClasses && current instanceof InnerClassNode) {
+            return findGetter(current.getOuterClass(), name, true);
+        }
+        return getterMethod;
     }
 
     private ClassNode getTypeForSpreadExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
@@ -3849,8 +3857,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
             }
-            if (typeCheckingContext.getEnclosingClosure() == null) {
-                // not in a closure
+            // TODO: investigate the trait exclusion a bit further, needed otherwise
+            // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying
+            // not static method can't be called from a static context
+            if (typeCheckingContext.getEnclosingClosure() == null || (receiver instanceof InnerClassNode && !receiver.getName().endsWith("$Trait$Helper"))) {
+                // not in a closure or within an inner class
                 ClassNode parent = receiver;
                 while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
                     parent = parent.getOuterClass();
