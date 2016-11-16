@@ -356,7 +356,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     }
 
     @Override
-    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader, boolean safe) {
         ClassNode current = getController().getClassNode();
         ClassNode arrayType = getController().getTypeChooser().resolveType(receiver, current);
         ClassNode arrayComponentType = arrayType.getComponentType();
@@ -364,7 +364,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         BinaryExpressionWriter bew = binExpWriter[operationType];
         AsmClassGenerator acg = getController().getAcg();
         
-        if (bew.arraySet(true) && arrayType.isArray()) {
+        if (bew.arraySet(true) && arrayType.isArray() && !safe) {
             OperandStack operandStack   =   getController().getOperandStack();
             
             // load the array
@@ -386,7 +386,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             operandStack.remove(3);
             rhsValueLoader.visit(acg);
         } else {        
-            super.assignToArray(orig, receiver, index, rhsValueLoader);
+            super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
         }
     }
     
