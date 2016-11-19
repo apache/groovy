@@ -18,15 +18,9 @@
  */
 package org.codehaus.groovy.syntax;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Collections;
-import java.util.Collection;
-
 import org.codehaus.groovy.GroovyBugError;
+
+import java.util.*;
 
 
 /**
@@ -91,6 +85,8 @@ public class Types
     public static final int COMPARE_GREATER_THAN        = 126;   // >
     public static final int COMPARE_GREATER_THAN_EQUAL  = 127;   // >=
     public static final int COMPARE_TO                  = 128;   // <=>
+    public static final int COMPARE_NOT_IN              = 129;  // !in
+    public static final int COMPARE_NOT_INSTANCEOF      = 130;  // !instanceof
 
     public static final int NOT                         = 160;   // !
     public static final int LOGICAL_OR                  = 162;   // ||
@@ -906,7 +902,7 @@ public class Types
     *  and requested.
     */
 
-    public static void makePrefix( CSTNode node, boolean throwIfInvalid ) {
+    public static void makePrefix(CSTNode node, boolean throwIfInvalid ) {
 
         switch( node.getMeaning() ) {
             case PLUS:
@@ -940,7 +936,7 @@ public class Types
     *  Throws a <code>GroovyBugError</code> if the type can't be converted.
     */
 
-    public static void makePostfix( CSTNode node, boolean throwIfInvalid ) {
+    public static void makePostfix(CSTNode node, boolean throwIfInvalid ) {
 
         switch( node.getMeaning() ) {
             case PLUS_PLUS:
@@ -1024,6 +1020,7 @@ public class Types
             case FIND_REGEX:
             case MATCH_REGEX:
             case KEYWORD_INSTANCEOF:
+            case COMPARE_NOT_INSTANCEOF:
                 return 25;
 
             case DOT_DOT:
@@ -1210,6 +1207,8 @@ public class Types
         addTranslation( ">"           , COMPARE_GREATER_THAN        );
         addTranslation( ">="          , COMPARE_GREATER_THAN_EQUAL  );
         addTranslation( "<=>"         , COMPARE_TO                  );
+        addTranslation( "!in"         , COMPARE_NOT_IN              );
+        addTranslation( "!instanceof" , COMPARE_NOT_INSTANCEOF      );
 
         addTranslation( "!"           , NOT                         );
         addTranslation( "||"          , LOGICAL_OR                  );

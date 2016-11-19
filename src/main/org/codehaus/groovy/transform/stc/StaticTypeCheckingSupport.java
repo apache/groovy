@@ -397,7 +397,7 @@ public abstract class StaticTypeCheckingSupport {
 
     static boolean isBoolIntrinsicOp(int op) {
         return op == LOGICAL_AND || op == LOGICAL_OR ||
-                op == MATCH_REGEX || op == KEYWORD_INSTANCEOF;
+                op == MATCH_REGEX || op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF;
     }
 
     static boolean isPowerOperator(int op) {
@@ -474,6 +474,9 @@ public abstract class StaticTypeCheckingSupport {
 
             case KEYWORD_IN:
                 return "isCase";
+
+            case COMPARE_NOT_IN:
+                return "isNotCase";
 
             default:
                 return null;

@@ -2205,7 +2205,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 ctx);
     }
 
-
     @Override
     public Expression visitRelationalExprAlt(RelationalExprAltContext ctx) {
         switch (ctx.op.getType()) {
@@ -2215,6 +2214,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         ctx);
 
             case INSTANCEOF:
+            case NOT_INSTANCEOF:
                 ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, true);
                 return this.configureAST(
                         new BinaryExpression((Expression) this.visit(ctx.left),
@@ -2227,6 +2227,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             case GT:
             case LT:
             case IN:
+            case NOT_IN:
                 return this.configureAST(
                         this.createBinaryExpression(ctx.left, ctx.op, ctx.right),
                         ctx);
@@ -3689,6 +3690,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 text,
                 token.getLine(),
                 token.getCharPositionInLine() + 1
+        );
+    }
+
+    private org.codehaus.groovy.syntax.Token createGroovyToken(String text, int startLine, int startColumn) {
+        return new org.codehaus.groovy.syntax.Token(
+                Types.lookup(text, Types.ANY),
+                text,
+                startLine,
+                startColumn
         );
     }
 

@@ -40,6 +40,18 @@ public class SemanticPredicates {
         return true;
     }
 
+    public static boolean isFollowedBy(CharStream cs, char... chars) {
+        int c1 = cs.LA(1);
+
+        for (char c : chars) {
+            if (c1 == c) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static boolean isFollowedByJavaLetterInGString(CharStream cs) {
         int c1 = cs.LA(1);
 

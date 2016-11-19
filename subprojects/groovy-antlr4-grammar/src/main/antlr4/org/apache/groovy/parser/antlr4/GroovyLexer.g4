@@ -268,11 +268,12 @@ fragment DollarSlashyStringCharacter
     ;
 
 // Groovy keywords
-AS            : 'as';
-DEF           : 'def';
-IN            : 'in';
-TRAIT         : 'trait';
-THREADSAFE    : 'threadsafe';
+AS              : 'as';
+DEF             : 'def';
+IN              : 'in';
+TRAIT           : 'trait';
+THREADSAFE      : 'threadsafe';
+
 
 // §3.9 Keywords
 BuiltInPrimitiveType
@@ -641,6 +642,10 @@ SPACESHIP           : '<=>';
 IDENTICAL           : '===';
 NOT_IDENTICAL       : '!==';
 ARROW               : '->';
+
+// !internalPromise will be parsed as !in ternalPromise, so semantic predicates are necessary
+NOT_INSTANCEOF      : '!instanceof' { isFollowedBy(_input, ' ', '\t', '\r', '\n') }?;
+NOT_IN              : '!in'         { isFollowedBy(_input, ' ', '\t', '\r', '\n', '[', '(', '{') }?;
 
 fragment
 DOLLAR              : '$';

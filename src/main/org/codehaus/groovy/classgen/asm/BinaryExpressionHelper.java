@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -49,11 +50,15 @@ public class BinaryExpressionHelper {
     private static final MethodCaller matchRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "matchRegex");
     // isCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
+    // isNotCase
+    private static final MethodCaller isNotCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotCase");
 
     private final WriterController controller;
+    private final UnaryExpressionHelper unaryExpressionHelper;
     
     public BinaryExpressionHelper(WriterController wc) {
         this.controller = wc;
+        this.unaryExpressionHelper = new UnaryExpressionHelper(this.controller);
     }
     
     public WriterController getController(){
@@ -212,6 +217,10 @@ public class BinaryExpressionHelper {
             evaluateInstanceof(expression);
             break;
 
+        case COMPARE_NOT_INSTANCEOF:
+            evaluateNotInstanceof(expression);
+            break;
+
         case FIND_REGEX:
             evaluateCompareExpression(findRegexMethod, expression);
             break;
@@ -230,6 +239,10 @@ public class BinaryExpressionHelper {
 
         case KEYWORD_IN:
             evaluateCompareExpression(isCaseMethod, expression);
+            break;
+
+        case COMPARE_NOT_IN:
+            evaluateCompareExpression(isNotCaseMethod, expression);
             break;
 
         case COMPARE_IDENTICAL:
@@ -583,6 +596,18 @@ public class BinaryExpressionHelper {
         String classInternalName = BytecodeHelper.getClassInternalName(classType);
         controller.getMethodVisitor().visitTypeInsn(INSTANCEOF, classInternalName);
         operandStack.replace(ClassHelper.boolean_TYPE);
+    }
+
+    private void evaluateNotInstanceof(BinaryExpression expression) {
+        unaryExpressionHelper.writeNotExpression(
+                new NotExpression(
+                        new BinaryExpression(
+                                expression.getLeftExpression(),
+                                Token.newSymbol(KEYWORD_INSTANCEOF, -1, -1),
+                                expression.getRightExpression()
+                        )
+                )
+        );
     }
 
     public MethodCaller getIsCaseMethod() {
