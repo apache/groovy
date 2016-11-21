@@ -4216,9 +4216,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     /**
      * Attach doc comment to member node as meta data
      * <p>
-     * TODO add a switch to turn on or off the doc attachment, which impacts the performance somehow
      */
     private void attachDocCommentAsMetaData(ASTNode node, GroovyParserRuleContext ctx) {
+        if (!EXTRACTING_DOC_COMMENT_ENABLED) {
+            return;
+        }
+
         if (!asBoolean(node) || !asBoolean(ctx)) {
             return;
         }
@@ -4300,6 +4303,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         throw new GroovyBugError("node can not be found: " + node.getText()); // The exception should never be thrown!
+    }
+
+    private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment";
+    private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
+
+    static {
+        boolean edce;
+        try {
+            edce = "true".equals(System.getProperty(EXTRACT_DOC_COMMENT));
+        } catch (Exception e) {
+            edce = false;
+        }
+
+        EXTRACTING_DOC_COMMENT_ENABLED = edce;
     }
 
     private final ModuleNode moduleNode;

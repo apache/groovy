@@ -53,3 +53,7 @@ allprojects {
         groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
     }
 }
+
+test {
+    jvmArgs "-Dgroovy.extract.doc.comment=true", "-Dgroovy.antlr4.cache.threshold=100"
+}
