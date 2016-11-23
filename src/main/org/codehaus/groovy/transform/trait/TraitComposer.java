@@ -143,7 +143,7 @@ public abstract class TraitComposer {
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             boolean isAbstract = methodNode.isAbstract();
-            if (!isAbstract && helperMethodParams.length > 0 && ((methodNode.getModifiers() & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) && !name.contains("$")) {
+            if (!isAbstract && helperMethodParams.length > 0 && ((methodNode.getModifiers() & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) && (!name.contains("$") || (methodNode.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0)) {
                 ArgumentListExpression argList = new ArgumentListExpression();
                 argList.addExpression(new VariableExpression("this"));
                 Parameter[] origParams = new Parameter[helperMethodParams.length - 1];
