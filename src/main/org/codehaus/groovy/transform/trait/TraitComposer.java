@@ -70,6 +70,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 
 /**
@@ -208,6 +211,7 @@ public abstract class TraitComposer {
                     String operation = methodNode.getName().substring(suffixIdx + 1);
                     boolean getter = "get".equals(operation);
                     ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
+                    int fieldMods = 0;
                     int isStatic = 0;
                     boolean publicField = true;
                     FieldNode helperField = fieldHelperClassNode.getField(Traits.FIELD_PREFIX + Traits.PUBLIC_FIELD_PREFIX + fieldName);
@@ -223,7 +227,22 @@ public abstract class TraitComposer {
                             publicField = false;
                             helperField = fieldHelperClassNode.getField(Traits.STATIC_FIELD_PREFIX+Traits.PRIVATE_FIELD_PREFIX +fieldName);
                         }
+                        fieldMods = fieldMods | Opcodes.ACC_STATIC;
                         isStatic = Opcodes.ACC_STATIC;
+                    }
+                    if (helperField == null) {
+                        fieldMods = 0;
+                        isStatic = 0;
+                        for (Integer mod : Traits.FIELD_PREFIXES) {
+                            helperField = fieldHelperClassNode.getField(String.format("$0x%04x", mod) + fieldName);
+                            if (helperField != null) {
+                                if ((mod & Opcodes.ACC_STATIC) != 0) isStatic = Opcodes.ACC_STATIC;
+                                fieldMods = fieldMods | mod;
+                                break;
+                            }
+                        }
+                    } else {
+                        fieldMods = fieldMods | (publicField?Opcodes.ACC_PUBLIC:Opcodes.ACC_PRIVATE);
                     }
                     if (getter) {
                         // add field
@@ -231,7 +250,7 @@ public abstract class TraitComposer {
                             List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                             List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                             GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
-                            FieldNode fieldNode = cNode.addField(fieldName, (publicField?Opcodes.ACC_PUBLIC:Opcodes.ACC_PRIVATE) | isStatic, returnType, null);
+                            FieldNode fieldNode = cNode.addField(fieldName, fieldMods, returnType, (fieldMods & Opcodes.ACC_FINAL) == 0 ? null : helperField.getInitialExpression());
                             fieldNode.addAnnotations(copied);
                         }
                     }
@@ -244,28 +263,30 @@ public abstract class TraitComposer {
                         newParams = new Parameter[]{new Parameter(fixedType, "val")};
                     }
 
-                    Expression fieldExpr = new VariableExpression(cNode.getField(fieldName));
+                    Expression fieldExpr = varX(cNode.getField(fieldName));
                     Statement body =
-                            getter ? new ReturnStatement(fieldExpr) :
-                                    new ExpressionStatement(
+                            getter ? returnS(fieldExpr) :
+                                    stmt(
                                             new BinaryExpression(
                                                     fieldExpr,
                                                     Token.newSymbol(Types.EQUAL, 0, 0),
-                                                    new VariableExpression(newParams[0])
+                                                    varX(newParams[0])
                                             )
                                     );
-                    MethodNode impl = new MethodNode(
-                            methodNode.getName(),
-                            Opcodes.ACC_PUBLIC | isStatic,
-                            returnType,
-                            newParams,
-                            ClassNode.EMPTY_ARRAY,
-                            body
-                    );
-                    AnnotationNode an = new AnnotationNode(COMPILESTATIC_CLASSNODE);
-                    impl.addAnnotation(an);
-                    cNode.addTransform(StaticCompileTransformation.class, an);
-                    cNode.addMethod(impl);
+                    if (getter || (fieldMods & Opcodes.ACC_FINAL) == 0) {
+                        MethodNode impl = new MethodNode(
+                                methodNode.getName(),
+                                Opcodes.ACC_PUBLIC | isStatic,
+                                returnType,
+                                newParams,
+                                ClassNode.EMPTY_ARRAY,
+                                body
+                        );
+                        AnnotationNode an = new AnnotationNode(COMPILESTATIC_CLASSNODE);
+                        impl.addAnnotation(an);
+                        cNode.addTransform(StaticCompileTransformation.class, an);
+                        cNode.addMethod(impl);
+                    }
                 }
             }
         }

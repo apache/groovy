@@ -388,7 +388,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper, final ClassNode trait, final Set<String> knownFields) {
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
-        if (initialExpression != null) {
+        if (initialExpression != null && !field.isFinal()) {
             VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
             ExpressionStatement initCode = new ExpressionStatement(initialExpression);
             processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
@@ -416,14 +416,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             code.addStatement(new ExpressionStatement(mce));
         }
         // define setter/getter helper methods
-        fieldHelper.addMethod(
-                Traits.helperSetterName(field),
-                ACC_PUBLIC | ACC_ABSTRACT,
-                field.getOriginType(),
-                new Parameter[]{new Parameter(field.getOriginType(), "val")},
-                ClassNode.EMPTY_ARRAY,
-                null
-        );
+        if (!Modifier.isFinal(field.getModifiers())) {
+            fieldHelper.addMethod(
+                    Traits.helperSetterName(field),
+                    ACC_PUBLIC | ACC_ABSTRACT,
+                    field.getOriginType(),
+                    new Parameter[]{new Parameter(field.getOriginType(), "val")},
+                    ClassNode.EMPTY_ARRAY,
+                    null
+            );
+        }
         fieldHelper.addMethod(
                 Traits.helperGetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
@@ -435,15 +437,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // dummy fields are only used to carry annotations if instance field
         // and to differentiate from static fields otherwise
-        String dummyFieldName = (field.isStatic() ? Traits.STATIC_FIELD_PREFIX : Traits.FIELD_PREFIX) +
-                (field.isPublic()? Traits.PUBLIC_FIELD_PREFIX : Traits.PRIVATE_FIELD_PREFIX)+
-                Traits.remappedFieldName(field.getOwner(), field.getName());
+        int mods = field.getModifiers() & Traits.FIELD_PREFIX_MASK;
+        String dummyFieldName = String.format("$0x%04x", mods) + Traits.remappedFieldName(field.getOwner(), field.getName());
         FieldNode dummyField = new FieldNode(
                 dummyFieldName,
                 ACC_STATIC | ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
                 field.getOriginType(),
                 fieldHelper,
-                null
+                field.isFinal() ? initialExpression : null
         );
         // copy annotations from field to dummy field
         List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
