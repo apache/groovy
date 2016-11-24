@@ -63,22 +63,72 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
         assert timesMethodBodyExecuted == 1
 
         timesMethodBodyExecuted = 0
-        lst.metaClass.getUsersByDeptAndMgrId = { String dept, int id ->
+        def code = { String dept, int id ->
             ++timesMethodBodyExecuted
             [dept, "${id}"]
+        }
+
+        lst.metaClass.getUsersByDeptAndMgrId = code.memoize()
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert timesMethodBodyExecuted == 2
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert timesMethodBodyExecuted == 2
+
+        // test SoftReferenceMemoizeFunction
+        lst.metaClass.getUsersByDeptAndMgrId = code.memoizeAtLeast(4)
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
+        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
+
+        assert timesMethodBodyExecuted == 4
+    }
+
+    void testMemoizeClosureParameters() {
+        def clo = { String a, Date b, c -> 42 }.memoize()
+        assert clo.maximumNumberOfParameters == 3
+        assert clo.parameterTypes[0] == String
+        assert clo.parameterTypes[1] == Date
+        assert clo.parameterTypes[2] == Object
+
+        // test SoftReferenceMemoizeFunction
+        clo = { String a, Date b, c -> 42 }.memoizeAtLeast(2)
+        assert clo.maximumNumberOfParameters == 3
+        assert clo.parameterTypes[0] == String
+        assert clo.parameterTypes[1] == Date
+        assert clo.parameterTypes[2] == Object
+    }
+
+    // GROOVY-6175
+    void testMemoizeClosureAsProperty() {
+        def c = new ClassWithMemoizeClosureProperty();
+
+        assert c.mc() == 1
+        assert c.mc() == 1
+
+        assert c.mcSoftRef() == 1
+        assert c.mcSoftRef() == 1
+    }
+
+    private static class ClassWithMemoizeClosureProperty {
+        int timesCalled, timesCalledSoftRef
+        def mc = {
+            ++timesCalled
         }.memoize()
 
-        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
-        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
-
-        assert timesMethodBodyExecuted == 2
-
-        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
-        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
-
-        assert lst.getUsersByDeptAndMgrId('123', 555) == ['123', '555']
-        assert lst.getUsersByDeptAndMgrId('456', 999) == ['456', '999']
-
-        assert timesMethodBodyExecuted == 2
+        def mcSoftRef = {
+            ++timesCalledSoftRef
+        }.memoizeAtLeast(4)
     }
 }
