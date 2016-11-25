@@ -20,6 +20,7 @@ package org.apache.groovy.parser.antlr4
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
+import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
 import org.codehaus.groovy.ast.stmt.AssertStatement
@@ -49,6 +50,7 @@ class GroovyParserTest extends GroovyTestCase {
     private static doTestAttachedComments() {
         def (newAST, oldAST) = doTest('core/Comments_02.groovy');
         List<ClassNode> classes = new ArrayList<>(newAST.classes).sort { c1, c2 -> c1.name <=> c2.name };
+        List<MethodNode> methods = new ArrayList<>(newAST.methods).sort { m1, m2 -> m1.name <=> m2.name };
 
         assert classes[0].nodeMetaData[AstBuilder.DOC_COMMENT].replaceAll(/\r?\n/, '')            == '/** * test class Comments */'
         assert classes[0].fields[0].nodeMetaData[AstBuilder.DOC_COMMENT].replaceAll(/\r?\n/, '')  == '/**     * test Comments.SOME_VAR     */'
@@ -75,6 +77,9 @@ class GroovyParserTest extends GroovyTestCase {
         assert classes[4].fields[0].nodeMetaData[AstBuilder.DOC_COMMENT] == null
 
         assert classes[5].nodeMetaData[AstBuilder.DOC_COMMENT] == null
+
+        assert methods[0].nodeMetaData[AstBuilder.DOC_COMMENT].replaceAll(/\r?\n/, '') == '/** * test someScriptMethod1 */'
+        assert methods[1].nodeMetaData[AstBuilder.DOC_COMMENT] == null
     }
 
     void "test groovy core - PackageDeclaration"() {

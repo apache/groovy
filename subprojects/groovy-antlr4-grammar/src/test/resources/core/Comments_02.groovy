@@ -105,3 +105,13 @@ class Comments2 {
 }
 
 class Comments3 {}
+
+/**
+ * test someScriptMethod1
+ */
+void someScriptMethod1() {}
+
+/*
+ * test someScriptMethod2
+ */
+void someScriptMethod2() {}

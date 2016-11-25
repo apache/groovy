@@ -1119,8 +1119,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
 
             modifierManager.attachAnnotations(methodNode);
-
-            this.attachDocCommentAsMetaData(methodNode, ctx);
         } else { // script method declaration
             methodNode =
                     new MethodNode(
@@ -1162,6 +1160,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 throw createParsingFailedException("You defined a method[" + methodNode.getName() + "] without body. Try adding a method body, or declare it abstract", methodNode);
             }
         }
+
+        this.attachDocCommentAsMetaData(methodNode, ctx);
 
         return methodNode;
     }
