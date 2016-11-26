@@ -247,9 +247,20 @@ try (
         Resource r1 = new Resource(
         1
 )
-     Resource r2 = new Resource(2)
-    ) {
+        Resource r2 = new Resource(2)
+) {
     a = 2;
 }
 assert Resource.closedResourceIds == [2, 1]
 assert 2 == a
+
+// test case 17
+Resource.closedResourceIds = []
+a = 1;
+try (r1 = new Resource(1)
+     r2 = new Resource(2)) {
+    a = 2;
+}
+assert Resource.closedResourceIds == [2, 1]
+assert 2 == a
+

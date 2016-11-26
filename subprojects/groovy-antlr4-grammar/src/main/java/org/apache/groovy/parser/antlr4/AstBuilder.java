@@ -444,13 +444,40 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ExpressionStatement visitResource(ResourceContext ctx) {
-        List<ExpressionStatement> declarationStatements = this.visitLocalVariableDeclaration(ctx.localVariableDeclaration()).getDeclarationStatements();
+        if (asBoolean(ctx.localVariableDeclaration())) {
+            List<ExpressionStatement> declarationStatements = this.visitLocalVariableDeclaration(ctx.localVariableDeclaration()).getDeclarationStatements();
 
-        if (declarationStatements.size() > 1) {
-            throw createParsingFailedException("Multi resources can not be declared in one statement", ctx);
+            if (declarationStatements.size() > 1) {
+                throw createParsingFailedException("Multi resources can not be declared in one statement", ctx);
+            }
+
+            return declarationStatements.get(0);
+        } else if (asBoolean(ctx.expression())) {
+            Expression expression = (Expression) this.visit(ctx.expression());
+            if (!(expression instanceof BinaryExpression
+                    && Types.ASSIGN == ((BinaryExpression) expression).getOperation().getType()
+                    && ((BinaryExpression) expression).getLeftExpression() instanceof VariableExpression)) {
+
+                throw createParsingFailedException("Only variable declarations are allowed to declare resource", ctx);
+            }
+
+            BinaryExpression assignmentExpression = (BinaryExpression) expression;
+
+            return this.configureAST(
+                    new ExpressionStatement(
+                            this.configureAST(
+                                    new DeclarationExpression(
+                                            this.configureAST(
+                                                    new VariableExpression(assignmentExpression.getLeftExpression().getText()),
+                                                    assignmentExpression.getLeftExpression()
+                                            ),
+                                            assignmentExpression.getOperation(),
+                                            assignmentExpression.getRightExpression()
+                                    ), ctx)
+                    ), ctx);
         }
 
-        return declarationStatements.get(0);
+        throw createParsingFailedException("Unsupported resource declaration: " + ctx.getText(), ctx);
     }
 
     /**

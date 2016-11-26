@@ -688,6 +688,7 @@ resourceList
 
 resource
     :   localVariableDeclaration
+    |   expression
     ;
 
 
