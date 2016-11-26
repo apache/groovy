@@ -137,6 +137,10 @@ public abstract class Memoize {
             }
             return result == MEMOIZE_NULL ? null : (V) result;
         }
+
+        public V doCall(final Object... args) {
+            return call(args);
+        }
     }
     
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
