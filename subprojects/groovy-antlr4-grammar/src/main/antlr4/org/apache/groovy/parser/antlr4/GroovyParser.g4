@@ -679,11 +679,11 @@ finallyBlock
 
 
 resources
-    :   LPAREN resourceList SEMI? RPAREN
+    :   LPAREN nls resourceList sep? RPAREN
     ;
 
 resourceList
-    :   resource (SEMI resource)*
+    :   resource (sep resource)*
     ;
 
 resource

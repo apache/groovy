@@ -85,6 +85,38 @@ lexer grammar GroovyLexer;
      */
     protected void rollbackOneChar() {}
 
+    private static class Paren {
+        private String text;
+        private int lastTokenType;
+
+        public Paren(String text, int lastTokenType) {
+            this.text = text;
+            this.lastTokenType = lastTokenType;
+        }
+
+        public String getText() {
+            return this.text;
+        }
+
+        public int getLastTokenType() {
+            return this.lastTokenType;
+        }
+
+        @Override
+        public int hashCode() {
+            return text.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Paren)) {
+                return false;
+            }
+
+            return this.text.equals(((Paren) obj).text);
+        }
+    }
+
     private static final Map<String, String> PAREN_MAP = Collections.unmodifiableMap(new HashMap<String, String>() {
         {
             put("(", ")");
@@ -92,25 +124,30 @@ lexer grammar GroovyLexer;
             put("{", "}");
         }
     });
-    private final Deque<String> parenStack = new ArrayDeque<>(32);
+
+    private final Deque<Paren> parenStack = new ArrayDeque<>(32);
     private void enterParen() {
-        parenStack.push(getText());
+        parenStack.push(new Paren(getText(), this.lastTokenType));
     }
     private void exitParen() {
-        String paren = parenStack.peek();
+        Paren paren = parenStack.peek();
 
         String text = getText();
         assert null != paren: "Too many '" + text + "' " + genPositionInfo();
-        assert text.equals(PAREN_MAP.get(paren)): "'" + text + "' can not match '" + paren + "' " + genPositionInfo();
+        assert text.equals(PAREN_MAP.get(paren.getText())): "'" + text + "' can not match '" + paren.getText() + "' " + genPositionInfo();
 
         parenStack.pop();
     }
     private boolean isInsideParens() {
-        String paren = parenStack.peek();
+        Paren paren = parenStack.peek();
 
         // We just care about "(" and "[", inside which the new lines will be ignored.
         // Notice: the new lines between "{" and "}" can not be ignored.
-        return "(".equals(paren) || "[".equals(paren);
+        if (null == paren) {
+            return false;
+        }
+        return ("(".equals(paren.getText()) && TRY != paren.getLastTokenType()) // we don't treat try-paren(i.e. try (....)) as parenthesis
+                    || "[".equals(paren.getText());
     }
     private void ignoreTokenInsideParens() {
         if (!this.isInsideParens()) {

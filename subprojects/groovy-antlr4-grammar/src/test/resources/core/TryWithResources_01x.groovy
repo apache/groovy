@@ -239,3 +239,17 @@ void tryWithResources() {
 
 tryWithResources()
 
+
+// test case 16
+Resource.closedResourceIds = []
+a = 1;
+try (
+        Resource r1 = new Resource(
+        1
+)
+     Resource r2 = new Resource(2)
+    ) {
+    a = 2;
+}
+assert Resource.closedResourceIds == [2, 1]
+assert 2 == a
