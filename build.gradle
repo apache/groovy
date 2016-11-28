@@ -153,10 +153,10 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '3.1'
+    gradleVersion = '3.2.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
-    jarjarVersion = '1.3'
+    jarjarVersion = '1.4.1'
     jlineVersion = '2.14.2'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
@@ -208,7 +208,8 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+//    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools files("lib/jarjar-${jarjarVersion}.jar")
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
