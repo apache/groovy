@@ -34,12 +34,14 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,6 +73,13 @@ public abstract class Traits {
     static final String FIELD_PREFIX = "$ins";
     static final String PUBLIC_FIELD_PREFIX = "$0";
     static final String PRIVATE_FIELD_PREFIX = "$1";
+    // TODO decide if we should support VOLATILE
+//    def hex(s) {new BigInteger(s, 16).intValue()}
+//    def optionals = [[0, 1], [0, 1], [0, 1], [0, 1]].combinations{ a, b, c, d ->
+//            (a ? hex('80') : 0) + (b ? hex('10') : 0) + (c ? hex('8') : 0) + (d ? hex('2') : hex('1'))
+//    }.sort()
+    static final List<Integer> FIELD_PREFIXES = Arrays.asList(1, 2, 9, 10, 17, 18, 25, 26, 129, 130, 137, 138, 145, 146, 153, 154);
+    static final int FIELD_PREFIX_MASK = Opcodes.ACC_PRIVATE | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT;
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
     static String fieldHelperClassName(final ClassNode traitNode) {

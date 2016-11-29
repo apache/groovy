@@ -16,15 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.syntax;
 
 import static org.codehaus.groovy.syntax.Types.*;
 
+/**
+ * Utility methods for working with Tokens.
+ *
+ */
 public class TokenUtil {
     private TokenUtil() {
     }
 
+    /**
+     * Removes the assignment portion of a given token.  If the given token
+     * is not an operator with assignment, the given token is returned.
+     *
+     * @param op token for which to remove assignment
+     * @return token without assignment, or the original token
+     *          if it was not an assignment operator
+     */
     public static int removeAssignment(int op) {
         switch (op) {
             case PLUS_EQUAL: return PLUS;

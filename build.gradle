@@ -131,6 +131,7 @@ subprojects {
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
+    maven { url 'http://repo.bodar.com' } // tools - jarjar
 }
 
 // todo do we need compile and runtime scope for examples?
@@ -208,8 +209,8 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-//    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
-    tools files("lib/jarjar-${jarjarVersion}.jar")
+    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+//    tools files("lib/jarjar-${jarjarVersion}.jar")
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {

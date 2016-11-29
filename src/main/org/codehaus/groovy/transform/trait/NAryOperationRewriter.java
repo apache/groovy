@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.TokenUtil;
 
 import java.util.Collection;
 
@@ -107,8 +108,8 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
 
     private Expression transformBinaryExpression(final BinaryExpression exp) {
         final int op = exp.getOperation().getType();
-        int token = getOperationWithoutEqual(op);
-        if (token < 0) {
+        int token = TokenUtil.removeAssignment(op);
+        if (token == op) {
             // no transform needed
             return super.transform(exp);
         }
@@ -125,59 +126,5 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         );
         result.setSourcePosition(exp);
         return result;
-    }
-
-    private static int getOperationWithoutEqual(final int op) {
-        int token = -1;
-        switch (op) {
-            case LOGICAL_OR_EQUAL:
-                token = LOGICAL_OR;
-                break;
-            case LOGICAL_AND_EQUAL:
-                token = LOGICAL_AND;
-                break;
-            case PLUS_EQUAL:
-                token = PLUS;
-                break;
-            case MINUS_EQUAL:
-                token = MINUS;
-                break;
-            case MULTIPLY_EQUAL:
-                token = MULTIPLY;
-                break;
-            case DIVIDE_EQUAL:
-                token = DIVIDE;
-                break;
-            case INTDIV_EQUAL:
-                token = INTDIV;
-                break;
-            case MOD_EQUAL:
-                token = MOD;
-                break;
-            case POWER_EQUAL:
-                token = POWER;
-                break;
-            case LEFT_SHIFT_EQUAL:
-                token = LEFT_SHIFT;
-                break;
-            case RIGHT_SHIFT_EQUAL:
-                token = RIGHT_SHIFT;
-                break;
-            case RIGHT_SHIFT_UNSIGNED_EQUAL:
-                token = RIGHT_SHIFT_UNSIGNED;
-                break;
-            case BITWISE_OR_EQUAL:
-                token = BITWISE_OR;
-                break;
-            case BITWISE_AND_EQUAL:
-                token = BITWISE_AND;
-                break;
-            case BITWISE_XOR_EQUAL:
-                token = BITWISE_XOR;
-                break;
-            default:
-                token = -1;
-        }
-        return token;
     }
 }
