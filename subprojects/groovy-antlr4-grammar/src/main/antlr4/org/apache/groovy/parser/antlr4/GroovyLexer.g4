@@ -133,8 +133,9 @@ lexer grammar GroovyLexer;
         Paren paren = parenStack.peek();
 
         String text = getText();
-        assert null != paren: "Too many '" + text + "' " + genPositionInfo();
-        assert text.equals(PAREN_MAP.get(paren.getText())): "'" + text + "' can not match '" + paren.getText() + "' " + genPositionInfo();
+
+        require(null != paren, "Too many '" + text + "'");
+        require(text.equals(PAREN_MAP.get(paren.getText())), "'" + text + "' can not match '" + paren.getText() + "'");
 
         parenStack.pop();
     }
@@ -156,16 +157,26 @@ lexer grammar GroovyLexer;
 
         this.setChannel(Token.HIDDEN_CHANNEL);
     }
-    private String genPositionInfo() {
-        return "@ line " + getLine() + ", column " + (getCharPositionInLine() + 1);
-    }
-
     private void ignoreMultiLineCommentConditionally() {
         if (!this.isInsideParens() && isFollowedByWhiteSpaces(_input)) {
             return;
         }
 
         this.setChannel(Token.HIDDEN_CHANNEL);
+    }
+
+    private void require(boolean condition, String msg) {
+        if (condition) {
+            return;
+        }
+
+        this.syntaxError(msg);
+    }
+    private void syntaxError(String msg) {
+        throw new GroovySyntaxError(msg + this.genPositionInfo());
+    }
+    private String genPositionInfo() {
+        return " @ line " + getLine() + ", column " + (getCharPositionInLine() + 1);
     }
 }
 
