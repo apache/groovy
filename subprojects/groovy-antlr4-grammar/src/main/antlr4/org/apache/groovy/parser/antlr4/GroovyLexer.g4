@@ -34,6 +34,10 @@
  */
 lexer grammar GroovyLexer;
 
+options {
+    superClass = AbstractLexer;
+}
+
 @header {
     import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
     import java.util.Deque;
@@ -165,17 +169,13 @@ lexer grammar GroovyLexer;
         this.setChannel(Token.HIDDEN_CHANNEL);
     }
 
-    private void require(boolean condition, String msg) {
-        if (condition) {
-            return;
-        }
+    @Override
+    public int getSyntaxErrorSource() {
+        return GroovySyntaxError.LEXER;
+    }
 
-        this.syntaxError(msg);
-    }
-    private void syntaxError(String msg) {
-        throw new GroovySyntaxError(msg + this.genPositionInfo());
-    }
-    private String genPositionInfo() {
+    @Override
+    public String genPositionInfo() {
         return " @ line " + getLine() + ", column " + (getCharPositionInLine() + 1);
     }
 }

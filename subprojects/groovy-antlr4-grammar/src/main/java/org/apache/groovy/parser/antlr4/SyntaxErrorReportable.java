@@ -18,27 +18,21 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import java.util.IllegalFormatCodePointException;
-
 /**
- * Represents a syntax error of groovy program
+ * A SyntaxErrorReportable is a recognizer that can report syntax error
  */
-public class GroovySyntaxError extends AssertionError {
-    public static final int LEXER = 0;
-    public static final int PARSER = 1;
-    private int source;
-
-    public GroovySyntaxError(String message, int source) {
-        super(message, null);
-
-        if (source != LEXER && source != PARSER) {
-            throw new IllegalArgumentException("Invalid syntax error source: " + source);
+public interface SyntaxErrorReportable {
+    default void require(boolean condition, String msg) {
+        if (condition) {
+            return;
         }
 
-        this.source = source;
+        this.throwSyntaxError(msg);
+    }
+    default void throwSyntaxError(String msg) {
+        throw new GroovySyntaxError(msg + this.genPositionInfo(), this.getSyntaxErrorSource());
     }
 
-    public int getSource() {
-        return source;
-    }
+    int getSyntaxErrorSource();
+    String genPositionInfo();
 }

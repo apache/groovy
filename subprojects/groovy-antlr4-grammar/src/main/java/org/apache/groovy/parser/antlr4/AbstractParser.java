@@ -18,27 +18,15 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import java.util.IllegalFormatCodePointException;
+import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.Parser;
 
 /**
- * Represents a syntax error of groovy program
+ * Because antlr4 does not support generating parser with specified interface,
+ * we have to create a super class for it and implement the interface.
  */
-public class GroovySyntaxError extends AssertionError {
-    public static final int LEXER = 0;
-    public static final int PARSER = 1;
-    private int source;
-
-    public GroovySyntaxError(String message, int source) {
-        super(message, null);
-
-        if (source != LEXER && source != PARSER) {
-            throw new IllegalArgumentException("Invalid syntax error source: " + source);
-        }
-
-        this.source = source;
-    }
-
-    public int getSource() {
-        return source;
+public abstract class AbstractParser extends Parser implements SyntaxErrorReportable {
+    public AbstractParser(TokenStream input) {
+        super(input);
     }
 }

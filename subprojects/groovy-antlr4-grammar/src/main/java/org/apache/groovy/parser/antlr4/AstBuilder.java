@@ -89,7 +89,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         AtnManager.RRWL.readLock().lock();
         try {
             result = buildCST(PredictionMode.SLL);
-        } catch (Exception e) {
+        } catch (Throwable t) {
+            // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
+            if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
+                throw t;
+            }
+
             result = buildCST(PredictionMode.LL);
         } finally {
             AtnManager.RRWL.readLock().unlock();

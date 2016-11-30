@@ -37,6 +37,7 @@ parser grammar GroovyParser;
 options {
     tokenVocab = GroovyLexer;
     contextSuperClass = GroovyParserRuleContext;
+    superClass = AbstractParser;
 }
 
 @header {
@@ -103,6 +104,24 @@ options {
             return metaDataMap.put(key, value);
         }
     }
+
+    @Override
+    public int getSyntaxErrorSource() {
+        return GroovySyntaxError.PARSER;
+    }
+
+    @Override
+    public String genPositionInfo() {
+        Token token = _input.LT(-1);
+
+        if (null == token) {
+            return "";
+        }
+
+        return " @ line " + token.getLine() + ", column " + (token.getCharPositionInLine() + 1 + token.getText().length());
+    }
+
+
 }
 
 // starting point for parsing a groovy file
@@ -730,7 +749,10 @@ castParExpression
     ;
 
 parExpression
-    :   LPAREN (statementExpression | standardLambda) RPAREN
+    :   LPAREN (statementExpression | standardLambda)
+        (   RPAREN
+        |   { require(false, "Missing ')'"); }
+        )
 
     // !!!Error Alternatives!!!
     //|   LPAREN statementExpression RPAREN RPAREN+ { notifyErrorListeners("Too many ')'"); } // the "Too many" case has been handled by the lexer
