@@ -54,6 +54,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFiel
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -141,16 +142,18 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(pre);
             copyStatementsWithSuperAdjustment(transformed, body);
         }
+        final BlockStatement inner = new BlockStatement();
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes, allNames)) continue;
-            assignField(useSetters, map, body, name);
+            assignField(useSetters, map, inner, name);
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes, allNames)) continue;
-            assignField(useSetters, map, body, name);
+            assignField(useSetters, map, inner, name);
         }
+        body.addStatement(ifS(notNullX(varX("args")), inner));
         if (post != null) {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(post);
             body.addStatement(transformed.getCode());
