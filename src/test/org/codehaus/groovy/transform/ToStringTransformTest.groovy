@@ -448,4 +448,25 @@ class ToStringTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testIncludesWithSuper_Groovy8011() {
+        def toString = evaluate("""
+            import groovy.transform.*
+
+            @ToString
+            class Foo {
+                String baz = 'baz'
+            }
+
+            @ToString(includes='super,num,blah', includeNames=true)
+            class Bar extends Foo {
+                String blah = 'blah'
+                int num = 42
+            }
+
+            new Bar().toString()
+        """)
+
+        assert toString.contains('super:Foo(baz)')
+    }
+
 }
