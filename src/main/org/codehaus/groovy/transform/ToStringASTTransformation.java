@@ -42,6 +42,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -153,7 +155,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         boolean canBeSelf;
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
         // def _result = new StringBuilder()
         final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
@@ -189,6 +191,15 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         if (includeSuper) {
             // not through MOP to avoid infinite recursion
             elements.add(new ToStringElement(callSuperX("toString"), "super", false));
+        }
+
+        if (includes != null) {
+            Comparator<ToStringElement> includeComparator = new Comparator<ToStringElement>() {
+                public int compare(ToStringElement tse1, ToStringElement tse2) {
+                    return new Integer(includes.indexOf(tse1.name)).compareTo(includes.indexOf(tse2.name));
+                }
+            };
+            Collections.sort(elements, includeComparator);
         }
 
         for (ToStringElement el : elements) {

@@ -469,4 +469,25 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assert toString.contains('super:Foo(baz)')
     }
 
+    void testIncludesOrdering_Groovy8014() {
+        assertScript """
+            import groovy.transform.*
+
+            @ToString
+            class Foo {
+                String baz = 'baz'
+            }
+
+            @ToString(includes='a,c,super,b,d', includeFields=true, includeSuper=true)
+            class Bar extends Foo {
+                int a = 1
+                int b = 2
+                private int c = 3
+                public int d = 4
+            }
+
+            assert new Bar().toString() == 'Bar(1, 3, Foo(baz), 2, 4)'
+        """
+    }
+
 }
