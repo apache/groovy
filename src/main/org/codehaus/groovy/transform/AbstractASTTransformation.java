@@ -24,12 +24,15 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
@@ -49,6 +52,7 @@ import java.util.Map;
 import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyNames;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
@@ -426,13 +430,33 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields) {
+        return checkPropertyList(cNode, propertyNameList, listName, anno, typeName, includeFields, false, false);
+    }
+
+    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields, boolean includeSuperProperties, boolean allProperties) {
+        return checkPropertyList(cNode, propertyNameList, listName, anno, typeName, includeFields, includeSuperProperties, allProperties, false);
+    }
+
+    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields, boolean includeSuperProperties, boolean allProperties, boolean includeSuperFields) {
         if (propertyNameList == null || propertyNameList.isEmpty()) {
             return true;
         }
-        final List<String> pNames = getInstancePropertyNames(cNode);
+        final List<String> pNames = new ArrayList<String>();
+        for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, includeSuperProperties, false, allProperties)) {
+            pNames.add(pNode.getField().getName());
+        }
         boolean result = true;
-        if (includeFields) {
-            final List<String> fNames = getInstanceNonPropertyFieldNames(cNode);
+        if (includeFields || includeSuperFields) {
+            final List<String> fNames = new ArrayList<String>();
+            if (includeFields) {
+                fNames.addAll(getInstanceNonPropertyFieldNames(cNode));
+            }
+            if (includeSuperFields) {
+                List<FieldNode> superNonPropertyFields = getSuperNonPropertyFields(cNode.getSuperClass());
+                for (FieldNode fn : superNonPropertyFields) {
+                    fNames.add(fn.getName());
+                }
+            }
             for (String pName : propertyNameList) {
                 if (!pNames.contains(pName) && !fNames.contains(pName)) {
                     addError("Error during " + typeName + " processing: '" + listName + "' property or field '" + pName + "' does not exist.", anno);
