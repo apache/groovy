@@ -89,8 +89,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             boolean allNames = memberHasValue(anno, "allNames", true);
 
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
-            if (!checkPropertyList(cNode, includes != null ? DefaultGroovyMethods.minus(includes, "super") : null, "includes", anno, MY_TYPE_NAME, includeFields)) return;
-            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
+            if (!checkPropertyList(cNode, includes != null ? DefaultGroovyMethods.minus(includes, "super") : null, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames);
         }
     }
