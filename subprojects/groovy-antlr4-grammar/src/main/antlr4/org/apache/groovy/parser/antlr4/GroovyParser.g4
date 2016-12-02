@@ -309,7 +309,7 @@ memberDeclaration[int t]
  */
 methodDeclaration[int t, int ct]
     :   { 3 == $ct }?
-        returnType[$ct] methodName LPAREN RPAREN (DEFAULT nls elementValue)?
+        returnType[$ct] methodName LPAREN rparen (DEFAULT nls elementValue)?
     |
         (   modifiersOpt  typeParameters? returnType[$ct]
         |   modifiers  typeParameters? returnType[$ct]?
@@ -393,7 +393,7 @@ qualifiedClassNameList
     ;
 
 formalParameters
-    :   LPAREN formalParameterList? RPAREN
+    :   LPAREN formalParameterList? rparen
     ;
 
 formalParameterList
@@ -513,7 +513,7 @@ annotationsOpt
     ;
 
 annotation
-    :   AT annotationName ( LPAREN ( elementValuePairs | elementValue )? RPAREN )?
+    :   AT annotationName ( LPAREN ( elementValuePairs | elementValue )? rparen )?
     ;
 
 annotationName : qualifiedClassName ;
@@ -579,7 +579,7 @@ variableDeclaration[int t]
     ;
 
 typeNamePairs
-    :   LPAREN typeNamePair (COMMA typeNamePair)* RPAREN
+    :   LPAREN typeNamePair (COMMA typeNamePair)* rparen
     ;
 
 typeNamePair
@@ -587,7 +587,7 @@ typeNamePair
     ;
 
 variableNames
-    :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ RPAREN
+    :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ rparen
     ;
 
 switchStatement
@@ -597,7 +597,7 @@ locals[ String footprint = "" ]
 
 loopStatement
 locals[ String footprint = "" ]
-    :   FOR LPAREN forControl RPAREN nls statement                                                          #forStmtAlt
+    :   FOR LPAREN forControl rparen nls statement                                                          #forStmtAlt
     |   WHILE parExpression nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE parExpression                                                            #doWhileStmtAlt
     ;
@@ -685,7 +685,7 @@ statement
     ;
 
 catchClause
-    :   CATCH LPAREN variableModifiersOpt catchType? identifier RPAREN nls block
+    :   CATCH LPAREN variableModifiersOpt catchType? identifier rparen nls block
     ;
 
 catchType
@@ -698,7 +698,7 @@ finallyBlock
 
 
 resources
-    :   LPAREN nls resourceList sep? RPAREN
+    :   LPAREN nls resourceList sep? rparen
     ;
 
 resourceList
@@ -745,18 +745,11 @@ enhancedForControl
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type RPAREN
+    :   LPAREN type rparen
     ;
 
 parExpression
-    :   LPAREN (statementExpression | standardLambda)
-        (   RPAREN
-        |   { require(false, "Missing ')'"); }
-        )
-
-    // !!!Error Alternatives!!!
-    //|   LPAREN statementExpression RPAREN RPAREN+ { notifyErrorListeners("Too many ')'"); } // the "Too many" case has been handled by the lexer
-    //|   LPAREN statementExpression               { false }?<fail={ "Missing ')'" }>  // FIXME Impact the performance quite a lot: 26min#297 -> 31min#300
+    :   LPAREN (statementExpression | standardLambda) rparen
     ;
 
 expressionList
@@ -1086,7 +1079,7 @@ arguments
         (   enhancedArgumentList?
         |   enhancedArgumentList COMMA
         )
-        RPAREN
+        rparen
     ;
 
 argumentList
@@ -1193,6 +1186,13 @@ keywords
     |   PUBLIC
     |   PROTECTED
     |   PRIVATE
+    ;
+
+rparen
+    :   RPAREN
+    |
+        // !!!Error Alternatives!!!
+        { require(false, "Missing ')'"); }
     ;
 
 nls

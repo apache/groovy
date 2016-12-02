@@ -100,6 +100,10 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/ParExpression_03x.groovy');
     }
 
+    void "test groovy core - Parentheses"() {
+        TestUtils.shouldFail('fail/Parentheses_01.groovy');
+    }
+
     void "test groovy core - This"() {
         TestUtils.doRunAndShouldFail('fail/This_01x.groovy');
     }
