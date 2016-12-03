@@ -111,6 +111,7 @@ public class Types
     public static final int INTDIV_EQUAL                = 214;   // \=
     public static final int MOD_EQUAL                   = 215;   // %=
     public static final int POWER_EQUAL                 = 216;   // **=
+    public static final int ELVIS_EQUAL                 = 217;   // ?=
 
     public static final int PLUS_PLUS                   = 250;   // ++
     public static final int PREFIX_PLUS_PLUS            = 251;   // ++
@@ -415,7 +416,7 @@ public class Types
                 break;
 
             case ASSIGNMENT_OPERATOR:
-                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                          || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
                                          || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
@@ -498,7 +499,7 @@ public class Types
                         return true;
                 }
 
-                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                  || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
             case PREFIX_OR_INFIX_OPERATOR:
@@ -982,6 +983,7 @@ public class Types
             case INTDIV_EQUAL:
             case MOD_EQUAL:
             case POWER_EQUAL:
+            case ELVIS_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
             case LEFT_SHIFT_EQUAL:
@@ -1232,6 +1234,7 @@ public class Types
         addTranslation( "\\="         , INTDIV_EQUAL                );
         addTranslation( "%="          , MOD_EQUAL                   );
         addTranslation( "**="         , POWER_EQUAL                 );
+        addTranslation( "?="          , ELVIS_EQUAL                 );
 
         addTranslation( "++"          , PLUS_PLUS                   );
         addTranslation( "--"          , MINUS_MINUS                 );

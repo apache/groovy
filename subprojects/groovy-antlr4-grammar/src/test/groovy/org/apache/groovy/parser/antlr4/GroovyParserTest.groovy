@@ -152,6 +152,10 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/MethodPointer_01x.groovy');
     }
 
+    void "test groovy core - ElvisAssignment"() {
+        doRunAndTest('core/ElvisAssignment_01x.groovy');
+    }
+
     void "test groovy core - List"() {
         doTest('core/List_01.groovy');
     }

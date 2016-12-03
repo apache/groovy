@@ -861,6 +861,7 @@ expression
                            |   LSHIFT_ASSIGN
                            |   MOD_ASSIGN
                            |   POWER_ASSIGN
+                           |   ELVIS_ASSIGN
                            ) nls
                      (statementExpression | standardLambda)                                 #assignmentExprAlt
     ;

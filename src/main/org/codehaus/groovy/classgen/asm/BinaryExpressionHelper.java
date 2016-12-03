@@ -189,6 +189,10 @@ public class BinaryExpressionHelper {
             evaluateBinaryExpressionWithAssignment("power", expression);
             break;
 
+        case ELVIS_EQUAL:
+            evaluateElvisEqual(expression);
+            break;
+
         case LEFT_SHIFT:
             evaluateBinaryExpression("leftShift", expression);
             break;
@@ -279,6 +283,18 @@ public class BinaryExpressionHelper {
         } else {
             return false;
         }
+    }
+
+    public void evaluateElvisEqual(BinaryExpression expression) {
+        Token operation = expression.getOperation();
+        BinaryExpression elvisAssignmentExpression =
+                new BinaryExpression(
+                        expression.getLeftExpression(),
+                        Token.newSymbol(Types.EQUAL, operation.getStartLine(), operation.getStartColumn()),
+                        new ElvisOperatorExpression(expression.getLeftExpression(), expression.getRightExpression())
+                );
+
+        this.evaluateEqual(elvisAssignmentExpression, false);
     }
 
     public void evaluateEqual(BinaryExpression expression, boolean defineVariable) {

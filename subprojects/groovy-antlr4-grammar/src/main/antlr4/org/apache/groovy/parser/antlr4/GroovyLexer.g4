@@ -750,6 +750,7 @@ MOD_ASSIGN      : '%=';
 LSHIFT_ASSIGN   : '<<=';
 RSHIFT_ASSIGN   : '>>=';
 URSHIFT_ASSIGN  : '>>>=';
+ELVIS_ASSIGN    : '?=';
 
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
