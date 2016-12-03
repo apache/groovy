@@ -40,6 +40,8 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -160,7 +162,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
                                          boolean includeProperties, boolean includeSuperFields, boolean
                                                  includeSuperProperties, boolean callSuper, boolean force,
-                                         List<String> excludes, List<String> includes, boolean useSetters, boolean
+                                         List<String> excludes, final List<String> includes, boolean useSetters, boolean
                                                  defaults, boolean allNames, SourceUnit sourceUnit, ClosureExpression
                                                  pre, ClosureExpression post) {
         // no processing if existing constructors found
@@ -230,6 +232,16 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (post != null) {
             body.addStatement(post.getCode());
         }
+
+        if (includes != null) {
+            Comparator<Parameter> includeComparator = new Comparator<Parameter>() {
+                public int compare(Parameter p1, Parameter p2) {
+                    return new Integer(includes.indexOf(p1.getName())).compareTo(includes.indexOf(p2.getName()));
+                }
+            };
+            Collections.sort(params, includeComparator);
+        }
+
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         if (sourceUnit != null && !body.isEmpty()) {
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
