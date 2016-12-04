@@ -71,13 +71,6 @@ task performanceTests {
         main = 'org.apache.groovy.perf.CompilerPerformanceTest'
         classpath = groovyConf + sourceSets.test.output + configurations.stats
         jvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxPermSize=512m']
-        def compileClassPath = [
-                '-cp',
-                groovyConf.files[0]
-        ]
-        rootProject.sourceSets.test.compileClasspath.files
-                .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') }
-                .collect(compileClassPath) { it.absolutePath }
 
         // configure some files to compile. This is an arbitrary set of files which can be compiled
         // independently of the version of Groovy being tested
@@ -99,10 +92,20 @@ task performanceTests {
             "../../benchmark/bench/${it}.groovy"
         }
 
-        args = [
-                *testFiles,
-                *compileClassPath
-        ]
+        doFirst {
+            def compileClassPath = [
+                    '-cp',
+                    groovyConf.files[0]
+            ]
+            rootProject.sourceSets.test.compileClasspath.files
+                    .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') }
+                    .collect(compileClassPath) { it.absolutePath }
+
+            args = [
+                    *testFiles,
+                    *compileClassPath
+            ]
+        }
 
     }
     performanceTests.dependsOn(t)
