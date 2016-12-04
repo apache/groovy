@@ -372,7 +372,7 @@ ext.modules = {
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
     def classesDir = sourceSets.main.output.classesDir
-    def classpath = files(classesDir, configurations.compile).asPath
+    def classpath = files(classesDir, configurations.compile)
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
@@ -381,7 +381,7 @@ task dgmConverter(dependsOn:compileJava) {
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
-        ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath) {
+        ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
             arg(value: classesDir.absolutePath)
         }
