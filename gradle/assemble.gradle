@@ -411,6 +411,7 @@ allprojects {
         description = 'Triggers an external build generating the indy jar'
         buildFile = 'build.gradle'
         startParameter.projectProperties['indy'] = true
+        startParameter.projectCacheDir = file("$buildDir/indyCacheDir")
         tasks = ['jar']
     }
 }
@@ -420,6 +421,7 @@ task jarAllWithIndy(type: GradleBuild) {
     description = 'Triggers an external build generating the indy jarAll'
     buildFile = 'build.gradle'
     startParameter.projectProperties['indy'] = true
+    startParameter.projectCacheDir = file("$buildDir/indyAllCacheDir")
     tasks = ['jarAll']
 }
 
