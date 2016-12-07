@@ -56,7 +56,7 @@ usage: groovysh [options] [...]
                              be first argument
   -cp, --classpath           Aliases for '-classpath'
   -d, --debug                Enable debug output
-  -e, --evaluate=arg         Evaluate option fist when starting
+  -e, --evaluate=arg         Evaluate option first when starting
                              interactive session
   -h, --help                 Display this help message
   -q, --quiet                Suppress superfluous output
