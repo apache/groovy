@@ -77,10 +77,10 @@ public class MapExpression extends Expression {
         MapEntryExpression mapEntryExpression = null;
         if (size > 0) {
             mapEntryExpression = mapEntryExpressions.get(0);
-            sb.append(mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
+            sb.append(mapEntryExpression.getKeyExpression().getText()).append(":").append(mapEntryExpression.getValueExpression().getText());
             for (int i = 1; i < size; i++) {
                 mapEntryExpression = mapEntryExpressions.get(i);
-                sb.append(", " + mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
+                sb.append(", ").append(mapEntryExpression.getKeyExpression().getText()).append(":").append(mapEntryExpression.getValueExpression().getText());
                 if (sb.length() > 120 && i < size - 1) {
                     sb.append(", ... ");
                     break;
