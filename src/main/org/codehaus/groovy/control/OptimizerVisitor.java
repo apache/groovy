@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -26,13 +27,18 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Visitor to produce several optimizations
- *  - to replace numbered constants with references to static fields
- *
- * @author Alex Tkachman
+ * Visitor to produce several optimizations:
+ * <ul>
+ *     <li>to replace numbered constants with references to static fields</li>
+ *     <li>remove superfluous references to GroovyObject interface</li>
+ * </ul>
  */
 public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
@@ -51,6 +57,31 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         missingFields.clear();
         super.visitClass(node);
         addMissingFields();
+        pruneUnneededGroovyObjectInterface(node);
+    }
+
+    private void pruneUnneededGroovyObjectInterface(ClassNode node) {
+        ClassNode superClass = node.getSuperClass();
+        boolean isSuperGroovy = superClass.isDerivedFromGroovyObject();
+        if (isSuperGroovy) {
+            ClassNode[] interfaces = node.getInterfaces();
+            boolean needsFix = false;
+            for (ClassNode classNode : interfaces) {
+                if (classNode.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
+                    needsFix = true;
+                    break;
+                }
+            }
+            if (needsFix) {
+                List<ClassNode> newInterfaces = new ArrayList<ClassNode>(interfaces.length);
+                for (ClassNode classNode : interfaces) {
+                    if (!classNode.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
+                        newInterfaces.add(classNode);
+                    }
+                }
+                node.setInterfaces(newInterfaces.toArray(new ClassNode[newInterfaces.size()]));
+            }
+        }
     }
 
     private void addMissingFields() {
