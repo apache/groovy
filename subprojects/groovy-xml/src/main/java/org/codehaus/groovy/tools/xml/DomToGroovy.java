@@ -307,7 +307,7 @@ public class DomToGroovy {
             buffer.append(prefix);
             buffer.append(":");
             buffer.append(getLocalName(attribute));
-            buffer.append(qt + ":" + qt);
+            buffer.append(qt).append(":").append(qt);
             buffer.append(escapeQuote(getAttributeValue(attribute)));
             buffer.append(qt);
         }

@@ -265,7 +265,7 @@ class GroovySyntaxCompletor implements Completer {
         if (previousLines.size() > 0) {
             StringBuilder src = new StringBuilder()
             for (String line: previousLines) {
-                src.append(line + '\n')
+                src.append(line).append('\n')
             }
             src.append(bufferLine)
             groovyLexer = createGroovyLexer(src.toString())
