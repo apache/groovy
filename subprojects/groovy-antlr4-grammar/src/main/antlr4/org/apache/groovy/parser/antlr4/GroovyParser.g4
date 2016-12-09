@@ -179,6 +179,7 @@ classOrInterfaceModifier
           |   ABSTRACT   // class or interface
           |   FINAL      // class only -- does not apply to interfaces
           |   STRICTFP   // class or interface
+          |   DEFAULT    // interface only -- does not apply to classes
           )
     ;
 

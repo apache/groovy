@@ -2,8 +2,21 @@ package org.apache.groovy.parser.antlr4;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
@@ -73,7 +86,7 @@ public class TryWithResourcesASTTransformation {
         return variableDeclaration;
     }
 
-    private long primaryExcCnt = 0;
+    private int primaryExcCnt = 0;
     private String genPrimaryExcName() {
         return "__$$primaryExc" + primaryExcCnt++;
     }
@@ -229,7 +242,7 @@ public class TryWithResourcesASTTransformation {
         return new CatchStatement(tExcParameter, blockStatement);
     }
 
-    private long tExcCnt = 0;
+    private int tExcCnt = 0;
     private String genTExcName() {
         return "__$$t" + tExcCnt++;
     }
@@ -303,7 +316,7 @@ public class TryWithResourcesASTTransformation {
         return astBuilder.createBlockStatement(finallyBlock);
     }
 
-    private long suppressedExcCnt = 0;
+    private int suppressedExcCnt = 0;
     private String genSuppressedExcName() {
         return "__$$suppressedExc" + suppressedExcCnt++;
     }

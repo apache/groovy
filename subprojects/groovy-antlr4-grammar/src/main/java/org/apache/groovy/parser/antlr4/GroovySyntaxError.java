@@ -18,8 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import java.util.IllegalFormatCodePointException;
-
 /**
  * Represents a syntax error of groovy program
  */
