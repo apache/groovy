@@ -269,18 +269,18 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     @Override
     public void writeIfElse(IfStatement statement) {
-        if (controller.isFastPath()) {
+        StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
+        FastPathData fastPathData = writeGuards(meta, statement);
+
+        if (fastPathData==null) {
             super.writeIfElse(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-            FastPathData fastPathData = writeGuards(meta, statement);
-
             boolean oldFastPathBlock = fastPathBlocked;
             fastPathBlocked = true;
             super.writeIfElse(statement);
             fastPathBlocked = oldFastPathBlock;
 
-            if (fastPathData==null) return;
+            if (fastPathData == null) return;
             writeFastPathPrelude(fastPathData);
             super.writeIfElse(statement);
             writeFastPathEpilogue(fastPathData);
@@ -768,6 +768,12 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (opt.shouldOptimize()) addMeta(statement,opt);
             opt.pop(opt.shouldOptimize());
         }
+
+        /*@Override
+        public void visitConstantExpression(ConstantExpression expression) {
+            super.visitConstantExpression(expression);
+            opt.chainShouldOptimize(true);
+        }*/
 
         @Override
         public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
