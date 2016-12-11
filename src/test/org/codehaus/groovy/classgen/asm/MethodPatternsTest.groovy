@@ -24,6 +24,70 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
  */
 class MethodPatternsTest extends AbstractBytecodeTestCase {
 
+    void testUnoptimizedIfWithNestedOptimizedLoop(){
+        if (config.optimizationOptions.indy) return;
+        // in this example the if block contains statements that will not be optimized
+        // but we still want to optimize the for loops, which can.
+        // The test will check there is a optimized bytecode sequence for the loops.
+        assert compile('''
+
+            long sum = 0;
+            double m = 1;
+
+            if( true ) {
+
+                System.err.println( "START");
+                long t0 = System.currentTimeMillis();
+
+                for( int j=0; j<1000; j++ ) {
+                    for( int i=0; i<100_000; i++ ) {
+                       sum = sum + i;
+                       m = m*i;
+                    }
+                }
+
+                long t1 = System.currentTimeMillis();
+                System.err.println( "END - " + (t1-t0)+"ms");
+            }
+
+            System.err.println( "Done: "+sum+" "+m );
+        ''').hasSequence([
+                // for (int j=0; j<1000; j++) start and condition
+                'ICONST_0',
+                'SIPUSH 1000',
+                'IF_ICMPGE',
+                'ICONST_1',
+                // for (int i=0; i<100_000; i++) start and condition
+                'ICONST_0',
+                'LDC 100000',
+                'IF_ICMPGE',
+                'ICONST_1',
+                'GOTO',
+                'ICONST_0',
+                'IFEQ',
+                // sum = sum + i
+                'LLOAD',
+                'ILOAD',
+                'I2L',
+                'LADD',
+                // m = m * i
+                'DLOAD',
+                'ILOAD',
+                'I2D',
+                'DMUL',
+                // for (int i=0; i<100_000; i++) increment
+                'ILOAD',
+                'ICONST_1',
+                'IADD',
+                'ISTORE',
+                // for (int j=0; j<1000; j++) increment
+                'ILOAD',
+                'ICONST_1',
+                'IADD',
+                'ISTORE'
+        ])
+    }
+
     // make a test for native compilation of the ackerman function
     // and ensure the nested call is optimized
     void testAckerman() {
