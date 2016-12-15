@@ -27,7 +27,7 @@ class GroovyMainTest extends GroovyTestCase {
         GroovyMain.processArgs(args, ps)
         def out = baos.toString()
         assert out.contains('usage: groovy')
-        ['-a', '-c', '-d', '-e', '-h', '-i', '-l', '-lh', '-n', '-p', '-v'].each{
+        ['-a', '-c', '-d', '-e', '-h', '-i', '-l', '-n', '-p', '-v'].each{
             assert out.contains(it)
         }
     }

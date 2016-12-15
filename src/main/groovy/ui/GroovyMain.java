@@ -18,9 +18,6 @@
  */
 package groovy.ui;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import groovy.lang.Binding;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyRuntimeException;
@@ -37,27 +34,13 @@ import org.apache.commons.cli.ParseException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -65,10 +48,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.apache.commons.cli.Option.builder;
 
@@ -111,12 +91,6 @@ public class GroovyMain {
     // port to listen on when processing sockets
     private int port;
 
-    // provide http service
-    private boolean provideHttpService;
-
-    // port to listen on when providing http service
-    private int httpServerPort;
-
     // backup input files with extension
     private String backupExtension;
 
@@ -147,7 +121,7 @@ public class GroovyMain {
                 printHelp(out, options);
             } else if (cmd.hasOption('v')) {
                 String version = GroovySystem.getVersion();
-                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") + 
+                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") +
                         " Vendor: " + System.getProperty("java.vm.vendor")  + " OS: " + System.getProperty("os.name"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
@@ -169,16 +143,16 @@ public class GroovyMain {
         PrintWriter pw = new PrintWriter(out);
 
         formatter.printHelp(
-            pw,
-            80,
-            "groovy [options] [filename] [args]",
-            "The Groovy command line processor.\nOptions:",
-            options,
-            2,
-            4,
-            null, // footer
-            false);
-       
+                pw,
+                80,
+                "groovy [options] [filename] [args]",
+                "The Groovy command line processor.\nOptions:",
+                options,
+                2,
+                4,
+                null, // footer
+                false);
+
         pw.flush();
     }
 
@@ -222,7 +196,6 @@ public class GroovyMain {
                 .addOption(builder("p").hasArg(false).desc("process files line by line and print result (see also -n)").build())
                 .addOption(builder("pa").hasArg(false).desc("Generate metadata for reflection on method parameter names (jdk8+ only)").longOpt("parameters").build())
                 .addOption(builder("l").argName("port").optionalArg(true).desc("listen on a port and process inbound lines (default: 1960)").build())
-                .addOption(builder("lh").argName("httpServerPort").hasArg().desc("listen on a port and provide http service").build())
                 .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
                 .addOption(builder().longOpt("indy").desc("enables compilation using invokedynamic").build())
                 .addOption(builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build())
@@ -254,9 +227,9 @@ public class GroovyMain {
      * @param line the parsed command line.
      * @throws ParseException if invalid options are chosen
      */
-     private static boolean process(CommandLine line) throws ParseException, IOException {
+    private static boolean process(CommandLine line) throws ParseException, IOException {
         List args = line.getArgList();
-        
+
         if (line.hasOption('D')) {
             String[] values = line.getOptionValues('D');
 
@@ -266,7 +239,7 @@ public class GroovyMain {
         }
 
         GroovyMain main = new GroovyMain();
-        
+
         // add the ability to parse scripts with a specified encoding
         main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
 
@@ -285,22 +258,16 @@ public class GroovyMain {
         if (sp != null)
             main.splitPattern = sp;
 
-         main.provideHttpService = line.hasOption("lh");
-         if (main.provideHttpService) {
-             String p = line.getOptionValue("lh");
-             main.httpServerPort = Integer.parseInt(p);
-         } else {
-             if (main.isScriptFile) {
-                 if (args.isEmpty())
-                     throw new ParseException("neither -e or filename provided");
+        if (main.isScriptFile) {
+            if (args.isEmpty())
+                throw new ParseException("neither -e or filename provided");
 
-                 main.script = (String) args.remove(0);
-                 if (main.script.endsWith(".java"))
-                     throw new ParseException("error: cannot compile file with .java extension: " + main.script);
-             } else {
-                 main.script = line.getOptionValue('e');
-             }
-         }
+            main.script = (String) args.remove(0);
+            if (main.script.endsWith(".java"))
+                throw new ParseException("error: cannot compile file with .java extension: " + main.script);
+        } else {
+            main.script = line.getOptionValue('e');
+        }
 
         main.processSockets = line.hasOption('l');
         if (main.processSockets) {
@@ -308,7 +275,6 @@ public class GroovyMain {
             main.port = Integer.parseInt(p);
         }
 
-        
         // we use "," as default, because then split will create
         // an empty array if no option is set
         String disabled = line.getOptionValue("disableopt", ",");
@@ -316,32 +282,32 @@ public class GroovyMain {
         for (String deopt_i : deopts) {
             main.conf.getOptimizationOptions().put(deopt_i,false);
         }
-        
+
         if (line.hasOption("indy")) {
             CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
             main.conf.getOptimizationOptions().put("indy", true);
         }
 
-         if (line.hasOption("basescript")) {
-             main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
-         }
+        if (line.hasOption("basescript")) {
+            main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
+        }
 
-         if (line.hasOption("configscript")) {
-             String path = line.getOptionValue("configscript");
-             File groovyConfigurator = new File(path);
-             Binding binding = new Binding();
-             binding.setVariable("configuration", main.conf);
+        if (line.hasOption("configscript")) {
+            String path = line.getOptionValue("configscript");
+            File groovyConfigurator = new File(path);
+            Binding binding = new Binding();
+            binding.setVariable("configuration", main.conf);
 
-             CompilerConfiguration configuratorConfig = new CompilerConfiguration();
-             ImportCustomizer customizer = new ImportCustomizer();
-             customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
-             configuratorConfig.addCompilationCustomizers(customizer);
+            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+            ImportCustomizer customizer = new ImportCustomizer();
+            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            configuratorConfig.addCompilationCustomizers(customizer);
 
-             GroovyShell shell = new GroovyShell(binding, configuratorConfig);
-             shell.evaluate(groovyConfigurator);
-         }
+            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+            shell.evaluate(groovyConfigurator);
+        }
 
-         main.args = args;
+        main.args = args;
 
         return main.run();
     }
@@ -354,8 +320,6 @@ public class GroovyMain {
         try {
             if (processSockets) {
                 processSockets();
-            } else if (provideHttpService) {
-                provideHttpService();
             } else if (processFiles) {
                 processFiles();
             } else {
@@ -385,23 +349,6 @@ public class GroovyMain {
     private void processSockets() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
         new GroovySocketServer(groovy, getScriptSource(isScriptFile, script), autoOutput, port);
-    }
-
-    /**
-     * Provide http service
-     */
-    private void provideHttpService() throws IOException {
-        int argsSize = args.size();
-
-        if (0 == argsSize) {
-            new SimpleHttpServer(httpServerPort).start();
-        } else if (1 == argsSize) {
-            new SimpleHttpServer(httpServerPort, "/", new File((String) args.get(0))).start();
-        } else if (2 == argsSize) {
-            new SimpleHttpServer(httpServerPort, (String) args.get(1), new File((String) args.get(0))).start();
-        } else {
-            throw new IllegalArgumentException("Too many arguments: " + args + ", usage: -lh <httpServerPort> [base directory] [context root]");
-        }
     }
 
     /**
@@ -647,107 +594,4 @@ public class GroovyMain {
         setupContextClassLoader(groovy);
         groovy.run(getScriptSource(isScriptFile, script), args);
     }
-
-}
-
-/*
- *   Failed to put SimpleHttpServer in a separate file(groovy/ui/SimpleHttpServer.java), because of the following compilation error:
- *
- *   /home/travis/build/danielsun1106/groovy/src/main/groovy/ui/GroovyMain.java:397: error: cannot find symbol
- *           new SimpleHttpServer(httpServerPort, "/", (String) args.get(0)).start();
- *               ^
- *   symbol:   class SimpleHttpServer
- *   location: class GroovyMain
- *
- *   but it can be compiled successfully in the IntelliJ IDEA 2016.3.1, weird... so put it here for the time being
- */
-
-/**
- * SimpleHTTPServer for Groovy, inspired by Python's SimpleHTTPServer
- */
-class SimpleHttpServer {
-    private HttpServer server;
-    private int port;
-    private String contextRoot;
-    private File docBase;
-
-    public SimpleHttpServer(final int port) throws IOException {
-        this(port, "/", new File("."));
-    }
-
-    public SimpleHttpServer(final int port, final String contextRoot, final File docBase) throws IOException {
-        this.port = port;
-        this.contextRoot = contextRoot.startsWith("/") ? contextRoot : ("/" + contextRoot);
-        this.docBase = docBase;
-
-        server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.setExecutor(Executors.newCachedThreadPool());
-        server.createContext(this.contextRoot, new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchg) throws IOException {
-                BufferedOutputStream bos = new BufferedOutputStream(exchg.getResponseBody());
-                byte[] content = null;
-
-                try {
-                    String uri = exchg.getRequestURI().getPath();
-                    String path =
-                            !"/".equals(SimpleHttpServer.this.contextRoot) && uri.startsWith(SimpleHttpServer.this.contextRoot) ? uri.substring(SimpleHttpServer.this.contextRoot.length()) : uri;
-
-                    content = readContent(docBase, path);
-                    exchg.sendResponseHeaders(HttpURLConnection.HTTP_OK, content.length);
-                    bos.write(content);
-                } catch (Exception e) {
-                    content = e.getMessage().getBytes();
-                    exchg.sendResponseHeaders(HttpURLConnection.HTTP_INTERNAL_ERROR, content.length);
-                    bos.write(content);
-                } finally {
-                    bos.close();
-                    exchg.close();
-                }
-            }
-        });
-    }
-
-    private byte[] readContent(File docBase, String path) throws IOException {
-        if ("/".equals(path)) {
-            return "Groovy SimpleHTTPServer is running".getBytes();
-        } else {
-            if (docBase.isDirectory()) {
-                return readFile(docBase, path);
-            } else {
-                return readZipEntry(docBase, path);
-            }
-        }
-    }
-
-    private byte[] readFile(File docBase, String path) throws IOException {
-        File file = new File((docBase.getCanonicalPath() + File.separator + path).trim());
-
-        if (file.isDirectory()) {
-            return ("Accessing the directory[" + file.getCanonicalPath() + "] is forbidden").getBytes();
-        } else {
-            return IOGroovyMethods.getBytes(
-                    new BufferedInputStream(
-                            new FileInputStream(file)));
-        }
-    }
-
-    private byte[] readZipEntry(File docBase, String entryName) throws IOException {
-        entryName = entryName.startsWith("/") ? entryName.substring(1) : entryName;
-
-        try(ZipFile zf = new ZipFile(docBase);
-            BufferedInputStream bis =
-                    new BufferedInputStream(
-                            zf.getInputStream(
-                                    new ZipEntry(entryName)))) {
-
-            return IOGroovyMethods.getBytes(bis);
-        }
-    }
-
-    public void start() {
-        server.start();
-        System.out.println("HTTP Server started up, visit http://localhost:" + this.port + this.contextRoot + " to access the files in the " + this.docBase);
-    }
-
 }
