@@ -166,7 +166,7 @@ class AstBrowser {
                         visible: showTreeView, 
                         leftComponent: scrollPane {
                             jTree = tree(
-                                    name: 'AstTreeView',
+                                    name: 'AstTreeView', rowHeight: 0, /* force recalc */
                                     model: new DefaultTreeModel(new DefaultMutableTreeNode('Loading...'))) {}
                         },
                         rightComponent: scrollPane {
