@@ -343,6 +343,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableModifiers
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableModifiersOptContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableNamesContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.WhileStmtAltContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.ElementValuesContext;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 
@@ -3581,19 +3582,33 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public AnnotationNode visitAnnotation(AnnotationContext ctx) {
         String annotationName = this.visitAnnotationName(ctx.annotationName());
-
         AnnotationNode annotationNode = new AnnotationNode(ClassHelper.make(annotationName));
+        List<Pair<String, Expression>> annotationElementValues = this.visitElementValues(ctx.elementValues());
 
-        if (asBoolean(ctx.elementValuePairs())) {
-            this.visitElementValuePairs(ctx.elementValuePairs()).entrySet().stream().forEach(e -> {
-                annotationNode.addMember(e.getKey(), e.getValue());
-            });
-        } else if (asBoolean(ctx.elementValue())) {
-            annotationNode.addMember(VALUE_STR, this.visitElementValue(ctx.elementValue()));
-        }
+        annotationElementValues.forEach(e -> annotationNode.addMember(e.getKey(), e.getValue()));
 
         return this.configureAST(annotationNode, ctx);
     }
+
+    @Override
+    public List<Pair<String, Expression>> visitElementValues(ElementValuesContext ctx) {
+        if (!asBoolean(ctx)) {
+            return Collections.emptyList();
+        }
+
+        List<Pair<String, Expression>> annotationElementValues = new LinkedList<>();
+
+        if (asBoolean(ctx.elementValuePairs())) {
+            this.visitElementValuePairs(ctx.elementValuePairs()).entrySet().forEach(e -> {
+                annotationElementValues.add(new Pair<>(e.getKey(), e.getValue()));
+            });
+        } else if (asBoolean(ctx.elementValue())) {
+            annotationElementValues.add(new Pair<>(VALUE_STR, this.visitElementValue(ctx.elementValue())));
+        }
+
+        return annotationElementValues;
+    }
+
 
     @Override
     public String visitAnnotationName(AnnotationNameContext ctx) {

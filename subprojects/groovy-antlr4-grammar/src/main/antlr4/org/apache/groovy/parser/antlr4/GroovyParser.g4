@@ -514,7 +514,12 @@ annotationsOpt
     ;
 
 annotation
-    :   AT annotationName ( LPAREN ( elementValuePairs | elementValue )? rparen )?
+    :   AT annotationName ( LPAREN elementValues? rparen )?
+    ;
+
+elementValues
+    :   elementValuePairs
+    |   elementValue
     ;
 
 annotationName : qualifiedClassName ;
