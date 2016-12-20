@@ -986,7 +986,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private SimpleGroovyClassDoc getCurrentClassDoc() {
         if (stack.isEmpty()) return null;
         GroovySourceAST node = getParentNode();
-        if (isTopLevelConstruct(node)) return foundClasses.get(getIdentFor(node));
+        if (isTopLevelConstruct(node) && foundClasses != null) {
+            return foundClasses.get(getIdentFor(node));
+        }
         GroovySourceAST saved = stack.pop();
         SimpleGroovyClassDoc result = getCurrentClassDoc();
         stack.push(saved);

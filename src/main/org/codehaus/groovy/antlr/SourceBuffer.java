@@ -75,6 +75,7 @@ public class SourceBuffer {
                 if (startColumn < 1) { startColumn = 1;}
                 if (endColumn > line.length()) { endColumn = line.length() + 1;}
                 if (endColumn < 1) { endColumn = 1;}
+                if (endColumn < startColumn) { endColumn = startColumn;}
 
                 line = line.substring(startColumn - 1, endColumn - 1);
             } else {
