@@ -65,7 +65,7 @@ public class AtnManager {
 
     public AtnManager(GroovyLangLexer lexer) {
         this.ownerClass = lexer.getClass();
-        this.atn = getAtnWrapper(this.ownerClass).checkAndClear();
+        this.atn = GroovyLangLexer._ATN; //getAtnWrapper(this.ownerClass).checkAndClear();
     }
 
     public AtnManager(GroovyLangParser parser) {
