@@ -640,6 +640,49 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testincludeSuperFieldsAndroperties_GROOVY8013() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString
+            class Foo {
+                String baz = 'baz'
+                protected String baz2
+            }
+
+            @TupleConstructor(includes='a,b,baz2', includeSuperFields=true)
+            @ToString(includes='a,c,super,baz,d', includeFields=true, includeSuperProperties=true, includeSuper=true)
+            class Bar extends Foo {
+                int a = 1
+                int b = 2
+                private int c = 3
+                public int d = 4
+            }
+
+            assert new Bar().toString() == 'Bar(1, 3, Foo(baz), baz, 4)'
+        """
+    }
+
+    void testOrderTupleParamsUsingIncludes_GROOVY8016() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString
+            class Foo {
+                String a
+                String c
+            }
+            @TupleConstructor(includes='d,c,b,a', includeSuperProperties=true, includeFields=true)
+            @ToString(includes='super,b,d', includeFields=true, includeSuperProperties=true, includeSuper=true)
+            class Bar extends Foo {
+                String d
+                private String b
+            }
+
+            assert new Bar('1', '2', '3', '4').toString() == 'Bar(Foo(4, 2), 3, 1)'
+        """
+    }
+
     void testTupleConstructorWithForceDirectBypassesSetters_GROOVY7087() {
         new GroovyShell().evaluate """
             import groovy.transform.*

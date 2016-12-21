@@ -37,10 +37,13 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -70,21 +73,24 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean cacheToString = memberHasValue(anno, "cache", true);
+            List<String> excludes = getMemberStringList(anno, "excludes");
+            List<String> includes = getMemberStringList(anno, "includes");
+            if (includes != null && includes.contains("super")) {
+                includeSuper = true;
+            }
             if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: includeSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeNames = memberHasValue(anno, "includeNames", true);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = getMemberStringList(anno, "excludes");
-            List<String> includes = getMemberStringList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
             boolean includePackage = !memberHasValue(anno, "includePackage", false);
             boolean allProperties = !memberHasValue(anno, "allProperties", false);
             boolean allNames = memberHasValue(anno, "allNames", true);
 
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
-            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
-            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
+            if (!checkPropertyList(cNode, includes != null ? DefaultGroovyMethods.minus(includes, "super") : null, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames);
         }
     }
@@ -137,10 +143,23 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
+    private static class ToStringElement {
+        ToStringElement(Expression value, String name, boolean canBeSelf) {
+            this.value = value;
+            this.name = name;
+            this.canBeSelf = canBeSelf;
+        }
+
+        Expression value;
+        String name;
+        boolean canBeSelf;
+    }
+
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
         // def _result = new StringBuilder()
         final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
+        List<ToStringElement> elements = new ArrayList<ToStringElement>();
 
         // def $toStringFirst = true
         final VariableExpression first = varX("$toStringFirst");
@@ -155,7 +174,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
             Expression getter = getterThisX(cNode, pNode);
-            appendValue(cNode, body, result, first, getter, pNode.getOriginType(), pNode.getName(), includeNames, ignoreNulls);
+            elements.add(new ToStringElement(getter, pNode.getName(), canBeSelf(cNode, pNode.getOriginType())));
         }
 
         // append fields if needed
@@ -164,16 +183,27 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             fList.addAll(getInstanceNonPropertyFields(cNode));
             for (FieldNode fNode : fList) {
                 if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
-                appendValue(cNode, body, result, first, varX(fNode), fNode.getType(), fNode.getName(), includeNames, ignoreNulls);
+                elements.add(new ToStringElement(varX(fNode), fNode.getName(), canBeSelf(cNode, fNode.getType())));
             }
         }
 
         // append super if needed
         if (includeSuper) {
-            appendCommaIfNotFirst(body, result, first);
-            appendPrefix(body, result, "super", includeNames);
             // not through MOP to avoid infinite recursion
-            body.addStatement(appendS(result, callSuperX("toString")));
+            elements.add(new ToStringElement(callSuperX("toString"), "super", false));
+        }
+
+        if (includes != null) {
+            Comparator<ToStringElement> includeComparator = new Comparator<ToStringElement>() {
+                public int compare(ToStringElement tse1, ToStringElement tse2) {
+                    return new Integer(includes.indexOf(tse1.name)).compareTo(includes.indexOf(tse2.name));
+                }
+            };
+            Collections.sort(elements, includeComparator);
+        }
+
+        for (ToStringElement el : elements) {
+            appendValue(body, result, first, el.value, el.name, includeNames, ignoreNulls, el.canBeSelf);
         }
 
         // wrap up
@@ -183,12 +213,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         return toString;
     }
 
-    private static void appendValue(ClassNode cNode, BlockStatement body, Expression result, VariableExpression first, Expression value, ClassNode valueType, String name, boolean includeNames, boolean ignoreNulls) {
+    private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls, boolean canBeSelf) {
         final BlockStatement thenBlock = new BlockStatement();
         final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
-        boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(valueType, cNode);
         if (canBeSelf) {
             thenBlock.addStatement(ifElseS(
                     sameX(value, new VariableExpression("this")),
@@ -199,6 +228,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         }
         body.addStatement(appendValue);
+    }
+
+    private static boolean canBeSelf(ClassNode cNode, ClassNode valueType) {
+        return StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(valueType, cNode);
     }
 
     private static void appendCommaIfNotFirst(BlockStatement body, Expression result, VariableExpression first) {

@@ -60,7 +60,7 @@ allprojects {
                 project(':groovy-templates').sourceSets.main.output +
                 project(':groovy-xml').sourceSets.main.output +
                 configurations.compile +
-                files(configurations.codenarc.findAll { !(it.name =~ /groovy|junit/)})
+                files { configurations.codenarc.findAll { !(it.name =~ /groovy|junit/)} }
     }
 
     tasks.withType(Checkstyle) {

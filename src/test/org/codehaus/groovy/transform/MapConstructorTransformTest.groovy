@@ -200,4 +200,16 @@ class MapConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-8012
+    void testMapConstructorWithNoArgs() {
+        assertScript '''
+            @groovy.transform.MapConstructor
+            class Foo {
+                String bar
+            }
+
+            assert new Foo() instanceof Foo
+        '''
+    }
+
 }

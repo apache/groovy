@@ -273,6 +273,7 @@ public @interface ToString {
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      * The default value is a special marker value indicating that no includes are defined; all fields and/or properties
      * are included if 'includes' remains undefined and 'excludes' is explicitly or implicitly an empty list.
+     * The special name 'super' can be used instead of using the 'includeSuper' flag.
      */
     String[] includes() default {Undefined.STRING};
 

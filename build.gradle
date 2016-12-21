@@ -48,16 +48,17 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.2'
-    id 'me.champeau.buildscan-recipes' version '0.1.0'
+    id 'com.gradle.build-scan' version '1.3'
+    id 'me.champeau.buildscan-recipes' version '0.1.7'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
+    publishAlways()
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
-    recipes 'git-status', 'gc-stats'
+    recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
 apply from: 'gradle/filter.gradle'
@@ -377,7 +378,7 @@ ext.modules = {
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
     def classesDir = sourceSets.main.output.classesDir
-    def classpath = files(classesDir, configurations.compile).asPath
+    def classpath = files(classesDir, configurations.compile)
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
@@ -386,7 +387,7 @@ task dgmConverter(dependsOn:compileJava) {
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
-        ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath) {
+        ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
             arg(value: classesDir.absolutePath)
         }

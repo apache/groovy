@@ -330,7 +330,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
         StringBuilder src = new StringBuilder()
         for (String line: buffer) {
-            src.append(line + '\n')
+            src.append(line).append('\n')
         }
 
         // not sure whether the same Lexer instance could be reused.
