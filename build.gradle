@@ -435,6 +435,11 @@ compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
 }
 
+// TODO superfluous to check for JDK7 for Gradle version 3.2+ but leave for future?
+task checkCompatibility {
+    assert JavaVersion.current().java7Compatible
+}
+
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'

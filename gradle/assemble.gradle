@@ -575,7 +575,7 @@ def installDir = {
         System.properties.installDirectory ?: "$buildDir/install"
 }
 
-task installGroovy(type: Sync, dependsOn: distBin) {
+task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
     description 'Generates a groovy distribution into an install directory'
     doLast {
         logger.lifecycle "Groovy installed under ${installDir()}"
@@ -586,7 +586,7 @@ task installGroovy(type: Sync, dependsOn: distBin) {
 
 import org.gradle.api.file.DuplicatesStrategy
 
-task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
+task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
     baseName = 'apache-groovy'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
