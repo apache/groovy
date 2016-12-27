@@ -35,6 +35,7 @@ def removeJarjaredDependencies = { p ->
 allprojects {
     apply plugin: 'maven'
     apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
+    install.dependsOn checkCompatibility
 }
 
 apply from: 'gradle/backports.gradle'
