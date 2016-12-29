@@ -1351,7 +1351,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return uniqueItems(new IteratorIterableAdapter<T>(self), comparator).listIterator();
     }
 
-    private static class IteratorIterableAdapter<T> implements Iterable<T> {
+    private static final class IteratorIterableAdapter<T> implements Iterable<T> {
         private final Iterator<T> self;
 
         private IteratorIterableAdapter(Iterator<T> self) {
@@ -8172,7 +8172,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
-        LinkedHashMap<Integer, E> result = new LinkedHashMap<Integer, E>();
+        Map<Integer, E> result = new LinkedHashMap<Integer, E>();
         Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
         while (indexed.hasNext()) {
             Tuple2<Integer, E> next = indexed.next();

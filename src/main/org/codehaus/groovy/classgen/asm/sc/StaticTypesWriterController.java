@@ -40,7 +40,7 @@ import java.lang.reflect.Constructor;
  */
 public class StaticTypesWriterController extends DelegatingController {
 
-    private final static Constructor indyBinHelper;
+    private static final Constructor indyBinHelper;
     static {
         Constructor ctor = null;
         try {

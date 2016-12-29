@@ -42,7 +42,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     private final Method cachedMethod;
     private int hashCode;
 
-    private static final MyComparator comparator = new MyComparator();
+    private static final MyComparator COMPARATOR = new MyComparator();
 
     private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
@@ -65,7 +65,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 //                return cachedMethod;
 //        }
 //        return null;
-        int i = Arrays.binarySearch(methods, method, comparator);
+        int i = Arrays.binarySearch(methods, method, COMPARATOR);
         if (i < 0)
           return null;
 

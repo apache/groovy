@@ -263,7 +263,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static void checkForDuplicateMethods(ClassNode cn) {
-        HashSet<String> descriptors = new HashSet<String>();
+        Set<String> descriptors = new HashSet<String>();
         for (MethodNode mn : cn.getMethods()) {
             if (mn.isSynthetic()) continue;
             String mySig = makeDescriptorWithoutReturnType(mn);

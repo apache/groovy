@@ -19,7 +19,6 @@
 package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
-import org.codehaus.groovy.control.CompilationUnit;
 
 import java.util.HashSet;
 import java.util.Set;

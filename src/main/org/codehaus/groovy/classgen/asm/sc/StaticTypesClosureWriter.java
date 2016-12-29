@@ -110,7 +110,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
                         new ReturnStatement(doCallNoArgs)));
     }
 
-    private static class MethodTargetCompletionVisitor extends ClassCodeVisitorSupport {
+    private static final class MethodTargetCompletionVisitor extends ClassCodeVisitorSupport {
 
         private final MethodNode doCallMethod;
 

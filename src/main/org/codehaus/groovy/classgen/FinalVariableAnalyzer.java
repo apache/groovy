@@ -332,7 +332,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
-    public static interface VariableNotFinalCallback {
+    public interface VariableNotFinalCallback {
         /**
          * Callback called whenever an assignment transforms an effectively final variable into a non final variable
          * (aka, breaks the "final" modifier contract)

@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
@@ -37,7 +38,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class OperandStack {
 
     private final WriterController controller;
-    private final ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
+    private final List<ClassNode> stack = new ArrayList<ClassNode>();
 
     public OperandStack(WriterController wc) {
         this.controller = wc;        
