@@ -21,7 +21,7 @@ package org.codehaus.groovy;
 /**
  * This class represents an error that is thrown when a bug is 
  * recognized inside the runtime. Basically it is thrown when
- * a constraint is not fullfilled that should be fullfiled. 
+ * a constraint is not fulfilled that should be fulfilled.
  * 
  * @author Jochen Theodorou
  */

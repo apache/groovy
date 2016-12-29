@@ -157,7 +157,7 @@ public abstract class AsmDecompiler {
         return name.replace('/', '.');
     }
 
-    private static abstract class AnnotationReader extends AnnotationVisitor {
+    private abstract static class AnnotationReader extends AnnotationVisitor {
         public AnnotationReader() {
             super(Opcodes.ASM5);
         }
@@ -183,7 +183,7 @@ public abstract class AsmDecompiler {
 
         @Override
         public AnnotationVisitor visitArray(String name) {
-            final ArrayList<Object> list = new ArrayList<Object>();
+            final List<Object> list = new ArrayList<Object>();
             visitAttribute(name, list);
             return new AnnotationReader() {
                 @Override

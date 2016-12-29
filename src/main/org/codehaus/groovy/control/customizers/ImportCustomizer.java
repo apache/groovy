@@ -127,7 +127,7 @@ public class ImportCustomizer extends CompilationCustomizer {
     /**
      * Represents imports which are possibly aliased.
      */
-    private static class Import {
+    private static final class Import {
         final ImportType type;
         final ClassNode classNode;
         final String alias;

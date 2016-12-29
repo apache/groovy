@@ -29,7 +29,7 @@ class GroovyClassValueFactory {
 	 * See https://bugs.openjdk.java.net/browse/JDK-8136353
 	 * This issue does not exist on IBM Java (J9) so use ClassValue by default on that JVM. 
 	 */
-	private final static boolean USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", "IBM J9 VM".equals(System.getProperty("java.vm.name"))?"true":"false"));
+	private static final boolean USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", "IBM J9 VM".equals(System.getProperty("java.vm.name"))?"true":"false"));
 
 	private static final Constructor groovyClassValueConstructor;
 

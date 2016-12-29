@@ -1107,7 +1107,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * This interface allows the user to plugin custom expression checkers if expression blacklist or whitelist are not
      * sufficient
      */
-    public static interface ExpressionChecker {
+    public interface ExpressionChecker {
         boolean isAuthorized(Expression expression);
     }
 
@@ -1115,7 +1115,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * This interface allows the user to plugin custom statement checkers if statement blacklist or whitelist are not
      * sufficient
      */
-    public static interface StatementChecker {
+    public interface StatementChecker {
         boolean isAuthorized(Statement expression);
     }
 

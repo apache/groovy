@@ -25,7 +25,7 @@ package org.codehaus.groovy.reflection;
  */
 public interface GroovyClassValue<T> {
 	
-	public static interface ComputeValue<T>{
+	interface ComputeValue<T>{
 		T computeValue(Class<?> type);
 	}
 	

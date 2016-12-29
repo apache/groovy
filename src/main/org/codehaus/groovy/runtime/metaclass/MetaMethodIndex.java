@@ -47,8 +47,8 @@ public class MetaMethodIndex {
     }
 
     public static class CacheEntry {
-        final public Class [] params;
-        final public MetaMethod method;
+        public final Class [] params;
+        public final MetaMethod method;
 
         public CacheEntry(final Class[] params, final MetaMethod method) {
             this.params = params;

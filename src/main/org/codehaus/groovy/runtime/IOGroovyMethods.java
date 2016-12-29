@@ -1487,7 +1487,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      *         from the reader when the Writable#writeTo(Writer) is called.
      * @since 1.0
      */
-    public static Writable filterLine(Reader reader, final @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) {
+    public static Writable filterLine(Reader reader, @ClosureParams(value=SimpleType.class, options="java.lang.String") final Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
         return new Writable() {
             public Writer writeTo(Writer out) throws IOException {

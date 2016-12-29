@@ -86,7 +86,7 @@ public class ImportCustomizerFactory extends AbstractFactory {
         return false;
     }
 
-    private static class ImportHelper {
+    private static final class ImportHelper {
         private final ImportCustomizer customizer;
 
         private ImportHelper(final ImportCustomizer customizer) {

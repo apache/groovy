@@ -53,7 +53,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
      */
     private URL configFile;
 
-    private LinkedHashMap delegateMap = new LinkedHashMap();
+    private HashMap delegateMap = new LinkedHashMap();
 
     public ConfigObject(URL file) {
         this.configFile = file;
