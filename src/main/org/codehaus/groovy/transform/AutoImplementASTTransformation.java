@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
-import org.codehaus.groovy.control.GenericsVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
