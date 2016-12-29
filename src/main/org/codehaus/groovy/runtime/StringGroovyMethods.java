@@ -221,7 +221,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The CharSequence to uncapitalize
      * @return A String containing the uncapitalized toString() of the CharSequence
-     * @since 2.5.0
+     * @since 2.4.8
      */
     public static String uncapitalize(CharSequence self) {
         String s = self.toString();
