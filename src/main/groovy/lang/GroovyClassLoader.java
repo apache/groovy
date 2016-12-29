@@ -977,7 +977,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private static class TimestampAdder extends CompilationUnit.PrimaryClassNodeOperation implements Opcodes {
-        private final static TimestampAdder INSTANCE = new TimestampAdder();
+        private static final TimestampAdder INSTANCE = new TimestampAdder();
 
         private TimestampAdder() {}
 

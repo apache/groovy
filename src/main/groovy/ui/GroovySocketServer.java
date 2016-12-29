@@ -93,7 +93,7 @@ public class GroovySocketServer implements Runnable {
     private static GroovyCodeSource getCodeSource(boolean scriptFile, String scriptFilenameOrText) {
         if (scriptFile) {
             try {
-                if (uriPattern.matcher(scriptFilenameOrText).matches()) {
+                if (URI_PATTERN.matcher(scriptFilenameOrText).matches()) {
                     return new GroovyCodeSource(new URI(scriptFilenameOrText));
                 } else {
                     return new GroovyCodeSource(GroovyMain.searchForGroovyScriptFile(scriptFilenameOrText));
@@ -118,7 +118,7 @@ public class GroovySocketServer implements Runnable {
 
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
+    private static final Pattern URI_PATTERN = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
 
     /**
     * This creates and starts the socket server on a new Thread. There is no need to call run or spawn

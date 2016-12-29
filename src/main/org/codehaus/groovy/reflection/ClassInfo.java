@@ -481,7 +481,7 @@ public class ClassInfo implements Finalizable {
 
     }
 
-    public static interface ClassInfoAction {
+    public interface ClassInfoAction {
         void onClassInfo(ClassInfo classInfo);
     }
 }

@@ -2595,7 +2595,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #replaceAll(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static String replaceAll(final String self, final Pattern pattern, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceAll(final String self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         return replaceAll((CharSequence) self, pattern, closure);
     }
 
@@ -2613,7 +2613,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #replaceAll(CharSequence, CharSequence, groovy.lang.Closure)
      */
     @Deprecated
-    public static String replaceAll(final String self, final String regex, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceAll(final String self, final String regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         return replaceAll((CharSequence) self, (CharSequence) regex, closure);
     }
 
@@ -2653,7 +2653,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #replaceFirst(String, String, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static String replaceFirst(final CharSequence self, final CharSequence regex, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceFirst(final CharSequence self, final CharSequence regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         return replaceFirst(self, Pattern.compile(regex.toString()), closure);
     }
 
@@ -2701,7 +2701,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a CharSequence with replaced content
      * @since 1.8.2
      */
-    public static String replaceFirst(final CharSequence self, final Pattern pattern, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceFirst(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
@@ -2720,7 +2720,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #replaceFirst(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static String replaceFirst(final String self, final Pattern pattern, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceFirst(final String self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         return replaceFirst((CharSequence) self, pattern, closure);
     }
 
@@ -2738,7 +2738,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #replaceFirst(CharSequence, CharSequence, groovy.lang.Closure)
      */
     @Deprecated
-    public static String replaceFirst(final String self, final String regex, final @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) Closure closure) {
+    public static String replaceFirst(final String self, final String regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         return replaceFirst((CharSequence) self, (CharSequence) regex, closure);
     }
 

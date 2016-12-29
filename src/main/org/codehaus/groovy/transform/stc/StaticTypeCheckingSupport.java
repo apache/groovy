@@ -2156,7 +2156,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return a set of interfaces implemented by this class node
      */
     public static Set<ClassNode> collectAllInterfaces(ClassNode node) {
-        HashSet<ClassNode> result = new HashSet<ClassNode>();
+        Set<ClassNode> result = new HashSet<ClassNode>();
         collectAllInterfaces(node, result);
         return result;
     }

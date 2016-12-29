@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.groovy.ast.ClassHelper;
@@ -35,7 +36,7 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
 public class MopWriter {
-    public static interface Factory {
+    public interface Factory {
         MopWriter create(WriterController controller);
     }
 
@@ -85,7 +86,7 @@ public class MopWriter {
 
     private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
         if (methods.isEmpty()) return Collections.EMPTY_SET;
-        HashSet<MopKey> result = new HashSet<MopKey>(methods.size());
+        Set<MopKey> result = new HashSet<MopKey>(methods.size());
         for (MethodNode mn : methods) {
             MopKey key = new MopKey(mn.getName(), mn.getParameters());
             result.add(key);
@@ -105,7 +106,7 @@ public class MopWriter {
      * @see #generateMopCalls(LinkedList, boolean)
      */
     private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
-        HashMap<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
+        Map<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
         LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
         for (MethodNode mn : methods) {
             // mop methods are helper for this and super calls and do direct calls

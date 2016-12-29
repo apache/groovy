@@ -21,6 +21,7 @@ package org.codehaus.groovy.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -205,9 +206,9 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     public Collection<V> values() {
-        if (innerMap==null) {
-            ArrayList<V> list = new ArrayList(size);
-            for (int i=0; i<size; i++) {
+        if (innerMap == null) {
+            List<V> list = new ArrayList<V>(size);
+            for (int i = 0; i < size; i++) {
                 list.add((V) listValues[i]);
             }
             return list;

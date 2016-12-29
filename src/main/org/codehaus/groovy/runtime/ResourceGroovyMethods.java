@@ -1189,7 +1189,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.io.FileType
      * @since 1.7.1
      */
-    public static void traverse(final File self, final Map<String, Object> options, final @ClosureParams(value=SimpleType.class, options="java.io.File") Closure closure)
+    public static void traverse(final File self, final Map<String, Object> options, @ClosureParams(value=SimpleType.class, options="java.io.File") final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         Number maxDepthNumber = DefaultGroovyMethods.asType(options.remove("maxDepth"), Number.class);
         int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
@@ -1267,7 +1267,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
      * @since 1.7.1
      */
-    public static void traverse(final File self, final @ClosureParams(value=SimpleType.class, options="java.io.File") Closure closure)
+    public static void traverse(final File self, @ClosureParams(value=SimpleType.class, options="java.io.File") final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         traverse(self, new HashMap<String, Object>(), closure);
     }

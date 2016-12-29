@@ -426,7 +426,7 @@ public class GroovyMain {
      */
     @Deprecated
     public String getText(String uriOrFilename) throws IOException {
-        if (uriPattern.matcher(uriOrFilename).matches()) {
+        if (URI_PATTERN.matcher(uriOrFilename).matches()) {
             try {
                 return ResourceGroovyMethods.getText(new URL(uriOrFilename));
             } catch (Exception e) {
@@ -452,7 +452,7 @@ public class GroovyMain {
         if (isScriptFile) {
             // search for the file and if it exists don't try to use URIs ...
             File scriptFile = huntForTheScriptFile(script);
-            if (!scriptFile.exists() && uriPattern.matcher(script).matches()) {
+            if (!scriptFile.exists() && URI_PATTERN.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
             }
             return new GroovyCodeSource( scriptFile );
@@ -463,7 +463,7 @@ public class GroovyMain {
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
     // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
-    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
+    private static final Pattern URI_PATTERN = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * Search for the script file, doesn't bother if it is named precisely.
