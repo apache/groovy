@@ -18,37 +18,39 @@
  */
 package org.codehaus.groovy.macro.matcher
 
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.expr.ArrayExpression
-import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
-import org.codehaus.groovy.ast.expr.CastExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.expr.GStringExpression
-import org.codehaus.groovy.ast.expr.MethodPointerExpression
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
-import org.codehaus.groovy.ast.expr.UnaryMinusExpression
-import org.codehaus.groovy.ast.expr.UnaryPlusExpression
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.IfStatement
-import org.codehaus.groovy.ast.stmt.WhileStatement
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.macro.transform.MacroClass
-import org.codehaus.groovy.syntax.Types
-
 class ASTMatcherTest extends GroovyTestCase {
     void testMatchesSimpleVar() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast = macro { a }
         assert ASTMatcher.matches(ast, ast)
+        '''
     }
     void testMatchesSimpleVarNeg() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast = macro { a }
         def ast2 = macro { b }
         assert !ASTMatcher.matches(ast, ast2)
         assert !ASTMatcher.matches(ast2, ast)
+        '''
     }
 
     void testBinaryExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a+b }
         def ast2 = macro { a+b }
         def ast3 = macro { b+a }
@@ -58,9 +60,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testMethodCallExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { foo() }
         def ast2 = macro { foo() }
         def ast3 = macro { this.foo() }
@@ -75,9 +84,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert ASTMatcher.matches(ast6, ast7)
+        '''
     }
 
     void testPropertyExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { this.p }
         def ast2 = macro { this.p }
         def ast3 = macro { that.p }
@@ -91,9 +107,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert !ASTMatcher.matches(ast1, ast6)
+        '''
     }
 
     void testAttributeExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { this.@p }
         def ast2 = macro { this.@p }
         def ast3 = macro { that.@p }
@@ -107,9 +130,18 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert !ASTMatcher.matches(ast1, ast6)
+        '''
     }
 
     void testClassExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.control.CompilePhase
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro(CompilePhase.SEMANTIC_ANALYSIS) { String }
         def ast2 = macro(CompilePhase.SEMANTIC_ANALYSIS) { String }
         def ast3 = macro(CompilePhase.SEMANTIC_ANALYSIS) { Boolean }
@@ -120,9 +152,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast1, ast2)
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
+        '''
     }
 
     void testTernaryExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a?b:c }
         def ast2 = macro { a?b:c }
         def ast3 = macro { b?b:c }
@@ -137,9 +176,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert ASTMatcher.matches(ast6, ast7)
+        '''
     }
 
     void testElvis() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a?:c }
         def ast2 = macro { a?:c }
         def ast3 = macro { b?:c }
@@ -153,9 +199,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert ASTMatcher.matches(ast5, ast6)
+        '''
     }
 
     void testPrefixExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { ++a }
         def ast2 = macro { ++a }
         def ast3 = macro { ++b }
@@ -165,9 +218,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testPostfixExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a++ }
         def ast2 = macro { a++ }
         def ast3 = macro { b++ }
@@ -177,9 +237,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testConstructorCall() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { new Foo() }
         def ast2 = macro { new Foo() }
         def ast3 = macro { new Bar() }
@@ -189,9 +256,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testDeclaration() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { def x = 1 }
         def ast2 = macro { def x = 1 }
         def ast3 = macro { int x = 1 }
@@ -203,9 +277,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
+        '''
     }
 
     void testBooleanExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a==1 }
         def ast2 = macro { a==1 }
         def ast3 = macro { 1==a }
@@ -217,9 +298,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
+        '''
     }
 
     void testClosureExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { {-> a } }
         def ast2 = macro { {-> a } }
         def ast3 = macro { {-> b } }
@@ -235,9 +323,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast4, ast5)
         assert !ASTMatcher.matches(ast5, ast6)
         assert !ASTMatcher.matches(ast5, ast7)
+        '''
     }
 
     void testNotExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { !a }
         def ast2 = macro { !a }
         def ast3 = macro { a }
@@ -249,9 +344,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
+        '''
     }
 
     void testMapExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { [:] }
         def ast2 = macro { [:] }
         def ast3 = macro { [a:''] }
@@ -271,9 +373,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast6, ast7)
         assert !ASTMatcher.matches(ast3, ast8)
         assert !ASTMatcher.matches(ast6, ast8)
+        '''
     }
 
     void testRangeExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { (0..10) }
         def ast2 = macro { (0..10) }
         def ast3 = macro { (1..10) }
@@ -287,9 +396,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
         assert !ASTMatcher.matches(ast1, ast6)
+        '''
     }
 
     void testListExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { [] }
         def ast2 = macro { [] }
         def ast3 = macro { [a] }
@@ -308,9 +424,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast5, ast4)
         assert !ASTMatcher.matches(ast5, ast6)
         assert !ASTMatcher.matches(ast1, ast6)
+        '''
     }
 
     void testSpreadExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { [*a] }
         def ast2 = macro { [*a] }
         def ast3 = macro { [*b] }
@@ -320,9 +443,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testArrayExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { new Integer[0] }
         def ast2 = macro { new Integer[0] }
         def ast3 = macro { new Integer[1] }
@@ -335,9 +466,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
+        '''
     }
 
     void testMethodPointerExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { this.&foo }
         def ast2 = macro { this.&foo }
         def ast3 = macro { that.&foo }
@@ -348,9 +487,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testUnaryMinus() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { -a }
         def ast2 = macro { -a }
         def ast3 = macro { -0 }
@@ -361,9 +508,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testUnaryPlus() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { +a }
         def ast2 = macro { +a }
         def ast3 = macro { +0 }
@@ -374,9 +529,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testBitwiseNegate() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { ~a }
         def ast2 = macro { ~a }
         def ast3 = macro { ~0 }
@@ -387,9 +550,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testCastExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { (String) foo }
         def ast2 = macro { (String) foo }
         def ast3 = macro { (Integer) foo }
@@ -400,9 +571,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testGStringExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { "123$a" }
         def ast2 = macro { "123$a" }
         def ast3 = macro { "$a" }
@@ -413,9 +592,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testClassComparison() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = new MacroClass() {
             class A {}
         }
@@ -438,9 +624,16 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
+        '''
     }
 
     void testPropertyComparison() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = new MacroClass() {
             class A { String str }
         }
@@ -480,8 +673,15 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast8)
         assert ASTMatcher.matches(ast8, ast8)
         assert !ASTMatcher.matches(ast8, ast9)
+        '''
     }
     void testFieldComparison() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = new MacroClass() {
             class A { public String str }
         }
@@ -525,9 +725,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast8, ast8)
         assert !ASTMatcher.matches(ast8, ast9)
         assert !ASTMatcher.matches(ast1, ast10)
+        '''
     }
 
     void testIf() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.stmt.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { if (a) b }
         def ast2 = macro { if (a) b }
         def ast3 = macro { if (a) c }
@@ -546,9 +754,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast6)
         assert ASTMatcher.matches(ast6, ast7)
         assert !ASTMatcher.matches(ast7, ast8)
+        '''
     }
 
     void testForLoop() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.stmt.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { for (;;) {} }
         def ast2 = macro { for (;;) {} }
         def ast3 = macro { for (int i=0;i<10;i++) {} }
@@ -563,9 +779,17 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast3, ast4)
         assert !ASTMatcher.matches(ast3, ast5)
         assert !ASTMatcher.matches(ast3, ast6)
+        '''
     }
 
     void testWhileLoop() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.stmt.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { while (true) {} }
         def ast2 = macro { while (true) {} }
         def ast3 = macro { while (false) {} }
@@ -577,18 +801,32 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        '''
     }
 
     void testWildcardMatchVariable() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a }
         def ast2 = macro { _ }
         def ast3 = macro { b }
         assert ASTMatcher.matches(ast1, ast2)
         assert !ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast2, ast3)
+        '''
     }
 
     void testWildcardMatchVariableInBinaryExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a+b }
         def ast2 = macro { _+_ }
         def ast3 = macro { _+c }
@@ -601,27 +839,48 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert ASTMatcher.matches(ast1, ast5)
         assert ASTMatcher.matches(ast1, ast6)
+        '''
     }
 
     void testWildcardForSubExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a+foo(b) }
         def ast2 = macro { _+foo(b) }
         def ast3 = macro { a+_ }
         assert ASTMatcher.matches(ast1, ast2)
         assert !ASTMatcher.matches(ast2, ast1)
         assert ASTMatcher.matches(ast1, ast3)
+        '''
     }
 
     void testWildcardInMethodName() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { a+foo(b) }
         def ast2 = macro { a+_(b) }
         def ast3 = macro { a+_(c) }
         assert ASTMatcher.matches(ast1, ast2)
         assert !ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
+        '''
     }
 
     void testConstrainedMatcher() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast = macro { a+foo(b) }
         def pattern = macro {
             a+b
@@ -630,9 +889,16 @@ class ASTMatcherTest extends GroovyTestCase {
             placeholder a,b
         }
         assert ASTMatcher.matches(ast, pattern)
+        '''
     }
 
     void testPlaceholdersMustMatch() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         def ast1 = macro { foo(a)+foo(a) }
         def ast2 = macro { foo(a)+foo(b) }
         def pattern = macro {
@@ -643,9 +909,16 @@ class ASTMatcherTest extends GroovyTestCase {
         }
         assert ASTMatcher.matches(ast1, pattern)
         assert !ASTMatcher.matches(ast2, pattern)
+        '''
     }
 
     void testPlaceholdersMustMatch2() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         use(ASTMatcher) {
             def ast1 = macro { foo(a) + foo(a) }
             def ast2 = macro { foo(a) + foo(foo(a)) }
@@ -657,9 +930,17 @@ class ASTMatcherTest extends GroovyTestCase {
             assert !ast1.matches(pattern)
             assert ast2.matches(pattern)
         }
+        '''
     }
 
     void testMacroCombination() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         use(ASTMatcher) {
             def lhs = macro { a }
             def rhs = macro { b }
@@ -670,9 +951,16 @@ class ASTMatcherTest extends GroovyTestCase {
             def pattern = macro { a + b }
             assert ast.matches(pattern)
         }
+        '''
     }
 
     void testRelaxedBinaryExpression() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+        
         use(ASTMatcher) {
             def ast1 = macro { a + b }
             def ast2 = macro { a - b }
@@ -688,9 +976,17 @@ class ASTMatcherTest extends GroovyTestCase {
             assert ast3.matches(pattern)
             assert !ast4.matches(pattern)
         }
+        '''
     }
 
     void testRelaxedBinaryExpressionWithConstrainedToken() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+        import org.codehaus.groovy.syntax.Types
+
         use(ASTMatcher) {
             def ast1 = macro { a + b }
             def ast2 = macro { a - b }
@@ -708,9 +1004,17 @@ class ASTMatcherTest extends GroovyTestCase {
             assert !ast3.matches(pattern)
             assert !ast4.matches(pattern)
         }
+        '''
     }
 
     void testInlineMacroCombinationWithConstraints() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         use(ASTMatcher) {
             def ast1 = macro { a + b }
             def ast2 = macro { b + b }
@@ -727,9 +1031,17 @@ class ASTMatcherTest extends GroovyTestCase {
             assert !ast3.matches(pattern)
             assert ast4.matches(pattern)
         }
+        '''
     }
 
     void testInlineMacroCombinationWithSimplifiedConstraints() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.expr.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         use(ASTMatcher) {
             def ast1 = macro { a + b }
             def ast2 = macro { b + b }
@@ -747,9 +1059,16 @@ class ASTMatcherTest extends GroovyTestCase {
             assert !ast3.matches(pattern)
             assert ast4.matches(pattern)
         }
+        '''
     }
 
     void testRelationshipMatching() {
+        assertScript '''
+        import org.codehaus.groovy.ast.*
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+        import org.codehaus.groovy.macro.transform.MacroClass
+
         use (ASTMatcher) {
             def ast1 = macro { (a + b) + (a + b ) }
             def ast2 = macro { (a + b) - (a + b ) }
@@ -768,7 +1087,7 @@ class ASTMatcherTest extends GroovyTestCase {
             assert ast3.matches(pattern)
             assert !ast4.matches(pattern)
             assert !ast5.matches(pattern)
-
         }
+        '''
     }
 }

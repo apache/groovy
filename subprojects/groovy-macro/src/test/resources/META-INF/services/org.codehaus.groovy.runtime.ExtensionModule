@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-#global transformation for macro support
-org.codehaus.groovy.macro.transform.MacroTransformation
-org.codehaus.groovy.macro.transform.MacroClassTransformation
+moduleName=macro-module
+moduleVersion=1.0
+extensionClasses=org.codehaus.groovy.macro.ExampleMacroMethods

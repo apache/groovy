@@ -349,5 +349,9 @@ public class SourceUnit extends ProcessingUnit {
         getErrorCollector().addError(se, this);
     }
 
+    public void addErrorAndContinue(SyntaxException se) throws CompilationFailedException {
+        getErrorCollector().addErrorAndContinue(se, this);
+    }
+
     public ReaderSource getSource() { return source; }
 }
