@@ -80,8 +80,10 @@ public class ErrorCollector {
             }            
         }
     }
-    
-    
+
+    public void addErrorAndContinue(SyntaxException error, SourceUnit source) throws CompilationFailedException {
+        addErrorAndContinue(Message.create(error, source));
+    }
     
     /**
      * Adds an error to the message set, but does not cause a failure. The message is not required to have a source

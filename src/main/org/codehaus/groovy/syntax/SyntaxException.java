@@ -19,6 +19,7 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyException;
+import org.codehaus.groovy.ast.ASTNode;
 
 /** Base exception indicating a syntax error.
  *
@@ -35,6 +36,10 @@ public class SyntaxException extends GroovyException {
     private final int endColumn;
 
     private String sourceLocator;
+
+    public SyntaxException(String message, ASTNode node) {
+        this(message, node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber());
+    }
 
     public SyntaxException(String message, int startLine, int startColumn) {
         this(message, startLine, startColumn, startLine, startColumn+1);

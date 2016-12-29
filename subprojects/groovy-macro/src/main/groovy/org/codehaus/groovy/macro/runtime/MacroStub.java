@@ -18,36 +18,15 @@
  */
 package org.codehaus.groovy.macro.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import org.codehaus.groovy.control.CompilePhase;
-
 /**
+ * Stub for macro calls.
  *
  * @author Sergei Egorov <bsideup@gmail.com>
  */
-public class MacroGroovyMethods {
+public enum MacroStub {
+    INSTANCE;
 
-    public static class MacroValuePlaceholder {
-        public static Object $v(Closure cl) {
-            // replaced with AST transformations
-            return null;
-        }
-    }
-
-    public static <T> T macro(Object self, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, CompilePhase compilePhase, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, CompilePhase compilePhase, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
+    public <T> T macroMethod(T obj) {
+        return obj;
     }
 }
