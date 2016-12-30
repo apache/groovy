@@ -215,8 +215,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert 'Hello'.uncapitalize() == 'hello'
      * assert 'Hello world'.uncapitalize() == 'hello world'
      * assert 'Hello World'.uncapitalize() == 'hello World'
-     * assert 'Hello World' ==
-     *     'hello world'.split(' ').collect{ it.uncapitalize() }.join(' ')
+     * assert 'hello world' ==
+     *     'Hello World'.split(' ').collect{ it.uncapitalize() }.join(' ')
      * </pre>
      *
      * @param self The CharSequence to uncapitalize
