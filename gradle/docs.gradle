@@ -53,21 +53,26 @@ def javadocSpec = {
 }
 
 def groovydocSpec = {
-    use = true
-    if (project != rootProject) source = project.sourceSets.main.allSource
-    classpath = javadoc.classpath
-    ext.windowtitle = doc.title
-    ext.doctitle = doc.title
-    header = doc.title
-    footer = doc.footer
-    overview = rootProject.file('src/main/overview.html')
-    includePrivate = false
-    link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
-    link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
-    link 'http://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
-    link 'http://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
-    link 'http://www.antlr2.org/javadoc/', 'antlr.'
-    link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
+    // hack to avoid errors when using gradle 3 to get the wrapper
+    // we won't ever build 2.4.x using a 3+ version - at least not
+    // without further changes
+    if (gradle.gradleVersion.startsWith('2.')) {
+        use = true
+        if (project != rootProject) source = project.sourceSets.main.allSource
+        classpath = javadoc.classpath
+        ext.windowtitle = doc.title
+        ext.doctitle = doc.title
+        header = doc.title
+        footer = doc.footer
+        overview = rootProject.file('src/main/overview.html')
+        includePrivate = false
+        link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
+        link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
+        link 'http://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
+        link 'http://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
+        link 'http://www.antlr2.org/javadoc/', 'antlr.'
+        link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
+    }
 }
 
 allprojects {
