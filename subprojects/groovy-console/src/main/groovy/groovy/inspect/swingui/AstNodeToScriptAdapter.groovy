@@ -288,11 +288,26 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             printDoubleBreak()
             node?.declaredConstructors?.each { visitConstructor(it) }
             printLineBreak()
+            visitObjectInitializerBlocks(node)
+            printLineBreak()
             node?.methods?.each { visitMethod(it) }
         }
         print '}'
         printLineBreak()
         classNameStack.pop()
+    }
+
+    private void visitObjectInitializerBlocks(ClassNode node) {
+        for (Statement stmt : node.getObjectInitializerStatements()) {
+            print '{'
+            printLineBreak()
+            indented {
+                stmt.visit(this)
+            }
+            printLineBreak()
+            print '}'
+            printDoubleBreak()
+        }
     }
 
     private void visitGenerics(GenericsType[] generics) {
