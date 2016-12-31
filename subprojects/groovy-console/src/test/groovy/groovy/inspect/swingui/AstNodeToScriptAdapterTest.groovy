@@ -869,4 +869,22 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("assert this.f([*: ['a': 10, 'b': 20, 'c': 30], 'e': 50]) == 30 : null")
         assert result.contains("assert this.f(['e': 100, *: ['a': 10, 'b': 20, 'c': 30]], *[4, 5], 6) == [['e': 100, 'b': 20, 'c': 30, 'a': 10], 4, 5, 6] : null")
     }
+
+    // GROOVY-4636
+    void testObjectInitializers() {
+        String script = '''
+            class A {
+                def v
+                A() { v = 1 }
+                { v = 2 }
+            }
+        '''
+
+        String result = compileToScript(script)
+        assert result =~ /\{\s*v = 2\s*\}/
+
+        // During class gen the initializers should have been merged in with the ctors
+        result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+        assert result =~ /(?s)public A\(\) \{.*?v = 2\s*v = 1\s*\}/
+    }
 }
