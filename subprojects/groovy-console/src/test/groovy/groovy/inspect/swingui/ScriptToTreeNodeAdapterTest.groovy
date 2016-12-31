@@ -558,4 +558,30 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 ],
                 adapter)
     }
+
+    // GROOVY-4636
+    void testScriptWithObjectInitializers() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
+
+        def source = '''
+            class A {
+                int i = 0
+                A() {
+                    i = 5
+                }
+                {
+                    i *= 2
+                }
+            }
+            '''
+
+        assertTreeStructure(source, CompilePhase.CONVERSION,
+                [
+                        startsWith('ClassNode - A'),
+                        eq('Object Initializers')
+                ],
+                adapter)
+
+    }
+
 }
