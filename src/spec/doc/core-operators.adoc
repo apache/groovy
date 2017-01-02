@@ -514,7 +514,7 @@ The position of the spread map operator is relevant, like illustrated in the fol
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spread_map_position,indent=0]
 ----
 <1> `m1` is the map that we want to inline
-<2> we use the `*:m1` notation to spread the contents of `m1` into `map`, but redefine the key `d` *after* spreading
+<2> we use the `*:m1` notation to spread the contents of `m1` into `map`, but redefine the key `d` **after** spreading
 <3> `map` contains all the expected keys, but `d` was redefined
 
 === Range operator
