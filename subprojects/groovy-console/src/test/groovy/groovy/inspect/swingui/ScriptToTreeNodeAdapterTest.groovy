@@ -608,7 +608,24 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('ExpressionStatement - MethodCallExpression')
                 ],
                 adapter)
+    }
 
+    void testCompileIndyBytecode() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
+        TreeNode root = adapter.compile('''
+            class Test {
+                void test() {}
+            }
+
+        ''', Phases.CLASS_GENERATION, true) as TreeNode
+
+        def classNodeTest = root.children().find { it.toString() == 'ClassNode - Test' }
+        def methods = classNodeTest.children().find { it.toString() == 'Methods' }
+        def methodNodeTest = methods.children().find { it.toString() == 'MethodNode - test' }
+
+        assert classNodeTest
+        assert methods
+        assert methodNodeTest
     }
 
 }

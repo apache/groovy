@@ -22,6 +22,7 @@ import groovy.ui.Console
 import groovy.ui.ConsoleActions
 import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
+import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.swing.JTextPane
 import java.awt.event.ActionEvent
@@ -557,6 +558,53 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
+                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
+                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
+            }
+        }
+    }
+
+    void testWithIndyCompilation() {
+        testInEDT {
+            SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
+                runnable.run()
+            }
+            Thread.metaClass.static.start = { Runnable runnable ->
+                runnable.run()
+            }
+            // in case the static final var has been already initialized
+            Console.prefs = testPreferences
+            try {
+                def swing = new SwingBuilder()
+                final Console console = new Console()
+                swing.controller = console
+                swing.build(new ConsoleActions())
+                console.showScriptInOutput = false
+                console.run()
+
+                String scriptSource = '"foo".concat("bar")'
+
+                def outputDocument = console.outputArea.document
+                console.inputEditor.textEditor.text = scriptSource
+
+                console.indy(new EventObject([selected: true]))
+                assert console.prefs.getBoolean('indy', false)
+                assert console.frame.title == 'GroovyConsole (Indy)'
+
+                console.runScript(new EventObject([:]))
+                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+                assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
+
+                console.indy(new EventObject([selected: false]))
+                assert !console.prefs.getBoolean('indy', true)
+                assert console.frame.title == 'GroovyConsole'
+
+                console.outputArea.text = ''
+                console.runScript(new EventObject([:]))
+                assert !console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+                assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread)
                 GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)

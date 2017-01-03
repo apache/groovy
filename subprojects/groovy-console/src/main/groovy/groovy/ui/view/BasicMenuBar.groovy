@@ -83,6 +83,7 @@ menuBar {
         checkBoxMenuItem(threadInterruptAction, selected: controller.threadInterrupt)
         menuItem(interruptAction)
         menuItem(compileAction)
+        checkBoxMenuItem(indyAction, selected: controller.indy)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)

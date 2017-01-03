@@ -60,6 +60,7 @@ usage: groovyConsole [options] [filename]
  -h,--help          Display this help message
  -pa,--parameters   Generate metadata for reflection on method parameter
                     names (jdk8+ only)
+ -i,--indy          Enable InvokeDynamic (Indy) compilation for scripts
  -V,--version       Display the version
 -----------------------------------------------------------------
 
@@ -137,6 +138,8 @@ being run by adding a new JAR or a directory to the classpath from the
 `Script` menu
 * Error hyperlinking from the output area when a compilation error is
 expected or when an exception is thrown
+* You can enable InvokeDynamic (Indy) compilation mode by selecting
+`Enable Indy Compilation` from the `Script` menu
 
 [[GroovyConsole-EmbeddingtheConsole]]
 == Embedding the Console

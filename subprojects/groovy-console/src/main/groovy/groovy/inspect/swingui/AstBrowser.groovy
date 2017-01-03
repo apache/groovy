@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.TraceClassVisitor
 
+import javax.swing.Action
 import javax.swing.JFrame
 import javax.swing.JSplitPane
 import javax.swing.KeyStroke
@@ -60,10 +61,13 @@ import static java.awt.GridBagConstraints.WEST
 
 class AstBrowser {
 
+    private static final String BYTECODE_MSG_SELECT_NODE = '// Please select a class node in the tree view.'
+
     private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
-    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView
+    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView, showIndyBytecode
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
+    Action refreshAction
 
     AstBrowser(inputArea, rootElement, classLoader) {
         this.inputArea = inputArea
@@ -102,13 +106,14 @@ class AstBrowser {
         showScriptClass = prefs.showScriptClass
         showClosureClasses = prefs.showClosureClasses
         showTreeView = prefs.showTreeView
+        showIndyBytecode = prefs.showIndyBytecode
 
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView) }) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView, showIndyBytecode) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -128,12 +133,16 @@ class AstBrowser {
                         action(name: 'Tree View', closure: this.&showTreeView,
                                 mnemonic: 'T')
                     }
+                    checkBoxMenuItem(selected: showIndyBytecode) {
+                        action(name: 'Generate Indy Bytecode', closure: this.&showIndyBytecode,
+                                mnemonic: 'I')
+                    }
                 }
                 menu(text: 'View', mnemonic: 'V') {
                     menuItem {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
                     menuItem {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
                     menuItem {
-                        action(name: 'Refresh', closure: {
+                        refreshAction = action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
@@ -151,7 +160,7 @@ class AstBrowser {
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
                             // reset text to the default as the phase change removes the focus from the class node
-                            bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+                            bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
 
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
@@ -185,14 +194,14 @@ class AstBrowser {
                         topComponent: splitterPane,
                         bottomComponent: tabbedPane {
                             widget(decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Source')
-                            widget(bytecodeView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Bytecode')
+                            widget(bytecodeView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:getByteCodeTitle())
                         },
                         constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
 
             }
         }
 
-        bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+        bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
@@ -383,6 +392,28 @@ class AstBrowser {
         }
     }
 
+    void showIndyBytecode(EventObject evt = null) {
+        showIndyBytecode = evt.source.selected
+        bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        refreshAction.actionPerformed(null)
+        updateByteCodeTabTitle()
+    }
+
+    private void updateByteCodeTabTitle() {
+        def tabPane = mainSplitter.bottomComponent
+        int tabCount = tabPane.getTabCount()
+        for (int i = 0; i < tabCount; i++) {
+            if (bytecodeView.is(tabPane.getComponentAt(i))) {
+                tabPane.setTitleAt(i, getByteCodeTitle())
+                break
+            }
+        }
+    }
+
+    private String getByteCodeTitle() {
+        'Bytecode' + (showIndyBytecode ? ' (Indy)' : '')
+    }
+
     void decompile(phaseId, source) {
 
         decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
@@ -422,7 +453,7 @@ class AstBrowser {
                 def nodeMaker = new SwingTreeNodeMaker()
                 def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
                 classLoader.clearBytecodeTable()
-                def result = adapter.compile(script, compilePhase)
+                def result = adapter.compile(script, compilePhase, showIndyBytecode)
                 swing.doLater {
                     model.setRoot(result)
                     model.reload()
@@ -451,6 +482,7 @@ class AstBrowserUiPreferences {
     final boolean showTreeView
     final boolean showScriptClass
     final boolean showClosureClasses
+    final boolean showIndyBytecode
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
 
@@ -470,13 +502,14 @@ class AstBrowserUiPreferences {
         showScriptClass = prefs.getBoolean('showScriptClass', true)
         showClosureClasses = prefs.getBoolean('showClosureClasses', false)
         showTreeView = prefs.getBoolean('showTreeView', true)
+        showIndyBytecode = prefs.getBoolean('showIndyBytecode', false)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
             it.phaseId == phase
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt('decompiledFontSize', decompiledSourceFontSize as int)
         prefs.putInt('frameX', frame.location.x as int)
@@ -489,6 +522,7 @@ class AstBrowserUiPreferences {
         prefs.putBoolean('showScriptClass', scriptClassPref)
         prefs.putBoolean('showClosureClasses', closureClassesPref)
         prefs.putBoolean('showTreeView', showTreeView)
+        prefs.putBoolean('showIndyBytecode', showIndyBytecode)
         prefs.putInt('compilerPhase', phase.phaseId)
     }
 }
