@@ -557,5 +557,19 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             countIt([1,2,3])==3
         '''
     }
+
+    // GROOVY-8033
+    void testSetSpreadPropertyInStaticContext() {
+        assertScript '''
+            class Foo {
+                String name
+            }
+            static List<String> meth() {
+                Set<Foo> foos = [new Foo(name: 'pls'), new Foo(name: 'bar')].toSet()
+                foos*.name
+            }
+            assert meth().toSet() == ['pls', 'bar'].toSet()            
+        '''
+    }
 }
 
