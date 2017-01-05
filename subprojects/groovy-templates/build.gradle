@@ -27,7 +27,7 @@ dependencies {
 }
 
 task backportJar(type:Jar) {
-    appendix = 'markup-backport'
+    name = 'groovy-markup-backport'
     dependsOn classes
     from sourceSets.main.output
     include 'groovy/text/markup/**'

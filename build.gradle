@@ -72,6 +72,8 @@ indyBanner()
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
+ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
+
 allprojects {
     apply plugin: 'java'
 
@@ -472,6 +474,15 @@ task checkCompatibility {
     }
 }
 
+if (!JavaVersion.current().java7Compatible) {
+    logger.lifecycle '''
+    **************************************** WARNING ********************************************
+    ******   You are running the build with an older JDK. NEVER try to release with 1.6.   ******
+    ******   You must use a JDK 1.7+ in order to compile all features of the language.     ******
+    *********************************************************************************************
+'''
+}
+
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
@@ -487,14 +498,7 @@ if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-if (!JavaVersion.current().java7Compatible) {
-    logger.lifecycle '''
-    **************************************** WARNING **********************************************
-    ****** You are running the build with an older JDK. NEVER try to release with 1.6.       ******
-    ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
-    ***********************************************************************************************
-'''
-}
+apply from: 'gradle/signing.gradle'
 
 licenseReport {
     excludeGroups = [

@@ -43,6 +43,7 @@ backports.each { pkg, classList ->
         from zipTree(jar.archivePath)
         include classList
         baseName = "groovy-backports-$pkg"
+        classifier = ''
     }
 
     // the following two jars are empty. No wonder, Maven Central *requires* a javadoc and sources classifier
