@@ -1198,7 +1198,7 @@ keywords
 rparen
     :   RPAREN
     |
-        // !!!Error Alternatives!!!
+        // !!!Error Alternatives, impact the performance of parsing!!!
         { require(false, "Missing ')'"); }
     ;
 
