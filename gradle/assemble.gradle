@@ -340,7 +340,7 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
     inputs.files(allprojects.jar.archivePath)
 
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
-    appendix = 'all'
+    baseName = 'groovy-all'
     includeEmptyDirs = false
     if (rootProject.useIndy()) {
         classifier = 'indy'
@@ -445,7 +445,7 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sou
     modules()*.sourceJar.each {
         with it.rootSpec
     }
-    appendix = 'all'
+    baseName = 'groovy-all'
     classifier = rootProject.useIndy() ? 'indy-sources' : 'sources'
 }
 
@@ -461,13 +461,13 @@ allprojects {
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocAll) {
-    appendix = 'all'
+    baseName = 'groovy-all'
     classifier = rootProject.useIndy() ? 'indy-javadoc' : 'javadoc'
     from javadocAll.destinationDir
 }
 
 task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
-    appendix = 'all'
+    baseName = 'groovy-all'
     classifier = rootProject.useIndy() ? 'indy-groovydoc' : 'groovydoc'
     from groovydocAll.destinationDir
 }
@@ -529,7 +529,7 @@ ext.distSpec = copySpec {
     }
     into('embeddable') {
         from jarAll.archivePath
-        from { new File(jarAll.archivePath.parent, "${jarAll.baseName}-${jarAll.appendix}-${jarAll.version}-indy.jar") }
+        from { new File(jarAll.destinationDir, "${jarAll.baseName}-${jarAll.version}-indy.jar") }
     }
 }
 

@@ -39,7 +39,25 @@ allprojects {
 
 apply from: 'gradle/backports.gradle'
 
+ext.basename = { String s -> s.take(s.lastIndexOf('.')) }
+ext.deriveFile = { File archive, String suffix -> new File(archive.parent, basename(archive.name) + "-${suffix}.jar") }
+
 allprojects {
+    ext.signWithClassifier = { String c, File f ->
+        signing.sign(c, f)
+        project.artifacts.add('archives', new File(f.parent, f.name + '.asc')) {
+            classifier = c
+            type = 'jar.asc'
+        }
+    }
+
+    ext.signArchiveTask = { archiveTask ->
+        signing.sign(archiveTask.classifier, archiveTask.archivePath)
+        project.artifacts.add('archives', new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')) {
+            classifier = archiveTask.classifier
+            type = archiveTask.extension + '.asc'
+        }
+    }
 
     configurations {
         deployerJars
@@ -50,6 +68,7 @@ allprojects {
             mavenDeployer {
                 configuration = configurations.deployerJars
                 pom pomConfigureClosure
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
             }
         }
     }
@@ -58,6 +77,7 @@ allprojects {
         repositories {
             mavenInstaller {
                 pom pomConfigureClosure
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
             }
         }
     }
@@ -78,14 +98,30 @@ allprojects {
                 new GradleException('You cannot use uploadArchives or install task with the flag [indy] turned'
                         +' on because the build handles indy artifacts by itself in that case.')
             }
-            def archive = jar.archivePath
-            def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-indy.jar')
+            def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
             if (indyJar.exists()) {
                 project.artifacts.add('archives', indyJar)
             }
-            def grooidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-grooid.jar')
+            def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
             if (grooidJar.exists()) {
                 project.artifacts.add('archives', grooidJar)
+            }
+        }
+    }
+
+    install {
+        doFirst {
+            signArchiveTask(jar)
+            signArchiveTask(sourceJar)
+            signArchiveTask(javadocJar)
+            signArchiveTask(groovydocJar)
+            def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
+            if (indyJar.exists()) {
+                signWithClassifier('indy', indyJar)
+            }
+            def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
+            if (grooidJar.exists()) {
+                signWithClassifier('grooid', grooidJar)
             }
         }
     }
@@ -95,32 +131,78 @@ allprojects {
 [uploadArchives, install]*.with {
     dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin])
     doFirst {
-        project.artifacts.add('archives', jarAll)
-        project.artifacts.add('archives', sourceAllJar)
-        project.artifacts.add('archives', javadocAllJar)
-        project.artifacts.add('archives', groovydocAllJar)
-        project.artifacts.add('archives', distBin)
+        project.artifacts.add('archives', jarAll) {
+            name = 'groovy-all'
+        }
+        project.artifacts.add('archives', sourceAllJar) {
+            name = 'groovy-all'
+        }
+        project.artifacts.add('archives', javadocAllJar) {
+            name = 'groovy-all'
+        }
+        project.artifacts.add('archives', groovydocAllJar) {
+            name = 'groovy-all'
+        }
+        project.artifacts.add('archives', distBin) {
+            name = 'groovy-binary'
+        }
         tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
             project.artifacts.add('archives', t.archivePath) {
                 name = t.baseName
                 type = 'jar'
+                classifier = t.classifier
             }
         }
 
-        def archive = jarAll.archivePath
-        def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1] + '-indy.jar')
+        def indyJar = deriveFile(jarAll.archivePath, 'indy')
         if (indyJar.exists()) {
             project.artifacts.add('archives', indyJar)
         }
-        def grooidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-grooid.jar')
+        def grooidJar = deriveFile(jarAll.archivePath, 'grooid')
         if (grooidJar.exists()) {
             project.artifacts.add('archives', grooidJar)
         }
     }
 }
+
+install {
+    doFirst {
+        signArchiveTask(jarAll)
+        signArchiveTask(sourceAllJar)
+        signArchiveTask(javadocAllJar)
+        signArchiveTask(groovydocAllJar)
+        signArchiveTask(distBin)
+
+        // next three are done as a side effect since it was the easiest approach
+        signing.sign(distSrc.archivePath)
+        signing.sign(distDoc.archivePath)
+        signing.sign(dist.archivePath)
+
+        tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
+            signing.sign(t.classifier, t.archivePath)
+            project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
+                name = t.baseName
+                classifier = t.classifier
+                type = t.extension + '.asc'
+            }
+        }
+
+        def indyJar = deriveFile(jarAll.archivePath, 'indy')
+        if (indyJar.exists()) {
+            signWithClassifier('indy', indyJar)
+        }
+        def grooidJar = deriveFile(jarAll.archivePath, 'grooid')
+        if (grooidJar.exists()) {
+            signWithClassifier('grooid', grooidJar)
+        }
+    }
+}
+
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->
-        !(artifact.name.contains('groovy-all')) && !(artifact.name.contains('groovy-binary')) && !(artifact.name.contains('backport'))
+        !(artifact.name.contains('groovy-all')) &&
+                !(artifact.name.contains('groovy-binary')) &&
+                !(artifact.name.contains('backport'))
     }
     addFilter('all') { artifact, file ->
         artifact.name.contains('groovy-all')
@@ -173,6 +255,8 @@ ext.pomAll = {
     binarypom.whenConfigured { p ->
         p.dependencies.clear()
     }
+
+    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 }
 
 install {
