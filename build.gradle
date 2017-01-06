@@ -55,6 +55,7 @@ indyBanner()
 //apply plugin: 'antlr'
 
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
+ext.shouldSign = isReleaseVersion
 
 allprojects {
     apply plugin: 'java'
