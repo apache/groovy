@@ -32,6 +32,7 @@ allprojects {
 gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.allTasks.any { it instanceof Sign } || project.hasProperty('forceSign')) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
+        project.ext.shouldSign = true
         if (!project.hasProperty('signing.keyId') ||
                 !project.hasProperty('signing.secretKeyRingFile') ||
                 !project.hasProperty('signing.password')) {
