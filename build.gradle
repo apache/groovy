@@ -72,9 +72,6 @@ indyBanner()
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
-ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
-ext.shouldSign = isReleaseVersion
-
 allprojects {
     apply plugin: 'java'
 
@@ -173,6 +170,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.9'
     spockVersion = '1.0-groovy-2.4'
+    isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
 dependencies {

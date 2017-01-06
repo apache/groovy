@@ -17,22 +17,20 @@
  *  under the License.
  */
 
-import org.gradle.plugins.signing.Sign
-
 allprojects {
     apply plugin: 'signing'
     signing {
         required {
-            isReleaseVersion &&
-                    (gradle.taskGraph.hasTask('artifactoryPublish') || project.hasProperty('forceSign'))
+            rootProject.ext.isReleaseVersion &&
+                    (gradle.taskGraph.hasTask(':artifactoryPublish') || rootProject.hasProperty('forceSign'))
         }
     }
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.allTasks.any { it instanceof Sign } || project.hasProperty('forceSign')) {
+    if (project.ext.isReleaseVersion &&
+            (taskGraph.hasTask(':artifactoryPublish') || project.hasProperty('forceSign'))) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
-        project.ext.shouldSign = true
         if (!project.hasProperty('signing.keyId') ||
                 !project.hasProperty('signing.secretKeyRingFile') ||
                 !project.hasProperty('signing.password')) {
@@ -63,30 +61,29 @@ def promptUser(String prompt) {
     def response = ''
     if (System.console() == null) {
         new groovy.swing.SwingBuilder().edt {
-            dialog(modal: true, //Otherwise the build will continue running
-                    title: 'Reponse required', //Dialog title
+            dialog(modal: true, // pause build
+                    title: 'Reponse required', // dialog title
                     alwaysOnTop: true,
                     resizable: false,
-                    locationRelativeTo: null, //Place dialog in center of the screen
-                    pack: true, //We need to pack the dialog (so it will take the size of its children)
+                    locationRelativeTo: null, // centered on screen
+                    pack: true,
                     show: true
-            ){
-                vbox { //Put everything below each other
+            ) {
+                vbox {
                     label(text: "$prompt:")
                     input = passwordField()
                     button(defaultButton: true, text: 'OK', actionPerformed: {
-                        response = new String(input.password); //set pass variable to value of input field
-                        dispose(); //close dialog
+                        response = new String(input.password)
+                        dispose()
                     })
                 }
             }
         }
-    }
-    else{
+    } else {
         response = new String(System.console().readPassword("\n$prompt: "))
     }
 
-    if(response.size() <= 0){
+    if (!response) {
         throw new InvalidUserDataException("Null response detected!")
     }
     response
