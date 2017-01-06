@@ -62,33 +62,70 @@ artifactoryPublish {
         def curDate = new Date()
         def additionalFiles = [
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", null,
-                        curDate, file("$projectDir/target/libs/groovy-all-${version}.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.jar"),
+                        curDate, file("$projectDir/target/libs/groovy-all-${version}.jar")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.jar"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'sources',
-                        curDate, file("$projectDir/target/libs/groovy-all-${version}-sources.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-sources.jar"),
+                        curDate, file("$projectDir/target/libs/groovy-all-${version}-sources.jar")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-sources.jar"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'javadoc',
-                        curDate, file("$projectDir/target/libs/groovy-all-${version}-javadoc.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-javadoc.jar"),
+                        curDate, file("$projectDir/target/libs/groovy-all-${version}-javadoc.jar")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-javadoc.jar"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'groovydoc',
-                        curDate, file("$projectDir/target/libs/groovy-all-${version}-groovydoc.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-groovydoc.jar"),
+                        curDate, file("$projectDir/target/libs/groovy-all-${version}-groovydoc.jar")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-groovydoc.jar"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'indy',
-                        curDate, file("$projectDir/target/libs/groovy-all-${version}-indy.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-indy.jar"),
+                        curDate, file("$projectDir/target/libs/groovy-all-${version}-indy.jar")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-indy.jar"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "pom", "pom", null,
-                        curDate, file("$projectDir/target/poms/pom-all.xml")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom"),
+                        curDate, file("$projectDir/target/poms/pom-all.xml")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom"),
+                gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "pom.asc", "pom.asc", null,
+                        curDate, file("$projectDir/target/poms/pom-all.xml.asc")), 'artifacts',
+                        "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom.asc"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "zip", "zip", null,
-                        curDate, distBin.archivePath), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip"),
+                        curDate, distBin.archivePath), 'artifacts',
+                        "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip"),
+                gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "zip.asc", "zip.asc", null,
+                        curDate, new File(distBin.destinationDir, distBin.archiveName + '.asc')), 'artifacts',
+                        "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip.asc"),
                 gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "pom", "pom", null,
-                        curDate, file("$projectDir/target/poms/pom-binary.xml")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
+                        curDate, file("$projectDir/target/poms/pom-binary.xml")), 'artifacts',
+                        "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
+                gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "pom.asc", "pom.asc", null,
+                        curDate, file("$projectDir/target/poms/pom-binary.xml.asc")), 'artifacts',
+                        "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom.asc"),
 
         ]
         tasks.withType(Jar).matching { it.name.startsWith('backport') }.all {
+            String baseDir = "org/codehaus/groovy/${baseName}/${version}"
             additionalFiles << gradleDeployDetails(
                     new DefaultPublishArtifact(baseName, "jar", "jar", classifier, curDate, archivePath),
                     'artifacts',
-                    "org/codehaus/groovy/${baseName}/${version}/${archiveName}")
+                    "$baseDir/${archiveName}")
+            additionalFiles << gradleDeployDetails(
+                    new DefaultPublishArtifact(baseName, "jar.asc", "jar.asc", classifier, curDate, new File(destinationDir, archiveName + '.asc')),
+                    'artifacts',
+                    "$baseDir/${archiveName}.asc")
             if (!classifier) {
+                def pomLocation = "$projectDir/target/poms/pom-${baseName - 'groovy-'}.xml"
                 additionalFiles << gradleDeployDetails(
-                        new DefaultPublishArtifact(baseName, "pom", "pom", null, curDate, file("$projectDir/target/poms/pom-${baseName - 'groovy-'}.xml")),
+                        new DefaultPublishArtifact(baseName, "pom", "pom", null, curDate, file(pomLocation)),
                         'artifacts',
-                        "org/codehaus/groovy/${baseName}/${version}/${baseName}-${version}.pom")
+                        "$baseDir/${baseName}-${version}.pom")
+                additionalFiles << gradleDeployDetails(
+                        new DefaultPublishArtifact(baseName, "pom.asc", "pom.asc", null, curDate, file(pomLocation + '.asc')),
+                        'artifacts',
+                        "$baseDir/${baseName}-${version}.pom.asc")
+            }
+        }
+        allprojects {
+            configurations.archives.artifacts.findAll{ it.name == project.name && it.type == 'jar' && it.extension == 'jar' }.each {
+                def pomLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml"
+                String baseDir = "org/codehaus/groovy/${it.name}/${version}"
+                additionalFiles << gradleDeployDetails(
+                        new DefaultPublishArtifact(it.name, "pom.asc", "pom.asc", null, curDate, file(pomLocation + '.asc')),
+                        'artifacts',
+                        "$baseDir/${it.name}-${version}.pom.asc")
             }
         }
         additionalFiles.each { deployDetails.add(it) }
