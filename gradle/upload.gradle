@@ -62,9 +62,7 @@ allprojects {
         repositories {
             mavenDeployer {
                 pom pomConfigureClosure
-                if (shouldSign) {
-                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                }
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
             }
         }
     }
@@ -73,9 +71,7 @@ allprojects {
         repositories {
             mavenInstaller {
                 pom pomConfigureClosure
-                if (shouldSign) {
-                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                }
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
             }
         }
     }
@@ -109,19 +105,17 @@ allprojects {
 
     install {
         doFirst {
-            if (shouldSign) {
-                signArchiveTask(jar)
-                signArchiveTask(sourceJar)
-                signArchiveTask(javadocJar)
-                signArchiveTask(groovydocJar)
-                def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
-                if (indyJar.exists()) {
-                    signWithClassifier('indy', indyJar)
-                }
-                def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
-                if (grooidJar.exists()) {
-                    signWithClassifier('grooid', grooidJar)
-                }
+            signArchiveTask(jar)
+            signArchiveTask(sourceJar)
+            signArchiveTask(javadocJar)
+            signArchiveTask(groovydocJar)
+            def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
+            if (indyJar.exists()) {
+                signWithClassifier('indy', indyJar)
+            }
+            def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
+            if (grooidJar.exists()) {
+                signWithClassifier('grooid', grooidJar)
             }
         }
     }
@@ -166,36 +160,35 @@ allprojects {
 }
 
 install {
+    dependsOn([distDoc, dist, distBin])
     doFirst {
-        if (shouldSign) {
-            signArchiveTask(jarAll)
-            signArchiveTask(sourceAllJar)
-            signArchiveTask(javadocAllJar)
-            signArchiveTask(groovydocAllJar)
-            signArchiveTask(distBin)
+        signArchiveTask(jarAll)
+        signArchiveTask(sourceAllJar)
+        signArchiveTask(javadocAllJar)
+        signArchiveTask(groovydocAllJar)
+        signArchiveTask(distBin)
 
-            // next three are done as a side effect since it was the easiest approach
-            signing.sign(distSrc.archivePath)
-            signing.sign(distDoc.archivePath)
-            signing.sign(dist.archivePath)
+        // next three are done as a side effect since it was the easiest approach
+        signing.sign(distSrc.archivePath)
+        signing.sign(distDoc.archivePath)
+        signing.sign(dist.archivePath)
 
-            tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
-                signing.sign(t.classifier, t.archivePath)
-                project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
-                    name = t.baseName
-                    classifier = t.classifier
-                    type = t.extension + '.asc'
-                }
+        tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
+            signing.sign(t.classifier, t.archivePath)
+            project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
+                name = t.baseName
+                classifier = t.classifier
+                type = t.extension + '.asc'
             }
+        }
 
-            def indyJar = deriveFile(jarAll.archivePath, 'indy')
-            if (indyJar.exists()) {
-                signWithClassifier('indy', indyJar)
-            }
-            def grooidJar = deriveFile(jarAll.archivePath, 'grooid')
-            if (grooidJar.exists()) {
-                signWithClassifier('grooid', grooidJar)
-            }
+        def indyJar = deriveFile(jarAll.archivePath, 'indy')
+        if (indyJar.exists()) {
+            signWithClassifier('indy', indyJar)
+        }
+        def grooidJar = deriveFile(jarAll.archivePath, 'grooid')
+        if (grooidJar.exists()) {
+            signWithClassifier('grooid', grooidJar)
         }
     }
 }
@@ -258,9 +251,7 @@ ext.pomAll = {
         p.dependencies.clear()
     }
 
-    if (shouldSign) {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-    }
+    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 }
 
 install {

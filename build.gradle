@@ -54,9 +54,6 @@ indyBanner()
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
-ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
-ext.shouldSign = isReleaseVersion
-
 allprojects {
     apply plugin: 'java'
 
@@ -152,6 +149,7 @@ ext {
     slf4jVersion = '1.7.6'
     xmlunitVersion = '1.5'
     xstreamVersion = '1.4.7'
+    isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
 dependencies {
@@ -445,6 +443,15 @@ task checkCompatibility {
     }
 }
 
+if (!JavaVersion.current().java7Compatible) {
+    logger.lifecycle '''
+    **************************************** WARNING ********************************************
+    ******   You are running the build with an older JDK. NEVER try to release with 1.6.   ******
+    ******   You must use a JDK 1.7+ in order to compile all features of the language.     ******
+    *********************************************************************************************
+'''
+}
+
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
@@ -454,21 +461,13 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/codehaus.gradle'
 apply from: 'gradle/quality.gradle'
-apply from: 'gradle/signing.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-if (!JavaVersion.current().java7Compatible) {
-    logger.lifecycle '''
-    **************************************** WARNING ********************************************
-    ******   You are running the build with an older JDK. NEVER try to release with 1.6.   ******
-    ******   You must use a JDK 1.7+ in order to compile all features of the language.     ******
-    *********************************************************************************************
-'''
-}
+apply from: 'gradle/signing.gradle'
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
 //task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
