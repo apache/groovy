@@ -73,8 +73,8 @@ artifactoryPublish {
             // as the artifactId, so we add the transformed one ourselves
             // this also covers signatures which we already added during install
             deployDetails.add(makeTransformedDetails(it))
-            if (it.type == 'jar' && it.extension == 'jar' && !it.classifier) {
-                // and the pom and its signature
+            if (!it.classifier && (it.type == 'jar' || it.type == 'zip')) {
+                // add the pom and its signature
                 deployDetails.add(makeTransformedPomDetails(it))
                 deployDetails.add(makeTransformedPomSigDetails(it))
             }
