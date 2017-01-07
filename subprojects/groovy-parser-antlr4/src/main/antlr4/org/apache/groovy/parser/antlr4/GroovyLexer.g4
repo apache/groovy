@@ -92,10 +92,14 @@ options {
     private static class Paren {
         private String text;
         private int lastTokenType;
+        private int line;
+        private int column;
 
-        public Paren(String text, int lastTokenType) {
+        public Paren(String text, int lastTokenType, int line, int column) {
             this.text = text;
             this.lastTokenType = lastTokenType;
+            this.line = line;
+            this.column = column;
         }
 
         public String getText() {
@@ -106,9 +110,17 @@ options {
             return this.lastTokenType;
         }
 
+        public int getLine() {
+            return line;
+        }
+
+        public int getColumn() {
+            return column;
+        }
+
         @Override
         public int hashCode() {
-            return text.hashCode();
+            return text.hashCode() * line + column;
         }
 
         @Override
@@ -117,7 +129,9 @@ options {
                 return false;
             }
 
-            return this.text.equals(((Paren) obj).text);
+            Paren other = (Paren) obj;
+
+            return this.text.equals(other.text) && (this.line == other.line && this.column == other.column);
         }
     }
 
@@ -131,15 +145,16 @@ options {
 
     private final Deque<Paren> parenStack = new ArrayDeque<>(32);
     private void enterParen() {
-        parenStack.push(new Paren(getText(), this.lastTokenType));
+        parenStack.push(new Paren(getText(), this.lastTokenType, getLine(), getCharPositionInLine() + 1));
     }
     private void exitParen() {
         Paren paren = parenStack.peek();
-
         String text = getText();
 
         require(null != paren, "Too many '" + text + "'");
-        require(text.equals(PAREN_MAP.get(paren.getText())), "'" + text + "' can not match '" + paren.getText() + "'");
+        require(text.equals(PAREN_MAP.get(paren.getText())),
+                "'" + text + "' " + genPositionInfo() + " can not match '" + paren.getText() + "' " + formatPositionInfo(paren.getLine(), paren.getColumn()),
+                false);
 
         parenStack.pop();
     }
@@ -176,7 +191,7 @@ options {
 
     @Override
     public String genPositionInfo() {
-        return " @ line " + getLine() + ", column " + (getCharPositionInLine() + 1);
+        return formatPositionInfo(getLine(), getCharPositionInLine() + 1);
     }
 }
 

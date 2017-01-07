@@ -118,10 +118,8 @@ options {
             return "";
         }
 
-        return " @ line " + token.getLine() + ", column " + (token.getCharPositionInLine() + 1 + token.getText().length());
+        return formatPositionInfo(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
     }
-
-
 }
 
 // starting point for parsing a groovy file

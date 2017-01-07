@@ -22,15 +22,23 @@ package org.apache.groovy.parser.antlr4;
  * A SyntaxErrorReportable is a recognizer that can report syntax error
  */
 public interface SyntaxErrorReportable {
-    default void require(boolean condition, String msg) {
+    default void require(boolean condition, String msg, boolean toAttachPositionInfo) {
         if (condition) {
             return;
         }
 
-        this.throwSyntaxError(msg);
+        this.throwSyntaxError(msg, toAttachPositionInfo);
     }
-    default void throwSyntaxError(String msg) {
-        throw new GroovySyntaxError(msg + this.genPositionInfo(), this.getSyntaxErrorSource());
+    default void require(boolean condition, String msg) {
+        require(condition, msg, true);
+    }
+
+    default void throwSyntaxError(String msg, boolean toAttachPositionInfo) {
+        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? this.genPositionInfo() : ""), this.getSyntaxErrorSource());
+    }
+
+    default String formatPositionInfo(int line, int column) {
+        return " @ line " + line + ", column " + column;
     }
 
     int getSyntaxErrorSource();
