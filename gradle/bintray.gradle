@@ -19,7 +19,7 @@
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
 ext.bintrayUser = project.hasProperty('bintrayUser') ? project.bintrayUser : System.getenv('BINTRAY_USER')
-ext.bintrayPassword = project.hasProperty('bintrayKey') ? project.bintrayKey : System.getenv('BINTRAY_KEY')
+ext.bintrayPassword = project.hasProperty('bintrayPassword') ? project.bintrayPassword : System.getenv('BINTRAY_PASSWORD')
 
 if (!bintrayUser) {
     // try to read from properties
@@ -74,15 +74,19 @@ artifactoryPublish {
             if (!it.classifier && (it.type == 'jar' || it.type == 'zip')) {
                 // add the pom and its signature
                 deployDetails.add(makeTransformedPomDetails(it))
-                deployDetails.add(makeTransformedPomSigDetails(it))
+                if (isReleaseVersion) {
+                    deployDetails.add(makeTransformedPomSigDetails(it))
+                }
             }
         }
 
-        allprojects {
-            configurations.archives.artifacts.findAll{ it.name == project.name && it.type == 'jar' && it.extension == 'jar' && !it.classifier }.each {
-                // add pom signatures
-                def pomSigLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
-                deployDetails.add(newDetails(it, file(pomSigLocation), 'pom.asc', 'pom'))
+        if (isReleaseVersion) {
+            allprojects {
+                configurations.archives.artifacts.findAll{ it.name == project.name && it.type == 'jar' && it.extension == 'jar' && !it.classifier }.each {
+                    // add pom signatures
+                    def pomSigLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
+                    deployDetails.add(newDetails(it, file(pomSigLocation), 'pom.asc', 'pom'))
+                }
             }
         }
     }
