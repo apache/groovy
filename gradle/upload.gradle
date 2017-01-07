@@ -46,7 +46,7 @@ allprojects {
         signing.sign(c, f)
         project.artifacts.add('archives', new File(f.parent, f.name + '.asc')) {
             classifier = c
-            type = 'jar.asc'
+            type = 'asc'
             extension = 'jar.asc'
         }
     }
@@ -56,7 +56,7 @@ allprojects {
         project.artifacts.add('archives', new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')) {
             name = archiveTask.baseName
             classifier = archiveTask.classifier
-            type = archiveTask.extension + '.asc'
+            type = 'asc'
             extension = archiveTask.extension + '.asc'
         }
     }
@@ -108,6 +108,8 @@ allprojects {
 
     install {
         doFirst {
+            // gradle doesn't expect us to mutate configurations like we do here
+            // so signing the configuration won't work and we do it manually here
             signArchiveTask(jar)
             signArchiveTask(sourceJar)
             signArchiveTask(javadocJar)
@@ -124,7 +126,9 @@ allprojects {
     }
 }
 
-// the root project generates an alternate 'groovy-all' artifact
+// the root project generates several alternate artifacts, e.g. 'groovy-all'
+// we don't want them in the root project so add them as artifacts with a modified name
+// we'll exclude the original artifacts during publication with an exclude pattern
 [uploadArchives, install]*.with {
     dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
     doFirst {
@@ -149,7 +153,12 @@ allprojects {
         signArchiveTask(groovydocAllJar)
 
         // TODO rework these?
-        signing.sign(distBin)
+        signing.sign(distBin.archivePath)
+        project.artifacts.add('archives', new File(distBin.destinationDir, distBin.archiveName + '.asc')) {
+            name = 'groovy-binary'
+            type = 'asc'
+            extension = 'zip.asc'
+        }
         signing.sign(distSrc.archivePath)
         signing.sign(distDoc.archivePath)
         signing.sign(dist.archivePath)
@@ -164,7 +173,8 @@ allprojects {
             project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
                 name = t.baseName
                 classifier = t.classifier
-                type = t.extension + '.asc'
+                type = 'asc'
+                extension = t.extension + '.asc'
             }
         }
 
