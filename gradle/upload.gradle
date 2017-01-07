@@ -44,21 +44,25 @@ ext.deriveFile = { File archive, String suffix -> new File(archive.parent, basen
 
 allprojects {
     ext.signWithClassifier = { String c, File f ->
-        signing.sign(c, f)
-        project.artifacts.add('archives', new File(f.parent, f.name + '.asc')) {
-            classifier = c
-            type = 'asc'
-            extension = 'jar.asc'
+        if (rootProject.isReleaseVersion) {
+            signing.sign(c, f)
+            project.artifacts.add('archives', new File(f.parent, f.name + '.asc')) {
+                classifier = c
+                type = 'asc'
+                extension = 'jar.asc'
+            }
         }
     }
 
     ext.signArchiveTask = { archiveTask ->
-        signing.sign(archiveTask.classifier, archiveTask.archivePath)
-        project.artifacts.add('archives', new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')) {
-            name = archiveTask.baseName
-            classifier = archiveTask.classifier
-            type = 'asc'
-            extension = archiveTask.extension + '.asc'
+        if (rootProject.isReleaseVersion) {
+            signing.sign(archiveTask.classifier, archiveTask.archivePath)
+            project.artifacts.add('archives', new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')) {
+                name = archiveTask.baseName
+                classifier = archiveTask.classifier
+                type = 'asc'
+                extension = archiveTask.extension + '.asc'
+            }
         }
     }
 
@@ -66,7 +70,7 @@ allprojects {
         repositories {
             mavenDeployer {
                 pom pomConfigureClosure
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
             }
         }
     }
@@ -75,7 +79,7 @@ allprojects {
         repositories {
             mavenInstaller {
                 pom pomConfigureClosure
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
             }
         }
     }
@@ -154,15 +158,17 @@ allprojects {
         signArchiveTask(groovydocAllJar)
 
         // TODO rework these?
-        signing.sign(distBin.archivePath)
-        project.artifacts.add('archives', new File(distBin.destinationDir, distBin.archiveName + '.asc')) {
-            name = 'groovy-binary'
-            type = 'asc'
-            extension = 'zip.asc'
+        if (isReleaseVersion) {
+            signing.sign(distBin.archivePath)
+            project.artifacts.add('archives', new File(distBin.destinationDir, distBin.archiveName + '.asc')) {
+                name = 'groovy-binary'
+                type = 'asc'
+                extension = 'zip.asc'
+            }
+            signing.sign(distSrc.archivePath)
+            signing.sign(distDoc.archivePath)
+            signing.sign(dist.archivePath)
         }
-        signing.sign(distSrc.archivePath)
-        signing.sign(distDoc.archivePath)
-        signing.sign(dist.archivePath)
 
         tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
             project.artifacts.add('archives', t.archivePath) {
@@ -170,12 +176,14 @@ allprojects {
                 type = 'jar'
                 classifier = t.classifier
             }
-            signing.sign(t.classifier, t.archivePath)
-            project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
-                name = t.baseName
-                classifier = t.classifier
-                type = 'asc'
-                extension = t.extension + '.asc'
+            if (isReleaseVersion) {
+                signing.sign(t.classifier, t.archivePath)
+                project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
+                    name = t.baseName
+                    classifier = t.classifier
+                    type = 'asc'
+                    extension = t.extension + '.asc'
+                }
             }
         }
 
@@ -250,7 +258,7 @@ ext.pomAll = {
         p.dependencies.clear()
     }
 
-    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+    beforeDeployment { MavenDeployment deployment -> if (isReleaseVersion) signing.signPom(deployment) }
 }
 
 install {
