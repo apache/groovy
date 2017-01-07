@@ -18,8 +18,6 @@
  */
 package groovy.grape
 
-import org.codehaus.groovy.reflection.ReflectionCache
-
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.cache.ResolutionCacheManager
