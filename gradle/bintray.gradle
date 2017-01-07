@@ -45,8 +45,8 @@ allprojects {
             }
         }
         publish {
+            excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
             repository {
-                excludePatterns = 'org/codehaus/groovy/groovy/*/groovy-all*,org/codehaus/groovy/groovy/*/groovy-backports*,org/codehaus/groovy/groovy/*/groovy-binary*'
                 repoKey = project.hasProperty('bintrayRepoKey') ? project.bintrayRepoKey : 'oss-snapshot-local' //The Artifactory repository key to publish to
                 //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
                 //~/.gradle/gradle.properties, otherwise to be set in the build server
