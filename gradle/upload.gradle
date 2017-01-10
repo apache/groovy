@@ -45,10 +45,13 @@ allprojects {
     ext.signWithClassifier = { String c, File f ->
         if (rootProject.isReleaseVersion) {
             signing.sign(c, f)
-            project.artifacts.add('archives', new File(f.parent, f.name + '.asc')) {
-                classifier = c
-                type = 'asc'
-                extension = 'jar.asc'
+            def ascFile = new File(f.parent, f.name + '.asc')
+            if (ascFile.exists()) {
+                project.artifacts.add('archives', ascFile) {
+                    classifier = c
+                    type = 'asc'
+                    extension = 'jar.asc'
+                }
             }
         }
     }
@@ -56,11 +59,14 @@ allprojects {
     ext.signArchiveTask = { archiveTask ->
         if (rootProject.isReleaseVersion) {
             signing.sign(archiveTask.classifier, archiveTask.archivePath)
-            project.artifacts.add('archives', new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')) {
-                name = archiveTask.baseName
-                classifier = archiveTask.classifier
-                type = 'asc'
-                extension = archiveTask.extension + '.asc'
+            def ascFile = new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')
+            if (ascFile.exists()) {
+                project.artifacts.add('archives', ascFile) {
+                    name = archiveTask.baseName
+                    classifier = archiveTask.classifier
+                    type = 'asc'
+                    extension = archiveTask.extension + '.asc'
+                }
             }
         }
     }
@@ -159,10 +165,13 @@ allprojects {
         // TODO rework these?
         if (isReleaseVersion) {
             signing.sign(distBin.archivePath)
-            project.artifacts.add('archives', new File(distBin.destinationDir, distBin.archiveName + '.asc')) {
-                name = 'groovy-binary'
-                type = 'asc'
-                extension = 'zip.asc'
+            def ascFile = new File(distBin.destinationDir, distBin.archiveName + '.asc')
+            if (ascFile.exists()) {
+                project.artifacts.add('archives', ascFile) {
+                    name = 'groovy-binary'
+                    type = 'asc'
+                    extension = 'zip.asc'
+                }
             }
             signing.sign(distSrc.archivePath)
             signing.sign(distDoc.archivePath)
@@ -177,11 +186,14 @@ allprojects {
             }
             if (isReleaseVersion) {
                 signing.sign(t.classifier, t.archivePath)
-                project.artifacts.add('archives', new File(t.destinationDir, t.archiveName + '.asc')) {
-                    name = t.baseName
-                    classifier = t.classifier
-                    type = 'asc'
-                    extension = t.extension + '.asc'
+                def ascFile = new File(t.destinationDir, t.archiveName + '.asc')
+                if (ascFile.exists()) {
+                    project.artifacts.add('archives', ascFile) {
+                        name = t.baseName
+                        classifier = t.classifier
+                        type = 'asc'
+                        extension = t.extension + '.asc'
+                    }
                 }
             }
         }
