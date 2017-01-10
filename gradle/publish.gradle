@@ -18,17 +18,17 @@
  */
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
-ext.bintrayUser = project.hasProperty('bintrayUser') ? project.bintrayUser : System.getenv('BINTRAY_USER')
-ext.bintrayPassword = project.hasProperty('bintrayPassword') ? project.bintrayPassword : System.getenv('BINTRAY_PASSWORD')
+ext.artifactoryUser = project.hasProperty('artifactoryUser') ? project.artifactoryUser : System.getenv('ARTIFACTORY_USER')
+ext.artifactoryPassword = project.hasProperty('artifactoryPassword') ? project.artifactoryPassword : System.getenv('ARTIFACTORY_PASSWORD')
 
-if (!bintrayUser) {
+if (!artifactoryUser) {
     // try to read from properties
-    def bintrayFile = file('bintray.properties')
-    if (bintrayFile.exists()) {
+    def artifactoryFile = file('artifactory.properties')
+    if (artifactoryFile.exists()) {
         def props = new Properties()
-        props.load(bintrayFile.newReader())
-        ext.bintrayUser = props.getProperty('bintrayUser','')
-        ext.bintrayPassword = props.getProperty('bintrayPassword','')
+        props.load(artifactoryFile.newReader())
+        ext.artifactoryUser = props.getProperty('artifactoryUser','')
+        ext.artifactoryPassword = props.getProperty('artifactoryPassword','')
     }
 }
 
@@ -36,7 +36,7 @@ allprojects {
     apply plugin: 'com.jfrog.artifactory-upload'
 
     artifactory {
-        contextUrl = project.hasProperty('bintrayContext') ? project.bintrayContext : 'https://oss.jfrog.org'
+        contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://oss.jfrog.org'
         resolve {
             repository {
                 repoKey = 'libs-release'
@@ -45,11 +45,11 @@ allprojects {
         publish {
             excludePatterns = 'org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*'
             repository {
-                repoKey = project.hasProperty('bintrayRepoKey') ? project.bintrayRepoKey : 'oss-snapshot-local' //The Artifactory repository key to publish to
+                repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local' //The Artifactory repository key to publish to
                 //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
                 //~/.gradle/gradle.properties, otherwise to be set in the build server
-                username = rootProject.bintrayUser
-                password = rootProject.bintrayPassword
+                username = rootProject.artifactoryUser
+                password = rootProject.artifactoryPassword
             }
         }
     }

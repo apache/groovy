@@ -44,7 +44,7 @@ buildscript {
 
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
-apply from: 'gradle/bintray.gradle'
+apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
 
 File javaHome = new File(System.getProperty('java.home'))

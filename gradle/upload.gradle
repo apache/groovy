@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-boolean isUsingBintray = rootProject.hasProperty('bintrayUser') && rootProject.bintrayUser &&
-        rootProject.hasProperty('bintrayPassword') && rootProject.bintrayPassword
+boolean isUsingArtifactory = rootProject.hasProperty('artifactoryUser') && rootProject.artifactoryUser &&
+        rootProject.hasProperty('artifactoryPassword') && rootProject.artifactoryPassword
 
-if (isUsingBintray) {
-    logger.lifecycle 'Deployment environment set to Bintray'
+if (isUsingArtifactory) {
+    logger.lifecycle 'Deployment environment set to Artifactory'
 }
 
 def embedded = ['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli', 'openbeans']
