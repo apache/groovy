@@ -32,7 +32,7 @@ if (!artifactoryUser) {
     }
 }
 
-logger.lifecycle "Bintray user: $bintrayUser"
+logger.lifecycle "ArtifactoryUser user: $artifactoryUser"
 
 allprojects {
     apply plugin: 'com.jfrog.artifactory-upload'
