@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 
@@ -85,7 +86,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
-            final HashSet<String> exceptions = new HashSet<String>();
+            final Set<String> exceptions = new HashSet<String>();
             for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {

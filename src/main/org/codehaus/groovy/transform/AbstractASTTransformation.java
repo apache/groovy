@@ -51,7 +51,6 @@ import java.util.Map;
 
 import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation, ErrorCollecting {

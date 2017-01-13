@@ -238,6 +238,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         root.add(child)
 
         collectConstructorData(child, 'Constructors', classNode)
+        collectObjectInitializers(child, 'Object Initializers', classNode)
         collectMethodData(child, 'Methods', classNode)
         collectFieldData(child, 'Fields', classNode)
         collectPropertyData(child, 'Properties', classNode)
@@ -261,6 +262,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             root.add(child)
 
             collectConstructorData(child, 'Constructors', innerClassNode)
+            collectObjectInitializers(child, 'Object Initializers', innerClassNode)
             collectMethodData(child, 'Methods', innerClassNode)
             collectFieldData(child, 'Fields', innerClassNode)
             collectPropertyData(child, 'Properties', innerClassNode)
@@ -360,6 +362,26 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
 
     }
+
+    private void collectObjectInitializers(parent, String name, ClassNode node) {
+        List<Statement> initStatements = node.getObjectInitializerStatements()
+        if (!initStatements) {
+            return
+        }
+        def allInitializers = nodeMaker.makeNode(name)
+        parent.add(allInitializers)
+        for (Statement stmt : initStatements) {
+            Statement initBlock = ((BlockStatement)stmt).statements.first()
+            def ggrandchild = adapter.make(initBlock)
+            allInitializers.add(ggrandchild)
+            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+            initBlock.visit(visitor)
+            if (visitor.currentNode) {
+                ggrandchild.add(visitor.currentNode)
+            }
+        }
+    }
+
 }
 
 /**

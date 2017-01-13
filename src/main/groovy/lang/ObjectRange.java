@@ -414,7 +414,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
     /**
      * Non-thread-safe iterator which lazily produces the next element only on calls of hasNext() or next()
      */
-    private static class StepIterator implements Iterator<Comparable> {
+    private static final class StepIterator implements Iterator<Comparable> {
         // actual step, can be +1 when desired step is -1 and direction is from high to low
         private final int step;
         private final ObjectRange range;

@@ -1491,6 +1491,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode getTypeForSpreadExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
         if (!pexp.isSpreadSafe()) return null;
         MethodCallExpression mce = new MethodCallExpression(new VariableExpression("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
+        mce.setImplicitThis(false);
         mce.visit(this);
         ClassNode callType = getType(mce);
         if (!implementsInterfaceOrIsSubclassOf(callType, Iterator_TYPE)) return null;

@@ -42,8 +42,6 @@ buildscript {
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
-
-        classpath files("lib/antlr4-gradle-plugin-0.1.2-SNAPSHOT.jar");
     }
 }
 
@@ -63,7 +61,7 @@ buildScan {
 
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
-apply from: 'gradle/bintray.gradle'
+apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
 apply plugin: "com.github.jk1.dependency-license-report"
 
@@ -78,8 +76,8 @@ allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
@@ -172,7 +170,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.9'
     spockVersion = '1.0-groovy-2.4'
-    antlr4Version = '4.6.0.3'
+    isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
 dependencies {
@@ -211,7 +209,6 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
-//    tools files("lib/jarjar-${jarjarVersion}.jar")
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
@@ -309,8 +306,6 @@ sourceSets {
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
     }
 }
-
-apply from: 'subprojects/groovy-parser-antlr4/build.gradle'
 
 // make sure examples can be compiled, even if we don't run them
 // todo: reorganize examples so that we can run them too
@@ -449,16 +444,16 @@ allprojects {
         tasks.withType(GroovyCompile) {
             logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
             groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
         }
         tasks.withType(JavaCompile) {
             if (project.name=='performance') {
                 sourceCompatibility = 1.8
                 targetCompatibility = 1.8
             } else {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
+                sourceCompatibility = 1.7
+                targetCompatibility = 1.7
             }
         }
         jar {
@@ -469,6 +464,22 @@ allprojects {
 
 compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+}
+
+// TODO superfluous to check for JDK7 for Gradle version 3.2+ but leave for future?
+task checkCompatibility {
+    doLast {
+        assert JavaVersion.current().java7Compatible
+    }
+}
+
+if (!JavaVersion.current().java7Compatible) {
+    logger.lifecycle '''
+    **************************************** WARNING ********************************************
+    ******   You are running the build with an older JDK. NEVER try to release with 1.6.   ******
+    ******   You must use a JDK 1.7+ in order to compile all features of the language.     ******
+    *********************************************************************************************
+'''
 }
 
 apply from: 'gradle/test.gradle'
@@ -486,14 +497,7 @@ if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-if (!JavaVersion.current().java8Compatible) {
-    logger.lifecycle '''
-    **************************************** WARNING **********************************************
-    ****** You are running the build with an older JDK. NEVER try to release with 1.6.       ******
-    ****** You must use a JDK 1.8+ in order to compile all features of the language.         ******
-    ***********************************************************************************************
-'''
-}
+apply from: 'gradle/signing.gradle'
 
 licenseReport {
     excludeGroups = [

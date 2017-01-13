@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 @Incubating
 public final class Realm {
-    private final static Realm ROOT = new Realm("ROOT", null);
+    private static final Realm ROOT = new Realm("ROOT", null);
 
     private final String name;
     private final Realm parent;
