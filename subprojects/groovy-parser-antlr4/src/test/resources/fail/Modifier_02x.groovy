@@ -1,0 +1,1 @@
+public public class A {}
