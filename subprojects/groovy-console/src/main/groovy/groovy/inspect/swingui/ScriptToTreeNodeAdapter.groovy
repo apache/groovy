@@ -371,13 +371,10 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         def allInitializers = nodeMaker.makeNode(name)
         parent.add(allInitializers)
         for (Statement stmt : initStatements) {
-            Statement initBlock = ((BlockStatement)stmt).statements.first()
-            def ggrandchild = adapter.make(initBlock)
-            allInitializers.add(ggrandchild)
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            initBlock.visit(visitor)
+            stmt.visit(visitor)
             if (visitor.currentNode) {
-                ggrandchild.add(visitor.currentNode)
+                allInitializers.add(visitor.currentNode)
             }
         }
     }
