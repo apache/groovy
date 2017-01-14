@@ -578,7 +578,34 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertTreeStructure(source, CompilePhase.CONVERSION,
                 [
                         startsWith('ClassNode - A'),
-                        eq('Object Initializers')
+                        eq('Object Initializers'),
+                        contains('BlockStatement'),
+                        contains('BlockStatement'),
+                        contains('ExpressionStatement')
+                ],
+                adapter)
+
+    }
+
+    void testTraitObjectInitializers() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
+
+        def source = '''
+            trait Interceptor {
+                final Collection<String> matchers = new ArrayList<String>()
+                void matchAll() {
+                    matchers << 'foo'
+                }
+            }
+
+            class TestInterceptor implements Interceptor { }
+            '''
+
+        assertTreeStructure(source, CompilePhase.CANONICALIZATION,
+                [
+                        startsWith('ClassNode - TestInterceptor'),
+                        eq('Object Initializers'),
+                        eq('ExpressionStatement - MethodCallExpression')
                 ],
                 adapter)
 
