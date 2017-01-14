@@ -20,9 +20,8 @@ package groovy.inspect.swingui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
-import groovy.transform.ThreadInterrupt
+import groovy.transform.PackageScope
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 import java.util.concurrent.atomic.AtomicBoolean
 import org.codehaus.groovy.GroovyBugError
@@ -77,14 +76,14 @@ class ScriptToTreeNodeAdapter {
                     classNameToStringForm.putAll(customConfig.toProperties())
                 }
             }
-        }catch(ex) {
+        } catch(ex) {
             // on restricted environments like, such calls may fail, but that should not prevent the class
             // from being loaded. Tree nodes can still get rendered with their simple names.
             classNameToStringForm = new Properties()  
         }
     }
     
-    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker) {
+    ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker) {
         this.classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
@@ -177,7 +176,7 @@ class ScriptToTreeNodeAdapter {
      * Handles the property file templating for node types.
      */
     private String getStringForm(node) {
-        def templateTextForNode = classNameToStringForm[node.class.name] 
+        String templateTextForNode = classNameToStringForm[node.class.name]
         if (templateTextForNode) {
             GStringTemplateEngine engine = new GStringTemplateEngine()
             Template template = engine.createTemplate(templateTextForNode)
@@ -207,11 +206,11 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     final nodeMaker
 
-    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
+    TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
         this(adapter, showScriptFreeForm, showScriptClass, false)
     }
 
-    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass, showClosureClasses) {
+    TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass, showClosureClasses) {
         if (!adapter) throw new IllegalArgumentException('Null: adapter')
         this.adapter = adapter
         this.showScriptFreeForm = showScriptFreeForm
@@ -221,6 +220,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         root = nodeMaker.makeNode('root')
     }
 
+    @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         // module node
         if (!sourceCollected.getAndSet(true) && showScriptFreeForm) {
@@ -270,7 +270,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private List collectAnnotationData(parent, String name, ClassNode classNode) {
+    private void collectAnnotationData(parent, String name, ClassNode classNode) {
         def allAnnotations = nodeMaker.makeNode(name)
         if (classNode.annotations) parent.add(allAnnotations)
         classNode.annotations?.each {AnnotationNode annotationNode ->
@@ -279,7 +279,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectPropertyData(parent, String name, ClassNode classNode) {
+    private void collectPropertyData(parent, String name, ClassNode classNode) {
         def allProperties = nodeMaker.makeNode(name)
         if (classNode.properties) parent.add(allProperties)
         classNode.properties?.each {PropertyNode propertyNode ->
@@ -293,7 +293,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectFieldData(parent, String name, ClassNode classNode) {
+    private void collectFieldData(parent, String name, ClassNode classNode) {
         def allFields = nodeMaker.makeNode(name)
         if (classNode.fields) parent.add(allFields)
         classNode.fields?.each {FieldNode fieldNode ->
@@ -307,14 +307,14 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectMethodData(parent, String name, ClassNode classNode) {
+    private void collectMethodData(parent, String name, ClassNode classNode) {
         def allMethods = nodeMaker.makeNode(name)
         if (classNode.methods) parent.add(allMethods)
 
         doCollectMethodData(allMethods, classNode.methods)
     }
 
-    private def collectModuleNodeMethodData(String name, List methods) {
+    private void collectModuleNodeMethodData(String name, List methods) {
         if(!methods) return
         def allMethods = nodeMaker.makeNode(name)
         root.add(allMethods)
@@ -322,7 +322,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         doCollectMethodData(allMethods, methods)
     }
     
-    private def doCollectMethodData(allMethods, List methods) {
+    private void doCollectMethodData(allMethods, List methods) {
         methods?.each {MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
@@ -347,7 +347,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectConstructorData(parent, String name, ClassNode classNode) {
+    private void collectConstructorData(parent, String name, ClassNode classNode) {
         def allCtors = nodeMaker.makeNode(name)
         if (classNode.declaredConstructors) parent.add(allCtors)
         classNode.declaredConstructors?.each {ConstructorNode ctorNode ->
@@ -386,7 +386,8 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
  *
  * @author Hamlet D'Arcy
 */
-@groovy.transform.PackageScope class TreeNodeBuildingVisitor extends CodeVisitorSupport {
+@PackageScope
+class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode
     private final adapter
@@ -395,7 +396,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
      * Creates the visitor. A file named AstBrowserProperties.groovy is located which is
      * a property files the describes how to represent ASTNode types as Strings.
      */
-    private TreeNodeBuildingVisitor(adapter) {
+    TreeNodeBuildingVisitor(adapter) {
         if (!adapter) throw new IllegalArgumentException('Null: adapter')
         this.adapter = adapter
     }
@@ -429,110 +430,137 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
+    @Override
     void visitBlockStatement(BlockStatement node) {
         addNode(node, BlockStatement, { super.visitBlockStatement(it) })
     }
 
+    @Override
     void visitForLoop(ForStatement node) {
         addNode(node, ForStatement, { super.visitForLoop(it) })
     }
 
+    @Override
     void visitWhileLoop(WhileStatement node) {
         addNode(node, WhileStatement, { super.visitWhileLoop(it) })
     }
 
+    @Override
     void visitDoWhileLoop(DoWhileStatement node) {
         addNode(node, DoWhileStatement, { super.visitDoWhileLoop(it) })
     }
 
+    @Override
     void visitIfElse(IfStatement node) {
         addNode(node, IfStatement, { super.visitIfElse(it) })
     }
 
+    @Override
     void visitExpressionStatement(ExpressionStatement node) {
         addNode(node, ExpressionStatement, { super.visitExpressionStatement(it) })
     }
 
+    @Override
     void visitReturnStatement(ReturnStatement node) {
         addNode(node, ReturnStatement, { super.visitReturnStatement(it) })
     }
 
+    @Override
     void visitAssertStatement(AssertStatement node) {
         addNode(node, AssertStatement, { super.visitAssertStatement(it) })
     }
 
+    @Override
     void visitTryCatchFinally(TryCatchStatement node) {
         addNode(node, TryCatchStatement, { super.visitTryCatchFinally(it) })
     }
-    
+
+    @Override
     protected void visitEmptyStatement(EmptyStatement node) {
         addNode(node, EmptyStatement, { super.visitEmptyStatement(it) })
     }
 
+    @Override
     void visitSwitch(SwitchStatement node) {
         addNode(node, SwitchStatement, { super.visitSwitch(it) })
     }
 
+    @Override
     void visitCaseStatement(CaseStatement node) {
         addNode(node, CaseStatement, { super.visitCaseStatement(it) })
     }
 
+    @Override
     void visitBreakStatement(BreakStatement node) {
         addNode(node, BreakStatement, { super.visitBreakStatement(it) })
     }
 
+    @Override
     void visitContinueStatement(ContinueStatement node) {
         addNode(node, ContinueStatement, { super.visitContinueStatement(it) })
     }
 
+    @Override
     void visitSynchronizedStatement(SynchronizedStatement node) {
         addNode(node, SynchronizedStatement, { super.visitSynchronizedStatement(it) })
     }
 
+    @Override
     void visitThrowStatement(ThrowStatement node) {
         addNode(node, ThrowStatement, { super.visitThrowStatement(it) })
     }
 
+    @Override
     void visitMethodCallExpression(MethodCallExpression node) {
         addNode(node, MethodCallExpression, { super.visitMethodCallExpression(it) })
     }
 
+    @Override
     void visitStaticMethodCallExpression(StaticMethodCallExpression node) {
         addNode(node, StaticMethodCallExpression, { super.visitStaticMethodCallExpression(it) })
     }
 
+    @Override
     void visitConstructorCallExpression(ConstructorCallExpression node) {
         addNode(node, ConstructorCallExpression, { super.visitConstructorCallExpression(it) })
     }
 
+    @Override
     void visitBinaryExpression(BinaryExpression node) {
         addNode(node, BinaryExpression, { super.visitBinaryExpression(it) })
     }
 
+    @Override
     void visitTernaryExpression(TernaryExpression node) {
         addNode(node, TernaryExpression, { super.visitTernaryExpression(it) })
     }
 
+    @Override
     void visitShortTernaryExpression(ElvisOperatorExpression node) {
         addNode(node, ElvisOperatorExpression, { super.visitShortTernaryExpression(it) })
     }
 
+    @Override
     void visitPostfixExpression(PostfixExpression node) {
         addNode(node, PostfixExpression, { super.visitPostfixExpression(it) })
     }
 
+    @Override
     void visitPrefixExpression(PrefixExpression node) {
         addNode(node, PrefixExpression, { super.visitPrefixExpression(it) })
     }
 
+    @Override
     void visitBooleanExpression(BooleanExpression node) {
         addNode(node, BooleanExpression, { super.visitBooleanExpression(it) })
     }
 
+    @Override
     void visitNotExpression(NotExpression node) {
         addNode(node, NotExpression, { super.visitNotExpression(it) })
     }
 
+    @Override
     void visitClosureExpression(ClosureExpression node) {
         addNode(node, ClosureExpression, { 
           it.parameters?.each { parameter -> visitParameter(parameter) }
@@ -551,66 +579,82 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         })
     }
 
+    @Override
     void visitTupleExpression(TupleExpression node) {
         addNode(node, TupleExpression, { super.visitTupleExpression(it) })
     }
 
+    @Override
     void visitListExpression(ListExpression node) {
         addNode(node, ListExpression, { super.visitListExpression(it) })
     }
 
+    @Override
     void visitArrayExpression(ArrayExpression node) {
         addNode(node, ArrayExpression, { super.visitArrayExpression(it) })
     }
 
+    @Override
     void visitMapExpression(MapExpression node) {
         addNode(node, MapExpression, { super.visitMapExpression(it) })
     }
 
+    @Override
     void visitMapEntryExpression(MapEntryExpression node) {
         addNode(node, MapEntryExpression, { super.visitMapEntryExpression(it) })
     }
 
+    @Override
     void visitRangeExpression(RangeExpression node) {
         addNode(node, RangeExpression, { super.visitRangeExpression(it) })
     }
 
+    @Override
     void visitSpreadExpression(SpreadExpression node) {
         addNode(node, SpreadExpression, { super.visitSpreadExpression(it) })
     }
 
+    @Override
     void visitSpreadMapExpression(SpreadMapExpression node) {
         addNode(node, SpreadMapExpression, { super.visitSpreadMapExpression(it) })
     }
 
+    @Override
     void visitMethodPointerExpression(MethodPointerExpression node) {
         addNode(node, MethodPointerExpression, { super.visitMethodPointerExpression(it) })
     }
 
+    @Override
     void visitUnaryMinusExpression(UnaryMinusExpression node) {
         addNode(node, UnaryMinusExpression, { super.visitUnaryMinusExpression(it) })
     }
 
+    @Override
     void visitUnaryPlusExpression(UnaryPlusExpression node) {
         addNode(node, UnaryPlusExpression, { super.visitUnaryPlusExpression(it) })
     }
 
+    @Override
     void visitBitwiseNegationExpression(BitwiseNegationExpression node) {
         addNode(node, BitwiseNegationExpression, { super.visitBitwiseNegationExpression(it) })
     }
 
+    @Override
     void visitCastExpression(CastExpression node) {
         addNode(node, CastExpression, { super.visitCastExpression(it) })
     }
 
+    @Override
     void visitConstantExpression(ConstantExpression node) {
         addNode(node, ConstantExpression, { super.visitConstantExpression(it) })
     }
 
+    @Override
     void visitClassExpression(ClassExpression node) {
         addNode(node, ClassExpression, { super.visitClassExpression(it) })
     }
 
+    @Override
     void visitVariableExpression(VariableExpression node) {
         addNode(node, VariableExpression, { VariableExpression it ->
             if (it.accessedVariable) {
@@ -623,26 +667,32 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         })
     }
 
+    @Override
     void visitDeclarationExpression(DeclarationExpression node) {
         addNode(node, DeclarationExpression, { super.visitDeclarationExpression(it) })
     }
 
+    @Override
     void visitPropertyExpression(PropertyExpression node) {
         addNode(node, PropertyExpression, { super.visitPropertyExpression(it) })
     }
 
+    @Override
     void visitAttributeExpression(AttributeExpression node) {
         addNode(node, AttributeExpression, { super.visitAttributeExpression(it) })
     }
 
+    @Override
     void visitFieldExpression(FieldExpression node) {
         addNode(node, FieldExpression, { super.visitFieldExpression(it) })
     }
 
+    @Override
     void visitGStringExpression(GStringExpression node) {
         addNode(node, GStringExpression, { super.visitGStringExpression(it) })
     }
 
+    @Override
     void visitCatchStatement(CatchStatement node) {
         addNode(node, CatchStatement, { 
             if (it.variable) visitParameter(it.variable) 
@@ -650,18 +700,22 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         })
     }
 
+    @Override
     void visitArgumentlistExpression(ArgumentListExpression node) {
         addNode(node, ArgumentListExpression, { super.visitArgumentlistExpression(it) })
     }
 
+    @Override
     void visitClosureListExpression(ClosureListExpression node) {
         addNode(node, ClosureListExpression, { super.visitClosureListExpression(it) })
     }
 
+    @Override
     void visitBytecodeExpression(BytecodeExpression node) {
         addNode(node, BytecodeExpression, { super.visitBytecodeExpression(it) })
     }
 
+    @Override
     protected void visitListOfExpressions(List<? extends Expression> list) {
         list.each { Expression node ->
             if (node instanceof NamedArgumentListExpression ) {
