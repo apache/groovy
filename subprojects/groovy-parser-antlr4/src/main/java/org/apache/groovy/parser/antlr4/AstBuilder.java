@@ -22,7 +22,6 @@ import groovy.lang.IntRange;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
@@ -167,6 +166,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.parser.setErrorHandler(new DescriptiveErrorStrategy());
 
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
+        this.groovydocManager = new GroovydocManager(this);
     }
 
     private GroovyParserRuleContext buildCST() {
@@ -955,7 +955,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             classNodeList.add(classNode);
         }
 
-        this.attachDocCommentAsMetaData(classNode, ctx);
+        groovydocManager.attachDocCommentAsMetaData(classNode, ctx);
 
         return classNode;
     }
@@ -1030,7 +1030,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(enumConstant::addAnnotation);
 
-        this.attachDocCommentAsMetaData(enumConstant, ctx);
+        groovydocManager.attachDocCommentAsMetaData(enumConstant, ctx);
 
         return this.configureAST(enumConstant, ctx);
     }
@@ -1314,7 +1314,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
         }
 
-        this.attachDocCommentAsMetaData(methodNode, ctx);
+        groovydocManager.attachDocCommentAsMetaData(methodNode, ctx);
 
         return methodNode;
     }
@@ -1438,7 +1438,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                     initialValue);
                     modifierManager.attachAnnotations(fieldNode);
 
-                    this.attachDocCommentAsMetaData(fieldNode, ctx);
+                    groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
 
                     this.configureAST(fieldNode, ctx);
                 } else {
@@ -1456,8 +1456,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     fieldNode.setSynthetic(!classNode.isInterface());
                     modifierManager.attachAnnotations(fieldNode);
 
-                    this.attachDocCommentAsMetaData(fieldNode, ctx);
-                    this.attachDocCommentAsMetaData(propertyNode, ctx);
+                    groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
+                    groovydocManager.attachDocCommentAsMetaData(propertyNode, ctx);
 
                     this.configureAST(fieldNode, ctx);
                     this.configureAST(propertyNode, ctx);
@@ -4402,118 +4402,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
     }
 
-    /**
-     * Attach doc comment to member node as meta data
-     * <p>
-     */
-    private void attachDocCommentAsMetaData(ASTNode node, GroovyParserRuleContext ctx) {
-        if (!EXTRACTING_DOC_COMMENT_ENABLED) {
-            return;
-        }
-
-        if (!asBoolean(node) || !asBoolean(ctx)) {
-            return;
-        }
-
-        String docCommentNodeText = this.findDocCommentByNode(ctx);
-
-        if (!asBoolean((Object) docCommentNodeText)) {
-            return;
-        }
-
-        node.putNodeMetaData(DOC_COMMENT, docCommentNodeText);
-    }
-
-    private String findDocCommentByNode(ParserRuleContext node) {
-        if (!asBoolean(node)) {
-            return null;
-        }
-
-        if (node instanceof ClassBodyContext) {
-            return null;
-        }
-
-        ParserRuleContext parentContext = node.getParent();
-
-        if (!asBoolean(parentContext)) {
-            return null;
-        }
-
-        String docCommentNodeText = null;
-        boolean sameTypeNodeBefore = false;
-        for (ParseTree child : parentContext.children) {
-
-            if (node == child) {
-                // if no doc comment node found and no siblings of same type before the node,
-                // try to find doc comment node of its parent
-                if (!asBoolean((Object) docCommentNodeText) && !sameTypeNodeBefore) {
-                    return findDocCommentByNode(parentContext);
-                }
-
-                return docCommentNodeText;
-            }
-
-            if (node.getClass() == child.getClass()) { // e.g. ClassBodyDeclarationContext == ClassBodyDeclarationContext
-                docCommentNodeText = null;
-                sameTypeNodeBefore = true;
-                continue;
-            }
-
-            if (!(child instanceof NlsContext || child instanceof SepContext)) {
-                continue;
-            }
-
-            // doc comments are treated as NL
-            List<? extends TerminalNode> nlList =
-                    child instanceof NlsContext
-                            ? ((NlsContext) child).NL()
-                            : ((SepContext) child).NL();
-
-            int nlListSize = nlList.size();
-            if (0 == nlListSize) {
-                continue;
-            }
-
-            for (int i = nlListSize - 1; i >= 0; i--) {
-                String text = nlList.get(i).getText();
-
-                if (text.matches("\\s+")) {
-                    continue;
-                }
-
-                if (text.startsWith(DOC_COMMENT_PREFIX)) {
-                    docCommentNodeText = text;
-                } else {
-                    docCommentNodeText = null;
-                }
-
-                break;
-            }
-        }
-
-        throw new GroovyBugError("node can not be found: " + node.getText()); // The exception should never be thrown!
-    }
-
-    private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment";
-    private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
-
-    static {
-        boolean edce;
-        try {
-            edce = "true".equals(System.getProperty(EXTRACT_DOC_COMMENT));
-        } catch (Exception e) {
-            edce = false;
-        }
-
-        EXTRACTING_DOC_COMMENT_ENABLED = edce;
-    }
-
     private final ModuleNode moduleNode;
     private final SourceUnit sourceUnit;
     private final ClassLoader classLoader; // Our ClassLoader, which provides information on external types
     private final GroovyLangLexer lexer;
     private final GroovyLangParser parser;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
+    private final GroovydocManager groovydocManager;
     private final List<ClassNode> classNodeList = new LinkedList<>();
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
@@ -4536,10 +4431,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final Set<String> PRIMITIVE_TYPE_SET = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("boolean", "char", "byte", "short", "int", "long", "float", "double")));
     private static final Logger LOGGER = Logger.getLogger(AstBuilder.class.getName());
 
-    private static final String DOC_COMMENT_PREFIX = "/**";
-
-    // keys for meta data
-    public static final String DOC_COMMENT = "_DOC_COMMENT";
     private static final String IS_INSIDE_PARENTHESES = "_IS_INSIDE_PARENTHESES";
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
