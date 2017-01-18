@@ -471,10 +471,10 @@ compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
 }
 
-// TODO superfluous to check for JDK7 for Gradle version 3.2+ but leave for future?
+// TODO superfluous to check for JDK8 for Gradle version 3.2+ but leave for future?
 task checkCompatibility {
     doLast {
-        assert JavaVersion.current().java7Compatible
+        assert JavaVersion.current().java8Compatible
     }
 }
 

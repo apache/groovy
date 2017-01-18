@@ -217,7 +217,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 cfe = createParsingFailedException(t);
             }
 
-            LOGGER.log(Level.SEVERE, "Failed to build AST", cfe);
+//            LOGGER.log(Level.SEVERE, "Failed to build AST", cfe);
 
             throw cfe;
         }
@@ -4165,21 +4165,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         private List<ModifierNode> modifierNodeList;
 
         public ModifierManager(List<ModifierNode> modifierNodeList) {
-            this.checkDuplicatedModifiers(modifierNodeList);
+            this.validate(modifierNodeList);
             this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.emptyList());
         }
 
-        public void checkDuplicatedModifiers(List<ModifierNode> modifierNodeList) {
-            Map<ModifierNode, Integer> modifierNodeCounter = new HashMap<>(modifierNodeList.size());
+        private void validate(List<ModifierNode> modifierNodeList) {
+            Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
+            int visibilityModifierCnt = 0;
 
             for (ModifierNode modifierNode : modifierNodeList) {
-               Integer cnt = modifierNodeCounter.get(modifierNode);
+                Integer cnt = modifierNodeCounter.get(modifierNode);
 
-               if (null == cnt) {
-                   modifierNodeCounter.put(modifierNode, 1);
-               } else if (1 == cnt && !modifierNode.isRepeatable()) {
-                   throw createParsingFailedException(modifierNode.getText() + " can not be duplicated", modifierNode);
-               }
+                if (null == cnt) {
+                    modifierNodeCounter.put(modifierNode, 1);
+                } else if (1 == cnt && !modifierNode.isRepeatable()) {
+                    throw createParsingFailedException("Cannot repeat modifier[" + modifierNode.getText() + "]", modifierNode);
+                }
+
+                if (modifierNode.isVisibilityModifier()) {
+                    visibilityModifierCnt++;
+
+                    if (visibilityModifierCnt > 1) {
+                        throw createParsingFailedException("Cannot specify modifier[" + modifierNode.getText() + "] when access scope has already been defined", modifierNode);
+                    }
+                }
             }
         }
 
@@ -4399,6 +4408,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         @Override
         public int hashCode() {
             return Objects.hash(type, text, annotationNode);
+        }
+
+        @Override
+        public String toString() {
+            return this.text;
         }
     }
 
