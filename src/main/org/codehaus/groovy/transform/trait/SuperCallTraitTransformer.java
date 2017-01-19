@@ -20,7 +20,9 @@ package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -36,6 +38,11 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.List;
 
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+
 /**
  * This transformer is used to transform calls to <code>SomeTrait.super.foo()</code> into the appropriate trait call.
  *
@@ -43,6 +50,7 @@ import java.util.List;
  * @since 2.3.0
  */
 class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
+    public static final String UNRESOLVED_HELPER_CLASS = "UNRESOLVED_HELPER_CLASS";
     private final SourceUnit unit;
 
     SuperCallTraitTransformer(final SourceUnit unit) {
@@ -109,10 +117,9 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         Expression objectExpression = transform(exp.getObjectExpression());
         ClassNode traitReceiver = objectExpression.getNodeMetaData(SuperCallTraitTransformer.class);
         if (traitReceiver!=null) {
-            TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
             // (SomeTrait.super).foo() --> SomeTrait$Helper.foo(this)
             ClassExpression receiver = new ClassExpression(
-                    helpers.getHelper()
+                    getHelper(traitReceiver)
             );
             ArgumentListExpression newArgs = new ArgumentListExpression();
             Expression arguments = exp.getArguments();
@@ -137,6 +144,33 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             return result;
         }
         return super.transform(exp);
+    }
+
+    private ClassNode getHelper(final ClassNode traitReceiver) {
+        if (helperClassNotCreatedYet(traitReceiver)) {
+            // GROOVY-7909 A Helper class in same compilation unit may have not been created when referenced
+            // Here create a symbol as a "placeholder" and it will be resolved later.
+            ClassNode ret = new InnerClassNode(
+                    traitReceiver,
+                    Traits.helperClassName(traitReceiver),
+                    ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
+                    ClassHelper.OBJECT_TYPE,
+                    ClassNode.EMPTY_ARRAY,
+                    null
+            ).getPlainNodeReference();
+
+            ret.setRedirect(null);
+            traitReceiver.redirect().setNodeMetaData(UNRESOLVED_HELPER_CLASS, ret);
+            return ret;
+        } else {
+            TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
+            return helpers.getHelper();
+        }
+    }
+
+    private boolean helperClassNotCreatedYet(final ClassNode traitReceiver) {
+        return !traitReceiver.redirect().getInnerClasses().hasNext()
+                && this.unit.getAST().getClasses().contains(traitReceiver.redirect());
     }
 
     private Expression transformPropertyExpression(final PropertyExpression expression) {

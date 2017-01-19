@@ -68,6 +68,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
+
 /**
  * Handles generation of code for the @Trait annotation. A class annotated with @Trait will generate, instead: <ul>
  * <li>an <i>interface</i> with the same name</li> <li>an utility inner class that will be used by the compiler to
@@ -101,7 +103,21 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             checkExtendsClause(cNode);
             generateMethodsWithDefaultArgs(cNode);
             replaceExtendsByImplements(cNode);
-            createHelperClass(cNode);
+            ClassNode helperClassNode = createHelperClass(cNode);
+            resolveHelperClassIfNecessary(helperClassNode);
+        }
+    }
+
+    private void resolveHelperClassIfNecessary(final ClassNode helperClassNode) {
+        if (helperClassNode == null) {
+            return;
+        }
+        for (ClassNode cNode : unit.getAST().getClasses()) {
+            ClassNode unresolvedHelperNode = cNode.getNodeMetaData(UNRESOLVED_HELPER_CLASS);
+            if (unresolvedHelperNode != null
+                    && unresolvedHelperNode.getName().equals(helperClassNode.getName())) {
+                unresolvedHelperNode.setRedirect(helperClassNode);
+            }
         }
     }
 
@@ -141,7 +157,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void createHelperClass(final ClassNode cNode) {
+    private ClassNode createHelperClass(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
                 Traits.helperClassName(cNode),
@@ -188,7 +204,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 if (!methodNode.isSynthetic() && (methodNode.isProtected() || methodNode.getModifiers()==0)) {
                     unit.addError(new SyntaxException("Cannot have protected/package private method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
-                    return;
+                    return null;
                 }
                 helper.addMethod(processMethod(cNode, methodNode, fieldHelper, fieldNames));
                 if (methodNode.isPrivate() || methodNode.isStatic()) {
@@ -231,6 +247,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (fieldHelper!=null) {
             resolveScope(fieldHelper);
         }
+        return helper;
     }
 
     private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
