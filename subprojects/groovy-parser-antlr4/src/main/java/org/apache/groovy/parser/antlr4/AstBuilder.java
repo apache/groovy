@@ -134,7 +134,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -3497,21 +3496,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ClassNode visitQualifiedClassName(QualifiedClassNameContext ctx) {
-        String className = this.visitIdentifier(ctx.identifier());
-
-        ClassNode result;
-        if (asBoolean(ctx.qualifiedNameElement())) {
-            result =
-                    ClassHelper.make(
-                            ctx.qualifiedNameElement().stream()
-                                    .map(ParseTree::getText)
-                                    .collect(Collectors.joining(DOT_STR))
-                                    + DOT_STR
-                                    + className
-                    );
-        } else {
-            result = ClassHelper.make(className);
-        }
+        ClassNode result = ClassHelper.make(ctx.getText());
 
         /*
         if (!isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) { // type in the "instanceof" expression should not have proxy to redirect to it
@@ -3524,23 +3509,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ClassNode visitQualifiedStandardClassName(QualifiedStandardClassNameContext ctx) {
-        String className =
-                ctx.className().stream()
-                        .map(this::visitClassName)
-                        .collect(Collectors.joining(DOT_STR));
-
-        ClassNode result;
-        if (asBoolean(ctx.qualifiedNameElement())) {
-            result = ClassHelper.make(
-                    ctx.qualifiedNameElement().stream()
-                            .map(ParseTree::getText)
-                            .collect(Collectors.joining(DOT_STR))
-                            + DOT_STR
-                            + className
-            );
-        } else {
-            result = ClassHelper.make(className);
-        }
+        ClassNode result = ClassHelper.make(ctx.getText());
 
         if (!isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) { // type in the "instanceof" expression should not have proxy to redirect to it
             result = this.proxyClassNode(result);
