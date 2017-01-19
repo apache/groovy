@@ -325,4 +325,9 @@ class GroovyParserTest extends GroovyTestCase {
     void "test groovy core - Unicode"() {
         doTest('core/Unicode_01.groovy');
     }
+
+    void "test groovy core - BUG"() {
+        doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
+    }
+
 }
