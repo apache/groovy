@@ -2980,7 +2980,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(ctx.LBRACE())) {
             if (asBoolean(ctx.statementExpression())) {
-                return this.configureAST(((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression(), ctx);
+                return this.configureAST(((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression(), ctx.statementExpression());
             } else { // e.g. "${}"
                 return this.configureAST(new ConstantExpression(null), ctx);
             }
