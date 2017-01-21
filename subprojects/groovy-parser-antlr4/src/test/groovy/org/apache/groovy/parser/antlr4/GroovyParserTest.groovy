@@ -333,4 +333,10 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('bugs/BUG-GROOVY-4762.groovy');
     }
 
+    void "test groovy core - BreakingChanges"() {
+        doRunAndTest('core/BreakingChange_01x.groovy');
+        doRunAndTest('core/BreakingChange_02x.groovy');
+        doRunAndTest('core/BreakingChange_03x.groovy');
+        doRunAndTest('core/BreakingChange_04x.groovy');
+    }
 }

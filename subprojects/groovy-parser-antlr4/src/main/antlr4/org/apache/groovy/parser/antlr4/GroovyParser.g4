@@ -310,11 +310,10 @@ methodDeclaration[int t, int ct]
     :   { 3 == $ct }?
         returnType[$ct] methodName LPAREN rparen (DEFAULT nls elementValue)?
     |
-        (   modifiersOpt  typeParameters? returnType[$ct]
-        |   modifiers  typeParameters? returnType[$ct]?
-        |
-            { 0 == $t }?
+        (   { 0 == $t }?
             modifiersOpt typeParameters?
+        |   modifiersOpt  typeParameters? returnType[$ct]
+        |   modifiers  typeParameters? returnType[$ct]?
         )
         methodName formalParameters (nls THROWS nls qualifiedClassNameList)?
         (
@@ -333,7 +332,7 @@ methodName
 
 returnType[int ct]
     :
-        type
+        standardType
     |
         // annotation method can not have void return type
         { 3 != $ct }? VOID
@@ -365,12 +364,25 @@ arrayInitializer
     :   LBRACK (variableInitializer (COMMA variableInitializer)* (COMMA)? )? RBRACK
     ;
 
+standardType
+options { baseContext = type; }
+    :   primitiveType (LBRACK RBRACK)*
+    |   standardClassOrInterfaceType (LBRACK RBRACK)*
+    ;
+
 type
     :   primitiveType (LBRACK RBRACK)*
     |   classOrInterfaceType (LBRACK RBRACK)*
     ;
 
 classOrInterfaceType
+    :   (   qualifiedClassName
+        |   qualifiedStandardClassName
+        ) typeArguments?
+    ;
+
+standardClassOrInterfaceType
+options { baseContext = classOrInterfaceType; }
     :   qualifiedStandardClassName typeArguments?
     ;
 
@@ -559,22 +571,23 @@ blockStatement
     ;
 
 localVariableDeclaration
-    :   variableDeclaration[0]
+    :   { !SemanticPredicates.isInvalidLocalVariableDeclaration(_input) }?
+        variableDeclaration[0]
     ;
 
 /**
  *  t   0: local variable declaration; 1: field declaration
  */
 variableDeclaration[int t]
-    :   (   { 0 == $t }? variableModifiersOpt
-        |   { 1 == $t }? modifiersOpt
-        )
-        type variableDeclarators
-    |
-        (   { 0 == $t }? variableModifiers
+    :   (   { 0 == $t }? variableModifiers
         |   { 1 == $t }? modifiers
         )
         type? variableDeclarators
+    |
+        (   { 0 == $t }? variableModifiersOpt
+        |   { 1 == $t }? modifiersOpt
+        )
+        type variableDeclarators
     |
         (   { 0 == $t }? variableModifiers
         |   { 1 == $t }? modifiers

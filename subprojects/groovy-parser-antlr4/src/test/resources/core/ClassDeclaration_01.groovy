@@ -45,3 +45,11 @@ C
 }
 
 class a {}
+
+class OutputTransforms {
+        final  static localTransforms = loadOutputTransforms()
+}
+
+class OutputTransforms2 {
+        @Lazy  static localTransforms = loadOutputTransforms()
+}

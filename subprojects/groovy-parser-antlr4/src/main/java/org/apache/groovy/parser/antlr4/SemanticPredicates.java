@@ -19,11 +19,13 @@
 package org.apache.groovy.parser.antlr4;
 
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 
-import static org.apache.groovy.parser.antlr4.GroovyParser.CapitalizedIdentifier;
-import static org.apache.groovy.parser.antlr4.GroovyParser.Identifier;
-import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 
 /**
  * Some semantic predicates for altering the behaviour of the lexer and parser
@@ -103,6 +105,48 @@ public class SemanticPredicates {
         int tokenType = ts.LT(1).getType();
 
         return (Identifier == tokenType || CapitalizedIdentifier == tokenType || StringLiteral == tokenType)
-                && GroovyLangParser.LPAREN == (ts.LT(2).getType());
+                && LPAREN == (ts.LT(2).getType());
     }
+
+    private static final Set<Integer> MODIFIER_SET =
+            Collections.unmodifiableSet(AstBuilder.ModifierNode.MODIFIER_OPCODE_MAP.keySet());
+    /**
+     * Distinguish between local variable declaration and method call, e.g. `a b`
+     */
+    public static boolean isInvalidLocalVariableDeclaration(TokenStream ts) {
+        int index = 2;
+        Token token;
+        int tokenType;
+        int tokenType2 = ts.LT(index).getType();
+        int tokenType3;
+
+        if (DOT == tokenType2) {
+            int tokeTypeN = tokenType2;
+
+            do {
+                index = index + 2;
+                tokeTypeN = ts.LT(index).getType();
+            } while (DOT == tokeTypeN);
+
+            if (LT == tokeTypeN || LBRACK == tokeTypeN) {
+                return false;
+            }
+
+            index = index - 1;
+            tokenType2 = ts.LT(index + 1).getType();
+        } else {
+            index = 1;
+        }
+
+        token = ts.LT(index);
+        tokenType = token.getType();
+        tokenType3 = ts.LT(index + 2).getType();
+
+        return VOID == tokenType
+                ||  !(BuiltInPrimitiveType == tokenType || MODIFIER_SET.contains(tokenType))
+                    && Character.isLowerCase(token.getText().codePointAt(0))
+                    && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2));
+
+    }
+
 }
