@@ -125,6 +125,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean saveOnRun = prefs.getBoolean('saveOnRun', false)
     Action saveOnRunAction
 
+    boolean indy = prefs.getBoolean('indy', false)
+    Action indyAction
+
     //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
     boolean useScriptClassLoaderForScriptExecution = false
 
@@ -206,6 +209,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             h(longOpt: 'help', messages['cli.option.help.description'])
             V(longOpt: 'version', messages['cli.option.version.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+            i(longOpt: 'indy', messages['cli.option.indy.description'])
         }
         OptionAccessor options = cli.parse(args)
 
@@ -232,6 +236,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         def baseConfig = new CompilerConfiguration()
         baseConfig.setParameters((boolean) options.hasOption("pa"))
+
+        if (options.i) {
+            enableIndy(baseConfig)
+        }
 
         def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
@@ -260,6 +268,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     Console(ClassLoader parent, Binding binding, CompilerConfiguration baseConfig) {
         this.baseConfig = baseConfig
+        indy = indy || isIndyEnabled(baseConfig)
+        if (indy) {
+            enableIndy(baseConfig)
+        }
         newScript(parent, binding);
         try {
             System.setProperty('groovy.full.stacktrace', System.getProperty('groovy.full.stacktrace',
@@ -360,6 +372,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             swing.consoleFrame.show()
         }
         installInterceptor()
+        updateTitle() // Title changes based on indy setting
         swing.doLater inputArea.&requestFocus
     }
 
@@ -966,6 +979,30 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         prefs.putBoolean('saveOnRun', saveOnRun)
     }
 
+    void indy(EventObject evt = null)  {
+        indy = evt.source.selected
+        prefs.putBoolean('indy', indy)
+        if (indy) {
+            enableIndy(baseConfig)
+        } else {
+            disableIndy(baseConfig)
+        }
+        updateTitle()
+        newScript(shell.classLoader, shell.context)
+    }
+
+    private static void enableIndy(CompilerConfiguration cc) {
+        cc.getOptimizationOptions().put(CompilerConfiguration.INVOKEDYNAMIC, true)
+    }
+
+    private static void disableIndy(CompilerConfiguration cc) {
+        cc.getOptimizationOptions().remove(CompilerConfiguration.INVOKEDYNAMIC)
+    }
+
+    private static boolean isIndyEnabled(CompilerConfiguration cc) {
+        cc.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+    }
+
     void runSelectedScript(EventObject evt = null) {
         runScriptImpl(true)
     }
@@ -1340,10 +1377,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void updateTitle() {
         if (frame.properties.containsKey('title')) {
+            String title = 'GroovyConsole'
+            if (indy) {
+                title += ' (Indy)'
+            }
             if (scriptFile != null) {
-                frame.title = scriptFile.name + (dirty?' * ':'') + ' - GroovyConsole'
+                frame.title = scriptFile.name + (dirty?' * ':'') + ' - ' + title
             } else {
-                frame.title = 'GroovyConsole'
+                frame.title = title
             }
         }
     }
