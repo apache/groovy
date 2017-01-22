@@ -567,7 +567,6 @@ block
 blockStatement
     :   localVariableDeclaration
     |   statement
-    |   typeDeclaration
     ;
 
 localVariableDeclaration
