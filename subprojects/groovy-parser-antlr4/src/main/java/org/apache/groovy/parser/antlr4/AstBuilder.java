@@ -270,9 +270,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ImportNode visitImportDeclaration(ImportDeclarationContext ctx) {
-        // GROOVY-6094
-        moduleNode.putNodeMetaData(IMPORT_NODE_CLASS, IMPORT_NODE_CLASS);
-
         ImportNode importNode;
 
         boolean hasStatic = asBoolean(ctx.STATIC());
@@ -328,15 +325,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 importNode = last(moduleNode.getImports());
             }
         }
-
-        // TODO verify whether the following code is useful or not
-        // we're using node metadata here in order to fix GROOVY-6094
-        // without breaking external APIs
-        Object node = moduleNode.getNodeMetaData(IMPORT_NODE_CLASS);
-        if (null != node && IMPORT_NODE_CLASS != node) {
-            this.configureAST((ImportNode) node, importNode);
-        }
-        moduleNode.removeNodeMetaData(IMPORT_NODE_CLASS);
 
         return this.configureAST(importNode, ctx);
     }
@@ -4398,7 +4386,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private int anonymousInnerClassCounter = 1;
-    private static final Class<ImportNode> IMPORT_NODE_CLASS = ImportNode.class;
     private static final String QUESTION_STR = "?";
     private static final String DOT_STR = ".";
     private static final String SUB_STR = "-";
