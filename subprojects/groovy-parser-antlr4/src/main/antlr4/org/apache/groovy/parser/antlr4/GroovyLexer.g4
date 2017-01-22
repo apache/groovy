@@ -120,7 +120,7 @@ options {
 
         @Override
         public int hashCode() {
-            return text.hashCode() * line + column;
+            return (int) (text.hashCode() * line + column);
         }
 
         @Override

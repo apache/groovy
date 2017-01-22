@@ -4168,7 +4168,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             int result = 0;
 
             for (ModifierNode modifierNode : modifierNodeList) {
-                result |= modifierNode.getOpCode();
+                result |= modifierNode.getOpcode();
             }
 
             if (!this.containsVisibilityModifier()) {
@@ -4215,7 +4215,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         public Parameter processParameter(Parameter parameter) {
             modifierNodeList.forEach(e -> {
-                parameter.setModifiers(parameter.getModifiers() | e.getOpCode());
+                parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
 
                 if (e.isAnnotation()) {
                     parameter.addAnnotation(e.getAnnotationNode());
@@ -4227,7 +4227,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         public MethodNode processMethodNode(MethodNode mn) {
             modifierNodeList.forEach(e -> {
-                mn.setModifiers(mn.getModifiers() | e.getOpCode());
+                mn.setModifiers(mn.getModifiers() | e.getOpcode());
 
                 if (e.isAnnotation()) {
                     mn.addAnnotation(e.getAnnotationNode());
@@ -4239,7 +4239,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         public VariableExpression processVariableExpression(VariableExpression ve) {
             modifierNodeList.forEach(e -> {
-                ve.setModifiers(ve.getModifiers() | e.getOpCode());
+                ve.setModifiers(ve.getModifiers() | e.getOpcode());
 
                 // local variable does not attach annotations
             });
@@ -4261,13 +4261,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
      */
     public static class ModifierNode extends ASTNode {
         private Integer type;
-        private Integer opCode; // ASM opcode
+        private Integer opcode; // ASM opcode
         private String text;
         private AnnotationNode annotationNode;
         private boolean repeatable;
 
         public static final int ANNOTATION_TYPE = -999;
-        public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = new HashMap<Integer, Integer>() {
+        public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Collections.unmodifiableMap(new HashMap<Integer, Integer>() {
             {
                 put(ANNOTATION_TYPE, 0);
                 put(DEF, 0);
@@ -4286,14 +4286,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 put(STRICTFP, Opcodes.ACC_STRICT);
                 put(DEFAULT, 0); // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
             }
-        };
+        });
 
         public ModifierNode(Integer type) {
             this.type = type;
-            this.opCode = MODIFIER_OPCODE_MAP.get(type);
+            this.opcode = MODIFIER_OPCODE_MAP.get(type);
             this.repeatable = ANNOTATION_TYPE == type; // Only annotations are repeatable
 
-            if (!asBoolean((Object) this.opCode)) {
+            if (!asBoolean((Object) this.opcode)) {
                 throw new IllegalArgumentException("Unsupported modifier type: " + type);
             }
         }
@@ -4349,8 +4349,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return type;
         }
 
-        public Integer getOpCode() {
-            return opCode;
+        public Integer getOpcode() {
+            return opcode;
         }
 
         public boolean isRepeatable() {
