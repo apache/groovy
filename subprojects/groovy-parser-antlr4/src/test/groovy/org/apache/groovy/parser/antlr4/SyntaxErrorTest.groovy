@@ -121,6 +121,10 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/AbstractMethod_06x.groovy');
     }
 
+    void "test groovy core - BUGs"() {
+        TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-5318.groovy');
+    }
+
     void "test groovy core - DoWhile"() {
         TestUtils.doRunAndShouldFail('fail/DoWhile_01x.groovy');
     }
