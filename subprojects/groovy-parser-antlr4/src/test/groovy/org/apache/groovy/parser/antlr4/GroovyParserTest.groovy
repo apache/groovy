@@ -328,13 +328,6 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Unicode_01.groovy');
     }
 
-    void "test groovy core - BUG"() {
-        doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
-        doRunAndTest('bugs/GROOVY-3898.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-5652.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-4762.groovy');
-    }
-
     void "test groovy core - BreakingChanges"() {
         doRunAndTest('core/BreakingChange_01x.groovy');
         doRunAndTest('core/BreakingChange_02x.groovy');
@@ -346,4 +339,11 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/Array_01x.groovy');
     }
 
+    void "test groovy core - BUG"() {
+        doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
+        doRunAndTest('bugs/GROOVY-3898.groovy');
+        doRunAndTest('bugs/BUG-GROOVY-5652.groovy');
+        doRunAndTest('bugs/BUG-GROOVY-4762.groovy');
+        doRunAndTest('bugs/BUG-GROOVY-4438.groovy');
+    }
 }
