@@ -1542,10 +1542,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return EmptyExpression.INSTANCE;
         }
 
-        if (asBoolean(ctx.arrayInitializer())) {
-            return this.configureAST(this.visitArrayInitializer(ctx.arrayInitializer()), ctx);
-        }
-
         if (asBoolean(ctx.statementExpression())) {
             return this.configureAST(
                     ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression(),
@@ -1560,15 +1556,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public ListExpression visitArrayInitializer(ArrayInitializerContext ctx) {
-        return this.configureAST(
-                new ListExpression(
-                        ctx.variableInitializer().stream()
-                                .map(this::visitVariableInitializer)
-                                .collect(Collectors.toList())),
-                ctx);
+    public List<Expression> visitVariableInitializers(VariableInitializersContext ctx) {
+        if (!asBoolean(ctx)) {
+            return Collections.emptyList();
+        }
+
+        return ctx.variableInitializer().stream()
+                        .map(this::visitVariableInitializer)
+                        .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Expression> visitArrayInitializer(ArrayInitializerContext ctx) {
+        if (!asBoolean(ctx)) {
+            return Collections.emptyList();
+        }
+
+        return this.visitVariableInitializers(ctx.variableInitializers());
+    }
 
     @Override
     public Statement visitBlock(BlockContext ctx) {
@@ -2611,24 +2616,37 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (asBoolean(ctx.LBRACK())) { // create array
-            Expression[] empties;
-            if (asBoolean(ctx.b)) {
-                empties = new Expression[ctx.b.size()];
-                Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
-            } else {
-                empties = new Expression[0];
-            }
+            if (asBoolean(ctx.arrayInitializer())) {
+                ClassNode arrayType = classNode;
+                for (int i = 0, n = ctx.b.size() - 1; i < n; i++) {
+                    arrayType = arrayType.makeArray();
+                }
 
-            return this.configureAST(
-                    new ArrayExpression(
-                            classNode,
-                            null,
-                            Stream.concat(
-                                    ctx.expression().stream()
-                                            .map(e -> (Expression) this.visit(e)),
-                                    Arrays.stream(empties)
-                            ).collect(Collectors.toList())),
-                    ctx);
+                return this.configureAST(
+                        new ArrayExpression(
+                                arrayType,
+                                this.visitArrayInitializer(ctx.arrayInitializer())),
+                        ctx);
+            } else {
+                Expression[] empties;
+                if (asBoolean(ctx.b)) {
+                    empties = new Expression[ctx.b.size()];
+                    Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
+                } else {
+                    empties = new Expression[0];
+                }
+
+                return this.configureAST(
+                        new ArrayExpression(
+                                classNode,
+                                null,
+                                Stream.concat(
+                                        ctx.expression().stream()
+                                                .map(e -> (Expression) this.visit(e)),
+                                        Arrays.stream(empties)
+                                ).collect(Collectors.toList())),
+                        ctx);
+            }
         }
 
         throw createParsingFailedException("Unsupported creator: " + ctx.getText(), ctx);

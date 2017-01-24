@@ -355,13 +355,12 @@ variableDeclaratorId
     ;
 
 variableInitializer
-    :   arrayInitializer
-    |   statementExpression
+    :   statementExpression
     |   standardLambda
     ;
 
-arrayInitializer
-    :   LBRACK (variableInitializer (COMMA variableInitializer)* (COMMA)? )? RBRACK
+variableInitializers
+    :   variableInitializer nls (COMMA nls variableInitializer nls)* nls COMMA?
     ;
 
 standardType
@@ -1086,6 +1085,11 @@ mapEntryLabel
 creator
     :   createdName nls arguments anonymousInnerClassDeclaration[0]?
     |   createdName (LBRACK expression RBRACK)+ (b+=LBRACK RBRACK)*
+    |   createdName (b+=LBRACK RBRACK)+ arrayInitializer
+    ;
+
+arrayInitializer
+    :   LBRACE nls variableInitializers? nls RBRACE
     ;
 
 /**

@@ -339,4 +339,9 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/BreakingChange_03x.groovy');
         doRunAndTest('core/BreakingChange_04x.groovy');
     }
+
+    void "test groovy core - Array"() {
+        doRunAndTest('core/Array_01x.groovy');
+    }
+
 }
