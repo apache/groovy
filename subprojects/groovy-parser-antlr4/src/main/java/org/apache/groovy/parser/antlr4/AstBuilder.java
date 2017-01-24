@@ -1255,7 +1255,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 }
 
-                modifiers |= classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.contains(DEFAULT)) ? Opcodes.ACC_ABSTRACT : 0;
+                modifiers |= !modifierManager.contains(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.contains(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
                 methodNode = classNode.addMethod(methodName, modifiers, returnType, parameters, exceptions, code);
 
                 methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
