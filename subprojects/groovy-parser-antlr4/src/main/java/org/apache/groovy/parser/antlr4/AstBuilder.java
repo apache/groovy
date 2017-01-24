@@ -4389,7 +4389,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String VALUE_STR = "value";
     private static final String DOLLAR_STR = "$";
     private static final String CALL_STR = "call";
-    private static final String IS_STR = "is";
     private static final String THIS_STR = "this";
     private static final String SUPER_STR = "super";
     private static final String VOID_STR = "void";
