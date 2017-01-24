@@ -98,11 +98,17 @@ class ScriptToTreeNodeAdapter {
      *      a Groovy script in String form
      * @param compilePhase
      *      the int based CompilePhase to compile it to.
+     * @param indy
+     *      if {@code true} InvokeDynamic (Indy) bytecode is generated
     */
-    def compile(String script, int compilePhase) {
+    def compile(String script, int compilePhase, boolean indy=false) {
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
+        CompilerConfiguration cc = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        if (indy) {
+            cc.getOptimizationOptions().put(CompilerConfiguration.INVOKEDYNAMIC, true)
+        }
+        CompilationUnit cu = new CompilationUnit(cc, codeSource.codeSource, classLoader)
         cu.setClassgenCallback(classLoader.createCollector(cu, null))
 
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass, showClosureClasses)
