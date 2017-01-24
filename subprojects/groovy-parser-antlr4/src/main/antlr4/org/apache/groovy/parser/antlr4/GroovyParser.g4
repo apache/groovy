@@ -124,8 +124,7 @@ options {
 
 // starting point for parsing a groovy file
 compilationUnit
-    :
-        nls
+    :   nls
         (packageDeclaration (sep | EOF))? (statement (sep | EOF))* EOF
     ;
 
@@ -1083,9 +1082,11 @@ mapEntryLabel
     ;
 
 creator
-    :   createdName nls arguments anonymousInnerClassDeclaration[0]?
-    |   createdName (LBRACK expression RBRACK)+ (b+=LBRACK RBRACK)*
-    |   createdName (b+=LBRACK RBRACK)+ arrayInitializer
+    :   createdName
+        (   nls arguments anonymousInnerClassDeclaration[0]?
+        |   (LBRACK expression RBRACK)+ (b+=LBRACK RBRACK)*
+        |   (b+=LBRACK RBRACK)+ arrayInitializer
+        )
     ;
 
 arrayInitializer
