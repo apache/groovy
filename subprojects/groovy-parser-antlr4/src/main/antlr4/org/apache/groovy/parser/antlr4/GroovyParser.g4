@@ -667,9 +667,13 @@ locals[boolean resourcesExists = false]
         )
     ;
 
+assertStatement
+locals[ String footprint = "" ]
+    :   ASSERT ce=expression ((COLON | COMMA) nls me=expression)?
+    ;
+
 statement
     :   block                                                                                               #blockStmtAlt
-    |   ASSERT ce=expression ((COLON | COMMA) nls me=expression)?                                           #assertStmtAlt
     |   IF parExpression nls tb=statement ((nls | sep) ELSE nls fb=statement)?                              #ifElseStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
 
@@ -687,6 +691,8 @@ statement
 
     // Import statement.  Can be used in any scope.  Has "import x as y" also.
     |   importDeclaration                                                                                   #importStmtAlt
+
+    |   assertStatement                                                                                     #assertStmtAlt
 
     |   typeDeclaration                                                                                     #typeDeclarationStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
@@ -786,11 +792,23 @@ statementExpression
     |   commandExpression                   #commandExprAlt
     ;
 
+postfixExpression
+locals[ boolean isInsideAssert ]
+@init {
+    try {
+        $isInsideAssert = null != $assertStatement::footprint;
+    } catch(NullPointerException e) {
+        $isInsideAssert = false;
+    }
+}
+    :   pathExpression op=(INC | DEC)?
+    ;
+
 expression
     // qualified names, array expressions, method invocation, post inc/dec, type casting (level 1)
     // The cast expression must be put before pathExpression to resovle the ambiguities between type casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression expression                                                        #castExprAlt
-    |   pathExpression op=(INC | DEC)?                                                      #postfixExprAlt
+    |   postfixExpression                                                                   #postfixExprAlt
 
     // ~(BNOT)/!(LNOT) (level 1)
     |   (BITNOT | NOT) nls expression                                                       #unaryNotExprAlt

@@ -262,8 +262,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         PackageNode packageNode = moduleNode.getPackage();
 
-        this.visitAnnotationsOpt(ctx.annotationsOpt()).stream()
-                .forEach(packageNode::addAnnotation);
+        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(packageNode::addAnnotation);
 
         return this.configureAST(packageNode, ctx);
     }
@@ -331,7 +330,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     // statement {    --------------------------------------------------------------------
     @Override
-    public AssertStatement visitAssertStmtAlt(AssertStmtAltContext ctx) {
+    public AssertStatement visitAssertStatement(AssertStatementContext ctx) {
         Expression conditionExpression = (Expression) this.visit(ctx.ce);
         BooleanExpression booleanExpression =
                 this.configureAST(
@@ -345,7 +344,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return this.configureAST(new AssertStatement(booleanExpression,
                         (Expression) this.visit(ctx.me)),
                 ctx);
+    }
 
+    @Override
+    public AssertStatement visitAssertStmtAlt(AssertStmtAltContext ctx) {
+        return this.configureAST(this.visitAssertStatement(ctx.assertStatement()), ctx);
     }
 
     @Override
@@ -2214,16 +2217,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public Expression visitPostfixExprAlt(PostfixExprAltContext ctx) {
+    public Expression visitPostfixExpression(PostfixExpressionContext ctx) {
         Expression pathExpr = this.visitPathExpression(ctx.pathExpression());
 
         if (asBoolean(ctx.op)) {
-            return this.configureAST(
-                    new PostfixExpression(pathExpr, createGroovyToken(ctx.op)),
-                    ctx.op/*powerassert requires different column for values, so we have to copy the location of op*/);
+            PostfixExpression postfixExpression = new PostfixExpression(pathExpr, createGroovyToken(ctx.op));
+
+            if (ctx.isInsideAssert) {
+                // powerassert requires different column for values, so we have to copy the location of op
+                return this.configureAST(postfixExpression, ctx.op);
+            } else {
+                return this.configureAST(postfixExpression, ctx);
+            }
         }
 
         return this.configureAST(pathExpr, ctx);
+    }
+
+    @Override
+    public Expression visitPostfixExprAlt(PostfixExprAltContext ctx) {
+        return this.visitPostfixExpression(ctx.postfixExpression());
     }
 
     @Override
