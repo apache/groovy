@@ -139,7 +139,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.*;
-import static org.apache.groovy.parser.antlr4.GroovyParser.ElementValuesContext;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 
@@ -496,8 +495,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         this.visitFinallyBlock(ctx.finallyBlock()));
 
         if (asBoolean(ctx.resources())) {
-            this.visitResources(ctx.resources()).stream()
-                    .forEach(tryCatchStatement::addResource);
+            this.visitResources(ctx.resources()).forEach(tryCatchStatement::addResource);
         }
 
         ctx.catchClause().stream().map(this::visitCatchClause)
@@ -626,7 +624,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<CaseStatement> caseStatementList = new LinkedList<>();
         List<Statement> defaultStatementList = new LinkedList<>();
 
-        statementList.stream().forEach(e -> {
+        statementList.forEach(e -> {
             if (e instanceof CaseStatement) {
                 caseStatementList.add((CaseStatement) e);
             } else if (isTrue(e, IS_SWITCH_DEFAULT)) {
@@ -980,7 +978,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             this.visitEnumConstants(ctx.enumConstants());
         }
 
-        ctx.classBodyDeclaration().stream().forEach(e -> {
+        ctx.classBodyDeclaration().forEach(e -> {
             e.putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
             this.visitClassBodyDeclaration(e);
         });
@@ -1274,7 +1272,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             modifierManager.processMethodNode(methodNode);
         }
-        anonymousInnerClassList.stream().forEach(e -> e.setEnclosingMethod(methodNode));
+        anonymousInnerClassList.forEach(e -> e.setEnclosingMethod(methodNode));
 
         methodNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
         methodNode.setSyntheticPublic(
@@ -1403,7 +1401,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
 
         if (asBoolean(classNode)) {
-            declarationExpressionList.stream().forEach(e -> {
+            declarationExpressionList.forEach(e -> {
                 VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
 
                 int modifiers = modifierManager.getClassMemberModifiersOpValue();
@@ -1459,7 +1457,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return null;
         }
 
-        declarationExpressionList.stream().forEach(e -> {
+        declarationExpressionList.forEach(e -> {
             VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
 
             modifierManager.processVariableExpression(variableExpression);
@@ -4080,14 +4078,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         public List<ExpressionStatement> getDeclarationStatements() {
             List<String> declarationListStatementLabels = this.getStatementLabels();
 
-            this.declarationStatements.stream().forEach(e -> {
+            this.declarationStatements.forEach(e -> {
                 if (asBoolean((Object) declarationListStatementLabels)) {
                     // clear existing statement labels before setting labels
                     if (asBoolean((Object) e.getStatementLabels())) {
                         e.getStatementLabels().clear();
                     }
 
-                    declarationListStatementLabels.stream().forEach(e::addStatementLabel);
+                    declarationListStatementLabels.forEach(e::addStatementLabel);
                 }
             });
 
