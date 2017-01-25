@@ -2907,13 +2907,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             StringBuilder buffer = new StringBuilder();
             boolean first = true;
 
-            for (; node != null && !isType(TYPE_ARGUMENTS, node); node = node.getNextSibling()) {
+            while (node != null && !isType(TYPE_ARGUMENTS, node)) {
                 if (first) {
                     first = false;
                 } else {
                     buffer.append(".");
                 }
                 buffer.append(qualifiedName(node));
+                node = node.getNextSibling();
             }
             return buffer.toString();
         } else {
@@ -3038,6 +3039,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
                 answer = makeType(node).makeArray();
             } else {
+                checkTypeArgs(node, false);
                 answer = ClassHelper.make(qualifiedName(node));
                 if (answer.isUsingGenerics()) {
                     ClassNode newAnswer = ClassHelper.makeWithoutCaching(answer.getName());
@@ -3048,6 +3050,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             configureAST(answer, node);
         }
         return answer;
+    }
+
+    private boolean checkTypeArgs(AST node, boolean seenTypeArgs) {
+        if (isType(IDENT, node) && seenTypeArgs) {
+            throw new ASTRuntimeException(node, "Unexpected type arguments found prior to: " + qualifiedName(node));
+        }
+        if (isType(DOT, node)) {
+            AST next = node.getFirstChild();
+            while (next != null && !isType(TYPE_ARGUMENTS, next)) {
+                seenTypeArgs |= checkTypeArgs(next, seenTypeArgs);
+                seenTypeArgs |= isType(TYPE_ARGUMENTS, next.getFirstChild()) || isType(TYPE_ARGUMENTS, next.getNextSibling());
+                next = next.getNextSibling();
+            }
+        }
+        return seenTypeArgs;
     }
 
     /**
