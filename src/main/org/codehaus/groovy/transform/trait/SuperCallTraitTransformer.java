@@ -141,18 +141,6 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         return super.transform(exp);
     }
 
-    private Expression transformPropertyExpression(final PropertyExpression expression) {
-        Expression objectExpression = expression.getObjectExpression();
-        ClassNode type = objectExpression.getType();
-        if (objectExpression instanceof ClassExpression) {
-            if (Traits.isTrait(type) && "super".equals(expression.getPropertyAsString())) {
-                // SomeTrait.super --> annotate to recognize later
-                expression.putNodeMetaData(SuperCallTraitTransformer.class, type);
-            }
-        }
-        return super.transform(expression);
-    }
-
     private boolean isTraitSuperPropertyExpression(Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
