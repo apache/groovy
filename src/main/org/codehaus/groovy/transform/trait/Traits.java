@@ -136,7 +136,7 @@ public abstract class Traits {
             try {
                 final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
                 String helperClassName = Traits.helperClassName(trait);
-                helperClassNode = ClassHelper.make(classLoader.loadClass(helperClassName));
+                helperClassNode = ClassHelper.make(Class.forName(helperClassName, false, classLoader));
                 try {
                     fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.fieldHelperClassName(trait)));
                 } catch (ClassNotFoundException e) {
