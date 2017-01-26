@@ -44,7 +44,7 @@ import java.util.Map;
  * </ul>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="maito:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ASTNode {
 
