@@ -36,7 +36,7 @@ public class StringUtils {
         Pattern p = Pattern.compile("(\\\\*)\\\\u+([0-9abcdefABCDEF]{4})");
 	    return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 		    Object doCall(String _0, String _1, String _2) {
-				if (null != _1 && _1.length() % 2 == 1) {
+				if (isLengthOdd(_1)) {
 					return _0;
 				}
 
@@ -49,7 +49,7 @@ public class StringUtils {
 	    Pattern p = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
 	    return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 		    Object doCall(String _0, String _1, String _2) {
-				if (null != _1 && _1.length() % 2 == 1) {
+				if (isLengthOdd(_1)) {
 					return _0;
 				}
 
@@ -73,7 +73,7 @@ public class StringUtils {
 
 	    String result = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 							Object doCall(String _0, String _1, String _2) {
-								if (null != _1 && _1.length() % 2 == 1) {
+								if (isLengthOdd(_1)) {
 									return _0;
 								}
 
@@ -124,7 +124,7 @@ public class StringUtils {
 		Pattern p = Pattern.compile("(\\\\*)\\\\\r?\n");
 		text = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1) {
-				if (null != _1 && _1.length() % 2 == 1) {
+				if (isLengthOdd(_1)) {
 					return _0;
 				}
 
@@ -133,6 +133,10 @@ public class StringUtils {
 		});
 
 		return text;
+	}
+
+	private static boolean isLengthOdd(String str) {
+		return null != str && str.length() % 2 == 1;
 	}
 
 	public static String removeCR(String text) {

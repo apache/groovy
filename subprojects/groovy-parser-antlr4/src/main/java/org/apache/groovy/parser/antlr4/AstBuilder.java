@@ -3844,6 +3844,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         );
     }
 
+    /*
     private org.codehaus.groovy.syntax.Token createGroovyToken(String text, int startLine, int startColumn) {
         return new org.codehaus.groovy.syntax.Token(
                 Types.lookup(text, Types.ANY),
@@ -3852,6 +3853,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 startColumn
         );
     }
+    */
 
     /**
      * set the script source position
