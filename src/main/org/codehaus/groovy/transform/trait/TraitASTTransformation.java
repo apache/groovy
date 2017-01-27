@@ -386,6 +386,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
 
     private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper, final ClassNode trait, final Set<String> knownFields) {
+        if (field.isProtected()) {
+            unit.addError(new SyntaxException("Cannot have protected field in a trait (" + trait.getName() + "#" + field.getName() + ")",
+                    field.getLineNumber(), field.getColumnNumber()));
+            return;
+        }
+
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
         if (initialExpression != null && !field.isFinal()) {
