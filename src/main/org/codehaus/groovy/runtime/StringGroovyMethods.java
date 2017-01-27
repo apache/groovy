@@ -1314,6 +1314,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List getAt(Matcher self, Collection indices) {
         List result = new ArrayList();
+        if (indices instanceof IntRange) {
+            int size = (int) size(self);
+            RangeInfo info = subListBorders(size, (Range) indices);
+            indices = new IntRange(((IntRange)indices).getInclusive(), info.from, info.to - 1);
+        }
         for (Object value : indices) {
             if (value instanceof Range) {
                 result.addAll(getAt(self, (Range) value));
