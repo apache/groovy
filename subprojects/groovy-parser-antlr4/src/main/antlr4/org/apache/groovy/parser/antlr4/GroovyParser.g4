@@ -750,11 +750,11 @@ forControl
 
 forInit
     :   localVariableDeclaration
-    |   expression
+    |   expressionList
     ;
 
 forUpdate
-    :   expression
+    :   expressionList
     ;
 
 enhancedForControl

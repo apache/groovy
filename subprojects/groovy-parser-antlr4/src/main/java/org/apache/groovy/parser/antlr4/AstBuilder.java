@@ -422,8 +422,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
         }
 
-        if (asBoolean(ctx.expression())) {
-            return this.configureAST((Expression) this.visit(ctx.expression()), ctx);
+        if (asBoolean(ctx.expressionList())) {
+            return this.convertExpressionList(ctx.expressionList());
         }
 
         throw createParsingFailedException("Unsupported for init: " + ctx.getText(), ctx);
@@ -435,9 +435,31 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return EmptyExpression.INSTANCE;
         }
 
-        return this.configureAST((Expression) this.visit(ctx.expression()), ctx);
+        return this.convertExpressionList(ctx.expressionList());
     }
 
+    private Expression convertExpressionList(ExpressionListContext ctx) {
+        List<Expression> expressionList = this.visitExpressionList(ctx);
+
+        if (expressionList.size() == 1) {
+            return this.configureAST(expressionList.get(0), ctx);
+        } else {
+            Statement code =
+                    this.createBlockStatement(
+                            expressionList.stream()
+                                    .map(e -> this.configureAST(new ExpressionStatement(e), e))
+                                    .collect(Collectors.toList()));
+            return this.configureAST(
+                    new MethodCallExpression(
+                            this.configureAST(
+                                    new ClosureExpression(Parameter.EMPTY_ARRAY, code),
+                                    ctx),
+                            CALL_STR,
+                            new ArgumentListExpression()
+                    ),
+                    ctx);
+        }
+    }
 
     @Override
     public Pair<Parameter, Expression> visitEnhancedForControl(EnhancedForControlContext ctx) {

@@ -208,6 +208,7 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/For_01.groovy', [AssertStatement]);
         doTest('core/For_02.groovy');
         doTest('core/For_03.groovy');
+        doRunAndTest('core/For_04x.groovy');
     }
 
     void "test groovy core - While"() {
