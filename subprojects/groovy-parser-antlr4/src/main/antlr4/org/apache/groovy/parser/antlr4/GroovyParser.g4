@@ -370,13 +370,18 @@ options { baseContext = type; }
 
 type
     :   primitiveType (LBRACK RBRACK)*
-    |   classOrInterfaceType (LBRACK RBRACK)*
+    |   generalClassOrInterfaceType (LBRACK RBRACK)*
     ;
 
 classOrInterfaceType
     :   (   qualifiedClassName
         |   qualifiedStandardClassName
         ) typeArguments?
+    ;
+
+generalClassOrInterfaceType
+options { baseContext = classOrInterfaceType; }
+    :   qualifiedClassName typeArguments?
     ;
 
 standardClassOrInterfaceType
