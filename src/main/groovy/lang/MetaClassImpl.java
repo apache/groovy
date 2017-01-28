@@ -2686,18 +2686,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
-        // turn setProperty on a Map to put on the Map itself
-        //----------------------------------------------------------------------
-        if (method == null && !isStatic && this.isMap) {
-            ((Map) object).put(name, newValue);
-            return;
-        }
-
-        //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
         if (method == null && field != null) {
             if (Modifier.isFinal(field.getModifiers())) {
+                // GROOVY-5985
+                if (!isStatic && this.isMap) {
+                    ((Map) object).put(name, newValue);
+                    return;
+                }
                 throw new ReadOnlyPropertyException(name, theClass);
             }
             if(!(this.isMap && isPrivateOrPkgPrivate(field.getModifiers()))) {
@@ -2738,6 +2735,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
             method.doMethodInvoke(object, arguments);
+            return;
+        }
+
+        //----------------------------------------------------------------------
+        // turn setProperty on a Map to put on the Map itself
+        //----------------------------------------------------------------------
+        if (method == null && !isStatic && this.isMap) {
+            ((Map) object).put(name, newValue);
             return;
         }
 
