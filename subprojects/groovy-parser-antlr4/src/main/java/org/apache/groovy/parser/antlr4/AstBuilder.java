@@ -443,20 +443,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         if (expressionList.size() == 1) {
             return this.configureAST(expressionList.get(0), ctx);
         } else {
-            Statement code =
-                    this.createBlockStatement(
-                            expressionList.stream()
-                                    .map(e -> this.configureAST(new ExpressionStatement(e), e))
-                                    .collect(Collectors.toList()));
-            return this.configureAST(
-                    new MethodCallExpression(
-                            this.configureAST(
-                                    new ClosureExpression(Parameter.EMPTY_ARRAY, code),
-                                    ctx),
-                            CALL_STR,
-                            new ArgumentListExpression()
-                    ),
-                    ctx);
+            return this.configureAST(new ClosureListExpression(expressionList), ctx);
         }
     }
 

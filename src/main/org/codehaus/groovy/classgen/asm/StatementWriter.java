@@ -150,6 +150,14 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    private void visitExpressionOfLoopStatement(Expression expression) {
+        if (expression instanceof ClosureListExpression) {
+            ((ClosureListExpression) expression).getExpressions().forEach(this::visitExpressionOrStatement);
+        } else {
+            visitExpressionOrStatement(expression);
+        }
+    }
+
     protected void writeForLoopWithClosureList(ForStatement loop) {
         controller.getAcg().onLineNumber(loop,"visitForLoop");
         writeStatementLabel(loop);
@@ -168,13 +176,7 @@ public class StatementWriter {
 
         // visit init
         for (int i = 0; i < condIndex; i++) {
-            Expression expression = expressions.get(i);
-
-            if (expression instanceof ClosureListExpression) {
-                ((ClosureListExpression) expression).getExpressions().forEach(this::visitExpressionOrStatement);
-            } else {
-                visitExpressionOrStatement(expression);
-            }
+            visitExpressionOfLoopStatement(expressions.get(i));
         }
 
         Label continueLabel = controller.getCompileStack().getContinueLabel();
@@ -199,7 +201,7 @@ public class StatementWriter {
         // visit increment
         mv.visitLabel(continueLabel);
         for (int i = condIndex + 1; i < size; i++) {
-            visitExpressionOrStatement(expressions.get(i));
+            visitExpressionOfLoopStatement(expressions.get(i));
         }
 
         // jump to test the condition again
