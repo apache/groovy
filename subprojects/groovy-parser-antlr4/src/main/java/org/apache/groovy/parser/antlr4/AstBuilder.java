@@ -1351,8 +1351,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return this.configureAST(this.visitVariableDeclaration(ctx.variableDeclaration()), ctx);
     }
 
-    @Override
-    public DeclarationListStatement visitVariableDeclaration(VariableDeclarationContext ctx) {
+    private ModifierManager createModifierManager(VariableDeclarationContext ctx) {
         List<ModifierNode> modifierNodeList = Collections.emptyList();
 
         if (asBoolean(ctx.variableModifiers())) {
@@ -1365,32 +1364,41 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             modifierNodeList = this.visitModifiersOpt(ctx.modifiersOpt());
         }
 
-        ModifierManager modifierManager = new ModifierManager(modifierNodeList);
+        return new ModifierManager(modifierNodeList);
+    }
+
+    private DeclarationListStatement createMultiAssignmentDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager) {
+        if (!modifierManager.contains(DEF)) {
+            throw createParsingFailedException("keyword def is required to declare tuple, e.g. def (int a, int b) = [1, 2]", ctx);
+        }
+
+        return this.configureAST(
+                new DeclarationListStatement(
+                        this.configureAST(
+                                modifierManager.attachAnnotations(
+                                        new DeclarationExpression(
+                                                new ArgumentListExpression(
+                                                        this.visitTypeNamePairs(ctx.typeNamePairs()).stream()
+                                                                .peek(e -> modifierManager.processVariableExpression((VariableExpression) e))
+                                                                .collect(Collectors.toList())
+                                                ),
+                                                this.createGroovyTokenByType(ctx.ASSIGN().getSymbol(), Types.ASSIGN),
+                                                this.visitVariableInitializer(ctx.variableInitializer())
+                                        )
+                                ),
+                                ctx
+                        )
+                ),
+                ctx
+        );
+    }
+
+    @Override
+    public DeclarationListStatement visitVariableDeclaration(VariableDeclarationContext ctx) {
+        ModifierManager modifierManager = this.createModifierManager(ctx);
 
         if (asBoolean(ctx.typeNamePairs())) { // e.g. def (int a, int b) = [1, 2]
-            if (!modifierManager.contains(DEF)) {
-                throw createParsingFailedException("keyword def is required to declare tuple, e.g. def (int a, int b) = [1, 2]", ctx);
-            }
-
-            return this.configureAST(
-                    new DeclarationListStatement(
-                            this.configureAST(
-                                    modifierManager.attachAnnotations(
-                                            new DeclarationExpression(
-                                                    new ArgumentListExpression(
-                                                            this.visitTypeNamePairs(ctx.typeNamePairs()).stream()
-                                                                    .peek(e -> modifierManager.processVariableExpression((VariableExpression) e))
-                                                                    .collect(Collectors.toList())
-                                                    ),
-                                                    this.createGroovyTokenByType(ctx.ASSIGN().getSymbol(), Types.ASSIGN),
-                                                    this.visitVariableInitializer(ctx.variableInitializer())
-                                            )
-                                    ),
-                                    ctx
-                            )
-                    ),
-                    ctx
-            );
+            return this.createMultiAssignmentDeclarationListStatement(ctx, modifierManager);
         }
 
         ClassNode variableType = this.visitType(ctx.type());
