@@ -630,7 +630,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (trySubscript(receiver, message, arguments, rType, aType, safe)) {
             return;
         }
-        // new try with flow type instead of declaration type
+        // now try with flow type instead of declaration type
         rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (rType!=null && trySubscript(receiver, message, arguments, rType, aType, safe)) {
             return;

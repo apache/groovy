@@ -129,24 +129,30 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
             }
 
             private Expression transformMethodCallExpression(Expression exp) {
-                MethodCallExpression mce = (MethodCallExpression) exp;
+                Expression modifiedCall = addGuard((MethodCallExpression) exp);
+                return modifiedCall == null ? super.transform(exp) : modifiedCall;
+            }
+
+            private Expression addGuard(MethodCallExpression mce) {
+                // only add guard to methods of the form: logVar.logMethod(params)
                 if (!(mce.getObjectExpression() instanceof VariableExpression)) {
-                    return exp;
+                    return null;
                 }
                 VariableExpression variableExpression = (VariableExpression) mce.getObjectExpression();
                 if (!variableExpression.getName().equals(logFieldName)
                         || !(variableExpression.getAccessedVariable() instanceof DynamicVariable)) {
-                    return exp;
+                    return null;
                 }
+
                 String methodName = mce.getMethodAsString();
-                if (methodName == null) return exp;
-                if (usesSimpleMethodArgumentsOnly(mce)) return exp;
+                if (methodName == null) return null;
+                if (!loggingStrategy.isLoggingMethod(methodName)) return null;
+                // also don't bother with guard if we have "simple" method args
+                // since there is no saving
+                if (usesSimpleMethodArgumentsOnly(mce)) return null;
 
                 variableExpression.setAccessedVariable(logNode);
-
-                if (!loggingStrategy.isLoggingMethod(methodName)) return exp;
-
-                return loggingStrategy.wrapLoggingMethodCall(variableExpression, methodName, exp);
+                return loggingStrategy.wrapLoggingMethodCall(variableExpression, methodName, mce);
             }
 
             private boolean usesSimpleMethodArgumentsOnly(MethodCallExpression mce) {

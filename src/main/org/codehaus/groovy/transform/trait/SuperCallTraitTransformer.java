@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.MetaProperty;
+import java.util.List;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -33,8 +34,6 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
-
-import java.util.List;
 
 /**
  * This transformer is used to transform calls to <code>SomeTrait.super.foo()</code> into the appropriate trait call.
@@ -56,9 +55,6 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
 
     @Override
     public Expression transform(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            return transformPropertyExpression((PropertyExpression) exp);
-        }
         if (exp instanceof MethodCallExpression) {
             return transformMethodCallExpression((MethodCallExpression)exp);
         }
@@ -74,12 +70,17 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             BinaryExpression bin = (BinaryExpression) trn;
             Expression leftExpression = bin.getLeftExpression();
             if (bin.getOperation().getType() == Types.EQUAL && leftExpression instanceof PropertyExpression) {
-                ClassNode traitReceiver = ((PropertyExpression) leftExpression).getObjectExpression().getNodeMetaData(SuperCallTraitTransformer.class);
+                ClassNode traitReceiver = null;
+                PropertyExpression leftPropertyExpression = (PropertyExpression) leftExpression;
+                if (isTraitSuperPropertyExpression(leftPropertyExpression.getObjectExpression())) {
+                    PropertyExpression pexp = (PropertyExpression) leftPropertyExpression.getObjectExpression();
+                    traitReceiver = pexp.getObjectExpression().getType();
+                }
                 if (traitReceiver!=null) {
                     // A.super.foo = ...
                     TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
                     ClassNode helper = helpers.getHelper();
-                    String setterName = MetaProperty.getSetterName(((PropertyExpression) leftExpression).getPropertyAsString());
+                    String setterName = MetaProperty.getSetterName(leftPropertyExpression.getPropertyAsString());
                     List<MethodNode> methods = helper.getMethods(setterName);
                     for (MethodNode method : methods) {
                         Parameter[] parameters = method.getParameters();
@@ -106,9 +107,10 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression transformMethodCallExpression(final MethodCallExpression exp) {
-        Expression objectExpression = transform(exp.getObjectExpression());
-        ClassNode traitReceiver = objectExpression.getNodeMetaData(SuperCallTraitTransformer.class);
-        if (traitReceiver!=null) {
+        if (isTraitSuperPropertyExpression(exp.getObjectExpression())) {
+            Expression objectExpression = exp.getObjectExpression();
+            ClassNode traitReceiver = ((PropertyExpression) objectExpression).getObjectExpression().getType();
+
             TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
             // (SomeTrait.super).foo() --> SomeTrait$Helper.foo(this)
             ClassExpression receiver = new ClassExpression(
@@ -123,11 +125,11 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                     newArgs.addExpression(transform(expression));
                 }
             } else {
-                newArgs.addExpression(arguments);
+                newArgs.addExpression(transform(arguments));
             }
             MethodCallExpression result = new MethodCallExpression(
                     receiver,
-                    exp.getMethod(),
+                    transform(exp.getMethod()),
                     newArgs
             );
             result.setImplicitThis(false);
@@ -139,15 +141,17 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         return super.transform(exp);
     }
 
-    private Expression transformPropertyExpression(final PropertyExpression expression) {
-        Expression objectExpression = expression.getObjectExpression();
-        ClassNode type = objectExpression.getType();
-        if (objectExpression instanceof ClassExpression) {
-            if (Traits.isTrait(type) && "super".equals(expression.getPropertyAsString())) {
-                // SomeTrait.super --> annotate to recognize later
-                expression.putNodeMetaData(SuperCallTraitTransformer.class, type);
+    private boolean isTraitSuperPropertyExpression(Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) exp;
+            Expression objectExpression = pexp.getObjectExpression();
+            if (objectExpression instanceof ClassExpression) {
+                ClassNode type = objectExpression.getType();
+                if (Traits.isTrait(type) && "super".equals(pexp.getPropertyAsString())) {
+                    return true;
+                }
             }
         }
-        return super.transform(expression);
+        return false;
     }
 }
