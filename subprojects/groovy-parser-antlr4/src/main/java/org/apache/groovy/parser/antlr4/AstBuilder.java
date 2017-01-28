@@ -412,7 +412,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(ctx.localVariableDeclaration())) {
             DeclarationListStatement declarationListStatement = this.visitLocalVariableDeclaration(ctx.localVariableDeclaration());
-
             List<?> declarationExpressionList = declarationListStatement.getDeclarationExpressions();
 
             if (declarationExpressionList.size() == 1) {
@@ -423,7 +422,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (asBoolean(ctx.expressionList())) {
-            return this.convertExpressionList(ctx.expressionList());
+            return this.translateExpressionList(ctx.expressionList());
         }
 
         throw createParsingFailedException("Unsupported for init: " + ctx.getText(), ctx);
@@ -435,10 +434,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return EmptyExpression.INSTANCE;
         }
 
-        return this.convertExpressionList(ctx.expressionList());
+        return this.translateExpressionList(ctx.expressionList());
     }
 
-    private Expression convertExpressionList(ExpressionListContext ctx) {
+    private Expression translateExpressionList(ExpressionListContext ctx) {
         List<Expression> expressionList = this.visitExpressionList(ctx);
 
         if (expressionList.size() == 1) {
