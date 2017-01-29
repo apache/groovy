@@ -1233,52 +1233,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // if classNode is not null, the method declaration is for class declaration
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
         if (asBoolean(classNode)) {
-            String className = classNode.getNodeMetaData(CLASS_NAME);
-            int modifiers = modifierManager.getClassMemberModifiersOpValue();
-
-            if (!asBoolean(ctx.returnType())
-                    && asBoolean(ctx.methodBody())
-                    && methodName.equals(className)) { // constructor declaration
-
-                ConstructorCallExpression thisOrSuperConstructorCallExpression = this.checkThisAndSuperConstructorCall(code);
-                if (asBoolean(thisOrSuperConstructorCallExpression)) {
-                    throw createParsingFailedException(thisOrSuperConstructorCallExpression.getText() + " should be the first statement in the constructor[" + methodName + "]", thisOrSuperConstructorCallExpression);
-                }
-
-                methodNode =
-                        classNode.addConstructor(
-                                modifiers,
-                                parameters,
-                                exceptions,
-                                code);
-
-            } else { // class memeber method declaration
-                if (asBoolean(ctx.elementValue())) { // the code of annotation method
-                    code = this.configureAST(
-                            new ExpressionStatement(
-                                    this.visitElementValue(ctx.elementValue())),
-                            ctx.elementValue());
-
-                }
-
-                modifiers |= !modifierManager.contains(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.contains(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
-                methodNode = classNode.addMethod(methodName, modifiers, returnType, parameters, exceptions, code);
-
-                methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
-            }
-
-            modifierManager.attachAnnotations(methodNode);
+            methodNode = createConstructorOrMethodNodeForClass(ctx, modifierManager, methodName, returnType, parameters, exceptions, code, classNode);
         } else { // script method declaration
-            methodNode =
-                    new MethodNode(
-                            methodName,
-                            modifierManager.contains(PRIVATE) ? Opcodes.ACC_PRIVATE : Opcodes.ACC_PUBLIC,
-                            returnType,
-                            parameters,
-                            exceptions,
-                            code);
-
-            modifierManager.processMethodNode(methodNode);
+            methodNode = createScriptMethodNode(modifierManager, methodName, returnType, parameters, exceptions, code);
         }
         anonymousInnerClassList.forEach(e -> e.setEnclosingMethod(methodNode));
 
@@ -1297,6 +1254,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.configureAST(methodNode, ctx);
 
+        validateMethodDeclaration(ctx, methodNode);
+
+        groovydocManager.attachDocCommentAsMetaData(methodNode, ctx);
+
+        return methodNode;
+    }
+
+    private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode) {
         boolean isAbstractMethod = methodNode.isAbstract();
         boolean hasMethodBody = asBoolean(methodNode.getCode());
 
@@ -1309,9 +1274,70 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 throw createParsingFailedException("You defined a method[" + methodNode.getName() + "] without body. Try adding a method body, or declare it abstract", methodNode);
             }
         }
+    }
 
-        groovydocManager.attachDocCommentAsMetaData(methodNode, ctx);
+    private MethodNode createScriptMethodNode(ModifierManager modifierManager, String methodName, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        MethodNode methodNode;
+        methodNode =
+                new MethodNode(
+                        methodName,
+                        modifierManager.contains(PRIVATE) ? Opcodes.ACC_PRIVATE : Opcodes.ACC_PUBLIC,
+                        returnType,
+                        parameters,
+                        exceptions,
+                        code);
 
+        modifierManager.processMethodNode(methodNode);
+        return methodNode;
+    }
+
+    private MethodNode createConstructorOrMethodNodeForClass(MethodDeclarationContext ctx, ModifierManager modifierManager, String methodName, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode) {
+        MethodNode methodNode;
+        String className = classNode.getNodeMetaData(CLASS_NAME);
+        int modifiers = modifierManager.getClassMemberModifiersOpValue();
+
+        if (!asBoolean(ctx.returnType())
+                && asBoolean(ctx.methodBody())
+                && methodName.equals(className)) { // constructor declaration
+
+            methodNode = createConstructorNodeForClass(methodName, parameters, exceptions, code, classNode, modifiers);
+        } else { // class memeber method declaration
+            methodNode = createMethodNodeForClass(ctx, modifierManager, methodName, returnType, parameters, exceptions, code, classNode, modifiers);
+        }
+
+        modifierManager.attachAnnotations(methodNode);
+        return methodNode;
+    }
+
+    private MethodNode createMethodNodeForClass(MethodDeclarationContext ctx, ModifierManager modifierManager, String methodName, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {
+        MethodNode methodNode;
+        if (asBoolean(ctx.elementValue())) { // the code of annotation method
+            code = this.configureAST(
+                    new ExpressionStatement(
+                            this.visitElementValue(ctx.elementValue())),
+                    ctx.elementValue());
+
+        }
+
+        modifiers |= !modifierManager.contains(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.contains(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
+        methodNode = classNode.addMethod(methodName, modifiers, returnType, parameters, exceptions, code);
+
+        methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
+        return methodNode;
+    }
+
+    private MethodNode createConstructorNodeForClass(String methodName, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {
+        MethodNode methodNode;ConstructorCallExpression thisOrSuperConstructorCallExpression = this.checkThisAndSuperConstructorCall(code);
+        if (asBoolean(thisOrSuperConstructorCallExpression)) {
+            throw createParsingFailedException(thisOrSuperConstructorCallExpression.getText() + " should be the first statement in the constructor[" + methodName + "]", thisOrSuperConstructorCallExpression);
+        }
+
+        methodNode =
+                classNode.addConstructor(
+                        modifiers,
+                        parameters,
+                        exceptions,
+                        code);
         return methodNode;
     }
 
@@ -1417,60 +1443,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
 
         if (asBoolean(classNode)) {
-            declarationExpressionList.forEach(e -> {
-                VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
-
-                int modifiers = modifierManager.getClassMemberModifiersOpValue();
-
-                Expression initialValue = EmptyExpression.INSTANCE.equals(e.getRightExpression()) ? null : e.getRightExpression();
-                Object defaultValue = findDefaultValueByType(variableType);
-
-                if (classNode.isInterface()) {
-                    if (!asBoolean(initialValue)) {
-                        initialValue = !asBoolean(defaultValue) ? null : new ConstantExpression(defaultValue);
-                    }
-
-                    modifiers |= Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
-                }
-
-                if (classNode.isInterface() || modifierManager.containsVisibilityModifier()) {
-                    FieldNode fieldNode =
-                            classNode.addField(
-                                    variableExpression.getName(),
-                                    modifiers,
-                                    variableType,
-                                    initialValue);
-                    modifierManager.attachAnnotations(fieldNode);
-
-                    groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
-
-                    this.configureAST(fieldNode, ctx);
-                } else {
-                    PropertyNode propertyNode =
-                            classNode.addProperty(
-                                    variableExpression.getName(),
-                                    modifiers | Opcodes.ACC_PUBLIC,
-                                    variableType,
-                                    initialValue,
-                                    null,
-                                    null);
-
-                    FieldNode fieldNode = propertyNode.getField();
-                    fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
-                    fieldNode.setSynthetic(!classNode.isInterface());
-                    modifierManager.attachAnnotations(fieldNode);
-
-                    groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
-                    groovydocManager.attachDocCommentAsMetaData(propertyNode, ctx);
-
-                    this.configureAST(fieldNode, ctx);
-                    this.configureAST(propertyNode, ctx);
-                }
-
-            });
-
-
-            return null;
+            return createFieldDeclarationListStatement(ctx, modifierManager, variableType, declarationExpressionList, classNode);
         }
 
         declarationExpressionList.forEach(e -> {
@@ -1478,7 +1451,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             modifierManager.processVariableExpression(variableExpression);
             modifierManager.attachAnnotations(e);
-
         });
 
         int size = declarationExpressionList.size();
@@ -1495,6 +1467,62 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         return this.configureAST(new DeclarationListStatement(declarationExpressionList), ctx);
+    }
+
+    private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
+        declarationExpressionList.forEach(e -> {
+            VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
+
+            int modifiers = modifierManager.getClassMemberModifiersOpValue();
+
+            Expression initialValue = EmptyExpression.INSTANCE.equals(e.getRightExpression()) ? null : e.getRightExpression();
+            Object defaultValue = findDefaultValueByType(variableType);
+
+            if (classNode.isInterface()) {
+                if (!asBoolean(initialValue)) {
+                    initialValue = !asBoolean(defaultValue) ? null : new ConstantExpression(defaultValue);
+                }
+
+                modifiers |= Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
+            }
+
+            if (classNode.isInterface() || modifierManager.containsVisibilityModifier()) {
+                FieldNode fieldNode =
+                        classNode.addField(
+                                variableExpression.getName(),
+                                modifiers,
+                                variableType,
+                                initialValue);
+                modifierManager.attachAnnotations(fieldNode);
+
+                groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
+
+                this.configureAST(fieldNode, ctx);
+            } else {
+                PropertyNode propertyNode =
+                        classNode.addProperty(
+                                variableExpression.getName(),
+                                modifiers | Opcodes.ACC_PUBLIC,
+                                variableType,
+                                initialValue,
+                                null,
+                                null);
+
+                FieldNode fieldNode = propertyNode.getField();
+                fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
+                fieldNode.setSynthetic(!classNode.isInterface());
+                modifierManager.attachAnnotations(fieldNode);
+
+                groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
+                groovydocManager.attachDocCommentAsMetaData(propertyNode, ctx);
+
+                this.configureAST(fieldNode, ctx);
+                this.configureAST(propertyNode, ctx);
+            }
+
+        });
+
+        return null;
     }
 
     @Override
