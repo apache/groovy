@@ -1213,7 +1213,6 @@ keywords
     |   SWITCH
     |   SYNCHRONIZED
     |   THIS
-    |   THREADSAFE
     |   THROW
     |   THROWS
     |   TRANSIENT
