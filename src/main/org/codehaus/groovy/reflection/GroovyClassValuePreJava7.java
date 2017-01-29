@@ -29,7 +29,14 @@ import org.codehaus.groovy.util.ReferenceBundle;
  * @param <T>
  */
 class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
-	private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+
+	// Computing values for this cache occurs while holding a segment lock and part of the
+	// computation requires a lock on GlobalClassSet.add, backed by a ManagedLinkedList.
+	// If objects from this cache are dequeued by the add operation then it could attempt
+	// to remove an entry from a segment of this cache for which another thread holds a lock.
+	// If that other thread is also computing a new value it will be blocked on the add operation.
+	// To avoid possible deadlocks a different ReferenceQueue is required for this cache.
+	private static final ReferenceBundle weakBundle = ReferenceBundle.newWeakBundle();
 
 	private class EntryWithValue extends ManagedConcurrentMap.EntryWithValue<Class<?>,T>{
 

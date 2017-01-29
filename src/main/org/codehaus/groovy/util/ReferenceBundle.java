@@ -21,6 +21,9 @@ package org.codehaus.groovy.util;
 import java.lang.ref.ReferenceQueue;
 
 public class ReferenceBundle{
+
+    private static final int DEFAULT_IDLE_THRESHOLD = 500;
+
     private final ReferenceManager manager;
     private final ReferenceType type;
     public ReferenceBundle(ReferenceManager manager, ReferenceType type){
@@ -38,7 +41,7 @@ public class ReferenceBundle{
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
+        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, DEFAULT_IDLE_THRESHOLD);
         softReferences = new ReferenceBundle(manager, ReferenceType.SOFT);
         weakReferences = new ReferenceBundle(manager, ReferenceType.WEAK);
         phantomReferences = new ReferenceBundle(manager, ReferenceType.PHANTOM);
@@ -59,5 +62,16 @@ public class ReferenceBundle{
 
     public static ReferenceBundle getPhantomBundle() {
         return phantomReferences;
+    }
+
+    /**
+     * Returns a new Weak ReferenceBundle with a default idling threshold of 500 that
+     * is backed by a new ReferenceQueue.
+     */
+    public static ReferenceBundle newWeakBundle() {
+        ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
+        ReferenceManager callback = ReferenceManager.createCallBackedManager(queue);
+        ReferenceManager manager = ReferenceManager.createThresholdedIdlingManager(queue, callback, DEFAULT_IDLE_THRESHOLD);
+        return new ReferenceBundle(manager, ReferenceType.WEAK);
     }
 }

@@ -456,9 +456,10 @@ public class ClassInfo implements Finalizable {
     }
 
     private static class GlobalClassSet {
-    	
-    	private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
-    	
+        // New ReferenceBundle is used to avoid possible deadlocks with modifiedExpandos
+    	private final ManagedLinkedList<ClassInfo> items =
+                new ManagedLinkedList<ClassInfo>(ReferenceBundle.newWeakBundle());
+
     	public int size(){
 		return values().size();
     	}
