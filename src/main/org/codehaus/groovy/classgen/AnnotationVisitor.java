@@ -18,13 +18,26 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.util.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.Map;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -32,12 +45,12 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 /**
- * An Annotation visitor responsible with:
- * - reading annotation metadata (@Retention, @Target, attribute types)
- * - verify that an <code>AnnotationNode</code> conforms to annotation meta
- * - enhancing an <code>AnnotationNode</code> AST to reflect real annotation meta
- *
- * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
+ * An Annotation visitor responsible for:
+ * <ul>
+ * <li>reading annotation metadata (@Retention, @Target, attribute types)</li>
+ * <li>verify that an <code>AnnotationNode</code> conforms to annotation meta</li>
+ * <li>enhancing an <code>AnnotationNode</code> AST to reflect real annotation meta</li>
+ * </ul>
  */
 public class AnnotationVisitor {
     private SourceUnit source;
