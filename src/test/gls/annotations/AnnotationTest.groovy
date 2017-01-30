@@ -22,10 +22,6 @@ import gls.CompilableTestSupport
 
 /**
  * Tests various properties of annotation definitions.
- *
- * @author Jochen Theodorou
- * @author Guillaume Laforge
- * @author Paul King
  */
 class AnnotationTest extends CompilableTestSupport {
 
