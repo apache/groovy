@@ -135,8 +135,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.*;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
@@ -225,21 +223,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ModuleNode visitCompilationUnit(CompilationUnitContext ctx) {
         this.visit(ctx.packageDeclaration());
 
-        ctx.statement().stream()
-                .map(this::visit)
-//                .filter(e -> e instanceof Statement)
-                .forEach(e -> {
-                    if (e instanceof DeclarationListStatement) { // local variable declaration
-                        ((DeclarationListStatement) e).getDeclarationStatements().forEach(moduleNode::addStatement);
-                    } else if (e instanceof Statement) {
-                        moduleNode.addStatement((Statement) e);
-                    } else if (e instanceof MethodNode) { // script method
-                        moduleNode.addMethod((MethodNode) e);
-                    }
-                });
-
-        this.classNodeList.forEach(moduleNode::addClass);
-
+        for (StatementContext s : ctx.statement()) {
+            Object e = this.visit(s);
+            if (e instanceof DeclarationListStatement) { // local variable declaration
+                for (Statement ds : ((DeclarationListStatement) e).getDeclarationStatements()) {
+                    moduleNode.addStatement(ds);
+                }
+            } else if (e instanceof Statement) {
+                moduleNode.addStatement((Statement) e);
+            } else if (e instanceof MethodNode) { // script method
+                moduleNode.addMethod((MethodNode) e);
+            }
+        }
+        for (ClassNode cl : this.classNodeList) {
+            moduleNode.addClass(cl);
+        }
         if (this.isPackageInfoDeclaration()) {
             this.addPackageInfoClassNode();
         } else {
@@ -261,7 +259,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         PackageNode packageNode = moduleNode.getPackage();
 
-        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(packageNode::addAnnotation);
+        for (AnnotationNode e : this.visitAnnotationsOpt(ctx.annotationsOpt())) {
+            packageNode.addAnnotation(e);
+        }
 
         return this.configureAST(packageNode, ctx);
     }
@@ -286,15 +286,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 importNode = last(moduleNode.getStaticStarImports().values());
             } else { // e.g. import static java.lang.Math.pow
-                List<GroovyParserRuleContext> identifierList = new LinkedList<>(ctx.qualifiedName().qualifiedNameElement());
+                List<QualifiedNameElementContext> identifierList = new LinkedList<>(ctx.qualifiedName().qualifiedNameElement());
                 int identifierListSize = identifierList.size();
                 String name = identifierList.get(identifierListSize - 1).getText();
+                StringBuilder builder = new StringBuilder();
+                long limit = identifierListSize - 1;
+                for (GroovyParserRuleContext groovyParserRuleContext : identifierList) {
+                    if (limit-- == 0) break;
+                    String text = groovyParserRuleContext.getText();
+                    if (builder.length() > 0) {
+                        builder.append(DOT_STR);
+                    }
+                    builder.append(text);
+                }
                 ClassNode classNode =
                         ClassHelper.make(
-                                identifierList.stream()
-                                        .limit(identifierListSize - 1)
-                                        .map(ParseTree::getText)
-                                        .collect(Collectors.joining(DOT_STR)));
+                                builder.toString());
                 String alias = hasAlias
                         ? ctx.alias.getText()
                         : name;
@@ -398,7 +405,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
             closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
-            return new Pair<>(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
+            return new Pair<>(ForStatement.FOR_LOOP_DUMMY, (Expression)closureListExpression);
         }
 
         throw createParsingFailedException("Unsupported for control: " + ctx.getText(), ctx);
@@ -503,16 +510,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         this.visitFinallyBlock(ctx.finallyBlock()));
 
         if (asBoolean(ctx.resources())) {
-            this.visitResources(ctx.resources()).forEach(tryCatchStatement::addResource);
+            for (ExpressionStatement e : this.visitResources(ctx.resources())) {
+                tryCatchStatement.addResource(e);
+            }
         }
 
-        ctx.catchClause().stream().map(this::visitCatchClause)
-                .reduce(new LinkedList<CatchStatement>(), (r, e) -> {
-                    r.addAll(e); // merge several LinkedList<CatchStatement> instances into one LinkedList<CatchStatement> instance
-                    return r;
-                })
-                .forEach(tryCatchStatement::addCatch);
-
+        for (CatchClauseContext cc : ctx.catchClause()) {
+            List<CatchStatement> list = this.visitCatchClause(cc);
+            for (CatchStatement cs : list) {
+                tryCatchStatement.addCatch(cs);
+            }
+        }
         return this.configureAST(
                 tryWithResourcesASTTransformation.transform(
                         this.configureAST(tryCatchStatement, ctx)),
@@ -527,7 +535,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public List<ExpressionStatement> visitResourceList(ResourceListContext ctx) {
-        return ctx.resource().stream().map(this::visitResource).collect(Collectors.toList());
+        List<ExpressionStatement> list = new ArrayList<>();
+        for (ResourceContext resourceContext : ctx.resource()) {
+            ExpressionStatement expressionStatement = visitResource(resourceContext);
+            list.add(expressionStatement);
+        }
+        return list;
     }
 
     @Override
@@ -579,17 +592,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // FIXME Groovy will ignore variableModifier of parameter in the catch clause
         // In order to make the new parser behave same with the old one, we do not process variableModifier*
 
-        return this.visitCatchType(ctx.catchType()).stream()
-                .map(e -> this.configureAST(
-                        new CatchStatement(
-                                // FIXME The old parser does not set location info for the parameter of the catch clause.
-                                // we could make it better
-                                //this.configureAST(new Parameter(e, this.visitIdentifier(ctx.identifier())), ctx.Identifier()),
+        List<CatchStatement> list = new ArrayList<>();
+        for (ClassNode e : this.visitCatchType(ctx.catchType())) {
+            CatchStatement catchStatement = this.configureAST(
+                    new CatchStatement(
+                            // FIXME The old parser does not set location info for the parameter of the catch clause.
+                            // we could make it better
+                            //this.configureAST(new Parameter(e, this.visitIdentifier(ctx.identifier())), ctx.Identifier()),
 
-                                new Parameter(e, this.visitIdentifier(ctx.identifier())),
-                                this.visitBlock(ctx.block())),
-                        ctx.block()))
-                .collect(Collectors.toList());
+                            new Parameter(e, this.visitIdentifier(ctx.identifier())),
+                            this.visitBlock(ctx.block())),
+                    ctx.block());
+            list.add(catchStatement);
+        }
+        return list;
     }
 
     @Override
@@ -598,9 +614,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.singletonList(ClassHelper.OBJECT_TYPE);
         }
 
-        return ctx.qualifiedClassName().stream()
-                .map(this::visitQualifiedClassName)
-                .collect(Collectors.toList());
+        List<ClassNode> list = new ArrayList<>();
+        for (QualifiedClassNameContext qualifiedClassNameContext : ctx.qualifiedClassName()) {
+            ClassNode classNode = visitQualifiedClassName(qualifiedClassNameContext);
+            list.add(classNode);
+        }
+        return list;
     }
 
 
@@ -621,24 +640,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     public SwitchStatement visitSwitchStatement(SwitchStatementContext ctx) {
-        List<Statement> statementList =
-                ctx.switchBlockStatementGroup().stream()
-                        .map(this::visitSwitchBlockStatementGroup)
-                        .reduce(new LinkedList<>(), (r, e) -> {
-                            r.addAll(e);
-                            return r;
-                        });
+        List<Statement> statementList = new LinkedList<>();
+        for (SwitchBlockStatementGroupContext c : ctx.switchBlockStatementGroup()) {
+            statementList.addAll(this.visitSwitchBlockStatementGroup(c));
+        }
 
         List<CaseStatement> caseStatementList = new LinkedList<>();
         List<Statement> defaultStatementList = new LinkedList<>();
 
-        statementList.forEach(e -> {
+        for (Statement e : statementList) {
             if (e instanceof CaseStatement) {
                 caseStatementList.add((CaseStatement) e);
             } else if (isTrue(e, IS_SWITCH_DEFAULT)) {
                 defaultStatementList.add(e);
             }
-        });
+        }
 
         int defaultStatementListSize = defaultStatementList.size();
         if (defaultStatementListSize > 1) {
@@ -666,50 +682,46 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         int labelCnt = ctx.switchLabel().size();
         List<Token> firstLabelHolder = new ArrayList<>(1);
 
-        return (List<Statement>) ctx.switchLabel().stream()
-                .map(e -> (Object) this.visitSwitchLabel(e))
-                .reduce(new ArrayList<Statement>(4), (r, e) -> {
-                    List<Statement> statementList = (List<Statement>) r;
-                    Pair<Token, Expression> pair = (Pair<Token, Expression>) e;
+        List<Statement> statementList = new ArrayList<>(4);
+        for (SwitchLabelContext e : ctx.switchLabel()) {
+            Pair<Token, Expression> pair = this.visitSwitchLabel(e);
 
-                    boolean isLast = labelCnt - 1 == statementList.size();
+            boolean isLast = labelCnt - 1 == statementList.size();
 
-                    switch (pair.getKey().getType()) {
-                        case CASE: {
-                            if (!asBoolean(statementList)) {
-                                firstLabelHolder.add(pair.getKey());
-                            }
-
-                            statementList.add(
-                                    this.configureAST(
-                                            new CaseStatement(
-                                                    pair.getValue(),
-
-                                                    // check whether processing the last label. if yes, block statement should be attached.
-                                                    isLast ? this.visitBlockStatements(ctx.blockStatements())
-                                                            : EmptyStatement.INSTANCE
-                                            ),
-                                            firstLabelHolder.get(0)));
-
-                            break;
-                        }
-                        case DEFAULT: {
-
-                            BlockStatement blockStatement = this.visitBlockStatements(ctx.blockStatements());
-                            blockStatement.putNodeMetaData(IS_SWITCH_DEFAULT, true);
-
-                            statementList.add(
-                                    // this.configureAST(blockStatement, pair.getKey())
-                                    blockStatement
-                            );
-
-                            break;
-                        }
+            switch (pair.getKey().getType()) {
+                case CASE: {
+                    if (!asBoolean(statementList)) {
+                        firstLabelHolder.add(pair.getKey());
                     }
 
-                    return statementList;
-                });
+                    statementList.add(
+                            this.configureAST(
+                                    new CaseStatement(
+                                            pair.getValue(),
 
+                                            // check whether processing the last label. if yes, block statement should be attached.
+                                            isLast ? this.visitBlockStatements(ctx.blockStatements())
+                                                    : EmptyStatement.INSTANCE
+                                    ),
+                                    firstLabelHolder.get(0)));
+
+                    break;
+                }
+                case DEFAULT: {
+
+                    BlockStatement blockStatement = this.visitBlockStatements(ctx.blockStatements());
+                    blockStatement.putNodeMetaData(IS_SWITCH_DEFAULT, true);
+
+                    statementList.add(
+                            // this.configureAST(blockStatement, pair.getKey())
+                            blockStatement
+                    );
+
+                    break;
+                }
+            }
+        }
+        return statementList;
     }
 
     @Override
@@ -717,7 +729,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         if (asBoolean(ctx.CASE())) {
             return new Pair<>(ctx.CASE().getSymbol(), (Expression) this.visit(ctx.expression()));
         } else if (asBoolean(ctx.DEFAULT())) {
-            return new Pair<>(ctx.DEFAULT().getSymbol(), EmptyExpression.INSTANCE);
+            return new Pair<>(ctx.DEFAULT().getSymbol(), (Expression) EmptyExpression.INSTANCE);
         }
 
         throw createParsingFailedException("Unsupported switch label: " + ctx.getText(), ctx);
@@ -958,22 +970,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @SuppressWarnings({"unchecked"})
     private boolean containsDefaultMethods(ClassDeclarationContext ctx) {
-        List<MethodDeclarationContext> methodDeclarationContextList =
-                (List<MethodDeclarationContext>) ctx.classBody().classBodyDeclaration().stream()
-                .map(ClassBodyDeclarationContext::memberDeclaration)
-                .filter(Objects::nonNull)
-                .map(e -> (Object) e.methodDeclaration())
-                .filter(Objects::nonNull).reduce(new LinkedList<MethodDeclarationContext>(), (r, e) -> {
-                    MethodDeclarationContext methodDeclarationContext = (MethodDeclarationContext) e;
-
+        for (ClassBodyDeclarationContext c : ctx.classBody().classBodyDeclaration()) {
+            MemberDeclarationContext memberDeclarationContext = c.memberDeclaration();
+            if(memberDeclarationContext != null) {
+                MethodDeclarationContext methodDeclarationContext = memberDeclarationContext.methodDeclaration();
+                if (methodDeclarationContext != null) {
                     if (createModifierManager(methodDeclarationContext).contains(DEFAULT)) {
-                        ((List) r).add(methodDeclarationContext);
+                        return true;
                     }
-
-                    return r;
-        });
-
-        return !methodDeclarationContextList.isEmpty();
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -986,10 +994,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             this.visitEnumConstants(ctx.enumConstants());
         }
 
-        ctx.classBodyDeclaration().forEach(e -> {
+        for (ClassBodyDeclarationContext e : ctx.classBodyDeclaration()) {
             e.putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
             this.visitClassBodyDeclaration(e);
-        });
+        }
 
         return null;
     }
@@ -999,12 +1007,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
         Objects.requireNonNull(classNode, "classNode should not be null");
 
-        return ctx.enumConstant().stream()
-                .map(e -> {
-                    e.putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
-                    return this.visitEnumConstant(e);
-                })
-                .collect(Collectors.toList());
+        List<FieldNode> list = new LinkedList<>();
+        for (EnumConstantContext e : ctx.enumConstant()) {
+            e.putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
+            list.add(visitEnumConstant(e));
+        }
+        return list;
     }
 
     @Override
@@ -1024,7 +1032,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         this.visitIdentifier(ctx.identifier()),
                         createEnumConstantInitExpression(ctx.arguments(), anonymousInnerClassNode));
 
-        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(enumConstant::addAnnotation);
+        for (AnnotationNode a : this.visitAnnotationsOpt(ctx.annotationsOpt())) {
+            enumConstant.addAnnotation(a);
+        }
 
         groovydocManager.attachDocCommentAsMetaData(enumConstant, ctx);
 
@@ -1044,11 +1054,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             if (expression instanceof NamedArgumentListExpression) { // e.g. SOME_ENUM_CONSTANT(a: "1", b: "2")
                 List<MapEntryExpression> mapEntryExpressionList = ((NamedArgumentListExpression) expression).getMapEntryExpressions();
+                List<Expression> list = new ArrayList<>();
+                for (MapEntryExpression e : mapEntryExpressionList) {
+                    Expression e1 = (Expression) e;
+                    list.add(e1);
+                }
                 ListExpression listExpression =
                         new ListExpression(
-                                mapEntryExpressionList.stream()
-                                        .map(e -> (Expression) e)
-                                        .collect(Collectors.toList()));
+                                list);
 
                 if (asBoolean(anonymousInnerClassNode)) {
                     listExpression.addExpression(
@@ -1146,9 +1159,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return null;
         }
 
-        return ctx.typeParameter().stream()
-                .map(this::visitTypeParameter)
-                .toArray(GenericsType[]::new);
+        List<GenericsType> list = new ArrayList<>();
+        for (TypeParameterContext typeParameterContext : ctx.typeParameter()) {
+            GenericsType genericsType = visitTypeParameter(typeParameterContext);
+            list.add(genericsType);
+        }
+        return list.toArray(new GenericsType[0]);
     }
 
     @Override
@@ -1168,9 +1184,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return null;
         }
 
-        return ctx.type().stream()
-                .map(this::visitType)
-                .toArray(ClassNode[]::new);
+        List<ClassNode> list = new ArrayList<>();
+        for (TypeContext typeContext : ctx.type()) {
+            ClassNode classNode = visitType(typeContext);
+            list.add(classNode);
+        }
+        return list.toArray(new ClassNode[0]);
     }
 
     @Override
@@ -1225,7 +1244,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
         ClassNode[] exceptions = this.visitQualifiedClassNameList(ctx.qualifiedClassNameList());
 
-        anonymousInnerClassesDefinedInMethodStack.push(new LinkedList<>());
+        anonymousInnerClassesDefinedInMethodStack.push(new LinkedList<InnerClassNode>());
         Statement code = this.visitMethodBody(ctx.methodBody());
         List<InnerClassNode> anonymousInnerClassList = anonymousInnerClassesDefinedInMethodStack.pop();
 
@@ -1237,7 +1256,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         } else { // script method declaration
             methodNode = createScriptMethodNode(modifierManager, methodName, returnType, parameters, exceptions, code);
         }
-        anonymousInnerClassList.forEach(e -> e.setEnclosingMethod(methodNode));
+        for (InnerClassNode e : anonymousInnerClassList) {
+            e.setEnclosingMethod(methodNode);
+        }
 
         methodNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
         methodNode.setSyntheticPublic(
@@ -1248,7 +1269,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         modifierManager));
 
         if (modifierManager.contains(STATIC)) {
-            Arrays.stream(methodNode.getParameters()).forEach(e -> e.setInStaticContext(true));
+            for (Parameter e : methodNode.getParameters()) {
+                e.setInStaticContext(true);
+            }
             methodNode.getVariableScope().setInStaticContext(true);
         }
 
@@ -1406,15 +1429,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             throw createParsingFailedException("keyword def is required to declare tuple, e.g. def (int a, int b) = [1, 2]", ctx);
         }
 
+        List<Expression> list = new ArrayList<>();
+        for (Expression e : this.visitTypeNamePairs(ctx.typeNamePairs())) {
+            modifierManager.processVariableExpression((VariableExpression) e);
+            list.add(e);
+        }
         return this.configureAST(
                 new DeclarationListStatement(
                         this.configureAST(
                                 modifierManager.attachAnnotations(
                                         new DeclarationExpression(
                                                 new ArgumentListExpression(
-                                                        this.visitTypeNamePairs(ctx.typeNamePairs()).stream()
-                                                                .peek(e -> modifierManager.processVariableExpression((VariableExpression) e))
-                                                                .collect(Collectors.toList())
+                                                        list
                                                 ),
                                                 this.createGroovyTokenByType(ctx.ASSIGN().getSymbol(), Types.ASSIGN),
                                                 this.visitVariableInitializer(ctx.variableInitializer())
@@ -1446,12 +1472,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return createFieldDeclarationListStatement(ctx, modifierManager, variableType, declarationExpressionList, classNode);
         }
 
-        declarationExpressionList.forEach(e -> {
+        for (DeclarationExpression e : declarationExpressionList) {
             VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
 
             modifierManager.processVariableExpression(variableExpression);
             modifierManager.attachAnnotations(e);
-        });
+        }
 
         int size = declarationExpressionList.size();
         if (size > 0) {
@@ -1470,7 +1496,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
-        declarationExpressionList.forEach(e -> {
+        for (DeclarationExpression e : declarationExpressionList) {
             VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
 
             int modifiers = modifierManager.getClassMemberModifiersOpValue();
@@ -1520,14 +1546,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 this.configureAST(propertyNode, ctx);
             }
 
-        });
+        }
 
         return null;
     }
 
     @Override
     public List<Expression> visitTypeNamePairs(TypeNamePairsContext ctx) {
-        return ctx.typeNamePair().stream().map(this::visitTypeNamePair).collect(Collectors.toList());
+        List<Expression> list = new ArrayList<>();
+        for (TypeNamePairContext typeNamePairContext : ctx.typeNamePair()) {
+            VariableExpression variableExpression = visitTypeNamePair(typeNamePairContext);
+            list.add(variableExpression);
+        }
+        return list;
     }
 
     @Override
@@ -1544,13 +1575,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ClassNode variableType = ctx.getNodeMetaData(VARIABLE_DECLARATION_VARIABLE_TYPE);
         Objects.requireNonNull(variableType, "variableType should not be null");
 
-        return ctx.variableDeclarator().stream()
-                .map(e -> {
-                    e.putNodeMetaData(VARIABLE_DECLARATION_VARIABLE_TYPE, variableType);
-                    return this.visitVariableDeclarator(e);
-//                    return this.configureAST(this.visitVariableDeclarator(e), ctx);
-                })
-                .collect(Collectors.toList());
+        List<DeclarationExpression> list = new LinkedList<>();
+        for (VariableDeclaratorContext e : ctx.variableDeclarator()) {
+            e.putNodeMetaData(VARIABLE_DECLARATION_VARIABLE_TYPE, variableType);
+            list.add(this.visitVariableDeclarator(e));
+            }
+            return list;
     }
 
     @Override
@@ -1603,9 +1633,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.emptyList();
         }
 
-        return ctx.variableInitializer().stream()
-                        .map(this::visitVariableInitializer)
-                        .collect(Collectors.toList());
+        List<Expression> list = new ArrayList<>();
+        for (VariableInitializerContext variableInitializerContext : ctx.variableInitializer()) {
+            Expression expression = visitVariableInitializer(variableInitializerContext);
+            list.add(expression);
+        }
+        return list;
     }
 
     @Override
@@ -1687,18 +1720,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return this.configureAST(methodCallExpression, ctx);
         }
 
-        return this.configureAST(
-                (Expression) ctx.commandArgument().stream()
-                        .map(e -> (Object) e)
-                        .reduce(methodCallExpression,
-                                (r, e) -> {
-                                    CommandArgumentContext commandArgumentContext = (CommandArgumentContext) e;
-                                    commandArgumentContext.putNodeMetaData(CMD_EXPRESSION_BASE_EXPR, r);
+        Expression r = methodCallExpression;
+        for (CommandArgumentContext commandArgumentContext : ctx.commandArgument()) {
+            commandArgumentContext.putNodeMetaData(CMD_EXPRESSION_BASE_EXPR, r);
+            r = this.visitCommandArgument(commandArgumentContext);
+        }
 
-                                    return this.visitCommandArgument(commandArgumentContext);
-                                }
-                        ),
-                ctx);
+        return this.configureAST(r, ctx);
     }
 
     @Override
@@ -1852,22 +1880,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     right = mapEntryExpression;
                 }
             } else {
-                ListExpression listExpression =
-                        this.configureAST(
-                                new ListExpression(
-                                        mapEntryExpressionList.stream()
-                                                .map(
-                                                        e -> {
-                                                            if (e.getKeyExpression() instanceof SpreadMapExpression) {
-                                                                return e.getKeyExpression();
-                                                            }
-
-                                                            return e;
-                                                        }
-                                                )
-                                                .collect(Collectors.toList())),
-                                ctx.namedPropertyArgs()
-                        );
+                List<Expression> list = new LinkedList<>();
+                for (MapEntryExpression e : mapEntryExpressionList) {
+                    list.add(e.getKeyExpression() instanceof SpreadMapExpression ?
+                            e.getKeyExpression() : e);
+                }
+                ListExpression listExpression = this.configureAST(new ListExpression(list), ctx.namedPropertyArgs());
                 listExpression.setWrapped(true);
                 right = listExpression;
             }
@@ -1995,16 +2013,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     NamedArgumentListExpression namedArgumentListExpression = (NamedArgumentListExpression) tupleExpression.getExpression(0);
 
                     if (asBoolean(tupleExpression.getExpressions())) {
+                        List<Expression> list = new ArrayList<>();
+                        for (Expression expression : Arrays.asList(
+                                this.configureAST(
+                                        new MapExpression(namedArgumentListExpression.getMapEntryExpressions()),
+                                        namedArgumentListExpression
+                                ),
+                                closureExpression
+                        )) {
+                            list.add(expression);
+                        }
                         methodCallExpression.setArguments(
                                 this.configureAST(
                                         new ArgumentListExpression(
-                                                Stream.of(
-                                                        this.configureAST(
-                                                                new MapExpression(namedArgumentListExpression.getMapEntryExpressions()),
-                                                                namedArgumentListExpression
-                                                        ),
-                                                        closureExpression
-                                                ).collect(Collectors.toList())
+                                                list
                                         ),
                                         tupleExpression
                                 )
@@ -2083,9 +2105,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return null;
         }
 
-        return Arrays.stream(this.visitTypeList(ctx.typeList()))
-                .map(this::createGenericsType)
-                .toArray(GenericsType[]::new);
+        List<GenericsType> list = new ArrayList<>();
+        for (ClassNode classNode : this.visitTypeList(ctx.typeList())) {
+            GenericsType genericsType = createGenericsType(classNode);
+            list.add(genericsType);
+        }
+        return list.toArray(new GenericsType[0]);
     }
 
     @Override
@@ -2094,9 +2119,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return new ClassNode[0];
         }
 
-        return ctx.type().stream()
-                .map(this::visitType)
-                .toArray(ClassNode[]::new);
+        List<ClassNode> list = new ArrayList<>();
+        for (TypeContext typeContext : ctx.type()) {
+            ClassNode classNode = visitType(typeContext);
+            list.add(classNode);
+        }
+        return list.toArray(new ClassNode[0]);
     }
 
     @Override
@@ -2117,17 +2145,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<Expression> expressionList = new LinkedList<>();
         List<MapEntryExpression> mapEntryExpressionList = new LinkedList<>();
 
-        ctx.enhancedArgumentListElement().stream()
-                .map(this::visitEnhancedArgumentListElement)
-                .forEach(e -> {
-
-                    if (e instanceof MapEntryExpression) {
-                        mapEntryExpressionList.add((MapEntryExpression) e);
-                    } else {
-                        expressionList.add(e);
-                    }
-                });
-
+        for (EnhancedArgumentListElementContext c : ctx.enhancedArgumentListElement()) {
+            Expression e = visitEnhancedArgumentListElement(c);
+            if (e instanceof MapEntryExpression) {
+                mapEntryExpressionList.add((MapEntryExpression) e);
+            } else {
+                expressionList.add(e);
+            }
+        }
         if (!asBoolean(mapEntryExpressionList)) { // e.g. arguments like  1, 2 OR  someArg, e -> e
             return this.configureAST(
                     new ArgumentListExpression(expressionList),
@@ -2229,7 +2254,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ListExpression listExpression = new ListExpression(expressionList);
         listExpression.setWrapped(true);
 
-        return new Pair<>(ctx.LBRACK().getSymbol(), this.configureAST(listExpression, ctx));
+        return new Pair<>(ctx.LBRACK().getSymbol(), (Expression) this.configureAST(listExpression, ctx));
     }
 
     @Override
@@ -2673,20 +2698,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 Expression[] empties;
                 if (asBoolean(ctx.b)) {
                     empties = new Expression[ctx.b.size()];
-                    Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
+                    for (int i = 0; i < empties.length; ++i) {
+                        empties[i] = ConstantExpression.EMPTY_EXPRESSION;
+                    }
                 } else {
                     empties = new Expression[0];
                 }
 
+                List<Expression> sizes = new LinkedList<>();
+                for (ExpressionContext e : ctx.expression()) {
+                    sizes.add((Expression)this.visit(e));
+                }
+                for (Expression e : empties) {
+                    sizes.add(e);
+                }
                 return this.configureAST(
                         new ArrayExpression(
                                 classNode,
                                 null,
-                                Stream.concat(
-                                        ctx.expression().stream()
-                                                .map(e -> (Expression) this.visit(e)),
-                                        Arrays.stream(empties)
-                                ).collect(Collectors.toList())),
+                                sizes),
                         ctx);
             }
         }
@@ -2778,9 +2808,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.emptyList();
         }
 
-        return mapEntryContextList.stream()
-                .map(this::visitMapEntry)
-                .collect(Collectors.toList());
+        List<MapEntryExpression> list = new ArrayList<>();
+        for (MapEntryContext mapEntryContext : mapEntryContextList) {
+            MapEntryExpression mapEntryExpression = visitMapEntry(mapEntryContext);
+            list.add(mapEntryExpression);
+        }
+        return list;
     }
 
     @Override
@@ -2871,9 +2904,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.emptyList();
         }
 
-        return expressionListElementContextList.stream()
-                .map(this::visitExpressionListElement)
-                .collect(Collectors.toList());
+        List<Expression> list = new ArrayList<>();
+        for (ExpressionListElementContext expressionListElementContext : expressionListElementContextList) {
+            Expression expression = visitExpressionListElement(expressionListElementContext);
+            list.add(expression);
+        }
+        return list;
     }
 
     @Override
@@ -2962,17 +2998,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             strings.add(this.configureAST(new ConstantExpression(it), ctx.GStringBegin()));
         }
 
-        List<ConstantExpression> partStrings =
-                ctx.GStringPart().stream()
-                        .map(e -> {
-                            String it = e.getText();
+        List<ConstantExpression> partStrings = new LinkedList<>();
+        for (TerminalNode e : ctx.GStringPart()) {
+            String it = e.getText();
 
-                            it = StringUtils.removeCR(it);
-                            it = StringUtils.replaceEscapes(it, slashyType);
-                            it = it.length() == 1 ? "" : StringGroovyMethods.getAt(it, new IntRange(true, 0, -2));
+            it = StringUtils.removeCR(it);
+            it = StringUtils.replaceEscapes(it, slashyType);
+            it = it.length() == 1 ? "" : StringGroovyMethods.getAt(it, new IntRange(true, 0, -2));
 
-                            return this.configureAST(new ConstantExpression(it), e);
-                        }).collect(Collectors.toList());
+            partStrings.add(this.configureAST(new ConstantExpression(it), e));
+        }
         strings.addAll(partStrings);
 
         {
@@ -2995,23 +3030,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             strings.add(this.configureAST(new ConstantExpression(it), ctx.GStringEnd()));
         }
 
-        List<Expression> values = ctx.gstringValue().stream()
-                .map(e -> {
-                    Expression expression = this.visitGstringValue(e);
+        List<Expression> values = new LinkedList<>();
+        for (GstringValueContext e : ctx.gstringValue()) {
+            Expression expression = this.visitGstringValue(e);
 
-                    if (expression instanceof ClosureExpression && !asBoolean(e.closure().ARROW())) {
-                        List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
+            if (expression instanceof ClosureExpression && !asBoolean(e.closure().ARROW())) {
+                List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
 
-                        if (statementList.stream().allMatch(x -> !asBoolean(x))) {
-                            return this.configureAST(new ConstantExpression(null), e);
-                        }
-
-                        return this.configureAST(new MethodCallExpression(expression, CALL_STR, new ArgumentListExpression()), e);
+                // Java 8: if (statementList.stream().allMatch(x -> !asBoolean(x))) {
+                boolean allFalse = true;
+                for (Statement x : statementList) {
+                    if (asBoolean(x)) {
+                        allFalse = false;
+                        break;
                     }
-
-                    return expression;
-                })
-                .collect(Collectors.toList());
+                }
+                if (allFalse) {
+                    values.add(this.configureAST(new ConstantExpression(null), e));
+                } else {
+                    values.add(this.configureAST(new MethodCallExpression(expression, CALL_STR, new ArgumentListExpression()), e));
+                }
+            } else {
+                values.add(expression);
+            }
+        }
 
         StringBuilder verbatimText = new StringBuilder(ctx.getText().length());
         for (int i = 0, n = strings.size(), s = values.size(); i < n; i++) {
@@ -3059,9 +3101,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         VariableExpression variableExpression = new VariableExpression(this.visitIdentifier(ctx.identifier()));
 
         if (asBoolean(ctx.GStringPathPart())) {
-            Expression propertyExpression = ctx.GStringPathPart().stream()
-                    .map(e -> this.configureAST((Expression) new ConstantExpression(e.getText().substring(1)), e))
-                    .reduce(this.configureAST(variableExpression, ctx.identifier()), (r, e) -> this.configureAST(new PropertyExpression(r, e), e));
+            Expression propertyExpression = this.configureAST(variableExpression, ctx.identifier());
+            for (TerminalNode e : ctx.GStringPathPart()) {
+                Expression expression = this.configureAST((Expression) new ConstantExpression(e.getText().substring(1)), e);
+                propertyExpression = this.configureAST(new PropertyExpression(propertyExpression, expression), expression);
+            }
 
             return this.configureAST(propertyExpression, ctx);
         }
@@ -3150,10 +3194,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<Parameter> parameterList = new LinkedList<>();
 
         if (asBoolean(ctx.formalParameter())) {
+            List<Parameter> list = new ArrayList<>();
+            for (FormalParameterContext formalParameterContext : ctx.formalParameter()) {
+                Parameter parameter = visitFormalParameter(formalParameterContext);
+                list.add(parameter);
+            }
             parameterList.addAll(
-                    ctx.formalParameter().stream()
-                            .map(this::visitFormalParameter)
-                            .collect(Collectors.toList()));
+                    list);
         }
 
         if (asBoolean(ctx.lastFormalParameter())) {
@@ -3184,9 +3231,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public List<ModifierNode> visitClassOrInterfaceModifiers(ClassOrInterfaceModifiersContext ctx) {
-        return ctx.classOrInterfaceModifier().stream()
-                .map(this::visitClassOrInterfaceModifier)
-                .collect(Collectors.toList());
+        List<ModifierNode> list = new ArrayList<>();
+        for (ClassOrInterfaceModifierContext classOrInterfaceModifierContext : ctx.classOrInterfaceModifier()) {
+            ModifierNode modifierNode = visitClassOrInterfaceModifier(classOrInterfaceModifierContext);
+            list.add(modifierNode);
+        }
+        return list;
     }
 
 
@@ -3218,9 +3268,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public List<ModifierNode> visitModifiers(ModifiersContext ctx) {
-        return ctx.modifier().stream()
-                .map(this::visitModifier)
-                .collect(Collectors.toList());
+        List<ModifierNode> list = new ArrayList<>();
+        for (ModifierContext modifierContext : ctx.modifier()) {
+            ModifierNode modifierNode = visitModifier(modifierContext);
+            list.add(modifierNode);
+        }
+        return list;
     }
 
     @Override
@@ -3257,9 +3310,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public List<ModifierNode> visitVariableModifiers(VariableModifiersContext ctx) {
-        return ctx.variableModifier().stream()
-                .map(this::visitVariableModifier)
-                .collect(Collectors.toList());
+        List<ModifierNode> list = new ArrayList<>();
+        for (VariableModifierContext variableModifierContext : ctx.variableModifier()) {
+            ModifierNode modifierNode = visitVariableModifier(variableModifierContext);
+            list.add(modifierNode);
+        }
+        return list;
     }
 
 
@@ -3333,7 +3389,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public GenericsType[] visitTypeArguments(TypeArgumentsContext ctx) {
-        return ctx.typeArgument().stream().map(this::visitTypeArgument).toArray(GenericsType[]::new);
+        List<GenericsType> list = new ArrayList<>();
+        for (TypeArgumentContext typeArgumentContext : ctx.typeArgument()) {
+            GenericsType genericsType = visitTypeArgument(typeArgumentContext);
+            list.add(genericsType);
+        }
+        return list.toArray(new GenericsType[0]);
     }
 
     @Override
@@ -3387,11 +3448,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public TupleExpression visitVariableNames(VariableNamesContext ctx) {
+        List<Expression> list = new ArrayList<>();
+        for (VariableDeclaratorIdContext variableDeclaratorIdContext : ctx.variableDeclaratorId()) {
+            VariableExpression variableExpression = visitVariableDeclaratorId(variableDeclaratorIdContext);
+            list.add(variableExpression);
+        }
         return this.configureAST(
                 new TupleExpression(
-                        ctx.variableDeclaratorId().stream()
-                                .map(this::visitVariableDeclaratorId)
-                                .collect(Collectors.toList())
+                        list
                 ),
                 ctx);
     }
@@ -3407,10 +3471,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public BlockStatement visitBlockStatements(BlockStatementsContext ctx) {
+        List<Statement> list = new ArrayList<>();
+        for (BlockStatementContext blockStatementContext : ctx.blockStatement()) {
+            Statement statement = visitBlockStatement(blockStatementContext);
+            list.add(statement);
+        }
         return this.configureAST(
                 this.createBlockStatement(
-                        ctx.blockStatement().stream()
-                                .map(this::visitBlockStatement).collect(Collectors.toList())),
+                        list),
                 ctx);
     }
 
@@ -3434,9 +3502,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.emptyList();
         }
 
-        return ctx.annotation().stream()
-                .map(this::visitAnnotation)
-                .collect(Collectors.toList());
+        List<AnnotationNode> list = new LinkedList<>();
+        for (AnnotationContext c : ctx.annotation()) {
+            list.add(this.visitAnnotation(c));
+        }
+        return list;
     }
 
     @Override
@@ -3445,7 +3515,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         AnnotationNode annotationNode = new AnnotationNode(ClassHelper.make(annotationName));
         List<Pair<String, Expression>> annotationElementValues = this.visitElementValues(ctx.elementValues());
 
-        annotationElementValues.forEach(e -> annotationNode.addMember(e.getKey(), e.getValue()));
+        for (Pair<String, Expression> e : annotationElementValues) {
+            annotationNode.addMember(e.getKey(), e.getValue());
+        }
 
         return this.configureAST(annotationNode, ctx);
     }
@@ -3459,9 +3531,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<Pair<String, Expression>> annotationElementValues = new LinkedList<>();
 
         if (asBoolean(ctx.elementValuePairs())) {
-            this.visitElementValuePairs(ctx.elementValuePairs()).entrySet().forEach(e -> {
+            for (Map.Entry<String, Expression> e : this.visitElementValuePairs(ctx.elementValuePairs()).entrySet()) {
                 annotationElementValues.add(new Pair<>(e.getKey(), e.getValue()));
-            });
+            }
         } else if (asBoolean(ctx.elementValue())) {
             annotationElementValues.add(new Pair<>(VALUE_STR, this.visitElementValue(ctx.elementValue())));
         }
@@ -3477,16 +3549,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Map<String, Expression> visitElementValuePairs(ElementValuePairsContext ctx) {
-        return ctx.elementValuePair().stream()
-                .map(this::visitElementValuePair)
-                .collect(Collectors.toMap(
-                        Pair::getKey,
-                        Pair::getValue,
-                        (k, v) -> {
-                            throw new IllegalStateException(String.format("Duplicate key %s", k));
-                        },
-                        LinkedHashMap::new
-                ));
+        LinkedHashMap<String, Expression> map = new LinkedHashMap<>();
+        for (ElementValuePairContext elementValuePairContext : ctx.elementValuePair()) {
+            Pair<String, Expression> stringExpressionPair = visitElementValuePair(elementValuePairContext);
+            if (map.containsKey(stringExpressionPair.getKey())) {
+                throw new IllegalStateException(String.format("Duplicate key %s", stringExpressionPair.getKey()));
+            } else{
+                map.put(stringExpressionPair.getKey(), stringExpressionPair.getValue());
+            }
+        }
+        return map;
     }
 
     @Override
@@ -3513,7 +3585,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ListExpression visitElementValueArrayInitializer(ElementValueArrayInitializerContext ctx) {
-        return this.configureAST(new ListExpression(ctx.elementValue().stream().map(this::visitElementValue).collect(Collectors.toList())), ctx);
+        List<Expression> list = new ArrayList<>();
+        for (ElementValueContext elementValueContext : ctx.elementValue()) {
+            Expression expression = visitElementValue(elementValueContext);
+            list.add(expression);
+        }
+        return this.configureAST(new ListExpression(list), ctx);
     }
 
     @Override
@@ -3541,9 +3618,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public String visitQualifiedName(QualifiedNameContext ctx) {
-        return ctx.qualifiedNameElement().stream()
-                .map(ParseTree::getText)
-                .collect(Collectors.joining(DOT_STR));
+        StringBuilder builder = new StringBuilder();
+        for (QualifiedNameElementContext qualifiedNameElementContext : ctx.qualifiedNameElement()) {
+            String text = qualifiedNameElementContext.getText();
+            if (builder.length() > 0) {
+                builder.append(DOT_STR);
+            }
+            builder.append(text);
+        }
+        return builder.toString();
     }
 
     @Override
@@ -3552,9 +3635,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return new ClassNode[0];
         }
 
-        return ctx.qualifiedClassName().stream()
-                .map(this::visitQualifiedClassName)
-                .toArray(ClassNode[]::new);
+        List<ClassNode> list = new ArrayList<>();
+        for (QualifiedClassNameContext qualifiedClassNameContext : ctx.qualifiedClassName()) {
+            ClassNode classNode = visitQualifiedClassName(qualifiedClassNameContext);
+            list.add(classNode);
+        }
+        return list.toArray(new ClassNode[0]);
     }
 
     @Override
@@ -3625,7 +3711,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         // if the generics types meta data is not empty, it is a generic method call, e.g. obj.<Integer>a(1, 2)
-        methodCallExpression.setGenericsTypes(
+        methodCallExpression.setGenericsTypes( (GenericsType[])
                 propertyExpression.getNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES));
 
         return methodCallExpression;
@@ -3676,17 +3762,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private Expression createPathExpression(Expression primaryExpr, List<? extends PathElementContext> pathElementContextList) {
-        return (Expression) pathElementContextList.stream()
-                .map(e -> (Object) e)
-                .reduce(primaryExpr,
-                        (r, e) -> {
-                            PathElementContext pathElementContext = (PathElementContext) e;
-
-                            pathElementContext.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR, r);
-
-                            return this.visitPathElement(pathElementContext);
-                        }
-                );
+        Expression expr = primaryExpr;
+        for (PathElementContext pathElementContext : pathElementContextList) {
+            pathElementContext.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR, expr);
+            expr = this.visitPathElement(pathElementContext);
+        }
+        return expr;
     }
 
     private GenericsType createGenericsType(ClassNode classNode) {
@@ -3732,18 +3813,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private BlockStatement appendStatementsToBlockStatement(BlockStatement bs, List<Statement> statementList) {
-        return (BlockStatement) statementList.stream()
-                .reduce(bs, (r, e) -> {
-                    BlockStatement blockStatement = (BlockStatement) r;
-
-                    if (e instanceof DeclarationListStatement) {
-                        ((DeclarationListStatement) e).getDeclarationStatements().forEach(blockStatement::addStatement);
-                    } else {
-                        blockStatement.addStatement(e);
-                    }
-
-                    return blockStatement;
-                });
+        for (Statement e : statementList) {
+            if (e instanceof DeclarationListStatement) {
+                for (ExpressionStatement s : ((DeclarationListStatement) e).getDeclarationStatements()) {
+                    bs.addStatement(s);
+                }
+            } else {
+                bs.addStatement(e);
+            }
+        }
+        return bs;
     }
 
     private boolean isAnnotationDeclaration(ClassNode classNode) {
@@ -4115,33 +4194,40 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         public DeclarationListStatement(List<DeclarationExpression> declarations) {
+            List<ExpressionStatement> list = new ArrayList<>();
+            for (DeclarationExpression e : declarations) {
+                ExpressionStatement expressionStatement = configureAST(new ExpressionStatement(e), e);
+                list.add(expressionStatement);
+            }
             this.declarationStatements =
-                    declarations.stream()
-                            .map(e -> configureAST(new ExpressionStatement(e), e))
-                            .collect(Collectors.toList());
+                    list;
         }
 
         public List<ExpressionStatement> getDeclarationStatements() {
             List<String> declarationListStatementLabels = this.getStatementLabels();
 
-            this.declarationStatements.forEach(e -> {
+            for (ExpressionStatement e: this.declarationStatements) {
                 if (asBoolean((Object) declarationListStatementLabels)) {
                     // clear existing statement labels before setting labels
                     if (asBoolean((Object) e.getStatementLabels())) {
                         e.getStatementLabels().clear();
                     }
-
-                    declarationListStatementLabels.forEach(e::addStatementLabel);
+                    for (String s : declarationListStatementLabels) {
+                        e.addStatementLabel(s);
+                    }
                 }
-            });
+            }
 
             return this.declarationStatements;
         }
 
         public List<DeclarationExpression> getDeclarationExpressions() {
-            return this.declarationStatements.stream()
-                    .map(e -> (DeclarationExpression) e.getExpression())
-                    .collect(Collectors.toList());
+            List<DeclarationExpression> list = new ArrayList<>();
+            for (ExpressionStatement e : this.declarationStatements) {
+                DeclarationExpression expression = (DeclarationExpression) e.getExpression();
+                list.add(expression);
+            }
+            return list;
         }
     }
 
@@ -4196,7 +4282,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         public ModifierManager(List<ModifierNode> modifierNodeList) {
             this.validate(modifierNodeList);
-            this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.emptyList());
+            this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.<ModifierNode>emptyList());
         }
 
         private void validate(List<ModifierNode> modifierNodeList) {
@@ -4250,64 +4336,90 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         public List<AnnotationNode> getAnnotations() {
-            return modifierNodeList.stream()
-                    .filter(ModifierNode::isAnnotation)
-                    .map(ModifierNode::getAnnotationNode)
-                    .collect(Collectors.toList());
+            List<AnnotationNode> list = new ArrayList<>();
+            for (ModifierNode modifierNode : modifierNodeList) {
+                if (modifierNode.isAnnotation()) {
+                    AnnotationNode annotationNode = modifierNode.getAnnotationNode();
+                    list.add(annotationNode);
+                }
+            }
+            return list;
         }
 
         public boolean contains(int modifierType) {
-            return modifierNodeList.stream().anyMatch(e -> modifierType == e.getType());
+            for (ModifierNode e : modifierNodeList) {
+                if (modifierType == e.getType()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public boolean containsAnnotations() {
-            return modifierNodeList.stream().anyMatch(ModifierNode::isAnnotation);
+            for (ModifierNode modifierNode : modifierNodeList) {
+                if (modifierNode.isAnnotation()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public boolean containsVisibilityModifier() {
-            return modifierNodeList.stream().anyMatch(ModifierNode::isVisibilityModifier);
+            for (ModifierNode modifierNode : modifierNodeList) {
+                if (modifierNode.isVisibilityModifier()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public boolean containsNonVisibilityModifier() {
-            return modifierNodeList.stream().anyMatch(ModifierNode::isNonVisibilityModifier);
+            for (ModifierNode modifierNode : modifierNodeList) {
+                if (modifierNode.isNonVisibilityModifier()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public Parameter processParameter(Parameter parameter) {
-            modifierNodeList.forEach(e -> {
+            for (ModifierNode e : modifierNodeList) {
                 parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
 
                 if (e.isAnnotation()) {
                     parameter.addAnnotation(e.getAnnotationNode());
                 }
-            });
+            }
 
             return parameter;
         }
 
         public MethodNode processMethodNode(MethodNode mn) {
-            modifierNodeList.forEach(e -> {
+            for (ModifierNode e : modifierNodeList) {
                 mn.setModifiers(mn.getModifiers() | e.getOpcode());
 
                 if (e.isAnnotation()) {
                     mn.addAnnotation(e.getAnnotationNode());
                 }
-            });
+            }
 
             return mn;
         }
 
         public VariableExpression processVariableExpression(VariableExpression ve) {
-            modifierNodeList.forEach(e -> {
+            for (ModifierNode e : modifierNodeList) {
                 ve.setModifiers(ve.getModifiers() | e.getOpcode());
 
                 // local variable does not attach annotations
-            });
+            }
 
             return ve;
         }
 
         public <T extends AnnotatedNode> T attachAnnotations(T node) {
-            this.getAnnotations().forEach(node::addAnnotation);
+            for (AnnotationNode a : this.getAnnotations()) {
+                node.addAnnotation(a);
+            }
 
             return node;
         }

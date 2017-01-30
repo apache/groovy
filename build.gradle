@@ -78,8 +78,8 @@ allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
@@ -449,16 +449,16 @@ allprojects {
         tasks.withType(GroovyCompile) {
             logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
             groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
         }
         tasks.withType(JavaCompile) {
             if (project.name=='performance') {
                 sourceCompatibility = 1.8
                 targetCompatibility = 1.8
             } else {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
+                sourceCompatibility = 1.7
+                targetCompatibility = 1.7
             }
         }
         jar {
@@ -471,10 +471,10 @@ compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
 }
 
-// TODO superfluous to check for JDK8 for Gradle version 3.2+ but leave for future?
+// TODO superfluous to check for JDK7 for Gradle version 3.2+ but leave for future?
 task checkCompatibility {
     doLast {
-        assert JavaVersion.current().java8Compatible
+        assert JavaVersion.current().java7Compatible
     }
 }
 

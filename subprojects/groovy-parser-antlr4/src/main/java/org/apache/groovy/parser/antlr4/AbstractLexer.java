@@ -29,4 +29,24 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
     public AbstractLexer(CharStream input) {
         super(input);
     }
+
+    public void require(boolean condition, String msg, boolean toAttachPositionInfo) {
+        if (condition) {
+            return;
+        }
+
+        this.throwSyntaxError(msg, toAttachPositionInfo);
+    }
+    public void require(boolean condition, String msg) {
+        require(condition, msg, true);
+    }
+
+    public void throwSyntaxError(String msg, boolean toAttachPositionInfo) {
+        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? this.genPositionInfo() : ""), this.getSyntaxErrorSource());
+    }
+
+    public String formatPositionInfo(int line, int column) {
+        return " @ line " + line + ", column " + column;
+    }
+
 }

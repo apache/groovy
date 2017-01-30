@@ -141,11 +141,19 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - Lambda"() {
-        doRunAndTest('core/Lambda_01x.groovy');
+        if (Runtime.class.getPackage().getImplementationVersion().startsWith("1.7.")) {
+            doRunAndTest('core/Lambda_01x_1_7.groovy');
+        } else {
+            doRunAndTest('core/Lambda_01x.groovy');
+        }
     }
 
     void "test groovy core - MethodReference"() {
-        doRunAndTest('core/MethodReference_01x.groovy');
+        if (Runtime.class.getPackage().getImplementationVersion().startsWith("1.7.")) {
+            doRunAndTest('core/MethodReference_01x_1_7.groovy');
+        } else {
+            doRunAndTest('core/MethodReference_01x.groovy');
+        }
     }
 
     void "test groovy core - MethodPointer"() {
