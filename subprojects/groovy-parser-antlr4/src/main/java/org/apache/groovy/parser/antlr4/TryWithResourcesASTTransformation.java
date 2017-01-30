@@ -7,6 +7,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -115,8 +116,10 @@ public class TryWithResourcesASTTransformation {
                 new TryCatchStatement(
                         tryCatchStatement.getTryStatement(),
                         EmptyStatement.INSTANCE);
-        tryCatchStatement.getResourceStatements().forEach(newTryWithResourcesStatement::addResource);
 
+        for(ExpressionStatement e : tryCatchStatement.getResourceStatements()) {
+            newTryWithResourcesStatement.addResource(e);
+        }
 
         /*
          *   try {
@@ -132,8 +135,9 @@ public class TryWithResourcesASTTransformation {
                         astBuilder.createBlockStatement(this.transform(newTryWithResourcesStatement)),
                         tryCatchStatement.getFinallyStatement());
 
-        tryCatchStatement.getCatchStatements().forEach(newTryCatchStatement::addCatch);
-
+        for (CatchStatement s : tryCatchStatement.getCatchStatements()) {
+            newTryCatchStatement.addCatch(s);
+        }
         return newTryCatchStatement;
     }
 
@@ -203,7 +207,9 @@ public class TryWithResourcesASTTransformation {
         List<ExpressionStatement> resourceStatements = tryCatchStatement.getResourceStatements();
         // 2nd, 3rd, ..., n'th resources declared in resources
         List<ExpressionStatement> tailResourceStatements = resourceStatements.subList(1, resourceStatements.size());
-        tailResourceStatements.stream().forEach(newTryCatchStatement::addResource);
+        for(ExpressionStatement s: tailResourceStatements) {
+            newTryCatchStatement.addResource(s);
+        }
 
         newTryCatchStatement.addCatch(this.createCatchBlockForOuterNewTryCatchStatement(primaryExcName));
         astBuilder.appendStatementsToBlockStatement(blockStatement, this.transform(newTryCatchStatement));
@@ -342,7 +348,7 @@ public class TryWithResourcesASTTransformation {
                 new MethodCallExpression(
                         new VariableExpression(primaryExcName),
                         "addSuppressed",
-                        new ArgumentListExpression(Collections.singletonList(new VariableExpression(suppressedExcName))));
+                        new ArgumentListExpression(Collections.singletonList((Expression) new VariableExpression(suppressedExcName))));
         addSuppressedMethodCallExpression.setImplicitThis(false);
         addSuppressedMethodCallExpression.setSafe(true);
 

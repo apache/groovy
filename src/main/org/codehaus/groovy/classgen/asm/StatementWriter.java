@@ -152,7 +152,9 @@ public class StatementWriter {
 
     private void visitExpressionOfLoopStatement(Expression expression) {
         if (expression instanceof ClosureListExpression) {
-            ((ClosureListExpression) expression).getExpressions().forEach(this::visitExpressionOrStatement);
+            for (Expression e : ((ClosureListExpression) expression).getExpressions()) {
+                visitExpressionOrStatement(e);
+            }
         } else {
             visitExpressionOrStatement(expression);
         }
