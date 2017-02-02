@@ -105,6 +105,7 @@ public @interface Log {
             ArgumentListExpression args = new ArgumentListExpression();
             args.addExpression(logLevelExpression);
             MethodCallExpression condition = new MethodCallExpression(logVariable, "isLoggable", args);
+            condition.setImplicitThis(false);
 
             return new TernaryExpression(
                     new BooleanExpression(condition),
