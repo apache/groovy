@@ -101,6 +101,7 @@ public @interface Log4j {
                         "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1, methodName.length()) + "Enabled",
                         ArgumentListExpression.EMPTY_ARGUMENTS);
             }
+            condition.setImplicitThis(false);
 
             return new TernaryExpression(
                     new BooleanExpression(condition),
