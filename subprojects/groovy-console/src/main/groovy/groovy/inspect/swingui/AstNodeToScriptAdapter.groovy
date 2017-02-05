@@ -476,9 +476,22 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitBlockStatement(BlockStatement block) {
-        block?.statements?.each {
-            it.visit(this)
+        if (printStatementLabels(block)) {
+            print '{'
             printLineBreak()
+            indented {
+                block?.statements?.each {
+                    it.visit(this)
+                    printLineBreak()
+                }
+            }
+            print '}'
+            printLineBreak()
+        } else {
+            block?.statements?.each {
+                it.visit(this)
+                printLineBreak()
+            }
         }
         if (!_out.toString().endsWith('\n')) {
             printLineBreak()
@@ -487,7 +500,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitForLoop(ForStatement statement) {
-
+        printStatementLabels(statement)
         print 'for ('
         if (statement?.variable != ForStatement.FOR_LOOP_DUMMY) {
             visitParameters([statement.variable])
@@ -510,6 +523,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitIfElse(IfStatement ifElse) {
+        printStatementLabels(ifElse)
         print 'if ('
         ifElse?.booleanExpression?.visit this
         print ') {'
@@ -545,6 +559,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitSwitch(SwitchStatement statement) {
+        printStatementLabels(statement)
         print 'switch ('
         statement?.expression?.visit this
         print ') {'
@@ -577,12 +592,18 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     void visitBreakStatement(BreakStatement statement) {
         print 'break'
+        if (statement.label) {
+            print ' ' + statement.label
+        }
         printLineBreak()
     }
 
     @Override
     void visitContinueStatement(ContinueStatement statement) {
         print 'continue'
+        if (statement.label) {
+            print ' ' + statement.label
+        }
         printLineBreak()
     }
 
@@ -878,6 +899,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitTryCatchFinally(TryCatchStatement statement) {
+        printStatementLabels(statement)
         print 'try {'
         printLineBreak()
         indented {
@@ -907,6 +929,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitSynchronizedStatement(SynchronizedStatement statement) {
+        printStatementLabels(statement)
         print 'synchronized ('
         statement?.expression?.visit this
         print ') {'
@@ -938,6 +961,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitWhileLoop(WhileStatement statement) {
+        printStatementLabels(statement)
         print 'while ('
         statement?.booleanExpression?.visit this
         print ') {'
@@ -952,6 +976,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitDoWhileLoop(DoWhileStatement statement) {
+        printStatementLabels(statement)
         print 'do {'
         printLineBreak()
         indented {
@@ -1035,4 +1060,24 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print '*:'
         expression?.expression?.visit this
     }
+
+    /**
+     * Prints all labels for the given statement.  The labels will be printed on a single
+     * line and line break will be added.
+     *
+     * @param statement for which to print labels
+     * @return {@code true} if the statement had labels to print, else {@code false}
+     */
+    private boolean printStatementLabels(Statement statement) {
+        List<String> labels = statement.statementLabels
+        if (labels == null || labels.isEmpty()) {
+            return false
+        }
+        for (String label : labels) {
+            print label + ':'
+            printLineBreak()
+        }
+        return true
+    }
+
 }
