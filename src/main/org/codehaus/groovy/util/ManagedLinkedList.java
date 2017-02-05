@@ -29,7 +29,9 @@ import java.util.List;
  *
  * @author Jochen Theodorou
  * @since 1.6
+ * @deprecated replaced by {@link ManagedConcurrentLinkedQueue}
  */
+@Deprecated
 public class ManagedLinkedList<T> {
 
     private final class Element<V> extends ManagedReference<V> {

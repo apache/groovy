@@ -16,35 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def subprojects = ['groovy-ant',
-        'groovy-bsf',
-        'groovy-console',
-        'groovy-docgenerator',
-        'groovy-groovydoc',
-        'groovy-groovysh',
-        'groovy-jmx',
-        'groovy-json',
-        'groovy-jsr223',
-        'groovy-nio',
-        'groovy-servlet',
-        'groovy-sql',
-        'groovy-swing',
-        'groovy-templates',
-        'groovy-test',
-        'groovy-testng',
-        'groovy-xml',
-        'groovy-macro',
-        'stress'
-]
+package org.apache.groovy.stress.util;
 
-if (JavaVersion.current().isJava8Compatible()) {
-    subprojects << 'performance'
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+
+public class ThreadUtils {
+
+    private ThreadUtils() { }
+
+    public static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new Error(e);
+        }
+    }
+
+    public static void await(CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
 }
-
-include(subprojects as String[])
-        
-rootProject.children.each { prj ->
-    prj.projectDir = new File("$rootDir/subprojects/$prj.name")
-}
-
-rootProject.name = 'groovy' // TODO should this be groovy-core?
