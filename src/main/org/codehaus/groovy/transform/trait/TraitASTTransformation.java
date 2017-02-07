@@ -68,6 +68,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+
 /**
  * Handles generation of code for the @Trait annotation. A class annotated with @Trait will generate, instead: <ul>
  * <li>an <i>interface</i> with the same name</li> <li>an utility inner class that will be used by the compiler to
@@ -204,7 +206,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // add fields
         for (FieldNode field : fields) {
-            processField(field, initializer, staticInitializer, fieldHelper, cNode, fieldNames);
+            processField(field, initializer, staticInitializer, fieldHelper, helper, cNode, fieldNames);
         }
 
         // clear properties to avoid generation of methods
@@ -385,7 +387,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
 
-    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper, final ClassNode trait, final Set<String> knownFields) {
+    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer,
+                              final ClassNode fieldHelper, final ClassNode helper, final ClassNode trait, final Set<String> knownFields) {
         if (field.isProtected()) {
             unit.addError(new SyntaxException("Cannot have protected field in a trait (" + trait.getName() + "#" + field.getName() + ")",
                     field.getLineNumber(), field.getColumnNumber()));
@@ -394,32 +397,45 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
-        if (initialExpression != null && !field.isFinal()) {
-            VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
-            ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-            processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
-            BlockStatement code = (BlockStatement) selectedMethod.getCode();
-            MethodCallExpression mce;
-            if (field.isStatic()) {
-                mce = new MethodCallExpression(
-                        new ClassExpression(INVOKERHELPER_CLASSNODE),
-                        "invokeStaticMethod",
-                        new ArgumentListExpression(
-                                thisObject,
-                                new ConstantExpression(Traits.helperSetterName(field)),
-                                initCode.getExpression()
-                        )
+        if (initialExpression != null) {
+            if (field.isFinal()) {
+                String baseName = field.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
+                MethodNode fieldInitializer = new MethodNode(
+                        baseName + Traits.remappedFieldName(trait, field.getName()),
+                        ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
+                        field.getOriginType(),
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        returnS(initialExpression)
                 );
+                helper.addMethod(fieldInitializer);
             } else {
-                mce = new MethodCallExpression(
-                        new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
-                        Traits.helperSetterName(field),
-                        new CastExpression(field.getOriginType(),initCode.getExpression())
-                );
+                VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
+                ExpressionStatement initCode = new ExpressionStatement(initialExpression);
+                processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
+                BlockStatement code = (BlockStatement) selectedMethod.getCode();
+                MethodCallExpression mce;
+                if (field.isStatic()) {
+                    mce = new MethodCallExpression(
+                            new ClassExpression(INVOKERHELPER_CLASSNODE),
+                            "invokeStaticMethod",
+                            new ArgumentListExpression(
+                                    thisObject,
+                                    new ConstantExpression(Traits.helperSetterName(field)),
+                                    initCode.getExpression()
+                            )
+                    );
+                } else {
+                    mce = new MethodCallExpression(
+                            new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
+                            Traits.helperSetterName(field),
+                            new CastExpression(field.getOriginType(),initCode.getExpression())
+                    );
+                }
+                mce.setImplicitThis(false);
+                mce.setSourcePosition(initialExpression);
+                code.addStatement(new ExpressionStatement(mce));
             }
-            mce.setImplicitThis(false);
-            mce.setSourcePosition(initialExpression);
-            code.addStatement(new ExpressionStatement(mce));
         }
         // define setter/getter helper methods
         if (!Modifier.isFinal(field.getModifiers())) {

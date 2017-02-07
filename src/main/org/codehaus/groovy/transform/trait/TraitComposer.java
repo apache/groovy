@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -70,6 +71,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -252,6 +255,18 @@ public abstract class TraitComposer {
                             GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
                             FieldNode fieldNode = cNode.addField(fieldName, fieldMods, returnType, (fieldMods & Opcodes.ACC_FINAL) == 0 ? null : helperField.getInitialExpression());
                             fieldNode.addAnnotations(copied);
+                            // getInitialExpression above will be null if not in same source unit
+                            // so instead set within (static) initializer
+                            if (fieldNode.isFinal() && !(helperClassNode instanceof InnerClassNode)) {
+                                String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
+                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName());
+                                Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
+                                if (isStatic == 0) {
+                                    cNode.addObjectInitializerStatements(stmt);
+                                } else {
+                                    cNode.addStaticInitializerStatements(Collections.<Statement>singletonList(stmt), false);
+                                }
+                            }
                         }
                     }
                     Parameter[] newParams;
