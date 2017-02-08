@@ -125,6 +125,10 @@ public class GeneralUtils {
         return new AttributeExpression(oe, prop);
     }
 
+    public static BinaryExpression binX(Expression left, Token token, Expression right) {
+        return new BinaryExpression(left, token, right);
+    }
+
     public static BlockStatement block(VariableScope varScope, Statement... stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(varScope);

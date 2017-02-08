@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -632,15 +631,20 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         // now try with flow type instead of declaration type
         rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (receiver instanceof VariableExpression && receiver.getNodeMetaData().isEmpty()) {
+            // TODO: can STCV be made smarter to avoid this check?
+            VariableExpression ve = (VariableExpression) ((VariableExpression)receiver).getAccessedVariable();
+            rType = ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        }
         if (rType!=null && trySubscript(receiver, message, arguments, rType, aType, safe)) {
             return;
         }
         // todo: more cases
         throw new GroovyBugError(
-                "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
-                "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
-                "This method should not have been called. Please try to create a simple example reproducing this error and file" +
-                "a bug report at https://issues.apache.org/jira/browse/GROOVY");
+                "At line " + receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
+                "On receiver: " + receiver.getText() + " with message: " + message + " and arguments: " + arguments.getText() + "\n" +
+                "This method should not have been called. Please try to create a simple example reproducing\n" +
+                "this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
     private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType, boolean safe) {

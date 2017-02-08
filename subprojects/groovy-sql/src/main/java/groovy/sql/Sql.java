@@ -578,17 +578,26 @@ public class Sql {
 
         Object url = sqlArgs.remove("url");
         Connection connection;
+        LOG.fine("url = " + url);
         if (props != null) {
-            System.err.println("url = " + url);
-            System.err.println("props = " + props);
-            connection = DriverManager.getConnection(url.toString(), new Properties(props));
+            Properties propsCopy = new Properties(props);
+            connection = DriverManager.getConnection(url.toString(), propsCopy);
+            if (propsCopy.containsKey("password")) {
+                // don't log the password
+                propsCopy = new Properties(propsCopy);
+                propsCopy.setProperty("password", "***");
+            }
+            LOG.fine("props = " + propsCopy);
         } else if (sqlArgs.containsKey("user")) {
             Object user = sqlArgs.remove("user");
+            LOG.fine("user = " + user);
             Object password = sqlArgs.remove("password");
+            LOG.fine("password = " + (password == null ? "null" : "***"));
             connection = DriverManager.getConnection(url.toString(),
                     (user == null ? null : user.toString()),
                     (password == null ? null : password.toString()));
         } else {
+            LOG.fine("No user/password specified");
             connection = DriverManager.getConnection(url.toString());
         }
 

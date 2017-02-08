@@ -43,36 +43,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.AttributeExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ClosureListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.EmptyExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
-import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.MethodCall;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PostfixExpression;
-import org.codehaus.groovy.ast.expr.PrefixExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.RangeExpression;
-import org.codehaus.groovy.ast.expr.SpreadExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.expr.TernaryExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
-import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -119,47 +90,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
-import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.DYNAMIC_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.findSAM;
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
-import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
@@ -190,53 +126,7 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.addMethodLevelDeclaredGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContextToParameterClass;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundUnboundedWildcards;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkCompatibleAssignmentTypes;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkPossibleLooseOfPrecision;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getGenericsWithoutArray;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getOperationName;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isArrayOp;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBeingCompiled;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBitOperator;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBoolIntrinsicOp;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithGStringOrGStringString;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithString;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isPowerOperator;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isShiftOperation;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTraitSelf;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isVargs;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.lastArgMatchesVarg;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMethodParametersString;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
 
 /**
  * The main class code visitor responsible for static type checking. It will perform various inspections like checking
@@ -608,7 +498,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean tryVariableExpressionAsProperty(final VariableExpression vexp, final String dynName) {
-        VariableExpression implicitThis = new VariableExpression("this");
+        VariableExpression implicitThis = varX("this");
         PropertyExpression pe = new PropertyExpression(implicitThis, dynName);
         pe.setImplicitThis(true);
         if (visitPropertyExpressionSilent(pe, vexp)) {
@@ -693,7 +583,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (!isPrimitiveType(lType))
                     rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
             }
-            BinaryExpression reversedBinaryExpression = new BinaryExpression(rightExpression, expression.getOperation(), leftExpression);
+            BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
             ClassNode resultType = (op==KEYWORD_IN || op==COMPARE_NOT_IN)
                     ?getResultType(rType,op,lType,reversedBinaryExpression)
                     :getResultType(lType, op, rType, expression);
@@ -835,12 +725,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // we know that the RHS type is a closure
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
-        VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
+        VariableExpression ve = varX("%", setterInfo.receiverType);
         // for compound assignment "x op= y" find type as if it was "x = (x op y)"
         final Expression newRightExpression = isCompoundAssignment(expression)
-                ? new BinaryExpression(leftExpression, getOpWithoutEqual(expression), rightExpression)
+                ? binX(leftExpression, getOpWithoutEqual(expression), rightExpression)
                 : rightExpression;
-        MethodCallExpression call = new MethodCallExpression(ve, setterInfo.name, newRightExpression);
+        MethodCallExpression call = callX(ve, setterInfo.name, newRightExpression);
         call.setImplicitThis(false);
         visitMethodCallExpression(call);
         MethodNode directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -850,7 +740,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
                 if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
-                    call = new MethodCallExpression(ve, setterInfo.name, new CastExpression(type, newRightExpression));
+                    call = callX(ve, setterInfo.name, castX(type, newRightExpression));
                     call.setImplicitThis(false);
                     visitMethodCallExpression(call);
                     directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -911,43 +801,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (node.isUsingGenerics() && node.getGenericsTypes() != null && node.getGenericsTypes().length == 0) {
             ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
             if (argumentListExpression.getExpressions().isEmpty()) {
-                GenericsType[] genericsTypes = lType.getGenericsTypes();
-                if (genericsTypes == null) {
-                    // case of def foo = new HashMap<>()
-                    genericsTypes = node.redirect().getGenericsTypes();
-                }
-                GenericsType[] copy = new GenericsType[genericsTypes.length];
-                for (int i = 0; i < genericsTypes.length; i++) {
-                    GenericsType genericsType = genericsTypes[i];
-                    copy[i] = new GenericsType(
-                            wrapTypeIfNecessary(genericsType.getType()),
-                            genericsType.getUpperBounds(),
-                            genericsType.getLowerBound()
-                    );
-                }
-                node.setGenericsTypes(copy);
+                adjustGenerics(lType, node);
             } else {
                 ClassNode type = getType(argumentListExpression.getExpression(0));
                 if (type.isUsingGenerics()) {
-                    GenericsType[] genericsTypes = type.getGenericsTypes();
-                    if (genericsTypes == null) {
-                        genericsTypes = node.redirect().getGenericsTypes();
-                    }
-                    GenericsType[] copy = new GenericsType[genericsTypes.length];
-                    for (int i = 0; i < genericsTypes.length; i++) {
-                        GenericsType genericsType = genericsTypes[i];
-                        copy[i] = new GenericsType(
-                                wrapTypeIfNecessary(genericsType.getType()),
-                                genericsType.getUpperBounds(),
-                                genericsType.getLowerBound()
-                        );
-                    }
-                    node.setGenericsTypes(copy);
+                    adjustGenerics(type, node);
                 }
             }
             // store inferred type on CCE
             storeType(cce, node);
         }
+    }
+
+    private void adjustGenerics(ClassNode from, ClassNode to) {
+        GenericsType[] genericsTypes = from.getGenericsTypes();
+        if (genericsTypes == null) {
+            // case of: def foo = new HashMap<>()
+            genericsTypes = to.redirect().getGenericsTypes();
+        }
+        GenericsType[] copy = new GenericsType[genericsTypes.length];
+        for (int i = 0; i < genericsTypes.length; i++) {
+            GenericsType genericsType = genericsTypes[i];
+            copy[i] = new GenericsType(
+                    wrapTypeIfNecessary(genericsType.getType()),
+                    genericsType.getUpperBounds(),
+                    genericsType.getLowerBound()
+            );
+        }
+        to.setGenericsTypes(copy);
     }
 
     /**
@@ -1060,7 +941,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // constructor type : Dimension d = [100,200]
         // In that case, more checks can be performed
         if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
-            ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
+            ArgumentListExpression argList = args(((ListExpression) rightExpression).getExpressions());
             ClassNode[] args = getArgumentTypes(argList);
             MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, args, assignmentExpression);
             if (methodNode!=null) {
@@ -1081,9 +962,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // In this case, more checks can be performed
         if (!implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE) && rightExpression instanceof MapExpression) {
             if (!(leftExpression instanceof VariableExpression) || !((VariableExpression) leftExpression).isDynamicTyped()) {
-                ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
-                ClassNode[] args = getArgumentTypes(argList);
-                checkGroovyStyleConstructor(leftRedirect, args, rightExpression);
+                ArgumentListExpression argList = args(rightExpression);
+                ClassNode[] argTypes = getArgumentTypes(argList);
+                checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
                 // perform additional type checking on arguments
                 MapExpression mapExpression = (MapExpression) rightExpression;
                 checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
@@ -1164,7 +1045,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
             } else {
                 AtomicReference<ClassNode> lookup = new AtomicReference<ClassNode>();
-                PropertyExpression pexp = new PropertyExpression(new VariableExpression("_", receiverType), keyExpr.getText());
+                PropertyExpression pexp = new PropertyExpression(varX("_", receiverType), keyExpr.getText());
                 boolean hasProperty = existsProperty(pexp, false, new PropertyLookupVisitor(lookup));
                 if (!hasProperty) {
                     addStaticTypeError("No such property: " + keyExpr.getText() +
@@ -1202,7 +1083,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *
      * @param node      the class node for which we will try to find a matching constructor
      * @param arguments the constructor arguments
-     * @deprecated use {@link #checkGroovyStyleConstructor(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.ast.ClassNode[], org.codehaus.groovy.ast.ASTNode)} )}
+     * @deprecated use {@link #checkGroovyStyleConstructor(ClassNode, ClassNode[], ASTNode)} )}
      */
     @Deprecated
     protected void checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments) {
@@ -1490,7 +1371,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getTypeForSpreadExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
         if (!pexp.isSpreadSafe()) return null;
-        MethodCallExpression mce = new MethodCallExpression(new VariableExpression("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
+        MethodCallExpression mce = callX(varX("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
         mce.setImplicitThis(false);
         mce.visit(this);
         ClassNode callType = getType(mce);
@@ -1498,9 +1379,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         GenericsType[] types = callType.getGenericsTypes();
         ClassNode contentType = OBJECT_TYPE;
         if (types!=null && types.length==1) contentType = types[0].getType();
-        PropertyExpression subExp = new PropertyExpression(
-                new VariableExpression("{}", contentType),
-                pexp.getPropertyAsString());
+        PropertyExpression subExp = new PropertyExpression(varX("{}", contentType), pexp.getPropertyAsString());
         AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
         if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
             ClassNode intf = LIST_TYPE.getPlainNodeReference();
@@ -1516,9 +1395,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         GenericsType[] types = intf.getGenericsTypes();
         if (types==null || types.length!=1) return OBJECT_TYPE;
 
-        PropertyExpression subExp = new PropertyExpression(
-                new VariableExpression("{}", types[0].getType()),
-                pexp.getPropertyAsString());
+        PropertyExpression subExp = new PropertyExpression(varX("{}", types[0].getType()), pexp.getPropertyAsString());
         AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
         if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
             intf = LIST_TYPE.getPlainNodeReference();
@@ -1693,7 +1570,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression init = node.getInitialExpression();
             if (init != null) {
                 FieldExpression left = new FieldExpression(node);
-                BinaryExpression bexp = new BinaryExpression(
+                BinaryExpression bexp = binX(
                         left,
                         Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
                         init
@@ -1877,7 +1754,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
             if (operationType == PLUS_PLUS || operationType == MINUS_MINUS) {
                 if (!isPrimitiveType(exprType)) {
-                    MethodNode node = findMethodOrFail(new VariableExpression("_dummy_", exprType), exprType, name);
+                    MethodNode node = findMethodOrFail(varX("_dummy_", exprType), exprType, name);
                     if (node != null) {
                         storeTargetMethod(origin, node);
                         storeType(origin,
@@ -1970,9 +1847,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
                     if (missesGenericsTypes(inferred)) {
                         DeclarationExpression virtualDecl = new DeclarationExpression(
-                                new VariableExpression("{target}", enclosingMethod.getReturnType()),
+                                varX("{target}", enclosingMethod.getReturnType()),
                                 Token.newSymbol(EQUAL, -1, -1),
-                                new VariableExpression("{source}", type)
+                                varX("{source}", type)
                         );
                         virtualDecl.setSourcePosition(statement);
                         virtualDecl.visit(this);
@@ -2224,13 +2101,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
         if (!extension.beforeVisitMethod(node)) {
-        ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
-        if (collector != null) {
-            typeCheckingContext.getErrorCollector().addCollectorContents(collector);
-        } else {
-            startMethodInference(node, typeCheckingContext.getErrorCollector());
-        }
-        node.removeNodeMetaData(ERROR_COLLECTOR);
+            ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
+            if (collector != null) {
+                typeCheckingContext.getErrorCollector().addCollectorContents(collector);
+            } else {
+                startMethodInference(node, typeCheckingContext.getErrorCollector());
+            }
+            node.removeNodeMetaData(ERROR_COLLECTOR);
         }
         extension.afterVisitMethod(node);
     }
@@ -2428,9 +2305,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Expression> expressions = new LinkedList<Expression>(arguments.getExpressions());
         if (selectedMethod instanceof ExtensionMethodNode) {
             params = ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode().getParameters();
-            expressions.add(0, new VariableExpression("$self", receiver));
+            expressions.add(0, varX("$self", receiver));
         }
-        ArgumentListExpression newArgs = new ArgumentListExpression(expressions);
+        ArgumentListExpression newArgs = args(expressions);
 
         for (int i = 0, expressionsSize = expressions.size(); i < expressionsSize; i++) {
             final Expression expression = expressions.get(i);
@@ -2459,13 +2336,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * This method is responsible for performing type inference on closure argument types whenever code like this is
      * found: <code>foo.collect { it.toUpperCase() }</code>.
      * In this case, the type checker tries to find if the <code>collect</code> method has its {@link Closure} argument
-     * annotated with {@link groovy.transform.stc.ClosureParams}. If yes, then additional type inference can be performed
+     * annotated with {@link ClosureParams}. If yes, then additional type inference can be performed
      * and the type of <code>it</code> may be inferred.
      *
      * @param receiver
      * @param arguments
      * @param expression a closure expression for which the argument types should be inferred
-     * @param param the parameter where to look for a {@link groovy.transform.stc.ClosureParams} annotation.
+     * @param param the parameter where to look for a {@link ClosureParams} annotation.
      * @param selectedMethod the method accepting a closure
      */
     protected void inferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final Parameter param, final MethodNode selectedMethod) {
@@ -2738,7 +2615,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Given a GenericsType instance, returns a ClassNode which can be used as an inferred type.
-     * @param genericsType a {@link org.codehaus.groovy.ast.GenericsType} representing either a type, a placeholder or a wildcard
+     * @param genericsType a {@link GenericsType} representing either a type, a placeholder or a wildcard
      * @return a class node usable as an inferred type
      */
     private static ClassNode createUsableClassNodeFromGenericsType(final GenericsType genericsType) {
@@ -2792,7 +2669,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression type = annotation.getMember("type");
                 Integer stInt = Closure.OWNER_FIRST;
                 if (strategy!=null) {
-                    stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy), typeCheckingContext.source.getConfiguration());
+                    stInt = (Integer) evaluateExpression(castX(ClassHelper.Integer_TYPE,strategy), typeCheckingContext.source.getConfiguration());
                 }
                 if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                     if (genericTypeIndex!=null) {
@@ -2947,11 +2824,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 // type check call as if it was made on component type
                 ClassNode componentType = inferComponentType(expressionType, int_TYPE);
-                MethodCallExpression subcall = new MethodCallExpression(
-                        new CastExpression(componentType, EmptyExpression.INSTANCE),
-                        name,
-                        call.getArguments()
-                );
+                MethodCallExpression subcall = callX(castX(componentType, EmptyExpression.INSTANCE), name, call.getArguments());
                 subcall.setLineNumber(call.getLineNumber());
                 subcall.setColumnNumber(call.getColumnNumber());
                 subcall.setImplicitThis(call.isImplicitThis());
@@ -3205,7 +3078,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param directMethodCallCandidate a method selected by the type checker
      * @param receiver the receiver of the method call
      *@param args the arguments of the method call
-     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
     private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
         if (directMethodCallCandidate instanceof ExtensionMethodNode) {
@@ -3473,7 +3346,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean sourceIsNull = isNullConstant(source);
         ClassNode expressionType = getType(source);
         if (targetType.isArray() && expressionType.isArray()) {
-            return checkCast(targetType.getComponentType(), new VariableExpression("foo", expressionType.getComponentType()));
+            return checkCast(targetType.getComponentType(), varX("foo", expressionType.getComponentType()));
         } else if (targetType.equals(char_TYPE) && expressionType == STRING_TYPE
                 && source instanceof ConstantExpression && source.getText().length() == 1) {
             // ex: (char) 'c'
@@ -3653,11 +3526,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isArrayOp(op)) {
             // using getPNR() to ignore generics at this point
             // and a different binary expression not to pollute the AST
-            BinaryExpression newExpr = new BinaryExpression(
-                    expr.getLeftExpression(),
-                    expr.getOperation(),
-                    rightExpression
-            );
+            BinaryExpression newExpr = binX(expr.getLeftExpression(), expr.getOperation(), rightExpression);
             newExpr.setSourcePosition(expr);
             MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
             if (method!=null && implementsInterfaceOrIsSubclassOf(right, RANGE_TYPE)) {
@@ -3732,7 +3601,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isAssignment(op)) return left;
             if (isCompareToBoolean(op)) return boolean_TYPE;
             if (op == COMPARE_TO) return int_TYPE;
-            return inferReturnTypeGenerics(left, method, new ArgumentListExpression(rightExpression));
+            return inferReturnTypeGenerics(left, method, args(rightExpression));
         }
         //TODO: other cases
         return null;
@@ -3794,7 +3663,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-5521
             // try to identify a getAt method
             typeCheckingContext.pushErrorCollector();
-            MethodCallExpression vcall = new MethodCallExpression(new VariableExpression("_hash_", containerType), "getAt", new VariableExpression("_index_", indexType));
+            MethodCallExpression vcall = callX(varX("_hash_", containerType), "getAt", varX("_index_", indexType));
             try {
                 visitMethodCallExpression(vcall);
             } finally {
@@ -3812,12 +3681,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty() && (expr instanceof BinaryExpression)) {
             BinaryExpression be = (BinaryExpression) expr;
-            MethodCallExpression call = new MethodCallExpression(
-                    be.getLeftExpression(),
-                    name,
-                    be.getRightExpression()
-            );
-            methods = extension.handleMissingMethod(receiver, name, new ArgumentListExpression(be.getLeftExpression()), args, call);
+            MethodCallExpression call = callX(be.getLeftExpression(), name, be.getRightExpression());
+            methods = extension.handleMissingMethod(receiver, name, args(be.getLeftExpression()), args, call);
         }
         if (methods.isEmpty()) {
             addNoMatchingMethodError(receiver, name, args, expr);
@@ -4406,7 +4271,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             MethodNode dgmMethod = emn.getExtensionMethodNode();
             ClassNode dc = emn.getDeclaringClass();
             ArgumentListExpression argList = new ArgumentListExpression();
-            VariableExpression vexp = new VariableExpression("$foo", receiver);
+            VariableExpression vexp = varX("$foo", receiver);
             vexp.setNodeMetaData(ExtensionMethodDeclaringClass.class, dc);
             argList.addExpression(vexp);
             if (arguments instanceof ArgumentListExpression) {
@@ -4896,7 +4761,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Returns a wrapped type if, and only if, the provided class node is a primitive type.
-     * This method differs from {@link ClassHelper#getWrapper(org.codehaus.groovy.ast.ClassNode)} as it will
+     * This method differs from {@link ClassHelper#getWrapper(ClassNode)} as it will
      * return the same instance if the provided type is not a generic type.
      *
      * @param type
