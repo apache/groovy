@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.ASMifier
 import org.objectweb.asm.util.TraceClassVisitor
 
 import javax.swing.Action
@@ -62,8 +63,9 @@ import static java.awt.GridBagConstraints.WEST
 class AstBrowser {
 
     private static final String BYTECODE_MSG_SELECT_NODE = '// Please select a class node in the tree view.'
+    private static final String NO_BYTECODE_AVAILABLE_AT_THIS_PHASE = '// No bytecode available at this phase'
 
-    private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
+    private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView, asmifierView
     boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView, showIndyBytecode
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
@@ -161,6 +163,7 @@ class AstBrowser {
                         actionPerformed: {
                             // reset text to the default as the phase change removes the focus from the class node
                             bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+                            asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
 
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
@@ -195,6 +198,7 @@ class AstBrowser {
                         bottomComponent: tabbedPane {
                             widget(decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Source')
                             widget(bytecodeView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:getByteCodeTitle())
+                            widget(asmifierView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:getASMifierTitle())
                         },
                         constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
 
@@ -202,6 +206,7 @@ class AstBrowser {
         }
 
         bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
@@ -274,43 +279,33 @@ class AstBrowser {
 
                 if (node.classNode || node.methodNode) {
                     bytecodeView.textEditor.text = '// Loading bytecode ...'
+                    asmifierView.textEditor.text = '// Loading ASMifier\'s output ...'
                     boolean showOnlyMethodCode = node.methodNode
 
                     swing.doOutside {
                         def className = showOnlyMethodCode ? node.getPropertyValue('declaringClass') : node.getPropertyValue('name')
                         def bytecode = classLoader.getBytecode(className)
                         if (bytecode) {
-                            def writer = new StringWriter()
-                            def visitor = new TraceClassVisitor(new PrintWriter(writer))
-                            def reader = new ClassReader(bytecode)
-                            reader.accept(visitor, 0)
+                            def methodName = node.getPropertyValue('name')
+                            def methodDescriptor = node.getPropertyValue('descriptor')
+                            boolean isMethodNameAndMethodDescriptorAvailable = methodName && methodDescriptor
 
-                            def source = writer.toString()
-                            swing.doLater {
-                                bytecodeView.textEditor.text = source
+                            String bytecodeSource = generateSource(bytecode, {writer -> new TraceClassVisitor(new PrintWriter(writer))})
+                            showSource(bytecodeView, bytecodeSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {"^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"})
 
-                                if (showOnlyMethodCode)  {
-                                    def methodName = node.getPropertyValue('name')
-                                    def methodDescriptor = node.getPropertyValue('descriptor')
-
-                                    if (methodName && methodDescriptor)  {
-                                        def pattern = Pattern.compile("^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]", Pattern.MULTILINE)
-                                        def matcher = pattern.matcher(source)
-                                        if (matcher.find())  {
-                                            bytecodeView.textEditor.text = source.substring(matcher.start(0), matcher.end(0))
-                                        }
-                                    }
-                                }
-
-                                bytecodeView.textEditor.caretPosition = 0
-                            }
+                            String asmifierSource = generateSource(bytecode, {writer -> new TraceClassVisitor(null, new ASMifier(), new PrintWriter(writer))})
+                            showSource(asmifierView, asmifierSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {"^.*\\n.*${Pattern.quote(methodName)}.*?${Pattern.quote(methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"})
                         } else {
-                            swing.doLater { bytecodeView.textEditor.text = '// No bytecode available at this phase' }
+                            swing.doLater {
+                                bytecodeView.textEditor.text = NO_BYTECODE_AVAILABLE_AT_THIS_PHASE
+                                asmifierView.textEditor.text = NO_BYTECODE_AVAILABLE_AT_THIS_PHASE
+                            }
                         }
                     }
 
                 } else {
                     bytecodeView.textEditor.text = ''
+                    asmifierView.textEditor.text = ''
                 }
             }
             propertyTable.model.fireTableDataChanged()
@@ -331,6 +326,27 @@ class AstBrowser {
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
 
+    }
+
+    private String generateSource(byte[] bytecode, getVisitor) {
+        def sw = new StringWriter()
+        new ClassReader(bytecode).accept(getVisitor(sw), 0)
+        return sw.toString()
+    }
+
+    private void showSource(view, String source, boolean showOnlyMethodCode, boolean isMethodNameAndMethodDescriptorAvailable, getPatternStr) {
+        swing.doLater {
+            view.textEditor.text = source
+            if (showOnlyMethodCode && isMethodNameAndMethodDescriptorAvailable) {
+                def pattern = Pattern.compile(getPatternStr(), Pattern.MULTILINE)
+                def matcher = pattern.matcher(source)
+                if (matcher.find()) {
+                    view.textEditor.text = source.substring(matcher.start(0), matcher.end(0))
+                }
+            }
+
+            view.textEditor.caretPosition = 0
+        }
     }
 
     void largerFont(EventObject evt = null) {
@@ -395,6 +411,7 @@ class AstBrowser {
     void showIndyBytecode(EventObject evt = null) {
         showIndyBytecode = evt.source.selected
         bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
         refreshAction.actionPerformed(null)
         updateByteCodeTabTitle()
     }
@@ -403,8 +420,12 @@ class AstBrowser {
         def tabPane = mainSplitter.bottomComponent
         int tabCount = tabPane.getTabCount()
         for (int i = 0; i < tabCount; i++) {
-            if (bytecodeView.is(tabPane.getComponentAt(i))) {
+            def component = tabPane.getComponentAt(i);
+            if (bytecodeView.is(component)) {
                 tabPane.setTitleAt(i, getByteCodeTitle())
+                break
+            } else if (asmifierView.is(component)) {
+                tabPane.setTitleAt(i, getASMifierTitle())
                 break
             }
         }
@@ -412,6 +433,10 @@ class AstBrowser {
 
     private String getByteCodeTitle() {
         'Bytecode' + (showIndyBytecode ? ' (Indy)' : '')
+    }
+
+    private String getASMifierTitle() {
+        'ASMifier' + (showIndyBytecode ? ' (Indy)' : '')
     }
 
     void decompile(phaseId, source) {
