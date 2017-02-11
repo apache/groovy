@@ -26,10 +26,13 @@ import groovy.lang.Tuple2;
 import groovy.xml.QName;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.util.ListHashMap;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -783,5 +786,81 @@ public class Node implements Serializable, Cloneable {
      */
     public void print(PrintWriter out) {
         new NodePrinter(out).print(this);
+    }
+
+    /**
+     * Converts the text of this GPathResult to a Integer object.
+     *
+     * @return the GPathResult, converted to a <code>Integer</code>
+     */
+    public Integer toInteger() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toInteger(text());
+    }
+
+    /**
+     * Converts the text of this GPathResult to a Long object.
+     *
+     * @return the GPathResult, converted to a <code>Long</code>
+     */
+    public Long toLong() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toLong(text());
+    }
+
+    /**
+     * Converts the text of this GPathResult to a Float object.
+     *
+     * @return the GPathResult, converted to a <code>Float</code>
+     */
+    public Float toFloat() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toFloat(text());
+    }
+
+    /**
+     * Converts the text of this GPathResult to a Double object.
+     *
+     * @return the GPathResult, converted to a <code>Double</code>
+     */
+    public Double toDouble() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toDouble(text());
+    }
+
+    /**
+     * Converts the text of this GPathResult to a BigDecimal object.
+     *
+     * @return the GPathResult, converted to a <code>BigDecimal</code>
+     */
+    public BigDecimal toBigDecimal() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toBigDecimal(text());
+    }
+
+    /**
+     * Converts the text of this GPathResult to a BigInteger object.
+     *
+     * @return the GPathResult, converted to a <code>BigInteger</code>
+     */
+    public BigInteger toBigInteger() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
+        return StringGroovyMethods.toBigInteger(text());
+    }
+
+    private boolean textIsEmptyOrNull() {
+        return text() == null || text().equals("");
     }
 }
