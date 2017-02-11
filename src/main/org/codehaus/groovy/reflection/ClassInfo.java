@@ -73,8 +73,9 @@ public class ClassInfo implements Finalizable {
 
     private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
-
-    private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
+    
+    private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
+            new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         @Override
@@ -110,12 +111,10 @@ public class ClassInfo implements Finalizable {
     }
 
     public static void clearModifiedExpandos() {
-        synchronized(modifiedExpandos){
-            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-                ClassInfo info = it.next();
-                it.remove();
-                info.setStrongMetaClass(null);
-            }
+        for (Iterator<ClassInfo> itr = modifiedExpandos.iterator(); itr.hasNext(); ) {
+            ClassInfo info = itr.next();
+            itr.remove();
+            info.setStrongMetaClass(null);
         }
     }
 
@@ -187,12 +186,10 @@ public class ClassInfo implements Finalizable {
 
         if (strongRef instanceof ExpandoMetaClass) {
             ((ExpandoMetaClass)strongRef).inRegistry = false;
-            synchronized(modifiedExpandos){
-                for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-                    ClassInfo info = it.next();
-                    if(info == this){
-                        it.remove();
-                    }
+            for (Iterator<ClassInfo> itr = modifiedExpandos.iterator(); itr.hasNext(); ) {
+                ClassInfo info = itr.next();
+                if(info == this) {
+                    itr.remove();
                 }
             }
         }
@@ -201,15 +198,7 @@ public class ClassInfo implements Finalizable {
 
         if (answer instanceof ExpandoMetaClass) {
             ((ExpandoMetaClass)answer).inRegistry = true;
-            synchronized(modifiedExpandos){
-                for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-                    ClassInfo info = it.next();
-                    if(info == this){
-                        it.remove();
-                    }
-                }
-                modifiedExpandos.add(this);
-            }
+            modifiedExpandos.add(this);
         }
 
         replaceWeakMetaClassRef(null);
@@ -456,28 +445,24 @@ public class ClassInfo implements Finalizable {
     }
 
     private static class GlobalClassSet {
-
-        private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
-
-        public int size(){
-            return values().size();
-        }
-
-        public int fullSize(){
-            return values().size();
-        }
-
-        public Collection<ClassInfo> values(){
-            synchronized(items){
-                return Arrays.asList(items.toArray(new ClassInfo[0]));
-            }
-        }
-
-        public void add(ClassInfo value){
-            synchronized(items){
-                items.add(value);
-            }
-        }
+    	
+    	private final ManagedConcurrentLinkedQueue<ClassInfo> items = new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
+    	
+    	public int size(){
+		    return values().size();
+    	}
+    	
+    	public int fullSize(){
+		    return values().size();
+    	}
+    	
+    	public Collection<ClassInfo> values(){
+    	    return items.values();
+    	}
+    	
+    	public void add(ClassInfo value){
+            items.add(value);
+    	}
 
     }
 

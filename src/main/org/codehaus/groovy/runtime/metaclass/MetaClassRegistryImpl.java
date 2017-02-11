@@ -26,9 +26,9 @@ import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
+import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
-import org.codehaus.groovy.util.ManagedLinkedList;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Constructor;
@@ -62,7 +62,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     private final LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
     private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
-    private final ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
+    private final ManagedConcurrentLinkedQueue<MetaClass> metaClassInfo = new ManagedConcurrentLinkedQueue<MetaClass>(ReferenceBundle.getWeakBundle());
     private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
 
     public static final int LOAD_DEFAULT = 0;
@@ -125,6 +125,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         addNonRemovableMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
+                // The calls to DefaultMetaClassInfo.setPrimitiveMeta and sdyn.setBoolean need to be
+                // ordered. Even though metaClassInfo is thread-safe, it is included in the block
+                // so the meta classes are added to the queue in the same order.
                 synchronized (metaClassInfo) {
                    metaClassInfo.add(cmcu.getNewMetaClass());
                    DefaultMetaClassInfo.getNewConstantMetaClassVersioning();
@@ -447,10 +450,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @return the iterator.
      */    
     public Iterator iterator() {
-        final MetaClass[] refs;
-        synchronized (metaClassInfo) {
-            refs = (MetaClass[]) metaClassInfo.toArray(new MetaClass[0]);
-        }
+        final MetaClass[] refs = metaClassInfo.toArray(new MetaClass[0]);
         
         return new Iterator() {
             // index in the ref array

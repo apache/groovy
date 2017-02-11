@@ -1,0 +1,19 @@
+= Stress Tests
+
+Tests in this subproject are used for stress testing.  These types of tests
+will normally involve calls to `System.gc()`, spinning up many threads, and
+may attempt to create OutOfMemory errors.
+
+These tests can be long running and may be prone to failure on different
+platforms, so in order to run these tests you must enable them as follows:
+
+    ./gradlew -PstressTests :stress:test
+
+You can run a single test with the following command:
+
+    ./gradlew -PstressTests :stress:test --tests org.codehaus.groovy.util.SomeTest
+
+Or run all tests under in a given package and subpackages:
+
+    ./gradlew -PstressTests :stress:test --tests org.codehaus.*
+
