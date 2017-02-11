@@ -16,35 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def subprojects = ['groovy-ant',
-        'groovy-bsf',
-        'groovy-console',
-        'groovy-docgenerator',
-        'groovy-groovydoc',
-        'groovy-groovysh',
-        'groovy-jmx',
-        'groovy-json',
-        'groovy-jsr223',
-        'groovy-nio',
-        'groovy-servlet',
-        'groovy-sql',
-        'groovy-swing',
-        'groovy-templates',
-        'groovy-test',
-        'groovy-testng',
-        'groovy-xml',
-        'groovy-macro',
-        'stress'
-]
+package org.apache.groovy.stress.util;
 
-if (JavaVersion.current().isJava8Compatible()) {
-    subprojects << 'performance'
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+
+public class GCUtils {
+
+    private GCUtils() { }
+
+    public static void gc() {
+        Reference<Object> dummy = new WeakReference<Object>(new Object());
+        System.gc();
+        int max = 0;
+        while (dummy.get() != null && max++ < 10) {
+            System.gc();
+        }
+        if (dummy.get() != null) {
+            throw new Error("GC attempt failed");
+        }
+    }
 }
-
-include(subprojects as String[])
-        
-rootProject.children.each { prj ->
-    prj.projectDir = new File("$rootDir/subprojects/$prj.name")
-}
-
-rootProject.name = 'groovy' // TODO should this be groovy-core?
