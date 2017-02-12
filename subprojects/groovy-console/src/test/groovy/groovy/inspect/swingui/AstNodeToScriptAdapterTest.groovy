@@ -887,4 +887,96 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
         result = compileToScript(script, CompilePhase.CLASS_GENERATION)
         assert result =~ /(?s)public A\(\) \{.*?v = 2\s*v = 1\s*\}/
     }
+
+    void testStatementLabels() {
+        String script = '''
+            label1:
+            label1a:
+            for (int x : (1..10)) {
+                if (x == 5) {
+                    break label1
+                }
+                if (x == 6) {
+                    continue label1a
+                }
+                println x
+            }
+
+            label2:
+            while (true) {
+                switch(hashCode()) {
+                    case 0: break label2
+                    case 1: break
+                }
+                break
+            }
+
+            label3:
+            if (hashCode() > 0) {
+                for (x in [1,2,3]) {
+                    if (x > 2) {
+                        break label3
+                    }
+                }
+            }
+
+            label4:
+            switch (hashCode()) { }
+
+            label5:
+            try { } catch (any) { }
+
+            label6:
+            synchronized (this) { }
+        '''
+
+        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('label1a:\nlabel1:\nfor (int x : (1..10)) {')
+        assert result.contains('break label1')
+        assert result.contains('continue label1a')
+        assert result.contains('label2:\nwhile (true)')
+        assert result.contains('break label2')
+        assert result.contains('label3:\nif (this.hashCode() > 0)')
+        assert result.contains('label4:\nswitch (this.hashCode())')
+        assert result.contains('label5:\ntry {')
+        assert result.contains('label6:\nsynchronized')
+    }
+
+    void testStatementLabelsForDoWhileLoop() {
+        def doWhile = new DoWhileStatement(
+                new BooleanExpression(constX(true)),
+                new BlockStatement(
+                        [stmt(callThisX('println', args(constX('value'))))],
+                        new VariableScope()
+                ))
+        doWhile.addStatementLabel('label1')
+
+        StringWriter writer = new StringWriter()
+        new AstNodeToScriptVisitor(writer).visitDoWhileLoop doWhile
+        String result = writer.toString()
+        assert result.contains('label1:\ndo {')
+        assert result.contains('} while (true)')
+    }
+
+    void testNestedObjectInitializers() {
+        String script = '''
+            class A {
+                def v
+                A() { v = 1 }
+                {
+                    v = 2
+                    // nested block must be labeled to avoid appearing as a closure
+                    oi:
+                    {
+                        v += 2
+                    }
+                }
+            }
+        '''
+
+        String result = compileToScript(script)
+        assert result =~ /\{\s*v = 2/
+        assert result =~ /(?s)oi:.*?\{.*?v \+= 2.*?\}/
+    }
+
 }
