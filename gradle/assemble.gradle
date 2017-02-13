@@ -184,7 +184,7 @@ allprojects {
                         configurations.runtime.files.findAll { file ->
                             ['antlr', 'asm', 'commons-cli'].any {
                                 file.name.startsWith(it)
-                            } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
+                            } && ['asm-attr', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
                             // GROOVY-7386 : excludes needed below to stop copy of incorrect maven meta info
                             zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*')
