@@ -413,20 +413,18 @@ class AstBrowser {
         bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
         asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
         refreshAction.actionPerformed(null)
-        updateByteCodeTabTitle()
+        updateTabTitles()
     }
 
-    private void updateByteCodeTabTitle() {
+    private void updateTabTitles() {
         def tabPane = mainSplitter.bottomComponent
         int tabCount = tabPane.getTabCount()
         for (int i = 0; i < tabCount; i++) {
             def component = tabPane.getComponentAt(i);
             if (bytecodeView.is(component)) {
                 tabPane.setTitleAt(i, getByteCodeTitle())
-                break
             } else if (asmifierView.is(component)) {
                 tabPane.setTitleAt(i, getASMifierTitle())
-                break
             }
         }
     }
