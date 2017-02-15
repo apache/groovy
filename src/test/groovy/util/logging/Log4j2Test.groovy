@@ -22,7 +22,6 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 import org.apache.log4j.spi.Filter
-import org.apache.log4j.spi.LoggingEvent
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.Layout
 import org.apache.logging.log4j.core.LogEvent
@@ -36,17 +35,18 @@ import java.nio.charset.Charset
 class Log4j2Test extends GroovyTestCase {
 
     class Log4j2InterceptingAppender extends AbstractAppender {
-        List<LoggingEvent> events
+        List<Map> events
         boolean isLogGuarded = true
 
         Log4j2InterceptingAppender(String name, Filter filter, Layout<String> layout){
             super(name, filter, layout)
-            this.events = new ArrayList<LoggingEvent>()
+            this.events = new ArrayList<Map>()
         }
 
         @Override
-        void append(LogEvent event) {
-            events.add(event)
+        void append(LogEvent ev) {
+            // Log4j2 re-cycles log events so extract and store the relevant info
+            events.add([level: ev.level, message: ev.message.formattedMessage])
         }
     }
 
@@ -140,17 +140,17 @@ class Log4j2Test extends GroovyTestCase {
         def events = appender.getEvents()
         assert events.size() == 6
         assert events[ind].level == Level.FATAL
-        assert events[ind].message.message == "fatal called"
+        assert events[ind].message == "fatal called"
         assert events[++ind].level == Level.ERROR
-        assert events[ind].message.message == "error called"
+        assert events[ind].message == "error called"
         assert events[++ind].level == Level.WARN
-        assert events[ind].message.message == "warn called"
+        assert events[ind].message == "warn called"
         assert events[++ind].level == Level.INFO
-        assert events[ind].message.message == "info called"
+        assert events[ind].message == "info called"
         assert events[++ind].level == Level.DEBUG
-        assert events[ind].message.message == "debug called"
+        assert events[ind].message == "debug called"
         assert events[++ind].level == Level.TRACE
-        assert events[ind].message.message == "trace called"
+        assert events[ind].message == "trace called"
     }
 
     void testLogFromStaticMethods() {
@@ -168,7 +168,7 @@ class Log4j2Test extends GroovyTestCase {
         def events = appender.getEvents()
         assert events.size() == 1
         assert events[0].level == Level.INFO
-        assert events[0].message.message == "(static) info called"
+        assert events[0].message == "(static) info called"
     }
 
     void testLogInfoForNamedLogger() {
@@ -193,17 +193,17 @@ class Log4j2Test extends GroovyTestCase {
         def events = appender.getEvents()
         assert events.size() == 6
         assert events[ind].level == Level.FATAL
-        assert events[ind].message.message == "fatal called"
+        assert events[ind].message == "fatal called"
         assert events[++ind].level == Level.ERROR
-        assert events[ind].message.message == "error called"
+        assert events[ind].message == "error called"
         assert events[++ind].level == Level.WARN
-        assert events[ind].message.message == "warn called"
+        assert events[ind].message == "warn called"
         assert events[++ind].level == Level.INFO
-        assert events[ind].message.message == "info called"
+        assert events[ind].message == "info called"
         assert events[++ind].level == Level.DEBUG
-        assert events[ind].message.message == "debug called"
+        assert events[ind].message == "debug called"
         assert events[++ind].level == Level.TRACE
-        assert events[ind].message.message == "trace called"
+        assert events[ind].message == "trace called"
     }
 
     void testLogGuard() {
