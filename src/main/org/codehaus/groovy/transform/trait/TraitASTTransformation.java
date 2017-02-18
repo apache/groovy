@@ -576,9 +576,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         @Override
         public Expression transform(final Expression exp) {
-            Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
-            if (replacement!=null) {
-                return replacement;
+            if (exp != null) {
+                Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
+                if (replacement!=null) {
+                    return replacement;
+                }
             }
             return super.transform(exp);
         }

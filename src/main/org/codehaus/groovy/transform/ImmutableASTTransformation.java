@@ -248,8 +248,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private void makeClassFinal(ClassNode cNode) {
-        if ((cNode.getModifiers() & ACC_FINAL) == 0) {
-            cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
+        int modifiers = cNode.getModifiers();
+        if ((modifiers & ACC_FINAL) == 0) {
+            if ((modifiers & (ACC_ABSTRACT | ACC_SYNTHETIC)) == (ACC_ABSTRACT | ACC_SYNTHETIC)) {
+                addError("Error during " + MY_TYPE_NAME + " processing: annotation found on inappropriate class " + cNode.getName(), cNode);
+                return;
+            }
+            cNode.setModifiers(modifiers | ACC_FINAL);
         }
     }
 
