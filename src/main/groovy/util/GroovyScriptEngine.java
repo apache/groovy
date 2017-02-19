@@ -563,8 +563,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         try {
             if (isSourceNewer(entry)) {
                 try {
-                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : config.getSourceEncoding();
-                    String content = IOGroovyMethods.getText(conn.getInputStream(), encoding);
+                    String content = IOGroovyMethods.getText(conn.getInputStream(), config.getSourceEncoding());
                     clazz = groovyLoader.parseClass(content, path);
                 } catch (IOException e) {
                     throw new ResourceException(e);

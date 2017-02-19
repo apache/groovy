@@ -482,10 +482,6 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     }
     
     class MapUrlConnection extends URLConnection {
-        String getContentEncoding() {
-            return CHARSET
-        }
-    
         Object getContent() throws IOException {
             return super.content
         }
