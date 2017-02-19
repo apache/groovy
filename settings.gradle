@@ -33,12 +33,15 @@ def subprojects = ['groovy-ant',
         'groovy-test',
         'groovy-testng',
         'groovy-xml',
-        'groovy-macro',
-        'stress'
+        'groovy-macro'
 ]
 
 if (JavaVersion.current().isJava8Compatible()) {
     subprojects << 'performance'
+}
+
+if (hasProperty('stressTests')) {
+    subprojects << 'stress'
 }
 
 include(subprojects as String[])
