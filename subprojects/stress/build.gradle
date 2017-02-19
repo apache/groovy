@@ -23,8 +23,6 @@ dependencies {
 test {
     minHeapSize = '512m'
     maxHeapSize = '512m'
-    onlyIf {
-        project.hasProperty('stressTests')
-    }
+
     outputs.upToDateWhen { false }
 }
