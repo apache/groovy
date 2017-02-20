@@ -184,14 +184,14 @@ allprojects {
                         configurations.runtime.files.findAll { file ->
                             ['antlr', 'asm', 'commons-cli'].any {
                                 file.name.startsWith(it)
-                            } && ['asm-attr', 'asm-analysis'].every { !file.name.startsWith(it) }
+                            } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
                             // GROOVY-7386 : excludes needed below to stop copy of incorrect maven meta info
                             zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*')
                         }
 
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
-                                includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/Trace*')
+                                includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/ASMifier.class,org/objectweb/asm/util/Trace*')
                     }
                     rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1'
                     rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
