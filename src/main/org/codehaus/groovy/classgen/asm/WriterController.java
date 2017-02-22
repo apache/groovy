@@ -19,10 +19,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.GroovyRuntimeException;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -32,14 +28,21 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.asm.util.LoggableClassVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-public class WriterController {
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
+public class WriterController {
+    private static final String GROOVY_LOG_CLASSGEN = "groovy.log.classgen";
+    private static final boolean LOG_CLASSGEN;
     private static Constructor indyWriter, indyCallSiteWriter, indyBinHelper;
     static {
         try {
@@ -55,6 +58,8 @@ public class WriterController {
             indyCallSiteWriter = null;
             indyBinHelper = null;
         }
+
+        LOG_CLASSGEN = Boolean.valueOf(System.getProperty(GROOVY_LOG_CLASSGEN));
     }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
@@ -138,13 +143,25 @@ public class WriterController {
         this.sourceUnit = acg.getSourceUnit();
         this.context = gcon;
         this.compileStack = new CompileStack(this);
-        this.cv = cv;
+        this.cv = this.createClassVisitor(cv);
         if (optimizeForInt) {
             this.statementWriter = new OptimizingStatementWriter(this);
         } else {
             this.statementWriter = new StatementWriter(this);
         }
         this.typeChooser = new StatementMetaTypeChooser();
+    }
+
+    private ClassVisitor createClassVisitor(ClassVisitor cv) {
+        if (!LOG_CLASSGEN) {
+            return cv;
+        }
+
+        if (cv instanceof LoggableClassVisitor) {
+            return cv;
+        }
+
+        return new LoggableClassVisitor(cv);
     }
 
     private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
