@@ -22,6 +22,11 @@ public class LoggableTextifier extends Textifier {
         super(Opcodes.ASM6);
     }
 
+    @Override
+    protected Textifier createTextifier() {
+        return new LoggableTextifier();
+    }
+
     protected void log() {
         int textSize = text.size();
 
