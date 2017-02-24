@@ -33,6 +33,27 @@ class Groovy8085Bug extends GroovyTestCase {
         '''
     }
 
+    void testTryCatchFinally2() {
+        assertScript '''
+            def visitSequence = []
+            try {
+                try {
+                    true
+                } finally {
+                    visitSequence << 'innerFinally'
+                    99 / 0
+                }
+            } catch (Exception e) {
+                visitSequence << 'outerCatch'
+                System.out.println("catch!!!");
+            } finally {
+                visitSequence << 'outerFinally'
+            }
+            
+            assert ['innerFinally', 'outerCatch', 'outerFinally'] == visitSequence
+        '''
+    }
+
     void testTryCatchFinallyWithExplicitReturn() {
         assertScript '''
             try {
@@ -44,6 +65,27 @@ class Groovy8085Bug extends GroovyTestCase {
             } catch (Exception e) {
                 System.out.println("catch!!!");
             }
+        '''
+    }
+
+    void testTryCatchFinallyWithExplicitReturn2() {
+        assertScript '''
+            def visitSequence = []
+            try {
+                try {
+                    return true
+                } finally {
+                    visitSequence << 'innerFinally'
+                    99 / 0
+                }
+            } catch (Exception e) {
+                visitSequence << 'outerCatch'
+                System.out.println("catch!!!");
+            } finally {
+                visitSequence << 'outerFinally'
+            }
+            
+            assert ['innerFinally', 'outerCatch', 'outerFinally'] == visitSequence
         '''
     }
 }
