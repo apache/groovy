@@ -257,7 +257,7 @@ public class CompileStack implements Opcodes {
      * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
      */
-    public int defineTemporaryVariable(org.codehaus.groovy.ast.Variable var, boolean store) {
+    public int defineTemporaryVariable(Variable var, boolean store) {
         return defineTemporaryVariable(var.getName(), var.getType(),store);
     }
 
@@ -772,13 +772,12 @@ public class CompileStack implements Opcodes {
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        Label end = new Label();
-        mv.visitInsn(NOP);
-        mv.visitLabel(end);
-        Label newStart = new Label();
-
         for (BlockRecorder fb : blocks) {
             if (visitedBlocks.contains(fb)) continue;
+
+            Label end = new Label();
+            mv.visitInsn(NOP);
+            mv.visitLabel(end);
 
             fb.closeRange(end);
 
@@ -786,11 +785,13 @@ public class CompileStack implements Opcodes {
             // here to avoid double visiting of finally statements
             fb.excludedStatement.run();
 
+            Label newStart = new Label();
             fb.startRange(newStart);
+
+            mv.visitInsn(NOP);
+            mv.visitLabel(newStart);
         }
 
-        mv.visitInsn(NOP);
-        mv.visitLabel(newStart);
     }
 
     public void applyBlockRecorder() {
