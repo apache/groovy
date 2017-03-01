@@ -167,7 +167,7 @@ version).
 * `classifier` - The optional classifier to use (for example, _jdk15_)
 
 The downloaded modules will be stored according to Ivy’s standard
-mechanism with a cache root of `~/.groovy/grape`
+mechanism with a cache root of `~/.groovy/grapes`
 
 [[Grape-Usage]]
 == Usage
@@ -344,10 +344,10 @@ dependencies expressed in an ivy like format.
 
 If you need to change the directory grape uses for downloading libraries
 you can specify the grape.root system property to change the default
-(which is ~/.groovy/grape)
+(which is ~/.groovy/grapes)
 
 -------------------------------------------------
-groovy -Dgrape.root=/repo/grape yourscript.groovy
+groovy -Dgrape.root=/repo/grapes yourscript.groovy
 -------------------------------------------------
 
 [[Grape-CustomizeIvysettings]]
