@@ -178,7 +178,7 @@ goto process_arg
 
 :get_arg
 rem remove quotes around first arg
-for %%i in (%1) do set _ARG=%_ARG% %%~i
+for /f %%i in (%1) do set _ARG=%_ARG% %%~i
 rem set the remaining args
 set _ARGS=%2
 rem remove the leading space we'll add the first time
