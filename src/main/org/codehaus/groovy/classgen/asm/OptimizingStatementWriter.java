@@ -55,6 +55,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         private boolean optimize=false;
         protected MethodNode target;
         protected ClassNode type;
+        protected VariableExpression declaredVariableExpression;
         protected boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
         public void chainInvolvedTypes(OptimizeFlagsCollector opt) {
             for (int i=0; i<typeMapKeyNames.length; i++) {
@@ -304,6 +305,10 @@ public class OptimizingStatementWriter extends StatementWriter {
         } else {
             StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
             if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
+                if (meta.declaredVariableExpression != null) {
+                    // declaration was replaced by assignment so we need to define the variable
+                    controller.getCompileStack().defineVariable(meta.declaredVariableExpression, false);
+                }
                 FastPathData fastPathData = writeGuards(meta, statement);
 
                 boolean oldFastPathBlock = fastPathBlocked;
@@ -342,6 +347,10 @@ public class OptimizingStatementWriter extends StatementWriter {
             // the only case we need to handle is then (2).
 
             if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
+                if (meta.declaredVariableExpression != null) {
+                    // declaration was replaced by assignment so we need to define the variable
+                    controller.getCompileStack().defineVariable(meta.declaredVariableExpression, false);
+                }
                 FastPathData fastPathData = writeGuards(meta, statement);
 
                 boolean oldFastPathBlock = fastPathBlocked;
@@ -375,8 +384,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         ex = declaration.getLeftExpression();
         if (ex instanceof TupleExpression) return false;
 
-        // do declaration
-        controller.getCompileStack().defineVariable(declaration.getVariableExpression(), false);
+        // stash declared variable in case we do subsequent visits after we
+        // change to assignment only
+        StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
+        if (meta != null) {
+            meta.declaredVariableExpression = declaration.getVariableExpression();
+        }
+
         // change statement to do assignment only
         BinaryExpression assignment = new BinaryExpression(
                 declaration.getLeftExpression(),
