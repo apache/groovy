@@ -409,45 +409,42 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         returnS(initialExpression)
                 );
                 helper.addMethod(fieldInitializer);
-            } else {
-                VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
-                ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-                processBody(thisObject, initCode, trait, helper, fieldHelper, knownFields);
-                BlockStatement code = (BlockStatement) selectedMethod.getCode();
-                MethodCallExpression mce;
-                if (field.isStatic()) {
-                    mce = new MethodCallExpression(
-                            new ClassExpression(INVOKERHELPER_CLASSNODE),
-                            "invokeStaticMethod",
-                            new ArgumentListExpression(
-                                    thisObject,
-                                    new ConstantExpression(Traits.helperSetterName(field)),
-                                    initCode.getExpression()
-                            )
-                    );
-                } else {
-                    mce = new MethodCallExpression(
-                            new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
-                            Traits.helperSetterName(field),
-                            new CastExpression(field.getOriginType(),initCode.getExpression())
-                    );
-                }
-                mce.setImplicitThis(false);
-                mce.setSourcePosition(initialExpression);
-                code.addStatement(new ExpressionStatement(mce));
             }
+            VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
+            ExpressionStatement initCode = new ExpressionStatement(initialExpression);
+            processBody(thisObject, initCode, trait, helper, fieldHelper, knownFields);
+            BlockStatement code = (BlockStatement) selectedMethod.getCode();
+            MethodCallExpression mce;
+            if (field.isStatic()) {
+                mce = new MethodCallExpression(
+                        new ClassExpression(INVOKERHELPER_CLASSNODE),
+                        "invokeStaticMethod",
+                        new ArgumentListExpression(
+                                thisObject,
+                                new ConstantExpression(Traits.helperSetterName(field)),
+                                initCode.getExpression()
+                        )
+                );
+            } else {
+                mce = new MethodCallExpression(
+                        new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
+                        Traits.helperSetterName(field),
+                        new CastExpression(field.getOriginType(),initCode.getExpression())
+                );
+            }
+            mce.setImplicitThis(false);
+            mce.setSourcePosition(initialExpression);
+            code.addStatement(new ExpressionStatement(mce));
         }
-        // define setter/getter helper methods
-        if (!Modifier.isFinal(field.getModifiers())) {
-            fieldHelper.addMethod(
-                    Traits.helperSetterName(field),
-                    ACC_PUBLIC | ACC_ABSTRACT,
-                    field.getOriginType(),
-                    new Parameter[]{new Parameter(field.getOriginType(), "val")},
-                    ClassNode.EMPTY_ARRAY,
-                    null
-            );
-        }
+        // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
+        fieldHelper.addMethod(
+                Traits.helperSetterName(field),
+                ACC_PUBLIC | ACC_ABSTRACT,
+                field.getOriginType(),
+                new Parameter[]{new Parameter(field.getOriginType(), "val")},
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
         fieldHelper.addMethod(
                 Traits.helperGetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
@@ -471,6 +468,24 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // copy annotations from field to dummy field
         List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
         List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+        GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
+        dummyField.addAnnotations(copied);
+        fieldHelper.addField(dummyField);
+
+        // retain legacy field (will be given lower precedence than above)
+        dummyFieldName = (field.isStatic() ? Traits.STATIC_FIELD_PREFIX : Traits.FIELD_PREFIX) +
+                (field.isPublic()? Traits.PUBLIC_FIELD_PREFIX : Traits.PRIVATE_FIELD_PREFIX)+
+                Traits.remappedFieldName(field.getOwner(), field.getName());
+        dummyField = new FieldNode(
+                dummyFieldName,
+                ACC_STATIC | ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
+                field.getOriginType(),
+                fieldHelper,
+                null
+        );
+        // copy annotations from field to legacy dummy field
+        copied = new LinkedList<AnnotationNode>();
+        notCopied = new LinkedList<AnnotationNode>();
         GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
         dummyField.addAnnotations(copied);
         fieldHelper.addField(dummyField);
