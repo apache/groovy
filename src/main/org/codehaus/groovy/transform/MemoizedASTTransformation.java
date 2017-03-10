@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -109,7 +110,11 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             newCode.addStatement(returnS(closureCallExpression));
             methodNode.setCode(newCode);
             VariableScopeVisitor visitor = new VariableScopeVisitor(source);
-            visitor.visitClass(ownerClassNode);
+            if (ownerClassNode instanceof InnerClassNode) {
+                visitor.visitClass(((InnerClassNode) ownerClassNode).getOuterMostClass());
+            } else {
+                visitor.visitClass(ownerClassNode);
+            }
         }
     }
 
