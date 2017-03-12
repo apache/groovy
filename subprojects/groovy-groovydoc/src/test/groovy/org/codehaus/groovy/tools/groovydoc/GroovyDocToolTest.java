@@ -21,9 +21,7 @@ package org.codehaus.groovy.tools.groovydoc;
 import groovy.util.GroovyTestCase;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -656,6 +654,42 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         assertTrue(m.find());
         assertEquals("There has to be a reference to class ArrayList", "ArrayList", m.group(2));
+    }
+
+    public void testImplementedInterfaceWithAlias() throws Exception {
+        // FooAdapter imports both api.Foo and lib.Foo, using "lib.Foo as FooImpl" to disambiguate.
+        // lib.Foo is imported later that api.Foo, so groovydoc tries to resolve to lib.Foo first.
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/alias/api/Foo.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/alias/lib/Foo.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/alias/FooAdapter.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String fooAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/alias/FooAdapter.html");
+
+        // "Interfaces and Traits" section should show "Foo" as one of the implemented interfaces,
+        // and that should link to api/Foo.html, not to lib/Foo.html.
+        final Matcher interfacesAndTraits = Pattern.compile(
+                "<dt>All Implemented Interfaces and Traits:</dt>\\s*" +
+                "<dd><a href='[./]*/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo\\.html'>(Foo|FooImpl)</a></dd>"
+        ).matcher(fooAdapterDoc);
+
+        // Constructor is actually "FooAdapter(FooImpl foo)",
+        // but it should show "Foo" as the link text, not "FooImpl".
+        // The Foo parameter type should link to lib/Foo.html, not api/Foo.html.
+        final Matcher constructor = Pattern.compile(
+                "FooAdapter(</[a-z]+>)*\\(<a href='[./]*/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo.html'>(Foo|FooImpl)</a> foo\\)"
+        ).matcher(fooAdapterDoc);
+
+        assertTrue("Interfaces and Traits pattern should match for this test to make sense", interfacesAndTraits.find());
+        assertTrue("Constructor pattern should match for this test to make sense", constructor.find());
+
+        assertEquals("The implemented interface should link to api.Foo", "api", interfacesAndTraits.group(1));
+        assertEquals("The implemented interface link text should be Foo", "Foo", interfacesAndTraits.group(2));
+        assertEquals("The constructor parameter should link to lib.Foo", "lib", constructor.group(2));
+        assertEquals("The constructor parameter link text should be Foo", "Foo", constructor.group(3));
     }
 
     public void testScript() throws Exception {
