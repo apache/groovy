@@ -76,7 +76,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  *     String lastName
  *     int age
  * }
- * def person = Person.builder().firstName("Robert").lastName("Lewandowski").age(21)
+ * def person = Person.builder().firstName("Robert").lastName("Lewandowski").age(21).build()
  * assert person.firstName == "Robert"
  * assert person.lastName == "Lewandowski"
  * assert person.age == 21
@@ -90,11 +90,11 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  *     String lastName
  *     int age
  * }
- * def p2 = Person.builder().setFirstName("Robert").setLastName("Lewandowski").setAge(21)
+ * def p2 = Person.builder().setFirstName("Robert").setLastName("Lewandowski").setAge(21).build()
  * </pre>
  * or using a prefix of 'with' would result in usage like this:
  * <pre>
- * def p3 = Person.builder().withFirstName("Robert").withLastName("Lewandowski").withAge(21)
+ * def p3 = Person.builder().withFirstName("Robert").withLastName("Lewandowski").withAge(21).build()
  * </pre>
  *
  * You can also use the {@code @Builder} annotation in combination with this strategy on one or more constructor or
@@ -159,8 +159,6 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * </pre>
  *
  * The 'forClass' annotation attribute for the {@code @Builder} transform isn't applicable for this strategy.
- *
- * @author Paul King
  */
 public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
