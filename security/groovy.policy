@@ -192,6 +192,7 @@ grant signedBy "Groovy" {
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
     permission java.lang.RuntimePermission "createClassLoader";
+    permission java.util.PropertyPermission "groovy.compiler.strictNames", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
@@ -213,6 +214,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
 
     // Required because GroovyCodeSource calls to File#getCanonicalPath (at least on the Windows FileSystem)
     permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "groovy.compiler.strictNames", "read";
 
     permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestBase.groovy", "read";
     permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
