@@ -863,7 +863,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 <2> we can still call the `toUpperCase` method, because the type of `aString` is resolved at runtime
 
 So it doesn't matter that you use an explicit type here. It is in particular interesting when you combine this feature
-with <<typechecking,static type checking>>, because the type checker performs type inference.
+with <<static-type-checking,static type checking>>, because the type checker performs type inference.
 
 Likewise, Groovy doesn't make it mandatory to declare the types of a parameter in a method:
 
@@ -1989,7 +1989,7 @@ discussed in a link:core-domain-specific-languages.html#section-delegatesto[spec
 
 ==== Dynamic vs static
 
-In the <<typechecking,type checking section>>, we have seen that Groovy provides optional type checking thanks to the
+In the <<static-type-checking,type checking section>>, we have seen that Groovy provides optional type checking thanks to the
 `@TypeChecked` annotation. The type checker runs at compile time and performs a static analysis of dynamic code. The
 program will behave exactly the same whether type checking has been enabled or not. This means that the `@TypeChecked`
 annotation is neutral with regards to the semantics of a program. Even though it may be necessary to add type information
