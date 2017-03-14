@@ -55,6 +55,8 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private static final String[] INVALID_NAME_CHARS = {".", ":", "/", ";", "[", "<", ">"};
+    // the groovy.compiler.strictNames system property is experimental and may change default value or be removed in a future version of Groovy
+    private final boolean strictNames = Boolean.parseBoolean(System.getProperty("groovy.compiler.strictNames", "false"));
     private ClassNode currentClass;
     private SourceUnit source;
     private boolean inConstructor = false;
@@ -291,6 +293,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkMethodsForIncorrectName(ClassNode cn) {
+        if (!strictNames) return;
         List<MethodNode> methods = cn.getAllDeclaredMethods();
         for (MethodNode mNode : methods) {
             String name = mNode.getName();

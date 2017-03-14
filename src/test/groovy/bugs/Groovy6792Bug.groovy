@@ -31,11 +31,19 @@ class Groovy6792Bug extends CompilableTestSupport {
     }
 
     void testMethodWithInvalidName() {
+        // currently groovy.compiler.strictNames is experimental
+        System.setProperty('groovy.compiler.strictNames', 'true')
         def message = shouldNotCompile """
             class Foo {
                 def "bar.baz"(){}
             }
         """
         assert message.contains("You are not allowed to have '.' in a method name")
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown()
+        System.setProperty('groovy.compiler.strictNames', 'false')
     }
 }
