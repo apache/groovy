@@ -149,7 +149,7 @@ ext {
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
-    commonsCliVersion = '1.3.1'
+    commonsCliVersion = '1.4'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
