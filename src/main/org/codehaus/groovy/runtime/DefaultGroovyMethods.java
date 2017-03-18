@@ -1880,6 +1880,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each item to the given closure.  Custom types may utilize this
      * method by simply providing an "iterator()" method.  The items returned
      * from the resulting iterator will be passed to the closure.
+     * <pre class="groovyTestCase">
+     * String result = ''
+     * ['a', 'b', 'c'].each{ result += it }
+     * assert result == 'abc'
+     * </pre>
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
@@ -1895,6 +1900,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through an aggregate type or data structure,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
+     * <pre class="groovyTestCase">
+     * String result = ''
+     * ['a', 'b', 'c'].eachWithIndex{ letter, index -> result += "$index:$letter" }
+     * assert result == '0:a1:b2:c'
+     * </pre>
      *
      * @param self    an Object
      * @param closure a Closure to operate on each item
@@ -2278,6 +2288,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over every element of a collection, and checks whether all
      * elements are <code>true</code> according to the Groovy Truth.
      * Equivalent to <code>self.every({element -> element})</code>
+     * <pre class="groovyTestCase">
+     * assert [true, true].every()
+     * assert [1, 1].every()
+     * assert ![1, 0].every()
+     * </pre>
      *
      * @param self the object over which we iterate
      * @return true if every item in the collection matches the closure
