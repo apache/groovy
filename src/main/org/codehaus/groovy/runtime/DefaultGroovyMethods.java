@@ -2432,6 +2432,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an object or collection, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it > 3 }
+     * </pre>
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
@@ -2449,6 +2453,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterator, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].iterator().any { it == 2 }
+     * assert ![1, 2, 3].iterator().any { it > 3 }
+     * </pre>
      *
      * @param self    the iterator over which we iterate
      * @param closure the closure predicate used for matching
@@ -2466,6 +2474,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterable, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it > 3 }
+     * </pre>
      *
      * @param self    the iterable over which we iterate
      * @param closure the closure predicate used for matching
@@ -2510,6 +2522,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of a collection, and checks whether at least
      * one element is true according to the Groovy Truth.
      * Equivalent to self.any({element -> element})
+     * <pre class="groovyTestCase">
+     * assert [false, true].any()
+     * assert [0, 1].any()
+     * assert ![0, 0].any()
+     * </pre>
      *
      * @param self the object over which we iterate
      * @return true if any item in the collection matches the closure predicate
