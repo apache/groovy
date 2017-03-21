@@ -586,6 +586,22 @@ task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
     into installDir
 }
 
+task checkNoSnapshotVersions {
+    doLast {
+        if (project.isReleaseVersion) {
+            // TODO use modules() and exclusions as per distSpec
+            allprojects {
+                project.configurations.runtime.resolvedConfiguration.resolvedArtifacts.each {
+                    if (it.moduleVersion.id.version.endsWith("-SNAPSHOT")) {
+                        throw new GradleException("Found snapshot dependency for non-snapshot Groovy: " + it.moduleVersion)
+                    }
+                }
+            }
+        }
+    }
+}
+distBin.dependsOn checkNoSnapshotVersions
+
 import org.gradle.api.file.DuplicatesStrategy
 
 task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, syncDoc]) {
