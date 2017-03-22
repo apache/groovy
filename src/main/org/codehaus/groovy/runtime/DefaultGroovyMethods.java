@@ -3829,7 +3829,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first value matching the closure condition
+     * Finds the first value matching the closure condition.
+     *
+     * <pre class="groovyTestCase">
+     * def numbers = [1, 2, 3]
+     * def result = numbers.find { it > 1}
+     * assert result == 2
+     * </pre>
      *
      * @param self    an Object with an iterator returning its values
      * @param closure a closure condition
@@ -3868,6 +3874,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
      *
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult(5) { if(it > 1) return it } == 2
+     * assert numbers.findResult(5) { if(it > 4) return it } == 5
+     * </pre>
+     *
      * @param self    an Object with an iterator returning its values
      * @param defaultResult an Object that should be returned if all closure results are null
      * @param closure a closure that returns a non-null value when processing should stop
@@ -3882,6 +3894,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
+     *
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult { if(it > 1) return it } == 2
+     * assert numbers.findResult { if(it > 4) return it } == null
+     * </pre>
      *
      * @param self    an Object with an iterator returning its values
      * @param closure a closure that returns a non-null value when processing should stop
