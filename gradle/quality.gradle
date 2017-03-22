@@ -137,6 +137,7 @@ allprojects {
             xml.enabled = false
             html.enabled = true
         }
+        maxHeapSize = '2g'
     }
 }
 
