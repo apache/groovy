@@ -780,6 +780,36 @@ assert foo.dm.x == '123'
             assert b.getC()
         """
     }
+
+    void testOwnerPropertyPreferredToDelegateProperty() {
+        assertScript '''
+            class Foo {
+                String pls
+                @groovy.lang.Delegate
+                Bar bar
+            }
+
+            class Bar { 
+                String pls        
+            }
+            assert new Foo(pls: 'ok').pls == 'ok'
+        '''
+    }
+
+    void testOwnerMethodPreferredToDelegateMethod() {
+        assertScript '''
+            class Foo {
+                String pls() { 'foo pls' }
+                @groovy.lang.Delegate
+                Bar bar
+            }
+
+            class Bar {
+                String pls() { 'bar pls' }
+            }
+            assert new Foo(bar: new Bar()).pls() == 'foo pls'
+        '''
+    }
 }
 
 interface DelegateFoo {
