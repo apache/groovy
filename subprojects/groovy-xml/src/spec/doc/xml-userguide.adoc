@@ -219,47 +219,43 @@ the
 
 Both of them are equally valid.
 
-=== Speed things up with breadthFirst and depthFirst
+=== Speed things up with * and ** navigation
 
 If you ever have used XPath you may have used expressions like
 
 * `//` : Look everywhere
 * `/following-sibling::othernode` : Look for a node "othernode" in the same level
 
-More or less we have their counterparts in `GPath` with the methods
-`breadthFirst()` and `depthFirst()`.
+More or less we have their counterparts in `GPath` with the shortcuts `*` and `**`.
 
-The first example shows a simple use of `breadthFirst()`. The creators of
-this methods created a shorter syntax for it using the symbol `*`.
+The first example shows a simple use of `*`, which only iterates over the direct children of the node.
 
 [source,groovy]
-.breadthFirst()
+.Using *
 ----
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testBreadthFirst1,indent=0]
 ----
 
 This test searches for any node at the same level of the "books" node
-first, and *only if* it couldn't find the node we were looking for,
-then it will look deeper in the tree, always taking into account the
-given the expression inside the closure.
+first. This operation roughly corresponds to the `breadthFirst()` method, except that it only stops at *one level* instead of continuing to the inner levels.
 
 The expression says *_Look for any node with a tag name
-equals 'book' having an id with a value of '2'_*.
+equals 'book' having an id with a value of '2' directly under the 'books' node_*.
 
 But what if we would like to look for a given value
 without having to know exactly where it is. Let's say that the
 only thing we know is the id of the author "Lewis Carroll" . How are
-we going to be able to find that book? `depthFirst()` is the solution:
+we going to be able to find that book? Using `**` is the solution:
 
 [source,groovy]
-.depthFirst()
+.Using **
 ----
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
 ----
 
-`depthFirst()` is the same as looking something *everywhere in the
+`**` is the same as looking something *everywhere in the
 tree from this point down*. In this case we've used the method
-`find(Closure cl)` to find just the first occurrence.
+`find(Closure cl)` to find just the first occurrence. `**` corresponds to the `depthFirst()` method.
 
 What if we want to collect all book's titles?
 
