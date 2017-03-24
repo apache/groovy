@@ -502,7 +502,7 @@ standardLambdaParameters
 
 lambdaBody
 	:	block
-	|	expression
+	|	statementExpression
 	;
 
 
