@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * TODO share some code with {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ExtensionMethodCache}
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
 class MacroMethodsCache {
 

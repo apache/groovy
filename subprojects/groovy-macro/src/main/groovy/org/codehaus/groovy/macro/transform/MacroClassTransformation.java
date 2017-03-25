@@ -34,6 +34,12 @@ import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
+/**
+ * Transforms {@link MacroClass} calls into it's ClassNode
+ *
+ * @since 2.5.0
+ */
+
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class MacroClassTransformation extends MethodCallTransformation {
 
@@ -42,73 +48,91 @@ public class MacroClassTransformation extends MethodCallTransformation {
 
     @Override
     protected GroovyCodeVisitor getTransformer(final ASTNode[] nodes, final SourceUnit sourceUnit) {
-        ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return sourceUnit;
-            }
+        ClassCodeExpressionTransformer transformer = new MacroClassTransformer(sourceUnit);
 
-            @Override
-            public Expression transform(final Expression exp) {
-                if (exp instanceof ConstructorCallExpression) {
-                    MethodCallExpression call = exp.getNodeMetaData(MacroTransformation.class);
-                    if (call != null) {
-                        return call;
-                    }
+        return new MacroClassTransformingCodeVisitor(transformer, sourceUnit);
+    }
+
+    private static class MacroClassTransformer extends ClassCodeExpressionTransformer {
+
+        private final SourceUnit sourceUnit;
+
+        public MacroClassTransformer(SourceUnit sourceUnit) {
+            this.sourceUnit = sourceUnit;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return sourceUnit;
+        }
+
+        @Override
+        public Expression transform(final Expression exp) {
+            if (exp instanceof ConstructorCallExpression) {
+                MethodCallExpression call = exp.getNodeMetaData(MacroTransformation.class);
+                if (call != null) {
+                    return call;
                 }
-                return super.transform(exp);
             }
-        };
+            return super.transform(exp);
+        }
+    }
 
-        return new TransformingCodeVisitor(transformer) {
+    private static class MacroClassTransformingCodeVisitor extends TransformingCodeVisitor {
 
-            @Override
-            public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-                ClassNode type = call.getType();
-                if (type instanceof InnerClassNode) {
-                    if (((InnerClassNode) type).isAnonymous() &&
-                            MACROCLASS_TYPE.getNameWithoutPackage().equals(type.getSuperClass().getNameWithoutPackage())) {
-                        try {
-                            String source = convertInnerClassToSource(type);
+        private final SourceUnit sourceUnit;
 
-                            MethodCallExpression macroCall = callX(
-                                    propX(classX(ClassHelper.makeWithoutCaching(MacroBuilder.class, false)), "INSTANCE"),
-                                    MACRO_METHOD,
-                                    args(
-                                            constX(source),
-                                            MacroGroovyMethods.buildSubstitutionMap(sourceUnit, type),
-                                            classX(ClassHelper.make(ClassNode.class))
-                                    )
-                            );
+        public MacroClassTransformingCodeVisitor(ClassCodeExpressionTransformer transformer, SourceUnit sourceUnit) {
+            super(transformer);
+            this.sourceUnit = sourceUnit;
+        }
 
-                            macroCall.setSpreadSafe(false);
-                            macroCall.setSafe(false);
-                            macroCall.setImplicitThis(false);
-                            call.putNodeMetaData(MacroTransformation.class, macroCall);
-                            List<ClassNode> classes = sourceUnit.getAST().getClasses();
-                            for (Iterator<ClassNode> iterator = classes.iterator(); iterator.hasNext(); ) {
-                                final ClassNode aClass = iterator.next();
-                                if (aClass == type || type == aClass.getOuterClass()) {
-                                    iterator.remove();
-                                }
+        @Override
+        public void visitConstructorCallExpression(final ConstructorCallExpression call) {
+            ClassNode type = call.getType();
+            if (type instanceof InnerClassNode) {
+                if (((InnerClassNode) type).isAnonymous() &&
+                        MACROCLASS_TYPE.getNameWithoutPackage().equals(type.getSuperClass().getNameWithoutPackage())) {
+                    try {
+                        String source = convertInnerClassToSource(type);
+
+                        MethodCallExpression macroCall = callX(
+                                propX(classX(ClassHelper.makeWithoutCaching(MacroBuilder.class, false)), "INSTANCE"),
+                                MACRO_METHOD,
+                                args(
+                                        constX(source),
+                                        MacroGroovyMethods.buildSubstitutionMap(sourceUnit, type),
+                                        classX(ClassHelper.make(ClassNode.class))
+                                )
+                        );
+
+                        macroCall.setSpreadSafe(false);
+                        macroCall.setSafe(false);
+                        macroCall.setImplicitThis(false);
+                        call.putNodeMetaData(MacroTransformation.class, macroCall);
+                        List<ClassNode> classes = sourceUnit.getAST().getClasses();
+                        for (Iterator<ClassNode> iterator = classes.iterator(); iterator.hasNext(); ) {
+                            final ClassNode aClass = iterator.next();
+                            if (aClass == type || type == aClass.getOuterClass()) {
+                                iterator.remove();
                             }
-                        } catch (Exception e) {
-                            // FIXME
-                            e.printStackTrace();
                         }
-                        return;
+                    } catch (Exception e) {
+                        // FIXME
+                        e.printStackTrace();
                     }
+                    return;
                 }
-                super.visitConstructorCallExpression(call);
-
             }
+            super.visitConstructorCallExpression(call);
 
-            private String convertInnerClassToSource(final ClassNode type) throws Exception {
-                String source = GeneralUtils.convertASTToSource(sourceUnit.getSource(), type);
-                // we need to remove the leading "{" and trailing "}"
-                source = source.substring(source.indexOf('{') + 1, source.lastIndexOf('}') - 1);
-                return source;
-            }
-        };
+        }
+
+        private String convertInnerClassToSource(final ClassNode type) throws Exception {
+            String source = GeneralUtils.convertASTToSource(sourceUnit.getSource(), type);
+            // we need to remove the leading "{" and trailing "}"
+            source = source.substring(source.indexOf('{') + 1, source.lastIndexOf('}') - 1);
+            return source;
+        }
     }
 }

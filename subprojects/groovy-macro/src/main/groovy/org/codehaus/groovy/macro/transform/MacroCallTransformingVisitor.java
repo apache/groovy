@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package org.codehaus.groovy.macro.transform;
 
 import org.codehaus.groovy.ast.*;
@@ -11,9 +29,19 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+/**
+ * Visitor to find and transform macro method calls. For the performance reasons it's not a transformer,
+ * but transforming visitor - it mutates {@link MethodCallExpression} if it's a macro method call by replacing
+ * original call (i.e. {@code myMacroMethod("foo", "bar")} with something like:
+ * {@code MacroStub.INSTANCE.macroMethod(123)}
+ * (where {@code myMacroMethod} returns constant expression {@code 123})
+ *
+ * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
+ */
 class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
 
     private static final ClassNode MACRO_CONTEXT_CLASS_NODE = ClassHelper.make(MacroContext.class);
@@ -43,14 +71,43 @@ class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
     public void visitMethodCallExpression(MethodCallExpression call) {
         super.visitMethodCallExpression(call);
 
-        List<MethodNode> methods = MacroMethodsCache.get(classLoader).get(call.getMethodAsString());
+        List<Expression> callArguments = InvocationWriter.makeArgumentList(call.getArguments()).getExpressions();
 
-        if (methods == null) {
-            // Not a macro call
+        List<MethodNode> macroMethods = findMacroMethods(call.getMethodAsString(), callArguments);
+
+        if (macroMethods.isEmpty()) {
+            // Early return to avoid macro context and arguments creation
             return;
         }
 
-        List<Expression> callArguments = InvocationWriter.makeArgumentList(call.getArguments()).getExpressions();
+        MacroContext macroContext = new MacroContext(unit, sourceUnit, call);
+
+        Object[] macroArguments = new Object[callArguments.size() + 1];
+        macroArguments[0] = macroContext;
+        System.arraycopy(callArguments.toArray(), 0, macroArguments, 1, callArguments.size());
+
+        for (MethodNode macroMethodNode : macroMethods) {
+            if (!(macroMethodNode instanceof ExtensionMethodNode)) {
+                throw new IllegalStateException(macroMethodNode + " is not an instance of ExtensionMethodNode");
+            }
+
+            if (tryMacroMethod(call, (ExtensionMethodNode) macroMethodNode, macroArguments)) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Finds all extension methods of {@link MacroContext} for given methodName
+     * with @{@link org.codehaus.groovy.macro.runtime.Macro} annotation.
+     */
+    private List<MethodNode> findMacroMethods(String methodName, List<Expression> callArguments) {
+        List<MethodNode> methods = MacroMethodsCache.get(classLoader).get(methodName);
+
+        if (methods == null) {
+            // Not a macro call
+            return Collections.emptyList();
+        }
 
         ClassNode[] argumentsList = new ClassNode[callArguments.size()];
 
@@ -58,43 +115,38 @@ class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
             argumentsList[i] = ClassHelper.make(callArguments.get(i).getClass());
         }
 
-        methods = StaticTypeCheckingSupport.chooseBestMethod(MACRO_CONTEXT_CLASS_NODE, methods, argumentsList);
+        return StaticTypeCheckingSupport.chooseBestMethod(MACRO_CONTEXT_CLASS_NODE, methods, argumentsList);
+    }
 
-        for (MethodNode macroMethodNode : methods) {
-            if (!(macroMethodNode instanceof ExtensionMethodNode)) {
-                // TODO is it even possible?
-                continue;
-            }
+    /**
+     * Attempts to call given macroMethod
+     * @param call MethodCallExpression before the transformation
+     * @param macroMethod a macro method candidate
+     * @param macroArguments arguments to pass to
+     * @return true if call succeeded and current call was transformed
+     */
+    private boolean tryMacroMethod(MethodCallExpression call, ExtensionMethodNode macroMethod, Object[] macroArguments) {
+        Expression result = (Expression) InvokerHelper.invokeStaticMethod(
+            macroMethod.getExtensionMethodNode().getDeclaringClass().getTypeClass(),
+            macroMethod.getName(),
+            macroArguments
+        );
 
-            MethodNode macroExtensionMethodNode = ((ExtensionMethodNode) macroMethodNode).getExtensionMethodNode();
-
-            final Class clazz;
-            try {
-                clazz = classLoader.loadClass(macroExtensionMethodNode.getDeclaringClass().getName());
-            } catch (ClassNotFoundException e) {
-                //TODO different reaction?
-                continue;
-            }
-
-            MacroContext macroContext = new MacroContext(unit, sourceUnit, call);
-
-            List<Object> macroArguments = new ArrayList<>();
-            macroArguments.add(macroContext);
-            macroArguments.addAll(callArguments);
-
-            Expression result = (Expression) InvokerHelper.invokeStaticMethod(clazz, macroMethodNode.getName(), macroArguments.toArray());
-
-            call.setObjectExpression(MACRO_STUB_INSTANCE);
-            call.setMethod(new ConstantExpression(MACRO_STUB_METHOD_NAME));
-
-            // TODO check that we reset everything here
-            call.setSpreadSafe(false);
-            call.setSafe(false);
-            call.setImplicitThis(false);
-            call.setArguments(result);
-            call.setGenericsTypes(new GenericsType[0]);
-
-            break;
+        if (result == null) {
+            // Allow macro methods to return null as an indicator that they didn't match a method call
+            return false;
         }
+
+        call.setObjectExpression(MACRO_STUB_INSTANCE);
+        call.setMethod(new ConstantExpression(MACRO_STUB_METHOD_NAME));
+
+        // TODO check that we reset everything here
+        call.setSpreadSafe(false);
+        call.setSafe(false);
+        call.setImplicitThis(false);
+        call.setArguments(result);
+        call.setGenericsTypes(new GenericsType[0]);
+
+        return true;
     }
 }

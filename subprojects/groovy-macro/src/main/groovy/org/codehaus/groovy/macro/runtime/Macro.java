@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
 
 @Retention(RetentionPolicy.RUNTIME)
