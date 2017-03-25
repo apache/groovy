@@ -19,6 +19,7 @@
 package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
@@ -38,8 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.codehaus.groovy.macro.methods.MacroGroovyMethods.DOLLAR_VALUE;
 
 /**
+ * Runtime support for <pre>{@code macro {} }</pre> method.
+ *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
+
+@Incubating
 public enum MacroBuilder {
     INSTANCE;
 

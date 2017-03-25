@@ -18,5 +18,13 @@
  */
 package org.codehaus.groovy.macro.transform;
 
+import org.apache.groovy.lang.annotation.Incubating;
+
+/**
+ *
+ * since 2.5.0
+ */
+
+@Incubating
 public abstract class MacroClass {
 }

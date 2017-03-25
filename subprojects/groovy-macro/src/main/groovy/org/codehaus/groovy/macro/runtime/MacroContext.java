@@ -24,7 +24,10 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
+ * Macro method context. Every macro method must be an extension method of it.
+ *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
 
 @Incubating
@@ -42,14 +45,26 @@ public class MacroContext {
         this.call = call;
     }
 
+    /**
+     *
+     * @return original method call expression
+     */
     public MethodCallExpression getCall() {
         return call;
     }
 
+    /**
+     *
+     * @return current source unit
+     */
     public SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     *
+     * @return current compilation unit
+     */
     public CompilationUnit getCompilationUnit() {
         return compilationUnit;
     }

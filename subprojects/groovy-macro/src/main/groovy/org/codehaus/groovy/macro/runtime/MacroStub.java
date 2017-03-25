@@ -22,6 +22,7 @@ package org.codehaus.groovy.macro.runtime;
  * Stub for macro calls.
  *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
 public enum MacroStub {
     INSTANCE;
