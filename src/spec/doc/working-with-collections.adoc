@@ -146,7 +146,7 @@ include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=l
 ----------------------------------------------------------------------------
 
 In case you only want to remove the first element having the same value in a list, instead of removing all
-elements, you call call the `remove` method passing the value:
+elements, you can call the `remove` method passing the value:
 
 [source,groovy]
 ----------------------------------------------------------------------------
