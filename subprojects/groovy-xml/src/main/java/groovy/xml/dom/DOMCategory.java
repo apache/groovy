@@ -355,7 +355,10 @@ public class DOMCategory {
 
     public static Node replaceNode(NodesHolder self, Closure c) {
         if (self.getLength() <= 0 || self.getLength() > 1) {
-            throw new GroovyRuntimeException("replaceNode() can only be used to replace a single element.");
+            throw new GroovyRuntimeException(
+                    "replaceNode() can only be used to replace a single element, " +
+                    "but was applied to " + self.getLength() + " elements."
+            );
         }
         return replaceNode(self.item(0), c);
     }
