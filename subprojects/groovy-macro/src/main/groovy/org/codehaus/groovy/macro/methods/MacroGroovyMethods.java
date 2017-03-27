@@ -106,13 +106,6 @@ public class MacroGroovyMethods {
 
         Boolean asIs = (Boolean) asIsConstantExpression.getValue();
 
-        TupleExpression macroArguments = getMacroArguments(macroContext.getSourceUnit(), macroContext.getCall());
-
-        if (macroArguments == null) {
-            // FIXME
-            return macroContext.getCall();
-        }
-
         return callX(
                 propX(classX(ClassHelper.makeWithoutCaching(MacroBuilder.class, false)), "INSTANCE"),
                 "macro",
@@ -120,13 +113,13 @@ public class MacroGroovyMethods {
                         phaseExpression != null ? phaseExpression : constX(null),
                         asIsConstantExpression,
                         constX(source),
-                        buildSubstitutionMap(macroContext.getSourceUnit(), closureExpression),
+                        buildSubstitutions(macroContext.getSourceUnit(), closureExpression),
                         classX(ClassHelper.makeWithoutCaching(MacroBuilder.getMacroValue(closureBlock, asIs).getClass(), false))
                 )
         );
     }
 
-    public static ListExpression buildSubstitutionMap(final SourceUnit source, final ASTNode expr) {
+    public static ListExpression buildSubstitutions(final SourceUnit source, final ASTNode expr) {
         final ListExpression listExpression = new ListExpression();
 
         ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
