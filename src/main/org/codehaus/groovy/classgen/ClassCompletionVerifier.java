@@ -510,26 +510,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         super.visitBinaryExpression(expression);
 
-        switch (expression.getOperation().getType()) {
-            case Types.EQUAL: // = assignment
-            case Types.BITWISE_AND_EQUAL:
-            case Types.BITWISE_OR_EQUAL:
-            case Types.BITWISE_XOR_EQUAL:
-            case Types.PLUS_EQUAL:
-            case Types.MINUS_EQUAL:
-            case Types.MULTIPLY_EQUAL:
-            case Types.DIVIDE_EQUAL:
-            case Types.INTDIV_EQUAL:
-            case Types.MOD_EQUAL:
-            case Types.POWER_EQUAL:
-            case Types.LEFT_SHIFT_EQUAL:
-            case Types.RIGHT_SHIFT_EQUAL:
-            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
-                checkFinalFieldAccess(expression.getLeftExpression());
-                checkSuperOrThisOnLHS(expression.getLeftExpression());
-                break;
-            default:
-                break;
+        if (Types.ASSIGNMENT_SET.contains(expression.getOperation().getType())) {
+            checkFinalFieldAccess(expression.getLeftExpression());
+            checkSuperOrThisOnLHS(expression.getLeftExpression());
         }
     }
 
