@@ -4108,16 +4108,27 @@ public class Sql {
      */
     protected void setParameters(List<Object> params, PreparedStatement statement) throws SQLException {
         int i = 1;
-        ParameterMetaData metaData = statement.getParameterMetaData();
-        if (metaData.getParameterCount() == 0 && params.size() == 1 && params.get(0) instanceof Map) {
-            Map paramsMap = (Map) params.get(0);
-            if (paramsMap.isEmpty()) return;
-        }
-        if (metaData.getParameterCount() != params.size()) {
-            throw new IllegalArgumentException("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
+        ParameterMetaData metaData = getParameterMetaDataSafe(statement);
+        if (metaData != null) {
+            if (metaData.getParameterCount() == 0 && params.size() == 1 && params.get(0) instanceof Map) {
+                Map paramsMap = (Map) params.get(0);
+                if (paramsMap.isEmpty()) return;
+            }
+            if (metaData.getParameterCount() != params.size()) {
+                throw new IllegalArgumentException("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
+            }
         }
         for (Object value : params) {
             setObject(statement, i++, value);
+        }
+    }
+
+    private ParameterMetaData getParameterMetaDataSafe(PreparedStatement statement) throws SQLException {
+        try {
+            return statement.getParameterMetaData();
+        } catch(SQLException se) {
+            LOG.fine("Unable to retrieve parameter metadata - reduced checking will occur: " + se.getMessage());
+            return null;
         }
     }
 
