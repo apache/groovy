@@ -101,7 +101,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
                                 MACRO_METHOD,
                                 args(
                                         constX(source),
-                                        MacroGroovyMethods.buildSubstitutionMap(sourceUnit, type),
+                                        MacroGroovyMethods.buildSubstitutions(sourceUnit, type),
                                         classX(ClassHelper.make(ClassNode.class))
                                 )
                         );

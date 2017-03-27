@@ -224,4 +224,10 @@ class MacroTest extends GroovyTestCase {
         assert ast1.getField("str") != null
 '''
     }
+
+    void testNotAMacroCall() {
+        shouldFail(MissingMethodException) {
+            assertScript 'macro()'
+        }
+    }
 }
