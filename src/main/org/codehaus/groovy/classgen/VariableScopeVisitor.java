@@ -348,7 +348,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitBinaryExpression(BinaryExpression be) {
         super.visitBinaryExpression(be);
 
-        if (Types.ASSIGNMENT_SET.contains(be.getOperation().getType())) {
+        if (Types.isAssignment(be.getOperation().getType())) {
             checkFinalFieldAccess(be.getLeftExpression());
         }
     }

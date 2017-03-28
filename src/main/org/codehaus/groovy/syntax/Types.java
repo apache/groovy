@@ -1448,4 +1448,8 @@ public class Types
     }
 
     public static final Set<Integer> ASSIGNMENT_SET = new HashSet<Integer>(Arrays.asList(EQUAL, BITWISE_AND_EQUAL, BITWISE_OR_EQUAL, BITWISE_XOR_EQUAL, PLUS_EQUAL, MINUS_EQUAL, MULTIPLY_EQUAL, DIVIDE_EQUAL, INTDIV_EQUAL, MOD_EQUAL, POWER_EQUAL, LEFT_SHIFT_EQUAL, RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL, ELVIS_EQUAL));
+
+    public static boolean isAssignment(Integer type) {
+        return ASSIGNMENT_SET.contains(type);
+    }
 }

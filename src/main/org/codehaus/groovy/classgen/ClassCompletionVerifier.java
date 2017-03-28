@@ -510,7 +510,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         super.visitBinaryExpression(expression);
 
-        if (Types.ASSIGNMENT_SET.contains(expression.getOperation().getType())) {
+        if (Types.isAssignment(expression.getOperation().getType())) {
             checkFinalFieldAccess(expression.getLeftExpression());
             checkSuperOrThisOnLHS(expression.getLeftExpression());
         }
