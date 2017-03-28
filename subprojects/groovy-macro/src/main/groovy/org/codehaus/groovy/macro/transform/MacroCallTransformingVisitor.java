@@ -20,7 +20,6 @@ package org.codehaus.groovy.macro.transform;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.macro.runtime.MacroContext;
@@ -71,7 +70,12 @@ class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
     public void visitMethodCallExpression(MethodCallExpression call) {
         super.visitMethodCallExpression(call);
 
-        List<Expression> callArguments = InvocationWriter.makeArgumentList(call.getArguments()).getExpressions();
+        final List<Expression> callArguments;
+        if (call.getArguments() instanceof TupleExpression) {
+            callArguments = ((TupleExpression) call.getArguments()).getExpressions();
+        } else {
+            callArguments = Collections.singletonList(call.getArguments());
+        }
 
         List<MethodNode> macroMethods = findMacroMethods(call.getMethodAsString(), callArguments);
 
