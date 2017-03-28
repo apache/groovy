@@ -1447,9 +1447,13 @@ public class Types
         addDescription( SWITCH_ENTRIES              , "<valid in a switch body>"     );
     }
 
-    public static final Set<Integer> ASSIGNMENT_SET = new HashSet<Integer>(Arrays.asList(EQUAL, BITWISE_AND_EQUAL, BITWISE_OR_EQUAL, BITWISE_XOR_EQUAL, PLUS_EQUAL, MINUS_EQUAL, MULTIPLY_EQUAL, DIVIDE_EQUAL, INTDIV_EQUAL, MOD_EQUAL, POWER_EQUAL, LEFT_SHIFT_EQUAL, RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL, ELVIS_EQUAL));
+    private static final int[] ASSIGNMENT_TYPES;
+    static {
+        ASSIGNMENT_TYPES = new int[] { EQUAL, BITWISE_AND_EQUAL, BITWISE_OR_EQUAL, BITWISE_XOR_EQUAL, PLUS_EQUAL, MINUS_EQUAL, MULTIPLY_EQUAL, DIVIDE_EQUAL, INTDIV_EQUAL, MOD_EQUAL, POWER_EQUAL, LEFT_SHIFT_EQUAL, RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL, ELVIS_EQUAL };
+        Arrays.sort(ASSIGNMENT_TYPES);
+    }
 
-    public static boolean isAssignment(Integer type) {
-        return ASSIGNMENT_SET.contains(type);
+    public static boolean isAssignment(int type) {
+        return Arrays.binarySearch(ASSIGNMENT_TYPES, type) >= 0;
     }
 }
