@@ -315,6 +315,36 @@ def mergeModuleDescriptors() {
     descriptor
 }
 
+def mergeGlobalTransforms() {
+    new File("$buildDir/tmp/").mkdirs()
+
+    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.transform.ASTTransformation")
+    descriptor.withWriter('UTF-8') {
+        it << '# This is a generated file, do not edit\n'
+    }
+
+    def files = []
+    files << new File("${rootProject.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
+    modules().collect {
+        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
+    }.findAll { it.exists() }.each {
+        files << it
+    }
+    files.each {
+        def skipping = true
+        it.readLines().each { line ->
+            if (skipping) {
+                skipping = line.startsWith('#')
+            }
+            if (!skipping) {
+                descriptor << line + '\n'
+            }
+        }
+    }
+
+    descriptor
+}
+
 task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     description = "Overwrites normal JAR files with their JARJAR version"
     doLast {
@@ -367,6 +397,10 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         }
         copy {
             from(mergeModuleDescriptors())
+            into "$owner.ext.metaInfDir/services"
+        }
+        copy {
+            from(mergeGlobalTransforms())
             into "$owner.ext.metaInfDir/services"
         }
         copy {
