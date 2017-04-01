@@ -346,7 +346,7 @@ variableDeclarators
     ;
 
 variableDeclarator
-    :   variableDeclaratorId (ASSIGN nls variableInitializer)?
+    :   variableDeclaratorId (nls ASSIGN nls variableInitializer)?
     ;
 
 variableDeclaratorId
@@ -416,11 +416,11 @@ formalParameterList
     ;
 
 formalParameter
-    :   variableModifiersOpt type?          variableDeclaratorId (ASSIGN nls expression)?
+    :   variableModifiersOpt type?          variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 lastFormalParameter
-    :   variableModifiersOpt type? ELLIPSIS variableDeclaratorId (ASSIGN nls expression)?
+    :   variableModifiersOpt type? ELLIPSIS variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 methodBody
@@ -542,7 +542,7 @@ elementValuePairs
     ;
 
 elementValuePair
-    :   elementValuePairName ASSIGN elementValue
+    :   elementValuePairName nls ASSIGN nls elementValue
     ;
 
 elementValuePairName
@@ -594,7 +594,7 @@ variableDeclaration[int t]
         (   { 0 == $t }? variableModifiers
         |   { 1 == $t }? modifiers
         )
-        typeNamePairs ASSIGN nls variableInitializer
+        typeNamePairs nls ASSIGN nls variableInitializer
     ;
 
 typeNamePairs
@@ -883,8 +883,8 @@ expression
 
     // assignment expression (level 15)
     // "(a) = [1]" is a special case of multipleAssignmentExprAlt, it will be handle by assignmentExprAlt
-    |   <assoc=right> left=variableNames op=ASSIGN nls right=statementExpression            #multipleAssignmentExprAlt
-    |   <assoc=right> left=expression
+    |   <assoc=right> left=variableNames nls op=ASSIGN nls right=statementExpression            #multipleAssignmentExprAlt
+    |   <assoc=right> left=expression nls
                         op=(   ASSIGN
                            |   ADD_ASSIGN
                            |   SUB_ASSIGN

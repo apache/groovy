@@ -188,6 +188,7 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/Expression_21x.groovy');
         doTest('core/Expression_22x.groovy');
         doRunAndTest('core/Expression_22x.groovy');
+        doRunAndTest('core/Expression_23x.groovy');
     }
 
     void "test groovy core - IdenticalOp"() {
