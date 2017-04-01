@@ -31,6 +31,9 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://jitpack.io'
+        }
     }
 
     dependencies {
@@ -43,7 +46,7 @@ buildscript {
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
 
-        classpath files("lib/antlr4-gradle-plugin-0.1.2-SNAPSHOT.jar");
+        classpath "com.github.danielsun1106:antlr4-gradle-plugin:v0.1.2"
     }
 }
 
