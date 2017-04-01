@@ -112,7 +112,7 @@ Having a XML like the following:
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategory.groovy[tags=testXML,indent=0]
 ----
 
-You can parse it using 'groovy.xml.DOMBuilder` and
+You can parse it using `groovy.xml.DOMBuilder` and
 `groovy.xml.dom.DOMCategory`.
 
 [source,groovy]
