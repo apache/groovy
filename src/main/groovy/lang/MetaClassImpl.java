@@ -499,11 +499,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             boolean useThis;
 
             @Override
-            public boolean skipClass(Class clazz) {
-                return !useThis && clazz == theClass;
-            }
-
-            @Override
             public void methodNameAction(Class clazz, MetaMethodIndex.Entry e) {
                 if (useThis) {
                     if (e.methods == null)
