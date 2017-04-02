@@ -28,7 +28,7 @@ groovy foo.groovy
 groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
 ```
 
-**JVM options to control parsing:**
+**JVM system properties to control parsing:**
 * `groovy.antlr4.cache.threshold`: how frequently to clear DFA cache(default: 50). **Notice:** The more frequently the DFA cache is cleared, the poorer parsing performance will be(you can not set the value that is less than the default value). But the DFA cache has to be cleared to avoid OutOfMemoryError's occurring. 
 * `groovy.extract.doc.comment`: whether to collect groovydoc while parsing groovy source code(default: false)
 
