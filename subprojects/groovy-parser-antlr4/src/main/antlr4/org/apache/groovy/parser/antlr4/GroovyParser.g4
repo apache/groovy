@@ -829,7 +829,7 @@ expression
     |   left=expression op=(ADD | SUB) nls right=expression                                 #additiveExprAlt
 
     // bit shift expressions (level 6)
-    |   left=expression
+    |   left=expression nls
             (           (   dlOp=LT LT
                         |   tgOp=GT GT GT
                         |   dgOp=GT GT
@@ -841,11 +841,11 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                      #relationalExprAlt
-    |   left=expression op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression          #relationalExprAlt
+    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                      #relationalExprAlt
+    |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression          #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
-    |   left=expression
+    |   left=expression nls
             op=(    IDENTICAL
                |    NOT_IDENTICAL
                |    EQUAL
@@ -857,27 +857,27 @@ expression
     // regex find and match (=~ and ==~) (level 8.5)
     // jez: moved =~ closer to precedence of == etc, as...
     // 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
-    |   left=expression op=(REGEX_FIND | REGEX_MATCH) nls right=expression                  #regexExprAlt
+    |   left=expression nls op=(REGEX_FIND | REGEX_MATCH) nls right=expression                  #regexExprAlt
 
     // bitwise or non-short-circuiting and (&)  (level 9)
-    |   left=expression op=BITAND nls right=expression                                      #andExprAlt
+    |   left=expression nls op=BITAND nls right=expression                                      #andExprAlt
 
     // exclusive or (^)  (level 10)
-    |   left=expression op=XOR nls right=expression                                         #exclusiveOrExprAlt
+    |   left=expression nls op=XOR nls right=expression                                         #exclusiveOrExprAlt
 
     // bitwise or non-short-circuiting or (|)  (level 11)
-    |   left=expression op=BITOR nls right=expression                                       #inclusiveOrExprAlt
+    |   left=expression nls op=BITOR nls right=expression                                       #inclusiveOrExprAlt
 
     // logical and (&&)  (level 12)
-    |   left=expression op=AND nls right=expression                                         #logicalAndExprAlt
+    |   left=expression nls op=AND nls right=expression                                         #logicalAndExprAlt
 
     // logical or (||)  (level 13)
-    |   left=expression op=OR nls right=expression                                          #logicalOrExprAlt
+    |   left=expression nls op=OR nls right=expression                                          #logicalOrExprAlt
 
     // conditional test (level 14)
-    |   <assoc=right> con=expression
-        (   nls QUESTION nls tb=expression nls COLON nls
-        |   nls ELVIS nls
+    |   <assoc=right> con=expression nls
+        (   QUESTION nls tb=expression nls COLON nls
+        |   ELVIS nls
         )
         fb=expression                                                                       #conditionalExprAlt
 

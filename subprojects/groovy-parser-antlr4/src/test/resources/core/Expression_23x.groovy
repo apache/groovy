@@ -43,3 +43,41 @@ def m(p1
 }
 assert 6 == m()
 
+def w
+    =
+        1
+            <<
+                2
+assert 4 == w
+assert 'a'
+            instanceof
+                        String
+assert 1
+            <
+                2
+
+assert 1
+            ==
+                1
+
+assert 'a'
+            ==~
+                /a/
+assert true
+            &
+                true
+assert true
+            ^
+                false
+assert true
+            |
+                true
+
+assert true
+            &&
+                true
+
+assert true
+            ||
+                true
+
