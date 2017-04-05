@@ -315,7 +315,7 @@ public class MetaMethodIndex {
         Object oldListOrMethod = e.methodsForSuper;
         if (oldListOrMethod == null)
           return;
-        
+
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
             int len1 = oldList.size();
@@ -346,7 +346,7 @@ public class MetaMethodIndex {
         Object oldListOrMethod = from.methods;
         if (oldListOrMethod == null)
           return;
-        
+
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
@@ -381,7 +381,10 @@ public class MetaMethodIndex {
                 return list;
             } else {
                 if (match.isPrivate()
-                        || (!isNonRealMethod(match) && match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
+                        || (!isNonRealMethod(match)
+                            && match.getDeclaringClass().isInterface()
+                            && !method.getDeclaringClass().isInterface()
+                            && !method.isStatic())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
@@ -413,7 +416,10 @@ public class MetaMethodIndex {
                 MetaMethod match = (MetaMethod) list.get(found);
                 if (match==method) return o;
                 if (match.isPrivate()
-                        || (!isNonRealMethod(match) && match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
+                        || (!isNonRealMethod(match)
+                            && match.getDeclaringClass().isInterface()
+                            && !method.getDeclaringClass().isInterface()
+                            && !method.isStatic())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
