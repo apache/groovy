@@ -63,7 +63,7 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -392,7 +392,7 @@ public class GeneralUtils {
     }
 
     public static Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
-        Set<ClassNode> res = new HashSet<ClassNode>();
+        Set<ClassNode> res = new LinkedHashSet<ClassNode>();
         if (type.isInterface()) {
             res.add(type);
             return res;

@@ -1110,7 +1110,7 @@ public abstract class StaticTypeCheckingSupport {
     private static Collection<MethodNode> removeCovariantsAndInterfaceEquivalents(Collection<MethodNode> collection) {
         if (collection.size() <= 1) return collection;
         List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
-        List<MethodNode> list = new LinkedList<MethodNode>(new HashSet<MethodNode>(collection));
+        List<MethodNode> list = new LinkedList<MethodNode>(new LinkedHashSet<MethodNode>(collection));
         for (int i = 0; i < list.size() - 1; i++) {
             MethodNode one = list.get(i);
             if (toBeRemoved.contains(one)) continue;
