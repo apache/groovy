@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -418,7 +417,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public Set<ClassNode> getAllInterfaces () {
-        Set<ClassNode> res = new HashSet<ClassNode>();
+        Set<ClassNode> res = new LinkedHashSet<ClassNode>();
         getAllInterfaces(res);
         return res;
     }
