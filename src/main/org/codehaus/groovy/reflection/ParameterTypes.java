@@ -25,17 +25,18 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Array;
 
-public class ParameterTypes
-{
-  protected volatile Class [] nativeParamTypes;
-  protected volatile CachedClass [] parameterTypes;
+public class ParameterTypes {
+    private final static Class[] NO_PARAMETERS = new Class[0];
 
-  protected boolean isVargsMethod;
+    protected volatile Class[] nativeParamTypes;
+    protected volatile CachedClass[] parameterTypes;
 
-    public ParameterTypes () {
+    protected boolean isVargsMethod;
+
+    public ParameterTypes() {
     }
 
-    public ParameterTypes(Class pt []) {
+    public ParameterTypes(Class pt[]) {
         nativeParamTypes = pt;
     }
 
@@ -43,9 +44,8 @@ public class ParameterTypes
         nativeParamTypes = new Class[pt.length];
         for (int i = 0; i != pt.length; ++i) {
             try {
-              nativeParamTypes[i] = Class.forName(pt[i]);
-            }
-            catch (ClassNotFoundException e){
+                nativeParamTypes[i] = Class.forName(pt[i]);
+            } catch (ClassNotFoundException e) {
                 NoClassDefFoundError err = new NoClassDefFoundError();
                 err.initCause(e);
                 throw err;
@@ -59,29 +59,34 @@ public class ParameterTypes
 
     protected final void setParametersTypes(CachedClass[] pt) {
         this.parameterTypes = pt;
-        isVargsMethod = pt.length > 0 && pt [pt.length-1].isArray;
+        isVargsMethod = pt.length > 0 && pt[pt.length - 1].isArray;
     }
 
     public CachedClass[] getParameterTypes() {
-      if (parameterTypes == null) {
-          getParametersTypes0();
-      }
+        if (parameterTypes == null) {
+            getParametersTypes0();
+        }
 
-      return parameterTypes;
-  }
+        return parameterTypes;
+    }
 
     private synchronized void getParametersTypes0() {
-      if (parameterTypes != null)
-          return;
+        if (parameterTypes != null)
+            return;
 
-      Class [] npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
+        Class[] npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
+        if (npt.length == 0) {
+            nativeParamTypes = NO_PARAMETERS;
+            setParametersTypes(CachedClass.EMPTY_ARRAY);
+        } else {
 
-      CachedClass[] pt = new CachedClass [npt.length];
-      for (int i = 0; i != npt.length; ++i)
-        pt[i] = ReflectionCache.getCachedClass(npt[i]);
+            CachedClass[] pt = new CachedClass[npt.length];
+            for (int i = 0; i != npt.length; ++i)
+                pt[i] = ReflectionCache.getCachedClass(npt[i]);
 
-      nativeParamTypes = npt;
-      setParametersTypes(pt);
+            nativeParamTypes = npt;
+            setParametersTypes(pt);
+        }
     }
 
     public Class[] getNativeParameterTypes() {
@@ -92,32 +97,33 @@ public class ParameterTypes
     }
 
     private synchronized void getNativeParameterTypes0() {
-      if (nativeParamTypes != null)
-          return;
+        if (nativeParamTypes != null)
+            return;
 
-      Class [] npt;
-      if (parameterTypes != null) {
-          npt = new Class [parameterTypes.length];
-          for (int i = 0; i != parameterTypes.length; ++i) {
-              npt[i] = parameterTypes[i].getTheClass();
-          }
-      }
-      else
-        npt = getPT ();
-      nativeParamTypes = npt;
+        Class[] npt;
+        if (parameterTypes != null) {
+            npt = new Class[parameterTypes.length];
+            for (int i = 0; i != parameterTypes.length; ++i) {
+                npt[i] = parameterTypes[i].getTheClass();
+            }
+        } else
+            npt = getPT();
+        nativeParamTypes = npt;
     }
 
-    protected Class[] getPT() { throw new UnsupportedOperationException(getClass().getName()); }
+    protected Class[] getPT() {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
 
     public boolean isVargsMethod() {
         return isVargsMethod;
     }
-    
+
     public boolean isVargsMethod(Object[] arguments) {
         // Uncomment if at some point this method can be called before parameterTypes initialized
         // getParameterTypes();
-        if(!isVargsMethod)
-          return false;
+        if (!isVargsMethod)
+            return false;
 
         final int lenMinus1 = parameterTypes.length - 1;
         // -1 because the varg part is optional
@@ -176,7 +182,7 @@ public class ParameterTypes
      * arguments to make the method callable
      *
      * @param argumentArrayOrig the arguments used to call the method
-     * @param paramTypes    the types of the parameters the method takes
+     * @param paramTypes        the types of the parameters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArrayOrig, CachedClass[] paramTypes) {
         Class vargsClassOrig = paramTypes[paramTypes.length - 1].getTheClass().getComponentType();
@@ -221,32 +227,30 @@ public class ParameterTypes
             throw new GroovyBugError("trying to call a vargs method without enough arguments");
         }
     }
-    
+
     private static Object makeCommonArray(Object[] arguments, int offset, Class baseClass) {
         Object[] result = (Object[]) Array.newInstance(baseClass, arguments.length - offset);
-        for (int i=offset; i<arguments.length; i++) {
+        for (int i = offset; i < arguments.length; i++) {
             Object v = arguments[i];
-            v = DefaultTypeTransformation.castToType(v,baseClass);
-            result[i-offset] = v;
+            v = DefaultTypeTransformation.castToType(v, baseClass);
+            result[i - offset] = v;
         }
         return result;
     }
-    
+
     public boolean isValidMethod(Class[] arguments) {
         if (arguments == null) return true;
 
         final int size = arguments.length;
         CachedClass[] pt = getParameterTypes();
-        final int paramMinus1 = pt.length-1;
+        final int paramMinus1 = pt.length - 1;
 
         if (isVargsMethod && size >= paramMinus1)
             return isValidVarargsMethod(arguments, size, pt, paramMinus1);
-        else
-            if (pt.length == size)
-                return isValidExactMethod(arguments, pt);
-            else
-                if (pt.length == 1 && size == 0 && !pt[0].isPrimitive)
-                    return true;
+        else if (pt.length == size)
+            return isValidExactMethod(arguments, pt);
+        else if (pt.length == 1 && size == 0 && !pt[0].isPrimitive)
+            return true;
         return false;
     }
 
@@ -261,13 +265,13 @@ public class ParameterTypes
         return true;
     }
 
-    public boolean isValidExactMethod(Object [] args) {
+    public boolean isValidExactMethod(Object[] args) {
         // lets check the parameter types match
         getParametersTypes0();
         int size = args.length;
         if (size != parameterTypes.length)
-          return false;
-        
+            return false;
+
         for (int i = 0; i < size; i++) {
             if (args[i] != null && !parameterTypes[i].isAssignableFrom(args[i].getClass())) {
                 return false;
@@ -276,12 +280,12 @@ public class ParameterTypes
         return true;
     }
 
-    public boolean isValidExactMethod(Class [] args) {
+    public boolean isValidExactMethod(Class[] args) {
         // lets check the parameter types match
         getParametersTypes0();
         int size = args.length;
         if (size != parameterTypes.length)
-          return false;
+            return false;
 
         for (int i = 0; i < size; i++) {
             if (args[i] != null && !parameterTypes[i].isAssignableFrom(args[i])) {
@@ -293,7 +297,7 @@ public class ParameterTypes
 
     private static boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
         Class component = toTest.getComponentType();
-        if (component==null) return false;
+        if (component == null) return false;
         return MetaClassHelper.isAssignableFrom(toTestAgainst, component);
     }
 
@@ -307,10 +311,9 @@ public class ParameterTypes
         // check direct match
         CachedClass varg = pt[paramMinus1];
         Class clazz = varg.getTheClass().getComponentType();
-        if ( size==pt.length &&
-             (varg.isAssignableFrom(arguments[paramMinus1]) ||
-              testComponentAssignable(clazz, arguments[paramMinus1])))
-        {
+        if (size == pt.length &&
+                (varg.isAssignableFrom(arguments[paramMinus1]) ||
+                        testComponentAssignable(clazz, arguments[paramMinus1]))) {
             return true;
         }
 
@@ -327,28 +330,26 @@ public class ParameterTypes
 
         final int size = arguments.length;
         CachedClass[] paramTypes = getParameterTypes();
-        final int paramMinus1 = paramTypes.length-1;
+        final int paramMinus1 = paramTypes.length - 1;
 
-        if ( size >= paramMinus1 && paramTypes.length > 0 &&
-             paramTypes[(paramMinus1)].isArray) 
-        {
+        if (size >= paramMinus1 && paramTypes.length > 0 &&
+                paramTypes[(paramMinus1)].isArray) {
             // first check normal number of parameters
             for (int i = 0; i < paramMinus1; i++) {
                 if (paramTypes[i].isAssignableFrom(getArgClass(arguments[i]))) continue;
                 return false;
             }
-            
-            
+
+
             // check direct match
             CachedClass varg = paramTypes[paramMinus1];
             Class clazz = varg.getTheClass().getComponentType();
-            if ( size==paramTypes.length && 
-                 (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
-                  testComponentAssignable(clazz, getArgClass(arguments[paramMinus1])))) 
-            {
+            if (size == paramTypes.length &&
+                    (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
+                            testComponentAssignable(clazz, getArgClass(arguments[paramMinus1])))) {
                 return true;
             }
-            
+
 
             // check varged
             for (int i = paramMinus1; i < size; i++) {
@@ -375,9 +376,8 @@ public class ParameterTypes
             cls = null;
         } else {
             if (arg instanceof Wrapper) {
-                cls = ((Wrapper)arg).getType();
-            }
-            else
+                cls = ((Wrapper) arg).getType();
+            } else
                 cls = arg.getClass();
         }
         return cls;
