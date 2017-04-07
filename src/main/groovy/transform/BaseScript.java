@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * {@link org.codehaus.groovy.control.CompilerConfiguration} of {@link groovy.lang.GroovyShell}
  * Example usage:
  * <pre>
- * class CustomScript extends Script {
+ * abstract class CustomScript extends Script {
  *     int getTheMeaningOfLife() { 42 }
  * }
  *

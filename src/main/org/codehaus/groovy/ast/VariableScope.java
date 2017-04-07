@@ -19,8 +19,8 @@
 package org.codehaus.groovy.ast;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -99,18 +99,15 @@ public class VariableScope  {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
         if (!declaredVariables.isEmpty()) {
-          copy.declaredVariables = new HashMap<String, Variable>();
-          copy.declaredVariables.putAll(declaredVariables);
+          copy.declaredVariables = new LinkedHashMap<String, Variable>(declaredVariables);
         }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
         if (!referencedClassVariables.isEmpty()) {
-            copy.referencedClassVariables = new HashMap<String, Variable>();
-            copy.referencedClassVariables.putAll(referencedClassVariables);
+            copy.referencedClassVariables = new LinkedHashMap<String, Variable>(referencedClassVariables);
         }
         if (!referencedLocalVariables.isEmpty()) {
-            copy.referencedLocalVariables = new HashMap<String, Variable>();
-            copy.referencedLocalVariables.putAll(referencedLocalVariables);
+            copy.referencedLocalVariables = new LinkedHashMap<String, Variable>(referencedLocalVariables);
         }
         copy.resolvesDynamic = resolvesDynamic;
         return copy;
@@ -118,7 +115,7 @@ public class VariableScope  {
 
     public void putDeclaredVariable(Variable var) {
         if (declaredVariables == Collections.EMPTY_MAP)
-          declaredVariables = new HashMap<String, Variable>();
+          declaredVariables = new LinkedHashMap<String, Variable>();
         declaredVariables.put(var.getName(), var);
     }
 
@@ -136,13 +133,13 @@ public class VariableScope  {
 
     public void putReferencedLocalVariable(Variable var) {
         if (referencedLocalVariables == Collections.EMPTY_MAP)
-          referencedLocalVariables = new HashMap<String, Variable>();
+          referencedLocalVariables = new LinkedHashMap<String, Variable>();
         referencedLocalVariables.put(var.getName(), var);
     }
 
     public void putReferencedClassVariable(Variable var) {
         if (referencedClassVariables == Collections.EMPTY_MAP)
-          referencedClassVariables = new HashMap<String, Variable>();
+          referencedClassVariables = new LinkedHashMap<String, Variable>();
         referencedClassVariables.put(var.getName(), var);
     }
 

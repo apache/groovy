@@ -18,42 +18,30 @@
  */
 package org.codehaus.groovy.macro.transform;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 /**
- *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
 
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
-public class MacroTransformation extends MethodCallTransformation {
+public class MacroTransformation extends MethodCallTransformation implements CompilationUnitAware {
 
-    public static final String DOLLAR_VALUE = "$v";
-    public static final String MACRO_METHOD = "macro";
+    protected CompilationUnit unit;
 
     @Override
-    protected GroovyCodeVisitor getTransformer(final ASTNode[] nodes, final SourceUnit sourceUnit) {
-        final ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return sourceUnit;
-            }
+    public void setCompilationUnit(CompilationUnit unit) {
+        this.unit = unit;
+    }
 
-            @Override
-            public Expression transform(final Expression exp) {
-                if (exp instanceof ConstructorCallExpression) {
-                    MethodCallExpression call = exp.getNodeMetaData(MacroTransformation.class);
-                    if (call!=null) {
-                        return call;
-                    }
-                }
-                return super.transform(exp);
-            }
-        };
-        return new TransformingMacroTrap(sourceUnit, trn);
+    @Override
+    protected GroovyCodeVisitor getTransformer(ASTNode[] nodes, final SourceUnit sourceUnit) {
+        return new MacroCallTransformingVisitor(sourceUnit, unit);
     }
 }

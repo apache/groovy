@@ -40,6 +40,10 @@ if (JavaVersion.current().isJava8Compatible()) {
     subprojects << 'performance'
 }
 
+if (hasProperty('stressTests')) {
+    subprojects << 'stress'
+}
+
 include(subprojects as String[])
         
 rootProject.children.each { prj ->

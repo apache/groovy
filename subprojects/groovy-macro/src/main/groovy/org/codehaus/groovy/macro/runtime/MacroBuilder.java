@@ -19,6 +19,7 @@
 package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,17 +31,21 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.macro.transform.MacroInvocationTrap;
-import org.codehaus.groovy.macro.transform.MacroTransformation;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.codehaus.groovy.macro.methods.MacroGroovyMethods.DOLLAR_VALUE;
+
 /**
+ * Runtime support for <pre>{@code macro {} }</pre> method.
  *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
+
+@Incubating
 public enum MacroBuilder {
     INSTANCE;
 
@@ -49,7 +54,7 @@ public enum MacroBuilder {
     }
 
     public <T> T macro(boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
-        return macro(CompilePhase.CONVERSION, asIs, source, context, resultClass);
+        return macro(null, asIs, source, context, resultClass);
     }
 
     public <T> T macro(CompilePhase compilePhase, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
@@ -61,12 +66,16 @@ public enum MacroBuilder {
     @SuppressWarnings("unchecked")
     public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         boolean isClosure = source.startsWith("{");
-        final String label = isClosure ?"__synthesized__label__" + COUNTER.incrementAndGet() + "__:":"";
+        final String label = isClosure ? "__synthesized__label__" + COUNTER.incrementAndGet() + "__:" : "";
         final String labelledSource = label + source;
+
+        if (compilePhase == null) {
+            compilePhase = CompilePhase.CONVERSION;
+        }
 
         List<ASTNode> nodes = (new AstBuilder()).buildFromString(compilePhase, true, labelledSource);
 
-        for(ASTNode node : nodes) {
+        for (ASTNode node : nodes) {
             if (node instanceof BlockStatement) {
 
                 List<Statement> statements = ((BlockStatement) node).getStatements();
@@ -74,7 +83,6 @@ public enum MacroBuilder {
                     BlockStatement closureBlock = (BlockStatement) statements.get(0);
 
                     performSubstitutions(context, closureBlock);
-
 
                     return (T) getMacroValue(closureBlock, asIs);
                 }
@@ -97,7 +105,7 @@ public enum MacroBuilder {
 
                 MethodCallExpression call = (MethodCallExpression) expression;
 
-                if (!MacroInvocationTrap.isBuildInvocation(call, MacroTransformation.DOLLAR_VALUE)) {
+                if (!DOLLAR_VALUE.equals(call.getMethodAsString())) {
                     return super.transform(expression);
                 }
 

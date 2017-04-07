@@ -19,6 +19,7 @@
 package org.codehaus.groovy.macro
 
 import groovy.transform.CompileStatic;
+import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
 
 /**
  *
@@ -208,5 +209,28 @@ class MacroTest extends GroovyTestCase {
 
         AstAssert.assertSyntaxTree([expected], [result])
 '''
+    }
+
+    void testMacroClass() {
+        assertScript '''
+        import org.codehaus.groovy.ast.ClassNode
+        import org.codehaus.groovy.macro.transform.MacroClass
+
+        def ast1 = new MacroClass() {
+            class A { String str }
+        }
+
+        assert ast1.getClass() == ClassNode
+        assert ast1.name == "A"
+        assert ast1.getField("str") != null
+'''
+    }
+
+    void testNotAMacroCall() {
+        // FIXME should fail with "MissingMethodException" because none of MacroGroovy extension methods
+        // are defined with "no-args" version
+        shouldFail(MethodSelectionException) {
+            assertScript 'macro()'
+        }
     }
 }

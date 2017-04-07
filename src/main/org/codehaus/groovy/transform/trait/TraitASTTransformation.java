@@ -68,6 +68,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+
+import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
+
 /**
  * Handles generation of code for the @Trait annotation. A class annotated with @Trait will generate, instead: <ul>
  * <li>an <i>interface</i> with the same name</li> <li>an utility inner class that will be used by the compiler to
@@ -101,7 +105,21 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             checkExtendsClause(cNode);
             generateMethodsWithDefaultArgs(cNode);
             replaceExtendsByImplements(cNode);
-            createHelperClass(cNode);
+            ClassNode helperClassNode = createHelperClass(cNode);
+            resolveHelperClassIfNecessary(helperClassNode);
+        }
+    }
+
+    private void resolveHelperClassIfNecessary(final ClassNode helperClassNode) {
+        if (helperClassNode == null) {
+            return;
+        }
+        for (ClassNode cNode : unit.getAST().getClasses()) {
+            ClassNode unresolvedHelperNode = cNode.getNodeMetaData(UNRESOLVED_HELPER_CLASS);
+            if (unresolvedHelperNode != null
+                    && unresolvedHelperNode.getName().equals(helperClassNode.getName())) {
+                unresolvedHelperNode.setRedirect(helperClassNode);
+            }
         }
     }
 
@@ -141,7 +159,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void createHelperClass(final ClassNode cNode) {
+    private ClassNode createHelperClass(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
                 Traits.helperClassName(cNode),
@@ -188,9 +206,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 if (!methodNode.isSynthetic() && (methodNode.isProtected() || methodNode.getModifiers()==0)) {
                     unit.addError(new SyntaxException("Cannot have protected/package private method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
-                    return;
+                    return null;
                 }
-                helper.addMethod(processMethod(cNode, methodNode, fieldHelper, fieldNames));
+                helper.addMethod(processMethod(cNode, helper, methodNode, fieldHelper, fieldNames));
                 if (methodNode.isPrivate() || methodNode.isStatic()) {
                     nonPublicAPIMethods.add(methodNode);
                 }
@@ -204,7 +222,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // add fields
         for (FieldNode field : fields) {
-            processField(field, initializer, staticInitializer, fieldHelper, cNode, fieldNames);
+            processField(field, initializer, staticInitializer, fieldHelper, helper, cNode, fieldNames);
         }
 
         // clear properties to avoid generation of methods
@@ -231,6 +249,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (fieldHelper!=null) {
             resolveScope(fieldHelper);
         }
+        return helper;
     }
 
     private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
@@ -384,8 +403,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return true;
     }
 
-
-    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper, final ClassNode trait, final Set<String> knownFields) {
+    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer,
+                              final ClassNode fieldHelper, final ClassNode helper, final ClassNode trait,
+                              final Set<String> knownFields) {
         if (field.isProtected()) {
             unit.addError(new SyntaxException("Cannot have protected field in a trait (" + trait.getName() + "#" + field.getName() + ")",
                     field.getLineNumber(), field.getColumnNumber()));
@@ -394,10 +414,22 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
-        if (initialExpression != null && !field.isFinal()) {
+        if (initialExpression != null) {
+            if (field.isFinal()) {
+                String baseName = field.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
+                MethodNode fieldInitializer = new MethodNode(
+                        baseName + Traits.remappedFieldName(trait, field.getName()),
+                        ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
+                        field.getOriginType(),
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        returnS(initialExpression)
+                );
+                helper.addMethod(fieldInitializer);
+            }
             VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
             ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-            processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
+            processBody(thisObject, initCode, trait, helper, fieldHelper, knownFields);
             BlockStatement code = (BlockStatement) selectedMethod.getCode();
             MethodCallExpression mce;
             if (field.isStatic()) {
@@ -421,17 +453,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             mce.setSourcePosition(initialExpression);
             code.addStatement(new ExpressionStatement(mce));
         }
-        // define setter/getter helper methods
-        if (!Modifier.isFinal(field.getModifiers())) {
-            fieldHelper.addMethod(
-                    Traits.helperSetterName(field),
-                    ACC_PUBLIC | ACC_ABSTRACT,
-                    field.getOriginType(),
-                    new Parameter[]{new Parameter(field.getOriginType(), "val")},
-                    ClassNode.EMPTY_ARRAY,
-                    null
-            );
-        }
+        // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
+        fieldHelper.addMethod(
+                Traits.helperSetterName(field),
+                ACC_PUBLIC | ACC_ABSTRACT,
+                field.getOriginType(),
+                new Parameter[]{new Parameter(field.getOriginType(), "val")},
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
         fieldHelper.addMethod(
                 Traits.helperGetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
@@ -458,9 +488,27 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
         dummyField.addAnnotations(copied);
         fieldHelper.addField(dummyField);
+
+        // retain legacy field (will be given lower precedence than above)
+        dummyFieldName = (field.isStatic() ? Traits.STATIC_FIELD_PREFIX : Traits.FIELD_PREFIX) +
+                (field.isPublic()? Traits.PUBLIC_FIELD_PREFIX : Traits.PRIVATE_FIELD_PREFIX)+
+                Traits.remappedFieldName(field.getOwner(), field.getName());
+        dummyField = new FieldNode(
+                dummyFieldName,
+                ACC_STATIC | ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
+                field.getOriginType(),
+                fieldHelper,
+                null
+        );
+        // copy annotations from field to legacy dummy field
+        copied = new LinkedList<AnnotationNode>();
+        notCopied = new LinkedList<AnnotationNode>();
+        GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
+        dummyField.addAnnotations(copied);
+        fieldHelper.addField(dummyField);
     }
 
-    private MethodNode processMethod(ClassNode traitClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {
+    private MethodNode processMethod(ClassNode traitClass, ClassNode traitHelperClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = createSelfParameter(traitClass, methodNode.isStatic());
@@ -472,7 +520,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
+                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
         mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
@@ -522,13 +570,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return type;
     }
 
-    private Statement processBody(VariableExpression thisObject, MethodNode methodNode, Statement code, ClassNode trait, ClassNode fieldHelper, Collection<String> knownFields) {
+    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode trait, ClassNode traitHelper, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
         NAryOperationRewriter operationRewriter = new NAryOperationRewriter(unit, knownFields);
         code.visit(operationRewriter);
         SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(unit);
         code.visit(superTrn);
-        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, fieldHelper, knownFields);
+        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, traitHelper, fieldHelper, knownFields);
         code.visit(trn);
         return code;
     }
@@ -560,9 +608,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         @Override
         public Expression transform(final Expression exp) {
-            Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
-            if (replacement!=null) {
-                return replacement;
+            if (exp != null) {
+                Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
+                if (replacement!=null) {
+                    return replacement;
+                }
             }
             return super.transform(exp);
         }

@@ -27,6 +27,7 @@ import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -4106,8 +4108,27 @@ public class Sql {
      */
     protected void setParameters(List<Object> params, PreparedStatement statement) throws SQLException {
         int i = 1;
+        ParameterMetaData metaData = getParameterMetaDataSafe(statement);
+        if (metaData != null) {
+            if (metaData.getParameterCount() == 0 && params.size() == 1 && params.get(0) instanceof Map) {
+                Map paramsMap = (Map) params.get(0);
+                if (paramsMap.isEmpty()) return;
+            }
+            if (metaData.getParameterCount() != params.size()) {
+                throw new IllegalArgumentException("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
+            }
+        }
         for (Object value : params) {
             setObject(statement, i++, value);
+        }
+    }
+
+    private ParameterMetaData getParameterMetaDataSafe(PreparedStatement statement) throws SQLException {
+        try {
+            return statement.getParameterMetaData();
+        } catch(SQLException se) {
+            LOG.fine("Unable to retrieve parameter metadata - reduced checking will occur: " + se.getMessage());
+            return null;
         }
     }
 
@@ -4444,7 +4465,11 @@ public class Sql {
             String prop = (String) tuple.get(1);
             if (index < 0 || index >= params.size())
                 throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
-            updatedParams.add(prop.equals("<this>") ? params.get(index) : InvokerHelper.getProperty(params.get(index), prop));
+            try {
+                updatedParams.add(prop.equals("<this>") ? params.get(index) : InvokerHelper.getProperty(params.get(index), prop));
+            } catch(MissingPropertyException mpe) {
+                throw new IllegalArgumentException("Property '" + prop + "' not found for parameter " + index);
+            }
         }
         return updatedParams;
     }

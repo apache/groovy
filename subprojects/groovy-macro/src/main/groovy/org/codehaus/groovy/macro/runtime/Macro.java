@@ -18,36 +18,20 @@
  */
 package org.codehaus.groovy.macro.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import org.codehaus.groovy.control.CompilePhase;
+import org.apache.groovy.lang.annotation.Incubating;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- *
  * @author Sergei Egorov <bsideup@gmail.com>
+ * @since 2.5.0
  */
-public class MacroGroovyMethods {
 
-    public static class MacroValuePlaceholder {
-        public static Object $v(Closure cl) {
-            // replaced with AST transformations
-            return null;
-        }
-    }
-
-    public static <T> T macro(Object self, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, CompilePhase compilePhase, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
-
-    public static <T> T macro(Object self, CompilePhase compilePhase, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
-        return null;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+@Incubating
+public @interface Macro {
 }

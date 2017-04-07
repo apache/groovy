@@ -191,7 +191,7 @@ allprojects {
                         }
 
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
-                                includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/Trace*')
+                                includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/ASMifier.class,org/objectweb/asm/util/Trace*')
                     }
                     rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1' // antlr2
                     rule pattern: 'org.antlr.**', result: 'groovyjarjarantlr4.@1' // antlr4
@@ -316,6 +316,36 @@ def mergeModuleDescriptors() {
     descriptor
 }
 
+def mergeGlobalTransforms() {
+    new File("$buildDir/tmp/").mkdirs()
+
+    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.transform.ASTTransformation")
+    descriptor.withWriter('UTF-8') {
+        it << '# This is a generated file, do not edit\n'
+    }
+
+    def files = []
+    files << new File("${rootProject.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
+    modules().collect {
+        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
+    }.findAll { it.exists() }.each {
+        files << it
+    }
+    files.each {
+        def skipping = true
+        it.readLines().each { line ->
+            if (skipping) {
+                skipping = line.startsWith('#')
+            }
+            if (!skipping) {
+                descriptor << line + '\n'
+            }
+        }
+    }
+
+    descriptor
+}
+
 task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     description = "Overwrites normal JAR files with their JARJAR version"
     doLast {
@@ -368,6 +398,10 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
         }
         copy {
             from(mergeModuleDescriptors())
+            into "$owner.ext.metaInfDir/services"
+        }
+        copy {
+            from(mergeGlobalTransforms())
             into "$owner.ext.metaInfDir/services"
         }
         copy {
@@ -586,6 +620,22 @@ task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
     with distSpec
     into installDir
 }
+
+task checkNoSnapshotVersions {
+    doLast {
+        if (project.isReleaseVersion) {
+            // TODO use modules() and exclusions as per distSpec
+            allprojects {
+                project.configurations.runtime.resolvedConfiguration.resolvedArtifacts.each {
+                    if (it.moduleVersion.id.version.endsWith("-SNAPSHOT")) {
+                        throw new GradleException("Found snapshot dependency for non-snapshot Groovy: " + it.moduleVersion)
+                    }
+                }
+            }
+        }
+    }
+}
+distBin.dependsOn checkNoSnapshotVersions
 
 import org.gradle.api.file.DuplicatesStrategy
 

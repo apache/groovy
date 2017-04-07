@@ -1976,6 +1976,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through an array passing each array entry to the given closure.
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'b', 'c']
+     * String result = ''
+     * letters.each{ result += it }
+     * assert result == 'abc'
+     * </pre>
      *
      * @param self    the array over which we iterate
      * @param closure the closure applied on each array entry
@@ -1994,6 +2000,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each item to the given closure.  Custom types may utilize this
      * method by simply providing an "iterator()" method.  The items returned
      * from the resulting iterator will be passed to the closure.
+     * <pre class="groovyTestCase">
+     * String result = ''
+     * ['a', 'b', 'c'].each{ result += it }
+     * assert result == 'abc'
+     * </pre>
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
@@ -2009,6 +2020,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through an array,
      * passing each array element and the element's index (a counter starting at
      * zero) to the given closure.
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'b', 'c']
+     * String result = ''
+     * letters.eachWithIndex{ letter, index -> result += "$index:$letter" }
+     * assert result == '0:a1:b2:c'
+     * </pre>
      *
      * @param self    an array
      * @param closure a Closure to operate on each array entry
@@ -2030,6 +2047,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through an aggregate type or data structure,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
+     * <pre class="groovyTestCase">
+     * String result = ''
+     * ['a', 'b', 'c'].eachWithIndex{ letter, index -> result += "$index:$letter" }
+     * assert result == '0:a1:b2:c'
+     * </pre>
      *
      * @param self    an Object
      * @param closure a Closure to operate on each item
@@ -2413,6 +2435,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over every element of a collection, and checks whether all
      * elements are <code>true</code> according to the Groovy Truth.
      * Equivalent to <code>self.every({element -> element})</code>
+     * <pre class="groovyTestCase">
+     * assert [true, true].every()
+     * assert [1, 1].every()
+     * assert ![1, 0].every()
+     * </pre>
      *
      * @param self the object over which we iterate
      * @return true if every item in the collection matches the closure
@@ -2432,6 +2459,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an object or collection, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it > 3 }
+     * </pre>
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
@@ -2449,6 +2480,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterator, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].iterator().any { it == 2 }
+     * assert ![1, 2, 3].iterator().any { it > 3 }
+     * </pre>
      *
      * @param self    the iterator over which we iterate
      * @param closure the closure predicate used for matching
@@ -2466,6 +2501,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterable, and checks whether a
      * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it > 3 }
+     * </pre>
      *
      * @param self    the iterable over which we iterate
      * @param closure the closure predicate used for matching
@@ -2510,6 +2549,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of a collection, and checks whether at least
      * one element is true according to the Groovy Truth.
      * Equivalent to self.any({element -> element})
+     * <pre class="groovyTestCase">
+     * assert [false, true].any()
+     * assert [0, 1].any()
+     * assert ![0, 0].any()
+     * </pre>
      *
      * @param self the object over which we iterate
      * @return true if any item in the collection matches the closure predicate
@@ -3940,7 +3984,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first value matching the closure condition
+     * Finds the first value matching the closure condition.
+     *
+     * <pre class="groovyTestCase">
+     * def numbers = [1, 2, 3]
+     * def result = numbers.find { it > 1}
+     * assert result == 2
+     * </pre>
      *
      * @param self    an Object with an iterator returning its values
      * @param closure a closure condition
@@ -3979,6 +4029,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
      *
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult(5) { if(it > 1) return it } == 2
+     * assert numbers.findResult(5) { if(it > 4) return it } == 5
+     * </pre>
+     *
      * @param self    an Object with an iterator returning its values
      * @param defaultResult an Object that should be returned if all closure results are null
      * @param closure a closure that returns a non-null value when processing should stop
@@ -3993,6 +4049,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
+     *
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult { if(it > 1) return it } == 2
+     * assert numbers.findResult { if(it > 4) return it } == null
+     * </pre>
      *
      * @param self    an Object with an iterator returning its values
      * @param closure a closure that returns a non-null value when processing should stop

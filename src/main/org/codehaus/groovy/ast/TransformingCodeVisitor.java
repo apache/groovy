@@ -16,9 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.macro.transform;
+package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -37,13 +36,11 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.control.SourceUnit;
 
-class TransformingMacroTrap extends MacroInvocationTrap {
+public class TransformingCodeVisitor extends CodeVisitorSupport {
     private final ClassCodeExpressionTransformer trn;
 
-    public TransformingMacroTrap(final SourceUnit sourceUnit, final ClassCodeExpressionTransformer trn) {
-        super(sourceUnit.getSource(), sourceUnit);
+    public TransformingCodeVisitor(final ClassCodeExpressionTransformer trn) {
         this.trn = trn;
     }
 

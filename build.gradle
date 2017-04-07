@@ -51,7 +51,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.3'
+    id 'com.gradle.build-scan' version '1.6'
     id 'me.champeau.buildscan-recipes' version '0.1.7'
 }
 
@@ -154,11 +154,11 @@ ext {
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
-    commonsCliVersion = '1.3.1'
+    commonsCliVersion = '1.4'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '3.2.1'
+    gradleVersion = '3.3'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.4.1'
@@ -166,7 +166,7 @@ ext {
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
     log4jVersion = '1.2.17'
-    log4j2Version = '2.3' // 2.4 requires Java 7
+    log4j2Version = '2.8'
     luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
     openejbVersion = '1.0'
@@ -174,7 +174,7 @@ ext {
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.9'
-    spockVersion = '1.0-groovy-2.4'
+    spockVersion = '1.1-groovy-2.4-SNAPSHOT' // supports 3.0
     antlr4Version = '4.6.0.3'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }

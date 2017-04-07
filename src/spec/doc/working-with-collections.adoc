@@ -138,22 +138,34 @@ The {gdk} also contains methods allowing you to easily remove elements from a li
 include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk3,indent=0]
 ----------------------------------------------------------------------------
 
-It is also possible to remove an element by referring to its index, in which case the list is mutated:
+It is also possible to remove an element by passing its index to the `remove` method, in which case the list is mutated:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk4,indent=0]
+include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk_remove_index,indent=0]
 ----------------------------------------------------------------------------
 
 In case you only want to remove the first element having the same value in a list, instead of removing all
-elements, you call call the `remove` method:
+elements, you can call the `remove` method passing the value:
 
 [source,groovy]
 ----------------------------------------------------------------------------
 include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk5,indent=0]
 ----------------------------------------------------------------------------
 
-And removing all the elements in a list can be done by calling the `clear` method:
+As you can see, there are two `remove` methods available.  One that takes an integer and removes an element
+by its index, and another that will remove the first element that matches the passed value.  So what should we 
+do when we have a list of integers?  In this case, you may wish to use `removeAt` to remove an element by its
+index, and `removeElement` to remove the first element that matches a value.
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk4,indent=0]
+----------------------------------------------------------------------------
+
+Of course, `removeAt` and `removeElement` will work with lists of any type.
+
+Additionally, removing all the elements in a list can be done by calling the `clear` method:
 
 [source,groovy]
 ----------------------------------------------------------------------------

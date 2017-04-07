@@ -82,7 +82,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::closure_call_1_explicit[]
 
         // tag::closure_call_2[]
-        def isOdd = { int i-> i%2 == 1 }                            // <1>
+        def isOdd = { int i -> i%2 != 0 }                           // <1>
         assert isOdd(3) == true                                     // <2>
         assert isOdd.call(2) == false                               // <3>
 

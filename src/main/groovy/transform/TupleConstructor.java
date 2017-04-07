@@ -267,12 +267,12 @@ public @interface TupleConstructor {
      *
      * @since 2.5.0
      */
-    Class pre();
+    Class pre() default Undefined.CLASS.class;
 
     /**
      * A Closure containing statements which will be appended to the end of the generated constructor. Useful for validation steps or tweaking the populated fields/properties.
      *
      * @since 2.5.0
      */
-    Class post();
+    Class post() default Undefined.CLASS.class;
 }

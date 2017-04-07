@@ -43,6 +43,7 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import static java.lang.reflect.Modifier.*;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.objectweb.asm.Opcodes.*;
 /**
  * Checks that a class satisfies various conditions including:
@@ -54,7 +55,9 @@ import static org.objectweb.asm.Opcodes.*;
  * </ul>
  */
 public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
-
+    private static final String[] INVALID_NAME_CHARS = {".", ":", "/", ";", "[", "<", ">"};
+    // the groovy.compiler.strictNames system property is experimental and may change default value or be removed in a future version of Groovy
+    private final boolean strictNames = Boolean.parseBoolean(System.getProperty("groovy.compiler.strictNames", "false"));
     private ClassNode currentClass;
     private final SourceUnit source;
     private boolean inConstructor = false;
@@ -78,6 +81,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkAbstractMethodVisibility(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForIncorrectModifiers(node);
+            checkMethodsForIncorrectName(node);
             checkMethodsForWeakerAccess(node);
             checkMethodsForOverridingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
@@ -257,6 +261,10 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         return "field '" + node.getName() + "'";
     }
 
+    private static String getDescription(Parameter node) {
+        return "parameter '" + node.getName() + "'";
+    }
+
     private void checkAbstractDeclaration(MethodNode methodNode) {
         if (!methodNode.isAbstract()) return;
         if (isAbstract(currentClass.getModifiers())) return;
@@ -269,11 +277,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         ClassNode superCN = cn.getSuperClass();
         if (superCN == null) return;
         if (!isFinal(superCN.getModifiers())) return;
-        StringBuilder msg = new StringBuilder();
-        msg.append("You are not allowed to overwrite the final ");
-        msg.append(getDescription(superCN));
-        msg.append(".");
-        addError(msg.toString(), cn);
+        String msg = "You are not allowed to overwrite the final " + getDescription(superCN) + ".";
+        addError(msg, cn);
     }
 
     private void checkImplementsAndExtends(ClassNode node) {
@@ -285,6 +290,22 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             cn = anInterface;
             if (!cn.isInterface()) {
                 addError("You are not allowed to implement the " + getDescription(cn) + ", use extends instead.", node);
+            }
+        }
+    }
+
+    private void checkMethodsForIncorrectName(ClassNode cn) {
+        if (!strictNames) return;
+        List<MethodNode> methods = cn.getAllDeclaredMethods();
+        for (MethodNode mNode : methods) {
+            String name = mNode.getName();
+            if (name.equals("<init>") || name.equals("<clinit>")) continue;
+            // Groovy allows more characters than Character.isValidJavaIdentifier() would allow
+            // if we find a good way to encode special chars we could remove (some of) these checks
+            for (String ch : INVALID_NAME_CHARS) {
+                if (name.contains(ch)) {
+                    addError("You are not allowed to have '" + ch + "' in a method name", mNode);
+                }
             }
         }
     }
@@ -388,6 +409,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkMethodModifiers(node);
         checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
+        for (Parameter param : node.getParameters()) {
+            if (param.getType().equals(VOID_TYPE)) {
+                addError("The " + getDescription(param) + " in " +  getDescription(node) + " has invalid type void", param);
+            }
+        }
         super.visitMethod(node);
     }
 
@@ -466,6 +492,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         checkInterfaceFieldModifiers(node);
         checkGenericsUsage(node, node.getType());
+        if (node.getType().equals(VOID_TYPE)) {
+            addError("The " + getDescription(node) + " has invalid type void", node);
+        }
         super.visitField(node);
     }
 
@@ -599,6 +628,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkInvalidDeclarationModifier(expression, ACC_SYNCHRONIZED, "synchronized");
         checkInvalidDeclarationModifier(expression, ACC_TRANSIENT, "transient");
         checkInvalidDeclarationModifier(expression, ACC_VOLATILE, "volatile");
+        if (expression.getVariableExpression().getOriginType().equals(VOID_TYPE)) {
+            addError("The variable '" + expression.getVariableExpression().getName() + "' has invalid type void", expression);
+        }
     }
 
     private void checkInvalidDeclarationModifier(DeclarationExpression expression, int modifier, String modName) {

@@ -1083,7 +1083,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *
      * @param node      the class node for which we will try to find a matching constructor
      * @param arguments the constructor arguments
-     * @deprecated use {@link #checkGroovyStyleConstructor(ClassNode, ClassNode[], ASTNode)} )}
+     * @deprecated use {@link #checkGroovyStyleConstructor(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.ast.ClassNode[], org.codehaus.groovy.ast.ASTNode)} )}
      */
     @Deprecated
     protected void checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments) {
@@ -2336,13 +2336,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * This method is responsible for performing type inference on closure argument types whenever code like this is
      * found: <code>foo.collect { it.toUpperCase() }</code>.
      * In this case, the type checker tries to find if the <code>collect</code> method has its {@link Closure} argument
-     * annotated with {@link ClosureParams}. If yes, then additional type inference can be performed
+     * annotated with {@link groovy.transform.stc.ClosureParams}. If yes, then additional type inference can be performed
      * and the type of <code>it</code> may be inferred.
      *
      * @param receiver
      * @param arguments
      * @param expression a closure expression for which the argument types should be inferred
-     * @param param the parameter where to look for a {@link ClosureParams} annotation.
+     * @param param the parameter where to look for a {@link groovy.transform.stc.ClosureParams} annotation.
      * @param selectedMethod the method accepting a closure
      */
     protected void inferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final Parameter param, final MethodNode selectedMethod) {
@@ -2615,7 +2615,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Given a GenericsType instance, returns a ClassNode which can be used as an inferred type.
-     * @param genericsType a {@link GenericsType} representing either a type, a placeholder or a wildcard
+     * @param genericsType a {@link org.codehaus.groovy.ast.GenericsType} representing either a type, a placeholder or a wildcard
      * @return a class node usable as an inferred type
      */
     private static ClassNode createUsableClassNodeFromGenericsType(final GenericsType genericsType) {
@@ -3078,7 +3078,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param directMethodCallCandidate a method selected by the type checker
      * @param receiver the receiver of the method call
      *@param args the arguments of the method call
-     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
     private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
         if (directMethodCallCandidate instanceof ExtensionMethodNode) {
@@ -4761,7 +4761,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Returns a wrapped type if, and only if, the provided class node is a primitive type.
-     * This method differs from {@link ClassHelper#getWrapper(ClassNode)} as it will
+     * This method differs from {@link ClassHelper#getWrapper(org.codehaus.groovy.ast.ClassNode)} as it will
      * return the same instance if the provided type is not a generic type.
      *
      * @param type
