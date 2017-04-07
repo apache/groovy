@@ -19,18 +19,35 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AnnotationCollector;
-
-import java.lang.reflect.Method;
-import java.util.*;
-
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -188,7 +205,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> ret = new ArrayList<AnnotationNode>(orig.size());
         for (AnnotationNode an : orig) {
             AnnotationNode newAn = new AnnotationNode(an.getClassNode());
-            newAn.getMembers().putAll(an.getMembers());
+            copyMembers(an, newAn);
             newAn.setSourcePosition(aliasAnnotationUsage);
             ret.add(newAn);
         }
@@ -204,10 +221,21 @@ public class AnnotationCollectorTransform {
             ClassNode type = an.getClassNode();
             if (type.getName().equals(AnnotationCollector.class.getName())) continue;
             AnnotationNode toAdd = new AnnotationNode(type);
-            toAdd.getMembers().putAll(an.getMembers());
+            copyMembers(an, toAdd);
             ret.add(toAdd);
         }
         return ret;
+    }
+
+    private static void copyMembers(final AnnotationNode from, final AnnotationNode to) {
+        Map<String, Expression> members = from.getMembers();
+        copyMembers(members, to);
+    }
+
+    private static void copyMembers(final Map<String, Expression> members, final AnnotationNode to) {
+        for (Map.Entry<String, Expression> entry : members.entrySet()) {
+            to.addMember(entry.getKey(), entry.getValue());
+        }
     }
 
     private static List<AnnotationNode> getTargetListFromClass(ClassNode alias) {
@@ -239,6 +267,7 @@ public class AnnotationCollectorTransform {
                 Object val = member.get(name);
                 generated.put(name, makeExpression(val));
             }
+            copyMembers(generated, toAdd);
             toAdd.getMembers().putAll(generated);
         }
         return ret;

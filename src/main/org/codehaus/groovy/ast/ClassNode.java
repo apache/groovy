@@ -106,16 +106,21 @@ import java.util.Set;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
     private static class MapOfLists {
-        private Map<Object, List<MethodNode>> map = new HashMap<Object, List<MethodNode>>();
+        private Map<Object, List<MethodNode>> map;
         public List<MethodNode> get(Object key) {
-            return map.get(key);
+            return map == null ? null : map.get(key);
         }
+
         public List<MethodNode> getNotNull(Object key) {
             List<MethodNode> ret = get(key);
             if (ret==null) ret = Collections.emptyList();
             return ret;
         }
+
         public void put(Object key, MethodNode value) {
+            if (map == null) {
+                 map = new HashMap<Object, List<MethodNode>>();
+            }
             if (map.containsKey(key)) {
                 get(key).add(value);
             } else {
@@ -124,6 +129,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 map.put(key, list);
             }
         }
+
         public void remove(Object key, MethodNode value) {
             get(key).remove(value);
         }
@@ -1313,7 +1319,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
                     if (count >= parameters.length - 1) return true;
                 }
-                
+
                 // handle parameters with default values
                 int nonDefaultParameters = 0;
                 for (Parameter parameter : parameters) {
