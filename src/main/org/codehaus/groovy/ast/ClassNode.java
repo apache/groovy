@@ -102,16 +102,21 @@ import java.util.Set;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
     private static class MapOfLists {
-        private final Map<Object, List<MethodNode>> map = new HashMap<Object, List<MethodNode>>();
+        private Map<Object, List<MethodNode>> map;
         public List<MethodNode> get(Object key) {
-            return map.get(key);
+            return map == null ? null : map.get(key);
         }
+
         public List<MethodNode> getNotNull(Object key) {
             List<MethodNode> ret = get(key);
             if (ret==null) ret = Collections.emptyList();
             return ret;
         }
+
         public void put(Object key, MethodNode value) {
+            if (map == null) {
+                 map = new HashMap<Object, List<MethodNode>>();
+            }
             if (map.containsKey(key)) {
                 get(key).add(value);
             } else {
@@ -120,6 +125,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 map.put(key, list);
             }
         }
+
         public void remove(Object key, MethodNode value) {
             get(key).remove(value);
         }
