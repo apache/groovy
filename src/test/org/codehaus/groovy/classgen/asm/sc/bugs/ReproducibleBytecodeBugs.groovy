@@ -23,7 +23,8 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy8142Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+    // GROOVY-8142
     void testShouldNotProduceDeterministicBytecode() {
         100.times {
             assertScript '''
@@ -46,6 +47,46 @@ class Groovy8142Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
 
             assert astTrees['Check'][1].contains('INVOKEINTERFACE FileOperations.file ()Ljava/io/File;') : "Incorrect bytecode found in iteration $it"
+        }
+    }
+
+    // GROOVY-8148
+    void testShouldAlwaysAddClosureSharedVariablesInSameOrder() {
+        100.times {
+            assertScript '''
+            class Check {
+                void test() {
+                    def xx = true
+                    def moot = "bar"
+                    def kr = [:]
+                    def zorg = []
+                    def cl = {
+                        def (x,y,z,t) = [xx, moot, kr , zorg]
+                    }
+                }
+            }
+            
+            def c = new Check()
+        '''
+
+            def bytecode = astTrees['Check$_test_closure1'][1]
+            assertOrdered it, bytecode,
+                    'PUTFIELD Check$_test_closure1.xx',
+                    'PUTFIELD Check$_test_closure1.moot',
+                    'PUTFIELD Check$_test_closure1.kr',
+                    'PUTFIELD Check$_test_closure1.zorg'
+
+        }
+    }
+
+
+    private static void assertOrdered(int iteration, String bytecode, String... elements) {
+        int start = 0
+        elements.eachWithIndex { it, i ->
+            start = bytecode.indexOf(it, start)
+            if (start == -1) {
+                throw new AssertionError("Iteration $iteration - Element [$it] not found in order (expected to find it at index $i)")
+            }
         }
     }
 }
