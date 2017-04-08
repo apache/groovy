@@ -18,12 +18,28 @@
  */
 package org.codehaus.groovy.runtime.methoddispatching;
 
+import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
+
+/**
+ * To test the case when we call a static method on a class and {@link MetaMethodIndex.Entry}
+ * contains more than one method from interface already
+ */
 interface FooTwo {
     static String foo() {
-        return "I'm Foo";
+        return "FooTwo.foo()";
     }
 
-    static String foo(int num) {
-        return String.valueOf(num);
+    static String foo(int a) {
+        return String.format("FooTwo.foo(%1$d)", a);
+    }
+}
+
+class BarTwo implements FooTwo {
+    static String foo() {
+        return "BarTwo.foo()";
+    }
+
+    static String foo(int a) {
+        return String.format("BarTwo.foo(%1$d)", a);
     }
 }
