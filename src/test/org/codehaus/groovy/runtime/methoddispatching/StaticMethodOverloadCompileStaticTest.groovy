@@ -18,7 +18,10 @@
  */
 package org.codehaus.groovy.runtime.methoddispatching
 
-class StaticMethodOverloadTest extends GroovyTestCase {
+import groovy.transform.CompileStatic
+
+@CompileStatic
+class StaticMethodOverloadCompileStaticTest extends GroovyTestCase {
     void testOneStaticMethod() {
         assert FooOne.foo() == "FooOne.foo()"
         assert BarOne.foo() == "BarOne.foo()"

@@ -20,6 +20,12 @@ package org.codehaus.groovy.runtime.methoddispatching;
 
 interface FooOne {
     static String foo() {
-        return "I'm Foo";
+        return "FooOne.foo()";
+    }
+}
+
+class BarOne implements FooOne {
+    static String foo() {
+        return "BarOne.foo()";
     }
 }
