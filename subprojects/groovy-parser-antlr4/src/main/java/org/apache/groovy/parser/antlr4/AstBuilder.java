@@ -951,7 +951,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             classNodeList.add(classNode);
         }
 
-        groovydocManager.attachDocCommentAsMetaData(classNode, ctx);
+        groovydocManager.handle(classNode, ctx);
 
         return classNode;
     }
@@ -1026,7 +1026,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(enumConstant::addAnnotation);
 
-        groovydocManager.attachDocCommentAsMetaData(enumConstant, ctx);
+        groovydocManager.handle(enumConstant, ctx);
 
         return this.configureAST(enumConstant, ctx);
     }
@@ -1256,7 +1256,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         validateMethodDeclaration(ctx, methodNode);
 
-        groovydocManager.attachDocCommentAsMetaData(methodNode, ctx);
+        groovydocManager.handle(methodNode, ctx);
 
         return methodNode;
     }
@@ -1495,7 +1495,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                 initialValue);
                 modifierManager.attachAnnotations(fieldNode);
 
-                groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
+                groovydocManager.handle(fieldNode, ctx);
 
                 this.configureAST(fieldNode, ctx);
             } else {
@@ -1513,8 +1513,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 fieldNode.setSynthetic(!classNode.isInterface());
                 modifierManager.attachAnnotations(fieldNode);
 
-                groovydocManager.attachDocCommentAsMetaData(fieldNode, ctx);
-                groovydocManager.attachDocCommentAsMetaData(propertyNode, ctx);
+                groovydocManager.handle(fieldNode, ctx);
+                groovydocManager.handle(propertyNode, ctx);
 
                 this.configureAST(fieldNode, ctx);
                 this.configureAST(propertyNode, ctx);

@@ -1,10 +1,15 @@
 package org.apache.groovy.parser.antlr4;
 
+import groovy.lang.Groovydoc;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 
 import java.util.List;
 
@@ -22,6 +27,8 @@ public class GroovydocManager {
     private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment";
     private static final String TRUE_STR = "true";
     private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
+    public static final String VALUE = "value";
+    public static final String GROOVYDOC_PATTERN = "(?s)\\s*/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc.+?[*]/\\s*";
     private AstBuilder astBuilder;
 
     static {
@@ -41,14 +48,22 @@ public class GroovydocManager {
 
     /**
      * Attach doc comment to member node as meta data
-     * <p>
+     *
      */
-    public void attachDocCommentAsMetaData(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
-        if (!EXTRACTING_DOC_COMMENT_ENABLED) {
+    public void handle(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
+        if (!asBoolean(node) || !asBoolean(ctx)) {
             return;
         }
 
-        if (!asBoolean(node) || !asBoolean(ctx)) {
+        attachDocCommentAsMetaData(node, ctx);
+        attachGroovydocAnnotation(node, ctx);
+    }
+
+    /*
+     * Attach doc comment to member node as meta data
+     */
+    private void attachDocCommentAsMetaData(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
+        if (!EXTRACTING_DOC_COMMENT_ENABLED) {
             return;
         }
 
@@ -60,6 +75,30 @@ public class GroovydocManager {
 
         node.putNodeMetaData(DOC_COMMENT, docCommentNodeText);
     }
+
+    private void attachGroovydocAnnotation(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
+        if (!(node instanceof AnnotatedNode)) {
+            return;
+        }
+
+        String docCommentNodeText;
+
+        if (EXTRACTING_DOC_COMMENT_ENABLED) { // try to reuse the result of extracting doc comment for better performance
+            docCommentNodeText = node.getNodeMetaData(DOC_COMMENT);
+        } else {
+            docCommentNodeText = this.findDocCommentByNode(ctx);
+        }
+
+        if (null == docCommentNodeText || !docCommentNodeText.matches(GROOVYDOC_PATTERN)) {
+            return;
+        }
+
+        AnnotatedNode annotatedNode = (AnnotatedNode) node;
+        AnnotationNode annotationNode = new AnnotationNode(ClassHelper.make(Groovydoc.class));
+        annotationNode.addMember(VALUE, new ConstantExpression(docCommentNodeText));
+        annotatedNode.addAnnotation(annotationNode);
+    }
+
 
     private String findDocCommentByNode(ParserRuleContext node) {
         if (!asBoolean(node)) {
