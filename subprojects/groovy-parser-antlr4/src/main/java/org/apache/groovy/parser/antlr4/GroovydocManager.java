@@ -28,7 +28,7 @@ public class GroovydocManager {
     private static final String TRUE_STR = "true";
     private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
     public static final String VALUE = "value";
-    public static final String GROOVYDOC_PATTERN = "(?s)\\s*/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc.+?[*]/\\s*";
+    public static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
     private AstBuilder astBuilder;
 
     static {
@@ -55,41 +55,35 @@ public class GroovydocManager {
             return;
         }
 
-        attachDocCommentAsMetaData(node, ctx);
-        attachGroovydocAnnotation(node, ctx);
+        String docCommentNodeText = this.findDocCommentByNode(ctx);
+        if (null == docCommentNodeText) {
+            return;
+        }
+
+        attachDocCommentAsMetaData(node, docCommentNodeText);
+        attachGroovydocAnnotation(node, docCommentNodeText);
     }
 
     /*
      * Attach doc comment to member node as meta data
      */
-    private void attachDocCommentAsMetaData(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
+    private void attachDocCommentAsMetaData(ASTNode node, String docCommentNodeText) {
         if (!EXTRACTING_DOC_COMMENT_ENABLED) {
-            return;
-        }
-
-        String docCommentNodeText = this.findDocCommentByNode(ctx);
-
-        if (!asBoolean((Object) docCommentNodeText)) {
             return;
         }
 
         node.putNodeMetaData(DOC_COMMENT, docCommentNodeText);
     }
 
-    private void attachGroovydocAnnotation(ASTNode node, GroovyParser.GroovyParserRuleContext ctx) {
+    /*
+     * Attach Groovydoc annotation to the target element
+     */
+    private void attachGroovydocAnnotation(ASTNode node, String docCommentNodeText) {
         if (!(node instanceof AnnotatedNode)) {
             return;
         }
 
-        String docCommentNodeText;
-
-        if (EXTRACTING_DOC_COMMENT_ENABLED) { // try to reuse the result of extracting doc comment for better performance
-            docCommentNodeText = node.getNodeMetaData(DOC_COMMENT);
-        } else {
-            docCommentNodeText = this.findDocCommentByNode(ctx);
-        }
-
-        if (null == docCommentNodeText || !docCommentNodeText.matches(GROOVYDOC_PATTERN)) {
+        if (!docCommentNodeText.matches(RUNTIME_GROOVYDOC_PATTERN)) {
             return;
         }
 
@@ -98,7 +92,6 @@ public class GroovydocManager {
         annotationNode.addMember(VALUE, new ConstantExpression(docCommentNodeText));
         annotatedNode.addAnnotation(annotationNode);
     }
-
 
     private String findDocCommentByNode(ParserRuleContext node) {
         if (!asBoolean(node)) {
