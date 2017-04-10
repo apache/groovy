@@ -81,3 +81,17 @@ assert true
             ||
                 true
 
+
+def z =
+        9
+            /
+                3
+                    *
+                        2
+assert 6 == z
+
+def r =
+         3
+            %
+                2
+assert 1 == r

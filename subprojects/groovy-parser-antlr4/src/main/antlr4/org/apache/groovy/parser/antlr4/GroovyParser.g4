@@ -823,7 +823,7 @@ expression
     |   op=(INC | DEC | ADD | SUB) expression                                               #unaryAddExprAlt
 
     // multiplication/division/modulo (level 4)
-    |   left=expression op=(MUL | DIV | MOD) nls right=expression                           #multiplicativeExprAlt
+    |   left=expression nls op=(MUL | DIV | MOD) nls right=expression                       #multiplicativeExprAlt
 
     // binary addition/subtraction (level 5)
     |   left=expression op=(ADD | SUB) nls right=expression                                 #additiveExprAlt
