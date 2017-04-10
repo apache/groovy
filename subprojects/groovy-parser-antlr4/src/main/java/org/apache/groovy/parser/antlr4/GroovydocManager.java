@@ -27,8 +27,8 @@ public class GroovydocManager {
     private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment";
     private static final String TRUE_STR = "true";
     private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
-    public static final String VALUE = "value";
-    public static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
+    private static final String VALUE = "value";
+    private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
     private AstBuilder astBuilder;
 
     static {
