@@ -144,6 +144,11 @@ public class StringUtils {
     }
 
 	public static long countChar(String text, char c) {
-		return text.chars().filter(e -> c == e).count();
+		int length = text.length();
+		int count = 0;
+		for(int i = 0; i<length; ++i) {
+			if (text.charAt(i) == c) count++;
+		}
+		return count; // return text.chars().filter(e -> c == e).count();
 	}
 }
