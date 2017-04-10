@@ -347,25 +347,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitBinaryExpression(BinaryExpression be) {
         super.visitBinaryExpression(be);
-        switch (be.getOperation().getType()) {
-            case Types.EQUAL: // = assignment
-            case Types.BITWISE_AND_EQUAL:
-            case Types.BITWISE_OR_EQUAL:
-            case Types.BITWISE_XOR_EQUAL:
-            case Types.PLUS_EQUAL:
-            case Types.MINUS_EQUAL:
-            case Types.MULTIPLY_EQUAL:
-            case Types.DIVIDE_EQUAL:
-            case Types.INTDIV_EQUAL:
-            case Types.MOD_EQUAL:
-            case Types.POWER_EQUAL:
-            case Types.LEFT_SHIFT_EQUAL:
-            case Types.RIGHT_SHIFT_EQUAL:
-            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
-                checkFinalFieldAccess(be.getLeftExpression());
-                break;
-            default:
-                break;
+
+        if (Types.isAssignment(be.getOperation().getType())) {
+            checkFinalFieldAccess(be.getLeftExpression());
         }
     }
 

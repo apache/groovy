@@ -110,12 +110,13 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.codehaus.groovy.syntax.Types.DIVIDE;
 import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.ELVIS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.EQUAL;
 import static org.codehaus.groovy.syntax.Types.FIND_REGEX;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
@@ -560,15 +561,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitBinaryExpression(BinaryExpression expression) {
-        int op = expression.getOperation().getType();
-        if (op == COMPARE_IDENTICAL || op == COMPARE_NOT_IDENTICAL) {
-            return; // we'll report those as errors later
-        }
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         typeCheckingContext.pushEnclosingBinaryExpression(expression);
         try {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
+            int op = expression.getOperation().getType();
             leftExpression.visit(this);
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             if (setterInfo != null) {
@@ -586,10 +584,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
             }
             BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
-            ClassNode resultType = op==KEYWORD_IN
+            ClassNode resultType = (op==KEYWORD_IN || op==COMPARE_NOT_IN)
                     ?getResultType(rType,op,lType,reversedBinaryExpression)
                     :getResultType(lType, op, rType, expression);
-            if (op==KEYWORD_IN) {
+            if (op==KEYWORD_IN || op==COMPARE_NOT_IN) {
                 // in case of the "in" operator, the receiver and the arguments are reversed
                 // so we use the reversedExpression and get the target method from it
                 storeTargetMethod(expression, (MethodNode) reversedBinaryExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
@@ -702,7 +700,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
 
-            } else if (op == KEYWORD_INSTANCEOF) {
+            } else if (op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF) {
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             }
             if (!isEmptyDeclaration) {
@@ -2103,13 +2101,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
         if (!extension.beforeVisitMethod(node)) {
-        ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
-        if (collector != null) {
-            typeCheckingContext.getErrorCollector().addCollectorContents(collector);
-        } else {
-            startMethodInference(node, typeCheckingContext.getErrorCollector());
-        }
-        node.removeNodeMetaData(ERROR_COLLECTOR);
+            ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
+            if (collector != null) {
+                typeCheckingContext.getErrorCollector().addCollectorContents(collector);
+            } else {
+                startMethodInference(node, typeCheckingContext.getErrorCollector());
+            }
+            node.removeNodeMetaData(ERROR_COLLECTOR);
         }
         extension.afterVisitMethod(node);
     }
@@ -2303,7 +2301,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void visitMethodCallArguments(final ClassNode receiver, ArgumentListExpression arguments, boolean visitClosures, final MethodNode selectedMethod) {
-        Parameter[] params = selectedMethod!=null?selectedMethod.getParameters():Parameter.EMPTY_ARRAY;
+        Parameter[] params = selectedMethod!=null?selectedMethod.getParameters(): Parameter.EMPTY_ARRAY;
         List<Expression> expressions = new LinkedList<Expression>(arguments.getExpressions());
         if (selectedMethod instanceof ExtensionMethodNode) {
             params = ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode().getParameters();
@@ -2368,12 +2366,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void inferSAMType(Parameter param, ClassNode receiver, MethodNode methodWithSAMParameter, ArgumentListExpression originalMethodCallArguments, ClosureExpression openBlock) {
         // In a method call with SAM coercion the inference is to be
         // understood as a two phase process. We have the normal method call
-        // to the target method with the closure argument and we have the 
-        // SAM method that will be called inside the normal target method. 
+        // to the target method with the closure argument and we have the
+        // SAM method that will be called inside the normal target method.
         // To infer correctly we have to "simulate" this process. We know the
         // call to the closure will be done through the SAM type, so the SAM
         // type generics deliver information about the Closure. At the same
-        // time the SAM class is used in the target method parameter, 
+        // time the SAM class is used in the target method parameter,
         // providing a connection from the SAM type and the target method
         // declaration class.
 
@@ -2425,7 +2423,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             extractGenericsConnections(SAMTypeConnections, blockParameterTypes[i], parameterTypesForSAM[i]);
         }
 
-        // and finally we apply the generics information to the parameters and 
+        // and finally we apply the generics information to the parameters and
         // store the type of parameter and block type as meta information
         for (int i=0; i<blockParameterTypes.length; i++) { //TODO: equal length guaranteed?
             ClassNode resolvedParameter =
@@ -3155,7 +3153,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         owners.add(Receiver.<String>make(receiver));
         if (isClassClassNodeWrappingConcreteType(receiver)) {
             GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(0,Receiver.<String>make(clazzGT.getType()));
+            owners.add(0, Receiver.<String>make(clazzGT.getType()));
         }
         if (receiver.isInterface()) {
             // GROOVY-xxxx
@@ -3363,7 +3361,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // char c = (char) ...
         } else if (sourceIsNull && isPrimitiveType(targetType) && !boolean_TYPE.equals(targetType)) {
             return false;
-        } else if ((expressionType.getModifiers()&Opcodes.ACC_FINAL)==0 && targetType.isInterface()) {
+        } else if ((expressionType.getModifiers()& Opcodes.ACC_FINAL)==0 && targetType.isInterface()) {
             return true;
         } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
             return false;
@@ -3484,7 +3482,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         Expression leftExpression = expr.getLeftExpression();
         Expression rightExpression = expr.getRightExpression();
-        if (op == ASSIGN || op == ASSIGNMENT_OPERATOR) {
+        if (op == ASSIGN || op == ASSIGNMENT_OPERATOR || op == ELVIS_EQUAL) {
             if (leftRedirect.isArray() && implementsInterfaceOrIsSubclassOf(rightRedirect, Collection_TYPE)) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
                 // because of type inferrence, we must perform an additional check if the right expression
@@ -3610,7 +3608,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode inferSAMTypeGenericsInAssignment(ClassNode samUsage, MethodNode sam, ClassNode closureType, ClosureExpression closureExpression) {
-        // if the sam type or closure type do not provide generics information, 
+        // if the sam type or closure type do not provide generics information,
         // we cannot infer anything, thus we simply return the provided samUsage
         GenericsType[] samGt = samUsage.getGenericsTypes();
         GenericsType[] closureGt = closureType.getGenericsTypes();
@@ -3620,7 +3618,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Map<String,GenericsType> connections = new HashMap<String,GenericsType>();
         extractGenericsConnections(connections, getInferredReturnType(closureExpression),sam.getReturnType());
 
-        // next we get the block parameter types and set the generics 
+        // next we get the block parameter types and set the generics
         // information just like before
         // TODO: add vargs handling
         Parameter[] closureParams = closureExpression.getParameters();

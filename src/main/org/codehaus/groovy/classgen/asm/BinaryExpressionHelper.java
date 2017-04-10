@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import groovy.lang.GroovyRuntimeException;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -34,6 +32,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -44,17 +43,67 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.codehaus.groovy.syntax.Types.*;
-import static org.objectweb.asm.Opcodes.*;
+import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
+import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
+import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
+import static org.codehaus.groovy.syntax.Types.BITWISE_OR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
+import static org.codehaus.groovy.syntax.Types.BITWISE_XOR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_LESS_THAN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_LESS_THAN_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
+import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
+import static org.codehaus.groovy.syntax.Types.DIVIDE;
+import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.ELVIS_EQUAL;
+import static org.codehaus.groovy.syntax.Types.EQUAL;
+import static org.codehaus.groovy.syntax.Types.FIND_REGEX;
+import static org.codehaus.groovy.syntax.Types.INTDIV;
+import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
+import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
+import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
+import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_AND;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
+import static org.codehaus.groovy.syntax.Types.MATCH_REGEX;
+import static org.codehaus.groovy.syntax.Types.MINUS;
+import static org.codehaus.groovy.syntax.Types.MINUS_EQUAL;
+import static org.codehaus.groovy.syntax.Types.MOD;
+import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
+import static org.codehaus.groovy.syntax.Types.MULTIPLY;
+import static org.codehaus.groovy.syntax.Types.MULTIPLY_EQUAL;
+import static org.codehaus.groovy.syntax.Types.PLUS;
+import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
+import static org.codehaus.groovy.syntax.Types.POWER;
+import static org.codehaus.groovy.syntax.Types.POWER_EQUAL;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.INSTANCEOF;
 
 public class BinaryExpressionHelper {
     //compare
+    private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
+    private static final MethodCaller compareNotIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotIdentical");
     private static final MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
     private static final MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
     private static final MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
@@ -67,11 +116,15 @@ public class BinaryExpressionHelper {
     private static final MethodCaller matchRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "matchRegex");
     // isCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
+    // isNotCase
+    private static final MethodCaller isNotCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotCase");
 
     private final WriterController controller;
+    private final UnaryExpressionHelper unaryExpressionHelper;
     
     public BinaryExpressionHelper(WriterController wc) {
         this.controller = wc;
+        this.unaryExpressionHelper = new UnaryExpressionHelper(this.controller);
     }
     
     public WriterController getController(){
@@ -202,6 +255,10 @@ public class BinaryExpressionHelper {
             evaluateBinaryExpressionWithAssignment("power", expression);
             break;
 
+        case ELVIS_EQUAL:
+            evaluateElvisEqual(expression);
+            break;
+
         case LEFT_SHIFT:
             evaluateBinaryExpression("leftShift", expression);
             break;
@@ -230,6 +287,10 @@ public class BinaryExpressionHelper {
             evaluateInstanceof(expression);
             break;
 
+        case COMPARE_NOT_INSTANCEOF:
+            evaluateNotInstanceof(expression);
+            break;
+
         case FIND_REGEX:
             evaluateCompareExpression(findRegexMethod, expression);
             break;
@@ -250,18 +311,24 @@ public class BinaryExpressionHelper {
             evaluateCompareExpression(isCaseMethod, expression);
             break;
 
+        case COMPARE_NOT_IN:
+            evaluateCompareExpression(isNotCaseMethod, expression);
+            break;
+
         case COMPARE_IDENTICAL:
+            evaluateCompareExpression(compareIdenticalMethod, expression);
+            break;
+
         case COMPARE_NOT_IDENTICAL:
-            Token op = expression.getOperation();
-            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn(), op.getStartLine(), op.getStartColumn()+3);
-            throw new GroovyRuntimeException(cause);
+            evaluateCompareExpression(compareNotIdenticalMethod, expression);
+            break;
 
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
     }
     
-    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader, boolean safe) {
         // let's replace this assignment to a subscript operator with a
         // method call
         // e.g. x[5] = 10
@@ -270,7 +337,7 @@ public class BinaryExpressionHelper {
         ArgumentListExpression ae = new ArgumentListExpression(index,rhsValueLoader);
         controller.getInvocationWriter().makeCall(
                 parent, receiver, new ConstantExpression("putAt"),
-                ae, InvocationWriter.invokeMethod, false, false, false);
+                ae, InvocationWriter.invokeMethod, safe, false, false);
         controller.getOperandStack().pop();
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
@@ -284,6 +351,18 @@ public class BinaryExpressionHelper {
         }
     }
 
+    public void evaluateElvisEqual(BinaryExpression expression) {
+        Token operation = expression.getOperation();
+        BinaryExpression elvisAssignmentExpression =
+                new BinaryExpression(
+                        expression.getLeftExpression(),
+                        Token.newSymbol(Types.EQUAL, operation.getStartLine(), operation.getStartColumn()),
+                        new ElvisOperatorExpression(expression.getLeftExpression(), expression.getRightExpression())
+                );
+
+        this.evaluateEqual(elvisAssignmentExpression, false);
+    }
+
     public void evaluateEqual(BinaryExpression expression, boolean defineVariable) {
         AsmClassGenerator acg = controller.getAcg();
         CompileStack compileStack = controller.getCompileStack();
@@ -293,7 +372,7 @@ public class BinaryExpressionHelper {
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
 
         if (    defineVariable &&
-                rightExpression instanceof EmptyExpression && 
+                rightExpression instanceof EmptyExpression &&
                 !(leftExpression instanceof TupleExpression) )
         {
             VariableExpression ve = (VariableExpression) leftExpression;
@@ -349,13 +428,13 @@ public class BinaryExpressionHelper {
             rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         }
         //TODO: if rhs is VariableSlotLoader already, then skip crating a new one
-        BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack); 
+        BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack);
         
         // assignment for subscript
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader);
+                assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader, leftBinExpr.isSafe());
             }
             compileStack.removeVar(rhsValueId);
             return;
@@ -428,7 +507,7 @@ public class BinaryExpressionHelper {
 
         boolean done = false;
         if (    ClassHelper.isPrimitiveType(leftType) &&
-                ClassHelper.isPrimitiveType(rightType)) 
+                ClassHelper.isPrimitiveType(rightType))
         {
             BinaryExpressionMultiTypeDispatcher helper = new BinaryExpressionMultiTypeDispatcher(getController());
             done = helper.doPrimitiveCompare(leftType, rightType, expression);
@@ -526,14 +605,14 @@ public class BinaryExpressionHelper {
 
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
-        controller.getInvocationWriter().makeSingleArgumentCall(receiver, message, arguments);
+        controller.getInvocationWriter().makeSingleArgumentCall(receiver, message, arguments, binExp.isSafe());
         compileStack.popLHS();        
     }
 
     protected void evaluateArrayAssignmentWithOperator(String method, BinaryExpression expression, BinaryExpression leftBinExpr) {
-        CompileStack        compileStack    = getController().getCompileStack();
-        AsmClassGenerator   acg             = getController().getAcg();
-        OperandStack        os              = getController().getOperandStack();
+        CompileStack compileStack    = getController().getCompileStack();
+        AsmClassGenerator acg             = getController().getAcg();
+        OperandStack os              = getController().getOperandStack();
 
         // e.g. x[a] += b
         // to avoid loading x and a twice we transform the expression to use
@@ -601,6 +680,18 @@ public class BinaryExpressionHelper {
         operandStack.replace(ClassHelper.boolean_TYPE);
     }
 
+    private void evaluateNotInstanceof(BinaryExpression expression) {
+        unaryExpressionHelper.writeNotExpression(
+                new NotExpression(
+                        new BinaryExpression(
+                                expression.getLeftExpression(),
+                                Token.newSymbol(KEYWORD_INSTANCEOF, -1, -1),
+                                expression.getRightExpression()
+                        )
+                )
+        );
+    }
+
     public MethodCaller getIsCaseMethod() {
         return isCaseMethod;
     }
@@ -614,7 +705,7 @@ public class BinaryExpressionHelper {
 
         // save copy for later
         operandStack.dup();
-        ClassNode expressionType = operandStack.getTopOperand(); 
+        ClassNode expressionType = operandStack.getTopOperand();
         int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, expressionType, true);
         
         // execute Method
@@ -670,7 +761,7 @@ public class BinaryExpressionHelper {
         // subscription
         if (expression instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) expression;
-            if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
+            if (be.getOperation().getType()== Types.LEFT_SQUARE_BRACKET) {
                 // right expression is the subscript expression
                 // we store the result of the subscription on the stack
                 Expression subscript = be.getRightExpression();
@@ -707,13 +798,13 @@ public class BinaryExpressionHelper {
             
             // execute the assignment, this will leave the right side 
             // (here the method call result) on the stack
-            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader);
+            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader, be.isSafe());
 
             compileStack.removeVar(resultIdx);
         } 
         // here we handle a.b++ and a++
         else if (expression instanceof VariableExpression ||
-            expression instanceof FieldExpression || 
+            expression instanceof FieldExpression ||
             expression instanceof PropertyExpression)
         {
             operandStack.dup();

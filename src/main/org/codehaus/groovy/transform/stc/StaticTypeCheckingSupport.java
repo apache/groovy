@@ -16,23 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
@@ -52,20 +41,8 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 
@@ -182,7 +159,7 @@ public abstract class StaticTypeCheckingSupport {
 
 
     /**
-     * @deprecated Use {@link #findDGMMethodsForClassNode(ClassLoader,ClassNode,String)} instead
+     * @deprecated Use {@link #findDGMMethodsForClassNode(ClassLoader, ClassNode,String)} instead
      */
     @Deprecated
     protected static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz, String name) {
@@ -420,7 +397,7 @@ public abstract class StaticTypeCheckingSupport {
 
     static boolean isBoolIntrinsicOp(int op) {
         return op == LOGICAL_AND || op == LOGICAL_OR ||
-                op == MATCH_REGEX || op == KEYWORD_INSTANCEOF;
+                op == MATCH_REGEX || op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF;
     }
 
     static boolean isPowerOperator(int op) {
@@ -497,6 +474,9 @@ public abstract class StaticTypeCheckingSupport {
 
             case KEYWORD_IN:
                 return "isCase";
+
+            case COMPARE_NOT_IN:
+                return "isNotCase";
 
             default:
                 return null;
@@ -593,7 +573,7 @@ public abstract class StaticTypeCheckingSupport {
             return left==VOID_TYPE||left==void_WRAPPER_TYPE;
         }
 
-        if ((isNumberType(rightRedirect)||WideningCategories.isNumberCategory(rightRedirect))) {
+        if ((isNumberType(rightRedirect)|| WideningCategories.isNumberCategory(rightRedirect))) {
            if (BigDecimal_TYPE==leftRedirect) {
                // any number can be assigned to a big decimal
                return true;
@@ -899,7 +879,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, org.codehaus.groovy.ast.ClassNode, String, org.codehaus.groovy.ast.ClassNode[], java.util.List)} instead
+     * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, ClassNode, String, ClassNode[], List)} instead
      */
     @Deprecated
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
@@ -911,7 +891,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, org.codehaus.groovy.ast.ClassNode, String, org.codehaus.groovy.ast.ClassNode[], List)} instead
+     * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, ClassNode, String, ClassNode[], List)} instead
      */
     @Deprecated
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
@@ -1433,7 +1413,7 @@ public abstract class StaticTypeCheckingSupport {
     private static Set<String> extractResolvedPlaceHolders(Map<String, GenericsType> resolvedMethodGenerics) {
         if (resolvedMethodGenerics.isEmpty()) return Collections.EMPTY_SET;
         Set<String> result = new HashSet<String>();
-        for (Map.Entry<String, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
+        for (Entry<String, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
             GenericsType value = entry.getValue();
             if (value.isPlaceholder()) continue;
             result.add(entry.getKey());
@@ -1479,7 +1459,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics, Set<String> fixedGenericsPlaceHolders)
     {
-        for (Map.Entry<String, GenericsType> entry : connections.entrySet()) {
+        for (Entry<String, GenericsType> entry : connections.entrySet()) {
             GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
             if (resolved==null) continue;
             GenericsType connection = entry.getValue();
@@ -1558,7 +1538,7 @@ public abstract class StaticTypeCheckingSupport {
         while (count<10000) {
             count++;
             boolean checkForMorePlaceHolders=false;
-            for (Map.Entry<String, GenericsType> entry: resolvedPlaceholders.entrySet()){
+            for (Entry<String, GenericsType> entry: resolvedPlaceholders.entrySet()){
                 String name = entry.getKey();
                 GenericsType replacement = connections.get(name);
                 if (replacement==null) {
@@ -1855,7 +1835,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static void applyContextGenerics(Map<String, GenericsType> resolvedPlaceholders, Map<String, GenericsType> placeholdersFromContext) {
         if (placeholdersFromContext==null) return;
-        for (Map.Entry<String, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+        for (Entry<String, GenericsType> entry : resolvedPlaceholders.entrySet()) {
             GenericsType gt = entry.getValue();
             if (gt.isPlaceholder()) {
                 String name = gt.getName();
@@ -1948,10 +1928,123 @@ public abstract class StaticTypeCheckingSupport {
      * A DGM-like method which adds support for method calls which are handled
      * specifically by the Groovy compiler.
      */
-    private static class ObjectArrayStaticTypesHelper {
-        public static <T> T getAt(T[] arr, int index) { return null;}
-        public static <T,U extends T> void putAt(T[] arr, int index, U object) { }
+    public static class ObjectArrayStaticTypesHelper {
+        public static <T> T getAt(T[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static <T,U extends T> void putAt(T[] arr, int index, U object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
     }
+
+    public static class BooleanArrayStaticTypesHelper {
+        public static Boolean getAt(boolean[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(boolean[] arr, int index, boolean object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class CharArrayStaticTypesHelper {
+        public static Character getAt(char[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(char[] arr, int index, char object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class ByteArrayStaticTypesHelper {
+        public static Byte getAt(byte[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(byte[] arr, int index, byte object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class ShortArrayStaticTypesHelper {
+        public static Short getAt(short[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(short[] arr, int index, short object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class IntArrayStaticTypesHelper {
+        public static Integer getAt(int[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(int[] arr, int index, int object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class LongArrayStaticTypesHelper {
+        public static Long getAt(long[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(long[] arr, int index, long object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class FloatArrayStaticTypesHelper {
+        public static Float getAt(float[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(float[] arr, int index, float object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
+    public static class DoubleArrayStaticTypesHelper {
+        public static Double getAt(double[] arr, int index) {
+            return null == arr ? null : arr[index];
+        }
+        public static void putAt(double[] arr, int index, double object) {
+            if (null == arr) {
+                return;
+            }
+
+            arr[index] = object;
+        }
+    }
+
 
     /**
      * This class is used to make extension methods lookup faster. Basically, it will only
@@ -2020,7 +2113,16 @@ public abstract class StaticTypeCheckingSupport {
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.DGM_LIKE_CLASSES);
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.additionals);
             staticExtClasses.add(DefaultGroovyStaticMethods.class);
+
             instanceExtClasses.add(ObjectArrayStaticTypesHelper.class);
+            instanceExtClasses.add(BooleanArrayStaticTypesHelper.class);
+            instanceExtClasses.add(CharArrayStaticTypesHelper.class);
+            instanceExtClasses.add(ByteArrayStaticTypesHelper.class);
+            instanceExtClasses.add(ShortArrayStaticTypesHelper.class);
+            instanceExtClasses.add(IntArrayStaticTypesHelper.class);
+            instanceExtClasses.add(LongArrayStaticTypesHelper.class);
+            instanceExtClasses.add(FloatArrayStaticTypesHelper.class);
+            instanceExtClasses.add(DoubleArrayStaticTypesHelper.class);
 
             scanClassesForDGMMethods(methods, staticExtClasses, true);
             scanClassesForDGMMethods(methods, instanceExtClasses, false);
@@ -2133,7 +2235,7 @@ public abstract class StaticTypeCheckingSupport {
         String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
         ClassNode node = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
         ReturnStatement code = new ReturnStatement(expr);
-        node.addMethod(new MethodNode("eval", Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code));
+        node.addMethod(new MethodNode("eval", Opcodes.ACC_PUBLIC+ Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code));
         CompilerConfiguration copyConf = new CompilerConfiguration(config);
         CompilationUnit cu = new CompilationUnit(copyConf);
         cu.addClassNode(node);

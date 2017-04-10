@@ -193,7 +193,8 @@ allprojects {
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
                                 includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/ASMifier.class,org/objectweb/asm/util/Trace*')
                     }
-                    rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1'
+                    rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1' // antlr2
+                    rule pattern: 'org.antlr.**', result: 'groovyjarjarantlr4.@1' // antlr4
                     rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
                     rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
                 }

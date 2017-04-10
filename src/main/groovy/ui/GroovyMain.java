@@ -121,7 +121,7 @@ public class GroovyMain {
                 printHelp(out, options);
             } else if (cmd.hasOption('v')) {
                 String version = GroovySystem.getVersion();
-                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") + 
+                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") +
                         " Vendor: " + System.getProperty("java.vm.vendor")  + " OS: " + System.getProperty("os.name"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
@@ -143,16 +143,16 @@ public class GroovyMain {
         PrintWriter pw = new PrintWriter(out);
 
         formatter.printHelp(
-            pw,
-            80,
-            "groovy [options] [filename] [args]",
-            "The Groovy command line processor.\nOptions:",
-            options,
-            2,
-            4,
-            null, // footer
-            false);
-       
+                pw,
+                80,
+                "groovy [options] [filename] [args]",
+                "The Groovy command line processor.\nOptions:",
+                options,
+                2,
+                4,
+                null, // footer
+                false);
+
         pw.flush();
     }
 
@@ -227,9 +227,9 @@ public class GroovyMain {
      * @param line the parsed command line.
      * @throws ParseException if invalid options are chosen
      */
-     private static boolean process(CommandLine line) throws ParseException, IOException {
+    private static boolean process(CommandLine line) throws ParseException, IOException {
         List args = line.getArgList();
-        
+
         if (line.hasOption('D')) {
             String[] values = line.getOptionValues('D');
 
@@ -239,7 +239,7 @@ public class GroovyMain {
         }
 
         GroovyMain main = new GroovyMain();
-        
+
         // add the ability to parse scripts with a specified encoding
         main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
 
@@ -274,7 +274,7 @@ public class GroovyMain {
             String p = line.getOptionValue('l', "1960"); // default port to listen to
             main.port = Integer.parseInt(p);
         }
-        
+
         // we use "," as default, because then split will create
         // an empty array if no option is set
         String disabled = line.getOptionValue("disableopt", ",");
@@ -282,32 +282,32 @@ public class GroovyMain {
         for (String deopt_i : deopts) {
             main.conf.getOptimizationOptions().put(deopt_i,false);
         }
-        
+
         if (line.hasOption("indy")) {
             CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
             main.conf.getOptimizationOptions().put("indy", true);
         }
 
-         if (line.hasOption("basescript")) {
-             main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
-         }
+        if (line.hasOption("basescript")) {
+            main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
+        }
 
-         if (line.hasOption("configscript")) {
-             String path = line.getOptionValue("configscript");
-             File groovyConfigurator = new File(path);
-             Binding binding = new Binding();
-             binding.setVariable("configuration", main.conf);
+        if (line.hasOption("configscript")) {
+            String path = line.getOptionValue("configscript");
+            File groovyConfigurator = new File(path);
+            Binding binding = new Binding();
+            binding.setVariable("configuration", main.conf);
 
-             CompilerConfiguration configuratorConfig = new CompilerConfiguration();
-             ImportCustomizer customizer = new ImportCustomizer();
-             customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
-             configuratorConfig.addCompilationCustomizers(customizer);
+            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+            ImportCustomizer customizer = new ImportCustomizer();
+            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            configuratorConfig.addCompilationCustomizers(customizer);
 
-             GroovyShell shell = new GroovyShell(binding, configuratorConfig);
-             shell.evaluate(groovyConfigurator);
-         }
+            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+            shell.evaluate(groovyConfigurator);
+        }
 
-         main.args = args;
+        main.args = args;
 
         return main.run();
     }

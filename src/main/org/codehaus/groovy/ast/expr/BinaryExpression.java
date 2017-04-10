@@ -34,6 +34,7 @@ public class BinaryExpression extends Expression {
     private Expression leftExpression;
     private Expression rightExpression;
     private final Token operation;
+    private boolean safe = false;
 
     public BinaryExpression(Expression leftExpression,
                             Token operation,
@@ -41,6 +42,14 @@ public class BinaryExpression extends Expression {
         this.leftExpression = leftExpression;
         this.operation = operation;
         this.rightExpression = rightExpression;
+    }
+
+    public BinaryExpression(Expression leftExpression,
+                            Token operation,
+                            Expression rightExpression,
+                            boolean safe) {
+        this(leftExpression, operation, rightExpression);
+        this.safe = safe;
     }
 
     public String toString() {
@@ -52,7 +61,7 @@ public class BinaryExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression));
+        Expression ret = new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression), safe);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
@@ -80,11 +89,18 @@ public class BinaryExpression extends Expression {
 
     public String getText() {
         if (operation.getType() == Types.LEFT_SQUARE_BRACKET) {
-            return leftExpression.getText() + "[" + rightExpression.getText() + "]";
+            return leftExpression.getText() + (safe ? "?" : "") + "[" + rightExpression.getText() + "]";
         }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
 
+    public boolean isSafe() {
+        return safe;
+    }
+
+    public void setSafe(boolean safe) {
+        this.safe = safe;
+    }
 
     /**
      * Creates an assignment expression in which the specified expression

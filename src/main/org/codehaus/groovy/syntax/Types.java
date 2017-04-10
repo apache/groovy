@@ -18,15 +18,16 @@
  */
 package org.codehaus.groovy.syntax;
 
+import org.codehaus.groovy.GroovyBugError;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.Collections;
-import java.util.Collection;
-
-import org.codehaus.groovy.GroovyBugError;
 
 
 /**
@@ -91,6 +92,8 @@ public class Types
     public static final int COMPARE_GREATER_THAN        = 126;   // >
     public static final int COMPARE_GREATER_THAN_EQUAL  = 127;   // >=
     public static final int COMPARE_TO                  = 128;   // <=>
+    public static final int COMPARE_NOT_IN              = 129;  // !in
+    public static final int COMPARE_NOT_INSTANCEOF      = 130;  // !instanceof
 
     public static final int NOT                         = 160;   // !
     public static final int LOGICAL_OR                  = 162;   // ||
@@ -115,6 +118,7 @@ public class Types
     public static final int INTDIV_EQUAL                = 214;   // \=
     public static final int MOD_EQUAL                   = 215;   // %=
     public static final int POWER_EQUAL                 = 216;   // **=
+    public static final int ELVIS_EQUAL                 = 217;   // ?=
 
     public static final int PLUS_PLUS                   = 250;   // ++
     public static final int PREFIX_PLUS_PLUS            = 251;   // ++
@@ -419,7 +423,7 @@ public class Types
                 break;
 
             case ASSIGNMENT_OPERATOR:
-                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                          || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
                                          || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
@@ -502,7 +506,7 @@ public class Types
                         return true;
                 }
 
-                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                  || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
             case PREFIX_OR_INFIX_OPERATOR:
@@ -906,7 +910,7 @@ public class Types
     *  and requested.
     */
 
-    public static void makePrefix( CSTNode node, boolean throwIfInvalid ) {
+    public static void makePrefix(CSTNode node, boolean throwIfInvalid ) {
 
         switch( node.getMeaning() ) {
             case PLUS:
@@ -940,7 +944,7 @@ public class Types
     *  Throws a <code>GroovyBugError</code> if the type can't be converted.
     */
 
-    public static void makePostfix( CSTNode node, boolean throwIfInvalid ) {
+    public static void makePostfix(CSTNode node, boolean throwIfInvalid ) {
 
         switch( node.getMeaning() ) {
             case PLUS_PLUS:
@@ -986,6 +990,7 @@ public class Types
             case INTDIV_EQUAL:
             case MOD_EQUAL:
             case POWER_EQUAL:
+            case ELVIS_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
             case LEFT_SHIFT_EQUAL:
@@ -1024,6 +1029,7 @@ public class Types
             case FIND_REGEX:
             case MATCH_REGEX:
             case KEYWORD_INSTANCEOF:
+            case COMPARE_NOT_INSTANCEOF:
                 return 25;
 
             case DOT_DOT:
@@ -1210,6 +1216,8 @@ public class Types
         addTranslation( ">"           , COMPARE_GREATER_THAN        );
         addTranslation( ">="          , COMPARE_GREATER_THAN_EQUAL  );
         addTranslation( "<=>"         , COMPARE_TO                  );
+        addTranslation( "!in"         , COMPARE_NOT_IN              );
+        addTranslation( "!instanceof" , COMPARE_NOT_INSTANCEOF      );
 
         addTranslation( "!"           , NOT                         );
         addTranslation( "||"          , LOGICAL_OR                  );
@@ -1233,6 +1241,7 @@ public class Types
         addTranslation( "\\="         , INTDIV_EQUAL                );
         addTranslation( "%="          , MOD_EQUAL                   );
         addTranslation( "**="         , POWER_EQUAL                 );
+        addTranslation( "?="          , ELVIS_EQUAL                 );
 
         addTranslation( "++"          , PLUS_PLUS                   );
         addTranslation( "--"          , MINUS_MINUS                 );
@@ -1438,4 +1447,13 @@ public class Types
         addDescription( SWITCH_ENTRIES              , "<valid in a switch body>"     );
     }
 
+    private static final int[] ASSIGNMENT_TYPES;
+    static {
+        ASSIGNMENT_TYPES = new int[] { EQUAL, BITWISE_AND_EQUAL, BITWISE_OR_EQUAL, BITWISE_XOR_EQUAL, PLUS_EQUAL, MINUS_EQUAL, MULTIPLY_EQUAL, DIVIDE_EQUAL, INTDIV_EQUAL, MOD_EQUAL, POWER_EQUAL, LEFT_SHIFT_EQUAL, RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL, ELVIS_EQUAL };
+        Arrays.sort(ASSIGNMENT_TYPES);
+    }
+
+    public static boolean isAssignment(int type) {
+        return Arrays.binarySearch(ASSIGNMENT_TYPES, type) >= 0;
+    }
 }

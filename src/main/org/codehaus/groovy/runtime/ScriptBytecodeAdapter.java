@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
@@ -28,7 +27,10 @@ import org.codehaus.groovy.runtime.wrappers.GroovyObjectWrapper;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -480,7 +482,7 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver==null) receiver=NullObject.getNullObject();
+            if (receiver==null) receiver= NullObject.getNullObject();
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
@@ -665,6 +667,10 @@ public class ScriptBytecodeAdapter {
             return switchValue == null;
         }
         return DefaultTypeTransformation.castToBoolean(invokeMethodN(caseExpression.getClass(), caseExpression, "isCase", new Object[]{switchValue}));
+    }
+
+    public static boolean isNotCase(Object switchValue, Object caseExpression) throws Throwable {
+        return !isCase(switchValue, caseExpression);
     }
 
     //compare

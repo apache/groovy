@@ -177,7 +177,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode componentType = StaticTypeCheckingVisitor.inferLoopElementType(typeChooser.resolveType(receiver, classNode));
         Parameter iterator = new Parameter(componentType, "for$it$" + counter);
         VariableExpression iteratorAsVar = new VariableExpression(iterator);
-        PropertyExpression pexp = spreadExpression instanceof AttributeExpression?
+        PropertyExpression pexp = spreadExpression instanceof AttributeExpression ?
                 new AttributeExpression(iteratorAsVar, spreadExpression.getProperty(), true):
                 new PropertyExpression(iteratorAsVar, spreadExpression.getProperty(), true);
         pexp.setImplicitThis(spreadExpression.isImplicitThis());
@@ -347,15 +347,16 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
-    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
+    @Override
+    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader, boolean safe) {
         ClassNode current = getController().getClassNode();
         ClassNode arrayType = getController().getTypeChooser().resolveType(receiver, current);
         ClassNode arrayComponentType = arrayType.getComponentType();
         int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
 
-        if (bew.arraySet(true) && arrayType.isArray()) {
-            super.assignToArray(parent, receiver, index, rhsValueLoader);
+        if (bew.arraySet(true) && arrayType.isArray() && !safe) {
+            super.assignToArray(parent, receiver, index, rhsValueLoader, safe);
         } else {
             /******
             / This code path is needed because ACG creates array access expressions
@@ -379,6 +380,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     "putAt",
                     ae
             );
+
+            mce.setSafe(safe);
             mce.setSourcePosition(parent);
             visitor.visitMethodCallExpression(mce);
             OperandStack operandStack = controller.getOperandStack();

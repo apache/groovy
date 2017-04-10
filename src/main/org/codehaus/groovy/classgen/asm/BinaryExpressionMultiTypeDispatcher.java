@@ -16,10 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.classgen.asm;
 
-import java.util.HashMap;
-import java.util.Map;
+package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -32,10 +30,13 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 import static org.codehaus.groovy.syntax.TokenUtil.removeAssignment;
 import static org.codehaus.groovy.syntax.Types.*;
-import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
  * This class is for internal use only!
@@ -48,7 +49,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public BinaryCharExpressionHelper(WriterController wc) {
             super(wc, charArraySet, charArrayGet);
         }
-        private static final MethodCaller 
+        private static final MethodCaller
             charArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "cArrayGet"),
             charArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "cArraySet");
         @Override protected ClassNode getArrayGetResultType() { return ClassHelper.char_TYPE; }
@@ -58,7 +59,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public BinaryByteExpressionHelper(WriterController wc) {
             super(wc, byteArraySet, byteArrayGet);
         }
-        private static final MethodCaller 
+        private static final MethodCaller
             byteArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "bArrayGet"),
             byteArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "bArraySet");
         @Override protected ClassNode getArrayGetResultType() { return ClassHelper.byte_TYPE; }
@@ -68,7 +69,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public BinaryShortExpressionHelper(WriterController wc) {
             super(wc, shortArraySet, shortArrayGet);
         }
-        private static final MethodCaller 
+        private static final MethodCaller
             shortArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "sArrayGet"),
             shortArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "sArraySet");
         @Override protected ClassNode getArrayGetResultType() { return ClassHelper.short_TYPE; }
@@ -177,7 +178,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             int operationType = getOperandType(leftType);
             BinaryExpressionWriter bew = binExpWriter[operationType];
             if (    leftTypeOrig.isArray() && isIntCastableType(rightExp) && 
-                    bew.arrayGet(operation, true)) 
+                    bew.arrayGet(operation, true) &&
+                    !binExp.isSafe())
             {
                 leftExp.visit(acg);
                 os.doGroovyCast(leftTypeOrig);
@@ -354,7 +356,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     }
 
     @Override
-    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader, boolean safe) {
         ClassNode current = getController().getClassNode();
         ClassNode arrayType = getController().getTypeChooser().resolveType(receiver, current);
         ClassNode arrayComponentType = arrayType.getComponentType();
@@ -362,7 +364,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         BinaryExpressionWriter bew = binExpWriter[operationType];
         AsmClassGenerator acg = getController().getAcg();
         
-        if (bew.arraySet(true) && arrayType.isArray()) {
+        if (bew.arraySet(true) && arrayType.isArray() && !safe) {
             OperandStack operandStack   =   getController().getOperandStack();
             
             // load the array
@@ -384,12 +386,12 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             operandStack.remove(3);
             rhsValueLoader.visit(acg);
         } else {        
-            super.assignToArray(orig, receiver, index, rhsValueLoader);
+            super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
         }
     }
     
     @Override
-    protected void writePostOrPrefixMethod(int op, String method,  Expression expression, Expression orig) {
+    protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
         ClassNode type = getController().getTypeChooser().resolveType(orig, getController().getClassNode());
         int operationType = getOperandType(type);
         BinaryExpressionWriter bew = binExpWriter[operationType];

@@ -42,7 +42,7 @@ public class IndyCallSiteWriter extends CallSiteWriter {
             Expression arguments, boolean safe, boolean implicitThis,
             boolean callCurrent, boolean callStatic) {}
     @Override
-    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {}
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments, boolean safe) {}
     @Override
     public void prepareCallSite(String message) {}    
     @Override

@@ -18,8 +18,6 @@
  */
 package groovy
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class EqualsTest extends GroovyShellTestCase {
 
     void testParentChildrenEquals() {
@@ -39,34 +37,14 @@ class EqualsTest extends GroovyShellTestCase {
         assert x != n
     }
 
-    // until Parrot is merged
-    void testNotIdentical() {
-        def msg = shouldFail(MultipleCompilationErrorsException) {
-            shell.evaluate """
-                def x = []
-                def y = []
-                def doIt() {
-                    assert y !== x
-                }
-                doIt()
-            """
-        }
-        assert msg.contains("!==") && msg.contains("not supported")
+    void testIdentical() {
+        assert 'a' === 'a'
+        assert null === null
+
+        def x = []
+        def y = []
+        assert y !== x
+
     }
 
-    // until Parrot is merged
-    void testIdenticalCompileStatic() {
-        def msg = shouldFail(MultipleCompilationErrorsException) {
-            shell.evaluate """
-                def x = []
-                def y = []
-                @groovy.transform.CompileStatic
-                def doIt() {
-                    assert y === x
-                }
-                doIt()
-            """
-        }
-        assert msg.contains("===") && msg.contains("not supported")
-    }
 }

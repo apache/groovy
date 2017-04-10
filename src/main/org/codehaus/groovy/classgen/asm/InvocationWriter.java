@@ -18,15 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TreeMap;
-
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -38,6 +29,9 @@ import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -617,8 +611,12 @@ public class InvocationWriter {
         }
     }
 
-    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments);
+    public final void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
+        makeSingleArgumentCall(receiver, message, arguments, false);
+    }
+
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments, boolean safe) {
+        controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments, safe);
     }
 
     public void writeSpecialConstructorCall(final ConstructorCallExpression call) {

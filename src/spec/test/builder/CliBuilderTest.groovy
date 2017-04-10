@@ -264,7 +264,7 @@ class CliBuilderTest extends GroovyTestCase {
         def options = cli.parse(argz)
         assert options.a == 'john'
         assert options.b == 'MARY'
-        assert options.d.format('dd-MMM-yyyy') == '01-Jan-2016'
+        assert options.d.format('yyyy-MM-dd') == '2016-01-01'
         assert options.arguments() == ['and', 'some', 'more']
         // end::withConvert[]
     }

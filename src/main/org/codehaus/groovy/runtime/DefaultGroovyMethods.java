@@ -11265,7 +11265,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, T[] right) {
-        return (T[]) plus(toList(left), toList(right)).toArray();
+        return (T[]) plus((List<T>) toList(left), (Collection<T>) toList(right)).toArray();
     }
 
     /**
@@ -11301,7 +11301,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, Collection<T> right) {
-        return (T[]) plus(toList(left), right).toArray();
+        return (T[]) plus((List<T>) toList(left), (Collection<T>) right).toArray();
     }
 
     /**
@@ -11323,7 +11323,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, Iterable<T> right) {
-        return (T[]) plus(toList(left), toList(right)).toArray();
+        return (T[]) plus((List<T>) toList(left), (Collection<T>) toList(right)).toArray();
     }
 
     /**
