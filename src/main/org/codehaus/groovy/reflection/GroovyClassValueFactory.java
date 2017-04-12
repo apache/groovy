@@ -19,48 +19,24 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
-
-import java.lang.reflect.Constructor;
+import org.codehaus.groovy.reflection.v7.GroovyClassValueJava7;
 
 class GroovyClassValueFactory {
 	/**
 	 * This flag is introduced as a (hopefully) temporary workaround for a JVM bug, that is to say that using
 	 * ClassValue prevents the classes and classloaders from being unloaded.
 	 * See https://bugs.openjdk.java.net/browse/JDK-8136353
-	 * This issue does not exist on IBM Java (J9) so use ClassValue by default on that JVM. 
+	 * This issue does not exist on IBM Java (J9) so use ClassValue by default on that JVM.
 	 */
-	private static final boolean USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", "IBM J9 VM".equals(System.getProperty("java.vm.name"))?"true":"false"));
-
-	private static final Constructor groovyClassValueConstructor;
-
+	private static final boolean USE_CLASSVALUE;
 	static {
-		Class groovyClassValueClass;
-		if (USE_CLASSVALUE) {
-			try {
-				Class.forName("java.lang.ClassValue");
-				try {
-					groovyClassValueClass = Class.forName("org.codehaus.groovy.reflection.v7.GroovyClassValueJava7");
-				} catch (Exception e) {
-					throw new RuntimeException(e); // this should never happen, but if it does, let it propagate and be fatal
-				}
-			} catch (ClassNotFoundException e) {
-				groovyClassValueClass = GroovyClassValuePreJava7.class;
-			}
-		} else {
-			groovyClassValueClass = GroovyClassValuePreJava7.class;
-		}
-		try{
-			groovyClassValueConstructor = groovyClassValueClass.getConstructor(ComputeValue.class);
-		}catch(Exception e){
-			throw new RuntimeException(e); // this should never happen, but if it does, let it propagate and be fatal
-		}
-	}
+        String isJ9 = "IBM J9 VM".equals(System.getProperty("java.vm.name")) ? "true" : "false";
+        USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", isJ9));
+    }
 
-	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue){
-		try {
-			return (GroovyClassValue<T>) groovyClassValueConstructor.newInstance(computeValue);
-		} catch (Exception e) {
-			throw new RuntimeException(e); // this should never happen, but if it does, let it propagate and be fatal
-		}
+	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
+		return (USE_CLASSVALUE)
+                ? new GroovyClassValueJava7<>(computeValue)
+                : new GroovyClassValuePreJava7<>(computeValue);
 	}
 }

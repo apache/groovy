@@ -21,14 +21,7 @@
 // with regards to invoke dynamic support (indy)
 
 rootProject.ext.indyCapable = {
-    boolean capable = true
-    try {
-        Class.forName('java.lang.invoke.MethodHandle')
-    } catch (e) {
-        capable = false
-    }
-
-    capable && !rootProject.hasProperty('skipIndy')
+    !rootProject.hasProperty('skipIndy')
 }
 
 rootProject.ext.useIndy = {
