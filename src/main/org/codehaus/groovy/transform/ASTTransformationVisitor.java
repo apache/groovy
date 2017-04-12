@@ -256,23 +256,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 "IO Exception attempting to load global transforms:" + e.getMessage(),
                 null));
         }
-        try {
-            Class.forName("java.lang.annotation.Annotation"); // test for 1.5 JVM
-        } catch (Exception e) {
-            // we failed, notify the user
-            StringBuilder sb = new StringBuilder();
-            sb.append("Global ASTTransformations are not enabled in retro builds of groovy.\n");
-            sb.append("The following transformations will be ignored:");
-            for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
-                sb.append('\t');
-                sb.append(entry.getKey());
-                sb.append('\n');
-            }
-            compilationUnit.getErrorCollector().addWarning(new WarningMessage(
-                WarningMessage.POSSIBLE_ERRORS, sb.toString(), null, null));
-            return;
-        }
-        
+
         // record the transforms found in the first scan, so that in the 2nd scan, phase operations 
         // can be added for only for new transforms that have come in 
         if(isFirstScan) {
