@@ -22,13 +22,12 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
-
-import java.lang.reflect.Constructor;
 
 
 /**
@@ -39,17 +38,6 @@ import java.lang.reflect.Constructor;
  * @author Cedric Champeau
  */
 public class StaticTypesWriterController extends DelegatingController {
-
-    private static final Constructor indyBinHelper;
-    static {
-        Constructor ctor = null;
-        try {
-            ClassLoader cl = WriterController.class.getClassLoader();
-            Class clazz = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher");
-            ctor = clazz.getConstructor(WriterController.class);
-        } catch (Exception any) {}
-        indyBinHelper = ctor;
-    }
 
     protected boolean isInStaticallyCheckedMethod;
     private StaticTypesCallSiteWriter callSiteWriter;
@@ -74,18 +62,9 @@ public class StaticTypesWriterController extends DelegatingController {
         this.invocationWriter = new StaticInvocationWriter(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
-        boolean useIndy = getBytecodeVersion()>Opcodes.V1_6 && indyBinHelper!=null;
-
-        boolean binHelperSet = false;
-        if (useIndy) {
-            try {
-                this.binaryExprHelper = (BinaryExpressionMultiTypeDispatcher) indyBinHelper.newInstance(this);
-                binHelperSet = true;
-            } catch (Exception any) {}
-        }
-        if (!binHelperSet) {
-            this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
-        }
+        this.binaryExprHelper = (getBytecodeVersion() > Opcodes.V1_6)
+                ? new IndyStaticTypesMultiTypeDispatcher(this)
+                : new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }
 
     @Override
@@ -104,12 +83,6 @@ public class StaticTypesWriterController extends DelegatingController {
         isInStaticallyCheckedMethod = mn != null && (
                 StaticCompilationVisitor.isStaticallyCompiled(node)
                         || classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)&&classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)!=null);
-
-/*      if (isInStaticallyCheckedMethod) {
-            System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
-        } else if (mn!=null) {
-            System.out.println("Entering dynamically compiled method: "+mn.getDeclaringClass()+"#"+mn);
-        }*/
     }
 
     @Override

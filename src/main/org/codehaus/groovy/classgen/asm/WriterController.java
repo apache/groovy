@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import groovy.lang.GroovyRuntimeException;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +30,9 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.asm.indy.IndyBinHelper;
+import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
+import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
@@ -40,22 +41,6 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
-    private static Constructor indyWriter, indyCallSiteWriter, indyBinHelper;
-    static {
-        try {
-            ClassLoader cl = WriterController.class.getClassLoader();
-            Class indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
-            indyWriter = indyClass.getConstructor(WriterController.class);
-            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter");
-            indyCallSiteWriter = indyClass.getConstructor(WriterController.class);
-            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyBinHelper");
-            indyBinHelper = indyClass.getConstructor(WriterController.class);
-        } catch (Exception e) {
-            indyWriter = null;
-            indyCallSiteWriter = null;
-            indyBinHelper = null;
-        }
-    }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -107,13 +92,9 @@ public class WriterController {
         bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.getTargetBytecode());
 
         if (invokedynamic) {
-            try {
-                this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
-                this.callSiteWriter = (CallSiteWriter) indyCallSiteWriter.newInstance(this);
-                this.binaryExpHelper = (BinaryExpressionHelper) indyBinHelper.newInstance(this);
-            } catch (Exception e) {
-                throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
-            }
+            this.invocationWriter = new InvokeDynamicWriter(this);
+            this.callSiteWriter = new IndyCallSiteWriter(this);
+            this.binaryExpHelper = new IndyBinHelper(this);
         } else {
             this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
