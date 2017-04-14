@@ -129,6 +129,11 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/DoWhile_01x.groovy');
     }
 
+    void "test groovy core - For"() {
+        TestUtils.shouldFail('fail/For_01.groovy');
+        TestUtils.shouldFail('fail/For_02.groovy');
+    }
+
     void "test groovy core - Modifier"() {
         TestUtils.doRunAndShouldFail('fail/Modifier_01x.groovy');
         TestUtils.doRunAndShouldFail('fail/Modifier_02x.groovy');

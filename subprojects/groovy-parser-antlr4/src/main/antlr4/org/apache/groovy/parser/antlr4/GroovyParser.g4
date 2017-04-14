@@ -755,11 +755,11 @@ forControl
 
 forInit
     :   localVariableDeclaration
-    |   expressionList
+    |   expressionList[false]
     ;
 
 forUpdate
-    :   expressionList
+    :   expressionList[false]
     ;
 
 enhancedForControl
@@ -777,12 +777,14 @@ parExpression
     :   LPAREN (statementExpression | standardLambda) rparen
     ;
 
-expressionList
-    :   expressionListElement (COMMA expressionListElement)*
+expressionList[boolean canSpread]
+    :   expressionListElement[$canSpread] (COMMA expressionListElement[$canSpread])*
     ;
 
-expressionListElement
-    :   MUL? expression
+expressionListElement[boolean canSpread]
+    :   (   MUL { $canSpread }?<fail={"spread is not allowed here"}>
+        |
+        ) expression
     ;
 
 /**
@@ -1028,7 +1030,7 @@ dynamicMemberName
  *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
  */
 indexPropertyArgs
-    :   QUESTION? LBRACK expressionList? RBRACK
+    :   QUESTION? LBRACK expressionList[true]? RBRACK
     ;
 
 namedPropertyArgs
@@ -1054,7 +1056,7 @@ list
 locals[boolean empty = true]
     :   LBRACK
         (
-            expressionList
+            expressionList[true]
             { $empty = false; }
         )?
         (
@@ -1144,12 +1146,12 @@ enhancedArgumentList
 
 argumentListElement
 options { baseContext = enhancedArgumentListElement; }
-    :   expressionListElement
+    :   expressionListElement[true]
     |   mapEntry
     ;
 
 enhancedArgumentListElement
-    :   expressionListElement
+    :   expressionListElement[true]
     |   standardLambda
     |   mapEntry
     ;
