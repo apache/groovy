@@ -384,4 +384,31 @@ class ListenerListASTTest extends GroovyTestCase {
                 assert C.class.getMethod('getObjects')
             """)
         }
+
+    // GROOVY-8156
+    void testListenerListWithEventClassInSameCompilationUnit() {
+        assertScript '''
+            class Event {}
+
+            class EventListener {
+                Event event
+                void doSomething(Event e) {
+                    event = e
+                }
+            }
+
+            class EventHandler {
+                @groovy.beans.ListenerList
+                List<EventListener> listeners
+            }
+
+            def listener = new EventListener()
+            def eh = new EventHandler()
+            eh.addEventListener(listener)
+            def testEvent = new Event()
+            eh.fireDoSomething(testEvent)
+
+            assert listener.event.is(testEvent)
+        '''
+    }
 }
