@@ -18,7 +18,6 @@
  */
 package groovy.beans
 
-import org.codehaus.groovy.ast.tools.GenericsUtils
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
@@ -353,7 +352,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
 
         def params = method.parameters.collect {
             def paramType = ClassHelper.getWrapper(it.type)
-            def cn = GenericsUtils.makeClassSafe(paramType.typeClass)
+            def cn = paramType.plainNodeReference
             cn.setRedirect(paramType)
             new Parameter(cn, it.name)
         }
