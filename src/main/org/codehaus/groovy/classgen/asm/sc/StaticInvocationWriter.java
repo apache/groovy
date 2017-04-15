@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -706,7 +707,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             } else {
                 type = getWrapper(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
                 ClassNode declaringClass = target.getDeclaringClass();
-                if (type.getClass() != ClassNode.class && type.getClass() !=InnerClassNode.class) {
+                if (type.getClass() != ClassNode.class
+                        && type.getClass() != InnerClassNode.class
+                        && type.getClass() != DecompiledClassNode.class) {
                     type = declaringClass; // ex: LUB type
                 }
                 if (OBJECT_TYPE.equals(type) && !OBJECT_TYPE.equals(declaringClass)) {
