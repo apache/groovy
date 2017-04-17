@@ -123,6 +123,7 @@ class SyntaxErrorTest extends GroovyTestCase {
 
     void "test groovy core - BUGs"() {
         TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-5318.groovy');
+        TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-8150.groovy');
     }
 
     void "test groovy core - DoWhile"() {

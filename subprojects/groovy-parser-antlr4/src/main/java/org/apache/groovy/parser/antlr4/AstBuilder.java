@@ -1770,6 +1770,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         expression.putNodeMetaData(IS_INSIDE_PARENTHESES, true);
 
+        Integer insideParenLevel = expression.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
+        if (asBoolean((Object) insideParenLevel)) {
+            insideParenLevel++;
+        } else {
+            insideParenLevel = 1;
+        }
+        expression.putNodeMetaData(INSIDE_PARENTHESES_LEVEL, insideParenLevel);
+
         return this.configureAST(expression, ctx);
     }
 
@@ -2519,6 +2527,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (leftExpr instanceof VariableExpression
                 && isTrue(leftExpr, IS_INSIDE_PARENTHESES)) { // it is a special multiple assignment whose variable count is only one, e.g. (a) = [1]
+
+            if ((Integer) leftExpr.getNodeMetaData(INSIDE_PARENTHESES_LEVEL) > 1) {
+                throw createParsingFailedException("Nested parenthesis is not allowed in multiple assignment, e.g. ((a)) = b", ctx);
+            }
 
             return this.configureAST(
                     new BinaryExpression(
@@ -4474,6 +4486,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final Logger LOGGER = Logger.getLogger(AstBuilder.class.getName());
 
     private static final String IS_INSIDE_PARENTHESES = "_IS_INSIDE_PARENTHESES";
+    private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
+
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
     private static final String IS_NUMERIC = "_IS_NUMERIC";
