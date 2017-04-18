@@ -769,7 +769,7 @@ public class CompilerConfiguration {
 
     /**
      * Allow setting the bytecode compatibility. The parameter can take
-     * one of the values <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
+     * one of the values <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
      * If wrong parameter then the value will default to VM determined version.
      * 
      * @param version the bytecode compatibility mode
@@ -778,6 +778,7 @@ public class CompilerConfiguration {
         for (String allowedJdk : ALLOWED_JDKS) {
             if (allowedJdk.equals(version)) {
                 this.targetBytecode = version;
+                break;
             }
         }
     }
@@ -785,13 +786,22 @@ public class CompilerConfiguration {
     /**
      * Retrieves the compiler bytecode compatibility mode.
      * 
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * @return bytecode compatibility mode. Can be one of the values <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
     }
     
     private static String getVMVersion() {
+        //detect the version from the JRE
+        String vmVersion = System.getProperty("java.specification.version");
+        for (String allowedJdk : ALLOWED_JDKS) {
+            if (allowedJdk.equals(vmVersion)) {
+                return vmVersion;
+            }
+        }
+        
+        //fallback and use either 1.5 or 1.4
         try {
             Class.forName(JDK5_CLASSNAME_CHECK);
             return POST_JDK5;
