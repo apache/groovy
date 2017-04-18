@@ -22,6 +22,7 @@ import groovy.lang.Delegate;
 import groovy.lang.GroovyObject;
 
 import groovy.lang.Lazy;
+import groovy.lang.Reference;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -47,6 +48,7 @@ import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
@@ -158,7 +160,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name, List<String> includes, List<String> excludes) {
         String setterName = "set" + Verifier.capitalize(name);
         if ((prop.getModifiers() & ACC_FINAL) == 0
-                && owner.getSetterMethod(setterName) == null
+                && owner.getSetterMethod(setterName) == null && owner.getProperty(name) == null
                 && !shouldSkipPropertyMethod(name, setterName, excludes, includes)) {
             owner.addMethod(setterName,
                     ACC_PUBLIC,
@@ -183,22 +185,34 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (cNode.getGetterMethod("get" + suffix) != null && cNode.getGetterMethod("is" + suffix) == null)
                 willHaveIsAccessor = false;
         }
+        Reference<Boolean> ownerWillHaveGetAccessor = new Reference<Boolean>();
+        Reference<Boolean> ownerWillHaveIsAccessor = new Reference<Boolean>();
+        extractAccessorInfo(owner, name, ownerWillHaveGetAccessor, ownerWillHaveIsAccessor);
+
         for (String prefix : new String[]{"get", "is"}) {
             String getterName = prefix + suffix;
-            if (owner.getGetterMethod(getterName) == null
+            if ((prefix.equals("get") && willHaveGetAccessor && !ownerWillHaveGetAccessor.get()
+                    || prefix.equals("is") && willHaveIsAccessor && !ownerWillHaveIsAccessor.get())
                     && !shouldSkipPropertyMethod(name, getterName, excludes, includes)) {
-                if (prefix.equals("get") && willHaveGetAccessor || prefix.equals("is") && willHaveIsAccessor) {
-                    owner.addMethod(getterName,
-                            ACC_PUBLIC,
-                            GenericsUtils.nonGeneric(prop.getType()),
-                            Parameter.EMPTY_ARRAY,
-                            null,
-                            returnS(propX(varX(fieldNode), name)));
-                }
+                owner.addMethod(getterName,
+                        ACC_PUBLIC,
+                        GenericsUtils.nonGeneric(prop.getType()),
+                        Parameter.EMPTY_ARRAY,
+                        null,
+                        returnS(propX(varX(fieldNode), name)));
             }
         }
     }
-    
+
+    private static void extractAccessorInfo(ClassNode owner, String name, Reference<Boolean> willHaveGetAccessor, Reference<Boolean> willHaveIsAccessor) {
+        String suffix = Verifier.capitalize(name);
+        boolean hasGetAccessor = owner.getGetterMethod("get" + suffix) != null;
+        boolean hasIsAccessor = owner.getGetterMethod("is" + suffix) != null;
+        PropertyNode prop = owner.getProperty(name);
+        willHaveGetAccessor.set(hasGetAccessor || (prop != null && !hasIsAccessor));
+        willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && prop.getOriginType().equals(ClassHelper.boolean_TYPE)));
+    }
+
     private boolean shouldSkipPropertyMethod(String propertyName, String methodName, List<String> excludes, List<String> includes) {
         return (deemedInternalName(propertyName)
                     || excludes != null && (excludes.contains(propertyName) || excludes.contains(methodName)) 
