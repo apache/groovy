@@ -237,7 +237,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
 
         // visit AST xforms
-        registerASTTranformations(helper);
+        registerASTTransformations(helper);
 
         unit.getAST().addClass(helper);
         if (fieldHelper != null) {
@@ -271,7 +271,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return initializer;
     }
 
-    private void registerASTTranformations(final ClassNode helper) {
+    private void registerASTTransformations(final ClassNode helper) {
         ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(
                 unit, compilationUnit.getTransformLoader()
         );
