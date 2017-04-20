@@ -74,25 +74,25 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy');
     }
 
-    void "test CompilerErrorTest_001.groovy"() {
-        unzipScriptAndShouldFail("scripts/CompilerErrorTest_001.groovy", [])
-    }
+//    void "test CompilerErrorTest_001.groovy"() {
+//        unzipScriptAndShouldFail("scripts/CompilerErrorTest_001.groovy", [])
+//    }
 
-    void "test CompilerErrorTest_002.groovy"() {
-        unzipScriptAndShouldFail("scripts/CompilerErrorTest_002.groovy", [])
-    }
+//    void "test CompilerErrorTest_002.groovy"() {
+//        unzipScriptAndShouldFail("scripts/CompilerErrorTest_002.groovy", [])
+//    }
 
-    void "test DifferencesFromJavaTest_002.groovy"() {
-        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
-    }
+//    void "test DifferencesFromJavaTest_002.groovy"() {
+//        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
+//    }
 
-    void "test Groovy5212Bug_001.groovy"() {
-        unzipScriptAndShouldFail("scripts/Groovy5212Bug_001.groovy", [])
-    }
+//    void "test Groovy5212Bug_001.groovy"() {
+//        unzipScriptAndShouldFail("scripts/Groovy5212Bug_001.groovy", [])
+//    }
 
-    void "test GStringEndTest_001.groovy"() {
-        unzipScriptAndShouldFail("scripts/GStringEndTest_001.groovy", [])
-    }
+//    void "test GStringEndTest_001.groovy"() {
+//        unzipScriptAndShouldFail("scripts/GStringEndTest_001.groovy", [])
+//    }
 
     void "test groovy core - ParExpression"() {
         TestUtils.doRunAndShouldFail('fail/ParExpression_01x.groovy');
