@@ -16,16 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.methoddispatching;
+package org.codehaus.groovy.runtime.methoddispatching.vm8
 
-interface FooOne {
-    static String foo() {
-        return "FooOne.foo()";
+class StaticMethodOverloadTest extends GroovyTestCase {
+    void testOneStaticMethod() {
+        assert FooOne.foo() == "FooOne.foo()"
+        assert BarOne.foo() == "BarOne.foo()"
     }
-}
 
-class BarOne implements FooOne {
-    static String foo() {
-        return "BarOne.foo()";
+    void testTwoStaticMethods() {
+        assert FooTwo.foo() == "FooTwo.foo()"
+        assert FooTwo.foo(0) == "FooTwo.foo(0)"
+        assert BarTwo.foo() == "BarTwo.foo()"
+        assert BarTwo.foo(0) == "BarTwo.foo(0)"
+    }
+
+    void testMoreThanTwoStaticMethods() {
+        assert FooThree.foo() == "FooThree.foo()"
+        assert FooThree.foo(0) == "FooThree.foo(0)"
+        assert FooThree.foo(0, 1) == "FooThree.foo(0, 1)"
+        assert BarThree.foo() == "BarThree.foo()"
+        assert BarThree.foo(0) == "BarThree.foo(0)"
+        assert BarThree.foo(0, 1) == "BarThree.foo(0, 1)"
     }
 }

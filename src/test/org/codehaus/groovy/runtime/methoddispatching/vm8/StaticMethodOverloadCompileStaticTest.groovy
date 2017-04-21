@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.methoddispatching
+package org.codehaus.groovy.runtime.methoddispatching.vm8
 
 import groovy.transform.CompileStatic
 
