@@ -18,40 +18,12 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
-import static org.junit.Assume.assumeFalse
-
 /**
  * Tests Groovy properties and how they can be used from Java.
  *
  * @author Guillaume Laforge
  */
-@RunWith(JUnit4)
 class PropertyUsageFromJavaTest extends StubTestCase {
-
-    @Before
-    void setUp() {
-        assumeNotOnTravisCIAndNotJava6()
-        super.setUp()
-    }
-
-    private assumeNotOnTravisCIAndNotJava6() {
-        boolean travisCI = new File('.').absolutePath =~ /travis/
-        boolean java6 = System.getProperty('java.version').startsWith('1.6')
-
-        assumeFalse('''Test always fails with "java.lang.IllegalArgumentException: URI is not hierarchical"
-            on open jdk used by travis.''', travisCI && java6)
-    }
-
-    @Test
-    void test() {
-        super.testRun()
-    }
 
     void verifyStubs() {
         classes['stubgenerator.propertyUsageFromJava.somepackage.GroovyPogo'].with {
@@ -60,11 +32,6 @@ class PropertyUsageFromJavaTest extends StubTestCase {
             assert methods['setAge'].signature == "public void setAge(int value)"
             assert methods['setName'].signature == "public void setName(java.lang.String value)"
         }
-    }
-
-    @After
-    void tearDown() {
-        super.tearDown()
     }
 }
 
