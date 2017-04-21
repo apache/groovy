@@ -35,23 +35,26 @@ if (!artifactoryUser) {
 logger.lifecycle "ArtifactoryUser user: $artifactoryUser"
 
 allprojects {
-    apply plugin: 'com.jfrog.artifactory-upload'
+    if (project == rootProject || rootProject.ext.modules().contains(project)) {
+        apply plugin: 'com.jfrog.artifactory-upload'
 
-    artifactory {
-        contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://oss.jfrog.org'
-        resolve {
-            repository {
-                repoKey = 'libs-release'
+        artifactory {
+            contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://oss.jfrog.org'
+            resolve {
+                repository {
+                    repoKey = 'libs-release'
+                }
             }
-        }
-        publish {
-            excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
-            repository {
-                repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local' //The Artifactory repository key to publish to
-                //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
-                //~/.gradle/gradle.properties, otherwise to be set in the build server
-                username = rootProject.artifactoryUser
-                password = rootProject.artifactoryPassword
+            publish {
+                excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
+                repository {
+                    repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local'
+                    //The Artifactory repository key to publish to
+                    //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+                    //~/.gradle/gradle.properties, otherwise to be set in the build server
+                    username = rootProject.artifactoryUser
+                    password = rootProject.artifactoryPassword
+                }
             }
         }
     }
@@ -84,10 +87,14 @@ artifactoryPublish {
 
         if (isReleaseVersion) {
             allprojects {
-                configurations.archives.artifacts.findAll{ it.name == project.name && it.type == 'jar' && it.extension == 'jar' && !it.classifier }.each {
-                    // add pom signatures
-                    def pomSigLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
-                    deployDetails.add(newDetails(it, file(pomSigLocation), 'pom.asc', 'pom'))
+                if (project == rootProject || rootProject.ext.modules().contains(project)) {
+                    configurations.archives.artifacts.findAll {
+                        it.name == project.name && it.type == 'jar' && it.extension == 'jar' && !it.classifier
+                    }.each {
+                        // add pom signatures
+                        def pomSigLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
+                        deployDetails.add(newDetails(it, file(pomSigLocation), 'pom.asc', 'pom'))
+                    }
                 }
             }
         }
