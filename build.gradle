@@ -59,6 +59,10 @@ buildScan {
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
+ext.modules = {
+    subprojects.findAll{ !['performance', 'groovy-tests-vm8'].contains(it.name) }
+}
+
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
@@ -360,10 +364,6 @@ task ensureGrammars {
 
 apply from: 'gradle/utils.gradle'
 apply from: 'gradle/wrapper.gradle'
-
-ext.modules = {
-    subprojects
-}
 
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
