@@ -16,16 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.methoddispatching.vm8;
-
-interface FooOne {
-    static String foo() {
-        return "FooOne.foo()";
-    }
+dependencies {
+    compile rootProject
+    testCompile project(':groovy-test')
 }
 
-class BarOne implements FooOne {
-    static String foo() {
-        return "BarOne.foo()";
+tasks.withType(JavaCompile) {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+sourceSets {
+    test {
+        java {
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
+        }
+        groovy {
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
+        }
     }
 }
