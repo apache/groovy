@@ -24,7 +24,7 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,8 +37,8 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
-        packageDocs = new HashMap<String, GroovyPackageDoc>();
-        classDocs = new HashMap<String, GroovyClassDoc>();
+        packageDocs = new LinkedHashMap<String, GroovyPackageDoc>();
+        classDocs = new LinkedHashMap<String, GroovyClassDoc>();
     }
 
     public GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name) {
@@ -119,7 +119,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     }
 
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {
-        Map<String, GroovyClassDoc> visibleClasses = new HashMap<String, GroovyClassDoc>();
+        Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<String, GroovyClassDoc>();
         for (String fullClassName : classDocs.keySet()) {
             String equivalentPackageImport = fullClassName.replaceAll("[^/]+$", "*");
             if (importedClassesAndPackages.contains(fullClassName) ||
