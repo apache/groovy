@@ -258,11 +258,6 @@ sourceSets {
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
-            fileTree('src/main/groovy/ui').matching {
-                exclude 'GroovyMain.java', 'GroovySocketServer.java'
-            }.visit { details ->
-                exclude "groovy/ui/$details.path"
-            }
         }
         groovy {
             srcDirs = [
