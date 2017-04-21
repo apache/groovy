@@ -16,30 +16,38 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.methoddispatching;
+package org.codehaus.groovy.runtime.methoddispatching.vm8;
 
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 
 /**
- * To test the case when we call a static method on a class and {@link MetaMethodIndex.Entry}
- * contains more than one method from interface already
+ * To test the case when we call a static method on a class and while we load all the methods from its interface,
+ * {@link MetaMethodIndex.Entry} contains more than one method from interface already
  */
-interface FooTwo {
+interface FooThree {
     static String foo() {
-        return "FooTwo.foo()";
+        return "FooThree.foo()";
     }
 
     static String foo(int a) {
-        return String.format("FooTwo.foo(%1$d)", a);
+        return String.format("FooThree.foo(%1$d)", a);
+    }
+
+    static String foo(int a, int b) {
+        return String.format("FooThree.foo(%1$d, %2$d)", a, b);
     }
 }
 
-class BarTwo implements FooTwo {
+class BarThree implements FooThree {
     static String foo() {
-        return "BarTwo.foo()";
+        return "BarThree.foo()";
     }
 
     static String foo(int a) {
-        return String.format("BarTwo.foo(%1$d)", a);
+        return String.format("BarThree.foo(%1$d)", a);
+    }
+
+    static String foo(int a, int b) {
+        return String.format("BarThree.foo(%1$d, %2$d)", a, b);
     }
 }

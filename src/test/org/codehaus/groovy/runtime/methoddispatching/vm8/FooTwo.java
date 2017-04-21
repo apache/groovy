@@ -16,27 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.methoddispatching
+package org.codehaus.groovy.runtime.methoddispatching.vm8;
 
-class StaticMethodOverloadTest extends GroovyTestCase {
-    void testOneStaticMethod() {
-        assert FooOne.foo() == "FooOne.foo()"
-        assert BarOne.foo() == "BarOne.foo()"
+import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
+
+/**
+ * To test the case when we call a static method on a class and {@link MetaMethodIndex.Entry}
+ * contains more than one method from interface already
+ */
+interface FooTwo {
+    static String foo() {
+        return "FooTwo.foo()";
     }
 
-    void testTwoStaticMethods() {
-        assert FooTwo.foo() == "FooTwo.foo()"
-        assert FooTwo.foo(0) == "FooTwo.foo(0)"
-        assert BarTwo.foo() == "BarTwo.foo()"
-        assert BarTwo.foo(0) == "BarTwo.foo(0)"
+    static String foo(int a) {
+        return String.format("FooTwo.foo(%1$d)", a);
+    }
+}
+
+class BarTwo implements FooTwo {
+    static String foo() {
+        return "BarTwo.foo()";
     }
 
-    void testMoreThanTwoStaticMethods() {
-        assert FooThree.foo() == "FooThree.foo()"
-        assert FooThree.foo(0) == "FooThree.foo(0)"
-        assert FooThree.foo(0, 1) == "FooThree.foo(0, 1)"
-        assert BarThree.foo() == "BarThree.foo()"
-        assert BarThree.foo(0) == "BarThree.foo(0)"
-        assert BarThree.foo(0, 1) == "BarThree.foo(0, 1)"
+    static String foo(int a) {
+        return String.format("BarTwo.foo(%1$d)", a);
     }
 }
