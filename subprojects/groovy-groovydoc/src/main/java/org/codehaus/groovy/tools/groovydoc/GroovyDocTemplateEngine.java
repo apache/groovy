@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -66,9 +66,9 @@ public class GroovyDocTemplateEngine {
         this.docTemplatePaths = Arrays.asList(docTemplates);
         this.packageTemplatePaths = Arrays.asList(packageTemplates);
         this.classTemplatePaths = Arrays.asList(classTemplates);
-        this.docTemplates = new HashMap<String, Template>();
-        this.packageTemplates = new HashMap<String, Template>();
-        this.classTemplates = new HashMap<String, Template>();
+        this.docTemplates = new LinkedHashMap<String, Template>();
+        this.packageTemplates = new LinkedHashMap<String, Template>();
+        this.classTemplates = new LinkedHashMap<String, Template>();
         engine = new GStringTemplateEngine();
 
     }
@@ -82,7 +82,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(templatePath));
                 classTemplates.put(templatePath, t);
             }
-            Map<String, Object> binding = new HashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<String, Object>();
             binding.put("classDoc", classDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -101,7 +101,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 packageTemplates.put(template, t);
             }
-            Map<String, Object> binding = new HashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<String, Object>();
             binding.put("packageDoc", packageDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -120,7 +120,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 docTemplates.put(template, t);
             }
-            Map<String, Object> binding = new HashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<String, Object>();
             binding.put("rootDoc", rootDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
