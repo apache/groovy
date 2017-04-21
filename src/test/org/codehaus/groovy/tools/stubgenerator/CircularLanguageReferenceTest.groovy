@@ -18,12 +18,6 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
 /**
  * Test circular reference between Java and Groovy, as well as inheritance:
  * a Shape Java interface is implemented by a Rectangle Groovy class,
@@ -33,29 +27,7 @@ import org.junit.runners.JUnit4
  *
  * @author Guillaume Laforge
  */
-import static org.junit.Assume.assumeFalse
-
-@RunWith(JUnit4)
 class CircularLanguageReferenceTest extends StubTestCase {
-
-    @Before
-    void setUp() {
-        assumeNotOnTravisCIAndNotJava6()
-        super.setUp()
-    }
-
-    private assumeNotOnTravisCIAndNotJava6() {
-        boolean travisCI = new File('.').absolutePath =~ /travis/
-        boolean java6 = System.getProperty('java.version').startsWith('1.6')
-
-        assumeFalse('''Test always fails with "java.lang.IllegalArgumentException: URI is not hierarchical"
-            on open jdk used by travis.''', travisCI && java6)
-    }
-
-    @Test
-    void test() {
-        super.testRun()
-    }
 
     void verifyStubs() {
         classes['stubgenerator.circularLanguageReference.Rectangle'].with {
@@ -66,11 +38,6 @@ class CircularLanguageReferenceTest extends StubTestCase {
             assert baseClass == 'java.lang.Object'
             assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
         }
-    }
-
-    @After
-    void tearDown() {
-        super.tearDown()
     }
 }
 
