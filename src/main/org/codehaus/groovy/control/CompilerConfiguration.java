@@ -37,8 +37,6 @@ import java.util.*;
 
 public class CompilerConfiguration {
 
-    private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
-
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
@@ -800,13 +798,7 @@ public class CompilerConfiguration {
     }
     
     private static String getVMVersion() {
-        try {
-            Class.forName(JDK5_CLASSNAME_CHECK);
-            return POST_JDK5;
-        } catch(Exception ex) {
-            // IGNORE
-        }
-        return PRE_JDK5;
+        return POST_JDK5;
     }
     
     /**
