@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,8 +28,8 @@ public class MockOutputTool implements OutputTool {
     Map output;
     
     public MockOutputTool() {
-        outputAreas = new HashSet();
-        output = new HashMap();
+        outputAreas = new LinkedHashSet();
+        output = new LinkedHashMap();
     }
     
     public void makeOutputArea(String filename) {

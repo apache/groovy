@@ -59,7 +59,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         this.isGroovy = isGroovy;
 
         stack = new Stack<GroovySourceAST>();
-        classDocs = new HashMap<String, GroovyClassDoc>();
+        classDocs = new LinkedHashMap<String, GroovyClassDoc>();
         if (file != null) {
             // todo: replace this simple idea of default class name
             int idx = file.lastIndexOf(".");
@@ -70,7 +70,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
         deferSetup = packagePath.equals("DefaultPackage");
         importedClassesAndPackages = new ArrayList<String>();
-        aliases = new HashMap<String, String>();
+        aliases = new LinkedHashMap<String, String>();
         if (!deferSetup) setUpImports(packagePath, links, isGroovy, className);
         lastLineCol = new LineColumn(1, 1);
     }
@@ -128,7 +128,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (parent != null && isNested() && !insideAnonymousInnerClass()) {
                 className = parent.name() + "." + className;
             } else {
-                foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+                foundClasses = new LinkedHashMap<String, SimpleGroovyClassDoc>();
             }
             SimpleGroovyClassDoc current = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
             if (current == null) {
@@ -273,7 +273,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
             classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
             if (foundClasses == null) {
-                foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+                foundClasses = new LinkedHashMap<String, SimpleGroovyClassDoc>();
             }
             foundClasses.put(className, currentClassDoc);
         }
