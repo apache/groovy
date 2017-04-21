@@ -32,6 +32,13 @@ def testArrayInitializer() {
     assert c[0] == 'a'
     assert c[1] == 'b'
     assert c[2] == 'c'
+
+    assert new String[]
+            {
+                'a', 'b'
+            }
+    ==
+            ['a', 'b'] as String[]
 }
 testArrayInitializer();
 
@@ -68,5 +75,12 @@ def testArrayInitializerCS() {
     assert c[0] == 'a'
     assert c[1] == 'b'
     assert c[2] == 'c'
+
+    assert new String[]
+            {
+                'a', 'b'
+            }
+    ==
+    ['a', 'b'] as String[]
 }
 testArrayInitializerCS();

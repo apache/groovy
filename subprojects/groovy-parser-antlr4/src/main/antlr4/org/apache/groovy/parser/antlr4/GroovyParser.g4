@@ -1092,7 +1092,7 @@ creator
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
         |   (LBRACK expression RBRACK)+ (b+=LBRACK RBRACK)*
-        |   (b+=LBRACK RBRACK)+ arrayInitializer
+        |   (b+=LBRACK RBRACK)+ nls arrayInitializer
         )
     ;
 
