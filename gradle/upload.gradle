@@ -31,9 +31,11 @@ def removeJarjaredDependencies = { p ->
 }
 
 allprojects {
-    apply plugin: 'maven'
-    apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
-    install.dependsOn checkCompatibility
+    if (project == rootProject || modules().contains(project)) {
+        apply plugin: 'maven'
+        apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
+        install.dependsOn checkCompatibility
+    }
 }
 
 apply from: 'gradle/backports.gradle'
@@ -42,95 +44,97 @@ ext.basename = { String s -> s.take(s.lastIndexOf('.')) }
 ext.deriveFile = { File archive, String suffix -> new File(archive.parent, basename(archive.name) + "-${suffix}.jar") }
 
 allprojects {
-    ext.signWithClassifier = { String c, File f ->
-        if (rootProject.isReleaseVersion) {
-            signing.sign(c, f)
-            def ascFile = new File(f.parent, f.name + '.asc')
-            if (ascFile.exists()) {
-                project.artifacts.add('archives', ascFile) {
-                    classifier = c
-                    type = 'asc'
-                    extension = 'jar.asc'
+    if (project == rootProject || modules().contains(project)) {
+        ext.signWithClassifier = { String c, File f ->
+            if (rootProject.isReleaseVersion) {
+                signing.sign(c, f)
+                def ascFile = new File(f.parent, f.name + '.asc')
+                if (ascFile.exists()) {
+                    project.artifacts.add('archives', ascFile) {
+                        classifier = c
+                        type = 'asc'
+                        extension = 'jar.asc'
+                    }
                 }
             }
         }
-    }
 
-    ext.signArchiveTask = { archiveTask ->
-        if (rootProject.isReleaseVersion) {
-            signing.sign(archiveTask.classifier, archiveTask.archivePath)
-            def ascFile = new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')
-            if (ascFile.exists()) {
-                project.artifacts.add('archives', ascFile) {
-                    name = archiveTask.baseName
-                    classifier = archiveTask.classifier
-                    type = 'asc'
-                    extension = archiveTask.extension + '.asc'
+        ext.signArchiveTask = { archiveTask ->
+            if (rootProject.isReleaseVersion) {
+                signing.sign(archiveTask.classifier, archiveTask.archivePath)
+                def ascFile = new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')
+                if (ascFile.exists()) {
+                    project.artifacts.add('archives', ascFile) {
+                        name = archiveTask.baseName
+                        classifier = archiveTask.classifier
+                        type = 'asc'
+                        extension = archiveTask.extension + '.asc'
+                    }
                 }
             }
         }
-    }
 
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                pom pomConfigureClosure
-                beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    pom pomConfigureClosure
+                    beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+                }
             }
         }
-    }
 
-    install {
-        repositories {
-            mavenInstaller {
-                pom pomConfigureClosure
-                beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+        install {
+            repositories {
+                mavenInstaller {
+                    pom pomConfigureClosure
+                    beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+                }
             }
         }
-    }
 
-    artifacts {
-        archives jar
-        archives sourceJar
-        archives javadocJar
-        archives groovydocJar
-    }
+        artifacts {
+            archives jar
+            archives sourceJar
+            archives javadocJar
+            archives groovydocJar
+        }
 
-    [uploadArchives, install]*.with {
-        // dependency on jarAllAll should in theory be replaced with jar, jarWithIndy but
-        // in practice, it is faster
-        dependsOn([jarAllAll, sourceJar, javadocJar, groovydocJar])
-        doFirst {
-            if (rootProject.useIndy()) {
-                new GradleException('You cannot use uploadArchives or install task with the flag [indy] turned'
-                        +' on because the build handles indy artifacts by itself in that case.')
-            }
-            def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
-            if (indyJar.exists()) {
-                project.artifacts.add('archives', indyJar)
-            }
-            def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
-            if (grooidJar.exists()) {
-                project.artifacts.add('archives', grooidJar)
+        [uploadArchives, install]*.with {
+            // dependency on jarAllAll should in theory be replaced with jar, jarWithIndy but
+            // in practice, it is faster
+            dependsOn([jarAllAll, sourceJar, javadocJar, groovydocJar])
+            doFirst {
+                if (rootProject.useIndy()) {
+                    new GradleException('You cannot use uploadArchives or install task with the flag [indy] turned'
+                            + ' on because the build handles indy artifacts by itself in that case.')
+                }
+                def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
+                if (indyJar.exists()) {
+                    project.artifacts.add('archives', indyJar)
+                }
+                def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
+                if (grooidJar.exists()) {
+                    project.artifacts.add('archives', grooidJar)
+                }
             }
         }
-    }
 
-    install {
-        doFirst {
-            // gradle doesn't expect us to mutate configurations like we do here
-            // so signing the configuration won't work and we do it manually here
-            signArchiveTask(jar)
-            signArchiveTask(sourceJar)
-            signArchiveTask(javadocJar)
-            signArchiveTask(groovydocJar)
-            def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
-            if (indyJar.exists()) {
-                signWithClassifier('indy', indyJar)
-            }
-            def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
-            if (grooidJar.exists()) {
-                signWithClassifier('grooid', grooidJar)
+        install {
+            doFirst {
+                // gradle doesn't expect us to mutate configurations like we do here
+                // so signing the configuration won't work and we do it manually here
+                signArchiveTask(jar)
+                signArchiveTask(sourceJar)
+                signArchiveTask(javadocJar)
+                signArchiveTask(groovydocJar)
+                def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
+                if (indyJar.exists()) {
+                    signWithClassifier('indy', indyJar)
+                }
+                def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
+                if (grooidJar.exists()) {
+                    signWithClassifier('grooid', grooidJar)
+                }
             }
         }
     }
