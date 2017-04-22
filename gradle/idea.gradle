@@ -68,7 +68,12 @@ idea {
                           <option name="myName" value="ASL2" />
                           <option name="myLocal" value="true" />
                       </copyright>
-                ''')
+                    ''')
+                    appendNode(copyrightManager, '''
+                        <LanguageOptions name="__TEMPLATE__">
+                            <option name="addBlankAfter" value="false" />
+                        </LanguageOptions>
+                    ''')
                 }
 
                 def compilerConfig = node.component.find { it.@name == 'CompilerConfiguration' }
