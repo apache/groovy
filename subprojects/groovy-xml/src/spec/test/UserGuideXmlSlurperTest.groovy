@@ -94,23 +94,25 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         // end::testGettingAnAttributeText[]
     }
 
-    void testBreadthFirst1() {
-        // tag::testBreadthFirst1[]
+    void testChildren() {
+        // tag::testChildren[]
         def response = new XmlSlurper().parseText(books)
 
+        // .'*' could be replaced by .children()
         def catcherInTheRye = response.value.books.'*'.find { node->
-         /* node.@id == 2 could be expressed as node['@id'] == 2 */
+            // node.@id == 2 could be expressed as node['@id'] == 2
             node.name() == 'book' && node.@id == '2'
         }
 
         assert catcherInTheRye.title.text() == 'Catcher in the Rye'
-        // end::testBreadthFirst1[]
+        // end::testChildren[]
     }
 
     void testDepthFirst1() {
         // tag::testDepthFirst1[]
         def response = new XmlSlurper().parseText(books)
 
+        // .'**' could be replaced by .depthFirst()
         def bookId = response.'**'.find { book->
             book.author.text() == 'Lewis Carroll'
         }.@id
@@ -127,6 +129,19 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
 
         assert titles.size() == 4
         // end::testDepthFirst2[]
+    }
+
+    void testDepthVsBreadth() {
+        // tag::testDepthVsBreadth[]
+        def response = new XmlSlurper().parseText(books)
+        def nodeName = { node -> node.name() }
+        def withId2or3 = { node -> node.@id in [2, 3] }
+
+        assert ['book', 'author', 'book', 'author'] ==
+                response.value.books.depthFirst().findAll(withId2or3).collect(nodeName)
+        assert ['book', 'book', 'author', 'author'] ==
+                response.value.books.breadthFirst().findAll(withId2or3).collect(nodeName)
+        // end::testDepthVsBreadth[]
     }
 
     void testHelpers() {
