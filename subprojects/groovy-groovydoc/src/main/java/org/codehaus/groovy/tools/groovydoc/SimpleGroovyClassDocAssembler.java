@@ -28,7 +28,13 @@ import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Stack;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

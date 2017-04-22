@@ -21,7 +21,10 @@ package org.codehaus.groovy.tools.groovydoc;
 import groovy.util.GroovyTestCase;
 
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
