@@ -1,3 +1,5 @@
+if (!rootProject.hasProperty('useAntlr4')) return
+
 apply plugin: 'me.champeau.gradle.antlr4'
 
 def srcBase = "subprojects/groovy-parser-antlr4/src"
@@ -19,7 +21,7 @@ compileJava.dependsOn antlr4
 
 // add antlr4 to classpath
 configurations {
-   compile.extendsFrom antlr4
+    compile.extendsFrom antlr4
 }
 
 dependencies {
@@ -44,6 +46,13 @@ sourceSets.main.resources.srcDirs += file("$srcMain/resources");
 sourceSets.test.java.srcDirs += file("$srcTest/java");
 sourceSets.test.groovy.srcDirs += file("$srcTest/groovy");
 sourceSets.test.resources.srcDirs += file("$srcTest/resources");
+
+
+allprojects {
+    tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
+    }
+}
 
 test {
     jvmArgs "-Dgroovy.extract.doc.comment=true", "-Dgroovy.antlr4.cache.threshold=100"
