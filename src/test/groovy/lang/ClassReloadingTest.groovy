@@ -18,21 +18,11 @@
  */
 package groovy.lang
 
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
-import static org.junit.Assume.assumeFalse
-
 import org.codehaus.groovy.control.CompilerConfiguration
 
-@RunWith(JUnit4)
 class ClassReloadingTest extends GroovyTestCase {
 
-    @Test
     void testReloading() {
-        assumeNotOnBuildsApacheOrg()
-
         def file = File.createTempFile("TestReload", ".groovy", new File("target"))
         file.deleteOnExit()
         def className = file.name - ".groovy"
@@ -73,12 +63,6 @@ class ClassReloadingTest extends GroovyTestCase {
         }
     }
 
-    private assumeNotOnBuildsApacheOrg() {
-        boolean buildsApacheOrg = new File('.').absolutePath =~ /jenkins|hudson/
-        assumeFalse('Test always fails on builds.apache.org, so we skip it there.', buildsApacheOrg)
-    }
-
-    @Test
     void testReloadingInStringStringVersion() {
         def fileName = "Dummy3981.groovy"
 
@@ -105,7 +89,6 @@ class ClassReloadingTest extends GroovyTestCase {
         assert "goodbye" == message
     }
 
-    @Test
     void testReloadingIfInitialFileMissesTimestamp() {
         def parent = File.createTempDir("reload","test")
         def file = File.createTempFile("TestReload", ".groovy", parent)
