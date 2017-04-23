@@ -21,19 +21,19 @@
 
 = Metaprogramming
 
-The Groovy language supports two flavors of metaprogramming: runtime metaprogramming and compile-time metaprogramming.
-The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
-at compile-time. Both have pros and cons, that we will detail in this section.
+The Groovy language supports two flavors of metaprogramming: runtime and compile-time.
+The first allows altering the class model and the behavior of a program at runtime while the second only occurs
+at compile-time. Both have pros and cons that we will detail in this section.
 
 == Runtime metaprogramming
-With runtime metaprogramming we can postpone to runtime the decision to intercept, inject and even synthesize methods of classes and interfaces. For a deep understanding of Groovy MOP we need to understand Groovy objects and Groovy's method handling.
-In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptors. Groovy allows metaprogramming for all types of objects but in different manner.
+With runtime metaprogramming we can postpone to runtime the decision to intercept, inject and even synthesize methods of classes and interfaces. For a deep understanding of Groovy's metaobject protocol (MOP) we need to understand Groovy objects and Groovy's method handling.
+In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptors. Groovy allows metaprogramming for all types of objects but in a different manner.
 
 - POJO - A regular Java object, whose class can be written in Java or any other language for the JVM.
 - POGO - A Groovy object, whose class is written in Groovy. It extends `java.lang.Object` and implements the gapi:groovy.lang.GroovyObject[] interface by default. 
 - Groovy Interceptor - A Groovy object that implements the gapi:groovy.lang.GroovyInterceptable[] interface and has method-interception capability, which we'll discuss in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> section.
 
-For every method call Groovy checks whether the object is a POJO or a POGO. For POJOs, Groovy fetches it's `MetaClass` from the gapi:groovy.lang.MetaClassRegistry[] and delegates method invocation to it. For POGOs, Groovy takes more steps, as illustrated in the following figure:
+For every method call Groovy checks whether the object is a POJO or a POGO. For POJOs, Groovy fetches its `MetaClass` from the gapi:groovy.lang.MetaClassRegistry[] and delegates method invocation to it. For POGOs, Groovy takes more steps, as illustrated in the following figure:
 
 .Groovy interception mechanism
 image::assets/img/GroovyInterceptions.png[align="center"]
@@ -62,13 +62,20 @@ public interface GroovyObject {
 
 ==== invokeMethod
 
-According to the schema in <<core-metaprogramming.adoc#_runtime_metaprogramming,Runtime Metaprogramming>> this method is called when the method you called is not present on a Groovy object.
-Here is a simple example using a overridden `invokeMethod()` method:
+This method is primarily intended to be used in conjunction with the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>>
+interface or an object's `MetaClass` where it will intercept all method calls.
+
+It is also invoked when the method called is not present on a Groovy object. Here is a simple example using an
+overridden `invokeMethod()` method:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags=groovy_invoke_method,indent=0]
 ----
+
+However, the use of `invokeMethod` to intercept missing methods is discouraged.  In cases where the intent is to only
+intercept method calls in the case of a failed method dispatch use <<core-metaprogramming.adoc#_methodmissing,methodMissing>>
+instead.
 
 ==== get/setProperty
 
@@ -90,7 +97,7 @@ include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags
 
 ==== get/setMetaClass
 
-You can a access an object's `metaClass` or set your own `MetaClass` implementation for changing the default interception mechanism. For example you can write your own implementation of the `MetaClass` interface and assign to it to objects and accordingly change the interception mechanism:
+You can a access an object's `metaClass` or set your own `MetaClass` implementation for changing the default interception mechanism. For example, you can write your own implementation of the `MetaClass` interface and assign it to objects in order to change the interception mechanism:
 
 [source,groovy]
 ----
@@ -106,7 +113,7 @@ You can find an additional example in the <<core-metaprogramming.adoc#_groovyint
 
 === get/setAttribute
 
-This functionality is related to the `MetaClass` implementation. In the default implementation you can access fields without invoking their getters and setters. The examples below demonstrate this approach:
+This functionality is related to the `MetaClass` implementation. In the default implementation you can access fields without invoking their getters and setters. The examples below demonstrates this approach:
 
 [source, groovy]
 ----
@@ -121,7 +128,7 @@ include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags
 === methodMissing
 
 Groovy supports the concept of `methodMissing`. This method differs from `invokeMethod` in that it
-is only invoked in case of a failed method dispatch, when no method can be found for the given name and/or the
+is only invoked in the case of a failed method dispatch when no method can be found for the given name and/or the
 given arguments:
 
 [source,groovy]
@@ -131,7 +138,7 @@ include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.gr
 
 Typically when using `methodMissing` it is possible to cache the result for the next time the same method is called.
 
-For example consider dynamic finders in GORM. These are implemented in terms of `methodMissing`. The code resembles
+For example, consider dynamic finders in GORM. These are implemented in terms of `methodMissing`. The code resembles
 something like this:
 
 [source,groovy]
@@ -194,7 +201,7 @@ package groovy.lang;
 public interface GroovyInterceptable extends GroovyObject {
 }
 ----
-When a Groovy object implements the `GroovyInterceptable` interface, it's `invokeMethod()` is called for any method calls. Below you can see a simple example of a object of this type:
+When a Groovy object implements the `GroovyInterceptable` interface, its `invokeMethod()` is called for any method calls. Below you can see a simple example of a object of this type:
 
 [source,groovy]
 ----
@@ -209,9 +216,9 @@ include::{projectdir}/src/spec/test/metaprogramming/InterceptableTest.groovy[tag
 ----
 
 [NOTE]
-We cannot use default groovy methods like `println` because these methods are injected into all groovy objects so they will be intercepted too.
+We cannot use default groovy methods like `println` because these methods are injected into all Groovy objects so they will be intercepted too.
 
-If we want to intercept all methods call but do not want to implement the `GroovyInterceptable` interface we can implement `invokeMethod()` on an object's `MetaClass`.
+If we want to intercept all method calls but do not want to implement the `GroovyInterceptable` interface we can implement `invokeMethod()` on an object's `MetaClass`.
 This approach works for both POGOs and POJOs, as shown by this example:
 
 [source,groovy]
