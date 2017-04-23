@@ -18,10 +18,6 @@
  */
 package groovy.swing
 
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
 import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
 import javax.swing.JToolBar.Separator as JToolBar_Separator
 
@@ -36,21 +32,8 @@ import javax.swing.text.NumberFormatter
 import java.awt.*
 import javax.swing.*
 
-import static org.junit.Assume.assumeFalse
-
-@RunWith(JUnit4)
 class SwingBuilderTest extends GroovySwingTestCase {
 
-    private static final boolean buildsApacheOrg = new File('.').absolutePath =~ /jenkins|hudson/
-    private static final boolean windows = System.properties['os.name'].toLowerCase().contains('windows')
-
-    private assumeNotOnBuildsApacheOrgAndNotOnWindows() {
-        assumeFalse('''Filechooser seems bugy on Windows e.g.: http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6973685
-on builds.apache.org these test fail with: java.lang.NullPointerException: at sun.awt.shell.Win32ShellFolder2.access$200(Win32ShellFolder2.java:72)
-Therefore we ship them on there.''', buildsApacheOrg && windows)
-    }
-
-    @Test
     void testWidgetId() {
         testInEDT {
 
@@ -75,10 +58,7 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testNamedWidgetCreation() {
-        assumeNotOnBuildsApacheOrgAndNotOnWindows()
-
         testInEDT {
             def topLevelWidgets = [
                     frame: [JFrame, true],
@@ -100,7 +80,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testLayoutCreation() {
         testInEDT {
 
@@ -122,7 +101,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testGridBagFactory() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -145,7 +123,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBorderLayout() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -164,7 +141,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testLayoutConstraintsProperty() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -176,7 +152,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testWidgetCreation() {
         testInEDT {
 
@@ -228,7 +203,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testButtonGroup() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -262,7 +236,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testButtonGroupOnlyForButtons() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -274,7 +247,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testWidget() {
         testInEDT {
 
@@ -287,7 +259,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSplitPane() {
         testInEDT {
 
@@ -310,7 +281,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testNestedWindows() {
         testInEDT {
 
@@ -341,7 +311,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testFrames() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -354,7 +323,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testDialogs() {
         testInEDT {
 
@@ -376,7 +344,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testWindows() {
         testInEDT {
 
@@ -387,7 +354,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testNodeCreation() {
         testInEDT {
 
@@ -408,7 +374,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSetMnemonic() {
         testInEDT {
 
@@ -434,7 +399,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBuilderProperties() {
         testInEDT {
 
@@ -443,7 +407,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testFormattedTextField() {
         testInEDT {
 
@@ -461,7 +424,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testScrollPane() {
         testInEDT {
 
@@ -475,7 +437,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testComboBox() {
         testInEDT {
 
@@ -490,7 +451,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testList() {
         testInEDT {
 
@@ -516,7 +476,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testMisplacedActionsAreIgnored() {
         testInEDT {
 
@@ -535,7 +494,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBoxLayout() {
         testInEDT {
 
@@ -555,7 +513,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testKeystrokesWithinActions() {
         testInEDT {
 
@@ -584,7 +541,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testActionClosures() {
         testInEDT {
 
@@ -625,7 +581,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSetAccelerator() {
         testInEDT {
 
@@ -648,7 +603,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         return action
     }
 
-    @Test
     void testSetAcceleratorShortcuts() {
         testInEDT {
 
@@ -665,7 +619,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBorderLayoutConstraints() {
         testInEDT {
 
@@ -697,7 +650,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSetConstraints() {
         testInEDT {
 
@@ -708,7 +660,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSetToolTipText() {
         testInEDT {
 
@@ -720,7 +671,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testAttributeOrdering() {
         testInEDT {
 
@@ -745,7 +695,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testWidgetPassthroughConstraints() {
         testInEDT {
 
@@ -759,7 +708,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testGROOVY1837ReuseAction() {
         testInEDT {
 
@@ -775,7 +723,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testSeparators() {
         testInEDT {
 
@@ -795,7 +742,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testCollectionNodes() {
         testInEDT {
 
@@ -807,7 +753,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testFactoryCornerCases() {
         testInEDT {
 
@@ -824,7 +769,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testFactoryLogging() {
         testInEDT {
 
@@ -837,10 +781,7 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testEnhancedValueArguments() {
-        assumeNotOnBuildsApacheOrgAndNotOnWindows()
-
         testInEDT {
 
             def swing = new SwingBuilder()
@@ -1042,7 +983,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         instancePass = true
     }
 
-    @Test
     void testEDT() {
         if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
@@ -1060,7 +1000,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         assert instancePass
     }
 
-    @Test
     void testDoLater() {
         if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
@@ -1102,7 +1041,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         assert instancePass
     }
 
-    @Test
     void testDoOutside() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1146,7 +1084,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testJumbledThreading() {
         if (HeadlessTestSupport.headless) return;
 
@@ -1228,7 +1165,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         assert swing != oldSwing
     }
 
-    @Test
     void testParallelBuild() {
         if (HeadlessTestSupport.headless) return;
 
@@ -1253,7 +1189,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         assert l.parent == null
     }
 
-    @Test
     void testDispose() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1276,7 +1211,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testPackAndShow() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1310,10 +1244,7 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testContainment() {
-        assumeNotOnBuildsApacheOrgAndNotOnWindows()
-
         testInEDT {
             def swing = new SwingBuilder()
 
@@ -1414,7 +1345,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testMenus() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1460,7 +1390,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testLookAndFeel() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1513,7 +1442,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testMultiLookAndFeel() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1540,7 +1468,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBorders() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1634,7 +1561,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testBorderAttachment() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1661,7 +1587,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testRenderer() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1696,7 +1621,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testNoParent() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1712,7 +1636,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testClientProperties() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1728,7 +1651,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testKeyStrokeAction() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -1781,7 +1703,6 @@ Therefore we ship them on there.''', buildsApacheOrg && windows)
         }
     }
 
-    @Test
     void testAutomaticNameBasedOnIdAttribute() {
         testInEDT {
             def swing = new SwingBuilder()
