@@ -71,6 +71,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -257,13 +258,13 @@ public abstract class TraitComposer {
                             List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                             List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                             GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
-                            FieldNode fieldNode = cNode.addField(fieldName, fieldMods, returnType, (fieldMods & Opcodes.ACC_FINAL) == 0 ? null : helperField.getInitialExpression());
+                            FieldNode fieldNode = cNode.addField(fieldName, fieldMods, returnType, null);
                             fieldNode.addAnnotations(copied);
                             // getInitialExpression above will be null if not in same source unit
                             // so instead set within (static) initializer
-                            if (fieldNode.isFinal() && !(helperClassNode instanceof InnerClassNode)) {
+                            if (fieldNode.isFinal()) {
                                 String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
-                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName());
+                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
                                 Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
                                 if (isStatic == 0) {
                                     cNode.addObjectInitializerStatements(stmt);
