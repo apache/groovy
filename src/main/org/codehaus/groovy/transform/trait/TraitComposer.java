@@ -74,6 +74,7 @@ import java.util.Map;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -264,7 +265,7 @@ public abstract class TraitComposer {
                             // so instead set within (static) initializer
                             if (fieldNode.isFinal()) {
                                 String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
-                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
+                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(fieldNode.isStatic() ? classX(cNode) : varX("this")));
                                 Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
                                 if (isStatic == 0) {
                                     cNode.addObjectInitializerStatements(stmt);
