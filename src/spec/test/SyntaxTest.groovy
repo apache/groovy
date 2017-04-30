@@ -501,8 +501,8 @@ class SyntaxTest extends CompilableTestSupport {
             $$ escaped dollar sign
             \ backslash
             / forward slash
-            $/ escaped forward slash
-            $/$ escaped dollar slashy string delimiter
+            $$/ escaped dollar forward slash
+            $/$ escaped closing dollar slashy
         /$
 
         assert [
@@ -512,10 +512,9 @@ class SyntaxTest extends CompilableTestSupport {
             '$ escaped dollar sign',
             '\\ backslash',
             '/ forward slash',
-                '$/ escaped forward slash',
-                '/$ escaped dollar slashy string delimiter'
-
-                ].each { dollarSlashy.contains(it) }
+            '$/ escaped dollar forward slash',
+            '/$ escaped closing dollar slashy'
+        ].every { dollarSlashy.contains(it) }
         // end::dollar_slashy_1[]
     }
 
