@@ -20,6 +20,8 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -332,7 +334,7 @@ public class DataSet extends Sql {
      * @throws SQLException if a database access error occurs
      * @see groovy.sql.Sql#eachRow(String, java.util.List, groovy.lang.Closure)
      */
-    public void each(Closure closure) throws SQLException {
+    public void each(@ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), closure);
     }
 
@@ -346,7 +348,8 @@ public class DataSet extends Sql {
      * @throws SQLException if a database access error occurs
      * @see groovy.sql.Sql#eachRow(String, java.util.List, int, int, groovy.lang.Closure)
      */
-    public void each(int offset, int maxRows, Closure closure) throws SQLException {
+    public void each(int offset, int maxRows,
+                     @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), offset, maxRows, closure);
     }
 
