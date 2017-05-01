@@ -42,6 +42,8 @@ import javax.sql.DataSource;
 
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
@@ -960,7 +962,7 @@ public class Sql {
      * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      */
-    public void query(String sql, Closure closure) throws SQLException {
+    public void query(String sql, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         ResultSet results = null;
@@ -1000,7 +1002,7 @@ public class Sql {
      * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      */
-    public void query(String sql, List<Object> params, Closure closure) throws SQLException {
+    public void query(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -1026,7 +1028,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void query(String sql, Map map, Closure closure) throws SQLException {
+    public void query(String sql, Map map, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         query(sql, singletonList(map), closure);
     }
 
@@ -1040,7 +1042,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void query(Map map, String sql, Closure closure) throws SQLException {
+    public void query(Map map, String sql, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         query(sql, singletonList(map), closure);
     }
 
@@ -1072,7 +1074,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
-    public void query(GString gstring, Closure closure) throws SQLException {
+    public void query(GString gstring, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         query(sql, params, closure);
@@ -1100,7 +1102,7 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, Closure closure) throws SQLException {
+    public void eachRow(String sql, @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, (Closure) null, closure);
     }
 
@@ -1127,7 +1129,8 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(String sql, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, (Closure) null, offset, maxRows, closure);
     }
 
@@ -1161,7 +1164,8 @@ public class Sql {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, metaClosure, 0, 0, rowClosure);
     }
 
@@ -1192,7 +1196,9 @@ public class Sql {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         ResultSet results = null;
@@ -1256,7 +1262,9 @@ public class Sql {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql, List<Object> params,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -1293,7 +1301,9 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(String sql, Map map, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql, Map map,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, singletonList(map), metaClosure, offset, maxRows, rowClosure);
     }
 
@@ -1310,7 +1320,9 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(Map map, String sql, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+    public void eachRow(Map map, String sql,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, singletonList(map), metaClosure, offset, maxRows, rowClosure);
     }
 
@@ -1348,7 +1360,9 @@ public class Sql {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params, Closure metaClosure, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql, List<Object> params,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, params, metaClosure, 0, 0, rowClosure);
     }
 
@@ -1363,7 +1377,9 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(String sql, Map params, Closure metaClosure, Closure rowClosure) throws SQLException {
+    public void eachRow(String sql, Map params,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, singletonList(params), metaClosure, rowClosure);
     }
 
@@ -1378,7 +1394,9 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(Map params, String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
+    public void eachRow(Map params, String sql,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, singletonList(params), metaClosure, rowClosure);
     }
 
@@ -1402,7 +1420,8 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
+    public void eachRow(String sql, List<Object> params,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, params, null, closure);
     }
 
@@ -1416,7 +1435,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(String sql, Map params, Closure closure) throws SQLException {
+    public void eachRow(String sql, Map params,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), closure);
     }
 
@@ -1430,7 +1450,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(Map params, String sql, Closure closure) throws SQLException {
+    public void eachRow(Map params, String sql,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), closure);
     }
 
@@ -1457,7 +1478,8 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(String sql, List<Object> params, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, params, null, offset, maxRows, closure);
     }
 
@@ -1473,7 +1495,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(String sql, Map params, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(String sql, Map params, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), offset, maxRows, closure);
     }
 
@@ -1489,7 +1512,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public void eachRow(Map params, String sql, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(Map params, String sql, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), offset, maxRows, closure);
     }
 
@@ -1526,7 +1550,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
-    public void eachRow(GString gstring, Closure metaClosure, Closure rowClosure) throws SQLException {
+    public void eachRow(GString gstring, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, metaClosure, rowClosure);
@@ -1557,7 +1582,9 @@ public class Sql {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(GString gstring, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+    public void eachRow(GString gstring,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, metaClosure, offset, maxRows, rowClosure);
@@ -1585,7 +1612,8 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(GString gstring, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(GString gstring, int offset, int maxRows,
+                        @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, offset, maxRows, closure);
@@ -1612,7 +1640,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
-    public void eachRow(GString gstring, Closure closure) throws SQLException {
+    public void eachRow(GString gstring, @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(gstring, null, closure);
     }
 
@@ -1680,7 +1708,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure)
+            throws SQLException {
         return rows(sql, 0, 0, metaClosure);
     }
 
@@ -1708,7 +1737,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, int offset, int maxRows, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, int offset, int maxRows,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         AbstractQueryCommand command = createQueryCommand(sql);
         // for efficiency set maxRows (adjusted for the first offset rows we are going to skip the cursor over)
         command.setMaxRows(offset + maxRows);
@@ -1898,8 +1928,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params, Closure metaClosure)
-            throws SQLException {
+    public List<GroovyRowResult> rows(String sql, List<Object> params,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, params, 0, 0, metaClosure);
     }
 
@@ -1914,7 +1944,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public List<GroovyRowResult> rows(String sql, Map params, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, Map params,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, singletonList(params), metaClosure);
     }
 
@@ -1929,7 +1960,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public List<GroovyRowResult> rows(Map params, String sql, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(Map params, String sql,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, singletonList(params), metaClosure);
     }
 
@@ -1962,9 +1994,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows, Closure metaClosure)
-            throws SQLException {
-
+    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         // for efficiency set maxRows (adjusted for the first offset rows we are going to skip the cursor over)
         command.setMaxRows(offset + maxRows);
@@ -1988,7 +2019,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public List<GroovyRowResult> rows(String sql, Map params, int offset, int maxRows, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, Map params, int offset, int maxRows,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, singletonList(params), offset, maxRows, metaClosure);
     }
 
@@ -2005,7 +2037,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
      */
-    public List<GroovyRowResult> rows(Map params, String sql, int offset, int maxRows, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(Map params, String sql, int offset, int maxRows,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, singletonList(params), offset, maxRows, metaClosure);
     }
 
@@ -2079,7 +2112,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
-    public List<GroovyRowResult> rows(GString gstring, Closure metaClosure)
+    public List<GroovyRowResult> rows(GString gstring, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure)
             throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
@@ -2111,7 +2144,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(GString gstring, int offset, int maxRows, Closure metaClosure) throws SQLException {
+    public List<GroovyRowResult> rows(GString gstring, int offset, int maxRows,
+                                      @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return rows(sql, params, offset, maxRows, metaClosure);
@@ -3464,7 +3498,7 @@ public class Sql {
      *
      * @param configureStatement the closure
      */
-    public void withStatement(Closure configureStatement) {
+    public void withStatement(@ClosureParams(value=SimpleType.class, options="java.sql.Statement") Closure configureStatement) {
         this.configureStatement = configureStatement;
     }
 
@@ -3929,11 +3963,13 @@ public class Sql {
      * @return the resulting list of rows
      * @throws SQLException if a database error occurs
      */
-    protected List<GroovyRowResult> asList(String sql, ResultSet rs, Closure metaClosure) throws SQLException {
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs,
+                                           @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return asList(sql, rs, 0, 0, metaClosure);
     }
 
-    protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows, Closure metaClosure) throws SQLException {
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows,
+                                           @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
 
         try {
