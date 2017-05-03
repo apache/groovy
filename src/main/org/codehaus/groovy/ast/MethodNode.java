@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
@@ -67,51 +68,16 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     /**
      * The type descriptor for a method node is a string containing the name of the method, its return type,
-     * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
-     * without parameter names.
+     * and its parameter types in a canonical form. For simplicity, we use the format of a Java declaration
+     * without parameter names or generics.
      *
      * @return the type descriptor
      */
     public String getTypeDescriptor() {
         if (typeDescriptor == null) {
-            StringBuilder buf = new StringBuilder(name.length() + parameters.length * 10);
-            buf.append(returnType.getName());
-            buf.append(' ');
-            buf.append(name);
-            buf.append('(');
-            for (int i = 0; i < parameters.length; i++) {
-                if (i > 0) {
-                    buf.append(", ");
-                }
-                Parameter param = parameters[i];
-                buf.append(formatTypeName(param.getType()));
-            }
-            buf.append(')');
-            typeDescriptor = buf.toString();
+            typeDescriptor = MethodNodeUtils.methodDescriptor(this);
         }
         return typeDescriptor;
-    }
-
-    /**
-     * Formats a type name in a readable version. For arrays, appends "[]" to the formatted
-     * type name of the component. For unit class nodes, uses the class node name.
-     * @param type the type to format
-     * @return a human readable version of the type name (java.lang.String[] for example)
-     */
-    private static String formatTypeName(ClassNode type) {
-        if (type.isArray()) {
-            ClassNode it = type;
-            int dim = 0;
-            while (it.isArray()) {
-                dim++;
-                it = it.getComponentType();
-            }
-            StringBuilder sb = new StringBuilder(it.getName().length()+2*dim);
-            sb.append(it.getName());
-            for (int i=0;i<dim;i++) { sb.append("[]"); }
-            return sb.toString();
-        }
-        return type.getName();
     }
 
     private void invalidateCachedData() {

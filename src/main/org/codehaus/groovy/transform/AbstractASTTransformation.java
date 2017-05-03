@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -285,7 +286,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     @Deprecated
     public static boolean shouldSkipOnDescriptor(boolean checkReturn, Map genericsSpec, MethodNode mNode, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
-        String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
+        String descriptorNoReturn = MethodNodeUtils.methodDescriptorWithoutReturnType(mNode);
         for (ClassNode cn : excludeTypes) {
             List<ClassNode> remaining = new LinkedList<ClassNode>();
             remaining.add(cn);
@@ -300,7 +301,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                             String md = correctedMethodNode.getTypeDescriptor();
                             if (md.equals(descriptor)) return true;
                         } else {
-                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
                             if (md.equals(descriptorNoReturn)) return true;
                         }
                     }
@@ -323,7 +324,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                             String md = correctedMethodNode.getTypeDescriptor();
                             if (md.equals(descriptor)) return false;
                         } else {
-                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
                             if (md.equals(descriptorNoReturn)) return false;
                         }
                     }
@@ -336,7 +337,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     public static boolean shouldSkipOnDescriptorUndefinedAware(boolean checkReturn, Map genericsSpec, MethodNode mNode,
                                                   List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
-        String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
+        String descriptorNoReturn = MethodNodeUtils.methodDescriptorWithoutReturnType(mNode);
         if (excludeTypes != null) {
             for (ClassNode cn : excludeTypes) {
                 List<ClassNode> remaining = new LinkedList<ClassNode>();
@@ -352,7 +353,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                                 String md = correctedMethodNode.getTypeDescriptor();
                                 if (md.equals(descriptor)) return true;
                             } else {
-                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                                String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
                                 if (md.equals(descriptorNoReturn)) return true;
                             }
                         }
@@ -376,7 +377,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                             String md = correctedMethodNode.getTypeDescriptor();
                             if (md.equals(descriptor)) return false;
                         } else {
-                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
                             if (md.equals(descriptorNoReturn)) return false;
                         }
                     }
