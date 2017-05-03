@@ -73,7 +73,7 @@ import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.makeDescriptorWithoutReturnType;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
@@ -266,7 +266,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Set<String> descriptors = new HashSet<String>();
         for (MethodNode mn : cn.getMethods()) {
             if (mn.isSynthetic()) continue;
-            String mySig = makeDescriptorWithoutReturnType(mn);
+            String mySig = methodDescriptorWithoutReturnType(mn);
             if (descriptors.contains(mySig)) {
                 if (mn.isScriptBody() || mySig.equals(scriptBodySignatureWithoutReturnType(cn))) {
                     throw new RuntimeParserException("The method " + mn.getText() +
@@ -282,7 +282,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static String scriptBodySignatureWithoutReturnType(ClassNode cn) {
         for (MethodNode mn : cn.getMethods()) {
-            if (mn.isScriptBody()) return makeDescriptorWithoutReturnType(mn);
+            if (mn.isScriptBody()) return methodDescriptorWithoutReturnType(mn);
         }
         return null;
     }

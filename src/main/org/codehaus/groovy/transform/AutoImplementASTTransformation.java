@@ -48,7 +48,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.makeDescriptorWithoutReturnType;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -107,7 +107,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private static Map<String, MethodNode> getAllCorrectedMethodsMap(ClassNode cNode) {
         Map<String, MethodNode> result = new HashMap<String, MethodNode>();
         for (MethodNode mn : cNode.getMethods()) {
-            result.put(makeDescriptorWithoutReturnType(mn), mn);
+            result.put(methodDescriptorWithoutReturnType(mn), mn);
         }
         ClassNode next = cNode;
         while (true) {
@@ -118,7 +118,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     ClassNode correctedClass = correctToGenericsSpecRecurse(genericsSpec, next);
                     MethodNode found = getDeclaredMethodCorrected(genericsSpec, correctedMethod, correctedClass);
                     if (found != null) {
-                        String td = makeDescriptorWithoutReturnType(found);
+                        String td = methodDescriptorWithoutReturnType(found);
                         if (result.containsKey(td) && !result.get(td).isAbstract()) {
                             continue;
                         }
@@ -137,7 +137,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, nextMethod);
                         MethodNode found = getDeclaredMethodCorrected(updatedGenericsSpec, correctedMethod, correctedInterface);
                         if (found != null) {
-                            String td = makeDescriptorWithoutReturnType(found);
+                            String td = methodDescriptorWithoutReturnType(found);
                             if (result.containsKey(td) && !result.get(td).isAbstract()) {
                                 continue;
                             }
