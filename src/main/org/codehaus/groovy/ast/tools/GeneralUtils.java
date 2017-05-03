@@ -559,6 +559,10 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, LT, rhv);
     }
 
+    /**
+     * @deprecated use MethodNodeUtils#methodDescriptorWithoutReturnType(MethodNode) instead
+     */
+    @Deprecated
     public static String makeDescriptorWithoutReturnType(MethodNode mn) {
         StringBuilder sb = new StringBuilder();
         sb.append(mn.getName()).append(':');
