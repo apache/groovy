@@ -4114,8 +4114,10 @@ public class Sql {
                 Map paramsMap = (Map) params.get(0);
                 if (paramsMap.isEmpty()) return;
             }
-            if (metaData.getParameterCount() != params.size()) {
+            if (metaData.getParameterCount() < params.size()) {
                 throw new IllegalArgumentException("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
+            } else if (metaData.getParameterCount() != params.size()) {
+                LOG.warning("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
             }
         }
         for (Object value : params) {
