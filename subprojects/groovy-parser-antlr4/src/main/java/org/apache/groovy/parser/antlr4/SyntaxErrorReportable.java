@@ -28,4 +28,38 @@ public interface SyntaxErrorReportable {
     String formatPositionInfo(int line, int column);
     int getSyntaxErrorSource();
     String genPositionInfo();
+
+    default void require(boolean condition, String msg, int offset, boolean toAttachPositionInfo) {
+        if (condition) {
+            return;
+        }
+
+        this.throwSyntaxError(msg, offset, toAttachPositionInfo);
+    }
+    default void require(boolean condition, String msg, boolean toAttachPositionInfo) {
+        require(condition, msg, 0, toAttachPositionInfo);
+    }
+    default void require(boolean condition, String msg, int offset) {
+        require(condition, msg, offset,false);
+    }
+    default void require(boolean condition, String msg) {
+        require(condition, msg, false);
+    }
+
+    default void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
+        PositionInfo positionInfo = this.genPositionInfo(offset);
+        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),
+                this.getSyntaxErrorSource(),
+                positionInfo.getLine(),
+                positionInfo.getColumn()
+        );
+    }
+
+    int getSyntaxErrorSource();
+    default PositionInfo genPositionInfo(int offset) {
+        return new PositionInfo(getErrorLine(), getErrorColumn() + offset);
+    }
+
+    int getErrorLine();
+    int getErrorColumn();
 }

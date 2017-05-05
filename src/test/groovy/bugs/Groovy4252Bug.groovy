@@ -29,7 +29,8 @@ class Groovy4252Bug extends GroovyShellTestCase {
             fail("The compilation should have failed as expression list of form (a;b;c) is not supported in this context")
         } catch (MultipleCompilationErrorsException e) {
             def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context")
+            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context") ||
+                    syntaxError.message.contains("Missing ')'")
         }
     }
 
@@ -41,7 +42,8 @@ class Groovy4252Bug extends GroovyShellTestCase {
             fail("The compilation should have failed as expression list of form (a;b;c) is not supported in this context")
         } catch (MultipleCompilationErrorsException e) {
             def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context")
+            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context") ||
+                    syntaxError.message.contains("Missing ')'")
         }
     }
 
@@ -53,7 +55,8 @@ class Groovy4252Bug extends GroovyShellTestCase {
             fail("The compilation should have failed as expression list of form (a;b;c) is not supported in this context")
         } catch (MultipleCompilationErrorsException e) {
             def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context")
+            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context") ||
+                    syntaxError.message.contains("Missing ')'")
         }
     }
 
@@ -74,7 +77,8 @@ class Groovy4252Bug extends GroovyShellTestCase {
             fail("The compilation should have failed as expression list of form (a;b;c) is not supported in this context")
         } catch (MultipleCompilationErrorsException e) {
             def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context")
+            assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context") ||
+                    syntaxError.message.contains("Missing ')'")
         }
     }
 

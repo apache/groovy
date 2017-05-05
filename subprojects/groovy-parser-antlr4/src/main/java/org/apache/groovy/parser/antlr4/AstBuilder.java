@@ -35,10 +35,10 @@ import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.EnumHelper;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -466,6 +466,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return new Pair<>(parameter, (Expression) this.visit(ctx.expression()));
     }
 
+    @Override
+    public Pair<Parameter, Expression> visitClassicalForControl(ClassicalForControlContext ctx) {
+        ClosureListExpression closureListExpression = new ClosureListExpression();
+
+        closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
+        closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
+        closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
+
+        return new Pair<>(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
+    }
 
     @Override
     public WhileStatement visitWhileStmtAlt(WhileStmtAltContext ctx) {
@@ -862,7 +872,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(TYPE_DECLARATION_MODIFIERS);
         Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
 
-        ModifierManager modifierManager = new ModifierManager(modifierNodeList);
+        ModifierManager modifierManager = new ModifierManager(this, modifierNodeList);
         int modifiers = modifierManager.getClassModifiersOpValue();
 
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
@@ -1078,11 +1088,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
 
             if (!asBoolean(anonymousInnerClassNode)) {
+                if (expression instanceof ListExpression) {
+                    ListExpression listExpression = new ListExpression();
+                    listExpression.addExpression(expression);
+
+                    return this.configureAST(listExpression, ctx);
+                }
+
                 return expression;
             }
 
             ListExpression listExpression = new ListExpression();
-            listExpression.addExpression(expression);
+
+            if (expression instanceof ListExpression) {
+                ((ListExpression) expression).getExpressions().forEach(listExpression::addExpression);
+            } else {
+                listExpression.addExpression(expression);
+            }
+
             listExpression.addExpression(
                     this.configureAST(
                             new ClassExpression(anonymousInnerClassNode),
@@ -1233,7 +1256,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             modifierNodeList = this.visitModifiersOpt(ctx.modifiersOpt());
         }
 
-        return new ModifierManager(modifierNodeList);
+        return new ModifierManager(this, modifierNodeList);
+    }
+
+    private void validateParametersOfMethodDeclaration(Parameter[] parameters, ClassNode classNode) {
+        if (!classNode.isInterface()) {
+            return;
+        }
+
+        Arrays.stream(parameters).forEach(e -> {
+            if (e.hasInitialExpression()) {
+                throw createParsingFailedException("Cannot specify default value for method parameter '" + e.getName() + " = " + e.getInitialExpression().getText() + "' inside an interface", e);
+            }
+        });
     }
 
     @Override
@@ -1252,6 +1287,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // if classNode is not null, the method declaration is for class declaration
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
         if (asBoolean(classNode)) {
+            validateParametersOfMethodDeclaration(parameters, classNode);
+
             methodNode = createConstructorOrMethodNodeForClass(ctx, modifierManager, methodName, returnType, parameters, exceptions, code, classNode);
         } else { // script method declaration
             methodNode = createScriptMethodNode(modifierManager, methodName, returnType, parameters, exceptions, code);
@@ -1277,14 +1314,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.configureAST(methodNode, ctx);
 
-        validateMethodDeclaration(ctx, methodNode);
+        validateMethodDeclaration(ctx, methodNode, modifierManager);
 
         groovydocManager.handle(methodNode, ctx);
 
         return methodNode;
     }
 
-    private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode) {
+    private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode, ModifierManager modifierManager) {
         boolean isAbstractMethod = methodNode.isAbstract();
         boolean hasMethodBody = asBoolean(methodNode.getCode());
 
@@ -1296,6 +1333,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             if (!isAbstractMethod && !hasMethodBody) { // non-abstract method without body in the non-script(e.g. class, enum, trait) is not allowed!
                 throw createParsingFailedException("You defined a method[" + methodNode.getName() + "] without body. Try adding a method body, or declare it abstract", methodNode);
             }
+        }
+
+        modifierManager.validate(methodNode);
+
+        if (methodNode instanceof ConstructorNode) {
+            modifierManager.validate((ConstructorNode) methodNode);
         }
     }
 
@@ -1343,25 +1386,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         modifiers |= !modifierManager.contains(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.contains(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
+
+        checkWhetherMethodNodeWithSameSignatureExists(classNode, methodName, parameters, ctx);
+
         methodNode = classNode.addMethod(methodName, modifiers, returnType, parameters, exceptions, code);
 
         methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
         return methodNode;
     }
 
-    private MethodNode createConstructorNodeForClass(String methodName, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {
-        MethodNode methodNode;ConstructorCallExpression thisOrSuperConstructorCallExpression = this.checkThisAndSuperConstructorCall(code);
+    private void checkWhetherMethodNodeWithSameSignatureExists(ClassNode classNode, String methodName, Parameter[] parameters, MethodDeclarationContext ctx) {
+        MethodNode sameSigMethodNode = classNode.getDeclaredMethod(methodName, parameters);
+
+        if (null == sameSigMethodNode) {
+            return;
+        }
+
+        throw createParsingFailedException("The method " +  sameSigMethodNode.getText() + " duplicates another method of the same signature", ctx);
+    }
+
+    private ConstructorNode createConstructorNodeForClass(String methodName, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {
+        ConstructorCallExpression thisOrSuperConstructorCallExpression = this.checkThisAndSuperConstructorCall(code);
         if (asBoolean(thisOrSuperConstructorCallExpression)) {
             throw createParsingFailedException(thisOrSuperConstructorCallExpression.getText() + " should be the first statement in the constructor[" + methodName + "]", thisOrSuperConstructorCallExpression);
         }
 
-        methodNode =
-                classNode.addConstructor(
-                        modifiers,
-                        parameters,
-                        exceptions,
-                        code);
-        return methodNode;
+        return classNode.addConstructor(
+                modifiers,
+                parameters,
+                exceptions,
+                code);
     }
 
     @Override
@@ -1421,7 +1475,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             modifierNodeList = this.visitModifiersOpt(ctx.modifiersOpt());
         }
 
-        return new ModifierManager(modifierNodeList);
+        return new ModifierManager(this, modifierNodeList);
     }
 
     private DeclarationListStatement createMultiAssignmentDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager) {
@@ -3502,7 +3556,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (asBoolean(ctx.statement())) {
-            return (Statement) this.visit(ctx.statement()); //this.configureAST((Statement) this.visit(ctx.statement()), ctx);
+            Object astNode = this.visit(ctx.statement()); //this.configureAST((Statement) this.visit(ctx.statement()), ctx);
+
+            if (astNode instanceof MethodNode) {
+                throw createParsingFailedException("Method definition not expected here", ctx);
+            } else {
+                return (Statement) astNode;
+            }
         }
 
         throw createParsingFailedException("Unsupported block statement: " + ctx.getText(), ctx);
@@ -3759,7 +3819,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         Parameter parameter =
-                new ModifierManager(this.visitVariableModifiersOpt(variableModifiersOptContext))
+                new ModifierManager(this, this.visitVariableModifiersOpt(variableModifiersOptContext))
                         .processParameter(
                                 this.configureAST(
                                         new Parameter(classNode, this.visitVariableDeclaratorId(variableDeclaratorIdContext).getName()),
@@ -4130,6 +4190,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private CompilationFailedException createParsingFailedException(Throwable t) {
         if (t instanceof SyntaxException) {
             this.collectSyntaxError((SyntaxException) t);
+        } else if (t instanceof GroovySyntaxError) {
+            GroovySyntaxError groovySyntaxError = (GroovySyntaxError) t;
+
+            this.collectSyntaxError(
+                    new SyntaxException(
+                            groovySyntaxError.getMessage(),
+                            groovySyntaxError,
+                            groovySyntaxError.getLine(),
+                            groovySyntaxError.getColumn()));
         } else if (t instanceof Exception) {
             this.collectException((Exception) t);
         }
@@ -4284,6 +4353,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
     }
 
+<<<<<<< HEAD
     /**
      * Process modifiers for AST nodes
      * <p>
