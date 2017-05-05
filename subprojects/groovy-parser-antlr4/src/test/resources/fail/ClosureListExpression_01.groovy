@@ -1,0 +1,1 @@
+[].for(1;2;3){println "in loop"}

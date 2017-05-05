@@ -27,7 +27,8 @@ class Groovy8046Bug extends CompilableTestSupport {
                 void field
             }
         """
-        assert message.contains("The field 'field' has invalid type void")
+        assert message.contains("The field 'field' has invalid type void") ||
+                message.contains("void is not allowed here")
     }
 
     void testParameterShouldNotHavePrimitiveVoidType() {
@@ -36,7 +37,8 @@ class Groovy8046Bug extends CompilableTestSupport {
                 int foo(void param) {}
             }
         """
-        assert message.contains("The parameter 'param' in method 'int foo(void)' has invalid type void")
+        assert message.contains("The parameter 'param' in method 'int foo(void)' has invalid type void") ||
+                message.contains("void is not allowed here")
     }
 
     void testLocalVariableShouldNotHavePrimitiveVoidType() {
@@ -47,6 +49,7 @@ class Groovy8046Bug extends CompilableTestSupport {
                 }
             }
         """
-        assert message.contains("The variable 'bar' has invalid type void")
+        assert message.contains("The variable 'bar' has invalid type void") ||
+                message.contains("void is not allowed here")
     }
 }

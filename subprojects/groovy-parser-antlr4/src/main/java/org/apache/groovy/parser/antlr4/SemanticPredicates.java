@@ -109,7 +109,7 @@ public class SemanticPredicates {
     }
 
     private static final Set<Integer> MODIFIER_SET =
-            Collections.unmodifiableSet(AstBuilder.ModifierNode.MODIFIER_OPCODE_MAP.keySet());
+            Collections.unmodifiableSet(ModifierNode.MODIFIER_OPCODE_MAP.keySet());
     /**
      * Distinguish between local variable declaration and method call, e.g. `a b`
      */
@@ -142,8 +142,8 @@ public class SemanticPredicates {
         tokenType = token.getType();
         tokenType3 = ts.LT(index + 2).getType();
 
-        return VOID == tokenType
-                ||  !(BuiltInPrimitiveType == tokenType || MODIFIER_SET.contains(tokenType))
+        return //VOID == tokenType ||
+                !(BuiltInPrimitiveType == tokenType || MODIFIER_SET.contains(tokenType))
                     && Character.isLowerCase(token.getText().codePointAt(0))
                     && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2));
 

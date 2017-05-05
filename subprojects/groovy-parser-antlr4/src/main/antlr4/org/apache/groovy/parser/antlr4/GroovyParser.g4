@@ -111,14 +111,25 @@ options {
     }
 
     @Override
-    public String genPositionInfo() {
+    public int getErrorLine() {
         Token token = _input.LT(-1);
 
         if (null == token) {
-            return "";
+            return -1;
         }
 
-        return formatPositionInfo(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
+        return token.getLine();
+    }
+
+    @Override
+    public int getErrorColumn() {
+        Token token = _input.LT(-1);
+
+        if (null == token) {
+            return -1;
+        }
+
+        return token.getCharPositionInLine() + 1 + token.getText().length();
     }
 }
 
@@ -369,7 +380,11 @@ options { baseContext = type; }
     ;
 
 type
-    :   primitiveType (LBRACK RBRACK)*
+    :   (   primitiveType
+        |
+            // !!! ERROR ALTERNATIVE !!!
+            VOID { require(false, "void is not allowed here", -4); }
+        ) (LBRACK RBRACK)*
     |   generalClassOrInterfaceType (LBRACK RBRACK)*
     ;
 
@@ -631,7 +646,7 @@ locals[ boolean isInsideLoop ]
     }
 }
     :   CONTINUE
-        { $isInsideLoop }?<fail={"the continue statement is only allowed inside loops"}>
+        { require($isInsideLoop, "the continue statement is only allowed inside loops", -8); }
         identifier?
     ;
 
@@ -651,7 +666,7 @@ locals[ boolean isInsideLoop, boolean isInsideSwitch ]
     }
 }
     :   BREAK
-        { $isInsideLoop || $isInsideSwitch }?<fail={"the break statement is only allowed inside loops or switches"}>
+        { require($isInsideLoop || $isInsideSwitch, "the break statement is only allowed inside loops or switches", -5); }
         identifier?
     ;
 
@@ -750,7 +765,15 @@ switchLabel
 
 forControl
     :   enhancedForControl
-    |   forInit? SEMI expression? SEMI forUpdate?
+    |   classicalForControl
+    ;
+
+enhancedForControl
+    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
+    ;
+
+classicalForControl
+    :   forInit? SEMI expression? SEMI forUpdate?
     ;
 
 forInit
@@ -760,10 +783,6 @@ forInit
 
 forUpdate
     :   expressionList[false]
-    ;
-
-enhancedForControl
-    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
     ;
 
 
@@ -782,7 +801,7 @@ expressionList[boolean canSpread]
     ;
 
 expressionListElement[boolean canSpread]
-    :   (   MUL { $canSpread }?<fail={"spread is not allowed here"}>
+    :   (   MUL { require($canSpread, "spread operator is not allowed here", -1); }
         |
         ) expression
     ;
@@ -1061,7 +1080,7 @@ locals[boolean empty = true]
         )?
         (
             COMMA
-            { !$empty }?<fail={"Empty list constructor should not contain any comma(,)"}>
+            { require(!$empty, "Empty list constructor should not contain any comma(,)", -1); }
         )?
         RBRACK
     ;

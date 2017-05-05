@@ -34,7 +34,7 @@ import org.apache.groovy.parser.antlr4.GroovyLangParser
 @Log
 public class GroovyTestRig extends TestRig {
     public GroovyTestRig(String[] args) throws Exception {
-        super(['Groovy', 'compilationUnit', *args] as String[]);
+        super(['Groovy', args.contains('-lexer') ? 'tokens' : 'compilationUnit', *args] as String[]);
     }
 
     public void inspectParseTree() {
@@ -57,7 +57,7 @@ public class GroovyTestRig extends TestRig {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            log.info "Usage: [-tokens] [-tree] [-gui] [-ps file.ps] [-encoding encodingname] [-trace] [-diagnostics] [-SLL] input-filename";
+            log.info "Usage: [-tokens] [-lexer] [-tree] [-gui] [-ps file.ps] [-encoding encodingname] [-trace] [-diagnostics] [-SLL] input-filename";
             return;
         }
 

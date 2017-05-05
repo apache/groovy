@@ -20,9 +20,6 @@ package org.apache.groovy.parser.antlr4
 
 import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 
-import static org.apache.groovy.parser.antlr4.TestUtils.COMMON_IGNORE_CLASS_LIST
-import static org.apache.groovy.parser.antlr4.TestUtils.shouldFail
-
 /**
  * Some syntax error test cases for the new parser
  *
@@ -141,11 +138,41 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Modifier_03x.groovy');
         TestUtils.doRunAndShouldFail('fail/Modifier_04x.groovy');
         TestUtils.doRunAndShouldFail('fail/Modifier_05x.groovy');
+        TestUtils.shouldFail('fail/Modifier_07.groovy');
     }
+
+    void "test groovy core - ClassDeclaration"() {
+        TestUtils.doRunAndShouldFail('fail/ClassDeclaration_01x.groovy');
+    }
+
+    void "test groovy core - MethodDeclaration"() {
+        TestUtils.shouldFail('fail/MethodDeclaration_01.groovy');
+    }
+
+    void "test groovy core - ConstructorDeclaration"() {
+        TestUtils.shouldFail('fail/ConstructorDeclaration_01.groovy');
+    }
+
+    void "test groovy core - ClosureListExpression"() {
+        TestUtils.shouldFail('fail/ClosureListExpression_01.groovy');
+        TestUtils.shouldFail('fail/ClosureListExpression_02.groovy');
+        TestUtils.shouldFail('fail/ClosureListExpression_03.groovy');
+        TestUtils.shouldFail('fail/ClosureListExpression_04.groovy');
+    }
+
+    void "test groovy core - InterfaceDeclaration"() {
+        TestUtils.shouldFail('fail/InterfaceDeclaration_01.groovy');
+    }
+
+    void "test groovy core - void"() {
+        TestUtils.doRunAndShouldFail('fail/Void_01x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Void_02x.groovy');
+    }
+
 
     /**************************************/
     static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
-        ignoreClazzList.addAll(COMMON_IGNORE_CLASS_LIST)
+        ignoreClazzList.addAll(TestUtils.COMMON_IGNORE_CLASS_LIST)
 
         TestUtils.unzipAndFail(SCRIPT_ZIP_PATH, entryName, TestUtils.addIgnore(ignoreClazzList, ASTComparatorCategory.LOCATION_IGNORE_LIST), replacementsMap, toCheckNewParserOnly)
     }

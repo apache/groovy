@@ -1,0 +1,164 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.apache.groovy.parser.antlr4;
+
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.objectweb.asm.Opcodes;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.apache.groovy.parser.antlr4.GroovyParser.*;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+
+/**
+ * Represents a modifier, which is better to place in the package org.codehaus.groovy.ast
+ * <p>
+ * Created by Daniel.Sun on 2016/08/23.
+ */
+public class ModifierNode extends ASTNode {
+    private Integer type;
+    private Integer opcode; // ASM opcode
+    private String text;
+    private AnnotationNode annotationNode;
+    private boolean repeatable;
+
+    public static final int ANNOTATION_TYPE = -999;
+    public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Collections.unmodifiableMap(new HashMap<Integer, Integer>() {
+        {
+            put(ANNOTATION_TYPE, 0);
+            put(DEF, 0);
+
+            put(NATIVE, Opcodes.ACC_NATIVE);
+            put(SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED);
+            put(TRANSIENT, Opcodes.ACC_TRANSIENT);
+            put(VOLATILE, Opcodes.ACC_VOLATILE);
+
+            put(PUBLIC, Opcodes.ACC_PUBLIC);
+            put(PROTECTED, Opcodes.ACC_PROTECTED);
+            put(PRIVATE, Opcodes.ACC_PRIVATE);
+            put(STATIC, Opcodes.ACC_STATIC);
+            put(ABSTRACT, Opcodes.ACC_ABSTRACT);
+            put(FINAL, Opcodes.ACC_FINAL);
+            put(STRICTFP, Opcodes.ACC_STRICT);
+            put(DEFAULT, 0); // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
+        }
+    });
+
+    public ModifierNode(Integer type) {
+        this.type = type;
+        this.opcode = MODIFIER_OPCODE_MAP.get(type);
+        this.repeatable = ANNOTATION_TYPE == type; // Only annotations are repeatable
+
+        if (!asBoolean((Object) this.opcode)) {
+            throw new IllegalArgumentException("Unsupported modifier type: " + type);
+        }
+    }
+
+    /**
+     * @param type the modifier type, which is same as the token type
+     * @param text text of the ast node
+     */
+    public ModifierNode(Integer type, String text) {
+        this(type);
+        this.text = text;
+    }
+
+    /**
+     * @param annotationNode the annotation node
+     * @param text           text of the ast node
+     */
+    public ModifierNode(AnnotationNode annotationNode, String text) {
+        this(ModifierNode.ANNOTATION_TYPE, text);
+        this.annotationNode = annotationNode;
+
+        if (!asBoolean(annotationNode)) {
+            throw new IllegalArgumentException("annotationNode can not be null");
+        }
+    }
+
+    /**
+     * Check whether the modifier is not an imagined modifier(annotation, def)
+     */
+    public boolean isModifier() {
+        return !this.isAnnotation() && !this.isDef();
+    }
+
+    public boolean isVisibilityModifier() {
+        return Objects.equals(PUBLIC, this.type)
+                || Objects.equals(PROTECTED, this.type)
+                || Objects.equals(PRIVATE, this.type);
+    }
+
+    public boolean isNonVisibilityModifier() {
+        return this.isModifier() && !this.isVisibilityModifier();
+    }
+
+    public boolean isAnnotation() {
+        return Objects.equals(ANNOTATION_TYPE, this.type);
+    }
+
+    public boolean isDef() {
+        return Objects.equals(DEF, this.type);
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public Integer getOpcode() {
+        return opcode;
+    }
+
+    public boolean isRepeatable() {
+        return repeatable;
+    }
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+    public AnnotationNode getAnnotationNode() {
+        return annotationNode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ModifierNode that = (ModifierNode) o;
+        return Objects.equals(type, that.type) &&
+                Objects.equals(text, that.text) &&
+                Objects.equals(annotationNode, that.annotationNode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, text, annotationNode);
+    }
+
+    @Override
+    public String toString() {
+        return this.text;
+    }
+}

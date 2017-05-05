@@ -18,17 +18,10 @@
  */
 package org.apache.groovy.parser.antlr4
 
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.FieldNode
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.syntax.Token
-
-import static org.apache.groovy.parser.antlr4.TestUtils.doTest
-import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
 
 /**
  * Some basic test cases for the new parser
@@ -43,12 +36,12 @@ class GroovyParserTest extends GroovyTestCase {
     void tearDown() {}
 
     void "test groovy core - Comments"() {
-        doTest('core/Comments_01.groovy', [ExpressionStatement]);
+        TestUtils.doTest('core/Comments_01.groovy', [ExpressionStatement]);
         doTestAttachedComments();
     }
 
     private static doTestAttachedComments() {
-        def (newAST, oldAST) = doTest('core/Comments_02.groovy');
+        def (newAST, oldAST) = TestUtils.doTest('core/Comments_02.groovy');
         List<ClassNode> classes = new ArrayList<>(newAST.classes).sort { c1, c2 -> c1.name <=> c2.name };
         List<MethodNode> methods = new ArrayList<>(newAST.methods).sort { m1, m2 -> m1.name <=> m2.name };
 
@@ -83,276 +76,285 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - PackageDeclaration"() {
-        doTest('core/PackageDeclaration_01.groovy');
-        doTest('core/PackageDeclaration_02.groovy');
-        doTest('core/PackageDeclaration_03.groovy');
-        doTest('core/PackageDeclaration_04.groovy');
-        doTest('core/PackageDeclaration_05.groovy');
-        doTest('core/PackageDeclaration_06.groovy');
+        TestUtils.doTest('core/PackageDeclaration_01.groovy');
+        TestUtils.doTest('core/PackageDeclaration_02.groovy');
+        TestUtils.doTest('core/PackageDeclaration_03.groovy');
+        TestUtils.doTest('core/PackageDeclaration_04.groovy');
+        TestUtils.doTest('core/PackageDeclaration_05.groovy');
+        TestUtils.doTest('core/PackageDeclaration_06.groovy');
     }
 
     void "test groovy core - ImportDeclaration"() {
-        doTest('core/ImportDeclaration_01.groovy');
-        doTest('core/ImportDeclaration_02.groovy');
-        doTest('core/ImportDeclaration_03.groovy');
-        doTest('core/ImportDeclaration_04.groovy');
-        doTest('core/ImportDeclaration_05.groovy');
-        doTest('core/ImportDeclaration_06.groovy');
-        doTest('core/ImportDeclaration_07.groovy');
-        doTest('core/ImportDeclaration_08.groovy');
+        TestUtils.doTest('core/ImportDeclaration_01.groovy');
+        TestUtils.doTest('core/ImportDeclaration_02.groovy');
+        TestUtils.doTest('core/ImportDeclaration_03.groovy');
+        TestUtils.doTest('core/ImportDeclaration_04.groovy');
+        TestUtils.doTest('core/ImportDeclaration_05.groovy');
+        TestUtils.doTest('core/ImportDeclaration_06.groovy');
+        TestUtils.doTest('core/ImportDeclaration_07.groovy');
+        TestUtils.doTest('core/ImportDeclaration_08.groovy');
     }
 
     void "test groovy core - Annotation"() {
-        doTest('core/Annotation_01.groovy');
-        doTest('core/Annotation_02.groovy');
-        doTest('core/Annotation_03.groovy');
-        doTest('core/Annotation_04.groovy');
-        doTest('core/Annotation_05.groovy');
-        doTest('core/Annotation_06.groovy');
-        doTest('core/Annotation_07.groovy');
-        doTest('core/Annotation_08.groovy');
-        doTest('core/Annotation_09.groovy');
-        doRunAndTest('core/Annotation_10x.groovy');
+        TestUtils.doTest('core/Annotation_01.groovy');
+        TestUtils.doTest('core/Annotation_02.groovy');
+        TestUtils.doTest('core/Annotation_03.groovy');
+        TestUtils.doTest('core/Annotation_04.groovy');
+        TestUtils.doTest('core/Annotation_05.groovy');
+        TestUtils.doTest('core/Annotation_06.groovy');
+        TestUtils.doTest('core/Annotation_07.groovy');
+        TestUtils.doTest('core/Annotation_08.groovy');
+        TestUtils.doTest('core/Annotation_09.groovy');
+        TestUtils.doRunAndTest('core/Annotation_10x.groovy');
     }
 
     void "test groovy core - Literal"() {
-        doTest('core/Literal_01.groovy');
-        doTest('core/Literal_02.groovy', [ExpressionStatement]);
-        doTest('core/Literal_03.groovy');
+        TestUtils.doTest('core/Literal_01.groovy');
+        TestUtils.doTest('core/Literal_02.groovy', [ExpressionStatement]);
+        TestUtils.doTest('core/Literal_03.groovy');
     }
 
     void "test groovy core - GString"() {
-        doTest('core/GString_01.groovy');
-        doTest('core/GString_02.groovy');
-        doTest('core/GString_03.groovy');
+        TestUtils.doTest('core/GString_01.groovy');
+        TestUtils.doTest('core/GString_02.groovy');
+        TestUtils.doTest('core/GString_03.groovy');
+        TestUtils.doTest('core/GString_04.groovy');
+        TestUtils.doTest('core/GString_05.groovy');
+        TestUtils.doTest('core/GString_06.groovy');
     }
 
     void "test groovy core - Closure"() {
-        doTest('core/Closure_01.groovy');
-        doTest('core/Closure_02.groovy');
-        doTest('core/Closure_03.groovy');
-        doTest('core/Closure_04.groovy');
-        doTest('core/Closure_05.groovy', [Parameter]);
-        doTest('core/Closure_06.groovy', [Parameter]);
-        doTest('core/Closure_07.groovy', [Parameter]);
-        doTest('core/Closure_08.groovy', [Parameter]);
-        doTest('core/Closure_09.groovy', [Parameter]);
-        doTest('core/Closure_10.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_01.groovy');
+        TestUtils.doTest('core/Closure_02.groovy');
+        TestUtils.doTest('core/Closure_03.groovy');
+        TestUtils.doTest('core/Closure_04.groovy');
+        TestUtils.doTest('core/Closure_05.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_06.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_07.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_08.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_09.groovy', [Parameter]);
+        TestUtils.doTest('core/Closure_10.groovy', [Parameter]);
     }
 
     void "test groovy core - Lambda"() {
-        doRunAndTest('core/Lambda_01x.groovy');
+        TestUtils.doRunAndTest('core/Lambda_01x.groovy');
     }
 
     void "test groovy core - MethodReference"() {
-        doRunAndTest('core/MethodReference_01x.groovy');
+        TestUtils.doRunAndTest('core/MethodReference_01x.groovy');
     }
 
     void "test groovy core - MethodPointer"() {
-        doRunAndTest('core/MethodPointer_01x.groovy');
+        TestUtils.doRunAndTest('core/MethodPointer_01x.groovy');
     }
 
     void "test groovy core - ElvisAssignment"() {
-        doRunAndTest('core/ElvisAssignment_01x.groovy');
+        TestUtils.doRunAndTest('core/ElvisAssignment_01x.groovy');
     }
 
     void "test groovy core - List"() {
-        doTest('core/List_01.groovy');
+        TestUtils.doTest('core/List_01.groovy');
     }
 
     void "test groovy core - Map"() {
-        doTest('core/Map_01.groovy');
+        TestUtils.doTest('core/Map_01.groovy');
     }
 
     void "test groovy core - Expression"() {
-        doTest('core/Expression_01.groovy');
-        doTest('core/Expression_02.groovy');
-        doTest('core/Expression_03.groovy');
-        doTest('core/Expression_04.groovy');
-        doTest('core/Expression_05.groovy');
-        doTest('core/Expression_06.groovy');
-        doTest('core/Expression_07.groovy');
-        doTest('core/Expression_08.groovy');
-        doTest('core/Expression_09.groovy');
-        doTest('core/Expression_10.groovy');
-        doTest('core/Expression_11.groovy');
-        doTest('core/Expression_12.groovy');
-        doTest('core/Expression_13.groovy');
-        doTest('core/Expression_14.groovy');
-        doTest('core/Expression_15.groovy');
-        doTest('core/Expression_16.groovy', [Parameter, ExpressionStatement]);
-        doTest('core/Expression_17.groovy');
-        doTest('core/Expression_18.groovy');
-        doTest('core/Expression_19.groovy');
-        doTest('core/Expression_20.groovy');
-        doRunAndTest('core/Expression_21x.groovy');
-        doTest('core/Expression_22x.groovy');
-        doRunAndTest('core/Expression_22x.groovy');
-        doRunAndTest('core/Expression_23x.groovy');
+        TestUtils.doTest('core/Expression_01.groovy');
+        TestUtils.doTest('core/Expression_02.groovy');
+        TestUtils.doTest('core/Expression_03.groovy');
+        TestUtils.doTest('core/Expression_04.groovy');
+        TestUtils.doTest('core/Expression_05.groovy');
+        TestUtils.doTest('core/Expression_06.groovy');
+        TestUtils.doTest('core/Expression_07.groovy');
+        TestUtils.doTest('core/Expression_08.groovy');
+        TestUtils.doTest('core/Expression_09.groovy');
+        TestUtils.doTest('core/Expression_10.groovy');
+        TestUtils.doTest('core/Expression_11.groovy');
+        TestUtils.doTest('core/Expression_12.groovy');
+        TestUtils.doTest('core/Expression_13.groovy');
+        TestUtils.doTest('core/Expression_14.groovy');
+        TestUtils.doTest('core/Expression_15.groovy');
+        TestUtils.doTest('core/Expression_16.groovy', [Parameter, ExpressionStatement]);
+        TestUtils.doTest('core/Expression_17.groovy');
+        TestUtils.doTest('core/Expression_18.groovy');
+        TestUtils.doTest('core/Expression_19.groovy');
+        TestUtils.doTest('core/Expression_20.groovy');
+        TestUtils.doRunAndTest('core/Expression_21x.groovy');
+        TestUtils.doTest('core/Expression_22x.groovy');
+        TestUtils.doRunAndTest('core/Expression_22x.groovy');
+        TestUtils.doRunAndTest('core/Expression_23x.groovy');
     }
 
     void "test groovy core - IdenticalOp"() {
-        doRunAndTest('core/IdenticalOp_01x.groovy');
+        TestUtils.doRunAndTest('core/IdenticalOp_01x.groovy');
     }
 
     void "test groovy core - Assert"() {
-        doTest('core/Assert_01.groovy');
-        doRunAndTest('core/Assert_02x.groovy');
-        doRunAndTest('core/Assert_03x.groovy');
+        TestUtils.doTest('core/Assert_01.groovy');
+        TestUtils.doRunAndTest('core/Assert_02x.groovy');
+        TestUtils.doRunAndTest('core/Assert_03x.groovy');
     }
 
     void "test groovy core - IfElse"() {
-        doTest('core/IfElse_01.groovy', [AssertStatement]);
+        TestUtils.doTest('core/IfElse_01.groovy', [AssertStatement]);
     }
 
     void "test groovy core - For"() {
-        doTest('core/For_01.groovy', [AssertStatement]);
-        doTest('core/For_02.groovy');
-        doTest('core/For_03.groovy');
-        doRunAndTest('core/For_04x.groovy');
-        doRunAndTest('core/For_05x.groovy');
+        TestUtils.doTest('core/For_01.groovy', [AssertStatement]);
+        TestUtils.doTest('core/For_02.groovy');
+        TestUtils.doTest('core/For_03.groovy');
+        TestUtils.doRunAndTest('core/For_04x.groovy');
+        TestUtils.doRunAndTest('core/For_05x.groovy');
     }
 
     void "test groovy core - While"() {
-        doTest('core/While_01.groovy');
-        doRunAndTest('core/While_02x.groovy');
+        TestUtils.doTest('core/While_01.groovy');
+        TestUtils.doRunAndTest('core/While_02x.groovy');
     }
 
     void "test groovy core - CodeBlock"() {
-        doRunAndTest('core/CodeBlock_01x.groovy');
+        TestUtils.doRunAndTest('core/CodeBlock_01x.groovy');
     }
 
     void "test groovy core - DoWhile"() {
-        doRunAndTest('core/DoWhile_01x.groovy');
-        doRunAndTest('core/DoWhile_02x.groovy');
-        doRunAndTest('core/DoWhile_03x.groovy');
-        doRunAndTest('core/DoWhile_04x.groovy');
+        TestUtils.doRunAndTest('core/DoWhile_01x.groovy');
+        TestUtils.doRunAndTest('core/DoWhile_02x.groovy');
+        TestUtils.doRunAndTest('core/DoWhile_03x.groovy');
+        TestUtils.doRunAndTest('core/DoWhile_04x.groovy');
     }
 
 
     void "test groovy core - TryCatch"() {
-        doTest('core/TryCatch_01.groovy');
+        TestUtils.doTest('core/TryCatch_01.groovy');
     }
 
     void "test groovy core - TryWithResources"() {
-        doRunAndTest('core/TryWithResources_01x.groovy');
+        TestUtils.doRunAndTest('core/TryWithResources_01x.groovy');
     }
 
     void "test groovy core - SafeIndex"() {
-        doRunAndTest('core/SafeIndex_01x.groovy');
-        doRunAndTest('core/SafeIndex_02x.groovy');
-        doRunAndTest('core/SafeIndex_03x.groovy');
+        TestUtils.doRunAndTest('core/SafeIndex_01x.groovy');
+        TestUtils.doRunAndTest('core/SafeIndex_02x.groovy');
+        TestUtils.doRunAndTest('core/SafeIndex_03x.groovy');
     }
 
     void "test groovy core - NegativeRelationalOperators"() {
-        doRunAndTest('core/NegativeRelationalOperators_01x.groovy');
-        doRunAndTest('core/NegativeRelationalOperators_02x.groovy');
+        TestUtils.doRunAndTest('core/NegativeRelationalOperators_01x.groovy');
+        TestUtils.doRunAndTest('core/NegativeRelationalOperators_02x.groovy');
     }
 
     void "test groovy core - DefaultMethod"() {
-        doRunAndTest('core/DefaultMethod_01x.groovy');
-        doRunAndTest('core/DefaultMethod_02x.groovy');
+        TestUtils.doRunAndTest('core/DefaultMethod_01x.groovy');
+        TestUtils.doRunAndTest('core/DefaultMethod_02x.groovy');
     }
 
 
     void "test groovy core - Switch"() {
-        doTest('core/Switch_01.groovy');
+        TestUtils.doTest('core/Switch_01.groovy');
     }
 
     void "test groovy core - Synchronized"() {
-        doTest('core/Synchronized_01.groovy');
+        TestUtils.doTest('core/Synchronized_01.groovy');
     }
 
     void "test groovy core - Return"() {
-        doTest('core/Return_01.groovy');
+        TestUtils.doTest('core/Return_01.groovy');
     }
 
     void "test groovy core - Throw"() {
-        doTest('core/Throw_01.groovy');
+        TestUtils.doTest('core/Throw_01.groovy');
     }
 
     void "test groovy core - Label"() {
-        doTest('core/Label_01.groovy');
+        TestUtils.doTest('core/Label_01.groovy');
     }
 
     void "test groovy core - LocalVariableDeclaration"() {
-        doTest('core/LocalVariableDeclaration_01.groovy', [Token]); // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
+        TestUtils.doTest('core/LocalVariableDeclaration_01.groovy', [Token]); // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
     }
 
     void "test groovy core - MethodDeclaration"() {
-        doTest('core/MethodDeclaration_01.groovy');
-        doTest('core/MethodDeclaration_02.groovy');
+        TestUtils.doTest('core/MethodDeclaration_01.groovy');
+        TestUtils.doTest('core/MethodDeclaration_02.groovy');
     }
 
     void "test groovy core - ClassDeclaration"() {
-        doTest('core/ClassDeclaration_01.groovy');
-        doTest('core/ClassDeclaration_02.groovy');
-        doTest('core/ClassDeclaration_03.groovy');
-        doTest('core/ClassDeclaration_04.groovy', [PropertyNode, FieldNode]);
-        doTest('core/ClassDeclaration_05.groovy', [ExpressionStatement]);
-        doTest('core/ClassDeclaration_06.groovy');
-        doTest('core/ClassDeclaration_07.groovy');
+        TestUtils.doTest('core/ClassDeclaration_01.groovy');
+        TestUtils.doTest('core/ClassDeclaration_02.groovy');
+        TestUtils.doTest('core/ClassDeclaration_03.groovy');
+        TestUtils.doTest('core/ClassDeclaration_04.groovy', [PropertyNode, FieldNode]);
+        TestUtils.doTest('core/ClassDeclaration_05.groovy', [ExpressionStatement]);
+        TestUtils.doTest('core/ClassDeclaration_06.groovy');
+        TestUtils.doTest('core/ClassDeclaration_07.groovy');
     }
 
     void "test groovy core - InterfaceDeclaration"() {
-        doTest('core/InterfaceDeclaration_01.groovy');
-        doTest('core/InterfaceDeclaration_02.groovy');
-        doTest('core/InterfaceDeclaration_03.groovy');
+        TestUtils.doTest('core/InterfaceDeclaration_01.groovy');
+        TestUtils.doTest('core/InterfaceDeclaration_02.groovy');
+        TestUtils.doTest('core/InterfaceDeclaration_03.groovy');
     }
 
     void "test groovy core - EnumDeclaration"() {
-        doTest('core/EnumDeclaration_01.groovy');
-        doTest('core/EnumDeclaration_02.groovy', [ExpressionStatement]);
-        doTest('core/EnumDeclaration_03.groovy');
+        TestUtils.doTest('core/EnumDeclaration_01.groovy');
+        TestUtils.doTest('core/EnumDeclaration_02.groovy', [ExpressionStatement]);
+        TestUtils.doTest('core/EnumDeclaration_03.groovy');
+        TestUtils.doTest('core/EnumDeclaration_04.groovy');
+        TestUtils.doTest('core/EnumDeclaration_05.groovy');
     }
 
     void "test groovy core - TraitDeclaration"() {
-        doTest('core/TraitDeclaration_01.groovy');
-        doTest('core/TraitDeclaration_02.groovy');
-        doTest('core/TraitDeclaration_03.groovy');
-        doTest('core/TraitDeclaration_04.groovy', [PropertyNode, FieldNode]);
-        doTest('core/TraitDeclaration_05.groovy');
+        TestUtils.doTest('core/TraitDeclaration_01.groovy');
+        TestUtils.doTest('core/TraitDeclaration_02.groovy');
+        TestUtils.doTest('core/TraitDeclaration_03.groovy');
+        TestUtils.doTest('core/TraitDeclaration_04.groovy', [PropertyNode, FieldNode]);
+        TestUtils.doTest('core/TraitDeclaration_05.groovy');
     }
 
     void "test groovy core - AnnotationDeclaration"() {
-        doTest('core/AnnotationDeclaration_01.groovy');
+        TestUtils.doTest('core/AnnotationDeclaration_01.groovy');
     }
 
     void "test groovy core - Command"() {
-        doTest('core/Command_01.groovy');
-        doTest('core/Command_02.groovy');
-        doTest('core/Command_03.groovy', [ExpressionStatement, Parameter]);
-        doTest('core/Command_04.groovy', [ExpressionStatement]);
-        doTest('core/Command_05.groovy');
-        doRunAndTest('core/Command_06x.groovy')
+        TestUtils.doTest('core/Command_01.groovy');
+        TestUtils.doTest('core/Command_02.groovy');
+        TestUtils.doTest('core/Command_03.groovy', [ExpressionStatement, Parameter]);
+        TestUtils.doTest('core/Command_04.groovy', [ExpressionStatement]);
+        TestUtils.doTest('core/Command_05.groovy');
+        TestUtils.doRunAndTest('core/Command_06x.groovy')
     }
 
     void "test groovy core - Unicode"() {
-        doTest('core/Unicode_01.groovy');
+        TestUtils.doTest('core/Unicode_01.groovy');
     }
 
     void "test groovy core - BreakingChanges"() {
-        doRunAndTest('core/BreakingChange_01x.groovy');
-        doRunAndTest('core/BreakingChange_02x.groovy');
-        doRunAndTest('core/BreakingChange_03x.groovy');
-        doRunAndTest('core/BreakingChange_04x.groovy');
+        TestUtils.doRunAndTest('core/BreakingChange_01x.groovy');
+        TestUtils.doRunAndTest('core/BreakingChange_02x.groovy');
+        TestUtils.doRunAndTest('core/BreakingChange_03x.groovy');
+        TestUtils.doRunAndTest('core/BreakingChange_04x.groovy');
     }
 
     void "test groovy core - Array"() {
-        doRunAndTest('core/Array_01x.groovy');
+        TestUtils.doRunAndTest('core/Array_01x.groovy');
     }
 
     void "test groovy core - Groovydoc"() {
-        doRunAndTest('core/Groovydoc_01x.groovy');
+        TestUtils.doRunAndTest('core/Groovydoc_01x.groovy');
+    }
+
+    void "test groovy core - Script"() {
+        TestUtils.doRunAndTest('core/Script_01x.groovy');
     }
 
     void "test groovy core - BUG"() {
-        doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
-        doRunAndTest('bugs/GROOVY-3898.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-5652.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-4762.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-4438.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-6038.groovy');
-        doRunAndTest('bugs/BUG-GROOVY-2324.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
+        TestUtils.doRunAndTest('bugs/GROOVY-3898.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-5652.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-4762.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-4438.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-6038.groovy');
+        TestUtils.doRunAndTest('bugs/BUG-GROOVY-2324.groovy');
     }
 }
