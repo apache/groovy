@@ -18,36 +18,56 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import java.util.Objects;
+
 /**
- * Represents a syntax error of groovy program
+ * Created by Daniel on 2017/4/22.
  */
-public class GroovySyntaxError extends AssertionError {
-    public static final int LEXER = 0;
-    public static final int PARSER = 1;
-    private int source;
+public class PositionInfo {
     private int line;
     private int column;
 
-    public GroovySyntaxError(String message, int source, int line, int column) {
-        super(message, null);
-
-        if (source != LEXER && source != PARSER) {
-            throw new IllegalArgumentException("Invalid syntax error source: " + source);
-        }
-
-        this.source = source;
+    public PositionInfo(int line, int column) {
         this.line = line;
         this.column = column;
     }
 
-    public int getSource() {
-        return source;
-    }
     public int getLine() {
         return line;
     }
 
+    public void setLine(int line) {
+        this.line = line;
+    }
+
     public int getColumn() {
         return column;
+    }
+
+    public void setColumn(int column) {
+        this.column = column;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PositionInfo that = (PositionInfo) o;
+        return line == that.line &&
+                column == that.column;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(line, column);
+    }
+
+    @Override
+    public String toString() {
+        if (-1 == line || -1 == column) {
+            return "";
+        }
+
+        return " @ line " + line + ", column " + column;
     }
 }

@@ -22,25 +22,37 @@ package org.apache.groovy.parser.antlr4;
  * A SyntaxErrorReportable is a recognizer that can report syntax error
  */
 public interface SyntaxErrorReportable {
-    default void require(boolean condition, String msg, boolean toAttachPositionInfo) {
+    default void require(boolean condition, String msg, int offset, boolean toAttachPositionInfo) {
         if (condition) {
             return;
         }
 
-        this.throwSyntaxError(msg, toAttachPositionInfo);
+        this.throwSyntaxError(msg, offset, toAttachPositionInfo);
+    }
+    default void require(boolean condition, String msg, boolean toAttachPositionInfo) {
+        require(condition, msg, 0, toAttachPositionInfo);
+    }
+    default void require(boolean condition, String msg, int offset) {
+        require(condition, msg, offset,false);
     }
     default void require(boolean condition, String msg) {
-        require(condition, msg, true);
+        require(condition, msg, false);
     }
 
-    default void throwSyntaxError(String msg, boolean toAttachPositionInfo) {
-        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? this.genPositionInfo() : ""), this.getSyntaxErrorSource());
-    }
-
-    default String formatPositionInfo(int line, int column) {
-        return " @ line " + line + ", column " + column;
+    default void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
+        PositionInfo positionInfo = this.genPositionInfo(offset);
+        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),
+                this.getSyntaxErrorSource(),
+                positionInfo.getLine(),
+                positionInfo.getColumn()
+        );
     }
 
     int getSyntaxErrorSource();
-    String genPositionInfo();
+    default PositionInfo genPositionInfo(int offset) {
+        return new PositionInfo(getErrorLine(), getErrorColumn() + offset);
+    }
+
+    int getErrorLine();
+    int getErrorColumn();
 }
