@@ -232,9 +232,9 @@ public class WideningCategories {
         // it according to the types provided by the two class nodes
         ClassNode holderForA = findGenericsTypeHolderForClass(a, lub);
         ClassNode holderForB = findGenericsTypeHolderForClass(b, lub);
-        // lets compare their generics type
-        GenericsType[] agt = holderForA.getGenericsTypes();
-        GenericsType[] bgt = holderForB.getGenericsTypes();
+        // let's compare their generics type
+        GenericsType[] agt = holderForA == null ? null : holderForA.getGenericsTypes();
+        GenericsType[] bgt = holderForB == null ? null : holderForB.getGenericsTypes();
         if (agt==null || bgt==null || agt.length!=bgt.length) {
             return lub;
         }
