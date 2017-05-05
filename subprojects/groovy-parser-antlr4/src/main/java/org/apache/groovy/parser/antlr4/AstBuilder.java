@@ -1285,14 +1285,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.configureAST(methodNode, ctx);
 
-        validateMethodDeclaration(ctx, methodNode, modifierManager);
+        validateMethodDeclaration(ctx, methodNode, modifierManager, classNode);
 
         groovydocManager.handle(methodNode, ctx);
 
         return methodNode;
     }
 
-    private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode, ModifierManager modifierManager) {
+    private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode, ModifierManager modifierManager, ClassNode classNode) {
         boolean isAbstractMethod = methodNode.isAbstract();
         boolean hasMethodBody = asBoolean(methodNode.getCode());
 
@@ -1303,6 +1303,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         } else {
             if (!isAbstractMethod && !hasMethodBody) { // non-abstract method without body in the non-script(e.g. class, enum, trait) is not allowed!
                 throw createParsingFailedException("You defined a method[" + methodNode.getName() + "] without body. Try adding a method body, or declare it abstract", methodNode);
+            }
+
+            boolean isInterfaceOrAbstractClass = asBoolean(classNode) && classNode.isAbstract() && !classNode.isAnnotationDefinition();
+            if (isInterfaceOrAbstractClass && !modifierManager.contains(DEFAULT) && isAbstractMethod && hasMethodBody) {
+                throw createParsingFailedException("You defined an abstract method[" + methodNode.getName() + "] with body. Try removing the method body" + (classNode.isInterface() ? ", or declare it default" : ""), methodNode);
             }
         }
 
@@ -3470,10 +3475,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return this.configureAST(
                 this.createBlockStatement(
                         ctx.blockStatement().stream()
-                                .map(this::visitBlockStatement).collect(Collectors.toList())),
+                                .map(this::visitBlockStatement)
+                                .filter(e -> asBoolean(e))
+                                .collect(Collectors.toList())),
                 ctx);
     }
-
 
     @Override
     public Statement visitBlockStatement(BlockStatementContext ctx) {
