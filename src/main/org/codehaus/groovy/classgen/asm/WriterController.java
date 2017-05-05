@@ -65,7 +65,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
-    private int bytecodeVersion = Opcodes.V1_5;
+    private int bytecodeVersion = Opcodes.V1_8;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
     private List<String> superMethodNames = new ArrayList<String>();
@@ -130,10 +130,10 @@ public class WriterController {
 
     private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
         if (invokedynamic) {
-            if (CompilerConfiguration.JDK8.equals(targetBytecode)) {
-                return Opcodes.V1_8;
+            if (CompilerConfiguration.JDK7.equals(targetBytecode)) {
+                return Opcodes.V1_7;
             }
-            return Opcodes.V1_7;
+            return Opcodes.V1_8;
         } else {
             if (CompilerConfiguration.JDK4.equals(targetBytecode)) {
                 return Opcodes.V1_4;
