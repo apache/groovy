@@ -152,7 +152,7 @@
             <property name="illegalClassNames" value="java.util.GregorianCalendar, java.util.Hashtable, java.util.HashSet, java.util.HashMap, java.util.ArrayList, java.util.LinkedHashMap, java.util.LinkedHashSet, java.util.TreeSet, java.util.TreeMap, java.util.Vector"/>
         </module>
         <module name="UpperEll"/>
-        <!-- off for now - to allow parenteses which add clarity -->
+        <!-- off for now - to allow parentheses which add clarity -->
         <!--<module name="UnnecessaryParentheses"/>-->
         <module name="JUnitTestCase"/>
         <module name="FinalClass"/>
