@@ -698,7 +698,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                         assertImportIsAllowed(expression.getType().getName());
                     } else if (expression instanceof MethodCallExpression) {
                         MethodCallExpression expr = (MethodCallExpression) expression;
-                        final String typename = expr.getObjectExpression().getType().getName();
+                        ClassNode objectExpressionType = expr.getObjectExpression().getType();
+                        final String typename = getExpressionType(objectExpressionType).getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethodAsString(), typename);
                     } else if (expression instanceof StaticMethodCallExpression) {
@@ -716,6 +717,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                     throw new SecurityException("Indirect import checks prevents usage of expression", e);
                 }
             }
+        }
+
+        private ClassNode getExpressionType(ClassNode objectExpressionType) {
+            return objectExpressionType.isArray() ? getExpressionType(objectExpressionType.getComponentType()) : objectExpressionType;
         }
 
         /**
