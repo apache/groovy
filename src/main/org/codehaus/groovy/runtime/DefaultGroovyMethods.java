@@ -1731,7 +1731,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Collection<T> toUnique(Iterable<T> self, Comparator<T> comparator) {
-        Collection<T> result = createSimilarCollection((Collection<T>) self);
+        Collection<T> result = createSimilarCollection(self);
         addAll(result, toUnique(self.iterator(), comparator));
         return result;
     }
@@ -4211,13 +4211,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T,U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
-        for (Object value : self) {
+        return findResults(self, result, filteringTransform);
+    }
+
+    /**
+     * Iterates through the Iterable transforming items using the supplied closure
+     * and adding any non-null results to the supplied <code>collector</code>.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1,2,3]
+     * def result = list.findResults([]) { it > 1 ? "Found $it" : null }
+     * assert result == ["Found 2", "Found 3"]
+     * </pre>
+     *
+     * @param self               an Iterable
+     * @param collector          the Collection to which the transformed values are added
+     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the collector with all non-null transformed values added to it
+     * @since 2.4.4
+     */
+    public static <T,U> Collection<T> findResults(Iterable<U> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> filteringTransform) {
+        for (U value : self) {
             T transformed = filteringTransform.call(value);
             if (transformed != null) {
-                result.add(transformed);
+                collector.add(transformed);
             }
         }
-        return result;
+        return collector;
     }
 
     /**
@@ -4240,13 +4261,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T,K,V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
+        return findResults(self, result, filteringTransform);
+    }
+
+    /**
+     * Iterates through the map transforming items using the supplied closure
+     * and adding any non-null results to the supplied <code>collector</code>.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2, hi:2, cat:3, dog:2]
+     * def result = map.findResults([]) { k, v -> k.size() == v ? "Found $k:$v" : null }
+     * assert result == ["Found a:1", "Found hi:2", "Found cat:3"]
+     * </pre>
+     *
+     * @param self               a Map
+     * @param collector          the Collection to which the transformed values are added
+     * @param filteringTransform a 1 or 2 arg Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the collector with all non-null transformed values added to it
+     * @since 2.4.4
+     */
+    public static <T,K,V> Collection<T> findResults(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> filteringTransform) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             T transformed = callClosureForMapEntry(filteringTransform, entry);
             if (transformed != null) {
-                result.add(transformed);
+                collector.add(transformed);
             }
         }
-        return result;
+        return collector;
     }
 
     /**
@@ -4354,8 +4398,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         Collection<T> answer = createSimilarCollection(self);
-        Iterator<T> iter = self.iterator();
-        return findAll(closure, answer, iter);
+        return findAll(self, answer, closure);
+    }
+
+    /**
+     * Finds all values matching the closure condition and adds them to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll([]) { it % 2 == 0 }</pre>
+     *
+     * @param self      a Collection
+     * @param collector the Collection to which the matching values are added
+     * @param closure   a closure condition
+     * @return the collector with all matching values added to it
+     * @since 2.4.4
+     */
+    public static <T, U extends T> Collection<T> findAll(Collection<U> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        Iterator<U> iter = self.iterator();
+        return findAll(closure, collector, iter);
     }
 
     /**
@@ -4372,7 +4430,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         Collection<T> answer = new ArrayList<T>();
-        return findAll(condition, answer, new ArrayIterator<T>(self));
+        return findAll(self, answer, condition);
+    }
+
+    /**
+     * Finds all elements of the array matching the given Closure condition and adds them to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">
+     * def items = [1,2,3,4] as Integer[]
+     * assert [2,4] == items.findAll([]) { it % 2 == 0 }
+     * </pre>
+     *
+     * @param self      an array
+     * @param collector the Collection to which the matching values are added
+     * @param condition a closure condition
+     * @return the collector with all matching values added to it
+     * @since 2.4.4
+     */
+    public static <T, U extends T> Collection<T> findAll(U[] self, Collection<T> collector, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findAll(condition, collector, new ArrayIterator<U>(self));
     }
 
     /**
@@ -4430,6 +4505,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth) and adds them to
+     * the supplied <code>collector</code>.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll([]) == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self      a Collection
+     * @param collector the Collection to which the matching values are added
+     * @return the collector with all matching values added to it
+     * @since 2.4.4
+     * @see Closure#IDENTITY
+     */
+    public static <T> Collection<T> findAll(Collection<? extends T> self, Collection<T> collector) {
+        return findAll(self, collector, Closure.IDENTITY);
+    }
+
+    /**
      * Finds the elements of the array matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
@@ -4448,6 +4543,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the elements of the array matching the IDENTITY Closure (i.e.&#160;matching Groovy truth) and adds them to
+     * the supplied <code>collector</code>.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
+     * assert items.findAll([]) == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self      an array
+     * @param collector the Collection to which the matching values are added
+     * @return the collector with all matching values added to it
+     * @see Closure#IDENTITY
+     * @since 2.4.4
+     */
+    public static <T, U extends T> Collection<T> findAll(U[] self, Collection<T> collector) {
+        return findAll(self, collector, Closure.IDENTITY);
+    }
+
+    /**
      * Finds all items matching the closure condition.
      *
      * @param self    an Object with an Iterator returning its values
@@ -4459,6 +4574,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List answer = new ArrayList();
         Iterator iter = InvokerHelper.asIterator(self);
         return findAll(closure, answer, iter);
+    }
+
+    /**
+     * Finds all items matching the closure condition and adds them to the supplied <code>collector</code>.
+     *
+     * @param self      an Object with an Iterator returning its values
+     * @param collector the Collection to which the matching values are added
+     * @param closure   a closure condition
+     * @return the collector with all matching values added to it
+     * @since 2.4.4
+     */
+    public static Collection findAll(Object self, Collection collector, Closure closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        return findAll(closure, collector, iter);
     }
 
     /**
@@ -4477,6 +4606,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Collection findAll(Object self) {
         return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds all items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth) and adds them to
+     * the supplied <code>collector</code>.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll([]) == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self      an Object with an Iterator returning its values
+     * @param collector the Collection to which the matching values are added
+     * @return the collector with all matching values added to it
+     * @since 2.4.4
+     * @see Closure#IDENTITY
+     */
+    public static Collection findAll(Object self, Collection collector) {
+        return findAll(self, collector, Closure.IDENTITY);
     }
 
     private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
