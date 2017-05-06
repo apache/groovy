@@ -830,5 +830,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert d.method() == "hello"
         '''
     }
+
+    //GROOVY-8157
+    void testFlowTypingAfterParameterAssignment() {
+        assertScript '''
+            class A {}
+            class B extends A { def bbb() { 42 } }
+
+            def fooParameterAssignment(A a) {
+                a = new B()
+                a.bbb()
+            }
+            assert fooParameterAssignment(null) == 42            
+        '''
+    }
 }
 
