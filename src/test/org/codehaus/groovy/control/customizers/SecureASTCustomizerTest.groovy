@@ -459,4 +459,25 @@ class SecureASTCustomizerTest extends GroovyTestCase {
             '''
         }
     }
+
+    // GROOVY-8135
+    void testStarImportsWhiteListWithIndirectImportCheckEnabled() {
+        SecureASTCustomizer customizer = new SecureASTCustomizer()
+        customizer.setIndirectImportCheckEnabled(true)
+
+        List<String> starImportsWhitelist = new ArrayList<String>()
+        starImportsWhitelist.add("java.lang")
+        customizer.setStarImportsWhitelist(starImportsWhitelist)
+
+        CompilerConfiguration cc = new CompilerConfiguration()
+        cc.addCompilationCustomizers(customizer)
+
+        ClassLoader parent = getClass().getClassLoader()
+        GroovyClassLoader loader = new GroovyClassLoader(parent, cc)
+        loader.parseClass("Object object = new Object()")
+        loader.parseClass("Object object = new Object(); object.hashCode()")
+        loader.parseClass("Object[] array = new Object[0]; array.size()")
+        loader.parseClass("Object[][] array = new Object[0][0]; array.size()")
+    }
+
 }
