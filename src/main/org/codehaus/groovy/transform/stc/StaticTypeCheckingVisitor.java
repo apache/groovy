@@ -3459,6 +3459,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((Expression) accessedVariable, cn);
             }
+            if (accessedVariable instanceof Parameter) {
+                ((Parameter) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
+            }
             if (var.isClosureSharedVariable() && cn!=null) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
                 if (assignedTypes == null) {
@@ -4024,6 +4027,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeType((VariableExpression)exp, type);
                     return type;
                 }
+                return getType((Parameter) variable);
             }
         }
 
