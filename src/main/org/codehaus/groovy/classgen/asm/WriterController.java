@@ -19,6 +19,8 @@
 package org.codehaus.groovy.classgen.asm;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.codehaus.groovy.GroovyBugError;
@@ -38,6 +40,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import static org.codehaus.groovy.control.CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP;
 
 public class WriterController {
 
@@ -65,7 +69,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
-    private int bytecodeVersion = Opcodes.V1_5;
+    private int bytecodeVersion = Opcodes.V1_8;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
     private List<String> superMethodNames = new ArrayList<String>();
@@ -130,27 +134,19 @@ public class WriterController {
 
     private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
         if (invokedynamic) {
-            if (CompilerConfiguration.JDK8.equals(targetBytecode)) {
-                return Opcodes.V1_8;
-            }
-            return Opcodes.V1_7;
-        } else {
-            if (CompilerConfiguration.JDK4.equals(targetBytecode)) {
-                return Opcodes.V1_4;
-            }
-            if (CompilerConfiguration.JDK5.equals(targetBytecode)) {
-                return Opcodes.V1_5;
-            }
-            if (CompilerConfiguration.JDK6.equals(targetBytecode)) {
-                return Opcodes.V1_6;
-            }
             if (CompilerConfiguration.JDK7.equals(targetBytecode)) {
                 return Opcodes.V1_7;
             }
-            if (CompilerConfiguration.JDK8.equals(targetBytecode)) {
-                return Opcodes.V1_8;
+
+            return Opcodes.V1_8;
+        } else {
+            Integer bytecodeVersion = JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
+
+            if (null != bytecodeVersion) {
+                return bytecodeVersion;
             }
         }
+
         throw new GroovyBugError("Bytecode version ["+targetBytecode+"] is not supported by the compiler");
     }
 

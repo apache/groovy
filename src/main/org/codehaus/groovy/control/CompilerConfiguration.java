@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -59,6 +60,17 @@ public class CompilerConfiguration {
 
     /** An array of the valid targetBytecode values **/
     public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
+
+    /**
+     * JDK version to bytecode version mapping
+     */
+    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Collections.unmodifiableMap(new HashMap<String, Integer>() {{
+        put(JDK4, Opcodes.V1_4);
+        put(JDK5, Opcodes.V1_5);
+        put(JDK6, Opcodes.V1_6);
+        put(JDK7, Opcodes.V1_7);
+        put(JDK8, Opcodes.V1_8);
+    }});
 
     // Just call getVMVersion() once.
     public static final String currentJVMVersion = getVMVersion();
