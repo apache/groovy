@@ -141,7 +141,7 @@ allprojects {
         // hack to exclude html files since include by itself doesn't work
         def temp = classes
         temp.include '**/*.class'
-        classes = files(temp.files)
+        classes = temp
     }
 }
 
