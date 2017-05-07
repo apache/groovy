@@ -18,11 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -41,7 +36,9 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class WriterController {
 
@@ -139,7 +136,7 @@ public class WriterController {
             }
             return Opcodes.V1_7;
         } else {
-            Integer bytecodeVersion = JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
+            Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
 
             if (null != bytecodeVersion) {
                 return bytecodeVersion;
