@@ -25,7 +25,18 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Compilation control flags and coordination stuff.
@@ -58,19 +69,19 @@ public class CompilerConfiguration {
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = JDK4;
 
-    /** An array of the valid targetBytecode values **/
-    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
-
     /**
      * JDK version to bytecode version mapping
      */
-    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Collections.unmodifiableMap(new HashMap<String, Integer>() {{
+    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Collections.unmodifiableMap(new LinkedHashMap<String, Integer>() {{
         put(JDK4, Opcodes.V1_4);
         put(JDK5, Opcodes.V1_5);
         put(JDK6, Opcodes.V1_6);
         put(JDK7, Opcodes.V1_7);
         put(JDK8, Opcodes.V1_8);
     }});
+
+    /** An array of the valid targetBytecode values **/
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
 
     // Just call getVMVersion() once.
     public static final String currentJVMVersion = getVMVersion();
