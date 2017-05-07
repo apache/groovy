@@ -880,7 +880,7 @@ p a > code:hover {
 
 @media only screen and (min-width: 768px) {
     body.toc2 {
-        padding-left: 17em;
+        padding-left: 2em;
         padding-right: 2em;
     }
 
@@ -932,7 +932,7 @@ p a > code:hover {
 
 @media only screen and (min-width: 1280px) {
     body.toc2 {
-        padding-left: 22em;
+        padding-left: 2em;
         padding-right: 2em;
     }
 
