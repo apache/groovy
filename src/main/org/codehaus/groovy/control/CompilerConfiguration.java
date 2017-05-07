@@ -41,6 +41,9 @@ public class CompilerConfiguration {
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
+    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
+    public static final String INVOKEDYNAMIC = "indy";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
     public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
