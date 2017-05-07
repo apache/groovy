@@ -60,7 +60,11 @@ buildScan {
 }
 
 ext.modules = {
+<<<<<<< HEAD
     subprojects.findAll{ !['performance'].contains(it.name) }
+=======
+    subprojects.findAll{ !['performance', 'tests-vm8'].contains(it.name) }
+>>>>>>> 27c7205... rename subproject to better reflect that it isn't a normal module
 }
 
 apply from: 'gradle/filter.gradle'
@@ -452,10 +456,8 @@ allprojects {
             targetCompatibility = 1.7
         }
         tasks.withType(JavaCompile) {
-            if (project.name=='performance') {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
-            } else {
+            // exclude projects which set their own specific source/target levels
+            if (!(project.name in ['performance', 'tests-vm8'])) {
                 sourceCompatibility = 1.7
                 targetCompatibility = 1.7
             }
