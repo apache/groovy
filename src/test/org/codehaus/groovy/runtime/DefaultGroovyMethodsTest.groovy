@@ -236,6 +236,13 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(3, list.get(2));
     }
 
+    public void testByteArrayOutputStreamGetText(){
+      ByteArrayOutputStream os = new ByteArrayOutputStream();
+      String text = "Hello World!";
+      os.write(text.getBytes());
+      assertEquals(text, IOGroovyMethods.getText(os));
+    }
+
     private static class MyList extends ArrayList {
         public MyList() {}
     }
