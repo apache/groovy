@@ -59,7 +59,7 @@ if (JavaVersion.current().java7Compatible) {
 }
 
 ext.modules = {
-    subprojects.findAll{ !['performance', 'groovy-tests-vm8'].contains(it.name) }
+    subprojects.findAll{ !['performance'].contains(it.name) }
 }
 
 apply from: 'gradle/filter.gradle'
