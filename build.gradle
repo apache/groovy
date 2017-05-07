@@ -65,7 +65,7 @@ buildScan {
 }
 
 ext.modules = {
-    subprojects.findAll{ !['performance', 'groovy-tests-vm8'].contains(it.name) }
+    subprojects.findAll{ !['performance', 'tests-vm8'].contains(it.name) }
 }
 
 apply from: 'gradle/filter.gradle'
@@ -452,7 +452,7 @@ allprojects {
         }
         tasks.withType(JavaCompile) {
             // exclude projects which set their own specific source/target levels
-            if (!(project.name in ['performance', 'groovy-tests-vm8'])) {
+            if (!(project.name in ['performance', 'tests-vm8'])) {
                 sourceCompatibility = 1.7
                 targetCompatibility = 1.7
             }
