@@ -18,7 +18,10 @@
  */
 
 buildscript {
-    repositories {
+  
+
+
+  repositories {
         jcenter()
         maven {
             name 'Bintray Asciidoctor repo'
