@@ -1543,6 +1543,9 @@ public abstract class StaticTypeCheckingSupport {
                 GenericsType replacement = connections.get(name);
                 if (replacement==null) {
                     GenericsType value = entry.getValue();
+                    if (!value.isWildcard() && !value.isPlaceholder()) {
+                        continue;
+                    }
                     GenericsType newValue = applyGenericsContext(connections, value);
                     entry.setValue(newValue);
                     checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(value,newValue);
