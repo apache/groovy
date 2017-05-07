@@ -137,6 +137,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             expr.visit(controller.getAcg());
             return;
         }
+
+        boolean isStaticProperty = receiver instanceof ClassExpression
+                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
+
+        if (!isStaticProperty && (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType))) {
+            // for maps, replace map.foo with map.get('foo')
+            writeMapDotProperty(receiver, methodName, mv, safe);
+            return;
+        }
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, methodName, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (receiverType.isEnum()) {
@@ -211,21 +220,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
 
-        boolean isStaticProperty = receiver instanceof ClassExpression
-                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
-
-        if (!isStaticProperty) {
-            if (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType)) {
-                // for maps, replace map.foo with map.get('foo')
-                writeMapDotProperty(receiver, methodName, mv, safe);
-                return;
-            }
-            if (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType)) {
-                writeListDotProperty(receiver, methodName, mv, safe);
-                return;
-            }
+        if (!isStaticProperty && (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType))) {
+            writeListDotProperty(receiver, methodName, mv, safe);
+            return;
         }
-
 
         controller.getSourceUnit().addError(
                 new SyntaxException("Access to "+

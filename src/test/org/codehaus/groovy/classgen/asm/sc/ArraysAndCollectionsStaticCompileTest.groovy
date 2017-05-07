@@ -128,6 +128,18 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         }
     }
 
+    void testMapSubclassPropertyStyleAccess() {
+        assertScript '''
+            class MyMap extends LinkedHashMap {
+                def foo = 1
+            }
+        
+            def map = new MyMap()
+            map.put('foo', 42)
+            assert map.foo == 42               
+        '''
+    }
+
     @Override
     void testForInLoop() {
         try {
