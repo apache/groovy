@@ -1,0 +1,4 @@
+ANTLR 4 License
+
+Antlr4 is released under a BSD 3-clause license.
+See licenses/antlr4-license.txt for details.
