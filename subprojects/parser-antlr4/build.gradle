@@ -20,7 +20,7 @@ if (!rootProject.hasProperty('useAntlr4')) return
 
 apply plugin: 'me.champeau.gradle.antlr4'
 
-def srcBase = "subprojects/groovy-parser-antlr4/src"
+def srcBase = "subprojects/parser-antlr4/src"
 def srcMain = "$srcBase/main"
 def srcTest = "$srcBase/test"
 def antlr4Source = "$srcMain/antlr4"
