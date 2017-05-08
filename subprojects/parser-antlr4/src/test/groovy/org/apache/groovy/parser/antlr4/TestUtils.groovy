@@ -41,7 +41,7 @@ import java.util.zip.ZipFile
 
 @Log
 class TestUtils {
-    public static final String DEFAULT_RESOURCES_PATH = 'subprojects/groovy-parser-antlr4/src/test/resources';
+    public static final String DEFAULT_RESOURCES_PATH = 'subprojects/parser-antlr4/src/test/resources';
     public static final String RESOURCES_PATH = new File(DEFAULT_RESOURCES_PATH).exists() ? DEFAULT_RESOURCES_PATH : 'src/test/resources';
 
     static doTest(String path) {
