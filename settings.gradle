@@ -33,6 +33,7 @@ def subprojects = ['groovy-ant',
         'groovy-test',
         'groovy-testng',
         'groovy-xml',
+        'groovy-parser-antlr4',
         'groovy-macro'
 ]
 
