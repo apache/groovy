@@ -312,7 +312,7 @@ sourceSets {
     }
 }
 
-apply from: 'subprojects/groovy-parser-antlr4/build.gradle'
+apply from: 'subprojects/parser-antlr4/build.gradle'
 
 // make sure examples can be compiled, even if we don't run them
 // todo: reorganize examples so that we can run them too
