@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-if (!rootProject.hasProperty('useAntlr4')) return
 
 apply plugin: 'me.champeau.gradle.antlr4'
 
