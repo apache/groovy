@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /\123 \/ abc \u1234 \r\n\$/
 
 $/\123 \/ abc \u1234 \r\n/$
