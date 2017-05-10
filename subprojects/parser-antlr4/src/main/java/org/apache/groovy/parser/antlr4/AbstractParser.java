@@ -31,21 +31,32 @@ public abstract class AbstractParser extends Parser implements SyntaxErrorReport
     }
 
     public void require(boolean condition, String msg, boolean toAttachPositionInfo) {
-        if (condition) {
-            return;
-        }
-
-        this.throwSyntaxError(msg, toAttachPositionInfo);
+        require(condition, msg, 0, toAttachPositionInfo);
     }
     public void require(boolean condition, String msg) {
         require(condition, msg, true);
     }
+    public void require(boolean condition, String msg, int offset, boolean toAttachPositionInfo) {
+        if (condition) {
+            return;
+        }
 
-    public void throwSyntaxError(String msg, boolean toAttachPositionInfo) {
-        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? this.genPositionInfo() : ""), this.getSyntaxErrorSource());
+        this.throwSyntaxError(msg, offset, toAttachPositionInfo);
+    }
+    public void require(boolean condition, String msg, int offset) {
+        require(condition, msg, offset,false);
     }
 
-    public String formatPositionInfo(int line, int column) {
-        return " @ line " + line + ", column " + column;
+    public void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
+        PositionInfo positionInfo = this.genPositionInfo(offset);
+        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),
+                this.getSyntaxErrorSource(),
+                positionInfo.getLine(),
+                positionInfo.getColumn()
+        );
+    }
+
+    public PositionInfo genPositionInfo(int offset) {
+        return new PositionInfo(getErrorLine(), getErrorColumn() + offset);
     }
 }

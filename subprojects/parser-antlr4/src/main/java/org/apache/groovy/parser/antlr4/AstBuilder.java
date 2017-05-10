@@ -35,6 +35,7 @@ import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.EnumHelper;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -398,14 +399,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return this.visitEnhancedForControl(ctx.enhancedForControl());
         }
 
-        if (asBoolean(ctx.SEMI())) { // e.g. for(int i = 0; i < 10; i++) {}
-            ClosureListExpression closureListExpression = new ClosureListExpression();
-
-            closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
-            closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
-            closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
-
-            return new Pair<>(ForStatement.FOR_LOOP_DUMMY, (Expression)closureListExpression);
+        if (asBoolean(ctx.classicalForControl())) { // e.g. for(int i = 0; i < 10; i++) {}
+            return this.visitClassicalForControl(ctx.classicalForControl());
         }
 
         throw createParsingFailedException("Unsupported for control: " + ctx.getText(), ctx);
@@ -474,7 +469,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
         closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
-        return new Pair<>(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
+        return new Pair<Parameter, Expression>(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
     }
 
     @Override
@@ -1101,7 +1096,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             ListExpression listExpression = new ListExpression();
 
             if (expression instanceof ListExpression) {
-                ((ListExpression) expression).getExpressions().forEach(listExpression::addExpression);
+                for (Expression e : ((ListExpression) expression).getExpressions()) {
+                    listExpression.addExpression(e);
+                }
             } else {
                 listExpression.addExpression(expression);
             }
@@ -1264,11 +1261,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return;
         }
 
-        Arrays.stream(parameters).forEach(e -> {
+        for (Parameter e : parameters) {
             if (e.hasInitialExpression()) {
                 throw createParsingFailedException("Cannot specify default value for method parameter '" + e.getName() + " = " + e.getInitialExpression().getText() + "' inside an interface", e);
             }
-        });
+        }
     }
 
     @Override
@@ -3542,12 +3539,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public BlockStatement visitBlockStatements(BlockStatementsContext ctx) {
-        List<Statement> list = new ArrayList<>();
+        List<Statement> result = new ArrayList<>();
         for (BlockStatementContext blockStatementContext : ctx.blockStatement()) {
-            Statement statement = visitBlockStatement(blockStatementContext);
-            list.add(statement);
+            Statement e = visitBlockStatement(blockStatementContext);
+            if (asBoolean(e)) {
+                result.add(e);
+            }
         }
-        return this.configureAST(this.createBlockStatement(list), ctx);
+        return this.configureAST(this.createBlockStatement(result), ctx);
     }
 
     @Override
@@ -4351,293 +4350,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         @Override
         public int hashCode() {
             return Objects.hash(key, value);
-        }
-    }
-
-<<<<<<< HEAD
-    /**
-     * Process modifiers for AST nodes
-     * <p>
-     * Created by Daniel.Sun on 2016/08/27.
-     */
-    private class ModifierManager {
-        private List<ModifierNode> modifierNodeList;
-
-        public ModifierManager(List<ModifierNode> modifierNodeList) {
-            this.validate(modifierNodeList);
-            this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.<ModifierNode>emptyList());
-        }
-
-        private void validate(List<ModifierNode> modifierNodeList) {
-            Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
-            int visibilityModifierCnt = 0;
-
-            for (ModifierNode modifierNode : modifierNodeList) {
-                Integer cnt = modifierNodeCounter.get(modifierNode);
-
-                if (null == cnt) {
-                    modifierNodeCounter.put(modifierNode, 1);
-                } else if (1 == cnt && !modifierNode.isRepeatable()) {
-                    throw createParsingFailedException("Cannot repeat modifier[" + modifierNode.getText() + "]", modifierNode);
-                }
-
-                if (modifierNode.isVisibilityModifier()) {
-                    visibilityModifierCnt++;
-
-                    if (visibilityModifierCnt > 1) {
-                        throw createParsingFailedException("Cannot specify modifier[" + modifierNode.getText() + "] when access scope has already been defined", modifierNode);
-                    }
-                }
-            }
-        }
-
-        // t    1: class modifiers value; 2: class member modifiers value
-        private int calcModifiersOpValue(int t) {
-            int result = 0;
-
-            for (ModifierNode modifierNode : modifierNodeList) {
-                result |= modifierNode.getOpcode();
-            }
-
-            if (!this.containsVisibilityModifier()) {
-                if (1 == t) {
-                    result |= Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PUBLIC;
-                } else if (2 == t) {
-                    result |= Opcodes.ACC_PUBLIC;
-                }
-            }
-
-            return result;
-        }
-
-        public int getClassModifiersOpValue() {
-            return this.calcModifiersOpValue(1);
-        }
-
-        public int getClassMemberModifiersOpValue() {
-            return this.calcModifiersOpValue(2);
-        }
-
-        public List<AnnotationNode> getAnnotations() {
-            List<AnnotationNode> list = new ArrayList<>();
-            for (ModifierNode modifierNode : modifierNodeList) {
-                if (modifierNode.isAnnotation()) {
-                    AnnotationNode annotationNode = modifierNode.getAnnotationNode();
-                    list.add(annotationNode);
-                }
-            }
-            return list;
-        }
-
-        public boolean contains(int modifierType) {
-            for (ModifierNode e : modifierNodeList) {
-                if (modifierType == e.getType()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean containsAnnotations() {
-            for (ModifierNode modifierNode : modifierNodeList) {
-                if (modifierNode.isAnnotation()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean containsVisibilityModifier() {
-            for (ModifierNode modifierNode : modifierNodeList) {
-                if (modifierNode.isVisibilityModifier()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean containsNonVisibilityModifier() {
-            for (ModifierNode modifierNode : modifierNodeList) {
-                if (modifierNode.isNonVisibilityModifier()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public Parameter processParameter(Parameter parameter) {
-            for (ModifierNode e : modifierNodeList) {
-                parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
-
-                if (e.isAnnotation()) {
-                    parameter.addAnnotation(e.getAnnotationNode());
-                }
-            }
-
-            return parameter;
-        }
-
-        public MethodNode processMethodNode(MethodNode mn) {
-            for (ModifierNode e : modifierNodeList) {
-                mn.setModifiers(mn.getModifiers() | e.getOpcode());
-
-                if (e.isAnnotation()) {
-                    mn.addAnnotation(e.getAnnotationNode());
-                }
-            }
-
-            return mn;
-        }
-
-        public VariableExpression processVariableExpression(VariableExpression ve) {
-            for (ModifierNode e : modifierNodeList) {
-                ve.setModifiers(ve.getModifiers() | e.getOpcode());
-
-                // local variable does not attach annotations
-            }
-
-            return ve;
-        }
-
-        public <T extends AnnotatedNode> T attachAnnotations(T node) {
-            for (AnnotationNode a : this.getAnnotations()) {
-                node.addAnnotation(a);
-            }
-
-            return node;
-        }
-    }
-
-    /**
-     * Represents a modifier, which is better to place in the package org.codehaus.groovy.ast
-     * <p>
-     * Created by Daniel.Sun on 2016/08/23.
-     */
-    public static class ModifierNode extends ASTNode {
-        private Integer type;
-        private Integer opcode; // ASM opcode
-        private String text;
-        private AnnotationNode annotationNode;
-        private boolean repeatable;
-
-        public static final int ANNOTATION_TYPE = -999;
-        public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Collections.unmodifiableMap(new HashMap<Integer, Integer>() {
-            {
-                put(ANNOTATION_TYPE, 0);
-                put(DEF, 0);
-
-                put(NATIVE, Opcodes.ACC_NATIVE);
-                put(SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED);
-                put(TRANSIENT, Opcodes.ACC_TRANSIENT);
-                put(VOLATILE, Opcodes.ACC_VOLATILE);
-
-                put(PUBLIC, Opcodes.ACC_PUBLIC);
-                put(PROTECTED, Opcodes.ACC_PROTECTED);
-                put(PRIVATE, Opcodes.ACC_PRIVATE);
-                put(STATIC, Opcodes.ACC_STATIC);
-                put(ABSTRACT, Opcodes.ACC_ABSTRACT);
-                put(FINAL, Opcodes.ACC_FINAL);
-                put(STRICTFP, Opcodes.ACC_STRICT);
-                put(DEFAULT, 0); // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
-            }
-        });
-
-        public ModifierNode(Integer type) {
-            this.type = type;
-            this.opcode = MODIFIER_OPCODE_MAP.get(type);
-            this.repeatable = ANNOTATION_TYPE == type; // Only annotations are repeatable
-
-            if (!asBoolean((Object) this.opcode)) {
-                throw new IllegalArgumentException("Unsupported modifier type: " + type);
-            }
-        }
-
-        /**
-         * @param type the modifier type, which is same as the token type
-         * @param text text of the ast node
-         */
-        public ModifierNode(Integer type, String text) {
-            this(type);
-            this.text = text;
-        }
-
-        /**
-         * @param annotationNode the annotation node
-         * @param text           text of the ast node
-         */
-        public ModifierNode(AnnotationNode annotationNode, String text) {
-            this(ModifierNode.ANNOTATION_TYPE, text);
-            this.annotationNode = annotationNode;
-
-            if (!asBoolean(annotationNode)) {
-                throw new IllegalArgumentException("annotationNode can not be null");
-            }
-        }
-
-        /**
-         * Check whether the modifier is not an imagined modifier(annotation, def)
-         */
-        public boolean isModifier() {
-            return !this.isAnnotation() && !this.isDef();
-        }
-
-        public boolean isVisibilityModifier() {
-            return Objects.equals(PUBLIC, this.type)
-                    || Objects.equals(PROTECTED, this.type)
-                    || Objects.equals(PRIVATE, this.type);
-        }
-
-        public boolean isNonVisibilityModifier() {
-            return this.isModifier() && !this.isVisibilityModifier();
-        }
-
-        public boolean isAnnotation() {
-            return Objects.equals(ANNOTATION_TYPE, this.type);
-        }
-
-        public boolean isDef() {
-            return Objects.equals(DEF, this.type);
-        }
-
-        public Integer getType() {
-            return type;
-        }
-
-        public Integer getOpcode() {
-            return opcode;
-        }
-
-        public boolean isRepeatable() {
-            return repeatable;
-        }
-
-        @Override
-        public String getText() {
-            return text;
-        }
-
-        public AnnotationNode getAnnotationNode() {
-            return annotationNode;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ModifierNode that = (ModifierNode) o;
-            return Objects.equals(type, that.type) &&
-                    Objects.equals(text, that.text) &&
-                    Objects.equals(annotationNode, that.annotationNode);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, text, annotationNode);
-        }
-
-        @Override
-        public String toString() {
-            return this.text;
         }
     }
 

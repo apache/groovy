@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,7 +57,7 @@ class ModifierManager {
     public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
         this.astBuilder = astBuilder;
         this.validate(modifierNodeList);
-        this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.emptyList());
+        this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.<ModifierNode>emptyList());
     }
 
     private void validate(List<ModifierNode> modifierNodeList) {
@@ -91,11 +92,11 @@ class ModifierManager {
     }
 
     private void validate(List<Integer> invalidModifierList, MethodNode methodNode) {
-        modifierNodeList.forEach(e -> {
+        for (ModifierNode e : modifierNodeList) {
             if (invalidModifierList.contains(e.getType())) {
                 throw astBuilder.createParsingFailedException(methodNode.getClass().getSimpleName().replace("Node", "") + " has an incorrect modifier '" + e + "'.", methodNode);
             }
-        });
+        }
     }
 
     // t    1: class modifiers value; 2: class member modifiers value
@@ -126,40 +127,68 @@ class ModifierManager {
     }
 
     public List<AnnotationNode> getAnnotations() {
-        return modifierNodeList.stream()
-                .filter(ModifierNode::isAnnotation)
-                .map(ModifierNode::getAnnotationNode)
-                .collect(Collectors.toList());
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>();
+        for (ModifierNode m : modifierNodeList) {
+            if (m.isAnnotation()) {
+                result.add(m.getAnnotationNode());
+            }
+        }
+        return result;
     }
 
     public boolean contains(int modifierType) {
-        return modifierNodeList.stream().anyMatch(e -> modifierType == e.getType());
+        for (ModifierNode e : modifierNodeList) {
+            if (modifierType == e.getType()) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public Optional<ModifierNode> get(int modifierType) {
-        return modifierNodeList.stream().filter(e -> modifierType == e.getType()).findFirst();
+    public ModifierNode get(int modifierType) {
+        for (ModifierNode e : modifierNodeList) {
+            if (modifierType == e.getType()) {
+                return e;
+            }
+        }
+        return null;
     }
 
     public boolean containsAnnotations() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isAnnotation);
+        for (ModifierNode e : modifierNodeList) {
+            if (e.isAnnotation()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean containsVisibilityModifier() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isVisibilityModifier);
+        for (ModifierNode e : modifierNodeList) {
+            if (e.isVisibilityModifier()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean containsNonVisibilityModifier() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isNonVisibilityModifier);
+        for (ModifierNode e : modifierNodeList) {
+            if (e.isNonVisibilityModifier()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Parameter processParameter(Parameter parameter) {
-        modifierNodeList.forEach(e -> {
+        for (ModifierNode e : modifierNodeList) {
             parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
 
             if (e.isAnnotation()) {
                 parameter.addAnnotation(e.getAnnotationNode());
             }
-        });
+        };
 
         return parameter;
     }
@@ -169,29 +198,31 @@ class ModifierManager {
     }
 
     public MethodNode processMethodNode(MethodNode mn) {
-        modifierNodeList.forEach(e -> {
+        for (ModifierNode e : modifierNodeList) {
             mn.setModifiers((e.isVisibilityModifier() ? clearVisibilityModifiers(mn.getModifiers()) : mn.getModifiers()) | e.getOpcode());
 
             if (e.isAnnotation()) {
                 mn.addAnnotation(e.getAnnotationNode());
             }
-        });
+        };
 
         return mn;
     }
 
     public VariableExpression processVariableExpression(VariableExpression ve) {
-        modifierNodeList.forEach(e -> {
+        for (ModifierNode e : modifierNodeList) {
             ve.setModifiers(ve.getModifiers() | e.getOpcode());
 
             // local variable does not attach annotations
-        });
+        };
 
         return ve;
     }
 
     public <T extends AnnotatedNode> T attachAnnotations(T node) {
-        this.getAnnotations().forEach(node::addAnnotation);
+        for (AnnotationNode an : getAnnotations()) {
+            node.addAnnotation(an);
+        }
 
         return node;
     }
