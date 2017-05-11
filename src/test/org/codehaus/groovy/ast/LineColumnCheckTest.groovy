@@ -59,8 +59,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/*
- * Tests the LineColumn information in file specified in TEST_FILE_PATH
+/**
+ * Tests the LineColumn information in file with path specified by the prefix TEST_FILE_PREFIX.
+ * The base version contains tests that should work with both the antlr2 and antlr4 parser.
+ * The suffixed versions work with just the respective parser. In general, the antlr4 parser
+ * has more accurate line/column information in a number of situations.
  * 
  * The file in the specified path should look like:
  * 
@@ -80,15 +83,11 @@ import org.junit.runners.Parameterized
  * [BlockStatement,(7:3),(9:2)][BlockStatement,(7:11),(9:2)]
  * 
  * [<NodeType>,(<line>:<column>),(<lastLine>:<lastColumn>)]
- * 
- * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
- *
  */
-
 @RunWith(Parameterized)
 class LineColumnCheckTest extends ASTTest {
 
-    static final String TEST_FILE_PATH = './src/test/org/codehaus/groovy/ast/LineColumnCheck.txt'
+    static final String TEST_FILE_PREFIX = './src/test/org/codehaus/groovy/ast/LineColumnCheck'
 
     private LineCheckVisitor visitor
     private String name
@@ -97,7 +96,17 @@ class LineColumnCheckTest extends ASTTest {
 
     @Parameterized.Parameters(name = 'Test {0}: Source: {1} Expected: {2}')
     static Iterable<Object[]> data() {
-        String content = new File(TEST_FILE_PATH).text
+        List testdata = extractData("${TEST_FILE_PREFIX}.txt")
+        if (System.getProperty('groovy.antlr4') != 'false') {
+            testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
+        } else {
+            testdata += extractData("${TEST_FILE_PREFIX}_antlr2.txt")
+        }
+        testdata
+    }
+
+    private static List extractData(String test_file_path) {
+        String content = new File(test_file_path).text
         String[] tests = content.split('###')
         tests = tests.drop(1) // remove apache header
         List testdata = []
