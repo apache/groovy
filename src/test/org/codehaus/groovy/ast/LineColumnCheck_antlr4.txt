@@ -23,7 +23,7 @@ public class Test {
 	String prop = "property"
 }
 :::[FieldNode,(2:2),(2:34)][ConstantExpression,(2:21),(2:22)];
-[FieldNode,(2:24),(2:34)][ConstantExpression,(2:33),(2:34)];
+[FieldNode,(2:2),(2:34)][ConstantExpression,(2:33),(2:34)];
 [FieldNode,(3:2),(3:26)][ConstantExpression,(3:16),(3:26)]
 
 ###ifElse:::
@@ -174,3 +174,60 @@ def method() throws java.lang.Exception {}
 ###throwsClauseMultiQualifiedName:::
 def method() throws java.lang.Exception, java.lang.RuntimeException {}
 :::[ClassNode,(1:21),(1:40)][ClassNode,(1:42),(1:68)]
+
+###declarationWithFullQualifiedTypeName:::
+java.lang.String s = "Groovy"
+:::[ClassNode,(1:1),(1:17)][DeclarationExpression,(1:1),(1:30)][VariableExpression,(1:18),(1:19)]
+
+###typeArgument:::
+Map<String,Object> map
+:::[ClassNode,(1:1),(1:19)];
+[GenericsType,(1:5),(1:11)][ClassNode,(1:5),(1:11)];
+[GenericsType,(1:12),(1:18)][ClassNode,(1:12),(1:18)]
+
+###typeArgumentFullQualifiedTypeName:::
+Map<java.lang.String,java.lang.Object> map
+:::[ClassNode,(1:1),(1:39)][GenericsType,(1:5),(1:21)][ClassNode,(1:5),(1:21)];
+[GenericsType,(1:22),(1:38)][ClassNode,(1:22),(1:38)]
+
+###typeArgumentUpperBound:::
+Collection<? extends File> c
+:::[ClassNode,(1:1),(1:27)][GenericsType,(1:12),(1:26)][ClassNode,(1:12),(1:13)];
+[ClassNode,(1:22),(1:26)]
+
+###typeArgumentLowerBound:::
+Collection<? super File> c
+:::[ClassNode,(1:1),(1:25)][GenericsType,(1:12),(1:24)][ClassNode,(1:12),(1:13)];
+[ClassNode,(1:20),(1:24)]
+
+###typeArgumentsLowerAndUpperBound:::
+Collection<? extends String,? super File> c
+:::[ClassNode,(1:1),(1:42)][GenericsType,(1:12),(1:28)][ClassNode,(1:12),(1:13)][ClassNode,(1:22),(1:28)];
+[GenericsType,(1:29),(1:41)][ClassNode,(1:29),(1:30)][ClassNode,(1:37),(1:41)]
+
+###typeArgumentNested:::
+class C<Y,T extends Map<String,Map<Y,Integer>>> {}
+:::[ClassNode,(1:1),(1:51)][GenericsType,(1:9),(1:10)][ClassNode,(1:9),(1:10)];
+[GenericsType,(1:11),(1:47)][ClassNode,(1:11),(1:47)][ClassNode,(1:21),(1:47)];
+[GenericsType,(1:25),(1:31)][ClassNode,(1:25),(1:31)][GenericsType,(1:32),(1:46)][ClassNode,(1:32),(1:46)];
+[GenericsType,(1:36),(1:37)][ClassNode,(1:36),(1:37)][GenericsType,(1:38),(1:45)][ClassNode,(1:38),(1:45)]
+
+###typeArgumentInConstructorCall:::
+ArrayList<String> list = new ArrayList<String>()
+:::[ClassNode,(1:30),(1:47)][GenericsType,(1:40),(1:46)][ClassNode,(1:40),(1:46)]
+
+###PropertyExpressionStaticField:::
+class PropertyExpression {
+    static field
+    static method() {
+        PropertyExpression.field = 42
+    }
+}
+:::[PropertyExpression,(4:9),(4:33)]
+
+###PropertyExpressionNormal:::
+class TestClass {
+    TestClass prop
+}
+TestClass.prop.prop = 42
+:::[PropertyExpression,(4:1),(4:20)][PropertyExpression,(4:10),(4:15)]
