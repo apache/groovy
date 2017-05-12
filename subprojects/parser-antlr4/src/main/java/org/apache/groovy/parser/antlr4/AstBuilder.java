@@ -607,7 +607,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                             new Parameter(e, this.visitIdentifier(ctx.identifier())),
                             this.visitBlock(ctx.block())),
-                    ctx.block());
+                    ctx);
             list.add(catchStatement);
         }
         return list;
@@ -1961,6 +1961,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(ctx.arguments())) {
             Expression argumentsExpr = this.visitArguments(ctx.arguments());
+            this.configureAST(argumentsExpr, ctx);
 
             if (isTrue(baseExpr, IS_INSIDE_PARENTHESES)) { // e.g. (obj.x)(), (obj.@x)()
                 MethodCallExpression methodCallExpression =
