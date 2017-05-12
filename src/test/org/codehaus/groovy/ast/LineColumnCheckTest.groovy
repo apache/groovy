@@ -97,10 +97,12 @@ class LineColumnCheckTest extends ASTTest {
     @Parameterized.Parameters(name = 'Test {0}: Source: {1} Expected: {2}')
     static Iterable<Object[]> data() {
         List testdata = extractData("${TEST_FILE_PREFIX}.txt")
-        if (System.getProperty('groovy.antlr4') != 'false') {
-            testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
-        } else {
+        //flip if condition as per below and swap antlr2/4 ordering once antlr4 is the default
+        //if (System.getProperty('groovy.antlr4') != 'false') {
+        if (System.getProperty('groovy.antlr4') != 'true') {
             testdata += extractData("${TEST_FILE_PREFIX}_antlr2.txt")
+        } else {
+            testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
         }
         testdata
     }
