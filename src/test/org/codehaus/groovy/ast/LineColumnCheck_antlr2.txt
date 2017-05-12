@@ -94,3 +94,83 @@ try {
 [CatchStatement,(3:3),(5:3)][BlockStatement,(3:12),(5:3)];
 [CatchStatement,(5:3),(7:3)][BlockStatement,(5:12),(7:3)];
 [BlockStatement,(7:3),(9:2)][BlockStatement,(7:11),(9:2)]
+
+###switchCase:::
+switch (expression) {
+	case 1 : log = 1
+	case 2 : log = 2
+}
+:::[SwitchStatement,(1:1),(4:2)];
+[CaseStatement,(2:2),(2:6)];[BlockStatement,(2:11),(3:2)];
+[CaseStatement,(3:2),(3:6)];[BlockStatement,(3:11),(4:1)]
+
+###switchCaseDefault:::
+switch (expression) {
+	case 1 : log = 1 ; break
+	case 2 : log = 2 ; break
+	default : log = 6
+}
+:::[SwitchStatement,(1:1),(5:2)];
+[CaseStatement,(2:2),(2:6)];[BlockStatement,(2:11),(3:2)];[BreakStatement,(2:21),(2:26)];
+[CaseStatement,(3:2),(3:6)];[BlockStatement,(3:11),(4:2)];[BreakStatement,(3:21),(3:26)];
+[BlockStatement,(4:12),(5:1)]
+
+###assertStatementAdv:::
+assert (expression) , "AssertTest"
+:::[AssertStatement,(1:1),(1:35)][BooleanExpression,(1:8),(1:21)];
+[VariableExpression,(1:8),(1:21)][ConstantExpression,(1:23),(1:35)]
+
+###throwStatement:::
+throw new Exception("exception")
+:::[ThrowStatement,(1:1),(1:33)][ConstructorCallExpression,(1:7),(1:33)];
+[ArgumentListExpression,(1:21),(1:32)][ConstantExpression,(1:21),(1:32)]
+
+###methodCallExpressionInAssignment:::
+sub = "groovy".substring(3)
+:::[MethodCallExpression,(1:7),(1:28)][ConstantExpression,(1:7),(1:15)];
+[ConstantExpression,(1:16),(1:25)][ArgumentListExpression,(1:26),(1:27)];
+[ConstantExpression,(1:26),(1:27)]
+
+###constructorCallExpressionInAssignment:::
+txt = new String("groovy")
+:::[ConstructorCallExpression,(1:7),(1:27)][ClassNode,(1:11),(1:17)][ArgumentListExpression,(1:18),(1:26)];
+[ConstantExpression,(1:18),(1:26)]
+
+###methodCallExpressionArgsAndAppendedBlock:::
+a = f(x){y}
+:::[MethodCallExpression,(1:5),(1:12)];
+[ConstantExpression,(1:5),(1:6)][ArgumentListExpression,(1:7),(1:8)][VariableExpression,(1:7),(1:8)];
+[ClosureExpression,(1:9),(1:12)]
+
+###methodCallExpressionChain:::
+b = getClass().getName().substring(42)
+:::[MethodCallExpression,(1:5),(1:39)][MethodCallExpression,(1:5),(1:25)];
+[MethodCallExpression,(1:5),(1:15)];
+[ConstantExpression,(1:5),(1:13)][ArgumentListExpression,(1:14),(1:14)];
+[ConstantExpression,(1:16),(1:23)][ArgumentListExpression,(1:24),(1:24)];
+[ConstantExpression,(1:26),(1:35)][ArgumentListExpression,(1:36),(1:38)];
+[ConstantExpression,(1:36),(1:38)]
+
+###methodCallExpressionNested:::
+b = outerMethod(obj.innerMethod(abc))
+:::[MethodCallExpression,(1:5),(1:38)];
+[ConstantExpression,(1:5),(1:16)][ArgumentListExpression,(1:17),(1:37)];
+[MethodCallExpression,(1:17),(1:37)][VariableExpression,(1:17),(1:20)];
+[ConstantExpression,(1:21),(1:32)][ArgumentListExpression,(1:33),(1:36)];
+[VariableExpression,(1:33),(1:36)]
+
+###declaratorBracketD1:::
+int[] array
+:::[ExpressionStatement,(1:1),(1:12)][ClassNode,(1:1),(1:7)][DeclarationExpression,(1:1),(1:12)]
+
+###declaratorBracketD3:::
+int[][][] array
+:::[ExpressionStatement,(1:1),(1:16)][ClassNode,(1:1),(1:11)][DeclarationExpression,(1:1),(1:16)]
+
+###throwsClauseQualifiedName:::
+def method() throws java.lang.Exception {}
+:::[ClassNode,(1:21),(1:41)]
+
+###throwsClauseMultiQualifiedName:::
+def method() throws java.lang.Exception, java.lang.RuntimeException {}
+:::[ClassNode,(1:21),(1:40)][ClassNode,(1:42),(1:69)]
