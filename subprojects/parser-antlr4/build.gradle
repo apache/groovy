@@ -17,6 +17,18 @@
  *  under the License.
  */
 
+if (rootProject.hasProperty('useAntlr4') && !Boolean.valueOf(rootProject.getProperty('useAntlr4'))) {
+    allprojects {
+        tasks.withType(GroovyCompile) {
+            groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=false"]
+        }
+    }
+    test {
+        jvmArgs "-Dgroovy.antlr4=false"
+    }
+    return
+}
+
 apply plugin: 'me.champeau.gradle.antlr4'
 
 def srcBase = "subprojects/parser-antlr4/src"
