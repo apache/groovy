@@ -280,7 +280,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             if (hasStar) { // e.g. import static java.lang.Math.*
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
                 ClassNode type = ClassHelper.make(qualifiedName);
-
+                this.configureAST(type, ctx);
 
                 moduleNode.addStaticStarImport(type.getText(), type, annotationNodeList);
 
@@ -298,6 +298,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 String alias = hasAlias
                         ? ctx.alias.getText()
                         : name;
+                this.configureAST(classNode, ctx);
 
                 moduleNode.addStaticImport(classNode, name, alias, annotationNodeList);
 
@@ -317,6 +318,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 String alias = hasAlias
                         ? ctx.alias.getText()
                         : name;
+                this.configureAST(classNode, ctx);
 
                 moduleNode.addImport(alias, classNode, annotationNodeList);
 
@@ -1172,7 +1174,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public GenericsType visitTypeParameter(TypeParameterContext ctx) {
         return this.configureAST(
                 new GenericsType(
-                        ClassHelper.make(this.visitClassName(ctx.className())),
+                        this.configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx),
                         this.visitTypeBound(ctx.typeBound()),
                         null
                 ),

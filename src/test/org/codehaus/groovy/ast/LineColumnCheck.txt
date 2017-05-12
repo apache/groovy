@@ -204,47 +204,6 @@ import static java.lang.Math.*
 import static java.lang.Math.cos
 :::[ClassNode,(1:1),(1:33)]
 
-###declarationWithFullQualifiedTypeName:::
-java.lang.String s = "Groovy"
-:::[ClassNode,(1:1),(1:18)][DeclarationExpression,(1:1),(1:30)][VariableExpression,(1:18),(1:19)]
-
-###typeArgument:::
-Map<String,Object> map
-:::[ClassNode,(1:1),(1:4)];
-[GenericsType,(1:5),(1:11)][ClassNode,(1:5),(1:11)];
-[GenericsType,(1:12),(1:18)][ClassNode,(1:12),(1:18)]
-
-###typeArgumentFullQualifiedTypeName:::
-Map<java.lang.String,java.lang.Object> map
-:::[ClassNode,(1:1),(1:4)][GenericsType,(1:5),(1:21)][ClassNode,(1:5),(1:21)];
-[GenericsType,(1:22),(1:38)][ClassNode,(1:22),(1:38)]
-
-###typeArgumentUpperBound:::
-Collection<? extends File> c
-:::[ClassNode,(1:1),(1:11)][GenericsType,(1:12),(1:26)][ClassNode,(-1:-1),(-1:-1)];
-[ClassNode,(1:22),(1:26)]
-
-###typeArgumentLowerBound:::
-Collection<? super File> c
-:::[ClassNode,(1:1),(1:11)][GenericsType,(1:12),(1:24)][ClassNode,(-1:-1),(-1:-1)];
-[ClassNode,(1:20),(1:24)]
-
-###typeArgumentsLowerAndUpperBound:::
-Collection<? extends String,? super File> c
-:::[ClassNode,(1:1),(1:11)][GenericsType,(1:12),(1:28)][ClassNode,(-1:-1),(-1:-1)][ClassNode,(1:22),(1:28)];
-[GenericsType,(1:29),(1:41)][ClassNode,(-1:-1),(-1:-1)][ClassNode,(1:37),(1:41)]
-
-###typeArgumentNested:::
-class C<Y,T extends Map<String,Map<Y,Integer>>> {}
-:::[ClassNode,(1:1),(1:51)][GenericsType,(1:9),(1:10)][ClassNode,(1:9),(1:10)];
-[GenericsType,(1:11),(1:49)][ClassNode,(1:11),(1:12)][ClassNode,(1:21),(1:49)];
-[GenericsType,(1:25),(1:31)][ClassNode,(1:25),(1:31)][GenericsType,(1:32),(1:49)][ClassNode,(1:32),(1:35)];
-[GenericsType,(1:36),(1:37)][ClassNode,(1:36),(1:37)][GenericsType,(1:38),(1:45)][ClassNode,(1:38),(1:45)]
-
-###typeArugmentInConstructorCall:::
-ArrayList<String> list = new ArrayList<String>()
-:::[ClassNode,(1:30),(1:39)][GenericsType,(1:40),(1:46)][ClassNode,(1:40),(1:46)]
-
 ###castExpressionClassNode:::
 String s = (String)i
 :::[ClassNode,(1:13),(1:19)]
@@ -260,22 +219,6 @@ String s = i as String
 ###AsCastExpressionFullQualifiedClassNode:::
 String s = i as java.lang.String
 :::[ClassNode,(1:17),(1:33)]
-
-###PropertyExpressionStaticField:::
-class PropertyExpression {
-    static field
-    static method() {
-        PropertyExpression.field = 42
-    }
-}
-:::[PropertyExpression,(4:9),(4:34)]
-
-###PropertyExpressionNormal:::
-class TestClass {
-    TestClass prop
-}
-TestClass.prop.prop = 42
-:::[PropertyExpression,(4:1),(4:21)][PropertyExpression,(4:1),(4:15)]
 
 ###MethodPointerExpression:::
 def selection = list.find (entry.&validate)
