@@ -70,6 +70,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     '''
     }
 
+    //GROOVY-7953
     void testExtensionPropertyWithPrimitiveReceiver() {
         assertScript '''
             assert 4.even
