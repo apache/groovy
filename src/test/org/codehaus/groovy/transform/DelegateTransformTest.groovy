@@ -721,6 +721,7 @@ assert foo.dm.x == '123'
         """
     }
 
+    //GROOVY-8132
     void testOwnerPropertyPreferredToDelegateProperty() {
         assertScript '''
             class Foo {

@@ -128,6 +128,7 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         }
     }
 
+    //GROOVY-8074
     void testMapSubclassPropertyStyleAccess() {
         assertScript '''
             class MyMap extends LinkedHashMap {
