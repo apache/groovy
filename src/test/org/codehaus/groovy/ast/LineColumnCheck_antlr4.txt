@@ -22,8 +22,8 @@ public class Test {
 	public attribute = 6, second = 9
 	String prop = "property"
 }
-:::[FieldNode,(2:2),(2:34)][ConstantExpression,(2:21),(2:22)];
-[FieldNode,(2:2),(2:34)][ConstantExpression,(2:33),(2:34)];
+:::[FieldNode,(2:2),(2:22)][ConstantExpression,(2:21),(2:22)];
+[FieldNode,(2:24),(2:34)][ConstantExpression,(2:33),(2:34)];
 [FieldNode,(3:2),(3:26)][ConstantExpression,(3:16),(3:26)]
 
 ###ifElse:::
