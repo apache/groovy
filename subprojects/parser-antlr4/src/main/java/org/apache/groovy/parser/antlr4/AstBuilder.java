@@ -1525,12 +1525,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
-        declarationExpressionList.forEach(e -> {
-            VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
+        for (int i = 0, n = declarationExpressionList.size(); i < n; i++) {
+            DeclarationExpression declarationExpression = declarationExpressionList.get(i);
+            VariableExpression variableExpression = (VariableExpression) declarationExpression.getLeftExpression();
 
             int modifiers = modifierManager.getClassMemberModifiersOpValue();
 
-            Expression initialValue = EmptyExpression.INSTANCE.equals(e.getRightExpression()) ? null : e.getRightExpression();
+            Expression initialValue = EmptyExpression.INSTANCE.equals(declarationExpression.getRightExpression()) ? null : declarationExpression.getRightExpression();
             Object defaultValue = findDefaultValueByType(variableType);
 
             if (classNode.isInterface()) {
@@ -1552,7 +1553,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 groovydocManager.handle(fieldNode, ctx);
 
-                this.configureAST(fieldNode, ctx);
+                if (0 == i) {
+                    this.configureAST(fieldNode, ctx, initialValue);
+                } else {
+                    this.configureAST(fieldNode, variableExpression, initialValue);
+                }
+
             } else {
                 PropertyNode propertyNode =
                         classNode.addProperty(
@@ -1571,11 +1577,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 groovydocManager.handle(fieldNode, ctx);
                 groovydocManager.handle(propertyNode, ctx);
 
-                this.configureAST(fieldNode, ctx);
-                this.configureAST(propertyNode, ctx);
+                if (0 == i) {
+                    this.configureAST(fieldNode, ctx, initialValue);
+                    this.configureAST(propertyNode, ctx, initialValue);
+                } else {
+                    this.configureAST(fieldNode, variableExpression, initialValue);
+                    this.configureAST(propertyNode, variableExpression, initialValue);
+                }
             }
-
-        });
+        }
 
         return null;
     }
@@ -4008,7 +4018,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         Token start = ctx.getStart();
         Token stop = ctx.getStop();
 
-        String stopText = stop.getText();
+        astNode.setLineNumber(start.getLine());
+        astNode.setColumnNumber(start.getCharPositionInLine() + 1);
+
+        Pair<Integer, Integer> stopTokenEndPosition = endPosition(stop);
+        astNode.setLastLineNumber(stopTokenEndPosition.getKey());
+        astNode.setLastColumnNumber(stopTokenEndPosition.getValue());
+
+        return astNode;
+    }
+
+    private Pair<Integer, Integer> endPosition(Token token) {
+        String stopText = token.getText();
         int stopTextLength = 0;
         int newLineCnt = 0;
         if (asBoolean((Object) stopText)) {
@@ -4016,18 +4037,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             newLineCnt = (int) StringUtils.countChar(stopText, '\n');
         }
 
-        astNode.setLineNumber(start.getLine());
-        astNode.setColumnNumber(start.getCharPositionInLine() + 1);
-
         if (0 == newLineCnt) {
-            astNode.setLastLineNumber(stop.getLine());
-            astNode.setLastColumnNumber(stop.getCharPositionInLine() + 1 + stop.getText().length());
+            return new Pair<Integer, Integer>(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
         } else { // e.g. GStringEnd contains newlines, we should fix the location info
-            astNode.setLastLineNumber(stop.getLine() + newLineCnt);
-            astNode.setLastColumnNumber(stopTextLength - stopText.lastIndexOf('\n'));
+            return new Pair<Integer, Integer>(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
         }
-
-        return astNode;
     }
 
     private <T extends ASTNode> T configureAST(T astNode, TerminalNode terminalNode) {
@@ -4048,6 +4062,39 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         astNode.setColumnNumber(source.getColumnNumber());
         astNode.setLastLineNumber(source.getLastLineNumber());
         astNode.setLastColumnNumber(source.getLastColumnNumber());
+
+        return astNode;
+    }
+
+    private <T extends ASTNode> T configureAST(T astNode, GroovyParserRuleContext ctx, ASTNode stop) {
+        Token start = ctx.getStart();
+
+        astNode.setLineNumber(start.getLine());
+        astNode.setColumnNumber(start.getCharPositionInLine() + 1);
+
+        if (asBoolean(stop)) {
+            astNode.setLastLineNumber(stop.getLastLineNumber());
+            astNode.setLastColumnNumber(stop.getLastColumnNumber());
+        } else {
+            Pair<Integer, Integer> endPosition = endPosition(start);
+            astNode.setLastLineNumber(endPosition.getKey());
+            astNode.setLastColumnNumber(endPosition.getValue());
+        }
+
+        return astNode;
+    }
+
+    private <T extends ASTNode> T configureAST(T astNode, ASTNode start, ASTNode stop) {
+        astNode.setLineNumber(start.getLineNumber());
+        astNode.setColumnNumber(start.getColumnNumber());
+
+        if (asBoolean(stop)) {
+            astNode.setLastLineNumber(stop.getLastLineNumber());
+            astNode.setLastColumnNumber(stop.getLastColumnNumber());
+        } else {
+            astNode.setLastLineNumber(start.getLastLineNumber());
+            astNode.setLastColumnNumber(start.getLastColumnNumber());
+        }
 
         return astNode;
     }
