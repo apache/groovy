@@ -274,6 +274,7 @@ class JsonSlurperTest extends GroovyTestCase {
         shouldFail(JsonException) { parser.parseText('["a"')        }
         shouldFail(JsonException) { parser.parseText('["a", ')      }
         shouldFail(JsonException) { parser.parseText('["a", true')  }
+        shouldFail(JsonException) { parser.parseText('[-]') }
     }
 
     void testBackSlashEscaping() {
