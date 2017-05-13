@@ -37,6 +37,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         shouldFail(JsonException) { parser.parseText('{a"') }
         shouldFail(JsonException) { parser.parseText("[\"a\"") }
         shouldFail(JsonException) { parser.parseText('{"a"') }
+        shouldFail(JsonException) { parser.parseText('[-]') }
     }
 
     void testObjectWithSimpleValues() {
