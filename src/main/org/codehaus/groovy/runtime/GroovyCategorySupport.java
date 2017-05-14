@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
-    private static final AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -72,8 +71,10 @@ public class GroovyCategorySupport {
         private Map<String, String> propertySetterMap;
 
         private void newScope () {
-            categoriesInUse = atomicCategoryUsageCounter.incrementAndGet();
-            DefaultMetaClassInfo.setCategoryUsed(true);
+            synchronized (ThreadCategoryInfo.class) {
+                categoriesInUse++;
+                DefaultMetaClassInfo.setCategoryUsed(true);
+            }
             VMPluginFactory.getPlugin().invalidateCallSites();
             level++;
         }
@@ -95,9 +96,12 @@ public class GroovyCategorySupport {
                 }
             }
             level--;
-            categoriesInUse = atomicCategoryUsageCounter.decrementAndGet();
             VMPluginFactory.getPlugin().invalidateCallSites();
-            if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
+            synchronized (ThreadCategoryInfo.class) {
+                if (--categoriesInUse == 0) {
+                    DefaultMetaClassInfo.setCategoryUsed(false);
+                }
+            }
             if (level == 0) {
                 THREAD_INFO.remove();
             }
@@ -262,13 +266,34 @@ public class GroovyCategorySupport {
     }
 
     public static boolean hasCategoryInCurrentThread() {
-        if (categoriesInUse == 0) return false;
+        /*
+         * Synchronization is avoided here for performance reasons since
+         * this method is called frequently from callsite locations. For
+         * a typical case when no Categories are in use the initialized
+         * value of 0 will be correctly read. For cases where multiple
+         * Threads are using Categories it is possible that a stale
+         * non-zero value may be read but in that case the ThreadLocal
+         * check will produce the correct result. When the current Thread
+         * is using Categories, it would have incremented the counter
+         * so whatever version of the value it observes here should be
+         * non-zero and good enough for the purposes of this quick exit
+         * check.
+         */
+        if (categoriesInUse == 0) {
+            return false;
+        }
         ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
         return infoNullable != null && infoNullable.level != 0;
     }
 
+    /**
+     * @deprecated use {@link #hasCategoryInCurrentThread()}
+     */
+    @Deprecated
     public static boolean hasCategoryInAnyThread() {
-        return atomicCategoryUsageCounter.get() != 0;
+        synchronized (ThreadCategoryInfo.class) {
+            return categoriesInUse != 0;
+        }
     }
 
     /**
