@@ -453,6 +453,9 @@ public class CharScanner {
                 offset++;
                 negative = true;
             }
+            if (offset >= to) {
+                die();
+            }
             if (negative) {
                 num = (digitChars[offset] - '0');
                 if (++offset < to) {
@@ -527,7 +530,9 @@ public class CharScanner {
             offset++;
             negative = true;
         }
-
+        if (offset >= to) {
+            die();
+        }
         c = digitChars[offset];
         num = (c - '0');
         offset++;
@@ -550,7 +555,9 @@ public class CharScanner {
             offset++;
             negative = true;
         }
-
+        if (offset >= to) {
+            die();
+        }
         c = digitChars[offset];
         num = (c - '0');
         offset++;
@@ -573,7 +580,9 @@ public class CharScanner {
             offset++;
             negative = true;
         }
-
+        if (offset >= to) {
+            die();
+        }
         c = digitChars[offset];
         num = (c - '0');
         offset++;
@@ -618,6 +627,9 @@ public class CharScanner {
 
         if (buffer[index] == '-') {
             index++;
+        }
+        if (index >= max) {
+            die();
         }
 
         boolean foundDot = false;
