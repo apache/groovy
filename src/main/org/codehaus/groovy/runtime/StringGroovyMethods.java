@@ -3343,27 +3343,28 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self  a CharSequence
-     * @param token the delimiter
+     * @param delimiter the delimiter
      * @return a List of tokens
      * @see java.util.StringTokenizer#StringTokenizer(String, String)
      * @since 1.8.2
      */
-    public static List<String> tokenize(CharSequence self, Character token) {
-        return tokenize(self, token.toString());
+    public static List<String> tokenize(CharSequence self, Character delimiter) {
+        return tokenize(self, delimiter.toString());
     }
 
     /**
-     * Tokenize a CharSequence based on the given CharSequence delimiter.
+     * Tokenize a CharSequence based on the given CharSequence. Each character in the CharSequence is a separate
+     * delimiter.
      *
      * @param self  a CharSequence
-     * @param token the delimiter
+     * @param delimiters the delimiters
      * @return a List of tokens
      * @see java.util.StringTokenizer#StringTokenizer(String, String)
      * @since 1.8.2
      */
     @SuppressWarnings("unchecked")
-    public static List<String> tokenize(CharSequence self, CharSequence token) {
-        return InvokerHelper.asList(new StringTokenizer(self.toString(), token.toString()));
+    public static List<String> tokenize(CharSequence self, CharSequence delimiters) {
+        return InvokerHelper.asList(new StringTokenizer(self.toString(), delimiters.toString()));
     }
 
     /**
@@ -3380,8 +3381,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #tokenize(CharSequence, Character)
      */
     @Deprecated
-    public static List<String> tokenize(String self, Character token) {
-        return tokenize((CharSequence) self, token);
+    public static List<String> tokenize(String self, Character delimiter) {
+        return tokenize((CharSequence) self, delimiter);
     }
 
     /**
@@ -3389,8 +3390,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #tokenize(CharSequence, CharSequence)
      */
     @Deprecated
-    public static List<String> tokenize(String self, String token) {
-        return tokenize((CharSequence) self, (CharSequence) token);
+    public static List<String> tokenize(String self, String delimiters) {
+        return tokenize((CharSequence) self, (CharSequence) delimiters);
     }
 
     /**
