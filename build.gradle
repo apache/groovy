@@ -100,6 +100,14 @@ allprojects {
     if (JavaVersion.current().java7Compatible) {
         apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
     }
+    if (JavaVersion.current().java9Compatible) {
+        tasks.withType(JavaCompile) {
+            options.forkOptions.jvmArgs << '-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
+        }
+        tasks.withType(GroovyCompile) {
+            options.forkOptions.jvmArgs << '-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
+        }
+    }
 }
 
 // todo: use the conventional "resources" directory for classpath resources
