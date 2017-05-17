@@ -137,6 +137,10 @@ allprojects {
                     signWithClassifier('grooid', grooidJar)
                 }
             }
+            def androidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-android.jar')
+            if (androidJar.exists()) {
+                project.artifacts.add('archives', androidJar)
+            }
         }
     }
 }
@@ -212,6 +216,10 @@ allprojects {
         if (grooidJar.exists()) {
             project.artifacts.add('archives', grooidJar)
             signWithClassifier('grooid', grooidJar)
+        }
+        def androidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-android.jar')
+        if (androidJar.exists()) {
+            project.artifacts.add('archives', androidJar)
         }
     }
 }

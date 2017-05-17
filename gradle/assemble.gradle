@@ -260,6 +260,41 @@ allprojects {
             }
         }
         jarjar.finalizedBy(grooidjar)
+
+        task androidjar(type: Jar) {
+            onlyIf {
+                !rootProject.useIndy()
+            }
+            destinationDir = jar.destinationDir
+            baseName = jar.baseName
+            appendix = jar.appendix
+            classifier = jar.classifier ? "${jar.classifier}android" : 'android'
+            includeEmptyDirs = false
+            def target = new File("${archivePath}.tmp")
+            boolean isRootProject = project==rootProject
+
+            doFirst {
+                from zipTree(target)
+                ant {
+                    taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
+                    jarjar(jarfile: target) {
+                        zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-ANDROIDJARJAR' : 'NOTICE-ANDROID', fullpath: 'META-INF/NOTICE')
+                        zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
+                        if (isRootProject) {
+                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
+                        }
+                        rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
+                        rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
+                        rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
+                    }
+                }
+
+            }
+            doLast {
+                target.delete()
+            }
+        }
+        jarjar.finalizedBy(androidjar)
     }
 }
 
@@ -735,17 +770,25 @@ task updateNotices {
     ext.noticeBinZipFile = "${noticesDir}/NOTICE-BINZIP"
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
+    ext.noticeAndroidFile = "${noticesDir}/NOTICE-ANDROID"
+    ext.noticeAndroidJarJarFile = "${noticesDir}/NOTICE-ANDROID"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
     ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
     outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
-            noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
+            noticeAndroidFile, noticeAndroidJarJarFile, noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile,
+            noticeSdkFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
         def grooidFiles = fileTree(noticesDir).include('*-GROOID*.txt').sort { it.name }
+        def androidFiles = fileTree(noticesDir).include('*-GROOID*.txt').sort { it.name }
         def jarjarFiles = fileTree(noticesDir).include('*-JARJAR*.txt').sort { it.name }
         def grooidJarjarFiles = fileTree(noticesDir) {
+            include '*-JARJAR*.txt'
+            include '*-GROOID*.txt'
+        }.sort { it.name }
+        def androidJarjarFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
             include '*-GROOID*.txt'
         }.sort { it.name }
@@ -764,7 +807,9 @@ task updateNotices {
                 (noticeAllJarJarFile): allJarjarFiles,
                 (noticeBinZipFile): binzipFiles,
                 (noticeGrooidFile): grooidFiles,
+                (noticeAndroidFile): androidFiles,
                 (noticeGrooidJarJarFile): grooidJarjarFiles,
+                (noticeAndroidJarJarFile): androidJarjarFiles,
                 (noticeJarJarFile): jarjarFiles,
                 (noticeSrcFile): srcFiles,
                 (noticeGroovyConsoleFile): groovyconsoleFiles,
