@@ -142,16 +142,16 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 if (knownFields.contains(propName)) {
                     return createFieldHelperCall(exp, weavedType, propName);
                 } else {
-                    return new PropertyExpression(
-                            new VariableExpression(weaved),
-                            accessedVariable.getName()
-                    );
+                    PropertyExpression propertyExpression = new PropertyExpression(
+                            new VariableExpression(weaved), accessedVariable.getName());
+                    propertyExpression.getProperty().setSourcePosition(exp);
+                    return propertyExpression;
                 }
             } else if (accessedVariable instanceof DynamicVariable) {
-                return new PropertyExpression(
-                        new VariableExpression(weaved),
-                        accessedVariable.getName()
-                );
+                PropertyExpression propertyExpression = new PropertyExpression(
+                        new VariableExpression(weaved), accessedVariable.getName());
+                propertyExpression.getProperty().setSourcePosition(exp);
+                return propertyExpression;
             }
             if (vexp.isThisExpression()) {
                 VariableExpression res = new VariableExpression(weaved);
