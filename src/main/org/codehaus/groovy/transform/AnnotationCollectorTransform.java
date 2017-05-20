@@ -97,8 +97,9 @@ public class AnnotationCollectorTransform {
                     break;
                 }
             }
-            if (collector==null) return;
-            
+            if (collector == null) {
+                return;
+            }
             // force final class, remove interface, annotation, enum and abstract modifiers
             cn.setModifiers((ACC_FINAL+cn.getModifiers()) & ~(ACC_ENUM|ACC_INTERFACE|ACC_ANNOTATION|ACC_ABSTRACT));
             // force Object super class
@@ -124,7 +125,9 @@ public class AnnotationCollectorTransform {
             // remove annotations
             for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
                 AnnotationNode an = it.next();
-                if (an==collector) continue;
+                if (an == collector) {
+                    continue;
+                }
                 it.remove();
             }
         }
@@ -157,8 +160,7 @@ public class AnnotationCollectorTransform {
             List<Expression> l = new ArrayList<Expression>(2);
             l.add(new ClassExpression(an.getClassNode()));
             l.add(map);
-            ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
-            return ae;
+            return new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
         }
     }
     
@@ -267,19 +269,22 @@ public class AnnotationCollectorTransform {
 
             @SuppressWarnings("unchecked")
             Map<String,Object> member = (Map<String, Object>) inner[1];
-            if (member.isEmpty()) continue;
+            if (member.isEmpty()) {
+                continue;
+            }
             Map<String, Expression> generated = new HashMap<String, Expression>(member.size());
-            for (String name : member.keySet()) {
-                Object val = member.get(name);
-                generated.put(name, makeExpression(val));
+            for (Map.Entry<String, Object> entry : member.entrySet()) {
+                generated.put(entry.getKey(), makeExpression(entry.getValue()));
             }
             copyMembers(generated, toAdd);
         }
         return ret;
     }
-    
+
     private static Expression makeExpression(Object o) {
-        if (o instanceof Class) return new ClassExpression(ClassHelper.make((Class) o));
+        if (o instanceof Class) {
+            return new ClassExpression(ClassHelper.make((Class) o));
+        }
         //TODO: value as Annotation here!
         if (o instanceof Object[][]) {
             List<AnnotationNode> annotations = makeListOfAnnotations((Object[][])o);
