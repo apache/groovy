@@ -55,7 +55,7 @@ import java.util.List;
 public abstract class Traits {
     public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
     public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
-    public static final Class TRAIT_CLASS = Trait.class;
+    public static final Class<Trait> TRAIT_CLASS = Trait.class;
     public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
     public static final ClassNode GENERATED_PROXY_CLASSNODE = ClassHelper.make(GeneratedGroovyProxy.class);
     public static final ClassNode SELFTYPE_CLASSNODE = ClassHelper.make(SelfType.class);
@@ -163,7 +163,7 @@ public abstract class Traits {
      * @param clazz a class to test
      * @return true if the classnode represents a trait
      */
-    public static boolean isTrait(final Class clazz) {
+    public static boolean isTrait(final Class<?> clazz) {
         return clazz!=null && clazz.getAnnotation(Trait.class)!=null;
     }
 
@@ -217,7 +217,7 @@ public abstract class Traits {
         if (annotation==null) {
             return null;
         }
-        Class aClass = annotation.traitClass();
+        Class<?> aClass = annotation.traitClass();
         String desc = annotation.desc();
         for (Method method : aClass.getDeclaredMethods()) {
             String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
@@ -355,7 +355,7 @@ public abstract class Traits {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public static @interface Implemented {}
+    public @interface Implemented {}
 
     /**
      * Internal annotation used to indicate that a method is a bridge method to a trait
@@ -363,11 +363,11 @@ public abstract class Traits {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-     public static @interface TraitBridge {
+     public @interface TraitBridge {
         /**
          * @return the trait class
          */
-        Class traitClass();
+        Class<?> traitClass();
 
         /**
          * @return The method descriptor of the method from the trait
