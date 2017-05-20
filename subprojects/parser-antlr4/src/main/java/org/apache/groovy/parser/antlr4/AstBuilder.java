@@ -32,6 +32,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.internal.AtnManager;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.EnumHelper;
 import org.codehaus.groovy.ast.ASTNode;
@@ -3905,18 +3906,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
     }
 
-    private static final Map<ClassNode, Object> TYPE_DEFAULT_VALUE_MAP = Collections.unmodifiableMap(new HashMap<ClassNode, Object>() {
-        {
-            this.put(ClassHelper.int_TYPE, 0);
-            this.put(ClassHelper.long_TYPE, 0L);
-            this.put(ClassHelper.double_TYPE, 0.0D);
-            this.put(ClassHelper.float_TYPE, 0.0F);
-            this.put(ClassHelper.short_TYPE, (short) 0);
-            this.put(ClassHelper.byte_TYPE, (byte) 0);
-            this.put(ClassHelper.char_TYPE, (char) 0);
-            this.put(ClassHelper.boolean_TYPE, Boolean.FALSE);
-        }
-    });
+    private static final Map<ClassNode, Object> TYPE_DEFAULT_VALUE_MAP = Maps.of(
+            ClassHelper.int_TYPE, 0,
+            ClassHelper.long_TYPE, 0L,
+            ClassHelper.double_TYPE, 0.0D,
+            ClassHelper.float_TYPE, 0.0F,
+            ClassHelper.short_TYPE, (short) 0,
+            ClassHelper.byte_TYPE, (byte) 0,
+            ClassHelper.char_TYPE, (char) 0,
+            ClassHelper.boolean_TYPE, Boolean.FALSE
+    );
 
     private Object findDefaultValueByType(ClassNode type) {
         return TYPE_DEFAULT_VALUE_MAP.get(type);

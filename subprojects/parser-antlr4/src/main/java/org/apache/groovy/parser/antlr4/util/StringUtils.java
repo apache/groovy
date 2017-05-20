@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4.util;
 
 import groovy.lang.Closure;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.util.HashMap;
@@ -58,15 +59,13 @@ public class StringUtils {
 	    });
     }
 
-    private static Map<Character, Character> STANDARD_ESCAPES = new HashMap<Character, Character>() {
-		{
-			this.put('b', '\b');
-			this.put('t', '\t');
-			this.put('n', '\n');
-			this.put('f', '\f');
-			this.put('r', '\r');
-		}
-	};
+    private static Map<Character, Character> STANDARD_ESCAPES = Maps.of(
+			'b', '\b',
+			't', '\t',
+			'n', '\n',
+			'f', '\f',
+			'r', '\r'
+	);
 
 	public static String replaceStandardEscapes(String text) {
 	    Pattern p = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");

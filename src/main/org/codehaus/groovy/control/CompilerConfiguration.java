@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -72,13 +73,13 @@ public class CompilerConfiguration {
     /**
      * JDK version to bytecode version mapping
      */
-    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Collections.unmodifiableMap(new LinkedHashMap<String, Integer>() {{
-        put(JDK4, Opcodes.V1_4);
-        put(JDK5, Opcodes.V1_5);
-        put(JDK6, Opcodes.V1_6);
-        put(JDK7, Opcodes.V1_7);
-        put(JDK8, Opcodes.V1_8);
-    }});
+    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
+            JDK4, Opcodes.V1_4,
+            JDK5, Opcodes.V1_5,
+            JDK6, Opcodes.V1_6,
+            JDK7, Opcodes.V1_7,
+            JDK8, Opcodes.V1_8
+    );
 
     /** An array of the valid targetBytecode values **/
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);

@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -44,12 +45,10 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * Created by Daniel.Sun on 2016/08/27.
  */
 class ModifierManager {
-    private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Collections.unmodifiableMap(new HashMap<Class, List<Integer>>() {
-        {
-            put(ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE));
-            put(MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/));
-        }
-    });
+    private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.of(
+            ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE),
+            MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/)
+    );
     private AstBuilder astBuilder;
     private List<ModifierNode> modifierNodeList;
 
