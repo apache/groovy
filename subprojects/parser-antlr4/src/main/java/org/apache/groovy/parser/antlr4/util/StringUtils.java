@@ -59,7 +59,7 @@ public class StringUtils {
 	    });
     }
 
-    private static Map<Character, Character> STANDARD_ESCAPES = Maps.of(
+    private static final Map<Character, Character> STANDARD_ESCAPES = Maps.of(
 			'b', '\b',
 			't', '\t',
 			'n', '\n',
