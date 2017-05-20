@@ -268,7 +268,6 @@ public class AnnotationCollectorTransform {
                 generated.put(name, makeExpression(val));
             }
             copyMembers(generated, toAdd);
-            toAdd.getMembers().putAll(generated);
         }
         return ret;
     }

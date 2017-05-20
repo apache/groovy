@@ -155,9 +155,7 @@ public abstract class Traits {
      * @return true if the classnode represents a trait
      */
     public static boolean isTrait(final ClassNode cNode) {
-        return cNode!=null
-                && ((cNode.isInterface() && !cNode.getAnnotations(TRAIT_CLASSNODE).isEmpty())
-                    || isAnnotatedWithTrait(cNode));
+        return cNode != null && isAnnotatedWithTrait(cNode);
     }
 
     /**
