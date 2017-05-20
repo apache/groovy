@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.objectweb.asm.Opcodes;
@@ -43,26 +44,24 @@ public class ModifierNode extends ASTNode {
     private boolean repeatable;
 
     public static final int ANNOTATION_TYPE = -999;
-    public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Collections.unmodifiableMap(new HashMap<Integer, Integer>() {
-        {
-            put(ANNOTATION_TYPE, 0);
-            put(DEF, 0);
+    public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Maps.of(
+            ANNOTATION_TYPE, 0,
+            DEF, 0,
 
-            put(NATIVE, Opcodes.ACC_NATIVE);
-            put(SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED);
-            put(TRANSIENT, Opcodes.ACC_TRANSIENT);
-            put(VOLATILE, Opcodes.ACC_VOLATILE);
+            NATIVE, Opcodes.ACC_NATIVE,
+            SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED,
+            TRANSIENT, Opcodes.ACC_TRANSIENT,
+            VOLATILE, Opcodes.ACC_VOLATILE,
 
-            put(PUBLIC, Opcodes.ACC_PUBLIC);
-            put(PROTECTED, Opcodes.ACC_PROTECTED);
-            put(PRIVATE, Opcodes.ACC_PRIVATE);
-            put(STATIC, Opcodes.ACC_STATIC);
-            put(ABSTRACT, Opcodes.ACC_ABSTRACT);
-            put(FINAL, Opcodes.ACC_FINAL);
-            put(STRICTFP, Opcodes.ACC_STRICT);
-            put(DEFAULT, 0); // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
-        }
-    });
+            PUBLIC, Opcodes.ACC_PUBLIC,
+            PROTECTED, Opcodes.ACC_PROTECTED,
+            PRIVATE, Opcodes.ACC_PRIVATE,
+            STATIC, Opcodes.ACC_STATIC,
+            ABSTRACT, Opcodes.ACC_ABSTRACT,
+            FINAL, Opcodes.ACC_FINAL,
+            STRICTFP, Opcodes.ACC_STRICT,
+            DEFAULT, 0 // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
+    );
 
     public ModifierNode(Integer type) {
         this.type = type;
