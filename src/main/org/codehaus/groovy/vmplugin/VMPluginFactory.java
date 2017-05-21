@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin;
 
+import org.codehaus.groovy.vmplugin.v7.Java7;
+
 /**
  * Factory class to get functionality based on the VM version.
  * The usage of this class is not for public use, only for the
@@ -26,26 +28,17 @@ package org.codehaus.groovy.vmplugin;
  */
 public class VMPluginFactory {
 
-    private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
-    private static final String JDK6_CLASSNAME_CHECK = "javax.script.ScriptEngine";
-    private static final String JDK7_CLASSNAME_CHECK = "java.util.Objects";
+    private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
+    private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.vm8.Java8";
 
-    private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
-    private static final String JDK6_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v6.Java6";
-    private static final String JDK7_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v7.Java7";
-
-    private static VMPlugin plugin;
+    private static final VMPlugin plugin;
 
     static {
-        plugin = createPlugin(JDK7_CLASSNAME_CHECK, JDK7_PLUGIN_NAME);
-        if (plugin == null) {
-            // v6 plugin is the same as v5 but with some scripting stuff
-            // so check below is good enough for now (can be true for JVM 5)
-            plugin = createPlugin(JDK6_CLASSNAME_CHECK, JDK6_PLUGIN_NAME);
+        VMPlugin target = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
+        if (target == null) {
+            target = new Java7();
         }
-        if (plugin == null) {
-            plugin = createPlugin(JDK5_CLASSNAME_CHECK, JDK5_PLUGIN_NAME);
-        }
+        plugin = target;
     }
 
     public static VMPlugin getPlugin() {

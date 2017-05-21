@@ -48,6 +48,7 @@ import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.WeakReference;
@@ -2021,6 +2022,9 @@ public abstract class StaticTypeCheckingSupport {
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.additionals);
             staticExtClasses.add(DefaultGroovyStaticMethods.class);
             instanceExtClasses.add(ObjectArrayStaticTypesHelper.class);
+
+            Collections.addAll(instanceExtClasses, VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods());
+            Collections.addAll(staticExtClasses, VMPluginFactory.getPlugin().getPluginStaticGroovyMethods());
 
             scanClassesForDGMMethods(methods, staticExtClasses, true);
             scanClassesForDGMMethods(methods, instanceExtClasses, false);
