@@ -407,3 +407,10 @@ indyAction = action(
     mnemonic: 'I',
     shortDescription: 'Enable InvokeDynamic (Indy) compilation for scripts'
 )
+
+preferencesAction = action(
+    name: 'Preferences',
+    closure: controller.&preferences,
+    mnemonic: 'S',
+    shortDescription: 'Preference Settings'
+)
