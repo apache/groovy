@@ -26,10 +26,11 @@ package groovy.ui
 
 import com.apple.mrj.*
 
-class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler {
+class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler, MRJPrefsHandler {
 
     def quitHandler
     def aboutHandler
+    def prefHandler
 
     public void handleAbout() {
         aboutHandler()
@@ -39,11 +40,16 @@ class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler {
         quitHandler()
     }
 
+
+    public void handlePrefs() throws IllegalStateException {
+        prefHandler()
+    }
 }
 
-def handler = new ConsoleMacOsSupport(quitHandler:controller.&exit, aboutHandler:controller.&showAbout)
+def handler = new ConsoleMacOsSupport(quitHandler:controller.&exit, aboutHandler:controller.&showAbout, prefHandler:controller.&preferences)
 MRJApplicationUtils.registerAboutHandler(handler)
 MRJApplicationUtils.registerQuitHandler(handler)
+MRJApplicationUtils.registerPrefsHandler(handler)
 
 return handler
 """, new GroovyClassLoader(this.class.classLoader))
