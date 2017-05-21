@@ -10625,6 +10625,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given iterable to another type.
+     *
+     * @param iterable a Iterable
+     * @param clazz    the desired class
+     * @return the object resulting from this type conversion
+     * @see #asType(Collection, Class)
+     * @since 2.4.12
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Iterable iterable, Class<T> clazz) {
+        if (Collection.class.isAssignableFrom(clazz)) {
+            return asType((Collection) toList(iterable), clazz);
+        }
+
+        return asType((Object) iterable, clazz);
+    }
+
+    /**
      * Converts the given collection to another type. A default concrete
      * type is used for List, Set, or SortedSet. If the given type has
      * a constructor taking a collection, that is used. Otherwise, the

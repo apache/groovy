@@ -195,7 +195,34 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(3, list.get(2));
     }
 
+    // GROOVY-7654
+    public void testIterableAsList() {
+        def list = [1, 2, 3]
+        def iterable = new IterableWrapper(delegate: list)
+
+        def iterableAsIterable = iterable as Iterable
+        assertTrue(iterableAsIterable.is(iterable))
+
+        def iterableAsIterableWrapper = iterable as IterableWrapper
+        assertTrue(iterableAsIterableWrapper.is(iterable))
+
+        def iterableAsList = iterable.asList()
+        def iterableAsType = iterable as List
+
+        assertEquals(iterableAsList, iterableAsType)
+        assertEquals(1, iterableAsList[0])
+        assertEquals(1, iterableAsType[0])
+    }
+
     private static class MyList extends ArrayList {
         public MyList() {}
+    }
+
+    private static class IterableWrapper implements Iterable {
+        Iterable delegate
+
+        Iterator iterator() {
+            delegate.iterator()
+        }
     }
 }
