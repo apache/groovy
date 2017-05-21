@@ -11001,12 +11001,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param iterable a Iterable
      * @param clazz    the desired class
      * @return the object resulting from this type conversion
-     * @see #asType(Collection, Class) 
+     * @see #asType(Collection, Class)
      * @since 2.4.12
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(Iterable iterable, Class<T> clazz) {
-          return asType((Collection) toList(iterable), clazz);
+        if (Collection.class.isAssignableFrom(clazz)) {
+            return asType((Collection) toList(iterable), clazz);
+        }
+
+        return asType((Object) iterable, clazz);
     }
 
     /**
