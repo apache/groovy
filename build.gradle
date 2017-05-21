@@ -268,12 +268,18 @@ sourceSets {
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
         }
         groovy {
             srcDirs = [
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
         }
         resources {
             srcDirs = ['src/main', 'src/tools', 'src/resources']
@@ -292,6 +298,9 @@ sourceSets {
     test {
         groovy {
             srcDirs = ['src/test']
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
         }
         resources {
             srcDirs = ['src/test-resources']
