@@ -169,7 +169,7 @@ public class EncodingGroovyMethods {
      * @param data Byte array to be encoded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
      * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)
-     * @since 2.5
+     * @since 2.5.0
      */
     public static Writable encodeBase64Url(Byte[] data) {
         return encodeBase64Url(data, false);
@@ -184,7 +184,7 @@ public class EncodingGroovyMethods {
      * @param data Byte array to be encoded
      * @param pad whether or not the encoded data should be padded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
-     * @since 2.5
+     * @since 2.5.0
      */
     public static Writable encodeBase64Url(Byte[] data, boolean pad) {
         return encodeBase64Url(DefaultTypeTransformation.convertToByteArray(data), pad);
@@ -203,7 +203,7 @@ public class EncodingGroovyMethods {
      * @param data Byte array to be encoded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
      * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(byte[], boolean)
-     * @since 2.5
+     * @since 2.5.0
      */
     public static Writable encodeBase64Url(final byte[] data) {
         return encodeBase64Url(data, false);
@@ -218,7 +218,7 @@ public class EncodingGroovyMethods {
      * @param data Byte array to be encoded
      * @param pad whether or not the encoded data should be padded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
-     * @since 2.5
+     * @since 2.5.0
      */
     public static Writable encodeBase64Url(final byte[] data, final boolean pad) {
         return encodeBase64(data, false, true, pad);
@@ -240,7 +240,7 @@ public class EncodingGroovyMethods {
      *
      * @param value the string to be decoded
      * @return the decoded bytes as an array
-     * @since 2.5
+     * @since 2.5.0
      */
     public static byte[] decodeBase64Url(String value) {
         return decodeBase64(value, true);

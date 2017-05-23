@@ -79,7 +79,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * Instantiates a JSON builder with a configured generator.
      *
      * @param generator used to generate the output
-     * @since 2.5
+     * @since 2.5.0
      */
     public JsonBuilder(JsonGenerator generator) {
         this.generator = generator;
@@ -101,7 +101,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      *
      * @param content a pre-existing data structure
      * @param generator used to generate the output
-     * @since 2.5
+     * @since 2.5.0
      */
     public JsonBuilder(Object content, JsonGenerator generator) {
         this.content = content;

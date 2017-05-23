@@ -194,7 +194,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      *
      * @param stepSize the desired step size
      * @return a new NumberRange
-     * @since 2.5
+     * @since 2.5.0
      */
     public <T extends Number & Comparable> NumberRange by(T stepSize) {
         return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusive);
