@@ -93,6 +93,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (unsupportedAttribute(transform, anno, "includeSuperProperties")) return;
+        if (unsupportedAttribute(transform, anno, "allProperties")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
 
