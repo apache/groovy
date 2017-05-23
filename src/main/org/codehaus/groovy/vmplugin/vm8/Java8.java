@@ -37,7 +37,7 @@ public class Java8 extends Java7 {
         super();
         List<Class<?>> dgmClasses = new ArrayList<>();
         Collections.addAll(dgmClasses, (Class<?>[]) super.getPluginDefaultGroovyMethods());
-        dgmClasses.add(Java8DefaultGroovyMethods.class);
+        dgmClasses.add(PluginDefaultGroovyMethods.class);
         PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
     }
 
