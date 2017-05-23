@@ -143,7 +143,7 @@ task docGDK {
                     arg(value: '-link')
                     arg(value: 'groovy,org.codehaus.groovy=http://docs.groovy-lang.org/latest/html/gapi/')
                     arg(value: '-link')
-                    arg(value: 'java,org.xml,javax,org.w3c=http://docs.oracle.com/javase/7/docs/api/')
+                    arg(value: 'java,org.xml,javax,org.w3c=http://docs.oracle.com/javase/8/docs/api/')
                     // either package name if in core or fully qualified path otherwise
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods')
@@ -155,8 +155,7 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.runtime.SocketGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.StringGroovyMethods')
                     arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.vmplugin.vm8.Java8DefaultGroovyMethods')
                     // TODO don't hard-code these
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
