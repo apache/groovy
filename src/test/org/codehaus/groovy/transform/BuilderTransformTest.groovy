@@ -757,4 +757,23 @@ class BuilderTransformTest extends CompilableTestSupport {
          '''
     }
 
+    // GROOVY-8186
+    void testJavaBeanPropertiesAreProperlyProcessed() {
+        assertScript '''
+            import groovy.transform.builder.*
+
+            class Foo {
+              String getName() {
+                'John'
+              }
+              void setName(String ignore) {}
+            }
+
+            @Builder(builderStrategy=ExternalStrategy, forClass=Foo)
+            class FooBuilder { }
+
+            assert new FooBuilder().name('Mary').build().name == 'John'
+         '''
+    }
+
 }

@@ -132,6 +132,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
+        if (unsupportedAttribute(transform, anno, "allProperties")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
         if (annotatedNode instanceof ClassNode) {
