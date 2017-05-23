@@ -18,28 +18,9 @@
  */
 package org.codehaus.groovy.vmplugin.vm8
 
-import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Java8DefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
-
-    // GROOVY-7611
-    void testOptionalAsBoolean() {
-        assertScript '''
-            boolean m() {
-                assert Optional.of('foo')
-                assert !Optional.empty()
-                assert !Optional.ofNullable(null)
-
-                def x = Optional.empty() ? 1 : -1
-                assert x == -1
-
-                x = Optional.ofNullable(null) ? 1 : -1
-                assert x == -1
-                
-                Optional.empty()
-            }            
-            assert !m()
-        '''
-    }
-
+class Java8DefaultGroovyMethodsSCTest
+        extends Java8DefaultGroovyMethodsTest
+        implements StaticCompilationTestSupport {
 }
