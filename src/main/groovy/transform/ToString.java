@@ -318,7 +318,7 @@ public @interface ToString {
      * methods as property getters as per the JavaBean specification. Old versions of Groovy did not.
      * So set this flag to false for the old behavior or if you want to explicitly exclude such properties.
      *
-     * @since 2.5
+     * @since 2.5.0
      */
     boolean allProperties() default true;
 

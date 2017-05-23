@@ -47,7 +47,7 @@ import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
  * 0..3 is deemed to be equal to 0.0..3.0 but they have different hashCode values,
  * so storing a value using one of these ranges couldn't be retrieved using the other.
  *
- * @since 2.5
+ * @since 2.5.0
  */
 public class NumberRange extends AbstractList<Comparable> implements Range<Comparable> {
 

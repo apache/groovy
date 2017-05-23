@@ -36,7 +36,7 @@ import java.util.TimeZone;
  * The {@link Options} builder can be used to configure an instance of a JsonGenerator.
  *
  * @see Options#build()
- * @since 2.5
+ * @since 2.5.0
  */
 public interface JsonGenerator {
 
@@ -69,7 +69,7 @@ public interface JsonGenerator {
     /**
      * Handles converting a given type.
      *
-     * @since 2.5
+     * @since 2.5.0
      */
     interface Converter {
 
@@ -115,7 +115,7 @@ public interface JsonGenerator {
      *     assert generator.toJson(input) == '{"lastUpdated":"2014"}'
      * </code></pre>
      *
-     * @since 2.5
+     * @since 2.5.0
      */
     class Options {
 
