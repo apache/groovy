@@ -456,14 +456,15 @@ It is possible to list the properties of a class thanks to the meta `properties`
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_meta,indent=0]
 ----
 
-By convention, Groovy will recognize properties even if there is no backing field, if there are getters or setters
+By convention, Groovy will recognize properties even if there is no backing field
+provided there are getters or setters
 that follow the Java Beans specification. For example:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,indent=0]
 ----
-<1> reading `p.name` is allowed because there is a pseudo-property `name`
+<1> writing `p.name` is allowed because there is a pseudo-property `name`
 <2> reading `p.age` is allowed because there is a pseudo-readonly property `age`
 <3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
 
