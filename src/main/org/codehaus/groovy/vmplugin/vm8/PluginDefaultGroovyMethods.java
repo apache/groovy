@@ -24,7 +24,7 @@ import java.util.Optional;
  * Defines new Groovy methods which appear on normal JDK 8
  * classes inside the Groovy environment.
  *
- * @since 2.5
+ * @since 2.5.0
  */
 public class PluginDefaultGroovyMethods {
 

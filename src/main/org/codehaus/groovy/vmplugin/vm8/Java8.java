@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Java 8 based functions.
  *
- * @since 2.5
+ * @since 2.5.0
  */
 public class Java8 extends Java7 {
 
