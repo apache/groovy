@@ -426,6 +426,38 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(dir)
     }
 
+    void testWhenParameterWriteNullValuesIsSetToFalseStillWriteNullIfWholeObjectIsNull() {
+        assert toJson((Object) null, false) == "null"
+        assert toJson((Closure) null, false) == 'null'
+        assert toJson((Expando) null, false) == 'null'
+        assert toJson((Map) null, false) == 'null'
+    }
+
+    def Closure closureWithNullValues = {
+        optionalValue null
+        constantValue 37
+    }
+    def Expando  expandoWithNullValues = new Expando(optionalValue: null, constantValue: 37)
+    def Map<String, Integer> mapWithNullValues = new TreeMap<>()
+
+    void testGivenMapValuesAreNullWhenWriteNullValuesIsTrueThenWriteNullValues() {
+        mapWithNullValues.put("optionalValue",null)
+        mapWithNullValues.put("constantValue",37)
+
+        assert toJson(closureWithNullValues) == '{"optionalValue":null,"constantValue":37}'
+        assert toJson(expandoWithNullValues) == '{"optionalValue":null,"constantValue":37}'
+        assert toJson(mapWithNullValues) == '{"constantValue":37,"optionalValue":null}'
+    }
+
+    void testGivenMapValuesAreNullWhenWriteNullValuesIsFalseThenDoNotWriteKeyAndValue() {
+        mapWithNullValues.put("optionalValue",null)
+        mapWithNullValues.put("constantValue",37)
+
+        assert toJson(closureWithNullValues, false) == '{"constantValue":37}'
+        assert toJson(expandoWithNullValues, false) == '{"constantValue":37}'
+        assert toJson(mapWithNullValues, false) == '{"constantValue":37}'
+    }
+
 }
 
 @Canonical

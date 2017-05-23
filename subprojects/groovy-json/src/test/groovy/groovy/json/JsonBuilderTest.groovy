@@ -17,7 +17,6 @@
  *  under the License.
  */
 package groovy.json
-
 /**
  * @author Guillaume Laforge
  */
@@ -402,4 +401,13 @@ class JsonBuilderTest extends GroovyTestCase {
         assert new JsonBuilder({'\1' 0}).toString() == '{"\\u0001":0}'
         assert new JsonBuilder({'\u0002' 0}).toString() == '{"\\u0002":0}'
     }
+
+    void testWhenFlagWhenWriteNullValuesIsFalseThenDoNotWriteNullValues() {
+        def Closure closureWithNullValues = {
+            optionalValue null
+            constantValue 37
+        }
+        assert new JsonBuilder(closureWithNullValues).toString(false)  == '{"constantValue":37}'
+    }
+
 }

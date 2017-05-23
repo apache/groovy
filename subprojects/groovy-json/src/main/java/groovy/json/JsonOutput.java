@@ -41,7 +41,6 @@ import java.util.*;
  * @author Andrey Bloschetsov
  * @author Rick Hightower
  * @author Graeme Rocher
- *
  * @since 1.8.0
  */
 public class JsonOutput {
@@ -67,7 +66,7 @@ public class JsonOutput {
      */
     public static String toJson(Boolean bool) {
         CharBuf buffer = CharBuf.create(4);
-        writeObject(bool, buffer); // checking null inside
+        writeObject(bool, buffer, true); // checking null inside
 
         return buffer.toString();
     }
@@ -93,7 +92,7 @@ public class JsonOutput {
      */
     public static String toJson(Character c) {
         CharBuf buffer = CharBuf.create(3);
-        writeObject(c, buffer); // checking null inside
+        writeObject(c, buffer, true); // checking null inside
 
         return buffer.toString();
     }
@@ -151,7 +150,7 @@ public class JsonOutput {
      */
     public static String toJson(UUID uuid) {
         CharBuf buffer = CharBuf.create(64);
-        writeObject(uuid, buffer); // checking null inside
+        writeObject(uuid, buffer, true); // checking null inside
 
         return buffer.toString();
     }
@@ -161,7 +160,21 @@ public class JsonOutput {
      */
     public static String toJson(URL url) {
         CharBuf buffer = CharBuf.create(64);
-        writeObject(url, buffer); // checking null inside
+        writeObject(url, buffer, true); // checking null inside
+
+        return buffer.toString();
+    }
+
+    /**
+     * @return an object representation of a closure
+     */
+    public static String toJson(Closure closure, boolean writeNullValues) {
+        if (closure == null) {
+            return NULL_VALUE;
+        }
+
+        CharBuf buffer = CharBuf.create(255);
+        writeMap(JsonDelegate.cloneDelegateAndGetContent(closure), buffer, writeNullValues);
 
         return buffer.toString();
     }
@@ -170,12 +183,19 @@ public class JsonOutput {
      * @return an object representation of a closure
      */
     public static String toJson(Closure closure) {
-        if (closure == null) {
+        return toJson(closure, true);
+    }
+
+    /**
+     * @return an object representation of an Expando
+     */
+    public static String toJson(Expando expando, boolean writeNullValues) {
+        if (expando == null) {
             return NULL_VALUE;
         }
 
         CharBuf buffer = CharBuf.create(255);
-        writeMap(JsonDelegate.cloneDelegateAndGetContent(closure), buffer);
+        writeMap(expando.getProperties(), buffer, writeNullValues);
 
         return buffer.toString();
     }
@@ -184,12 +204,16 @@ public class JsonOutput {
      * @return an object representation of an Expando
      */
     public static String toJson(Expando expando) {
-        if (expando == null) {
-            return NULL_VALUE;
-        }
+        return toJson(expando, true);
+    }
 
+    /**
+     * @return "null" for a null value, or a JSON array representation for a collection, array, iterator or enumeration,
+     * or representation for other object.
+     */
+    public static String toJson(Object object, boolean writeNullValues) {
         CharBuf buffer = CharBuf.create(255);
-        writeMap(expando.getProperties(), buffer);
+        writeObject(object, buffer, writeNullValues); // checking null inside
 
         return buffer.toString();
     }
@@ -199,8 +223,19 @@ public class JsonOutput {
      * or representation for other object.
      */
     public static String toJson(Object object) {
+        return toJson(object, true);
+    }
+
+    /**
+     * @return a JSON object representation for a map
+     */
+    public static String toJson(Map m, boolean writeNullValues) {
+        if (m == null) {
+            return NULL_VALUE;
+        }
+
         CharBuf buffer = CharBuf.create(255);
-        writeObject(object, buffer); // checking null inside
+        writeMap(m, buffer, writeNullValues);
 
         return buffer.toString();
     }
@@ -209,14 +244,7 @@ public class JsonOutput {
      * @return a JSON object representation for a map
      */
     public static String toJson(Map m) {
-        if (m == null) {
-            return NULL_VALUE;
-        }
-
-        CharBuf buffer = CharBuf.create(255);
-        writeMap(m, buffer);
-
-        return buffer.toString();
+        return toJson(m, true);
     }
 
     /**
@@ -263,7 +291,7 @@ public class JsonOutput {
     /**
      * Serializes object and writes it into specified buffer.
      */
-    private static void writeObject(Object object, CharBuf buffer) {
+    private static void writeObject(Object object, CharBuf buffer, boolean writeNullValues) {
         if (object == null) {
             buffer.addNull();
         } else {
@@ -280,11 +308,11 @@ public class JsonOutput {
             } else if (Calendar.class.isAssignableFrom(objectClass)) {
                 writeDate(((Calendar) object).getTime(), buffer);
             } else if (Map.class.isAssignableFrom(objectClass)) {
-                writeMap((Map) object, buffer);
+                writeMap((Map) object, buffer, writeNullValues);
             } else if (Iterable.class.isAssignableFrom(objectClass)) {
-                writeIterator(((Iterable<?>) object).iterator(), buffer);
+                writeIterator(((Iterable<?>) object).iterator(), buffer, writeNullValues);
             } else if (Iterator.class.isAssignableFrom(objectClass)) {
-                writeIterator((Iterator) object, buffer);
+                writeIterator((Iterator) object, buffer, writeNullValues);
             } else if (objectClass == Character.class) {
                 buffer.addJsonEscapedString(Chr.array((Character) object));
             } else if (objectClass == URL.class) {
@@ -294,31 +322,31 @@ public class JsonOutput {
             } else if (objectClass == JsonUnescaped.class) {
                 buffer.add(object.toString());
             } else if (Closure.class.isAssignableFrom(objectClass)) {
-                writeMap(JsonDelegate.cloneDelegateAndGetContent((Closure<?>) object), buffer);
+                writeMap(JsonDelegate.cloneDelegateAndGetContent((Closure<?>) object), buffer, writeNullValues);
             } else if (Expando.class.isAssignableFrom(objectClass)) {
-                writeMap(((Expando) object).getProperties(), buffer);
+                writeMap(((Expando) object).getProperties(), buffer, writeNullValues);
             } else if (Enumeration.class.isAssignableFrom(objectClass)) {
                 List<?> list = Collections.list((Enumeration<?>) object);
-                writeIterator(list.iterator(), buffer);
+                writeIterator(list.iterator(), buffer, writeNullValues);
             } else if (objectClass.isArray()) {
-                writeArray(objectClass, object, buffer);
+                writeArray(objectClass, object, buffer, writeNullValues);
             } else if (Enum.class.isAssignableFrom(objectClass)) {
                 buffer.addQuoted(((Enum<?>) object).name());
-            }else if (File.class.isAssignableFrom(objectClass)){
+            } else if (File.class.isAssignableFrom(objectClass)) {
                 Map<?, ?> properties = getObjectProperties(object);
                 //Clean up all recursive references to File objects
                 Iterator<? extends Map.Entry<?, ?>> iterator = properties.entrySet().iterator();
-                while(iterator.hasNext()){
-                    Map.Entry<?,?> entry = iterator.next();
-                    if(entry.getValue() instanceof File){
+                while (iterator.hasNext()) {
+                    Map.Entry<?, ?> entry = iterator.next();
+                    if (entry.getValue() instanceof File) {
                         iterator.remove();
                     }
                 }
 
-                writeMap(properties, buffer);
+                writeMap(properties, buffer, writeNullValues);
             } else {
                 Map<?, ?> properties = getObjectProperties(object);
-                writeMap(properties, buffer);
+                writeMap(properties, buffer, writeNullValues);
             }
         }
     }
@@ -355,15 +383,15 @@ public class JsonOutput {
     /**
      * Serializes array and writes it into specified buffer.
      */
-    private static void writeArray(Class<?> arrayClass, Object array, CharBuf buffer) {
+    private static void writeArray(Class<?> arrayClass, Object array, CharBuf buffer, boolean writeNullValues) {
         buffer.addChar(OPEN_BRACKET);
         if (Object[].class.isAssignableFrom(arrayClass)) {
             Object[] objArray = (Object[]) array;
             if (objArray.length > 0) {
-                writeObject(objArray[0], buffer);
+                writeObject(objArray[0], buffer, writeNullValues);
                 for (int i = 1; i < objArray.length; i++) {
                     buffer.addChar(COMMA);
-                    writeObject(objArray[i], buffer);
+                    writeObject(objArray[i], buffer, writeNullValues);
                 }
             }
         } else if (int[].class.isAssignableFrom(arrayClass)) {
@@ -439,7 +467,7 @@ public class JsonOutput {
     /**
      * Serializes map and writes it into specified buffer.
      */
-    private static void writeMap(Map<?, ?> map, CharBuf buffer) {
+    private static void writeMap(Map<?, ?> map, CharBuf buffer, boolean writeNullValues) {
         if (!map.isEmpty()) {
             buffer.addChar(OPEN_BRACE);
             boolean firstItem = true;
@@ -448,14 +476,16 @@ public class JsonOutput {
                     throw new IllegalArgumentException("Maps with null keys can\'t be converted to JSON");
                 }
 
-                if (!firstItem) {
-                    buffer.addChar(COMMA);
-                } else {
-                    firstItem = false;
-                }
+                if (writeNullValues || (entry.getValue() != null)) {
+                    if (!firstItem) {
+                        buffer.addChar(COMMA);
+                    } else {
+                        firstItem = false;
+                    }
 
-                buffer.addJsonFieldName(entry.getKey().toString());
-                writeObject(entry.getValue(), buffer);
+                    buffer.addJsonFieldName(entry.getKey().toString());
+                    writeObject(entry.getValue(), buffer, writeNullValues);
+                }
             }
             buffer.addChar(CLOSE_BRACE);
         } else {
@@ -468,15 +498,15 @@ public class JsonOutput {
     /**
      * Serializes iterator and writes it into specified buffer.
      */
-    private static void writeIterator(Iterator<?> iterator, CharBuf buffer) {
+    private static void writeIterator(Iterator<?> iterator, CharBuf buffer, boolean writeNullValues) {
         if (iterator.hasNext()) {
             buffer.addChar(OPEN_BRACKET);
             Object it = iterator.next();
-            writeObject(it, buffer);
+            writeObject(it, buffer, writeNullValues);
             while (iterator.hasNext()) {
                 it = iterator.next();
                 buffer.addChar(COMMA);
-                writeObject(it, buffer);
+                writeObject(it, buffer, writeNullValues);
             }
             buffer.addChar(CLOSE_BRACKET);
         } else {
