@@ -31,10 +31,16 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,6 +94,21 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;
+        }
+
+        protected static List<PropertyInfo> getPropertyInfoFromBeanInfo(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
+            final List<PropertyInfo> result = new ArrayList<PropertyInfo>();
+            try {
+                BeanInfo beanInfo = Introspector.getBeanInfo(cNode.getTypeClass());
+                for (PropertyDescriptor descriptor : beanInfo.getPropertyDescriptors()) {
+                    if (shouldSkipUndefinedAware(descriptor.getName(), excludes, includes, allNames)) continue;
+                    // skip hidden and read-only props
+                    if (descriptor.isHidden() || descriptor.getWriteMethod() == null) continue;
+                    result.add(new PropertyInfo(descriptor.getName(), ClassHelper.make(descriptor.getPropertyType())));
+                }
+            } catch (IntrospectionException ignore) {
+            }
+            return result;
         }
 
         protected String getSetterName(String prefix, String fieldName) {
@@ -164,6 +185,28 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         protected List<FieldNode> getFields(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee) {
            boolean includeSuperProperties = transform.memberHasValue(anno, "includeSuperProperties", true);
            return includeSuperProperties ? getSuperPropertyFields(buildee) : getInstancePropertyFields(buildee);
+        }
+
+        protected List<PropertyInfo> getPropertyInfoFromClassNode(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames, boolean allProperties) {
+            List<PropertyInfo> props = new ArrayList<PropertyInfo>();
+            List<String> seen = new ArrayList<String>();
+            for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, allProperties)) {
+                if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
+                props.add(new PropertyInfo(pNode.getName(), pNode.getType()));
+                seen.add(pNode.getName());
+            }
+            for (FieldNode fNode : getFields(transform, anno, cNode)) {
+                if (seen.contains(fNode.getName()) || shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
+                props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
+            }
+            return props;
+        }
+
+        protected List<PropertyInfo> getPropertyInfos(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
+            if (buildee.getModule() == null) {
+                return getPropertyInfoFromBeanInfo(buildee, includes, excludes, allNames);
+            }
+            return getPropertyInfoFromClassNode(transform, anno, buildee, includes, excludes, allNames, allProperties);
         }
 
         protected static class PropertyInfo {

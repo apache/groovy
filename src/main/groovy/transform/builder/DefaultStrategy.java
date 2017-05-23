@@ -54,7 +54,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
-import static org.codehaus.groovy.transform.AbstractASTTransformation.shouldSkipUndefinedAware;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -199,20 +198,21 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         createBuilderFactoryMethod(anno, buildee, builder);
         List<FieldNode> fields = getFields(transform, anno, buildee);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
-        List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes, allNames);
-        for (FieldNode fieldNode : filteredFields) {
-            ClassNode correctedType = getCorrectedType(buildee, fieldNode);
-            String fieldName = fieldNode.getName();
+        boolean allProperties = !transform.memberHasValue(anno, "allProperties", false);
+        List<PropertyInfo> props = getPropertyInfos(transform, anno, buildee, excludes, includes, allNames, allProperties);
+        for (PropertyInfo pi : props) {
+            ClassNode correctedType = getCorrectedType(buildee, pi.getType(), builder);
+            String fieldName = pi.getName();
             builder.addField(createFieldCopy(buildee, fieldName, correctedType));
             builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(fieldName, correctedType), getPrefix(anno)));
         }
-        builder.addMethod(createBuildMethod(anno, buildee, filteredFields));
+        builder.addMethod(createBuildMethod(anno, buildee, props));
     }
 
-    private static ClassNode getCorrectedType(ClassNode buildee, FieldNode fieldNode) {
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
-        extractSuperClassGenerics(fieldNode.getType(), buildee, genericsSpec);
-        return correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType());
+    private static ClassNode getCorrectedType(ClassNode buildee, ClassNode fieldType, ClassNode declaringClass) {
+        Map<String,ClassNode> genericsSpec = createGenericsSpec(declaringClass);
+        extractSuperClassGenerics(fieldType, buildee, genericsSpec);
+        return correctToGenericsSpecRecurse(genericsSpec, fieldType);
     }
 
     private static void createBuilderFactoryMethod(AnnotationNode anno, ClassNode buildee, ClassNode builder) {
@@ -254,10 +254,10 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         return new MethodNode(builderMethodName, PUBLIC_STATIC, builder, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
-    private static MethodNode createBuildMethod(AnnotationNode anno, ClassNode buildee, List<FieldNode> fields) {
+    private static MethodNode createBuildMethod(AnnotationNode anno, ClassNode buildee, List<PropertyInfo> props) {
         String buildMethodName = getMemberStringValue(anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
-        body.addStatement(returnS(initializeInstance(buildee, fields, body)));
+        body.addStatement(returnS(initializeInstance(buildee, props, body)));
         return new MethodNode(buildMethodName, ACC_PUBLIC, newClass(buildee), NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
@@ -282,20 +282,11 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         return new FieldNode(fieldName, ACC_PRIVATE, fieldType, buildee, DEFAULT_INITIAL_VALUE);
     }
 
-    private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes, boolean allNames) {
-        List<FieldNode> fields = new ArrayList<FieldNode>();
-        for (FieldNode fNode : fieldNodes) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
-            fields.add(fNode);
-        }
-        return fields;
-    }
-
-    private static Expression initializeInstance(ClassNode buildee, List<FieldNode> fields, BlockStatement body) {
+    private static Expression initializeInstance(ClassNode buildee, List<PropertyInfo> props, BlockStatement body) {
         Expression instance = varX("_the" + buildee.getNameWithoutPackage(), buildee);
         body.addStatement(declS(instance, ctorX(buildee)));
-        for (FieldNode field : fields) {
-            body.addStatement(stmt(assignX(propX(instance, field.getName()), varX(field))));
+        for (PropertyInfo pi : props) {
+            body.addStatement(stmt(assignX(propX(instance, pi.getName()), varX(pi.getName(), pi.getType()))));
         }
         return instance;
     }

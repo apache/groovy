@@ -60,8 +60,6 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  * </pre>
  * so you might not find value in using the builder transform at all. But if you need Java integration or in some cases improved type safety, the {@code @Builder} transform might prove very useful.
  *
- * @author Marcin Grzejszczak
- * @author Paul King
  * @see groovy.transform.builder.SimpleStrategy
  * @see groovy.transform.builder.ExternalStrategy
  * @see groovy.transform.builder.DefaultStrategy
@@ -147,4 +145,16 @@ public @interface Builder {
      * @since 2.5.0
      */
     boolean allNames() default false;
+
+    /**
+     * Whether to include all properties (as per the JavaBean spec) in the generated builder.
+     * Groovy recognizes any field-like definitions with no explicit visibility as property definitions
+     * and always includes them in the {@code @Builder} generated classes. Groovy also treats any explicitly created getXxx() or isYyy()
+     * methods as property getters as per the JavaBean specification. Old versions of Groovy did not.
+     * So set this flag to false for the old behavior or if you want to explicitly exclude such properties.
+     * Currently only supported by DefaultStrategy and ExternalStrategy.
+     *
+     * @since 2.5.0
+     */
+    boolean allProperties() default true;
 }

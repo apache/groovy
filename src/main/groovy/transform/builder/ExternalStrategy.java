@@ -21,19 +21,13 @@ package groovy.transform.builder;
 import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.BuilderASTTransformation;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,9 +86,6 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
  *
  * The {@code @Builder} 'builderMethodName' and 'builderClassName' annotation attributes aren't applicable for this strategy.
  * The {@code @Builder} 'useSetters' annotation attribute is ignored by this strategy which always uses setters.
- *
- * @author Marcin Grzejszczak
- * @author Paul King
  */
 public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
@@ -119,13 +110,9 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         if (unsupportedAttribute(transform, anno, "builderClassName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
-        List<PropertyInfo> props;
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
-        if (buildee.getModule() == null) {
-            props = getPropertyInfoFromBeanInfo(buildee, includes, excludes, allNames);
-        } else {
-            props = getPropertyInfoFromClassNode(transform, anno, buildee, includes, excludes, allNames);
-        }
+        boolean allProperties = !transform.memberHasValue(anno, "allProperties", false);
+        List<PropertyInfo> props = getPropertyInfos(transform, anno, buildee, excludes, includes, allNames, allProperties);
         if (includes != null) {
             for (String name : includes) {
                 checkKnownProperty(transform, anno, name, props);
@@ -158,30 +145,6 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
     private static FieldNode createFieldCopy(ClassNode builderClass, PropertyInfo prop) {
         String propName = prop.getName();
         return new FieldNode(propName.equals("class") ? "clazz" : propName, ACC_PRIVATE, newClass(prop.getType()), builderClass, DEFAULT_INITIAL_VALUE);
-    }
-
-    public static List<PropertyInfo> getPropertyInfoFromBeanInfo(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-        final List<PropertyInfo> result = new ArrayList<PropertyInfo>();
-        try {
-            BeanInfo beanInfo = Introspector.getBeanInfo(cNode.getTypeClass());
-            for (PropertyDescriptor descriptor : beanInfo.getPropertyDescriptors()) {
-                if (AbstractASTTransformation.shouldSkipUndefinedAware(descriptor.getName(), excludes, includes, allNames)) continue;
-                // skip hidden and read-only props
-                if (descriptor.isHidden() || descriptor.getWriteMethod() == null) continue;
-                result.add(new PropertyInfo(descriptor.getName(), ClassHelper.make(descriptor.getPropertyType())));
-            }
-        } catch (IntrospectionException ignore) {
-        }
-        return result;
-    }
-
-    private List<PropertyInfo> getPropertyInfoFromClassNode(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-        List<PropertyInfo> props = new ArrayList<PropertyInfo>();
-        for (FieldNode fNode : getFields(transform, anno, cNode)) {
-            if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
-            props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
-        }
-        return props;
     }
 
     private static Expression initializeInstance(ClassNode sourceClass, List<PropertyInfo> props, BlockStatement body) {
