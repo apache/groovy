@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform
 
 /**
- * @author Paul King
+ * Tests for the {@code @Newify} AST transform.
  */
 class NewifyTransformTest extends GroovyShellTestCase {
 
@@ -158,7 +158,6 @@ class NewifyTransformTest extends GroovyShellTestCase {
         assert test == 'ABC'
     }
 
-
     void testNewifyClosureCompileStatic_Groovy7758() {
         assertScript '''
             class A {
@@ -173,6 +172,21 @@ class NewifyTransformTest extends GroovyShellTestCase {
             }
 
             assert test(new A()) == 'abc'
+        '''
+    }
+
+    void testNewifyTransformPreservesSafeMethodCall_Groovy8203() {
+        assertScript '''
+            @Newify(A)
+            class Z {
+                def foo() {
+                    def a
+                    a?.get('b')
+                }
+                class A {}
+            }
+
+            assert !new Z().foo()
         '''
     }
 }
