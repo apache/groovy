@@ -128,7 +128,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -1683,17 +1682,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return EmptyExpression.INSTANCE;
         }
 
-        if (asBoolean(ctx.statementExpression())) {
-            return this.configureAST(
-                    ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression(),
-                    ctx);
-        }
-
-        if (asBoolean(ctx.standardLambda())) {
-            return this.configureAST(this.visitStandardLambda(ctx.standardLambda()), ctx);
-        }
-
-        throw createParsingFailedException("Unsupported variable initializer: " + ctx.getText(), ctx);
+        return this.configureAST(
+                this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression()),
+                ctx);
     }
 
     @Override
@@ -1855,15 +1846,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitParExpression(ParExpressionContext ctx) {
-        Expression expression;
-
-        if (asBoolean(ctx.statementExpression())) {
-            expression = ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression();
-        } else if (asBoolean(ctx.standardLambda())) {
-            expression = this.visitStandardLambda(ctx.standardLambda());
-        } else {
-            throw createParsingFailedException("Unsupported parentheses expression: " + ctx.getText(), ctx);
-        }
+        Expression expression = this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
 
         expression.putNodeMetaData(IS_INSIDE_PARENTHESES, true);
 
@@ -1877,6 +1860,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return this.configureAST(expression, ctx);
     }
+
+    @Override public Expression visitEnhancedStatementExpression(EnhancedStatementExpressionContext ctx) {
+        Expression expression;
+
+        if (asBoolean(ctx.statementExpression())) {
+            expression = ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression();
+        } else if (asBoolean(ctx.standardLambda())) {
+            expression = this.visitStandardLambda(ctx.standardLambda());
+        } else {
+            throw createParsingFailedException("Unsupported enhanced statement expression: " + ctx.getText(), ctx);
+        }
+
+        return this.configureAST(expression, ctx);
+    }
+
 
     @Override
     public Expression visitPathExpression(PathExpressionContext ctx) {
@@ -2631,9 +2629,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     new BinaryExpression(
                             this.configureAST(new TupleExpression(leftExpr), ctx.left),
                             this.createGroovyToken(ctx.op),
-                            asBoolean(ctx.statementExpression())
-                                    ? ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression()
-                                    : this.visitStandardLambda(ctx.standardLambda())),
+                            this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression())),
                     ctx);
         }
 
@@ -2660,9 +2656,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 new BinaryExpression(
                         leftExpr,
                         this.createGroovyToken(ctx.op),
-                        asBoolean(ctx.statementExpression())
-                                ? ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression()
-                                : this.visitStandardLambda(ctx.standardLambda())),
+                        this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression())),
                 ctx);
     }
 
