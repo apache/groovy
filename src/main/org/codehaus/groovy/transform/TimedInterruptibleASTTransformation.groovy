@@ -187,8 +187,14 @@ public class TimedInterruptibleASTTransformation extends AbstractASTTransformati
                             ctorX(thrown,
                                     args(
                                             plusX(
-                                                    constX('Execution timed out after ' + maximum + ' units. Start time: '),
-                                                    propX(varX("this"), basename + '$startTime'),
+                                                    plusX(
+                                                            constX('Execution timed out after ' + maximum + ' '),
+                                                            callX(callX(unit, 'name'), 'toLowerCase', propX(classX(Locale), 'US'))
+                                                    ),
+                                                    plusX(
+                                                            constX('. Start time: '),
+                                                            propX(varX("this"), basename + '$startTime')
+                                                    )
                                             )
 
                                     )
