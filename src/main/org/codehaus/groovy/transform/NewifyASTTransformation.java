@@ -49,9 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 
 /**
- * Handles generation of code for the @Newify annotation.
- *
- * @author Paul King
+ * Handles generation of code for the {@code @Newify} AST transform.
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NewifyASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation {
@@ -167,6 +165,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             Expression object = transform(mce.getObjectExpression());
             MethodCallExpression transformed = callX(object, method, args);
             transformed.setImplicitThis(mce.isImplicitThis());
+            transformed.setSafe(mce.isSafe());
             transformed.setSourcePosition(mce);
             return transformed;
         } else if (expr instanceof ClosureExpression) {
