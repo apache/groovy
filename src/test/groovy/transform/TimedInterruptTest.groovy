@@ -19,6 +19,8 @@
 package groovy.transform
 
 import groovy.mock.interceptor.StubFor
+
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.transform.TimedInterruptibleASTTransformation
@@ -140,7 +142,7 @@ class TimedInterruptTest extends GroovyTestCase {
       @TimedInterrupt(value = 18000000L, unit = TimeUnit.MILLISECONDS)
       def myMethod() { }
     ''')
-    assertPassesNormalFailsSlowExecution(c, 18000000000666, '18000000') //5 hours in future
+    assertPassesNormalFailsSlowExecution(c, 18000000000666, '18000000', 'myMethod', TimeoutException, 'milliseconds') //5 hours in future
   }
 
   // TODO not sure all these tests are pulling their weight - testing Groovy annotation type handing not subject
@@ -244,7 +246,7 @@ class TimedInterruptTest extends GroovyTestCase {
     }
   }
 
-  private void assertPassesNormalFailsSlowExecution(c, long expireTime=1000000666L, units='1', methodName='myMethod', exception=TimeoutException) {
+  private void assertPassesNormalFailsSlowExecution(c, long expireTime=1000000666L, units='1', methodName='myMethod', exception=TimeoutException, timeUnitName='seconds') {
     def system = new StubFor(System)
     // start time initialized to the Long of the Beast
     system.demand.nanoTime() { 666L }
@@ -266,7 +268,7 @@ class TimedInterruptTest extends GroovyTestCase {
       def e = shouldFail(exception) {
         instance."$methodName"()
       }
-      assert e.contains('Execution timed out after ' + units + ' units')
+      assert e.contains('Execution timed out after ' + units + ' ' + timeUnitName)
     }
   }
 
