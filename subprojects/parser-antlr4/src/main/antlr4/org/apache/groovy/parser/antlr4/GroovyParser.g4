@@ -364,8 +364,7 @@ variableDeclaratorId
     ;
 
 variableInitializer
-    :   statementExpression
-    |   standardLambda
+    :   enhancedStatementExpression
     ;
 
 variableInitializers
@@ -679,7 +678,7 @@ locals[boolean resourcesExists = false]
         |
             nls finallyBlock
         |
-            // a catch or finally clause is required unless it's try-with-resources
+            // try-with-resources can have no catche and finally clauses
             { $resourcesExists }?<fail={"catch or finally clauses are required for try-catch statement"}>
         )
     ;
@@ -792,7 +791,12 @@ castParExpression
     ;
 
 parExpression
-    :   LPAREN (statementExpression | standardLambda) rparen
+    :   LPAREN enhancedStatementExpression rparen
+    ;
+
+enhancedStatementExpression
+    :   statementExpression
+    |   standardLambda
     ;
 
 expressionList[boolean canSpread]
@@ -920,7 +924,7 @@ expression
                            |   POWER_ASSIGN
                            |   ELVIS_ASSIGN
                            ) nls
-                     (statementExpression | standardLambda)                                 #assignmentExprAlt
+                     enhancedStatementExpression                                            #assignmentExprAlt
     ;
 
 commandExpression
