@@ -431,6 +431,8 @@ public class GenericsUtils {
         if (target==null || type==target) return;
         if (type.isArray() && target.isArray()) {
             extractSuperClassGenerics(type.getComponentType(), target.getComponentType(), spec);
+        } else if (type.isArray() && target.getName().equals("java.lang.Object")) {
+            // Object is superclass of arrays but no generics involved
         } else if (target.isGenericsPlaceHolder() || type.equals(target) || !StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(type, target)) {
             // structural match route
             if (target.isGenericsPlaceHolder()) {

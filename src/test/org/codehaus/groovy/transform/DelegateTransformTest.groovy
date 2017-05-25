@@ -21,7 +21,7 @@ package org.codehaus.groovy.transform
 import gls.CompilableTestSupport
 
 /**
- * Tests for the @{code @Delegate} AST transform.
+ * Tests for the {@code @Delegate} AST transform.
  */
 class DelegateTransformTest extends CompilableTestSupport {
 
@@ -749,6 +749,22 @@ assert foo.dm.x == '123'
                 String pls() { 'bar pls' }
             }
             assert new Foo(bar: new Bar()).pls() == 'foo pls'
+        '''
+    }
+
+    // GROOVY-8204
+    void testDelegateToArray() {
+        assertScript '''
+            import groovy.lang.Delegate
+
+            class BugsMe {
+                @Delegate
+                String[] content = ['foo', 'bar']
+            }
+
+            assert new BugsMe().content.join() == 'foobar'
+            assert new BugsMe().content.length == 2
+            assert new BugsMe().length == 2
         '''
     }
 }
