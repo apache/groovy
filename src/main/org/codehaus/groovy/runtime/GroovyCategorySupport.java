@@ -65,13 +65,16 @@ public class GroovyCategorySupport {
     }
 
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
+
+        private static final Object LOCK = new Object();
+
         int level;
 
         private Map<String, String> propertyGetterMap;
         private Map<String, String> propertySetterMap;
 
         private void newScope () {
-            synchronized (ThreadCategoryInfo.class) {
+            synchronized (LOCK) {
                 categoriesInUse++;
                 DefaultMetaClassInfo.setCategoryUsed(true);
             }
@@ -97,7 +100,7 @@ public class GroovyCategorySupport {
             }
             level--;
             VMPluginFactory.getPlugin().invalidateCallSites();
-            synchronized (ThreadCategoryInfo.class) {
+            synchronized (LOCK) {
                 if (--categoriesInUse == 0) {
                     DefaultMetaClassInfo.setCategoryUsed(false);
                 }
@@ -291,7 +294,7 @@ public class GroovyCategorySupport {
      */
     @Deprecated
     public static boolean hasCategoryInAnyThread() {
-        synchronized (ThreadCategoryInfo.class) {
+        synchronized (ThreadCategoryInfo.LOCK) {
             return categoriesInUse != 0;
         }
     }
