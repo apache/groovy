@@ -624,14 +624,14 @@ variableNames
 
 switchStatement
 locals[ String footprint = "" ]
-    :   SWITCH parExpression nls LBRACE nls switchBlockStatementGroup* nls RBRACE
+    :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementGroup* nls RBRACE
     ;
 
 loopStatement
 locals[ String footprint = "" ]
     :   FOR LPAREN forControl rparen nls statement                                                          #forStmtAlt
-    |   WHILE parExpression nls statement                                                                   #whileStmtAlt
-    |   DO nls statement nls WHILE parExpression                                                            #doWhileStmtAlt
+    |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
+    |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
 
 continueStatement
@@ -690,13 +690,13 @@ locals[ String footprint = "" ]
 
 statement
     :   block                                                                                               #blockStmtAlt
-    |   IF parExpression nls tb=statement ((nls | sep) ELSE nls fb=statement)?                              #ifElseStmtAlt
+    |   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?                              #ifElseStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
 
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
 
     |   switchStatement                                                                                     #switchStmtAlt
-    |   SYNCHRONIZED parExpression nls block                                                                #synchronizedStmtAlt
+    |   SYNCHRONIZED expressionInPar nls block                                                                #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt
 
@@ -791,6 +791,10 @@ castParExpression
     ;
 
 parExpression
+    :   expressionInPar
+    ;
+
+expressionInPar
     :   LPAREN enhancedStatementExpression rparen
     ;
 

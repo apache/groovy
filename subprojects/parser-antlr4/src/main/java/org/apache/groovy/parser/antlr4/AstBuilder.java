@@ -362,7 +362,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public IfStatement visitIfElseStmtAlt(IfElseStmtAltContext ctx) {
-        Expression conditionExpression = this.visitParExpression(ctx.parExpression());
+        Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
         BooleanExpression booleanExpression =
                 this.configureAST(
                         new BooleanExpression(conditionExpression), conditionExpression);
@@ -476,7 +476,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public WhileStatement visitWhileStmtAlt(WhileStmtAltContext ctx) {
-        Expression conditionExpression = this.visitParExpression(ctx.parExpression());
+        Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
         BooleanExpression booleanExpression =
                 this.configureAST(
                         new BooleanExpression(conditionExpression), conditionExpression);
@@ -490,7 +490,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public DoWhileStatement visitDoWhileStmtAlt(DoWhileStmtAltContext ctx) {
-        Expression conditionExpression = this.visitParExpression(ctx.parExpression());
+        Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
 
         BooleanExpression booleanExpression =
                 this.configureAST(
@@ -674,7 +674,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return this.configureAST(
                 new SwitchStatement(
-                        this.visitParExpression(ctx.parExpression()),
+                        this.visitExpressionInPar(ctx.expressionInPar()),
                         caseStatementList,
                         defaultStatementListSize == 0 ? EmptyStatement.INSTANCE : defaultStatementList.get(0)
                 ),
@@ -742,14 +742,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         throw createParsingFailedException("Unsupported switch label: " + ctx.getText(), ctx);
     }
 
-
     @Override
     public SynchronizedStatement visitSynchronizedStmtAlt(SynchronizedStmtAltContext ctx) {
         return this.configureAST(
-                new SynchronizedStatement(this.visitParExpression(ctx.parExpression()), this.visitBlock(ctx.block())),
+                new SynchronizedStatement(this.visitExpressionInPar(ctx.expressionInPar()), this.visitBlock(ctx.block())),
                 ctx);
     }
-
 
     @Override
     public ExpressionStatement visitExpressionStmtAlt(ExpressionStmtAltContext ctx) {
@@ -1846,7 +1844,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitParExpression(ParExpressionContext ctx) {
-        Expression expression = this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
+        Expression expression = this.visitExpressionInPar(ctx.expressionInPar());
 
         expression.putNodeMetaData(IS_INSIDE_PARENTHESES, true);
 
@@ -1861,7 +1859,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return this.configureAST(expression, ctx);
     }
 
-    @Override public Expression visitEnhancedStatementExpression(EnhancedStatementExpressionContext ctx) {
+    @Override
+    public Expression visitExpressionInPar(ExpressionInParContext ctx) {
+        return this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
+    }
+
+    @Override
+    public Expression visitEnhancedStatementExpression(EnhancedStatementExpressionContext ctx) {
         Expression expression;
 
         if (asBoolean(ctx.statementExpression())) {
