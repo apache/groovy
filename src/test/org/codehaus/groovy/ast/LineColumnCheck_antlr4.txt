@@ -24,7 +24,7 @@ if (expression) {
 
 }
 :::[IfStatement,(1:1),(5:2)];
-[BooleanExpression,(1:4),(1:16)][VariableExpression,(1:4),(1:16)];
+[BooleanExpression,(1:5),(1:15)][VariableExpression,(1:5),(1:15)];
 [BlockStatement,(1:17),(3:2)];
 [BlockStatement,(3:8),(5:2)]
 
