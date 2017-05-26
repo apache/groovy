@@ -136,15 +136,15 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 addGetterIfNeeded(fieldNode, owner, prop, name, includes, excludes);
                 addSetterIfNeeded(fieldNode, owner, prop, name, includes, excludes);
             }
-            if (delegate.type.isArray()) {
-                boolean skipLength = delegate.excludes != null && (delegate.excludes.contains("length") || delegate.excludes.contains("getLength"));
+            if (type.isArray()) {
+                boolean skipLength = excludes != null && (excludes.contains("length") || excludes.contains("getLength"));
                 if (!skipLength) {
-                    delegate.owner.addMethod("getLength",
+                    owner.addMethod("getLength",
                             ACC_PUBLIC,
                             ClassHelper.int_TYPE,
                             Parameter.EMPTY_ARRAY,
                             null,
-                            returnS(propX(delegate.getOp, "length")));
+                            returnS(propX(varX(fieldNode), "length")));
                 }
             }
 
