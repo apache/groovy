@@ -10777,13 +10777,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce an object instance to a boolean value.
      * An object is coerced to true if it's not null, to false if it is null.
+     * One exception to this is in the case of a non-null {@code java.util.Optional}
+     * in which case the result of the {@code isPresent} method is returned.
      *
      * @param object the object to coerce
      * @return the boolean value
      * @since 1.7.0
      */
     public static boolean asBoolean(Object object) {
-        return object != null;
+        if (object == null) {
+            return false;
+        }
+        //TODO: move to jvm8 module when it becomes the minimum version for the build
+        if ("java.util.Optional".equals(object.getClass().getName())) {
+            return ((Boolean) InvokerHelper.invokeMethod(object, "isPresent", EMPTY_OBJECT_ARRAY));
+        }
+        return true;
     }
 
     /**
