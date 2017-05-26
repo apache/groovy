@@ -110,16 +110,10 @@ public class NumberValue extends java.lang.Number implements Value {
             case DOUBLE:
                 return bigDecimalValue();
             case INTEGER:
-                int sign = 1;
-                if (buffer[startIndex] == '-') {
-                    startIndex++;
-                    sign = -1;
-                }
-
                 if (isInteger(buffer, startIndex, endIndex - startIndex)) {
-                    return intValue() * sign;
+                    return intValue();
                 } else {
-                    return longValue() * sign;
+                    return longValue();
                 }
         }
         die();
@@ -174,12 +168,7 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
     public int intValue() {
-        int sign = 1;
-        if (buffer[startIndex] == '-') {
-            startIndex++;
-            sign = -1;
-        }
-        return parseIntFromTo(buffer, startIndex, endIndex) * sign;
+        return parseIntFromTo(buffer, startIndex, endIndex);
     }
 
     public long longValue() {
