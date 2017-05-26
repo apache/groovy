@@ -66,6 +66,12 @@ public class NumberValue extends java.lang.Number implements Value {
         } catch (Exception ex) {
             Exceptions.handle(sputs("exception", ex, "start", startIndex, "end", endIndex), ex);
         }
+
+        // Check for a single minus now, rather than finding out later during lazy parsing.
+        if (this.endIndex - this.startIndex == 1 && this.buffer[this.startIndex] == '-') {
+            die("A single minus is not a valid number");
+        }
+
     }
 
     public String toString() {
