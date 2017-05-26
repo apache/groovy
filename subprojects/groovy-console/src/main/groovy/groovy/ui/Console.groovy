@@ -200,6 +200,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action selectWordAction
     Action selectPreviousWordAction
 
+    ConsolePreferences consolePreferences;
+
     static void main(args) {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         MessageSource messages = new MessageSource(Console)
@@ -250,6 +252,20 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     }
 
+    int loadMaxOutputChars() {
+        // For backwards compatibility 'maxOutputChars' remains defined in the Console class
+        // and the System Property takes precedence as the default value.
+        int max = prefs.getInt('maxOutputChars', ConsolePreferences.DEFAULT_MAX_OUTPUT_CHARS)
+        return System.getProperty('groovy.console.output.limit', "${max}") as int
+    }
+
+    void preferences(EventObject evt = null) {
+        if (!consolePreferences) {
+            consolePreferences = new ConsolePreferences(this)
+        }
+        consolePreferences.show()
+    }
+
     Console() {
         this(new Binding())
     }
@@ -268,6 +284,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     Console(ClassLoader parent, Binding binding, CompilerConfiguration baseConfig) {
         this.baseConfig = baseConfig
+        this.maxOutputChars = loadMaxOutputChars()
         indy = indy || isIndyEnabled(baseConfig)
         if (indy) {
             enableIndy(baseConfig)
