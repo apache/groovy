@@ -1875,8 +1875,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(ctx.statementExpression())) {
             expression = ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression();
-        } else if (asBoolean(ctx.standardLambda())) {
-            expression = this.visitStandardLambda(ctx.standardLambda());
+        } else if (asBoolean(ctx.standardLambdaExpression())) {
+            expression = this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
         } else {
             throw createParsingFailedException("Unsupported enhanced statement expression: " + ctx.getText(), ctx);
         }
@@ -2269,8 +2269,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return this.configureAST(this.visitExpressionListElement(ctx.expressionListElement()), ctx);
         }
 
-        if (asBoolean(ctx.standardLambda())) {
-            return this.configureAST(this.visitStandardLambda(ctx.standardLambda()), ctx);
+        if (asBoolean(ctx.standardLambdaExpression())) {
+            return this.configureAST(this.visitStandardLambdaExpression(ctx.standardLambdaExpression()), ctx);
         }
 
         if (asBoolean(ctx.mapEntry())) {
@@ -2716,7 +2716,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ClosureExpression visitLambdaPrmrAlt(LambdaPrmrAltContext ctx) {
-        return this.configureAST(this.visitStandardLambda(ctx.standardLambda()), ctx);
+        return this.configureAST(this.visitStandardLambdaExpression(ctx.standardLambdaExpression()), ctx);
     }
 
     @Override
@@ -3201,7 +3201,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 // } gstring       --------------------------------------------------------------------
 
     @Override
-    public LambdaExpression visitStandardLambda(StandardLambdaContext ctx) {
+    public LambdaExpression visitStandardLambdaExpression(StandardLambdaExpressionContext ctx) {
         return this.configureAST(this.createLambda(ctx.standardLambdaParameters(), ctx.lambdaBody()), ctx);
     }
 
