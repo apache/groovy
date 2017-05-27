@@ -170,6 +170,8 @@ task docGDK {
                     if(JavaVersion.current().isJava7Compatible()) {
                         arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
                     }
+                    arg(value: 'subprojects/groovy-jsr223/src/main/java/org/codehaus/groovy/jsr223/ScriptExtensions.java')
+                    arg(value: 'subprojects/groovy-jsr223/src/main/java/org/codehaus/groovy/jsr223/ScriptStaticExtensions.java')
                 }
             }
         } finally {
