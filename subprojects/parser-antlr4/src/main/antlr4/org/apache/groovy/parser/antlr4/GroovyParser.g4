@@ -490,12 +490,12 @@ gstringPath
 
 
 // LAMBDA EXPRESSION
-lambda
-options { baseContext = standardLambda; }
+lambdaExpression
+options { baseContext = standardLambdaExpression; }
 	:	lambdaParameters nls ARROW nls lambdaBody
 	;
 
-standardLambda
+standardLambdaExpression
 	:	standardLambdaParameters nls ARROW nls lambdaBody
 	;
 
@@ -734,7 +734,6 @@ finallyBlock
     :   FINALLY nls block
     ;
 
-
 resources
     :   LPAREN nls resourceList sep? rparen
     ;
@@ -798,11 +797,6 @@ expressionInPar
     :   LPAREN enhancedStatementExpression rparen
     ;
 
-enhancedStatementExpression
-    :   statementExpression
-    |   standardLambda
-    ;
-
 expressionList[boolean canSpread]
     :   expressionListElement[$canSpread] (COMMA expressionListElement[$canSpread])*
     ;
@@ -811,6 +805,11 @@ expressionListElement[boolean canSpread]
     :   (   MUL { require($canSpread, "spread operator is not allowed here", -1); }
         |
         ) expression
+    ;
+
+enhancedStatementExpression
+    :   statementExpression
+    |   standardLambdaExpression
     ;
 
 /**
@@ -1072,7 +1071,7 @@ primary
     |   SUPER                                                                               #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
     |   closure                                                                             #closurePrmrAlt
-    |   lambda                                                                              #lambdaPrmrAlt
+    |   lambdaExpression                                                                              #lambdaPrmrAlt
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
     |   builtInType                                                                         #typePrmrAlt
@@ -1178,7 +1177,7 @@ options { baseContext = enhancedArgumentListElement; }
 
 enhancedArgumentListElement
     :   expressionListElement[true]
-    |   standardLambda
+    |   standardLambdaExpression
     |   mapEntry
     ;
 
