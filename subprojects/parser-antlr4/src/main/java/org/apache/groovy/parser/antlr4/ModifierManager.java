@@ -58,6 +58,10 @@ class ModifierManager {
         this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.emptyList());
     }
 
+    public int getModifierCount() {
+        return modifierNodeList.size();
+    }
+
     private void validate(List<ModifierNode> modifierNodeList) {
         Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
         int visibilityModifierCnt = 0;

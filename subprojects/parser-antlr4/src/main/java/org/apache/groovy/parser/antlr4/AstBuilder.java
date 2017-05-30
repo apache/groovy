@@ -883,7 +883,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                 modifiers,
                                 ClassHelper.OBJECT_TYPE);
             }
-
         }
 
         this.configureAST(classNode, ctx);
@@ -1338,12 +1337,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         String className = classNode.getNodeMetaData(CLASS_NAME);
         int modifiers = modifierManager.getClassMemberModifiersOpValue();
 
-        if (!asBoolean(ctx.returnType())
-                && asBoolean(ctx.methodBody())
+        boolean hasReturnType = asBoolean(ctx.returnType());
+        boolean hasMethodBody = asBoolean(ctx.methodBody());
+
+        if (!hasReturnType
+                && hasMethodBody
                 && methodName.equals(className)) { // constructor declaration
 
             methodNode = createConstructorNodeForClass(methodName, parameters, exceptions, code, classNode, modifiers);
         } else { // class memeber method declaration
+            if (!hasReturnType && hasMethodBody && (0 == modifierManager.getModifierCount())) {
+                throw createParsingFailedException("Invalid method declaration: " + methodName, ctx);
+            }
+
             methodNode = createMethodNodeForClass(ctx, modifierManager, methodName, returnType, parameters, exceptions, code, classNode, modifiers);
         }
 
@@ -2798,6 +2804,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         anonymousInnerClass.setUsingGenerics(false);
         anonymousInnerClass.setAnonymous(true);
+        anonymousInnerClass.putNodeMetaData(CLASS_NAME, fullName);
         this.configureAST(anonymousInnerClass, ctx);
 
         classNodeStack.push(anonymousInnerClass);
