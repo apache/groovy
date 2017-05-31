@@ -569,7 +569,7 @@ In Java, when using two classes of the same name but from different packages, li
 and `java.awt.List`, you can import one class, but have to use a fully-qualified name for the other.
 
 Also sometimes, in your code, multiple usages of a long class name, can increase verbosity and
-reduce clarify of the code.
+reduce clarity of the code.
 
 To improve such situations, Groovy features import aliasing:
 
