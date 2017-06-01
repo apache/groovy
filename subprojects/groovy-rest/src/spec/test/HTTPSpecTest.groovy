@@ -39,7 +39,9 @@ class HTTPSpecTest extends GroovyTestCase {
 
     void test2Https() {
         // tag::http2[]
-        def t = HTTP.get(url:"https://api.github.com/")
+        def t = HTTP.get(
+            url:"https://api.github.com/"
+        )
         assert t.response.code==200
         assert t.response.contentType =~ "/json"
         assert t.response.body instanceof Map // expecting response like:  { "current_user_url": "https://api.github.com/user", ... }
@@ -47,22 +49,61 @@ class HTTPSpecTest extends GroovyTestCase {
         // end::http2[]
     }
 
-    void test3HttpsXml() {
+    void test3HttpXml() {
         // tag::http3[]
-        //System.setProperty("https.protocols", "TLSv1");
+        //create xml with builder
+        def xml = new groovy.util.NodeBuilder().
+            aaa(a0:'a00'){
+                bbb(b0:'b00', "some text")
+            }
+        assert xml instanceof groovy.util.Node
+        //send post request
         def t = HTTP.get(
-            url:   "https://esb.alfabank.kiev.ua/services/Currency/getCardCrossRate",
-            query: [ccyFrom: 'USD', ccyTo:'UAH'],
-            ssl:   HTTP.getSSLContext("TLSv1")
+            url:   "https://httpbin.org/post",
+            query: [p1: "11&22", p2:"33 44"],
+            //define body as closure, so it will be called to serialize data to output stream 
+            body: {outStream,ctx->
+                groovy.xml.XmlUtil.serialize(xml,outStream)
+            },
+            //define content type as xml so server should response in xml
+            headers:[
+                "content-type":"application/xml"
+            ]
         )
         assert t.response.code==200
-        assert t.response.contentType =~ "/xml"
-        assert t.response.body instanceof groovy.util.Node
-
-        def ns = new groovy.xml.Namespace("http://sab/")
-        assert t.response.body[ns.currencyCrossRate][ns.ccyFrom].text()=="USD"
-        assert t.response.body[ns.currencyCrossRate][ns.ccyTo].text()=="UAH"
+        //the https://httpbin.org/post service returns json object 
+        //with `args` attribute with parameters and `data` attribute with body as string 
+        assert t.response.contentType =~ "/json"
+        assert t.response.body.args.p1 =="11&22"
+        assert t.response.body.args.p2 =="33 44"
+        assert t.response.body.data == groovy.xml.XmlUtil.serialize(xml)
         // end::http3[]
+    }
+
+    void test4PostJson() {
+        // tag::http4[]
+        def t = HTTP.post(
+            url:   "https://httpbin.org/post",
+            //define payload as maps/arrays
+            body: [
+              arr_int: [1,2,3,4,5,9],
+              str: "hello",
+            ],
+            //let's specify content-type = json, so JsonOutput.toJson() will be applied
+            headers:[
+                "content-type":"application/json"
+            ],
+            encoding: "UTF-8",  //force to use utf-8 encoding for sending/receiving data
+        )
+        assert t.response.code==200
+        assert t.response.contentType =~ "/json"
+        assert t.response.body instanceof Map
+        //the https://httpbin.org/post service returns json object with json key that contains posted body
+        //so let's take it and validate
+        def data = t.response.body.json  
+        assert data.arr_int==[1,2,3,4,5,9]
+        assert data.str=="hello"
+        // end::http4[]
     }
 
 }

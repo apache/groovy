@@ -28,3 +28,18 @@ Groovy's `groovy.io.HTTP` makes it easy to do http web requests:
 include::{rootProjectDir}/subprojects/groovy-rest/src/spec/test/HTTPSpecTest.groovy[tags=http1,indent=0]
 ----
 
+Http POST with XML example:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-rest/src/spec/test/HTTPSpecTest.groovy[tags=http3,indent=0]
+----
+
+
+Http POST with JSON example:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-rest/src/spec/test/HTTPSpecTest.groovy[tags=http4,indent=0]
+----
+
