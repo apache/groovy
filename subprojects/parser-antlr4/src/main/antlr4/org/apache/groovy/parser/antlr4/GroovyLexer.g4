@@ -52,6 +52,7 @@ options {
 @members {
     private long tokenIndex     = 0;
     private int  lastTokenType  = 0;
+    private int  invalidDigitCount = 0;
 
     /**
      * Record the index and token type of the current token while emitting tokens.
@@ -444,6 +445,9 @@ IntegerLiteral
     |   HexIntegerLiteral
     |   OctalIntegerLiteral
     |   BinaryIntegerLiteral
+
+    // !!! Error Alternative !!!
+    |   '0' ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
     ;
 
 fragment
