@@ -21,10 +21,14 @@ package groovy.lang;
 import groovy.security.GroovyCodeSourcePermission;
 import groovy.util.CharsetToolkit;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedActionException;
@@ -173,7 +177,7 @@ public class GroovyCodeSource {
         this.name = url.toExternalForm();
         this.codeSource = new CodeSource(url, (java.security.cert.Certificate[]) null);
         try {
-            String contentEncoding = url.openConnection().getContentEncoding();
+            String contentEncoding = getContentEncoding(url);
             if (contentEncoding != null) {
                 this.scriptText = ResourceGroovyMethods.getText(url, contentEncoding);
             } else {
@@ -182,6 +186,28 @@ public class GroovyCodeSource {
         } catch (IOException e) {
             throw new RuntimeException("Impossible to read the text content from " + name, e);
         }
+    }
+
+    /**
+     * TODO(jwagenleitner): remove or fix in future release
+     *
+     * According to the spec getContentEncoding() returns the Content-Encoding
+     * HTTP Header which typically carries values such as 'gzip' or 'deflate'
+     * and is not the character set encoding. For compatibility in 2.4.x,
+     * this behavior is retained but should be removed or fixed (parse
+     * charset from Content-Type header) in future releases.
+     *
+     * see GROOVY-8056 and https://github.com/apache/groovy/pull/500
+     */
+    private static String getContentEncoding(URL url) throws IOException {
+        URLConnection urlConnection = url.openConnection();
+        String encoding = urlConnection.getContentEncoding();
+        try {
+            IOGroovyMethods.closeQuietly(urlConnection.getInputStream());
+        } catch (IOException ignore) {
+            // For compatibility, ignore exceptions from getInputStream() call
+        }
+        return encoding;
     }
 
     CodeSource getCodeSource() {
