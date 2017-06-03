@@ -50,6 +50,7 @@ public class CachedField extends MetaProperty {
      * @throws RuntimeException if the property could not be evaluated
      */
     public Object getProperty(final Object object) {
+        AccessPermissionChecker.checkAccessPermission(field);
         try {
             return field.get(object);
         } catch (IllegalAccessException e) {
@@ -65,6 +66,7 @@ public class CachedField extends MetaProperty {
      * @throws RuntimeException if the property could not be set
      */
     public void setProperty(final Object object, Object newValue) {
+        AccessPermissionChecker.checkAccessPermission(field);
         final Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
 
         if (isFinal()) {

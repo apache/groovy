@@ -90,6 +90,12 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public final Object invoke(Object object, Object[] arguments) {
         try {
+            AccessPermissionChecker.checkAccessPermission(cachedMethod);
+        }
+        catch (CacheAccessControlException ex) {
+            throw new InvokerInvocationException(ex);
+        }
+        try {
             return cachedMethod.invoke(object, arguments);
         } catch (IllegalArgumentException e) {
             throw new InvokerInvocationException(e);
@@ -124,6 +130,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Method setAccessible() {
+        AccessPermissionChecker.checkAccessPermission(cachedMethod);
 //        if (queuedToCompile.compareAndSet(false,true)) {
 //            if (isCompilable())
 //              CompileThread.addMethod(this);
@@ -324,6 +331,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public Method getCachedMethod() {
+        AccessPermissionChecker.checkAccessPermission(cachedMethod);
         return cachedMethod;
     }
 
