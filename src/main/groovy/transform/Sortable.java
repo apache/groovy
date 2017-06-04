@@ -126,31 +126,27 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') }.toSorted() == ['comparatorByMaxAttendees', 'comparatorByTitle']
  *
  * //--------------------------------------------------------------------------
- * // Sortinng by max attendees using reversed order
- * &#64;Sortable(includes = ['maxAttendees'], reversed = true)
+ * // Sorting by max attendees using reversed order
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
+ * &#64;Sortable(includes = ['points'], reversed = true)
  * &#64;ToString
- * class Course {
- *     String title
- *     Date beginDate
- *     Integer maxAttendees
+ * class LeaderBoardEntry {
+ *     String team
+ *     int points
  * }
  *
- *  final Course groovy = new Course(
- *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
- * final Course groovy2 = new Course(
- *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
- * final Course grails = new Course(
- *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
  *
+ * final LeaderBoardEntry teamA = new LeaderBoardEntry(team: "Team A", points: 30)
+ * final LeaderBoardEntry teamB = new LeaderBoardEntry(team: "Team B", points: 80)
+ * final LeaderBoardEntry teamC = new LeaderBoardEntry(team: "Team C", points: 50)
  *
- * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ * final List&lt;LeaderBoardEntry&gt; leaderBoard = [teamA, teamB, teamC].toSorted()
  *
- * // Use toSorted() method to sort
- * final List&lt;Course&gt; sorted = courses.toSorted()
- *
- * assert sorted.first().title == 'Groovy'
- * assert sorted.last().title == 'Grails'
- * assert sorted.maxAttendees == [50, 40, 20]
+ * assert leaderBoard.first().team == 'Team B'
+ * assert leaderBoard.last().team == 'Team A'
+ * assert leaderBoard.points == [80, 50, 30]
  *
  * </pre>
  *
