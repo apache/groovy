@@ -82,6 +82,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private void createSortable(AnnotationNode annotation, ClassNode classNode) {
         List<String> includes = getMemberStringList(annotation, "includes");
         List<String> excludes = getMemberStringList(annotation, "excludes");
+        boolean reversed = getMemberBoolValue(annotation, "reversed");
         if (!checkIncludeExcludeUndefinedAware(annotation, excludes, includes, MY_TYPE_NAME)) return;
         if (!checkPropertyList(classNode, includes, "includes", annotation, MY_TYPE_NAME, false)) return;
         if (!checkPropertyList(classNode, excludes, "excludes", annotation, MY_TYPE_NAME, false)) return;
@@ -97,11 +98,11 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 ClassHelper.int_TYPE,
                 params(param(newClass(classNode), OTHER)),
                 ClassNode.EMPTY_ARRAY,
-                createCompareToMethodBody(properties)
+                createCompareToMethodBody(properties, reversed)
         ));
 
         for (PropertyNode property : properties) {
-            createComparatorFor(classNode, property);
+            createComparatorFor(classNode, property, reversed);
         }
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
@@ -112,7 +113,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static Statement createCompareToMethodBody(List<PropertyNode> properties) {
+    private static Statement createCompareToMethodBody(List<PropertyNode> properties, Boolean reversed) {
         List<Statement> statements = new ArrayList<Statement>();
 
         // if (this.is(other)) return 0;
@@ -123,14 +124,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
             // return this.hashCode() <=> other.hashCode()
             statements.add(declS(varX(THIS_HASH, ClassHelper.Integer_TYPE), callX(varX("this"), "hashCode")));
             statements.add(declS(varX(OTHER_HASH, ClassHelper.Integer_TYPE), callX(varX(OTHER), "hashCode")));
-            statements.add(returnS(cmpX(varX(THIS_HASH), varX(OTHER_HASH))));
+            statements.add(returnS(cmpX(varX(THIS_HASH), varX(OTHER_HASH), reversed)));
         } else {
             // int value = 0;
             statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
             for (PropertyNode property : properties) {
                 String propName = property.getName();
                 // value = this.prop <=> other.prop;
-                statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), propX(varX(OTHER), propName))));
+                statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), propX(varX(OTHER), propName), reversed)));
                 // if (value != 0) return value;
                 statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
             }
@@ -143,7 +144,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         return body;
     }
 
-    private static Statement createCompareMethodBody(PropertyNode property) {
+    private static Statement createCompareMethodBody(PropertyNode property, boolean reversed) {
         String propName = property.getName();
         return block(
                 // if (arg0 == arg1) return 0;
@@ -153,11 +154,11 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 // if (arg0 == null && arg1 != null) return 1;
                 ifS(andX(equalsNullX(varX(ARG0)), notNullX(varX(ARG1))), returnS(constX(1))),
                 // return arg0.prop <=> arg1.prop;
-                returnS(cmpX(propX(varX(ARG0), propName), propX(varX(ARG1), propName)))
+                returnS(cmpX(propX(varX(ARG0), propName), propX(varX(ARG1), propName), reversed))
         );
     }
 
-    private static void createComparatorFor(ClassNode classNode, PropertyNode property) {
+    private static void createComparatorFor(ClassNode classNode, PropertyNode property, boolean reversed) {
         String propName = property.getName();
         String className = classNode.getName() + "$" + StringGroovyMethods.capitalize(propName) + "Comparator";
         ClassNode superClass = makeClassSafeWithGenerics(AbstractComparator.class, classNode);
@@ -170,7 +171,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 ClassHelper.int_TYPE,
                 params(param(newClass(classNode), ARG0), param(newClass(classNode), ARG1)),
                 ClassNode.EMPTY_ARRAY,
-                createCompareMethodBody(property)
+                createCompareMethodBody(property, reversed)
         ));
 
         String fieldName = "this$" + StringGroovyMethods.capitalize(propName) + "Comparator";

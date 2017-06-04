@@ -45,6 +45,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *     priority will be according to the order given in the includes list)</li>
  *     <li>have three {@code Comparator} methods named {@code comparatorByFirst},
  *     {@code comparatorByLast} and {@code comparatorByBorn}</li>
+ *     <li>sort by natural order by default, reversed natural order can be specified</li>
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
  * <p>More examples:</p>
@@ -123,6 +124,34 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * assert sortedByMaxAttendees[2].beginDate &lt; sortedByMaxAttendees[1].beginDate
  *
  * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') }.toSorted() == ['comparatorByMaxAttendees', 'comparatorByTitle']
+ *
+ * //--------------------------------------------------------------------------
+ * // Sortinng by max attendees using reversed order
+ * &#64;Sortable(includes = ['maxAttendees'], reversed = true)
+ * &#64;ToString
+ * class Course {
+ *     String title
+ *     Date beginDate
+ *     Integer maxAttendees
+ * }
+ *
+ *  final Course groovy = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 7, maxAttendees: 40)
+ * final Course groovy2 = new Course(
+ *         title: 'Groovy', beginDate: new Date() + 2, maxAttendees: 50)
+ * final Course grails = new Course(
+ *         title: 'Grails', beginDate: new Date() + 1, maxAttendees: 20)
+ *
+ *
+ * final List&lt;Course&gt; courses = [groovy, groovy2, grails]
+ *
+ * // Use toSorted() method to sort
+ * final List&lt;Course&gt; sorted = courses.toSorted()
+ *
+ * assert sorted.first().title == 'Groovy'
+ * assert sorted.last().title == 'Grails'
+ * assert sorted.maxAttendees == [50, 40, 20]
+ *
  * </pre>
  *
  * @author Andres Almiray
@@ -145,4 +174,9 @@ public @interface Sortable {
      * Must not be used if 'includes' is used.
      */
     String[] excludes() default {};
+
+    /**
+     * Set to true so that comparator uses reversed natural order.
+     */
+    boolean reversed() default false;
 }

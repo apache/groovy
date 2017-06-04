@@ -115,6 +115,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return 0;
     }
 
+    public boolean getMemberBoolValue(AnnotationNode node, String name) {
+        Object value = getMemberValue(node, name);
+        if (value != null && value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return false;
+    }
+
     public ClassNode getMemberClassValue(AnnotationNode node, String name) {
         return getMemberClassValue(node, name, null);
     }
