@@ -20,7 +20,7 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
 
-public class CacheAccessControlException extends GroovyRuntimeException{
+public class CacheAccessControlException extends GroovyRuntimeException {
     public CacheAccessControlException(String message, Throwable cause) {
         super(message, cause);
     }
