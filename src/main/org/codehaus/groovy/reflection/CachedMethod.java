@@ -91,8 +91,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public final Object invoke(Object object, Object[] arguments) {
         try {
             AccessPermissionChecker.checkAccessPermission(cachedMethod);
-        }
-        catch (CacheAccessControlException ex) {
+        } catch (CacheAccessControlException ex) {
             throw new InvokerInvocationException(ex);
         }
         try {
