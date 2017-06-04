@@ -45,6 +45,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *     priority will be according to the order given in the includes list)</li>
  *     <li>have three {@code Comparator} methods named {@code comparatorByFirst},
  *     {@code comparatorByLast} and {@code comparatorByBorn}</li>
+ *     <li>sort by natural order by default, reversed natural order can be specified</li>
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
  * <p>More examples:</p>
@@ -123,6 +124,30 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * assert sortedByMaxAttendees[2].beginDate &lt; sortedByMaxAttendees[1].beginDate
  *
  * assert Course.declaredMethods.name.findAll { it.startsWith('comparatorBy') }.toSorted() == ['comparatorByMaxAttendees', 'comparatorByTitle']
+ *
+ * //--------------------------------------------------------------------------
+ * // Sorting by max attendees using reversed order
+ * import groovy.transform.Sortable
+ * import groovy.transform.ToString
+ *
+ * &#64;Sortable(includes = ['points'], reversed = true)
+ * &#64;ToString
+ * class LeaderBoardEntry {
+ *     String team
+ *     int points
+ * }
+ *
+ *
+ * final LeaderBoardEntry teamA = new LeaderBoardEntry(team: "Team A", points: 30)
+ * final LeaderBoardEntry teamB = new LeaderBoardEntry(team: "Team B", points: 80)
+ * final LeaderBoardEntry teamC = new LeaderBoardEntry(team: "Team C", points: 50)
+ *
+ * final List&lt;LeaderBoardEntry&gt; leaderBoard = [teamA, teamB, teamC].toSorted()
+ *
+ * assert leaderBoard.first().team == 'Team B'
+ * assert leaderBoard.last().team == 'Team A'
+ * assert leaderBoard.points == [80, 50, 30]
+ *
  * </pre>
  *
  * @author Andres Almiray
@@ -145,4 +170,10 @@ public @interface Sortable {
      * Must not be used if 'includes' is used.
      */
     String[] excludes() default {};
+
+    /**
+     * Set to true so that comparator uses reversed natural order.
+     * @since 2.5.0
+     */
+    boolean reversed() default false;
 }

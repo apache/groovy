@@ -219,8 +219,25 @@ public class GeneralUtils {
         return result;
     }
 
+    /**
+     * Build a binary expression that compares two values
+     * @param lhv expression for the value to compare from
+     * @param rhv expression for the value value to compare to
+     * @return the expression comparing two values
+     */
     public static BinaryExpression cmpX(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, CMP, rhv);
+    }
+
+    /**
+     * Build a binary expression that compares two values
+     * @param lhv expression for the value to compare from
+     * @param rhv expression for the value value to compare to
+     * @param reversed whether to use natural ordering or reversed natural ordering
+     * @return the expression comparing two values
+     */
+    public static BinaryExpression cmpX(Expression lhv, Expression rhv, boolean reversed) {
+        return (reversed) ? cmpX(rhv, lhv) : cmpX(lhv, rhv);
     }
 
     public static ConstantExpression constX(Object val) {

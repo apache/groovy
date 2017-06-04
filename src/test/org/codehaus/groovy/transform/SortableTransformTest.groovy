@@ -166,4 +166,27 @@ class SortableTransformTest extends CompilableTestSupport {
         '''
         assert message.contains("@Sortable cannot be applied to interface Foo")
     }
+
+    void testReverseSorting() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            @Canonical
+            @Sortable(includes = ['age'], reversed = true)
+            class Person {
+                String name
+                int age
+            }
+
+            def persons = [
+                new Person('PJ', 25),
+                new Person('Guillaume', 40)
+            ]
+
+            assert persons*.age == [25, 40]
+            assert persons.sort()*.age == [40, 25]
+            assert persons.sort(false, Person.comparatorByAge())*.age == [40, 25]
+        '''
+    }
 }
