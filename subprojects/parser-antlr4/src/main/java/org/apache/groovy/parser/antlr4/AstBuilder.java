@@ -3990,7 +3990,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
     }
 
-    private static final Map<ClassNode, Object> TYPE_DEFAULT_VALUE_MAP = Maps.of(
+    private static final Map<ClassNode, Object> TYPE_DEFAULT_VALUE_MAP = Maps.<ClassNode, Object>of(
             ClassHelper.int_TYPE, 0,
             ClassHelper.long_TYPE, 0L,
             ClassHelper.double_TYPE, 0.0D,

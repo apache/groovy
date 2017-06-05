@@ -46,7 +46,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * Created by Daniel.Sun on 2016/08/27.
  */
 class ModifierManager {
-    private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.of(
+    private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.<Class, List<Integer>>of(
             ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE),
             MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/)
     );

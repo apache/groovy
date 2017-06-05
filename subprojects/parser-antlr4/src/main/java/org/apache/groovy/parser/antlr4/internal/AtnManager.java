@@ -41,7 +41,7 @@ public class AtnManager {
     private static final int CACHE_THRESHOLD;
     private final Class ownerClass;
     private final ATN atn;
-    private static final Map<Class, AtnWrapper> ATN_MAP = Maps.of(
+    private static final Map<Class, AtnWrapper> ATN_MAP = Maps.<Class, AtnWrapper>of(
             GroovyLangLexer.class, new AtnWrapper(GroovyLangLexer._ATN),
             GroovyLangParser.class, new AtnWrapper(GroovyLangParser._ATN)
     );
