@@ -15760,8 +15760,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean and(Boolean left, Boolean right) {
-        right = Boolean.TRUE.equals(right);
-        return left && right;
+        return left && Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15773,8 +15772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean or(Boolean left, Boolean right) {
-        right = Boolean.TRUE.equals(right);
-        return left || right;
+        return left || Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15786,8 +15784,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.3
      */
     public static Boolean implies(Boolean left, Boolean right) {
-        right = Boolean.TRUE.equals(right);
-        return !left || right;
+        return !left || Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15799,8 +15796,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean xor(Boolean left, Boolean right) {
-        right = Boolean.TRUE.equals(right);
-        return left ^ right;
+        return left ^ Boolean.TRUE.equals(right);
     }
 
 //    public static Boolean negate(Boolean left) {
