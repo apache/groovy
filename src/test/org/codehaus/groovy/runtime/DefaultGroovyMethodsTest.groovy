@@ -269,10 +269,10 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testBooleanImplication() {
         assertTrue(DefaultGroovyMethods.implies(true, true))
-        assertTrue(DefaultGroovyMethods.xor(true, false))
-        assertTrue(DefaultGroovyMethods.xor(false, true))
-        assertFalse(DefaultGroovyMethods.xor(false, false))
-        assertFalse(DefaultGroovyMethods.xor(false, null))
-        assertTrue(DefaultGroovyMethods.xor(true, null))
+        assertFalse(DefaultGroovyMethods.implies(true, false))
+        assertTrue(DefaultGroovyMethods.implies(false, true))
+        assertTrue(DefaultGroovyMethods.implies(false, false))
+        assertTrue(DefaultGroovyMethods.implies(false, null))
+        assertFalse(DefaultGroovyMethods.implies(true, null))
     }
 }
