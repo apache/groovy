@@ -18,6 +18,9 @@
  */
 package groovy.grape
 
+import org.apache.groovy.plugin.GroovyRunner
+import org.apache.groovy.plugin.GroovyRunnerRegistry
+
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.cache.ResolutionCacheManager
@@ -61,6 +64,9 @@ import org.codehaus.groovy.reflection.ClassInfo
 class GrapeIvy implements GrapeEngine {
 
     static final int DEFAULT_DEPTH = 3
+
+    private static final String METAINF_PREFIX = 'META-INF/services/'
+    private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.class.getName()
 
     private final exclusiveGrabArgs = [
             ['group', 'groupId', 'organisation', 'organization', 'org'],
@@ -258,11 +264,18 @@ class GrapeIvy implements GrapeEngine {
             for (URI uri in uris) {
                 loader.addURL(uri.toURL())
             }
+            boolean runnerServicesFound = false
             for (URI uri in uris) {
                 //TODO check artifact type, jar vs library, etc
                 File file = new File(uri)
                 processCategoryMethods(loader, file)
-                processOtherServices(loader, file)
+                Collection<String> services = processMetaInfServices(loader, file)
+                if (!runnerServicesFound) {
+                    runnerServicesFound = services.contains(RUNNER_PROVIDER_CONFIG)
+                }
+            }
+            if (runnerServicesFound) {
+                GroovyRunnerRegistry.getInstance().load(loader)
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -313,20 +326,44 @@ class GrapeIvy implements GrapeEngine {
     }
 
     void processOtherServices(ClassLoader loader, File f) {
+        processMetaInfServices(loader, f) // ignore result
+    }
+
+    /**
+     * Searches the given File for known service provider
+     * configuration files to process.
+     *
+     * @param loader used to locate service provider files
+     * @param f ZipFile in which to search for services
+     * @return a collection of service provider files that were found
+     */
+    private Collection<String> processMetaInfServices(ClassLoader loader, File f) {
+        List<String> services = new ArrayList<>()
         try {
             ZipFile zf = new ZipFile(f)
-            ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
+            String providerConfig = 'org.codehaus.groovy.runtime.SerializedCategoryMethods'
+            ZipEntry serializedCategoryMethods = zf.getEntry(METAINF_PREFIX + providerConfig)
             if (serializedCategoryMethods != null) {
+                services.add(providerConfig)
                 processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
             }
-            ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
+            // TODO: remove in a future release (replaced by GroovyRunnerRegistry)
+            providerConfig = 'org.codehaus.groovy.plugins.Runners'
+            ZipEntry pluginRunners = zf.getEntry(METAINF_PREFIX + providerConfig)
             if (pluginRunners != null) {
+                services.add(providerConfig)
                 processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+            }
+            // GroovyRunners are loaded per ClassLoader using a ServiceLoader so here
+            // it only needs to be indicated that the service provider file was found
+            if (zf.getEntry(METAINF_PREFIX + RUNNER_PROVIDER_CONFIG) != null) {
+                services.add(RUNNER_PROVIDER_CONFIG)
             }
         } catch(ZipException ignore) {
             // ignore files we can't process, e.g. non-jar/zip artifacts
             // TODO log a warning
         }
+        return services
     }
 
     void processSerializedCategoryMethods(InputStream is) {
@@ -336,9 +373,10 @@ class GrapeIvy implements GrapeEngine {
     }
 
     void processRunners(InputStream is, String name, ClassLoader loader) {
+        GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance()
         is.text.readLines()*.trim().findAll{ !it.isEmpty() && it[0] != '#' }.each {
             try {
-                GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it).newInstance()
+                registry[name] = loader.loadClass(it).newInstance()
             } catch (Exception ex) {
                 throw new IllegalStateException("Error registering runner class '" + it + "'", ex)
             }
