@@ -48,6 +48,7 @@ import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.NodeMetaDataHandler;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -1749,7 +1750,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                     (PropertyExpression) baseExpr, arguments),
                             arguments);
 
-        } else if (baseExpr instanceof MethodCallExpression && !isTrue(baseExpr, IS_INSIDE_PARENTHESES)) { // e.g. m {} a, b  OR  m(...) a, b
+        } else if (baseExpr instanceof MethodCallExpression && !isInsideParentheses(baseExpr)) { // e.g. m {} a, b  OR  m(...) a, b
             if (asBoolean(arguments)) {
                 // The error should never be thrown.
                 throw new GroovyBugError("When baseExpr is a instance of MethodCallExpression, which should follow NO argumentList");
@@ -1757,7 +1758,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             methodCallExpression = (MethodCallExpression) baseExpr;
         } else if (
-                !isTrue(baseExpr, IS_INSIDE_PARENTHESES)
+                !isInsideParentheses(baseExpr)
                         && (baseExpr instanceof VariableExpression /* e.g. m 1, 2 */
                         || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
                         || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)
@@ -1851,8 +1852,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Expression visitParExpression(ParExpressionContext ctx) {
         Expression expression = this.visitExpressionInPar(ctx.expressionInPar());
-
-        expression.putNodeMetaData(IS_INSIDE_PARENTHESES, true);
 
         Integer insideParenLevel = expression.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
         if (asBoolean((Object) insideParenLevel)) {
@@ -1984,7 +1983,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             Expression argumentsExpr = this.visitArguments(ctx.arguments());
             this.configureAST(argumentsExpr, ctx);
 
-            if (isTrue(baseExpr, IS_INSIDE_PARENTHESES)) { // e.g. (obj.x)(), (obj.@x)()
+            if (isInsideParentheses(baseExpr)) { // e.g. (obj.x)(), (obj.@x)()
                 MethodCallExpression methodCallExpression =
                         new MethodCallExpression(
                                 baseExpr,
@@ -2437,7 +2436,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ExpressionContext expressionCtx = ctx.expression();
         Expression expression = (Expression) this.visit(expressionCtx);
 
-        Boolean insidePar = isTrue(expression, IS_INSIDE_PARENTHESES);
+        Boolean insidePar = isInsideParentheses(expression);
 
         switch (ctx.op.getType()) {
             case ADD: {
@@ -2629,7 +2628,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         Expression leftExpr = (Expression) this.visit(ctx.left);
 
         if (leftExpr instanceof VariableExpression
-                && isTrue(leftExpr, IS_INSIDE_PARENTHESES)) { // it is a special multiple assignment whose variable count is only one, e.g. (a) = [1]
+                && isInsideParentheses(leftExpr)) { // it is a special multiple assignment whose variable count is only one, e.g. (a) = [1]
 
             if ((Integer) leftExpr.getNodeMetaData(INSIDE_PARENTHESES_LEVEL) > 1) {
                 throw createParsingFailedException("Nested parenthesis is not allowed in multiple assignment, e.g. ((a)) = b", ctx);
@@ -2648,7 +2647,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 !(
                         (leftExpr instanceof VariableExpression
 //                                && !(THIS_STR.equals(leftExpr.getText()) || SUPER_STR.equals(leftExpr.getText()))     // commented, e.g. this = value // this will be transformed to $this
-                                && !isTrue(leftExpr, IS_INSIDE_PARENTHESES)) // e.g. p = 123
+                                && !isInsideParentheses(leftExpr)) // e.g. p = 123
 
                                 || leftExpr instanceof PropertyExpression // e.g. obj.p = 123
 
@@ -2929,7 +2928,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             Expression expression = (Expression) this.visit(ctx.primary());
 
             // if the key is variable and not inside parentheses, convert it to a constant, e.g. [a:1, b:2]
-            if (expression instanceof VariableExpression && !isTrue(expression, IS_INSIDE_PARENTHESES)) {
+            if (expression instanceof VariableExpression && !isInsideParentheses(expression)) {
                 expression =
                         this.configureAST(
                                 new ConstantExpression(((VariableExpression) expression).getName()),
@@ -4019,6 +4018,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return moduleNode.getStatementBlock().isEmpty() && moduleNode.getMethods().isEmpty() && moduleNode.getClasses().isEmpty();
     }
 
+    private boolean isInsideParentheses(NodeMetaDataHandler nodeMetaDataHandler) {
+        Integer insideParenLevel = nodeMetaDataHandler.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
+
+        if (asBoolean((Object) insideParenLevel)) {
+            return insideParenLevel > 0;
+        }
+
+        return false;
+    }
+
     private void addEmptyReturnStatement() {
         moduleNode.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
     }
@@ -4182,29 +4191,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return astNode;
     }
 
-    private boolean isTrue(GroovyParserRuleContext ctx, String key) {
-        Object nmd = ctx.getNodeMetaData(key);
+    private boolean isTrue(NodeMetaDataHandler nodeMetaDataHandler, String key) {
+        Object nmd = nodeMetaDataHandler.getNodeMetaData(key);
 
         if (null == nmd) {
             return false;
         }
 
         if (!(nmd instanceof Boolean)) {
-            throw new GroovyBugError(ctx + " ctx meta data[" + key + "] is not an instance of Boolean");
-        }
-
-        return (Boolean) nmd;
-    }
-
-    private boolean isTrue(ASTNode node, String key) {
-        Object nmd = node.getNodeMetaData(key);
-
-        if (null == nmd) {
-            return false;
-        }
-
-        if (!(nmd instanceof Boolean)) {
-            throw new GroovyBugError(node + " node meta data[" + key + "] is not an instance of Boolean");
+            throw new GroovyBugError(nodeMetaDataHandler + " node meta data[" + key + "] is not an instance of Boolean");
         }
 
         return (Boolean) nmd;
@@ -4434,7 +4429,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final Set<String> PRIMITIVE_TYPE_SET = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("boolean", "char", "byte", "short", "int", "long", "float", "double")));
     private static final Logger LOGGER = Logger.getLogger(AstBuilder.class.getName());
 
-    private static final String IS_INSIDE_PARENTHESES = "_IS_INSIDE_PARENTHESES";
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
 
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
