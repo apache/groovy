@@ -42,22 +42,33 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 public class GroovydocManager {
     public static final String DOC_COMMENT = "_DOC_COMMENT"; // keys for meta data
     private static final String DOC_COMMENT_PREFIX = "/**";
-    private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment";
     private static final String TRUE_STR = "true";
-    private static final boolean EXTRACTING_DOC_COMMENT_ENABLED;
+
+    @Deprecated
+    private static final String EXTRACT_DOC_COMMENT = "groovy.extract.doc.comment"; // it will be removed in future releases and replaced with ATTACH_GROOVYDOC
+    private static final String ATTACH_GROOVYDOC = "groovy.attach.groovydoc";
+    private static final boolean ATTACHING_GROOVYDOC_ENABLED;
+    private static final String ATTACH_RUNTIME_GROOVYDOC = "groovy.attach.runtime.groovydoc";
+    private static final boolean ATTACHING_RUNTIME_GROOVYDOC_ENABLED;
     private static final String VALUE = "value";
     private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
     private AstBuilder astBuilder;
 
     static {
-        boolean edce;
+        ATTACHING_GROOVYDOC_ENABLED = isFeatureEnabled(ATTACH_GROOVYDOC) || isFeatureEnabled(EXTRACT_DOC_COMMENT);
+        ATTACHING_RUNTIME_GROOVYDOC_ENABLED = isFeatureEnabled(ATTACH_RUNTIME_GROOVYDOC);
+    }
+
+    private static boolean isFeatureEnabled(String featureOpt) {
+        boolean result;
+
         try {
-            edce = TRUE_STR.equals(System.getProperty(EXTRACT_DOC_COMMENT));
+            result = TRUE_STR.equals(System.getProperty(featureOpt));
         } catch (Exception e) {
-            edce = false;
+            result = false;
         }
 
-        EXTRACTING_DOC_COMMENT_ENABLED = edce;
+        return result;
     }
 
     public GroovydocManager(AstBuilder astBuilder) {
@@ -86,7 +97,7 @@ public class GroovydocManager {
      * Attach doc comment to member node as meta data
      */
     private void attachDocCommentAsMetaData(ASTNode node, String docCommentNodeText) {
-        if (!EXTRACTING_DOC_COMMENT_ENABLED) {
+        if (!ATTACHING_GROOVYDOC_ENABLED) {
             return;
         }
 
@@ -101,7 +112,7 @@ public class GroovydocManager {
             return;
         }
 
-        if (!docCommentNodeText.matches(RUNTIME_GROOVYDOC_PATTERN)) {
+        if (!(ATTACHING_RUNTIME_GROOVYDOC_ENABLED || docCommentNodeText.matches(RUNTIME_GROOVYDOC_PATTERN))) {
             return;
         }
 
