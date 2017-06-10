@@ -73,5 +73,5 @@ allprojects {
 }
 
 test {
-    jvmArgs "-Dgroovy.extract.doc.comment=true", "-Dgroovy.antlr4.cache.threshold=100"
+    jvmArgs "-Dgroovy.attach.groovydoc=true", "-Dgroovy.antlr4.cache.threshold=100"
 }
