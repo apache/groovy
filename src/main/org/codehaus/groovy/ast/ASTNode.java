@@ -18,10 +18,8 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -46,13 +44,13 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
-public class ASTNode {
+public class ASTNode implements NodeMetaDataHandler {
 
     private int lineNumber = -1;
     private int columnNumber = -1;
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
-    private ListHashMap metaDataMap = null;
+    private Map metaDataMap = null;
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -108,93 +106,22 @@ public class ASTNode {
         this.lastColumnNumber = node.getLastColumnNumber();
         this.lineNumber = node.getLineNumber();
     }
-    
-    /**
-     * Gets the node meta data. 
-     * 
-     * @param key - the meta data key
-     * @return the node meta data value for this key
-     */
-    public <T> T getNodeMetaData(Object key) {
-        if (metaDataMap == null) {
-            return (T) null;
-        }
-        return (T) metaDataMap.get(key);
-    }
 
     /**
      * Copies all node meta data from the other node to this one
      * @param other - the other node
      */
     public void copyNodeMetaData(ASTNode other) {
-        if (other.metaDataMap == null) {
-            return;
-        }
-        if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
-        }
-        metaDataMap.putAll(other.metaDataMap);
-    }
-    
-    /**
-     * Sets the node meta data. 
-     * 
-     * @param key - the meta data key
-     * @param value - the meta data value
-     * @throws GroovyBugError if key is null or there is already meta 
-     *                        data under that key
-     */
-    public void setNodeMetaData(Object key, Object value) {
-        if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
-        if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
-        }
-        Object old = metaDataMap.put(key,value);
-        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
+        copyNodeMetaData((NodeMetaDataHandler) other);
     }
 
-    /**
-     * Sets the node meta data but allows overwriting values.
-     *
-     * @param key   - the meta data key
-     * @param value - the meta data value
-     * @return the old node meta data value for this key
-     * @throws GroovyBugError if key is null
-     */
-    public Object putNodeMetaData(Object key, Object value) {
-        if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
-        if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
-        }
-        return metaDataMap.put(key, value);
-    }
-
-    /**
-     * Removes a node meta data entry.
-     * 
-     * @param key - the meta data key
-     * @throws GroovyBugError if the key is null
-     */
-    public void removeNodeMetaData(Object key) {
-        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
-        if (metaDataMap == null) {
-            return;
-        }
-        metaDataMap.remove(key);
-    }
-
-    /**
-     * Returns an unmodifiable view of the current node metadata.
-     * @return the node metadata. Always not null.
-     */
-    public Map<?,?> getNodeMetaData() {
-        if (metaDataMap==null) {
-            return Collections.emptyMap();
-        }
-        return Collections.unmodifiableMap(metaDataMap);
-    }
-
+    @Override
     public ListHashMap getMetaDataMap() {
-        return metaDataMap;
+        return (ListHashMap) metaDataMap;
+    }
+
+    @Override
+    public void setMetaDataMap(Map<?, ?> metaDataMap) {
+        this.metaDataMap = metaDataMap;
     }
 }
