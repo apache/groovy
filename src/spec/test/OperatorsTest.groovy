@@ -607,4 +607,46 @@ assert (b1 + 11).size == 15
             assert str1 == str2
             '''
     }
+
+    void testBooleanOr() {
+        assertScript '''
+boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
+boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
+
+assert (trueValue1 |= true)
+assert (trueValue2 |= false)
+assert (trueValue3 |= null)
+assert (falseValue1 |= true)
+assert !(falseValue2 |= false)
+assert !(falseValue3 |= null)
+'''
+    }
+
+    void testBooleanAnd() {
+        assertScript '''
+boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
+boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
+
+assert (trueValue1 &= true)
+assert !(trueValue2 &= false)
+assert !(trueValue3 &= null)
+assert !(falseValue1 &= true)
+assert !(falseValue2 &= false)
+assert !(falseValue3 &= null)
+'''
+    }
+
+    void testBooleanXor() {
+        assertScript '''
+boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
+boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
+
+assert !(trueValue1 ^= true)
+assert (trueValue2 ^= false)
+assert (trueValue3 ^= null)
+assert (falseValue1 ^= true)
+assert !(falseValue2 ^= false)
+assert !(falseValue3 ^= null)
+'''
+    }
 }

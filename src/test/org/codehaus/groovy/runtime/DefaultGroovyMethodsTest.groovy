@@ -239,4 +239,40 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     private static class MyList extends ArrayList {
         public MyList() {}
     }
+
+    public void testBooleanOr() {
+        assertTrue(DefaultGroovyMethods.or(true, true))
+        assertTrue(DefaultGroovyMethods.or(true, false))
+        assertTrue(DefaultGroovyMethods.or(false, true))
+        assertFalse(DefaultGroovyMethods.or(false, false))
+        assertFalse(DefaultGroovyMethods.or(false, null))
+        assertTrue(DefaultGroovyMethods.or(true, null))
+    }
+
+    public void testBooleanAnd() {
+        assertTrue(DefaultGroovyMethods.and(true, true))
+        assertFalse(DefaultGroovyMethods.and(true, false))
+        assertFalse(DefaultGroovyMethods.and(false, true))
+        assertFalse(DefaultGroovyMethods.and(false, false))
+        assertFalse(DefaultGroovyMethods.and(false, null))
+        assertFalse(DefaultGroovyMethods.and(true, null))
+    }
+
+    public void testBooleanXor() {
+        assertFalse(DefaultGroovyMethods.xor(true, true))
+        assertTrue(DefaultGroovyMethods.xor(true, false))
+        assertTrue(DefaultGroovyMethods.xor(false, true))
+        assertFalse(DefaultGroovyMethods.xor(false, false))
+        assertFalse(DefaultGroovyMethods.xor(false, null))
+        assertTrue(DefaultGroovyMethods.xor(true, null))
+    }
+
+    public void testBooleanImplication() {
+        assertTrue(DefaultGroovyMethods.implies(true, true))
+        assertFalse(DefaultGroovyMethods.implies(true, false))
+        assertTrue(DefaultGroovyMethods.implies(false, true))
+        assertTrue(DefaultGroovyMethods.implies(false, false))
+        assertTrue(DefaultGroovyMethods.implies(false, null))
+        assertFalse(DefaultGroovyMethods.implies(true, null))
+    }
 }
