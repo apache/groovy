@@ -1218,7 +1218,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         BytecodeVariable variable = controller.getCompileStack().getVariable(variableName, false);
         if (variable == null) {
-            processClassVariable(variableName);
+            processClassVariable(expression);
         } else {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
         }
@@ -1242,22 +1242,24 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void processClassVariable(String name) {
+    private void processClassVariable(VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
             //TODO: check if this part is actually used
-            MethodVisitor mv = controller.getMethodVisitor();
+            MethodVisitor methodVisitor = controller.getMethodVisitor();
             // let's create a ScriptReference to pass into the closure
-            mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
-            mv.visitInsn(DUP);
+            methodVisitor.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
+            methodVisitor.visitInsn(DUP);
 
             loadThisOrOwner();
-            mv.visitLdcInsn(name);
+            methodVisitor.visitLdcInsn(expression.getName());
 
-            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
+            methodVisitor.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
-            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), name);
-            pexp.setImplicitThis(true);
-            visitPropertyExpression(pexp);
+            PropertyExpression propertyExpression = new PropertyExpression(new VariableExpression("this"), expression.getName());
+            propertyExpression.getObjectExpression().setSourcePosition(expression);
+            propertyExpression.getProperty().setSourcePosition(expression);
+            propertyExpression.setImplicitThis(true);
+            visitPropertyExpression(propertyExpression);
         }
     }
 
