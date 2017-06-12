@@ -86,31 +86,31 @@ public class HTTP{
             return f;
         }
     }
-    /** Sends request using http method 'GET'. See {@link #send(Map<String, Object>)} for parameter details. */
+    /** Sends request using http method 'GET'. See {@link #send(Map&lt;String,Object&gt;)} for parameter details. */
     public static Map<String,Object> get(Map<String,Object> ctx)throws IOException{
         ctx.put('method','GET');
         return send(ctx);
     }
     
-    /** Sends request using http method 'HEAD'. See {@link #send(Map<String, Object>)} for parameter details. */
+    /** Sends request using http method 'HEAD'. See {@link #send(Map&lt;String,Object&gt;)} for parameter details. */
     public static Map<String,Object> head(Map<String,Object> ctx)throws IOException{
         ctx.put('method','HEAD');
         return send(ctx);
     }
     
-    /** Sends request using http method 'POST'. See {@link #send(Map<String, Object>)} for parameter details. */
+    /** Sends request using http method 'POST'. See {@link #send(Map&lt;String,Object&gt;)} for parameter details. */
     public static Map<String,Object> post(Map<String,Object> ctx)throws IOException{
         ctx.put('method','POST');
         return send(ctx);
     }
     
-    /** Sends request using http method 'PUT'. See {@link #send(Map<String, Object>)} for parameter details. */
+    /** Sends request using http method 'PUT'. See {@link #send(Map&lt;String,Object&gt;)} for parameter details. */
     public static Map<String,Object> put(Map<String,Object> ctx)throws IOException{
         ctx.put('method','PUT');
         return send(ctx);
     }
     
-    /** Sends request using http method 'DELETE'. See {@link #send(Map<String, Object>)} for parameter details. */
+    /** Sends request using http method 'DELETE'. See {@link #send(Map&lt;String,Object&gt;)} for parameter details. */
     public static Map<String,Object> delete(Map<String,Object> ctx)throws IOException{
         ctx.put('method','DELETE');
         return send(ctx);
@@ -125,14 +125,14 @@ public class HTTP{
      * @param encoding encoding name to use to send/receive data - default UTF-8
      * @param connector Closure that will be called to init connection after header, method, ssl were set but before connection established.
      * @param receiver Closure that will be called to receive data from server. Default: {@link #DEFAULT_RECEIVER}. Available: {@link #JSON_RECEIVER}, {@link #XML_RECEIVER}, {@link #TEXT_RECEIVER}, {@link #FILE_RECEIVER(java.io.File)}.
-     * @param ssl javax.net.ssl.SSLContext or String that evaluates the javax.net.ssl.SSLContext. example: send( url:..., ssl: "HTTP.getKeystoreSSLContext('./keystore.jks', 'testpass')" )
+     * @param ssl {@link javax.net.ssl.SSLContext} or String that evaluates the {@link javax.net.ssl.SSLContext}. example: send( url:..., ssl: "HTTP.getKeystoreSSLContext('./keystore.jks', 'testpass')" )
      * @return the modified ctx Map with new property `response`:
      * <table> 
      * <tr><td>response.code</td><td>http response code. for example '200' as Integer</td><tr> 
      * <tr><td>response.message</td><td>http response message. for example for code '404' it will be 'Not Found'</td><tr> 
      * <tr><td>response.contentType</td><td>http `content-type` header. returned by URLConnection.getContentType()</td><tr> 
      * <tr><td>response.headers</td><td>http response headers Map<String,List<String>> returned by URLConnection.getHeaderFields()</td><tr> 
-     * <tr><td>response.body</td><td>response body returned by a *_RECEIVER. For example {@link #TEXT_RECEIVER} returns body as text, and {@link #FILE_RECEIVER} returns body as java.io.File object</td><tr> 
+     * <tr><td>response.body</td><td>response body returned by a *_RECEIVER. For example {@link #TEXT_RECEIVER} returns body as text, and {@link #FILE_RECEIVER(java.io.File)} returns body as java.io.File object</td><tr> 
      * </table> 
      */
     public static Map<String,Object> send(Map<String,Object> ctx)throws IOException{
@@ -280,7 +280,7 @@ public class HTTP{
      * Creates naive ssl context that trusts to all. Prints to System.err the warning if used...
      * @param protocol used for SSLContext creation. 
      *   Valid parameters: "SSL", "SSLv2", "SSLv3", "TLS", "TLSv1", "TLSv1.1", "TLSv1.2". 
-     *   For more information {@see javax.net.ssl.SSLContext#getInstance(java.lang.String)}
+     *   For more information see {@link javax.net.ssl.SSLContext#getInstance(java.lang.String)}
      */
     @Memoized
     public static SSLContext getNaiveSSLContext(String protocol="TLS"){
@@ -303,7 +303,7 @@ public class HTTP{
      * Creates default ssl context but with forced protocol.
      * @param protocol used for SSLContext creation. 
      *   Valid parameters: "SSL", "SSLv2", "SSLv3", "TLS", "TLSv1", "TLSv1.1", "TLSv1.2". 
-     *   For more information {@see javax.net.ssl.SSLContext#getInstance(java.lang.String)}
+     *   For more information see {@link javax.net.ssl.SSLContext#getInstance(java.lang.String)}
      */
     public static SSLContext getSSLContext(String protocol="TLS"){
         SSLContext sslContext = SSLContext.getInstance(protocol);
