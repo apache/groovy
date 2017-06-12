@@ -18,8 +18,10 @@
  */
 package org.codehaus.groovy.vmplugin.vm8;
 
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.vmplugin.v7.Java7;
 
+import java.lang.annotation.ElementType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,4 +53,14 @@ public class Java8 extends Java7 {
         return 8;
     }
 
+    @Override
+    protected int getElementCode(ElementType value) {
+        switch (value) {
+            case TYPE_PARAMETER:
+                return AnnotationNode.TYPE_PARAMETER_TARGET;
+            case TYPE_USE:
+                return AnnotationNode.TYPE_USE_TARGET;
+        }
+        return super.getElementCode(value);
+    }
 }

@@ -32,6 +32,7 @@ public interface VMPlugin {
     void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
     Class[] getPluginStaticGroovyMethods();
+    void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root);
     void configureAnnotation(AnnotationNode an);
     void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
     void invalidateCallSites();
@@ -54,8 +55,8 @@ public interface VMPlugin {
     Object invokeHandle(Object handle, Object[] args) throws Throwable;
 
     /**
-     * Gives the version the plguin is made for
-     * @return 5 for jdk5, 6 for jdk6, 7 for jdk7 or higher
+     * Gives the version the plugin is made for
+     * @return 5 for jdk5, 6 for jdk6, 7 for jdk7, 8 for jdk8 or higher
      */
     int getVersion();
 
