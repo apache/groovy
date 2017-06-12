@@ -678,6 +678,32 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-8226
+    void testAnnotationOnParameterType() {
+        assertScript '''
+            import java.lang.annotation.*
+            import static java.lang.annotation.ElementType.*
+            import static java.lang.annotation.RetentionPolicy.*
+
+            @Target([PARAMETER, FIELD, METHOD, ANNOTATION_TYPE, TYPE_USE])
+            @Retention(RUNTIME)
+            public @interface NonNull { }
+
+            class Foo {
+              @NonNull public Integer foo
+              @NonNull public Integer bar(@NonNull String baz) {}
+            }
+
+            def expected = '@NonNull()'
+            def foo = Foo.getField('foo')
+            assert foo.annotations[0].toString() == expected
+            def bar = Foo.getMethod('bar', String)
+            assert bar.annotations[0].toString() == expected
+            def baz = bar.parameters[0]
+            assert baz.annotations[0].toString() == expected
+        '''
+    }
+
     //Parametrized tests in Spock would allow to make it much more readable
     private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
         """
