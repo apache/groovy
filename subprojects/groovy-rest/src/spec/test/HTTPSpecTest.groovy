@@ -58,21 +58,21 @@ class HTTPSpecTest extends GroovyTestCase {
             }
         assert xml instanceof groovy.util.Node
         //send post request
-        def t = HTTP.get(
+        def t = HTTP.post(
             url:   "https://httpbin.org/post",
             query: [p1: "11&22", p2:"33 44"],
             //define body as closure, so it will be called to serialize data to output stream 
             body: {outStream,ctx->
                 groovy.xml.XmlUtil.serialize(xml,outStream)
             },
-            //define content type as xml so server should response in xml
+            //define content type xml
             headers:[
                 "content-type":"application/xml"
             ]
         )
         assert t.response.code==200
-        //the https://httpbin.org/post service returns json object 
-        //with `args` attribute with parameters and `data` attribute with body as string 
+        //the https://httpbin.org/post service always returns json object 
+        //with `args` attribute evaluated from url query and `data` attribute with body as string 
         assert t.response.contentType =~ "/json"
         assert t.response.body.args.p1 =="11&22"
         assert t.response.body.args.p2 =="33 44"
