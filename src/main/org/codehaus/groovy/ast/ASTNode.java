@@ -51,6 +51,7 @@ public class ASTNode implements NodeMetaDataHandler {
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
     private Map metaDataMap = null;
+    private NodeMetaDataHandlerHelper helper = new NodeMetaDataHandlerHelper(this);
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -113,6 +114,36 @@ public class ASTNode implements NodeMetaDataHandler {
      */
     public void copyNodeMetaData(ASTNode other) {
         copyNodeMetaData((NodeMetaDataHandler) other);
+    }
+
+    @Override
+    public <T> T getNodeMetaData(Object key) {
+        return helper.getNodeMetaData(key);
+    }
+
+    @Override
+    public void copyNodeMetaData(NodeMetaDataHandler other) {
+        helper.copyNodeMetaData(other);
+    }
+
+    @Override
+    public void setNodeMetaData(Object key, Object value) {
+        helper.setNodeMetaData(key, value);
+    }
+
+    @Override
+    public Object putNodeMetaData(Object key, Object value) {
+        return helper.putNodeMetaData(key, value);
+    }
+
+    @Override
+    public void removeNodeMetaData(Object key) {
+        helper.removeNodeMetaData(key);
+    }
+
+    @Override
+    public Map<?, ?> getNodeMetaData() {
+        return helper.getNodeMetaData();
     }
 
     @Override

@@ -49,6 +49,7 @@ options {
 
     public static class GroovyParserRuleContext extends ParserRuleContext implements NodeMetaDataHandler {
         private Map metaDataMap = null;
+        private NodeMetaDataHandlerHelper helper = new NodeMetaDataHandlerHelper(this);
 
         public GroovyParserRuleContext() {}
 
@@ -59,6 +60,45 @@ options {
         @Override
         public Map<?, ?> getMetaDataMap() {
             return this.metaDataMap;
+        }
+
+        @Override
+        public void setMetaDataMap(Map<?, ?> metaDataMap) {
+            this.metaDataMap = metaDataMap;
+        }
+
+        public <T> T getNodeMetaData(Object key) {
+            return helper.getNodeMetaData(key);
+        }
+
+        @Override
+        public void copyNodeMetaData(NodeMetaDataHandler other) {
+            helper.copyNodeMetaData(other);
+        }
+
+        @Override
+        public void setNodeMetaData(Object key, Object value) {
+            helper.setNodeMetaData(key, value);
+        }
+
+        @Override
+        public Object putNodeMetaData(Object key, Object value) {
+            return helper.putNodeMetaData(key, value);
+        }
+
+        @Override
+        public void removeNodeMetaData(Object key) {
+            helper.removeNodeMetaData(key);
+        }
+
+        @Override
+        public Map<?, ?> getNodeMetaData() {
+            return helper.getNodeMetaData();
+        }
+
+        @Override
+        public ListHashMap getMetaDataMap() {
+            return (ListHashMap) metaDataMap;
         }
 
         @Override
