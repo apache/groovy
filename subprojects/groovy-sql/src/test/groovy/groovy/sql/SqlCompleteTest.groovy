@@ -146,11 +146,12 @@ class SqlCompleteTest extends SqlHelperTestCase {
         assert results.collectEntries{ [it.firstname, it.lastname] } == ["James": "Strachan", "Sam": "Pullara"]
     }
 
-    void testRowsWithIncorrectNumberOfParams() {
-        shouldFail(IllegalArgumentException) {
-            sql.rows("select * from PERSON where firstname like ? and lastname like ?", ['foo', 'bar', 'baz'])
-        }
-    }
+    // GROOVY-8174: we'd like a strict test like this but current drivers aren't up to it
+//    void testRowsWithIncorrectNumberOfParams() {
+//        shouldFail(IllegalArgumentException) {
+//            sql.rows("select * from PERSON where firstname like ? and lastname like ?", ['foo', 'bar', 'baz'])
+//        }
+//    }
 
     void testRowsWithIncorrectParam() {
         shouldFail(IllegalArgumentException) {
