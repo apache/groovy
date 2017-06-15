@@ -4148,9 +4148,8 @@ public class Sql {
                 Map paramsMap = (Map) params.get(0);
                 if (paramsMap.isEmpty()) return;
             }
-            if (metaData.getParameterCount() < params.size()) {
-                throw new IllegalArgumentException("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
-            } else if (metaData.getParameterCount() != params.size()) {
+            // GROOVY-8174: we'd like stricter checking here but many drivers currently in use just aren't consistent enough, so we log
+            if (metaData.getParameterCount() != params.size()) {
                 LOG.warning("Found " + metaData.getParameterCount() + " parameter placeholders but supplied with " + params.size() + " parameters");
             }
         }
