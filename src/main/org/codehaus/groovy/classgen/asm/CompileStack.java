@@ -29,7 +29,13 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
  * This class is a helper for AsmClassGenerator. It manages
@@ -567,7 +573,7 @@ public class CompileStack implements Opcodes {
         return answer;
     }
 
-    private void makeLocalVariablesOffset(Parameter[] paras,boolean isInStaticContext) {
+    private void makeLocalVariablesOffset(Parameter[] paras, boolean isInStaticContext) {
         resetVariableIndex(isInStaticContext);
 
         for (Parameter para : paras) {
@@ -633,11 +639,11 @@ public class CompileStack implements Opcodes {
 
     private static void pushInitValue(ClassNode type, MethodVisitor mv) {
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type==ClassHelper.long_TYPE) {
+            if (type== ClassHelper.long_TYPE) {
                 mv.visitInsn(LCONST_0);
-            } else if (type==ClassHelper.double_TYPE) {
+            } else if (type== ClassHelper.double_TYPE) {
                 mv.visitInsn(DCONST_0);
-            } else if (type==ClassHelper.float_TYPE) {
+            } else if (type== ClassHelper.float_TYPE) {
                 mv.visitInsn(FCONST_0);
             } else {
                 mv.visitLdcInsn(0);
@@ -706,7 +712,7 @@ public class CompileStack implements Opcodes {
      */
     private void makeNextVariableID(ClassNode type, boolean useReferenceDirectly) {
         currentVariableIndex = nextVariableIndex;
-        if ((type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) && !useReferenceDirectly) {
+        if ((type== ClassHelper.long_TYPE || type== ClassHelper.double_TYPE) && !useReferenceDirectly) {
             nextVariableIndex++;
         }
         nextVariableIndex++;
@@ -767,10 +773,12 @@ public class CompileStack implements Opcodes {
         applyBlockRecorder(blocks);
     }
 
+
     private void applyBlockRecorder(List<BlockRecorder> blocks) {
-        if (blocks.isEmpty() || blocks.size()==visitedBlocks.size()) return;
+        if (blocks.isEmpty() || blocks.size() == visitedBlocks.size()) return;
 
         MethodVisitor mv = controller.getMethodVisitor();
+        Label newStart = new Label();
 
         for (BlockRecorder fb : blocks) {
             if (visitedBlocks.contains(fb)) continue;
@@ -785,13 +793,11 @@ public class CompileStack implements Opcodes {
             // here to avoid double visiting of finally statements
             fb.excludedStatement.run();
 
-            Label newStart = new Label();
             fb.startRange(newStart);
-
-            mv.visitInsn(NOP);
-            mv.visitLabel(newStart);
         }
 
+        mv.visitInsn(NOP);
+        mv.visitLabel(newStart);
     }
 
     public void applyBlockRecorder() {
