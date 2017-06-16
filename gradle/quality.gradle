@@ -138,10 +138,7 @@ allprojects {
             html.enabled = true
         }
         maxHeapSize = '2g'
-        // hack to exclude html files since include by itself doesn't work
-        def temp = classes
-        temp.include '**/*.class'
-        classes = temp
+        classes = classes.asFileTree.filter { it.name.endsWith('.class') }
     }
 }
 
