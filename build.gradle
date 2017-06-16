@@ -51,7 +51,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.8'
+    id 'com.gradle.build-scan' version '1.6'
     id 'me.champeau.buildscan-recipes' version '0.1.7'
 }
 
@@ -162,7 +162,7 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '4.0'
+    gradleVersion = '3.5'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.4.1'
