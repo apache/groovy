@@ -138,7 +138,6 @@ allprojects {
             html.enabled = true
         }
         maxHeapSize = '2g'
-        classes = classes.asFileTree.filter { it.name.endsWith('.class') }
     }
 }
 
