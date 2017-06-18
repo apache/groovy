@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform;
+package groovy.transform
 
 /**
  * Class annotation used to assist in the creation of {@code Externalizable} classes.
@@ -60,7 +60,6 @@ package groovy.transform;
  * <p>
  * The {@code @AutoExternalize} transform is implemented as a combination of the {@code @ExternalizeMethods} and {@code @ExternalizeVerifier} transforms.
  *
- * @author Paul King
  * @since 1.8.0
  */
 @AnnotationCollector([ExternalizeMethods, ExternalizeVerifier])
