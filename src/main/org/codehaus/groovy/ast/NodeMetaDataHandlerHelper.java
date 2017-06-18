@@ -20,7 +20,6 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.GroovyParserRuleContext;
 
 import java.util.Collections;
 import java.util.Map;
@@ -29,11 +28,7 @@ public class NodeMetaDataHandlerHelper {
 
     private NodeMetaDataHandler delegate;
 
-    public NodeMetaDataHandlerHelper(ASTNode delegate) {
-        this.delegate = delegate;
-    }
-
-    public NodeMetaDataHandlerHelper(GroovyParserRuleContext delegate) {
+    public NodeMetaDataHandlerHelper(NodeMetaDataHandler delegate) {
         this.delegate = delegate;
     }
 
