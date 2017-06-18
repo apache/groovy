@@ -41,7 +41,9 @@ options {
 
 @header {
     import java.util.Map;
+    import org.codehaus.groovy.util.ListHashMap;
     import org.codehaus.groovy.ast.NodeMetaDataHandler;
+    import org.codehaus.groovy.ast.NodeMetaDataHandlerHelper;
     import org.apache.groovy.parser.antlr4.SemanticPredicates;
 }
 
