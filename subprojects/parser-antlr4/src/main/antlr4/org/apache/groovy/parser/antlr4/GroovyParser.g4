@@ -50,7 +50,7 @@ options {
 @members {
 
     public static class GroovyParserRuleContext extends ParserRuleContext implements NodeMetaDataHandler {
-        private Map metaDataMap = null;
+        private Map<?, ?> metaDataMap = null;
         private NodeMetaDataHandlerHelper helper = new NodeMetaDataHandlerHelper(this);
 
         public GroovyParserRuleContext() {}
@@ -60,15 +60,6 @@ options {
         }
 
         @Override
-        public Map<?, ?> getMetaDataMap() {
-            return this.metaDataMap;
-        }
-
-        @Override
-        public void setMetaDataMap(Map<?, ?> metaDataMap) {
-            this.metaDataMap = metaDataMap;
-        }
-
         public <T> T getNodeMetaData(Object key) {
             return helper.getNodeMetaData(key);
         }
@@ -99,8 +90,8 @@ options {
         }
 
         @Override
-        public ListHashMap getMetaDataMap() {
-            return (ListHashMap) metaDataMap;
+        public Map<?, ?> getMetaDataMap() {
+            return this.metaDataMap;
         }
 
         @Override
