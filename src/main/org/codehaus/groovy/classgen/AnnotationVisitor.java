@@ -194,6 +194,12 @@ public class AnnotationVisitor {
         return node.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
+    private boolean isValidAnnotationClassOrAnnotationInterface(ClassNode node) {
+        // the java.lang.annotation.Annotation interface (ClassHelper.Annotation_TYPE)
+        // can be used to indicate that any annotation is allowed
+        return isValidAnnotationClass(node) || ClassHelper.Annotation_TYPE.equals(node);
+    }
+
     protected void visitExpression(String attrName, Expression attrExp, ClassNode attrType) {
         if (attrType.isArray()) {
             // check needed as @Test(attr = {"elem"}) passes through the parser
@@ -225,7 +231,7 @@ public class AnnotationVisitor {
             } else {
                 addError("Expected enum value for attribute " + attrName, attrExp);
             }
-        } else if (isValidAnnotationClass(attrType)) {
+        } else if (isValidAnnotationClassOrAnnotationInterface(attrType)) {
             if (attrExp instanceof AnnotationConstantExpression) {
                 visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrExp, attrType);
             } else {
@@ -247,7 +253,7 @@ public class AnnotationVisitor {
             return;
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
             return;
-        } else if (isValidAnnotationClass(attrType)) {
+        } else if (isValidAnnotationClassOrAnnotationInterface(attrType)) {
             return;
         } else {
             addError("Unexpected return type " + attrType.getName(), node);

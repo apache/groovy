@@ -678,6 +678,22 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-7814
+    void testAnyAnnotations() {
+        assertScript '''
+        @gls.annotations.AnyAnnotationCollection([
+            @Grab('foo:bar:1.0'),
+            @gls.annotations.AnyAnnotationCollection([
+                @Deprecated
+            ])
+        ])
+        class Dummy{}
+
+        assert Dummy.annotations[0].value().size() == 2
+        assert Dummy.annotations[0].value()[1].value()[0].annotationType().simpleName == 'Deprecated'
+        '''
+    }
+
     //Parametrized tests in Spock would allow to make it much more readable
     private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
         """
