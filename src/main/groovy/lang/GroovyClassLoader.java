@@ -963,23 +963,45 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Removes all classes from the class cache.
+     * <p>
+     * In addition to internal caches this method also clears any
+     * previously set MetaClass information for the given set of
+     * classes being removed.
      *
      * @see #getClassCacheEntry(String)
      * @see #setClassCacheEntry(Class)
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
+        Class<?>[] clearedClasses;
         synchronized (classCache) {
-            for (Class cl : classCache.values()) {
-                InvokerHelper.removeClass(cl);
-            }
+            clearedClasses = getLoadedClasses();
             classCache.clear();
         }
         synchronized (sourceCache) {
             sourceCache.clear();
         }
+        for (Class<?> c : clearedClasses) {
+            // Another Thread may be using an instance of this class
+            // (for the first time) requiring a ClassInfo lock and
+            // classloading which would require a lock on classCache.
+            // The following locks on ClassInfo and to avoid deadlock
+            // should not be done with a classCache lock.
+            InvokerHelper.removeClass(c);
+        }
     }
 
+    /**
+     * Closes this GroovyClassLoader and clears any caches it maintains.
+     * <p>
+     * No use should be made of this instance after this method is
+     * invoked. Any classes that are already loaded are still accessible.
+     *
+     * @throws IOException
+     * @see URLClassLoader#close()
+     * @see #clearCache()
+     * @since 2.5.0
+     */
     @Override
     public void close() throws IOException {
         super.close();
