@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -211,7 +212,12 @@ public class Java5 implements VMPlugin {
         }
     }
 
+    @Deprecated
     public static void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
+        VMPluginFactory.getPlugin().configureAnnotationNodeFromDefinition(definition, root);
+    }
+
+    public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
         if ("java.lang.annotation.Retention".equals(type.getName())) {
             Expression exp = definition.getMember("value");
@@ -318,7 +324,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private static int getElementCode(ElementType value) {
+    protected int getElementCode(ElementType value) {
         switch (value) {
             case TYPE:
                 return AnnotationNode.TYPE_TARGET;

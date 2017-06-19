@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Type;
 
@@ -97,9 +98,8 @@ class Annotations {
             synchronized (initLock) {
                 if (!lazyInitDone) {
                     for (AnnotationNode annotation : getClassNode().getAnnotations()) {
-                        Java5.configureAnnotationFromDefinition(annotation, this);
+                        VMPluginFactory.getPlugin().configureAnnotationNodeFromDefinition(annotation, this);
                     }
-
                     lazyInitDone = true;
                 }
             }
