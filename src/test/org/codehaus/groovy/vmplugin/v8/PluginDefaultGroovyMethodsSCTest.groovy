@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.vm8
+package org.codehaus.groovy.vmplugin.v8
 
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
