@@ -18732,4 +18732,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <E> boolean removeElement(Collection<E> self, Object o) {
         return self.remove(o);
     }
+
+    /**
+     * This method is called by the ++ operator for enums. It will invoke
+     * Groovy's default next behaviour for enums do not have their own
+     * next method.
+     *
+     * @param self an Enum
+     * @return the next defined enum from the enum class
+     */
+    public static Object next(Enum self) {
+        final Method[] methods = self.getClass().getMethods();
+        for (Method method : methods) {
+            if (method.getName().equals("next") && method.getParameterTypes().length == 0) {
+                return InvokerHelper.invokeMethod(self, "next", EMPTY_OBJECT_ARRAY);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", EMPTY_OBJECT_ARRAY);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index < values.length - 1 ? index + 1 : 0];
+    }
+
+    /**
+     * This method is called by the -- operator for enums. It will invoke
+     * Groovy's default previous behaviour for enums that do not have
+     * their own previous method.
+     *
+     * @param self an Enum
+     * @return the previous defined enum from the enum class
+     */
+    public static Object previous(Enum self) {
+        final Method[] methods = self.getClass().getMethods();
+        for (Method method : methods) {
+            if (method.getName().equals("previous") && method.getParameterTypes().length == 0) {
+                return InvokerHelper.invokeMethod(self, "previous", EMPTY_OBJECT_ARRAY);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", EMPTY_OBJECT_ARRAY);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index > 0 ? index - 1 : values.length - 1];
+    }
 }

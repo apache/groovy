@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
@@ -36,7 +35,6 @@ import java.util.List;
 public abstract class VMPluginBase implements VMPlugin {
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
 
     @Override
     public void setAdditionalClassInformation(ClassNode cn) {
@@ -45,7 +43,7 @@ public abstract class VMPluginBase implements VMPlugin {
 
     @Override
     public Class[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
+        return EMPTY_CLASS_ARRAY;
     }
 
     @Override

@@ -1986,8 +1986,56 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static StringBuilder leftShift(StringBuilder self, Object value) {
-        self.append(value);
-        return self;
+        if (value instanceof CharSequence)
+            return self.append((CharSequence)value);
+        else
+            return self.append(value);
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     * Index values are treated as characters within the builder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuilder self, IntRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuilder self, EmptyRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Appends a String to this StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a String
+     * @return a String
+     */
+    public static String plus(StringBuilder self, String value) {
+        return self + value;
+    }
+
+    /**
+     * Standard Groovy size() method for StringBuilders.
+     *
+     * @param builder a StringBuilder
+     * @return the length of the StringBuilder
+     */
+    public static int size(StringBuilder builder) {
+        return builder.length();
     }
 
     /**
