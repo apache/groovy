@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.internal.vmplugin.vm8;
 
-import org.apache.groovy.internal.vmplugin.vm7.Java7;
+import org.apache.groovy.internal.vmplugin.VMPluginBase;
 import org.codehaus.groovy.ast.AnnotationNode;
 
 import java.lang.annotation.ElementType;
@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @since 2.5.0
  */
-public class Java8 extends Java7 {
+public class Java8 extends VMPluginBase {
 
     private final Class<?>[] PLUGIN_DGM;
 

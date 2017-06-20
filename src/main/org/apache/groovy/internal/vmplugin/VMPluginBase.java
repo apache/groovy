@@ -24,9 +24,14 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.vmplugin.v7.IndyInterface;
 
 import java.lang.annotation.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 
 /**
@@ -35,6 +40,35 @@ import java.util.List;
 public abstract class VMPluginBase implements VMPlugin {
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+
+    private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+    static {
+        Constructor<MethodHandles.Lookup> con = null;
+        try {
+            con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+        } catch (NoSuchMethodException e) {
+            throw new GroovyBugError(e);
+        }
+        try {
+            if (!con.isAccessible()) {
+                final Constructor tmp = con;
+                AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    @Override
+                    public Object run() {
+                        tmp.setAccessible(true);
+                        return null;
+                    }
+                });
+            }
+        } catch (SecurityException se) {
+            con = null;
+        } catch (RuntimeException re) {
+            // test for JDK9 JIGSAW
+            if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
+            con = null;
+        }
+        LOOKUP_Constructor = con;
+    }
 
     @Override
     public void setAdditionalClassInformation(ClassNode cn) {
@@ -134,16 +168,46 @@ public abstract class VMPluginBase implements VMPlugin {
     }
 
     @Override
-    public void invalidateCallSites() {}
+    public void invalidateCallSites() {
+        IndyInterfaceHelper.invalidateCallSites();
+    }
+
+    // Used to access protected invalidateSwitchPoints() method
+    private static class IndyInterfaceHelper extends IndyInterface {
+        static void invalidateCallSites() {
+            IndyInterface.invalidateSwitchPoints();
+        }
+    }
 
     @Override
-    public Object getInvokeSpecialHandle(Method m, Object receiver){
-        throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 wot private access to Lookup");
+    public Object getInvokeSpecialHandle(Method method, Object receiver) {
+        if (LOOKUP_Constructor==null) {
+            throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 with private access to Lookup");
+        }
+        if (!method.isAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    method.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+        Class declaringClass = method.getDeclaringClass();
+        try {
+            return LOOKUP_Constructor.
+                    newInstance(declaringClass, -1).
+                    unreflectSpecial(method, declaringClass).
+                    bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyBugError(e);
+        }
     }
 
     @Override
     public Object invokeHandle(Object handle, Object[] args) throws Throwable {
-        throw new GroovyBugError("invokeHandle requires at least JDK 7");
+        MethodHandle mh = (MethodHandle) handle;
+        return mh.invokeWithArguments(args);
     }
 
     @Override

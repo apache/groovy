@@ -19,93 +19,15 @@
 package org.apache.groovy.internal.vmplugin.vm7;
 
 import org.apache.groovy.internal.vmplugin.VMPluginBase;
-import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Java 7 based functions.
  */
 public class Java7 extends VMPluginBase {
-    private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
-    static {
-        Constructor<MethodHandles.Lookup> con = null;
-        try {
-            con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
-        } catch (NoSuchMethodException e) {
-            throw new GroovyBugError(e);
-        }
-        try {
-            if (!con.isAccessible()) {
-                final Constructor tmp = con;
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    @Override
-                    public Object run() {
-                        tmp.setAccessible(true);
-                        return null;
-                    }
-                });
-            }
-        } catch (SecurityException se) {
-            con = null;
-        } catch (RuntimeException re) {
-            // test for JDK9 JIGSAW
-            if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
-            con = null;
-        }
-        LOOKUP_Constructor = con;
-    }
-
-    @Override
-    public void invalidateCallSites() {
-    	IndyInterfaceHelper.invalidateCallSites();
-    }
-
-    private static class IndyInterfaceHelper extends IndyInterface {
-        static void invalidateCallSites() {
-            IndyInterface.invalidateSwitchPoints();
-        }
-    }
 
     @Override
     public int getVersion() {
         return 7;
     }
 
-    @Override
-    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
-        if (LOOKUP_Constructor==null) {
-            return super.getInvokeSpecialHandle(method, receiver);
-        }
-        if (!method.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                @Override
-                public Object run() {
-                    method.setAccessible(true);
-                    return null;
-                }
-            });
-        }
-        Class declaringClass = method.getDeclaringClass();
-        try {
-            return LOOKUP_Constructor.
-                    newInstance(declaringClass, -1).
-                    unreflectSpecial(method, declaringClass).
-                    bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            throw new GroovyBugError(e);
-        }
-    }
-
-    @Override
-    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
-        MethodHandle mh = (MethodHandle) handle;
-        return mh.invokeWithArguments(args);
-    }
 }
