@@ -611,4 +611,31 @@ public class GenericsUtils {
         }
         return newTypes;
     }
+
+    public static GenericsType configureTypeVariableDefinition(ClassNode base, ClassNode[] cBounds) {
+        ClassNode redirect = base.redirect();
+        base.setRedirect(null);
+        GenericsType gt;
+        if (cBounds == null || cBounds.length == 0) {
+            gt = new GenericsType(base);
+        } else {
+            gt = new GenericsType(base, cBounds, null);
+            gt.setName(base.getName());
+            gt.setPlaceholder(true);
+        }
+        base.setRedirect(redirect);
+        return gt;
+    }
+
+    public static ClassNode configureTypeVariableReference(String name) {
+        ClassNode cn = ClassHelper.makeWithoutCaching(name);
+        cn.setGenericsPlaceHolder(true);
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
+        cn2.setGenericsPlaceHolder(true);
+        GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
+        cn.setGenericsTypes(gts);
+        cn.setRedirect(ClassHelper.OBJECT_TYPE);
+        return cn;
+    }
+
 }

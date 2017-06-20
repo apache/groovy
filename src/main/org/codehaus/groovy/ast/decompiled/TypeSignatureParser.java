@@ -21,7 +21,7 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -47,7 +47,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitTypeVariable(String name) {
-        finished(Java5.configureTypeVariableReference(name));
+        finished(GenericsUtils.configureTypeVariableReference(name));
     }
 
     @Override
