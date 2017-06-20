@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.internal.vmplugin;
 
-import org.codehaus.groovy.vmplugin.v7.Java7;
+import org.apache.groovy.internal.vmplugin.vm7.Java7;
 
 /**
  * Factory class to get functionality based on the VM version.

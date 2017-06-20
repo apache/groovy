@@ -18,8 +18,8 @@
  */
 package org.apache.groovy.internal.vmplugin.vm8;
 
+import org.apache.groovy.internal.vmplugin.vm7.Java7;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.lang.annotation.ElementType;
 import java.util.ArrayList;
