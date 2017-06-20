@@ -137,6 +137,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.*;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
@@ -261,9 +263,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         PackageNode packageNode = moduleNode.getPackage();
 
-        for (AnnotationNode e : this.visitAnnotationsOpt(ctx.annotationsOpt())) {
-            packageNode.addAnnotation(e);
-        }
+        packageNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         return this.configureAST(packageNode, ctx);
     }
@@ -1037,9 +1037,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         this.visitIdentifier(ctx.identifier()),
                         createEnumConstantInitExpression(ctx.arguments(), anonymousInnerClassNode));
 
-        for (AnnotationNode a : this.visitAnnotationsOpt(ctx.annotationsOpt())) {
-            enumConstant.addAnnotation(a);
-        }
+        enumConstant.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         groovydocManager.handle(enumConstant, ctx);
 
@@ -2767,25 +2765,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     ctx);
         }
 
-        if (asBoolean(ctx.LBRACK())) { // create array
+        if (asBoolean(ctx.LBRACK()) || asBoolean(ctx.dims())) { // create array
+            ArrayExpression arrayExpression;
+            List<List<AnnotationNode>> allDimList;
+
             if (asBoolean(ctx.arrayInitializer())) {
-                ClassNode arrayType = classNode;
-                for (int i = 0, n = ctx.b.size() - 1; i < n; i++) {
-                    arrayType = arrayType.makeArray();
+                ClassNode elementType = classNode;
+                allDimList = this.visitDims(ctx.dims());
+
+                for (int i = 0, n = allDimList.size() - 1; i < n; i++) {
+                    elementType = elementType.makeArray();
                 }
 
-                return this.configureAST(
+                arrayExpression =
                         new ArrayExpression(
-                                arrayType,
-                                this.visitArrayInitializer(ctx.arrayInitializer())),
-                        ctx);
+                            elementType,
+                            this.visitArrayInitializer(ctx.arrayInitializer()));
+
             } else {
                 Expression[] empties;
-                if (asBoolean(ctx.b)) {
-                    empties = new Expression[ctx.b.size()];
-                    for (int i = 0; i < empties.length; ++i) {
-                        empties[i] = ConstantExpression.EMPTY_EXPRESSION;
-                    }
+                List<List<AnnotationNode>> emptyDimList = this.visitDimsOpt(ctx.dimsOpt());
+
+                if (asBoolean(emptyDimList)) {
+                    empties = new Expression[emptyDimList.size()];
+                    Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
                 } else {
                     empties = new Expression[0];
                 }
@@ -2797,16 +2800,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 for (Expression e : empties) {
                     sizes.add(e);
                 }
-                return this.configureAST(
+
+                arrayExpression =
                         new ArrayExpression(
                                 classNode,
                                 null,
-                                sizes),
-                        ctx);
+                                sizes);
+
+
+                List<List<AnnotationNode>> exprDimList = ctx.annotationsOpt().stream().map(this::visitAnnotationsOpt).collect(Collectors.toList());
+                allDimList = new ArrayList<>(exprDimList);
+                Collections.reverse(emptyDimList);
+                allDimList.addAll(emptyDimList);
+                Collections.reverse(allDimList);
             }
+
+            arrayExpression.setType(createArrayType(classNode, allDimList));
+
+            return this.configureAST(arrayExpression, ctx);
         }
 
         throw createParsingFailedException("Unsupported creator: " + ctx.getText(), ctx);
+    }
+
+    private ClassNode createArrayType(ClassNode classNode, List<List<AnnotationNode>> dimList) {
+        ClassNode arrayType = classNode;
+        for (int i = 0, n = dimList.size(); i < n; i++) {
+            arrayType = arrayType.makeArray();
+            arrayType.addAnnotations(dimList.get(i));
+        }
+        return arrayType;
     }
 
 
@@ -2852,24 +2875,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ClassNode visitCreatedName(CreatedNameContext ctx) {
+        ClassNode classNode = null;
+
         if (asBoolean(ctx.qualifiedClassName())) {
-            ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
+            classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
 
             if (asBoolean(ctx.typeArgumentsOrDiamond())) {
                 classNode.setGenericsTypes(
                         this.visitTypeArgumentsOrDiamond(ctx.typeArgumentsOrDiamond()));
             }
 
-            return this.configureAST(classNode, ctx);
-        }
-
-        if (asBoolean(ctx.primitiveType())) {
-            return this.configureAST(
+            classNode = this.configureAST(classNode, ctx);
+        } else if (asBoolean(ctx.primitiveType())) {
+            classNode = this.configureAST(
                     this.visitPrimitiveType(ctx.primitiveType()),
                     ctx);
         }
 
-        throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
+        if (!asBoolean(classNode)) {
+            throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
+        }
+
+        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+
+        return classNode;
     }
 
 
@@ -3279,6 +3308,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         List<Parameter> parameterList = new LinkedList<>();
 
+        if (asBoolean(ctx.thisFormalParameter())) {
+            parameterList.add(this.visitThisFormalParameter(ctx.thisFormalParameter()));
+        }
+
         if (asBoolean(ctx.formalParameter())) {
             List<Parameter> list = new ArrayList<>();
             for (FormalParameterContext formalParameterContext : ctx.formalParameter()) {
@@ -3299,6 +3332,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Parameter visitFormalParameter(FormalParameterContext ctx) {
         return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), null, ctx.variableDeclaratorId(), ctx.expression());
+    }
+
+    @Override
+    public Parameter visitThisFormalParameter(ThisFormalParameterContext ctx) {
+        return this.configureAST(new Parameter(this.visitType(ctx.type()), THIS_STR), ctx);
     }
 
     @Override
@@ -3404,6 +3442,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return list;
     }
 
+    @Override
+    public List<List<AnnotationNode>> visitDims(DimsContext ctx) {
+        List<List<AnnotationNode>> dimList =
+                ctx.annotationsOpt().stream()
+                        .map(this::visitAnnotationsOpt)
+                        .collect(Collectors.toList());
+
+        Collections.reverse(dimList);
+
+        return dimList;
+    }
+
+    @Override
+    public List<List<AnnotationNode>> visitDimsOpt(DimsOptContext ctx) {
+        if (!asBoolean(ctx.dims())) {
+            return Collections.emptyList();
+        }
+
+        return this.visitDims(ctx.dims());
+    }
 
     // type {       --------------------------------------------------------------------
     @Override
@@ -3417,24 +3475,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         if (asBoolean(ctx.classOrInterfaceType())) {
             ctx.classOrInterfaceType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, ctx.getNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR));
             classNode = this.visitClassOrInterfaceType(ctx.classOrInterfaceType());
-        }
-
-        if (asBoolean(ctx.primitiveType())) {
+        } else if (asBoolean(ctx.primitiveType())) {
             classNode = this.visitPrimitiveType(ctx.primitiveType());
-        }
-
-        if (asBoolean(ctx.LBRACK())) {
-            // clear array's generics type info. Groovy's bug? array's generics type will be ignored. e.g. List<String>[]... p
-            classNode.setGenericsTypes(null);
-            classNode.setUsingGenerics(false);
-
-            for (int i = 0, n = ctx.LBRACK().size(); i < n; i++) {
-                classNode = this.configureAST(classNode.makeArray(), classNode);
-            }
         }
 
         if (!asBoolean(classNode)) {
             throw createParsingFailedException("Unsupported type: " + ctx.getText(), ctx);
+        }
+
+        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+
+        List<List<AnnotationNode>> dimList = this.visitDimsOpt(ctx.dimsOpt());
+        if (asBoolean(dimList)) {
+            // clear array's generics type info. Groovy's bug? array's generics type will be ignored. e.g. List<String>[]... p
+            classNode.setGenericsTypes(null);
+            classNode.setUsingGenerics(false);
+
+            classNode = this.createArrayType(classNode, dimList);
         }
 
         return this.configureAST(classNode, ctx);
@@ -3487,6 +3544,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public GenericsType visitTypeArgument(TypeArgumentContext ctx) {
         if (asBoolean(ctx.QUESTION())) {
             ClassNode baseType = this.configureAST(ClassHelper.makeWithoutCaching(QUESTION_STR), ctx.QUESTION());
+
+            baseType.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
             if (!asBoolean(ctx.type())) {
                 GenericsType genericsType = new GenericsType(baseType);
@@ -3720,14 +3779,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
+    public ClassNode visitAnnotatedQualifiedClassName(AnnotatedQualifiedClassNameContext ctx) {
+        ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
+
+        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(classNode::addAnnotation);
+
+        return classNode;
+    }
+
+    @Override
     public ClassNode[] visitQualifiedClassNameList(QualifiedClassNameListContext ctx) {
         if (!asBoolean(ctx)) {
             return new ClassNode[0];
         }
 
         List<ClassNode> list = new ArrayList<>();
-        for (QualifiedClassNameContext qualifiedClassNameContext : ctx.qualifiedClassName()) {
-            ClassNode classNode = visitQualifiedClassName(qualifiedClassNameContext);
+        for (AnnotatedQualifiedClassNameContext annotatedQualifiedClassNameContext : ctx.annotatedQualifiedClassName()) {
+            ClassNode classNode = visitAnnotatedQualifiedClassName(annotatedQualifiedClassNameContext);
             list.add(classNode);
         }
         return list.toArray(new ClassNode[0]);
@@ -3840,8 +3908,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 new ModifierManager(this, this.visitVariableModifiersOpt(variableModifiersOptContext))
                         .processParameter(
                                 this.configureAST(
-                                        new Parameter(classNode, this.visitVariableDeclaratorId(variableDeclaratorIdContext).getName()),
-                                        ctx)
+                                        new Parameter(
+                                                classNode,
+                                                this.visitVariableDeclaratorId(variableDeclaratorIdContext).getName()
+                                        ),
+                                        ctx
+                                )
                         );
 
         if (asBoolean(expressionContext)) {
