@@ -16,30 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.vm8;
+package org.apache.groovy.internal.vmplugin.vm8
 
-import java.util.Optional;
+import groovy.transform.stc.StaticTypeCheckingTestCase
 
-/**
- * Defines new Groovy methods which appear on normal JDK 8
- * classes inside the Groovy environment.
- *
- * @since 2.5.0
- */
-public class PluginDefaultGroovyMethods {
+class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
 
-    // No instances, static methods only
-    private PluginDefaultGroovyMethods() {
-    }
+    // GROOVY-7611
+    void testOptionalAsBoolean() {
+        assertScript '''
+            boolean m() {
+                assert Optional.of('foo')
+                assert !Optional.empty()
+                assert !Optional.ofNullable(null)
 
-    /**
-     * Coerce an Optional instance to a boolean value.
-     *
-     * @param optional the Optional
-     * @return {@code true} if a value is present, otherwise {@code false}
-     */
-    public static boolean asBoolean(Optional<?> optional) {
-        return optional.isPresent();
+                def x = Optional.empty() ? 1 : -1
+                assert x == -1
+
+                x = Optional.ofNullable(null) ? 1 : -1
+                assert x == -1
+                
+                Optional.empty()
+            }            
+            assert !m()
+        '''
     }
 
 }
