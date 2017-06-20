@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.apache.groovy.internal.vmplugin.VMPluginBase;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.vmplugin.v6.Java6;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,7 +35,7 @@ import java.security.PrivilegedAction;
  *
  * @author Jochen Theodorou
  */
-public class Java7 extends Java6 {
+public class Java7 extends VMPluginBase {
     private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
     static {
         Constructor<MethodHandles.Lookup> con = null;
