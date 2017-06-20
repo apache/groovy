@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.plugin.Junit4TestRunner;
 import org.codehaus.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
@@ -51,6 +52,11 @@ public final class GroovySystem {
      * Reference to the Runtime Registry to be used by the Groovy run-time system to find classes capable of running scripts
      */
     public static final Map<String, GroovyRunner> RUNNER_REGISTRY = new HashMap<String, GroovyRunner>();
+    static {
+        // TODO(jwagenleitner): GROOVY-8197
+        GroovyRunner runner = new Junit4TestRunner();
+        RUNNER_REGISTRY.put(runner.getClass().getName(), runner);
+    }
 
     private static boolean keepJavaMetaClasses=false;
     
