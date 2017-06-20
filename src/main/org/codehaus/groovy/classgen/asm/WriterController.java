@@ -30,6 +30,7 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.indy.IndyBinHelper;
 import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
 import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
+import org.codehaus.groovy.classgen.asm.util.LoggableClassVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
@@ -41,7 +42,11 @@ import java.util.List;
 import java.util.Map;
 
 public class WriterController {
-
+    private static final String GROOVY_LOG_CLASSGEN = "groovy.log.classgen";
+    private static final boolean LOG_CLASSGEN;
+    static {
+        LOG_CLASSGEN = Boolean.valueOf(System.getProperty(GROOVY_LOG_CLASSGEN));
+    }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -101,7 +106,7 @@ public class WriterController {
             this.invocationWriter = new InvocationWriter(this);
             this.binaryExpHelper = new BinaryExpressionHelper(this);
         }
-        
+
         this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);
@@ -120,7 +125,7 @@ public class WriterController {
         this.sourceUnit = acg.getSourceUnit();
         this.context = gcon;
         this.compileStack = new CompileStack(this);
-        this.cv = cv;
+        this.cv = this.createClassVisitor(cv);
         if (optimizeForInt) {
             this.statementWriter = new OptimizingStatementWriter(this);
         } else {
@@ -129,6 +134,15 @@ public class WriterController {
         this.typeChooser = new StatementMetaTypeChooser();
     }
 
+    private ClassVisitor createClassVisitor(ClassVisitor cv) {
+        if (!LOG_CLASSGEN) {
+            return cv;
+        }
+        if (cv instanceof LoggableClassVisitor) {
+            return cv;
+        }
+        return new LoggableClassVisitor(cv);
+    }
     private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
         if (invokedynamic) {
             if (CompilerConfiguration.JDK8.equals(targetBytecode)) {
@@ -181,7 +195,7 @@ public class WriterController {
     public ClosureWriter getClosureWriter() {
         return closureWriter;
     }
-    
+
     public ClassVisitor getCv() {
         return cv;
     }
@@ -221,25 +235,25 @@ public class WriterController {
     public String getInternalBaseClassName() {
         return internalBaseClassName;
     }
-    
+
     public MethodNode getMethodNode() {
         return methodNode;
     }
-    
+
     public void setMethodNode(MethodNode mn) {
         methodNode = mn;
         constructorNode = null;
     }
-    
+
     public ConstructorNode getConstructorNode(){
         return constructorNode;
     }
-    
+
     public void setConstructorNode(ConstructorNode cn) {
         constructorNode = cn;
         methodNode = null;
     }
-    
+
     public boolean isNotClinit() {
         return methodNode == null || !methodNode.getName().equals("<clinit>");
     }
@@ -260,12 +274,12 @@ public class WriterController {
     public boolean isInClosure() {
         return classNode.getOuterClass() != null
                 && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
-    }    
-    
+    }
+
     public boolean isInClosureConstructor() {
         return constructorNode != null
-        && classNode.getOuterClass() != null
-        && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+                && classNode.getOuterClass() != null
+                && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
     }
 
     public boolean isNotExplicitThisInClosure(boolean implicitThis) {
@@ -306,7 +320,7 @@ public class WriterController {
             return classNode.isScript() && methodNode != null && methodNode.getName().equals("run");
         }
     }
-    
+
     public String getClassName() {
         String className;
         if (!classNode.isInterface() || interfaceClassLoadingClass == null) {
@@ -316,7 +330,7 @@ public class WriterController {
         }
         return className;
     }
-    
+
     public ClassNode getOutermostClass() {
         if (outermostClass == null) {
             outermostClass = classNode;
@@ -334,15 +348,15 @@ public class WriterController {
     public void setInterfaceClassLoadingClass(InterfaceHelperClassNode ihc) {
         interfaceClassLoadingClass = ihc;
     }
-    
+
     public InterfaceHelperClassNode getInterfaceClassLoadingClass() {
         return interfaceClassLoadingClass;
     }
-    
+
     public boolean shouldOptimizeForInt() {
         return optimizeForInt;
     }
-    
+
     public StatementWriter getStatementWriter() {
         return statementWriter;
     }
@@ -360,22 +374,22 @@ public class WriterController {
     public boolean isFastPath() {
         return fastPath;
     }
-    
+
     public int getBytecodeVersion() {
         return bytecodeVersion;
     }
-    
+
     public int getLineNumber() {
         return lineNumber;
     }
-    
+
     public void setLineNumber(int n) {
-    	lineNumber = n;
+        lineNumber = n;
     }
 
-	public void resetLineNumber() {
-		setLineNumber(-1);
-	}
+    public void resetLineNumber() {
+        setLineNumber(-1);
+    }
 
     public int getNextHelperMethodIndex() {
         return helperMethodIndex++;

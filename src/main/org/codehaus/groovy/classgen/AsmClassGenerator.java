@@ -95,7 +95,7 @@ import java.util.Map;
  */
 public class AsmClassGenerator extends ClassGenerator {
 
-    private final ClassVisitor cv;
+    private ClassVisitor cv;
     private final GeneratorContext context;
     private final String sourceFile;
 
@@ -165,7 +165,7 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
         referencedClasses.clear();
-        WriterControllerFactory factory = (WriterControllerFactory) classNode.getNodeMetaData(WriterControllerFactory.class);
+        WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
         WriterController normalController = new WriterController();
         if (factory!=null) {
             this.controller = factory.makeController(normalController);
@@ -173,6 +173,7 @@ public class AsmClassGenerator extends ClassGenerator {
             this.controller = normalController;
         }
         this.controller.init(this, context, cv, classNode);
+        this.cv = this.controller.getClassVisitor();
 
         if (controller.shouldOptimizeForInt() || factory!=null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
