@@ -18,14 +18,16 @@
  */
 package org.codehaus.groovy.vmplugin.v6;
 
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import org.apache.groovy.internal.vmplugin.VMPluginBase;
 
 /**
  * Java 6 based functions. M12n moved these to modules.
  *
  * @author Jochen Theodorou
+ * @deprecated retained for compatibility
  */
-public class Java6 extends Java5 {
+@Deprecated
+public class Java6 extends VMPluginBase {
 
     @Override
     public int getVersion() {
