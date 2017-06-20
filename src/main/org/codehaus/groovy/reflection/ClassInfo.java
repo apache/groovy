@@ -20,10 +20,10 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.*;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;

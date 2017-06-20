@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.vmplugin.v5;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.apache.groovy.internal.vmplugin.VMPluginBase;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Method;
 

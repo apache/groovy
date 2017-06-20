@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.transform.stc;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -37,7 +38,6 @@ import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.WeakReference;

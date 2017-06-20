@@ -21,12 +21,12 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import java.lang.ref.SoftReference;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
