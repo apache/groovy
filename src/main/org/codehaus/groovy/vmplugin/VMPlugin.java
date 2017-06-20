@@ -18,46 +18,13 @@
  */
 package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.ast.*;
-
-import java.lang.reflect.Method;
-
 /**
  * Interface to access VM version based actions.
  * This interface is for internal use only!
  * 
  * @author Jochen Theodorou
+ * @deprecated use {@link org.apache.groovy.internal.vmplugin.VMPlugin}
  */
-public interface VMPlugin {
-    void setAdditionalClassInformation(ClassNode c);
-    Class[] getPluginDefaultGroovyMethods();
-    Class[] getPluginStaticGroovyMethods();
-    void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root);
-    void configureAnnotation(AnnotationNode an);
-    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
-    void invalidateCallSites();
-    /**
-     * Returns a handle with bound receiver to invokeSpecial the given method.
-     * This method will require at least Java 7, but since the source has to compile
-     * on older Java versions as well it is not marked to return a MethodHandle and
-     * uses Object instead
-     * @return  null in case of jdk&lt;7, otherwise a handle that takes the method call
-     *          arguments for the invokespecial call
-     */
-    Object getInvokeSpecialHandle(Method m, Object receiver);
-
-    /**
-     * Invokes a handle produced by #getInvokeSpecialdHandle
-     * @param handle the handle
-     * @param args arguments for the method call, can be empty but not null
-     * @return the result of the method call
-     */
-    Object invokeHandle(Object handle, Object[] args) throws Throwable;
-
-    /**
-     * Gives the version the plugin is made for
-     * @return 5 for jdk5, 6 for jdk6, 7 for jdk7, 8 for jdk8 or higher
-     */
-    int getVersion();
-
+@Deprecated
+public interface VMPlugin extends org.apache.groovy.internal.vmplugin.VMPlugin {
 }
