@@ -338,6 +338,11 @@ public class Java5 implements VMPlugin {
             case PACKAGE:
                 return AnnotationNode.PACKAGE_TARGET;
             default:
+                if ("TYPE_USE".equals(value.name()) || "TYPE_PARAMETER".equals(value.name()) || "MODULE".equals(value.name())) {
+                    // return 0 value because we are binary or'ing this and want to ignore without failing
+                    // later version plugins will override and provide sensible values for jdk8+
+                    return 0;
+                }
                 throw new GroovyBugError("unsupported Target " + value);
         }
     }
