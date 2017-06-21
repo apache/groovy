@@ -165,7 +165,7 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
         referencedClasses.clear();
-        WriterControllerFactory factory = (WriterControllerFactory) classNode.getNodeMetaData(WriterControllerFactory.class);
+        WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
         WriterController normalController = new WriterController();
         if (factory!=null) {
             this.controller = factory.makeController(normalController);

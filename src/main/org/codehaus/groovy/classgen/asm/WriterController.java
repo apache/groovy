@@ -56,6 +56,7 @@ public class WriterController {
             indyBinHelper = null;
         }
     }
+
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
