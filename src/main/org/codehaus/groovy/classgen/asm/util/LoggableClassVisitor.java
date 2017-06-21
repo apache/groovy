@@ -25,7 +25,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 /**
  * A ClassVisitor proxy, which can log bytecode generation
  *
- * @since 2.4.12
+ * @since 2.5.0
  */
 public class LoggableClassVisitor extends ClassVisitor {
     public LoggableClassVisitor(final ClassVisitor cv) {
