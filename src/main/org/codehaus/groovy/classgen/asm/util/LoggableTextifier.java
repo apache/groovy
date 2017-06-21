@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Logging bytecode generation, which can make debugging easy
  *
- * @since 2.4.12
+ * @since 2.5.0
  */
 public class LoggableTextifier extends Textifier {
 //    private static final Logger LOGGER = Logger.getLogger(LoggableTextifier.class.getName());
