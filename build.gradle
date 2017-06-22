@@ -46,14 +46,16 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.6'
-    id 'me.champeau.buildscan-recipes' version '0.1.7'
+    id 'com.gradle.build-scan' version '1.8'
+    id 'me.champeau.buildscan-recipes' version '0.2.0'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
     publishAlways()
+}
+buildScanRecipes {
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
