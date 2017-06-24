@@ -243,7 +243,7 @@ class DocGenerator {
 
         def srcFiles = options.arguments().collect { DocUtil.sourceFileOf(it) }
         try {
-            DefaultGroovyMethods.additionals.each { aClass ->
+            DefaultGroovyMethods.ADDITIONAL_CLASSES.each { aClass ->
                 def className = aClass.name.replaceAll(/\$.*/, '')
                 def additionalFile = DocUtil.sourceFileOf(className)
                 if (srcFiles.every { it.canonicalPath != additionalFile.canonicalPath }) {
