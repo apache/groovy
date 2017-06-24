@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.List;
 
 /**
  * This class is a place holder for an empty expression. 
@@ -30,7 +34,41 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
 public class EmptyExpression extends Expression {
-    public static final EmptyExpression INSTANCE = new EmptyExpression();
+    public static final EmptyExpression INSTANCE = new EmptyExpression() {
+        @Override
+        public void setType(ClassNode t) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void addAnnotation(AnnotationNode value) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void addAnnotations(List<AnnotationNode> annotations) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setSynthetic(boolean synthetic) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setDeclaringClass(ClassNode declaringClass) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setHasNoRealSourcePosition(boolean value) {
+            throw createUnsupportedOperationException();
+        }
+
+        private UnsupportedOperationException createUnsupportedOperationException() {
+            return new UnsupportedOperationException("EmptyExpression.INSTANCE is immutable");
+        }
+    };
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
