@@ -1239,11 +1239,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return;
         }
 
-        Arrays.stream(parameters).forEach(e -> {
-            if (e.hasInitialExpression()) {
-                throw createParsingFailedException("Cannot specify default value for method parameter '" + e.getName() + " = " + e.getInitialExpression().getText() + "' inside an interface", e);
+        for (Parameter parameter : parameters) {
+            if (parameter.hasInitialExpression()) {
+                throw createParsingFailedException("Cannot specify default value for method parameter '" + parameter.getName() + " = " + parameter.getInitialExpression().getText() + "' inside an interface", parameter);
             }
-        });
+        }
     }
 
     @Override
@@ -1279,7 +1279,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         modifierManager));
 
         if (modifierManager.contains(STATIC)) {
-            Arrays.stream(methodNode.getParameters()).forEach(e -> e.setInStaticContext(true));
+            for (Parameter parameter : methodNode.getParameters()) {
+                parameter.setInStaticContext(true);
+            }
+
             methodNode.getVariableScope().setInStaticContext(true);
         }
 
@@ -2157,7 +2160,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         throw createParsingFailedException("Unsupported path element: " + ctx.getText(), ctx);
     }
-
 
     @Override
     public GenericsType[] visitNonWildcardTypeArguments(NonWildcardTypeArgumentsContext ctx) {
@@ -3702,7 +3704,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ClassNode visitAnnotatedQualifiedClassName(AnnotatedQualifiedClassNameContext ctx) {
         ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
 
-        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(classNode::addAnnotation);
+        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         return classNode;
     }
