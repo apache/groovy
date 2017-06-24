@@ -227,7 +227,7 @@ class AstAssert {
             EmptyStatement : { expected, actual ->
                 // always successful
             },
-            'EmptyStatement.ImmutableStatement' : { expected, actual ->
+            ImmutableEmptyStatement : { expected, actual ->
                 // always successful
             },
 

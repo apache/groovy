@@ -30,7 +30,7 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class EmptyStatement extends Statement {
-    public static final EmptyStatement INSTANCE = new ImmutableStatement();
+    public static final EmptyStatement INSTANCE = new ImmutableEmptyStatement();
     
     public void visit(GroovyCodeVisitor visitor) {
     }
@@ -39,7 +39,7 @@ public class EmptyStatement extends Statement {
         return true;
     }
 
-    public static class ImmutableStatement extends EmptyStatement {
+    private static class ImmutableEmptyStatement extends EmptyStatement {
         @Override
         public void setStatementLabel(String label) {
             throw createUnsupportedOperationException();

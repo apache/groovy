@@ -37,7 +37,17 @@ import java.util.Map;
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
 public class EmptyExpression extends Expression {
-    public static final EmptyExpression INSTANCE = new EmptyExpression() {
+    public static final EmptyExpression INSTANCE = new ImmutableEmptyExpression() ;
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+
+    public void visit(GroovyCodeVisitor visitor) {
+        return;
+    }
+
+    private static class ImmutableEmptyExpression extends EmptyExpression {
         @Override
         public void setType(ClassNode t) {
             throw createUnsupportedOperationException();
@@ -121,13 +131,5 @@ public class EmptyExpression extends Expression {
         private UnsupportedOperationException createUnsupportedOperationException() {
             return new UnsupportedOperationException("EmptyExpression.INSTANCE is immutable");
         }
-    };
-
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        return this;
-    }
-
-    public void visit(GroovyCodeVisitor visitor) {
-        return;
     }
 }
