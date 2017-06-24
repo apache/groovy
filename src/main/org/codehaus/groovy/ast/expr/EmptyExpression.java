@@ -18,14 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.NodeMetaDataHandler;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * This class is a place holder for an empty expression. 
@@ -38,7 +31,7 @@ import java.util.Map;
  */
 
 public class EmptyExpression extends Expression {
-    public static final EmptyExpression INSTANCE = new ImmutableEmptyExpression() ;
+    public static final EmptyExpression INSTANCE = new EmptyExpression();
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
@@ -46,91 +39,5 @@ public class EmptyExpression extends Expression {
 
     public void visit(GroovyCodeVisitor visitor) {
         return;
-    }
-
-    private static class ImmutableEmptyExpression extends EmptyExpression {
-        @Override
-        public void setType(ClassNode t) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void addAnnotation(AnnotationNode value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void addAnnotations(List<AnnotationNode> annotations) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setSynthetic(boolean synthetic) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setDeclaringClass(ClassNode declaringClass) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setHasNoRealSourcePosition(boolean value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLineNumber(int lineNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setColumnNumber(int columnNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLastLineNumber(int lastLineNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLastColumnNumber(int lastColumnNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setSourcePosition(ASTNode node) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void copyNodeMetaData(NodeMetaDataHandler other) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setNodeMetaData(Object key, Object value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public Object putNodeMetaData(Object key, Object value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void removeNodeMetaData(Object key) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setMetaDataMap(Map<?, ?> metaDataMap) {
-            throw createUnsupportedOperationException();
-        }
-
-        private UnsupportedOperationException createUnsupportedOperationException() {
-            return new UnsupportedOperationException("EmptyExpression.INSTANCE is immutable");
-        }
     }
 }

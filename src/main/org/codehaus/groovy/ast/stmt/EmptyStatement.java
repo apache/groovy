@@ -18,11 +18,7 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.NodeMetaDataHandler;
-
-import java.util.Map;
 
 /**
  * Represents an empty statement
@@ -31,78 +27,12 @@ import java.util.Map;
  */
 
 public class EmptyStatement extends Statement {
-    public static final EmptyStatement INSTANCE = new ImmutableEmptyStatement();
+    public static final EmptyStatement INSTANCE = new EmptyStatement();
     
     public void visit(GroovyCodeVisitor visitor) {
     }
 
     public boolean isEmpty() {
         return true;
-    }
-
-    private static class ImmutableEmptyStatement extends EmptyStatement {
-        @Override
-        public void setStatementLabel(String label) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void addStatementLabel(String label) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLineNumber(int lineNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setColumnNumber(int columnNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLastLineNumber(int lastLineNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setLastColumnNumber(int lastColumnNumber) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setSourcePosition(ASTNode node) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void copyNodeMetaData(NodeMetaDataHandler other) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setNodeMetaData(Object key, Object value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public Object putNodeMetaData(Object key, Object value) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void removeNodeMetaData(Object key) {
-            throw createUnsupportedOperationException();
-        }
-
-        @Override
-        public void setMetaDataMap(Map<?, ?> metaDataMap) {
-            throw createUnsupportedOperationException();
-        }
-
-        private UnsupportedOperationException createUnsupportedOperationException() {
-            return new UnsupportedOperationException("EmptyStatement.INSTANCE is immutable");
-        }
     }
 }
