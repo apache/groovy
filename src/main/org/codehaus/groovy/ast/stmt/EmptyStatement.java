@@ -29,6 +29,7 @@ import java.util.Map;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
+
 public class EmptyStatement extends Statement {
     public static final EmptyStatement INSTANCE = new ImmutableEmptyStatement();
     

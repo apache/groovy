@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.CompilePhase
 
-
 /**
  * Tests the CodeVisitorSupport.
  *

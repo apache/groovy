@@ -36,6 +36,7 @@ import java.util.Map;
  * @author Jochen Theodorou
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
+
 public class EmptyExpression extends Expression {
     public static final EmptyExpression INSTANCE = new ImmutableEmptyExpression() ;
 
