@@ -94,7 +94,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
             // let's register the default methods
             registerMethods(null, true, true, map);
-            final Class[] additionals = DefaultGroovyMethods.additionals;
+            final Class[] additionals = DefaultGroovyMethods.ADDITIONAL_CLASSES;
             for (int i = 0; i != additionals.length; ++i) {
                 createMetaMethodFromClass(map, additionals[i]);
             }

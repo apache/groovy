@@ -104,7 +104,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
-    public static final Class [] additionals = {
+    public static final Class [] ADDITIONAL_CLASSES = {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
             NumberNumberMinus.class,
