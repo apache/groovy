@@ -20,12 +20,12 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.*;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Annotation;

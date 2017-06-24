@@ -16,10 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.vm8;
+package org.apache.groovy.internal.vmplugin.vm8;
 
+import org.apache.groovy.internal.vmplugin.VMPluginBase;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.lang.annotation.ElementType;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @since 2.5.0
  */
-public class Java8 extends Java7 {
+public class Java8 extends VMPluginBase {
 
     private final Class<?>[] PLUGIN_DGM;
 

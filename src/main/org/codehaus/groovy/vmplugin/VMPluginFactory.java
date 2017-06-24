@@ -18,40 +18,85 @@
  */
 package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.vmplugin.v7.Java7;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
+
+import java.lang.reflect.Method;
 
 /**
  * Factory class to get functionality based on the VM version.
  * The usage of this class is not for public use, only for the
  * runtime.
  * @author Jochen Theodorou
+ * @deprecated use {@link org.apache.groovy.internal.vmplugin.VMPluginFactory}
  */
+@Deprecated
 public class VMPluginFactory {
 
-    private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
-    private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.vm8.Java8";
-
-    private static final VMPlugin plugin;
-
-    static {
-        VMPlugin target = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
-        if (target == null) {
-            target = new Java7();
-        }
-        plugin = target;
-    }
+    private static final VMPlugin plugin =
+            new LegacyPluginAdapter(org.apache.groovy.internal.vmplugin.VMPluginFactory.getPlugin());
 
     public static VMPlugin getPlugin() {
         return plugin;
     }
 
-    private static VMPlugin createPlugin(String classNameCheck, String pluginName) {
-        try {
-            ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            loader.loadClass(classNameCheck);
-            return (VMPlugin) loader.loadClass(pluginName).newInstance();
-        } catch (Throwable ex) {
-            return null;
+    private static class LegacyPluginAdapter implements VMPlugin {
+
+        private final org.apache.groovy.internal.vmplugin.VMPlugin adaptee;
+
+        LegacyPluginAdapter(org.apache.groovy.internal.vmplugin.VMPlugin adaptee) {
+            this.adaptee = adaptee;
+        }
+
+        @Override
+        public void setAdditionalClassInformation(ClassNode c) {
+            adaptee.setAdditionalClassInformation(c);
+        }
+
+        @Override
+        public Class[] getPluginDefaultGroovyMethods() {
+            return adaptee.getPluginDefaultGroovyMethods();
+        }
+
+        @Override
+        public Class[] getPluginStaticGroovyMethods() {
+            return adaptee.getPluginStaticGroovyMethods();
+        }
+
+        @Override
+        public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
+            adaptee.configureAnnotationNodeFromDefinition(definition, root);
+        }
+
+        @Override
+        public void configureAnnotation(AnnotationNode an) {
+            adaptee.configureAnnotation(an);
+        }
+
+        @Override
+        public void configureClassNode(CompileUnit compileUnit, ClassNode classNode) {
+            adaptee.configureClassNode(compileUnit, classNode);
+        }
+
+        @Override
+        public void invalidateCallSites() {
+            adaptee.invalidateCallSites();
+        }
+
+        @Override
+        public Object getInvokeSpecialHandle(Method m, Object receiver) {
+            return adaptee.getInvokeSpecialHandle(m, receiver);
+        }
+
+        @Override
+        public Object invokeHandle(Object handle, Object[] args) throws Throwable {
+            return adaptee.invokeHandle(handle, args);
+        }
+
+        @Override
+        public int getVersion() {
+            return adaptee.getVersion();
         }
     }
 }

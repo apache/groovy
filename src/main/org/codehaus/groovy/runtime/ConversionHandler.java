@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.apache.groovy.internal.vmplugin.VMPlugin;
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
-import org.codehaus.groovy.vmplugin.VMPlugin;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -44,14 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
     private final Object delegate;
     private static final long serialVersionUID = 1162833717190835227L;
-    private final ConcurrentHashMap<Method, Object> handleCache;
-    {
-        if (VMPluginFactory.getPlugin().getVersion() >= 7) {
-            handleCache = new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
-        } else {
-            handleCache = null;
-        }
-    }
+    private final ConcurrentHashMap<Method, Object> handleCache =
+            new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
 
     private MetaClass metaClass;
 
@@ -102,7 +96,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (handleCache != null && isDefaultMethod(method)) {
+        if (isDefaultMethod(method)) {
             VMPlugin plugin = VMPluginFactory.getPlugin();
             Object handle = handleCache.get(method);
             if (handle == null) {

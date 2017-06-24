@@ -298,10 +298,6 @@ public class GroovyShell extends GroovyObjectSupport {
             if (isJUnit3TestSuite(scriptClass)) {
                 return runJUnit3TestSuite(scriptClass);
             }
-            // if it's a JUnit 4.x test, run it with an appropriate runner
-            if (isJUnit4Test(scriptClass)) {
-                return runJUnit4Test(scriptClass);
-            }
             for (Map.Entry<String, GroovyRunner> entry : GroovySystem.RUNNER_REGISTRY.entrySet()) {
                 GroovyRunner runner = entry.getValue();
                 if (runner != null && runner.canRun(scriptClass, this.loader)) {
@@ -395,15 +391,6 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
-    private Object runJUnit4Test(Class scriptClass) {
-        try {
-            return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
-                    "realRunJUnit4Test", new Object[]{scriptClass, this.loader});
-        } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the JUnit 4 test.", e);
-        }
-    }
-
     /**
      * Utility method to check through reflection if the class appears to be a
      * JUnit 3.8.x test, i.e. checks if it extends JUnit 3.8.x's TestCase.
@@ -456,29 +443,6 @@ public class GroovyShell extends GroovyObjectSupport {
             // fall through
         }
         return isUnitTestSuite;
-    }
-
-    /**
-     * Utility method to check via reflection if the parsed class appears to be a JUnit4
-     * test, i.e. checks whether it appears to be using the relevant JUnit 4 annotations.
-     *
-     * @param scriptClass the class we want to check
-     * @return true if the class appears to be a test
-     */
-    private boolean isJUnit4Test(Class scriptClass) {
-        // check if there are appropriate class or method annotations
-        // that suggest we have a JUnit 4 test
-        boolean isTest = false;
-
-        try {
-            if (InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
-                    "realIsJUnit4Test", new Object[]{scriptClass, this.loader}) == Boolean.TRUE) {
-                isTest = true;
-            }
-        } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to invoke the JUnit 4 helper class.", e);
-        }
-        return isTest;
     }
 
     /**

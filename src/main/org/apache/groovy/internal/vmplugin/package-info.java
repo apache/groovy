@@ -16,21 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v6;
-
-import org.codehaus.groovy.vmplugin.v5.Java5;
 
 /**
- * Java 6 based functions. M12n moved these to modules.
+ * Plugins that allow for adapting behavior based on the
+ * specific Java VM runtime being executed.
  *
- * @author Jochen Theodorou
- * @deprecated retained for compatibility
+ * @since 2.5.0
  */
-@Deprecated
-public class Java6 extends Java5 {
-
-    @Override
-    public int getVersion() {
-        return 6;
-    }
-}
+package org.apache.groovy.internal.vmplugin;

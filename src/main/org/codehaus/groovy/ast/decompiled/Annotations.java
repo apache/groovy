@@ -18,11 +18,10 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import org.apache.groovy.internal.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Array;

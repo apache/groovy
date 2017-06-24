@@ -16,21 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v6;
+package org.apache.groovy.internal.vmplugin.vm8
 
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import groovy.transform.stc.StaticTypeCheckingTestCase
 
-/**
- * Java 6 based functions. M12n moved these to modules.
- *
- * @author Jochen Theodorou
- * @deprecated retained for compatibility
- */
-@Deprecated
-public class Java6 extends Java5 {
+class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
 
-    @Override
-    public int getVersion() {
-        return 6;
+    // GROOVY-7611
+    void testOptionalAsBoolean() {
+        assertScript '''
+            boolean m() {
+                assert Optional.of('foo')
+                assert !Optional.empty()
+                assert !Optional.ofNullable(null)
+
+                def x = Optional.empty() ? 1 : -1
+                assert x == -1
+
+                x = Optional.ofNullable(null) ? 1 : -1
+                assert x == -1
+                
+                Optional.empty()
+            }            
+            assert !m()
+        '''
     }
+
 }

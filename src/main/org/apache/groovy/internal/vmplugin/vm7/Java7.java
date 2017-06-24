@@ -16,30 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.vm8
+package org.apache.groovy.internal.vmplugin.vm7;
 
-import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.apache.groovy.internal.vmplugin.VMPluginBase;
 
-class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
+/**
+ * Java 7 based functions.
+ */
+public class Java7 extends VMPluginBase {
 
-    // GROOVY-7611
-    void testOptionalAsBoolean() {
-        assertScript '''
-            boolean m() {
-                assert Optional.of('foo')
-                assert !Optional.empty()
-                assert !Optional.ofNullable(null)
-
-                def x = Optional.empty() ? 1 : -1
-                assert x == -1
-
-                x = Optional.ofNullable(null) ? 1 : -1
-                assert x == -1
-                
-                Optional.empty()
-            }            
-            assert !m()
-        '''
+    @Override
+    public int getVersion() {
+        return 7;
     }
 
 }
