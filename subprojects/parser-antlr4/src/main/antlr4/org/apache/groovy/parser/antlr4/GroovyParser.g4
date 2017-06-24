@@ -334,19 +334,38 @@ variableInitializers
     :   variableInitializer nls (COMMA nls variableInitializer nls)* nls COMMA?
     ;
 
+dims
+    :   (annotationsOpt LBRACK RBRACK)+
+    ;
+
+dimsOpt
+    :   dims?
+    ;
+
 standardType
 options { baseContext = type; }
-    :   primitiveType (LBRACK RBRACK)*
-    |   standardClassOrInterfaceType (LBRACK RBRACK)*
+    :   annotationsOpt
+        (
+            primitiveType
+        |
+            standardClassOrInterfaceType
+        )
+        dimsOpt
     ;
 
 type
-    :   (   primitiveType
+    :   annotationsOpt
+        (
+            (
+                primitiveType
+            |
+                 // !!! ERROR ALTERNATIVE !!!
+                 VOID { require(false, "void is not allowed here", -4); }
+            )
         |
-            // !!! ERROR ALTERNATIVE !!!
-            VOID { require(false, "void is not allowed here", -4); }
-        ) (LBRACK RBRACK)*
-    |   generalClassOrInterfaceType (LBRACK RBRACK)*
+                generalClassOrInterfaceType
+        )
+        dimsOpt
     ;
 
 classOrInterfaceType
@@ -375,11 +394,15 @@ typeArguments
 
 typeArgument
     :   type
-    |   QUESTION ((EXTENDS | SUPER) nls type)?
+    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type)?
+    ;
+
+annotatedQualifiedClassName
+    :   annotationsOpt qualifiedClassName
     ;
 
 qualifiedClassNameList
-    :   qualifiedClassName (COMMA nls qualifiedClassName)*
+    :   annotatedQualifiedClassName (COMMA nls annotatedQualifiedClassName)*
     ;
 
 formalParameters
@@ -387,8 +410,12 @@ formalParameters
     ;
 
 formalParameterList
-    :   formalParameter (COMMA nls formalParameter)* (COMMA nls lastFormalParameter)?
+    :   (formalParameter | thisFormalParameter) (COMMA nls formalParameter)* (COMMA nls lastFormalParameter)?
     |   lastFormalParameter
+    ;
+
+thisFormalParameter
+    :   type THIS
     ;
 
 formalParameter
@@ -1079,8 +1106,8 @@ mapEntryLabel
 creator
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   (LBRACK expression RBRACK)+ (b+=LBRACK RBRACK)*
-        |   (b+=LBRACK RBRACK)+ nls arrayInitializer
+        |   (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
+        |   dims nls arrayInitializer
         )
     ;
 
@@ -1096,8 +1123,10 @@ anonymousInnerClassDeclaration[int t]
     ;
 
 createdName
-    :   primitiveType
-    |   qualifiedClassName typeArgumentsOrDiamond?
+    :   annotationsOpt
+        (   primitiveType
+        |   qualifiedClassName typeArgumentsOrDiamond?
+        )
     ;
 
 nonWildcardTypeArguments
