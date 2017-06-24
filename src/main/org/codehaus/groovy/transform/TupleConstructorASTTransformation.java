@@ -138,10 +138,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                     callSuper, force, excludes, includes, useSetters, defaults, allNames, sourceUnit,
                     (ClosureExpression) pre, (ClosureExpression) post);
             if (pre != null) {
-                anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("pre", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
             }
             if (post != null) {
-                anno.setMember("post", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("post", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
             }
         }
     }

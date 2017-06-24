@@ -159,7 +159,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode MAP_ENTRY_TYPE = make(Map.Entry.class);
     protected static final ClassNode ENUMERATION_TYPE = make(Enumeration.class);
 
-    public static final Statement GENERATED_EMPTY_STATEMENT = new EmptyStatement();
+    public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
