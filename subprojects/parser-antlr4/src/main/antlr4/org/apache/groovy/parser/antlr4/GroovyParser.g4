@@ -1094,7 +1094,7 @@ primary
     |   SUPER                                                                               #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
     |   closure                                                                             #closurePrmrAlt
-    |   lambdaExpression                                                                              #lambdaPrmrAlt
+    |   lambdaExpression                                                                    #lambdaPrmrAlt
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
     |   builtInType                                                                         #typePrmrAlt

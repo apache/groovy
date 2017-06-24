@@ -3448,10 +3448,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public List<List<AnnotationNode>> visitDims(DimsContext ctx) {
-        List<List<AnnotationNode>> dimList =
-                ctx.annotationsOpt().stream()
-                        .map(this::visitAnnotationsOpt)
-                        .collect(Collectors.toList());
+        List<List<AnnotationNode>> dimList = new ArrayList<List<AnnotationNode>>();
+        for (AnnotationsOptContext annotationsOptContext : ctx.annotationsOpt()) {
+            dimList.add(this.visitAnnotationsOpt(annotationsOptContext));
+        }
 
         Collections.reverse(dimList);
 
@@ -3786,7 +3786,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ClassNode visitAnnotatedQualifiedClassName(AnnotatedQualifiedClassNameContext ctx) {
         ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
 
-        this.visitAnnotationsOpt(ctx.annotationsOpt()).forEach(classNode::addAnnotation);
+        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         return classNode;
     }
