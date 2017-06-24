@@ -118,7 +118,7 @@ class StatementReplacerTest {
     public void replaceIfBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
-        def ifStatement = new IfStatement(aBooleanExpression(true), toReplace, new EmptyStatement())
+        def ifStatement = new IfStatement(aBooleanExpression(true), toReplace, EmptyStatement.INSTANCE)
 
         replacements[toReplace] = replacement
         replacer.replaceIn(ifStatement)
@@ -130,7 +130,7 @@ class StatementReplacerTest {
     public void replaceElseBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
-        def ifStatement = new IfStatement(aBooleanExpression(true), new EmptyStatement(), toReplace)
+        def ifStatement = new IfStatement(aBooleanExpression(true), EmptyStatement.INSTANCE, toReplace)
 
         replacements[toReplace] = replacement
         replacer.replaceIn(ifStatement)

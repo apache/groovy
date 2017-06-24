@@ -53,7 +53,7 @@ class InWhileLoopWrapper {
 		BlockStatement oldBody = method.code as BlockStatement
         TryCatchStatement tryCatchStatement = new TryCatchStatement(
                 oldBody,
-                new EmptyStatement()
+                EmptyStatement.INSTANCE
         )
         tryCatchStatement.addCatch(new CatchStatement(
                 new Parameter(ClassHelper.make(GotoRecurHereException), 'ignore'),
