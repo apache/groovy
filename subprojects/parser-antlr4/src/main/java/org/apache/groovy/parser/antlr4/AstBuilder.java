@@ -2788,7 +2788,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 if (asBoolean(emptyDimList)) {
                     empties = new Expression[emptyDimList.size()];
-                    Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
+                    for (int i = 0; i < empties.length; ++i) {
+                        empties[i] = ConstantExpression.EMPTY_EXPRESSION;
+                    }
                 } else {
                     empties = new Expression[0];
                 }
@@ -2807,8 +2809,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                 null,
                                 sizes);
 
-
-                List<List<AnnotationNode>> exprDimList = ctx.annotationsOpt().stream().map(this::visitAnnotationsOpt).collect(Collectors.toList());
+                List<List<AnnotationNode>> exprDimList = new ArrayList<List<AnnotationNode>>();
+                for (AnnotationsOptContext annotationsOptContext : ctx.annotationsOpt()) {
+                    exprDimList.add(this.visitAnnotationsOpt(annotationsOptContext));
+                }
                 allDimList = new ArrayList<>(exprDimList);
                 Collections.reverse(emptyDimList);
                 allDimList.addAll(emptyDimList);
