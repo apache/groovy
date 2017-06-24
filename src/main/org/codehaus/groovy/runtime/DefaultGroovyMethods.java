@@ -129,7 +129,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
-    public static final Class [] ADDITIONAL_CLASSES = {
+    public static final Class[] ADDITIONAL_CLASSES = {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
             NumberNumberMinus.class,
@@ -10423,6 +10423,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
+        if (null == bool) {
+            return false;
+        }
+
         return bool;
     }
 
@@ -10437,6 +10441,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Collection collection) {
+        if (null == collection) {
+            return false;
+        }
+
         return !collection.isEmpty();
     }
 
@@ -10451,6 +10459,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Map map) {
+        if (null == map) {
+            return false;
+        }
+
         return !map.isEmpty();
     }
 
@@ -10464,6 +10476,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Iterator iterator) {
+        if (null == iterator) {
+            return false;
+        }
+
         return iterator.hasNext();
     }
 
@@ -10477,6 +10493,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Enumeration enumeration) {
+        if (null == enumeration) {
+            return false;
+        }
+
         return enumeration.hasMoreElements();
     }
 
@@ -10490,6 +10510,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Object[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10503,6 +10527,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(byte[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10516,6 +10544,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(short[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10529,6 +10561,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(int[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10542,6 +10578,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(long[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10555,6 +10595,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(float[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10568,6 +10612,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(double[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10581,6 +10629,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(boolean[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10594,6 +10646,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(char[] array) {
+        if (null == array) {
+            return false;
+        }
+
         return array.length > 0;
     }
 
@@ -10608,6 +10664,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
 
     public static boolean asBoolean(Character character) {
+        if (null == character) {
+            return false;
+        }
+
         return character != 0;
     }
 
@@ -10621,6 +10681,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Number number) {
+        if (null == number) {
+            return false;
+        }
+
         return number.doubleValue() != 0;
     }
 

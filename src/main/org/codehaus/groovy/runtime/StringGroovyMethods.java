@@ -81,6 +81,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(CharSequence string) {
+        if (null == string) {
+            return false;
+        }
+
         return string.length() > 0;
     }
 
@@ -92,6 +96,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Matcher matcher) {
+        if (null == matcher) {
+            return false;
+        }
+
         RegexSupport.setLastMatcher(matcher);
         return matcher.find();
     }
