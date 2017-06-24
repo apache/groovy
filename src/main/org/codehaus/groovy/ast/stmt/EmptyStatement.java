@@ -35,5 +35,4 @@ public class EmptyStatement extends Statement {
     public boolean isEmpty() {
         return true;
     }
-
 }
