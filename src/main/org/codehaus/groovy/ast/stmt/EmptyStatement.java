@@ -33,7 +33,14 @@ import java.util.Map;
 public class EmptyStatement extends Statement {
     public static final EmptyStatement INSTANCE = new EmptyStatement();
 
-    private EmptyStatement() {}
+    /**
+     * use EmptyStatement.INSTANCE instead
+     */
+    @Deprecated
+    public EmptyStatement() {
+        // org.spockframework.compiler.ConditionRewriter will create EmptyStatement via calling the constructor
+        // so we keep the constructor for the time being, but it will be removed finally.
+    }
     
     public void visit(GroovyCodeVisitor visitor) {
     }
