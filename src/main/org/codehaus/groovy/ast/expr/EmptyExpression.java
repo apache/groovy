@@ -18,11 +18,14 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.NodeMetaDataHandler;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class is a place holder for an empty expression. 
@@ -62,6 +65,56 @@ public class EmptyExpression extends Expression {
 
         @Override
         public void setHasNoRealSourcePosition(boolean value) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setLineNumber(int lineNumber) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setColumnNumber(int columnNumber) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setLastLineNumber(int lastLineNumber) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setLastColumnNumber(int lastColumnNumber) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setSourcePosition(ASTNode node) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void copyNodeMetaData(NodeMetaDataHandler other) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setNodeMetaData(Object key, Object value) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public Object putNodeMetaData(Object key, Object value) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void removeNodeMetaData(Object key) {
+            throw createUnsupportedOperationException();
+        }
+
+        @Override
+        public void setMetaDataMap(Map<?, ?> metaDataMap) {
             throw createUnsupportedOperationException();
         }
 
