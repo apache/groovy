@@ -30,8 +30,16 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class EmptyStatement extends Statement {
+    public static final EmptyStatement INSTANCE = new ImmutableStatement();
+    
+    public void visit(GroovyCodeVisitor visitor) {
+    }
 
-    public static final EmptyStatement INSTANCE = new EmptyStatement() {
+    public boolean isEmpty() {
+        return true;
+    }
+
+    public static class ImmutableStatement extends EmptyStatement {
         @Override
         public void setStatementLabel(String label) {
             throw createUnsupportedOperationException();
@@ -95,13 +103,5 @@ public class EmptyStatement extends Statement {
         private UnsupportedOperationException createUnsupportedOperationException() {
             return new UnsupportedOperationException("EmptyStatement.INSTANCE is immutable");
         }
-    };
-    
-    public void visit(GroovyCodeVisitor visitor) {
     }
-
-    public boolean isEmpty() {
-        return true;
-    }
-
 }

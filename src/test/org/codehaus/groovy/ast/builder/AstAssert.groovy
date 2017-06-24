@@ -20,6 +20,8 @@ package org.codehaus.groovy.ast.builder
 
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.EmptyExpression
+import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.junit.Assert
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
@@ -221,9 +223,14 @@ class AstAssert {
                 assertSyntaxTree([expected.expression], [actual.expression])
                 assertSyntaxTree([expected.code], [actual.code])
             },
+
             EmptyStatement : { expected, actual ->
                 // always successful
             },
+            'EmptyStatement.ImmutableStatement' : { expected, actual ->
+                // always successful
+            },
+
             BreakStatement : { expected, actual ->
                 Assert.assertEquals("Wrong label", expected.label, actual.label)
             },
@@ -374,15 +381,25 @@ class AstAssert {
         if (actual == null || expected == null || expected.size() != actual?.size()) {
             Assert.fail("AST comparison failure. \nExpected $expected \nReceived $actual")
         }
+
         expected.eachWithIndex { item, index ->
-            if (item.getClass().isArray() && actual[index].getClass().isArray()) {
-                assertSyntaxTree(item, actual[index])
+            def actualNode = actual[index]
+
+            if (item.getClass().isArray() && actualNode.getClass().isArray()) {
+                assertSyntaxTree(item, actualNode)
             } else {
-                Assert.assertEquals("Wrong type in AST Node", item.getClass(), actual[index].getClass())
+                try {
+                    Assert.assertEquals("Wrong type in AST Node", item.getClass(), actualNode.getClass())
+                } catch (AssertionError e) {
+                    if (!(item instanceof EmptyStatement && actualNode instanceof EmptyStatement)
+                        || !(item instanceof EmptyExpression && actualNode instanceof EmptyExpression)) {
+                        throw e;
+                    }
+                }
 
                 if (ASSERTION_MAP.containsKey(item.getClass().getSimpleName())) {
                     Closure assertion = ASSERTION_MAP.get(item.getClass().getSimpleName())
-                    assertion(item, actual[index])
+                    assertion(item, actualNode)
                 } else {
                     Assert.fail("Unexpected type: ${item.getClass()} Update the unit test!")
                 }
