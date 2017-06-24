@@ -29,9 +29,6 @@ import java.lang.reflect.Method;
 
 /**
  * Java 5 code for working with JUnit 4 tests.
- * 
- * @author Paul King
- *
  */
 public class JUnit4Utils {
 

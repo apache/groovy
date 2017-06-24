@@ -28,9 +28,6 @@ import java.lang.reflect.Method;
 
 /**
  * Integration code for running TestNG tests in Groovy.
- * 
- * @author Paul King
- *
  */
 public class TestNgRunner implements GroovyRunner {
 
