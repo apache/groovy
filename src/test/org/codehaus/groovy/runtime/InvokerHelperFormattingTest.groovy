@@ -214,4 +214,44 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert '[(this Map):(this Map)]' == InvokerHelper.toString(m)
     }
 
+
+
+    public void testIgnoreDefaultToStringForCustomList() {
+
+        String TEST = '''
+                @IgnoreDefaultEqualsAndToString
+                class Foo extends ArrayList {
+                   String toString() { return this.join('-') }
+                }
+
+                def foo = new Foo()
+                foo << 1 << 2 << 3
+                assert foo.toString() == "1-2-3"
+                assert "$foo".toString() == "1-2-3"
+                return true
+                '''
+
+        assertTrue((Boolean)Eval.me(TEST));
+
+    }
+
+    public void testIgnoreDefaultToStringForCustomMap() {
+
+        String TEST = '''
+                @IgnoreDefaultEqualsAndToString
+                class Foo extends HashMap {
+                   String toString() { return 'MyCustomToString' }
+                }
+
+                def foo = new Foo()
+                assert foo.toString() == 'MyCustomToString'
+                assert "$foo".toString() == 'MyCustomToString'
+                return true
+                '''
+
+        assertTrue((Boolean)Eval.me(TEST));
+
+    }
+
+
 }
