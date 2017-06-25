@@ -20,7 +20,7 @@ package org.apache.groovy.plugin.junit;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.plugin.GroovyRunner;
+import org.apache.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
