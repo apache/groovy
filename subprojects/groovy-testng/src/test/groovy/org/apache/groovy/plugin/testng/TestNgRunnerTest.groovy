@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.testng
+package org.apache.groovy.plugin.testng
 
 class TestNgRunnerTest extends GroovyShellTestCase {
 
