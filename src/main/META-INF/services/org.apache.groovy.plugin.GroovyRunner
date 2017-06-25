@@ -17,6 +17,6 @@
 #  under the License.
 #
 
-org.apache.groovy.plugin.Junit3TestRunner
-org.apache.groovy.plugin.Junit3SuiteRunner
-org.apache.groovy.plugin.Junit4TestRunner
+org.apache.groovy.plugin.junit.Junit3TestRunner
+org.apache.groovy.plugin.junit.Junit3SuiteRunner
+org.apache.groovy.plugin.junit.Junit4TestRunner

@@ -18,6 +18,10 @@
  */
 package org.apache.groovy.plugin
 
+import org.apache.groovy.plugin.junit.Junit3TestRunner
+import org.apache.groovy.plugin.junit.Junit3SuiteRunner
+import org.apache.groovy.plugin.junit.Junit4TestRunner
+
 import static java.util.Collections.emptyMap
 
 class GroovyRunnerRegistryTest extends GroovyTestCase {

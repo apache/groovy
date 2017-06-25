@@ -19,12 +19,12 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import groovy.lang.GroovyClassLoader;
-import org.apache.groovy.plugin.Junit4TestRunner;
+import org.apache.groovy.plugin.junit.Junit4TestRunner;
 
 /**
  * Java 5 code for working with JUnit 4 tests.
  *
- * @deprecated use {@link org.apache.groovy.plugin.Junit4TestRunner}
+ * @deprecated use {@link Junit4TestRunner}
  */
 @Deprecated
 public class JUnit4Utils {
