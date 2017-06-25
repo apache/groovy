@@ -704,6 +704,44 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-8236
+    void testAnnotationWithRepeated() {
+        def errorMessage = shouldNotCompile '''
+            import java.lang.annotation.*
+
+            class MyClass {
+                @MyAnnotation(value = "val1")
+                @MyAnnotation(value = "val2")
+                //change annotation to next line and the code will work
+                //@MyAnnotationArray( [@MyAnnotation("val1"), @MyAnnotation("val2")] )
+                String annotatedMethod() {
+                    'foo'
+                }
+                static void main(String... args) {
+                    MyClass myc = new MyClass()
+                    assert 'foo' == myc.annotatedMethod()
+                    def m = myc.getClass().getMethod("annotatedMethod")
+                    List annos = m.getAnnotations()
+                    assert annos.size() == 1
+                }
+            }
+
+            @Target(ElementType.METHOD)
+            @Retention(RetentionPolicy.RUNTIME)
+            @Repeatable(MyAnnotationArray)
+            @interface MyAnnotation {
+                String value() default "val0"
+            }
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface MyAnnotationArray {
+                MyAnnotation[] value()
+            }
+        '''
+        assert errorMessage.contains('Automatic repeated annotations are not supported')
+        assert errorMessage.contains('Consider using the explicit @MyAnnotationArray collector annotation')
+    }
+
     //Parametrized tests in Spock would allow to make it much more readable
     private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
         """
