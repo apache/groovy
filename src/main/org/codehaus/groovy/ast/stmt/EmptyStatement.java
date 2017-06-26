@@ -26,9 +26,14 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class EmptyStatement extends Statement {
-
     public static final EmptyStatement INSTANCE = new EmptyStatement();
-    
+
+    /**
+     * use EmptyStatement.INSTANCE instead
+     */
+    @Deprecated
+    public EmptyStatement() {}
+
     public void visit(GroovyCodeVisitor visitor) {
     }
 
