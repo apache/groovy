@@ -18,8 +18,24 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PackageNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
@@ -34,6 +50,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -135,20 +152,63 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
+        Map<String, List<AnnotationNode>> runtimeAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
         for (AnnotationNode unvisited : node.getAnnotations()) {
             AnnotationNode visited = visitAnnotation(unvisited);
-            boolean isTargetAnnotation = visited.getClassNode().isResolved() &&
-                    visited.getClassNode().getName().equals("java.lang.annotation.Target");
+            String name = visited.getClassNode().getName();
+            if (visited.hasRuntimeRetention()) {
+                List<AnnotationNode> seen = runtimeAnnotations.get(name);
+                if (seen == null) {
+                    seen = new ArrayList<AnnotationNode>();
+                }
+                seen.add(visited);
+                runtimeAnnotations.put(name, seen);
+            }
+            boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
             if (!isTargetAnnotation && !visited.isTargetAllowed(target)) {
-                addError("Annotation @" + visited.getClassNode().getName()
-                        + " is not allowed on element " + AnnotationNode.targetToName(target),
-                        visited);
+                addError("Annotation @" + name + " is not allowed on element "
+                        + AnnotationNode.targetToName(target), visited);
             }
             visitDeprecation(node, visited);
             visitOverride(node, visited);
+        }
+        checkForDuplicateAnnotations(node, runtimeAnnotations);
+    }
+
+    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> runtimeAnnotations) {
+        for (Map.Entry<String, List<AnnotationNode>> next : runtimeAnnotations.entrySet()) {
+            if (next.getValue().size() > 1) {
+                ClassNode repeatable = null;
+                AnnotationNode repeatee = next.getValue().get(0);
+                List<AnnotationNode> repeateeAnnotations = repeatee.getClassNode().getAnnotations();
+                for (AnnotationNode anno : repeateeAnnotations) {
+                    ClassNode annoClassNode = anno.getClassNode();
+                    if (annoClassNode.getName().equals("java.lang.annotation.Repeatable")) {
+                        Expression value = anno.getMember("value");
+                        if (value instanceof ClassExpression) {
+                            ClassExpression ce = (ClassExpression) value;
+                            if (ce.getType() != null && ce.getType().isAnnotationDefinition()) {
+                                repeatable = ce.getType();
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (repeatable != null) {
+                    AnnotationNode collector = new AnnotationNode(repeatable);
+                    collector.setRuntimeRetention(true); // checked earlier
+                    List<Expression> annos = new ArrayList<Expression>();
+                    for (AnnotationNode an : next.getValue()) {
+                        annos.add(new AnnotationConstantExpression(an));
+                    }
+                    collector.addMember("value", new ListExpression(annos));
+                    node.addAnnotation(collector);
+                    node.getAnnotations().removeAll(next.getValue());
+                }
+            }
         }
     }
 
