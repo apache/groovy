@@ -130,4 +130,16 @@ class GroovyFilterTests extends GroovyTestCase {
         '''"""
         assert multilineTripleSingleQuotes ==~ GroovyFilter.SINGLE_QUOTES
     }
+
+    void testSlashyQuotes() {
+        assert '/foo/' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '/foo\\//' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '/foo\\/bar\\//' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '/foo\\/bar\\\\/\\//' ==~ GroovyFilter.SLASHY_QUOTES
+
+        assert '$/foo$/' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '$/foo\nbar$/' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '$/foo\n/bar//$/' ==~ GroovyFilter.SLASHY_QUOTES
+        assert '$/foo\n/bar//\n$/' ==~ GroovyFilter.SLASHY_QUOTES
+    }
 }
