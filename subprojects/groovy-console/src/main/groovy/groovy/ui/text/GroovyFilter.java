@@ -57,7 +57,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     public static final String SINGLE_QUOTES =
             "(?ms:'{3}(?!'{1,3}).*?(?:'{3}|\\z))|(?:'{1}.*?(?:'|\\z))";
 
-    public static final String SLASHY_QUOTES = "(?:/[^/*].*?/|(?ms:\\$/.*?(?:/\\$|\\z)))";
+    public static final String SLASHY_QUOTES = "(?:/[^/*].*?(?<!\\\\)/|(?ms:\\$/.*?(?:/\\$|\\z)))";
 
     public static final String DIGIT = "DIGIT";
     public static final String DECIMAL_INTEGER_LITERAL = "(?:0|[1-9](?:[_0-9]*[0-9])?)[lL]?";
