@@ -182,7 +182,7 @@ class VariableExpressionReplacerTest {
 
 
     def anEmptyStatement() {
-        new EmptyStatement()
+        EmptyStatement.INSTANCE
     }
 
     def aConstant(value) {

@@ -166,8 +166,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
                 //  ...
                 // }
                 Map<String,ClassNode> modelTypes = extractModelTypesFromClosureExpression((ClosureExpression)right);
-                Expression result = new EmptyExpression();
-                result.setSourcePosition(bin);
+                Expression result = EmptyExpression.INSTANCE;
                 classNode.putNodeMetaData(MarkupTemplateEngine.MODELTYPES_ASTKEY, modelTypes);
                 return result;
             }

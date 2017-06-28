@@ -36,7 +36,7 @@ public class SingletonASTTransformationTest {
         try {
             ASTNode[] badInput = new ASTNode[]{
                     new ConstantExpression("sample"),
-                    new EmptyExpression()
+                    EmptyExpression.INSTANCE
             };
             new SingletonASTTransformation().visit(badInput, null);
             Assert.fail("Contract Failure");

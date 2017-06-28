@@ -564,7 +564,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private Expression findStaticPropertyAccessorByFullName(ClassNode staticImportType, String accessorMethodName) {
         // anything will do as we only check size == 1
         ArgumentListExpression dummyArgs = new ArgumentListExpression();
-        dummyArgs.addExpression(new EmptyExpression());
+        dummyArgs.addExpression(EmptyExpression.INSTANCE);
         return findStaticMethod(staticImportType, accessorMethodName, (inLeftExpression ? dummyArgs : ArgumentListExpression.EMPTY_ARGUMENTS));
     }
 
