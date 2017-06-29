@@ -3816,7 +3816,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     );
                     stubbed.setGenericsTypes(method.getGenericsTypes());
                 }
-                stubbed.setDeclaringClass(receiver);
+                stubbed.setDeclaringClass(method.getDeclaringClass());
                 result.add(stubbed);
             }
         }
