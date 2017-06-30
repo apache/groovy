@@ -52,10 +52,22 @@ import java.util.logging.Logger;
  */
 public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable<GroovyRunner> {
 
-    // GroovySystem stores a static reference to this instance so it is important
-    // to make it fast to create as possible. GroovyRunners are only used to run
-    // scripts that GroovyShell does not already know how to run so defer service
-    // loading until requested via the iterator or map access methods.
+    /*
+     * Implementation notes
+     *
+     * GroovySystem stores a static reference to this instance so it is
+     * important to make it fast to create as possible. GroovyRunners are
+     * only used to run scripts that GroovyShell does not already know how
+     * to run so defer service loading until requested via the iterator or
+     * map access methods.
+     *
+     * The Map interface is for compatibility with the original definition
+     * of GroovySystem.RUNNER_REGISTRY. At some point it would probably
+     * make sense to dispense with associating a String key with a runner
+     * and provide register/unregister methods instead of the Map
+     * interface.
+     */
+
     private static final GroovyRunnerRegistry INSTANCE = new GroovyRunnerRegistry();
 
     private static final Logger LOG = Logger.getLogger(GroovyRunnerRegistry.class.getName());
@@ -101,6 +113,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             try {
                 if ((map = runnerMap) == null) {
                     runnerMap = map = new LinkedHashMap<>();
+                    loadDefaultRunners();
                     load(null);
                 }
             } finally {
@@ -108,6 +121,12 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             }
         }
         return map;
+    }
+
+    private void loadDefaultRunners() {
+        register(DefaultRunners.junit3TestRunner());
+        register(DefaultRunners.junit3SuiteRunner());
+        register(DefaultRunners.junit4TestRunner());
     }
 
     /**
@@ -139,8 +158,19 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
     private void load0(ClassLoader classLoader) {
         ServiceLoader<GroovyRunner> serviceLoader = ServiceLoader.load(GroovyRunner.class, classLoader);
         for (GroovyRunner runner : serviceLoader) {
-            put(runner.getClass().getName(), runner);
+            register(runner);
         }
+    }
+
+    /**
+     * Registers the given instance with the registry. This is
+     * equivalent to {@link #put(String, GroovyRunner)} with a
+     * {@code key} being set to {@code runner.getClass().getName()}.
+     *
+     * @param runner the instance to add to the registry
+     */
+    private void register(GroovyRunner runner) {
+        put(runner.getClass().getName(), runner);
     }
 
     /**

@@ -22,6 +22,8 @@ import groovy.lang.GroovyClassLoader;
 
 /**
  * Classes which can run scripts should implement this interface.
+ *
+ * @since 2.5.0
  */
 public interface GroovyRunner {
 

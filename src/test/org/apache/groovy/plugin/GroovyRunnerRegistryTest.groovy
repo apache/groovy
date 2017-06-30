@@ -18,24 +18,19 @@
  */
 package org.apache.groovy.plugin
 
-import org.apache.groovy.plugin.junit.Junit3TestRunner
-import org.apache.groovy.plugin.junit.Junit3SuiteRunner
-import org.apache.groovy.plugin.junit.Junit4TestRunner
-
 import static java.util.Collections.emptyMap
 
 class GroovyRunnerRegistryTest extends GroovyTestCase {
 
     Map<String, GroovyRunner> knownRunners = [
-            Junit3TestRunner: new Junit3TestRunner(),
-            Junit3SuiteRunner: new Junit3SuiteRunner(),
-            Junit4TestRunner: new Junit4TestRunner()
+            Junit3TestRunner: DefaultRunners.junit3TestRunner(),
+            Junit3SuiteRunner: DefaultRunners.junit3SuiteRunner(),
+            Junit4TestRunner: DefaultRunners.junit4TestRunner()
     ]
 
     GroovyRunnerRegistry registry = new GroovyRunnerRegistry(knownRunners)
 
     void testServiceLoaderFindsKnownRunners() {
-        // Tests loading from META-INF/services
         GroovyRunnerRegistry reg = GroovyRunnerRegistry.getInstance()
         assert reg.@runnerMap == null
         reg.load(null)

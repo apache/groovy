@@ -19,17 +19,20 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import groovy.lang.GroovyClassLoader;
-import org.apache.groovy.plugin.junit.Junit4TestRunner;
+import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Java 5 code for working with JUnit 4 tests.
  *
- * @deprecated use {@link Junit4TestRunner}
+ * @deprecated use {@link org.apache.groovy.plugin.GroovyRunnerRegistry}
  */
 @Deprecated
 public class JUnit4Utils {
-
-    private static final Junit4TestRunner RUNNER = new Junit4TestRunner();
 
     /**
      * Utility method to check via reflection if the parsed class appears to be a JUnit4 test.
@@ -39,7 +42,34 @@ public class JUnit4Utils {
      * @return true if the class appears to be a test
      */
     static Boolean realIsJUnit4Test(Class scriptClass, GroovyClassLoader loader) {
-        return RUNNER.canRun(scriptClass, loader);
+        // check if there are appropriate class or method annotations
+        // that suggest we have a JUnit 4 test
+        boolean isTest = false;
+        try {
+            try {
+                Class runWithAnnotationClass = loader.loadClass("org.junit.runner.RunWith");
+                Annotation annotation = scriptClass.getAnnotation(runWithAnnotationClass);
+                if (annotation != null) {
+                    isTest = true;
+                } else {
+                    Class testAnnotationClass = loader.loadClass("org.junit.Test");
+                    Method[] methods = scriptClass.getMethods();
+                    for (int i = 0; i < methods.length; i++) {
+                        Method method = methods[i];
+                        annotation = method.getAnnotation(testAnnotationClass);
+                        if (annotation != null) {
+                            isTest = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                // fall through
+            }
+        } catch (Throwable e) {
+            // fall through
+        }
+        return isTest ? Boolean.TRUE : Boolean.FALSE;
     }
 
     /**
@@ -49,6 +79,24 @@ public class JUnit4Utils {
      * @return the result of running the test
      */
     static Object realRunJUnit4Test(Class scriptClass, GroovyClassLoader loader) {
-        return RUNNER.run(scriptClass, loader);
+        // invoke through reflection to eliminate mandatory JUnit 4 jar dependency
+
+        try {
+            Class junitCoreClass = loader.loadClass("org.junit.runner.JUnitCore");
+            Object result = InvokerHelper.invokeStaticMethod(junitCoreClass,
+                    "runClasses", new Object[]{scriptClass});
+            System.out.print("JUnit 4 Runner, Tests: " + InvokerHelper.getProperty(result, "runCount"));
+            System.out.print(", Failures: " + InvokerHelper.getProperty(result, "failureCount"));
+            System.out.println(", Time: " + InvokerHelper.getProperty(result, "runTime"));
+            List failures = (List) InvokerHelper.getProperty(result, "failures");
+            for (int i = 0; i < failures.size(); i++) {
+                Object f = failures.get(i);
+                System.out.println("Test Failure: " + InvokerHelper.getProperty(f, "description"));
+                System.out.println(InvokerHelper.getProperty(f, "trace"));
+            }
+            return result;
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Error running JUnit 4 test.", e);
+        }
     }
 }
