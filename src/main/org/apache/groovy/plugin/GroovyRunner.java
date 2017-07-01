@@ -16,11 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    runtime('org.testng:testng:6.9.10') {
-        // exclude 'optional' beanshell even though testng's pom doesn't say optional
-        exclude(group: 'org.beanshell', module: 'bsh')
-    }
-    testCompile project(':groovy-test')
+package org.apache.groovy.plugin;
+
+import groovy.lang.GroovyClassLoader;
+
+/**
+ * Classes which can run scripts should implement this interface.
+ *
+ * @since 2.5.0
+ */
+public interface GroovyRunner {
+
+    /**
+     * Returns {@code true} if this runner is able to
+     * run the given class.
+     *
+     * @param scriptClass class to run
+     * @param loader used to locate classes and resources
+     * @return true if given class can be run, else false
+     */
+    boolean canRun(Class<?> scriptClass, GroovyClassLoader loader);
+
+    /**
+     * Runs the given class.
+     *
+     * @param scriptClass class to run
+     * @param loader used to locate classes and resources
+     * @return result of running the class
+     */
+    Object run(Class<?> scriptClass, GroovyClassLoader loader);
+
 }

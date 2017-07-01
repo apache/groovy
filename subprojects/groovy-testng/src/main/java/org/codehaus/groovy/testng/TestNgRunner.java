@@ -18,77 +18,15 @@
  */
 package org.codehaus.groovy.testng;
 
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.plugin.GroovyRunner;
-import org.codehaus.groovy.runtime.InvokerHelper;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 
 /**
  * Integration code for running TestNG tests in Groovy.
+ *
+ * @deprecated use {@link org.apache.groovy.plugin.testng.TestNgRunner}
  */
-public class TestNgRunner implements GroovyRunner {
-
-    /**
-     * Utility method to check via reflection if the parsed class appears to be a TestNG
-     * test, i.e. checks whether it appears to be using the relevant TestNG annotations.
-     *
-     * @param scriptClass the class we want to check
-     * @param loader the GroovyClassLoader to use to find classes
-     * @return true if the class appears to be a test
-     */
-    @SuppressWarnings("unchecked")
-    public boolean canRun(Class scriptClass, GroovyClassLoader loader) {
-        // check if there are appropriate class or method annotations
-        // that suggest we have a TestNG test
-        boolean isTest = false;
-        try {
-            try {
-                Class testAnnotationClass = loader.loadClass("org.testng.annotations.Test");
-                Annotation annotation = scriptClass.getAnnotation(testAnnotationClass);
-                if (annotation != null) {
-                    isTest = true;
-                } else {
-                    Method[] methods = scriptClass.getMethods();
-                    for (Method method : methods) {
-                        annotation = method.getAnnotation(testAnnotationClass);
-                        if (annotation != null) {
-                            isTest = true;
-                            break;
-                        }
-                    }
-                }
-            } catch (ClassNotFoundException e) {
-                // fall through
-            }
-        } catch (Throwable e) {
-            // fall through
-        }
-        return isTest;
-    }
-
-    /**
-     * Utility method to run a TestNG test.
-     *
-     * @param scriptClass the class we want to run as a test
-     * @param loader the class loader to use
-     * @return the result of running the test
-     */
-    public Object run(Class scriptClass, GroovyClassLoader loader) {
-        // invoke through reflection to eliminate mandatory TestNG jar dependency
-        try {
-            Class testNGClass = loader.loadClass("org.testng.TestNG");
-            Object testng = InvokerHelper.invokeConstructorOf(testNGClass, new Object[]{});
-            InvokerHelper.invokeMethod(testng, "setTestClasses", new Object[]{scriptClass});
-            Class listenerClass = loader.loadClass("org.testng.TestListenerAdapter");
-            Object listener = InvokerHelper.invokeConstructorOf(listenerClass, new Object[]{});
-            InvokerHelper.invokeMethod(testng, "addListener", new Object[]{listener});
-            return InvokerHelper.invokeMethod(testng, "run", new Object[]{});
-        } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Error running TestNG test.", e);
-        }
-    }
-
+@Deprecated
+public class TestNgRunner
+        extends org.apache.groovy.plugin.testng.TestNgRunner
+        implements GroovyRunner {
 }
