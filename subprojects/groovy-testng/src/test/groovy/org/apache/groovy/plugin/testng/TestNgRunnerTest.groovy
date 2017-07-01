@@ -16,11 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    runtime('org.testng:testng:6.9.10') {
-        // exclude 'optional' beanshell even though testng's pom doesn't say optional
-        exclude(group: 'org.beanshell', module: 'bsh')
+package org.apache.groovy.plugin.testng
+
+class TestNgRunnerTest extends GroovyShellTestCase {
+
+    void testRunWithTestNg() {
+        String test = '''
+            class F {
+                @org.testng.annotations.Test
+                void m() {
+                    org.testng.Assert.assertEquals(1,1)
+                }
+            }
+        '''
+        shell.run(test, 'F.groovy', [])
     }
-    testCompile project(':groovy-test')
+
+    void testTestNgRunnerListedInRunnerList() {
+        assert shouldFail(GroovyRuntimeException) {
+            shell.run('class F {}', 'F.groovy', [])
+        }.contains('* ' + TestNgRunner.class.getName())
+    }
+
 }

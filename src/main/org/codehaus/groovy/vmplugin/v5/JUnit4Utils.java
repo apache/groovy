@@ -17,7 +17,6 @@
  *  under the License.
  */
 package org.codehaus.groovy.vmplugin.v5;
-// TODO M12N move this to groovy-test
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
@@ -29,7 +28,10 @@ import java.lang.reflect.Method;
 
 /**
  * Java 5 code for working with JUnit 4 tests.
+ *
+ * @deprecated use {@link org.apache.groovy.plugin.GroovyRunnerRegistry}
  */
+@Deprecated
 public class JUnit4Utils {
 
     /**
