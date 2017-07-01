@@ -30,12 +30,8 @@ class GroovyRunnerRegistryTest extends GroovyTestCase {
 
     GroovyRunnerRegistry registry = new GroovyRunnerRegistry(knownRunners)
 
-    void testServiceLoaderFindsKnownRunners() {
-        GroovyRunnerRegistry reg = GroovyRunnerRegistry.getInstance()
-        assert reg.@runnerMap == null
-        reg.load(null)
-        assert reg.@runnerMap.size() == 3
-        for (runner in reg) {
+    void testRegistryContainsDefaultRunners() {
+        for (runner in GroovyRunnerRegistry.getInstance()) {
             knownRunners.remove(runner.getClass().getSimpleName())
         }
         assert knownRunners.isEmpty()
