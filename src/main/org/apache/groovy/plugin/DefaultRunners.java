@@ -33,6 +33,18 @@ import java.util.List;
  */
 final class DefaultRunners {
 
+    /*
+     * These runners were originally included directly in GroovyShell.
+     * Since they are part of core they are added directly to the
+     * GroovyRunnerRegistry rather than via a provider configuration
+     * file in META-INF/services. If any of these runners are moved
+     * out to a submodule then they should be registered using the
+     * provider configuration file (see groovy-testng).
+     *
+     * These are internal classes and not meant to be referenced
+     * outside of the GroovyRunnerRegistry.
+     */
+
     private static final GroovyRunner JUNIT3_TEST = new Junit3TestRunner();
     private static final GroovyRunner JUNIT3_SUITE = new Junit3SuiteRunner();
     private static final GroovyRunner JUNIT4_TEST = new Junit4TestRunner();
@@ -67,9 +79,8 @@ final class DefaultRunners {
                 Class<?> testCaseClass = loader.loadClass("junit.framework.TestCase");
                 return testCaseClass.isAssignableFrom(scriptClass);
             } catch (Throwable e) {
-                // fall through
+                return false;
             }
-            return false;
         }
 
         /**
@@ -107,9 +118,8 @@ final class DefaultRunners {
                 Class<?> testSuiteClass = loader.loadClass("junit.framework.TestSuite");
                 return testSuiteClass.isAssignableFrom(scriptClass);
             } catch (Throwable e) {
-                // fall through
+                return false;
             }
-            return false;
         }
 
         /**
@@ -176,26 +186,25 @@ final class DefaultRunners {
             }
         }
 
-        private boolean hasRunWithAnnotation(Class<?> scriptClass, ClassLoader loader) {
+        private static boolean hasRunWithAnnotation(Class<?> scriptClass, ClassLoader loader) {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Annotation> runWithAnnotationClass =
                         (Class<? extends Annotation>)loader.loadClass("org.junit.runner.RunWith");
                 return scriptClass.isAnnotationPresent(runWithAnnotationClass);
             } catch (Throwable e) {
-                // fall through
+                return false;
             }
-            return false;
         }
 
-        private boolean hasTestAnnotatedMethod(Class<?> scriptClass, ClassLoader loader) {
+        private static boolean hasTestAnnotatedMethod(Class<?> scriptClass, ClassLoader loader) {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Annotation> testAnnotationClass =
                         (Class<? extends Annotation>) loader.loadClass("org.junit.Test");
                 Method[] methods = scriptClass.getMethods();
                 for (Method method : methods) {
-                    if (method.getAnnotation(testAnnotationClass) != null) {
+                    if (method.isAnnotationPresent(testAnnotationClass)) {
                         return true;
                     }
                 }

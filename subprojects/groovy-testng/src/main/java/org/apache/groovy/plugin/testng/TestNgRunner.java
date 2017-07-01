@@ -41,34 +41,24 @@ public class TestNgRunner implements GroovyRunner {
      */
     @Override
     public boolean canRun(Class<?> scriptClass, GroovyClassLoader loader) {
-        // check if there are appropriate class or method annotations
-        // that suggest we have a TestNG test
-        boolean isTest = false;
         try {
-            try {
-                @SuppressWarnings("unchecked")
-                Class<? extends Annotation> testAnnotationClass =
-                        (Class<? extends Annotation>) loader.loadClass("org.testng.annotations.Test");
-                Annotation annotation = scriptClass.getAnnotation(testAnnotationClass);
-                if (annotation != null) {
-                    isTest = true;
-                } else {
-                    Method[] methods = scriptClass.getMethods();
-                    for (Method method : methods) {
-                        annotation = method.getAnnotation(testAnnotationClass);
-                        if (annotation != null) {
-                            isTest = true;
-                            break;
-                        }
+            @SuppressWarnings("unchecked")
+            Class<? extends Annotation> testAnnotationClass =
+                    (Class<? extends Annotation>) loader.loadClass("org.testng.annotations.Test");
+            if (scriptClass.isAnnotationPresent(testAnnotationClass)) {
+                return true;
+            } else {
+                Method[] methods = scriptClass.getMethods();
+                for (Method method : methods) {
+                    if (method.isAnnotationPresent(testAnnotationClass)) {
+                        return true;
                     }
                 }
-            } catch (ClassNotFoundException e) {
-                // fall through
             }
         } catch (Throwable e) {
             // fall through
         }
-        return isTest;
+        return false;
     }
 
     /**
@@ -80,7 +70,6 @@ public class TestNgRunner implements GroovyRunner {
      */
     @Override
     public Object run(Class<?> scriptClass, GroovyClassLoader loader) {
-        // invoke through reflection to eliminate mandatory TestNG jar dependency
         try {
             Class<?> testNGClass = loader.loadClass("org.testng.TestNG");
             Object testng = InvokerHelper.invokeConstructorOf(testNGClass, new Object[]{});
