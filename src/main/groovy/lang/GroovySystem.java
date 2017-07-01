@@ -18,12 +18,12 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.plugin.GroovyRunner;
+import org.apache.groovy.plugin.GroovyRunner;
+import org.apache.groovy.plugin.GroovyRunnerRegistry;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.util.ReleaseInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public final class GroovySystem {
@@ -49,8 +49,11 @@ public final class GroovySystem {
 
     /**
      * Reference to the Runtime Registry to be used by the Groovy run-time system to find classes capable of running scripts
+     *
+     * @deprecated use {@link GroovyRunnerRegistry}
      */
-    public static final Map<String, GroovyRunner> RUNNER_REGISTRY = new HashMap<String, GroovyRunner>();
+    @Deprecated
+    public static final Map<String, GroovyRunner> RUNNER_REGISTRY = GroovyRunnerRegistry.getInstance();
 
     private static boolean keepJavaMetaClasses=false;
     

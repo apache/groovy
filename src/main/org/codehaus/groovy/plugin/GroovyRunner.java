@@ -18,13 +18,11 @@
  */
 package org.codehaus.groovy.plugin;
 
-import groovy.lang.GroovyClassLoader;
-
 /**
  * Classes which can run scripts should implement this interface.
+ *
+ * @deprecated use {@link org.apache.groovy.plugin.GroovyRunner}
  */
-public interface GroovyRunner {
-    boolean canRun(Class scriptClass, GroovyClassLoader loader);
-
-    Object run(Class scriptClass, GroovyClassLoader loader);
+@Deprecated
+public interface GroovyRunner extends org.apache.groovy.plugin.GroovyRunner {
 }
