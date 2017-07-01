@@ -129,26 +129,8 @@ public class BooleanExpressionTransformer {
                     // becomes the "null" constant, so we need to recheck
                     top = controller.getOperandStack().getTopOperand();
                     if (ClassHelper.isPrimitiveType(top)) {
-                        if (top.equals(ClassHelper.int_TYPE) || top.equals(ClassHelper.byte_TYPE)
-                                || top.equals(ClassHelper.short_TYPE) || top.equals(ClassHelper.char_TYPE)) {
-                            // int on stack
-                        } else if (top.equals(ClassHelper.long_TYPE)) {
-                            MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(LCONST_0);
-                            mv.visitInsn(LCMP);
-                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                        } else if (top.equals(ClassHelper.float_TYPE)) {
-                            MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(F2D);
-                            mv.visitInsn(DCONST_0);
-                            mv.visitInsn(DCMPG);
-                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                        } else if (top.equals(ClassHelper.double_TYPE)) {
-                            MethodVisitor mv = controller.getMethodVisitor();
-                            mv.visitInsn(DCONST_0);
-                            mv.visitInsn(DCMPG);
-                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                        }
+                        BytecodeHelper.convertPrimitiveToBoolean(controller.getMethodVisitor(), top);
+                        controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                         return;
                     }
                 }

@@ -11043,9 +11043,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Coerce a Float instance to a boolean value.
+     *
+     * @param object the Float
+     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @since 3.0.0
+     */
+    public static boolean asBoolean(Float object) {
+        float f = object;
+        return f != 0.0f && !Float.isNaN(f);
+    }
+
+    /**
+     * Coerce a Double instance to a boolean value.
+     *
+     * @param object the Double
+     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @since 3.0.0
+     */
+    public static boolean asBoolean(Double object) {
+        double d = object;
+        return d != 0.0d && !Double.isNaN(d);
+    }
+
+    /**
      * Coerce a number to a boolean value.
-     * A number is coerced to false if its double value is equal to 0, and to true otherwise,
-     * and to true otherwise.
+     * A number is coerced to false if its double value is equal to 0, and to true otherwise.
      *
      * @param number the number
      * @return the boolean value
