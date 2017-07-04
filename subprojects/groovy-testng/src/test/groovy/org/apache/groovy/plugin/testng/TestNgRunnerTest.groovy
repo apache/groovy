@@ -20,6 +20,18 @@ package org.apache.groovy.plugin.testng
 
 class TestNgRunnerTest extends GroovyShellTestCase {
 
+    @Override
+    void setUp() {
+        super.setUp()
+        System.setProperty('groovy.plugin.testng.output', 'target/testng-output')
+    }
+
+    @Override
+    void tearDown() {
+        super.tearDown()
+        System.clearProperty('groovy.plugin.testng.output')
+    }
+
     void testRunWithTestNg() {
         String test = '''
             class F {
