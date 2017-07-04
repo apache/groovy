@@ -37,6 +37,13 @@ class GroovyRunnerRegistryTest extends GroovyTestCase {
         assert knownRunners.isEmpty()
     }
 
+    void testDefaultRunnersAreLoaded() {
+        def reg = GroovyRunnerRegistry.getInstance()
+        reg.clear()
+        assert !reg.isEmpty()
+        testRegistryContainsDefaultRunners()
+    }
+
     void testCustomRunner() {
         DummyRunner customRunner = new DummyRunner()
         GroovyRunnerRegistry realRegistry = GroovyRunnerRegistry.getInstance()
@@ -107,9 +114,10 @@ class GroovyRunnerRegistryTest extends GroovyTestCase {
     }
 
     void testClear() {
-        assert registry.size() == knownRunners.size()
+        registry.put('DummyRunner', new DummyRunner())
+        assert registry.size() == knownRunners.size() + 1
         registry.clear()
-        assert registry.size() == 0
+        assert registry.size() == knownRunners.size()
     }
 
     void testPutAll() {
