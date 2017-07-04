@@ -47,6 +47,10 @@ import java.util.logging.Logger;
  * For compatibility with previous versions, this registry implements the
  * {@link Map} interface. All {@code null} keys and values will be ignored
  * and no exception thrown, except where noted.
+ * <p>
+ * By default the registry contains runners that are capable of running
+ * {@code JUnit 3} and {@code JUnit 4} test classes if those libraries
+ * are available to the class loader.
  *
  * @since 2.5.0
  */
@@ -113,7 +117,6 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             try {
                 if ((map = runnerMap) == null) {
                     runnerMap = map = new LinkedHashMap<>();
-                    loadDefaultRunners();
                     load(null);
                 }
             } finally {
@@ -121,12 +124,6 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             }
         }
         return map;
-    }
-
-    private void loadDefaultRunners() {
-        register(DefaultRunners.junit3TestRunner());
-        register(DefaultRunners.junit3SuiteRunner());
-        register(DefaultRunners.junit4TestRunner());
     }
 
     /**
@@ -143,19 +140,29 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
                 return;
             }
         }
+        writeLock.lock();
         try {
             if (classLoader == null) {
                 classLoader = Thread.currentThread().getContextClassLoader();
             }
-            load0(classLoader);
+            loadDefaultRunners();
+            loadWithLock(classLoader);
         } catch (SecurityException se) {
             LOG.log(Level.WARNING, "Failed to get the context ClassLoader", se);
         } catch (ServiceConfigurationError sce) {
             LOG.log(Level.WARNING, "Failed to load GroovyRunner services from ClassLoader " + classLoader, sce);
+        } finally {
+            writeLock.unlock();
         }
     }
 
-    private void load0(ClassLoader classLoader) {
+    private void loadDefaultRunners() {
+        register(DefaultRunners.junit3TestRunner());
+        register(DefaultRunners.junit3SuiteRunner());
+        register(DefaultRunners.junit4TestRunner());
+    }
+
+    private void loadWithLock(ClassLoader classLoader) {
         ServiceLoader<GroovyRunner> serviceLoader = ServiceLoader.load(GroovyRunner.class, classLoader);
         for (GroovyRunner runner : serviceLoader) {
             register(runner);
@@ -346,7 +353,9 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
     }
 
     /**
-     * Clears all registered runners from the registry.
+     * Clears all registered runners from the registry and resets
+     * the registry so that it contains only the default set of
+     * runners.
      */
     @Override
     public void clear() {
@@ -354,6 +363,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
         writeLock.lock();
         try {
             map.clear();
+            loadDefaultRunners();
         } finally {
             writeLock.unlock();
         }
