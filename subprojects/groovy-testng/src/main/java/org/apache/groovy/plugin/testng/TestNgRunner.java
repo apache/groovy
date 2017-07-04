@@ -31,6 +31,17 @@ import java.lang.reflect.Method;
  */
 public class TestNgRunner implements GroovyRunner {
 
+    /** Path to the desired test-output directory, else null */
+    private static final String OUTPUT_DIRECTORY = getTestOutputDirectory();
+
+    private static String getTestOutputDirectory() {
+        try {
+            return System.getProperty("groovy.plugin.testng.output");
+        } catch (SecurityException ignore) {
+            return null;
+        }
+    }
+
     /**
      * Utility method to check via reflection if the parsed class appears to be a TestNG
      * test, i.e. checks whether it appears to be using the relevant TestNG annotations.
@@ -77,6 +88,9 @@ public class TestNgRunner implements GroovyRunner {
             Class<?> listenerClass = loader.loadClass("org.testng.TestListenerAdapter");
             Object listener = InvokerHelper.invokeConstructorOf(listenerClass, new Object[]{});
             InvokerHelper.invokeMethod(testng, "addListener", new Object[]{listener});
+            if (OUTPUT_DIRECTORY != null) {
+                InvokerHelper.invokeMethod(testng, "setOutputDirectory", new Object[]{OUTPUT_DIRECTORY});
+            }
             return InvokerHelper.invokeMethod(testng, "run", new Object[]{});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Error running TestNG test.", e);
