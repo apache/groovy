@@ -82,7 +82,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private void createSortable(AnnotationNode annotation, ClassNode classNode) {
         List<String> includes = getMemberStringList(annotation, "includes");
         List<String> excludes = getMemberStringList(annotation, "excludes");
-        boolean reversed = getMemberBoolValue(annotation, "reversed");
+        boolean reversed = memberHasValue(annotation, "reversed", true);
         if (!checkIncludeExcludeUndefinedAware(annotation, excludes, includes, MY_TYPE_NAME)) return;
         if (!checkPropertyList(classNode, includes, "includes", annotation, MY_TYPE_NAME, false)) return;
         if (!checkPropertyList(classNode, excludes, "excludes", annotation, MY_TYPE_NAME, false)) return;
