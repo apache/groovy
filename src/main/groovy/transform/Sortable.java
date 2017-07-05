@@ -173,6 +173,7 @@ public @interface Sortable {
 
     /**
      * Set to true so that comparator uses reversed natural order.
+     * @since 2.5.0
      */
     boolean reversed() default false;
 }
