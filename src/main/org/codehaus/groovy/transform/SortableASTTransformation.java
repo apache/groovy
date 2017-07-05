@@ -113,7 +113,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static Statement createCompareToMethodBody(List<PropertyNode> properties, Boolean reversed) {
+    private static Statement createCompareToMethodBody(List<PropertyNode> properties, boolean reversed) {
         List<Statement> statements = new ArrayList<Statement>();
 
         // if (this.is(other)) return 0;
