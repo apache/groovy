@@ -237,18 +237,7 @@ public class GeneralUtils {
      * @return the expression comparing two values
      */
     public static BinaryExpression cmpX(Expression lhv, Expression rhv, boolean reversed) {
-        return (reversed) ? cmpXReversed(lhv, rhv) : cmpX(lhv, rhv);
-    }
-
-    /**
-     * Build a binary expression that compares two values opposite to natural order
-     * @param lhv expression for the value to compare from
-     * @param rhv expression for the value to compare to
-     * @return the expression comparing two values
-     */
-    public static BinaryExpression cmpXReversed(Expression lhv, Expression rhv) {
-        // Right value (rhv) and left value (lhv) are inversed to do an inversed comparison
-        return new BinaryExpression(rhv, CMP, lhv);
+        return (reversed) ? cmpX(rhv, lhv) : cmpX(lhv, rhv);
     }
 
     public static ConstantExpression constX(Object val) {
