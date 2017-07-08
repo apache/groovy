@@ -29,7 +29,7 @@ import org.codehaus.groovy.vmplugin.v7.Java7;
 public class VMPluginFactory {
 
     private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
-    private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.vm8.Java8";
+    private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v8.Java8";
 
     private static final VMPlugin plugin;
 
