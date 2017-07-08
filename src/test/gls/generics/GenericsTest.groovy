@@ -323,9 +323,9 @@ class GenericsTest extends GenericsTestBase {
     }
 
     void testGenericsDiamondShortcutIllegalPosition() {
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             List<> list4 = []
-        ''', 'unexpected token: <'
+        ''', ['unexpected token: <', 'Unexpected input: \'<\'']
     }
 
     void testGenericsInAsType() {
@@ -398,6 +398,7 @@ import java.util.concurrent.atomic.AtomicInteger
         shouldFailCompilationWithMessage scriptText, "Missing closing bracket '>' for generics types"
     }
 
+
     private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
         shouldFailCompilationWithMessages(scriptText, [errorMessage])
     }
@@ -411,6 +412,23 @@ import java.util.concurrent.atomic.AtomicInteger
             errorMessages.each {
                 assert text.contains(it)
             }
+        }
+    }
+
+    private void shouldFailCompilationWithAnyMessage(scriptText, List<String> errorMessages) {
+        try {
+            assertScript scriptText
+            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
+        } catch (MultipleCompilationErrorsException mcee) {
+            def text = mcee.toString()
+
+            for (errorMessage in errorMessages) {
+                if (text.contains(errorMessage)) {
+                    return
+                }
+            }
+
+            assert false, text + " can not match any expected error message: " + errorMessages
         }
     }
 
