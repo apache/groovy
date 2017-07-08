@@ -88,11 +88,14 @@ public abstract class Selector {
     public boolean catchException = true;
     public CALL_TYPES callType;
 
+    /** Cache values for read-only access */
+    private static final CALL_TYPES[] CALL_TYPES_VALUES = CALL_TYPES.values();
+
     /**
      * Returns the Selector
      */
     public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
-        CALL_TYPES callType = CALL_TYPES.values()[callID];
+        CALL_TYPES callType = CALL_TYPES_VALUES[callID];
         switch (callType) {
             case INIT: return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case METHOD: return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
