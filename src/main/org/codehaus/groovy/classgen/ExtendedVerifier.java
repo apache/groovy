@@ -19,7 +19,9 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
@@ -34,6 +36,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -135,20 +138,61 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
+        Map<String, List<AnnotationNode>> runtimeAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
         for (AnnotationNode unvisited : node.getAnnotations()) {
             AnnotationNode visited = visitAnnotation(unvisited);
-            boolean isTargetAnnotation = visited.getClassNode().isResolved() &&
-                    visited.getClassNode().getName().equals("java.lang.annotation.Target");
+            String name = visited.getClassNode().getName();
+            if (visited.hasRuntimeRetention()) {
+                List<AnnotationNode> seen = runtimeAnnotations.get(name);
+                if (seen == null) {
+                    seen = new ArrayList<AnnotationNode>();
+                }
+                seen.add(visited);
+                runtimeAnnotations.put(name, seen);
+            }
+            boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
             if (!isTargetAnnotation && !visited.isTargetAllowed(target)) {
-                addError("Annotation @" + visited.getClassNode().getName()
-                        + " is not allowed on element " + AnnotationNode.targetToName(target),
-                        visited);
+                addError("Annotation @" + name + " is not allowed on element "
+                        + AnnotationNode.targetToName(target), visited);
             }
             visitDeprecation(node, visited);
             visitOverride(node, visited);
+        }
+        checkForDuplicateAnnotations(runtimeAnnotations);
+    }
+
+    private void checkForDuplicateAnnotations(Map<String, List<AnnotationNode>> runtimeAnnotations) {
+        for (Map.Entry<String, List<AnnotationNode>> next : runtimeAnnotations.entrySet()) {
+            if (next.getValue().size() > 1) {
+                String repeatableName = null;
+                AnnotationNode repeatee = next.getValue().get(0);
+                List<AnnotationNode> repeateeAnnotations = repeatee.getClassNode().getAnnotations();
+                for (AnnotationNode anno : repeateeAnnotations) {
+                    ClassNode annoClassNode = anno.getClassNode();
+                    if (annoClassNode.getName().equals("java.lang.annotation.Repeatable")) {
+                        Expression value = anno.getMember("value");
+                        if (value instanceof ClassExpression) {
+                            ClassExpression ce = (ClassExpression) value;
+                            if (ce.getType() != null && ce.getType().isAnnotationDefinition()) {
+                                repeatableName = ce.getType().getName();
+                            }
+                        }
+                        break;
+                    }
+                }
+                // TODO: further checks: that repeatableName is valid and has RUNTIME retention?
+                if (repeatableName != null) {
+                    addError("Annotation @" + next.getKey() + " has RUNTIME retention and " + next.getValue().size()
+                            + " occurrences. Automatic repeated annotations are not supported in this version of Groovy. " +
+                            "Consider using the explicit @" + repeatableName + " collector annotation instead.", next.getValue().get(1));
+                } else {
+                    addError("Annotation @" + next.getKey() + " has RUNTIME retention and " + next.getValue().size()
+                            + " occurrences. Duplicate annotations not allowed.", next.getValue().get(1));
+                }
+            }
         }
     }
 
@@ -222,7 +266,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
             ClassNode superClass = next.getUnresolvedSuperClass();
             if (superClass != null) {
-                next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+                next = correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
             } else {
                 next = null;
             }
@@ -231,7 +275,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
-        for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
+        for (MethodNode orig : correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
             if (ParameterUtils.parametersEqual(method.getParameters(), mn.getParameters())) {
                 return method;
