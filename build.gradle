@@ -265,6 +265,7 @@ sourceSets {
                     "$generatedDirectory/src/main"
             ]
             if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
@@ -274,6 +275,7 @@ sourceSets {
                     "$generatedDirectory/src/main"
             ]
             if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
@@ -295,6 +297,7 @@ sourceSets {
         groovy {
             srcDirs = ['src/test']
             if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
