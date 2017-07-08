@@ -201,39 +201,38 @@ options {
 
 
 // §3.10.5 String Literals
-
 StringLiteral
-    :   '"'      DqStringCharacter*?           '"'
-    |   '\''     SqStringCharacter*?           '\''
+    :   GStringQuotationMark    DqStringCharacter*? GStringQuotationMark
+    |   SqStringQuotationMark   SqStringCharacter*? SqStringQuotationMark
 
-    |   '/'      { this.isRegexAllowed() && _input.LA(1) != '*' }?
-                 SlashyStringCharacter+?       '/'
+    |   Slash      { this.isRegexAllowed() && _input.LA(1) != '*' }?
+                 SlashyStringCharacter+?       Slash
 
-    |   '"""'    TdqStringCharacter*?          '"""'
-    |   '\'\'\'' TsqStringCharacter*?          '\'\'\''
-    |   '$/'     DollarSlashyStringCharacter+? '/$'
+    |   TdqStringQuotationMark  TdqStringCharacter*?    TdqStringQuotationMark
+    |   TsqStringQuotationMark  TsqStringCharacter*?    TsqStringQuotationMark
+    |   DollarSlashyGStringQuotationMarkBegin   DollarSlashyStringCharacter+?   DollarSlashyGStringQuotationMarkEnd
     ;
 
 // Groovy gstring
 GStringBegin
-    :   '"' DqStringCharacter*? DOLLAR -> pushMode(DQ_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   GStringQuotationMark DqStringCharacter*? Dollar -> pushMode(DQ_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 TdqGStringBegin
-    :   '"""'   TdqStringCharacter*? DOLLAR -> type(GStringBegin), pushMode(TDQ_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   TdqStringQuotationMark   TdqStringCharacter*? Dollar -> type(GStringBegin), pushMode(TDQ_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 SlashyGStringBegin
-    :   '/' { this.isRegexAllowed() && _input.LA(1) != '*' }? SlashyStringCharacter*? DOLLAR { isFollowedByJavaLetterInGString(_input) }? -> type(GStringBegin), pushMode(SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   Slash { this.isRegexAllowed() && _input.LA(1) != '*' }? SlashyStringCharacter*? Dollar { isFollowedByJavaLetterInGString(_input) }? -> type(GStringBegin), pushMode(SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 DollarSlashyGStringBegin
-    :   '$/' DollarSlashyStringCharacter*? DOLLAR { isFollowedByJavaLetterInGString(_input) }? -> type(GStringBegin), pushMode(DOLLAR_SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   DollarSlashyGStringQuotationMarkBegin DollarSlashyStringCharacter*? Dollar { isFollowedByJavaLetterInGString(_input) }? -> type(GStringBegin), pushMode(DOLLAR_SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 
 mode DQ_GSTRING_MODE;
 GStringEnd
-    :   '"'     -> popMode
+    :   GStringQuotationMark     -> popMode
     ;
 GStringPart
-    :   DOLLAR  -> pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   Dollar  -> pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 GStringCharacter
     :   DqStringCharacter -> more
@@ -241,10 +240,10 @@ GStringCharacter
 
 mode TDQ_GSTRING_MODE;
 TdqGStringEnd
-    :   '"""'    -> type(GStringEnd), popMode
+    :   TdqStringQuotationMark    -> type(GStringEnd), popMode
     ;
 TdqGStringPart
-    :   DOLLAR   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   Dollar   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 TdqGStringCharacter
     :   TdqStringCharacter -> more
@@ -252,10 +251,10 @@ TdqGStringCharacter
 
 mode SLASHY_GSTRING_MODE;
 SlashyGStringEnd
-    :   '$'? '/'  -> type(GStringEnd), popMode
+    :   Dollar? Slash  -> type(GStringEnd), popMode
     ;
 SlashyGStringPart
-    :   DOLLAR { isFollowedByJavaLetterInGString(_input) }?   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   Dollar { isFollowedByJavaLetterInGString(_input) }?   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 SlashyGStringCharacter
     :   SlashyStringCharacter -> more
@@ -263,10 +262,10 @@ SlashyGStringCharacter
 
 mode DOLLAR_SLASHY_GSTRING_MODE;
 DollarSlashyGStringEnd
-    :   '/$'      -> type(GStringEnd), popMode
+    :   DollarSlashyGStringQuotationMarkEnd      -> type(GStringEnd), popMode
     ;
 DollarSlashyGStringPart
-    :   DOLLAR { isFollowedByJavaLetterInGString(_input) }?   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
+    :   Dollar { isFollowedByJavaLetterInGString(_input) }?   -> type(GStringPart), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
 DollarSlashyGStringCharacter
     :   DollarSlashyStringCharacter -> more
@@ -283,7 +282,7 @@ GStringIdentifier
 
 mode GSTRING_PATH_MODE;
 GStringPathPart
-    :   '.' IdentifierInGString
+    :   Dot IdentifierInGString
     ;
 RollBackOne
     :   . {
@@ -315,29 +314,29 @@ SqStringCharacter
 // character in the triple double quotation string. e.g. """a"""
 fragment TdqStringCharacter
     :   ~["\\$]
-    |   '"' { !(_input.LA(1) == '"' && _input.LA(2) == '"') }?
+    |   GStringQuotationMark { !(_input.LA(1) == '"' && _input.LA(2) == '"') }?
     |   EscapeSequence
     ;
 
 // character in the triple single quotation string. e.g. '''a'''
 fragment TsqStringCharacter
     :   ~['\\]
-    |   '\'' { !(_input.LA(1) == '\'' && _input.LA(2) == '\'') }?
+    |   SqStringQuotationMark { !(_input.LA(1) == '\'' && _input.LA(2) == '\'') }?
     |   EscapeSequence
     ;
 
 // character in the slashy string. e.g. /a/
 fragment SlashyStringCharacter
     :   SlashEscape
-    |   '$' { !isFollowedByJavaLetterInGString(_input) }?
+    |   Dollar { !isFollowedByJavaLetterInGString(_input) }?
     |   ~[/$\u0000]
     ;
 
 // character in the collar slashy string. e.g. $/a/$
 fragment DollarSlashyStringCharacter
     :   SlashEscape | DollarSlashEscape | DollarDollarEscape
-    |   '/' { _input.LA(1) != '$' }?
-    |   '$' { !isFollowedByJavaLetterInGString(_input) }?
+    |   Slash { _input.LA(1) != '$' }?
+    |   Dollar { !isFollowedByJavaLetterInGString(_input) }?
     |   ~[/$\u0000]
     ;
 
@@ -447,7 +446,12 @@ IntegerLiteral
     |   BinaryIntegerLiteral
 
     // !!! Error Alternative !!!
-    |   '0' ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
+    |   Zero ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
+    ;
+
+fragment
+Zero
+    :   '0'
     ;
 
 fragment
@@ -477,7 +481,7 @@ IntegerTypeSuffix
 
 fragment
 DecimalNumeral
-    :   '0'
+    :   Zero
     |   NonZeroDigit (Digits? | Underscores Digits)
     ;
 
@@ -488,7 +492,7 @@ Digits
 
 fragment
 Digit
-    :   '0'
+    :   Zero
     |   NonZeroDigit
     ;
 
@@ -515,7 +519,7 @@ Underscore
 
 fragment
 HexNumeral
-    :   '0' [xX] HexDigits
+    :   Zero [xX] HexDigits
     ;
 
 fragment
@@ -536,7 +540,7 @@ HexDigitOrUnderscore
 
 fragment
 OctalNumeral
-    :   '0' Underscores? OctalDigits
+    :   Zero Underscores? OctalDigits
     ;
 
 fragment
@@ -557,7 +561,7 @@ OctalDigitOrUnderscore
 
 fragment
 BinaryNumeral
-    :   '0' [bB] BinaryDigits
+    :   Zero [bB] BinaryDigits
     ;
 
 fragment
@@ -585,7 +589,7 @@ FloatingPointLiteral
 
 fragment
 DecimalFloatingPointLiteral
-    :   Digits '.' Digits ExponentPart? FloatTypeSuffix?
+    :   Digits Dot Digits ExponentPart? FloatTypeSuffix?
     |   Digits ExponentPart FloatTypeSuffix?
     |   Digits FloatTypeSuffix
     ;
@@ -622,8 +626,8 @@ HexadecimalFloatingPointLiteral
 
 fragment
 HexSignificand
-    :   HexNumeral '.'?
-    |   '0' [xX] HexDigits? '.' HexDigits
+    :   HexNumeral Dot?
+    |   Zero [xX] HexDigits? Dot HexDigits
     ;
 
 fragment
@@ -634,6 +638,10 @@ BinaryExponent
 fragment
 BinaryExponentIndicator
     :   [pP]
+    ;
+
+fragment
+Dot :   '.'
     ;
 
 // §3.10.3 Boolean Literals
@@ -648,7 +656,7 @@ BooleanLiteral
 
 fragment
 EscapeSequence
-    :   '\\' [btnfr"'\\]
+    :   Backslash [btnfr"'\\]
     |   OctalEscape
     |   UnicodeEscape
     |   DollarEscape
@@ -658,15 +666,15 @@ EscapeSequence
 
 fragment
 OctalEscape
-    :   '\\' OctalDigit
-    |   '\\' OctalDigit OctalDigit
-    |   '\\' ZeroToThree OctalDigit OctalDigit
+    :   Backslash OctalDigit
+    |   Backslash OctalDigit OctalDigit
+    |   Backslash ZeroToThree OctalDigit OctalDigit
     ;
 
 // Groovy allows 1 or more u's after the backslash
 fragment
 UnicodeEscape
-    :   '\\' 'u'+ HexDigit HexDigit HexDigit HexDigit
+    :   Backslash 'u'+ HexDigit HexDigit HexDigit HexDigit
     ;
 
 fragment
@@ -678,17 +686,62 @@ ZeroToThree
 
 fragment
 DollarEscape
-    :   '\\' DOLLAR
+    :   Backslash Dollar
     ;
 
 fragment
 LineEscape
-    :   '\\' '\r'? '\n'
+    :   Backslash '\r'? '\n'
     ;
 
 fragment
 SlashEscape
-    :   '\\' '/'
+    :   Backslash Slash
+    ;
+
+fragment
+Backslash
+    :   '\\'
+    ;
+
+fragment
+Slash
+    :   '/'
+    ;
+
+fragment
+Dollar
+    :   '$'
+    ;
+
+fragment
+GStringQuotationMark
+    :   '"'
+    ;
+
+fragment
+SqStringQuotationMark
+    :   '\''
+    ;
+
+fragment
+TdqStringQuotationMark
+    :   '"""'
+    ;
+
+fragment
+TsqStringQuotationMark
+    :   '\'\'\''
+    ;
+
+fragment
+DollarSlashyGStringQuotationMarkBegin
+    :   '$/'
+    ;
+
+fragment
+DollarSlashyGStringQuotationMarkEnd
+    :   '/$'
     ;
 
 fragment
@@ -700,8 +753,8 @@ fragment
 DollarDollarEscape
     :   '$$'
     ;
-// §3.10.7 The Null Literal
 
+// §3.10.7 The Null Literal
 NullLiteral
     :   'null'
     ;
@@ -728,9 +781,6 @@ ARROW               : '->';
 NOT_INSTANCEOF      : '!instanceof' { isFollowedBy(_input, ' ', '\t', '\r', '\n') }?;
 NOT_IN              : '!in'         { isFollowedBy(_input, ' ', '\t', '\r', '\n', '[', '(', '{') }?;
 
-fragment
-DOLLAR              : '$';
-
 
 // §3.11 Separators
 
@@ -743,7 +793,7 @@ RBRACK          : ']'  { this.exitParen();      } -> popMode;
 
 SEMI            : ';';
 COMMA           : ',';
-DOT             : '.';
+DOT             : Dot;
 
 // §3.12 Operators
 
@@ -765,7 +815,7 @@ DEC             : '--';
 ADD             : '+';
 SUB             : '-';
 MUL             : '*';
-DIV             : '/';
+DIV             : Slash;
 BITAND          : '&';
 BITOR           : '|';
 XOR             : '^';
