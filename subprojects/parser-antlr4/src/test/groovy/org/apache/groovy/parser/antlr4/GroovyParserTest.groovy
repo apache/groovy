@@ -355,6 +355,10 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/Script_01x.groovy');
     }
 
+    void "test groovy core - FieldDeclaration"() {
+        doRunAndTest('core/FieldDeclaration_01x.groovy');
+    }
+
     void "test groovy core - BUG"() {
         doRunAndTest('bugs/BUG-GROOVY-4757.groovy');
         doRunAndTest('bugs/BUG-GROOVY-5652.groovy');

@@ -1537,6 +1537,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             DeclarationExpression declarationExpression = declarationExpressionList.get(i);
             VariableExpression variableExpression = (VariableExpression) declarationExpression.getLeftExpression();
 
+            String fieldName = variableExpression.getName();
+            validateDuplicatedField(ctx, classNode, fieldName);
+
             int modifiers = modifierManager.getClassMemberModifiersOpValue();
 
             Expression initialValue = EmptyExpression.INSTANCE.equals(declarationExpression.getRightExpression()) ? null : declarationExpression.getRightExpression();
@@ -1553,7 +1556,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             if (classNode.isInterface() || modifierManager.containsVisibilityModifier()) {
                 FieldNode fieldNode =
                         classNode.addField(
-                                variableExpression.getName(),
+                                fieldName,
                                 modifiers,
                                 variableType,
                                 initialValue);
@@ -1570,7 +1573,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             } else {
                 PropertyNode propertyNode =
                         classNode.addProperty(
-                                variableExpression.getName(),
+                                fieldName,
                                 modifiers | Opcodes.ACC_PUBLIC,
                                 variableType,
                                 initialValue,
@@ -1596,6 +1599,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         return null;
+    }
+
+    private void validateDuplicatedField(VariableDeclarationContext ctx, ClassNode classNode, String fieldName) {
+        if (null == classNode.getDeclaredField(fieldName)) {
+            return;
+        }
+
+        throw createParsingFailedException("The field '" + fieldName + "' is declared multiple times", ctx);
     }
 
     @Override
