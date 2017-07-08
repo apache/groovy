@@ -500,12 +500,17 @@ NonZeroDigit
 fragment
 DigitOrUnderscore
     :   Digit
-    |   '_'
+    |   Underscore
     ;
 
 fragment
 Underscores
-    :   '_'+
+    :   Underscore+
+    ;
+
+fragment
+Underscore
+    :   '_'
     ;
 
 fragment
@@ -526,7 +531,7 @@ HexDigit
 fragment
 HexDigitOrUnderscore
     :   HexDigit
-    |   '_'
+    |   Underscore
     ;
 
 fragment
@@ -547,7 +552,7 @@ OctalDigit
 fragment
 OctalDigitOrUnderscore
     :   OctalDigit
-    |   '_'
+    |   Underscore
     ;
 
 fragment
@@ -568,7 +573,7 @@ BinaryDigit
 fragment
 BinaryDigitOrUnderscore
     :   BinaryDigit
-    |   '_'
+    |   Underscore
     ;
 
 // §3.10.2 Floating-Point Literals
