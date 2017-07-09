@@ -19,14 +19,26 @@
 
 import java.text.DecimalFormat
 
+plugins {
+    id "me.champeau.gradle.jmh" version "0.4.2"
+}
+
 configurations {
     stats
     testCompile.extendsFrom(stats)
 }
 
 dependencies {
+    jmh rootProject
     testCompile 'org.codehaus.groovy:groovy:2.4.7'
     stats 'org.apache.commons:commons-math3:3.6'
+}
+
+jmh {
+    jmhVersion = '1.19'
+    include = ['.*']
+    includeTests = true
+    resultsFile = project.file("target/results${useIndy() ? '_indy' : ''}.txt")
 }
 
 sourceCompatibility = 1.8

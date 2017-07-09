@@ -1,0 +1,18 @@
+= Performance
+
+This subproject contains two sets of performance related tests.  The first
+are compiler tests that can be run using the following Gradle task:
+
+    ./gradlew :perf:performanceTests
+
+This will compile various source files using several past version of Apache
+Groovy in addition to the current source version.
+
+This subproject also contains `JMH` Benchmarks which can be run using:
+
+    ./gradlew :perf:jmh
+
+In order to run the benchmarks against InvokeDynamic generated classes use
+the `indy` property:
+
+    ./gradlew -Pindy=true :perf:jmh
