@@ -26,7 +26,7 @@ are compiler tests that can be run using the following Gradle task:
 
     ./gradlew :perf:performanceTests
 
-This will compile various source files using several past version of Apache
+This will compile various source files using several past versions of Apache
 Groovy in addition to the current source version.
 
 This subproject also contains `JMH` Benchmarks which can be run using:
