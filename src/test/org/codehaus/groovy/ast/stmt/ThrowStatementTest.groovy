@@ -16,39 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.stmt;
+package org.codehaus.groovy.ast.stmt
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 
+class ThrowStatementTest extends GroovyTestCase {
 
-/**
- * Represents a throw statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
-public class ThrowStatement extends Statement {
-
-    private Expression expression;
-    
-    public ThrowStatement(Expression expression) {
-        this.expression = expression;
-    }
-    
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitThrowStatement(this);
-    }
-    public void setExpression(Expression expression) {
-        this.expression = expression;
-    }
-
-    @Override
-    public String getText() {
-        return "throw " + expression.getText();
+    void testGetText() {
+        assert new ThrowStatement(
+            new ConstructorCallExpression(
+                new ClassNode(Exception),
+                new ArgumentListExpression(
+                    new ConstantExpression('oops')))).
+            text == 'throw new java.lang.Exception(oops)'
     }
 
 }
