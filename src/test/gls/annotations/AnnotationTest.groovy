@@ -658,6 +658,8 @@ class AnnotationTest extends CompilableTestSupport {
 
     // GROOVY-8236
     void testAnnotationWithRepeated() {
+        // @Repeatable is 1.8+
+        if (System.getProperty('java.specification.version') < '1.8') return
         def errorMessage = shouldNotCompile '''
             import java.lang.annotation.*
 
