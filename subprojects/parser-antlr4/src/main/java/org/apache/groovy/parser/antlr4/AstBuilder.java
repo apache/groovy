@@ -36,7 +36,6 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.EnumHelper;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -137,8 +136,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.*;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
@@ -850,7 +847,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             classNode.setUsingGenerics(classNode.getSuperClass().isUsingGenerics());
         }
 
-        if (!classNode.isUsingGenerics() && asBoolean((Object) classNode.getInterfaces())) {
+        if (!classNode.isUsingGenerics() && null != classNode.getInterfaces()) {
             for (ClassNode anInterface : classNode.getInterfaces()) {
                 classNode.setUsingGenerics(classNode.isUsingGenerics() || anInterface.isUsingGenerics());
 
@@ -863,7 +860,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public ClassNode visitClassDeclaration(ClassDeclarationContext ctx) {
         String packageName = moduleNode.getPackageName();
-        packageName = asBoolean((Object) packageName) ? packageName : "";
+        packageName = null != packageName ? packageName : "";
 
         List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(TYPE_DECLARATION_MODIFIERS);
         Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
@@ -1895,7 +1892,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         Expression expression = this.visitExpressionInPar(ctx.expressionInPar());
 
         Integer insideParenLevel = expression.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
-        if (asBoolean((Object) insideParenLevel)) {
+        if (null != insideParenLevel) {
             insideParenLevel++;
         } else {
             insideParenLevel = 1;
@@ -2492,12 +2489,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     ConstantExpression constantExpression = (ConstantExpression) expression;
 
                     String integerLiteralText = constantExpression.getNodeMetaData(INTEGER_LITERAL_TEXT);
-                    if (asBoolean((Object) integerLiteralText)) {
+                    if (null != integerLiteralText) {
                         return this.configureAST(new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText)), ctx);
                     }
 
                     String floatingPointLiteralText = constantExpression.getNodeMetaData(FLOATING_POINT_LITERAL_TEXT);
-                    if (asBoolean((Object) floatingPointLiteralText)) {
+                    if (null != floatingPointLiteralText) {
                         return this.configureAST(new ConstantExpression(Numbers.parseDecimal(SUB_STR + floatingPointLiteralText)), ctx);
                     }
 
@@ -2793,7 +2790,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 InnerClassNode anonymousInnerClassNode = this.visitAnonymousInnerClassDeclaration(ctx.anonymousInnerClassDeclaration());
 
                 List<InnerClassNode> anonymousInnerClassList = anonymousInnerClassesDefinedInMethodStack.peek();
-                if (asBoolean((Object) anonymousInnerClassList)) { // if the anonymous class is created in a script, no anonymousInnerClassList is available.
+                if (null != anonymousInnerClassList) { // if the anonymous class is created in a script, no anonymousInnerClassList is available.
                     anonymousInnerClassList.add(anonymousInnerClassNode);
                 }
 
@@ -4126,7 +4123,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private boolean isPackageInfoDeclaration() {
         String name = this.sourceUnit.getName();
 
-        if (asBoolean((Object) name) && name.endsWith(PACKAGE_INFO_FILE_NAME)) {
+        if (null != name && name.endsWith(PACKAGE_INFO_FILE_NAME)) {
             return true;
         }
 
@@ -4140,7 +4137,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private boolean isInsideParentheses(NodeMetaDataHandler nodeMetaDataHandler) {
         Integer insideParenLevel = nodeMetaDataHandler.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
 
-        if (asBoolean((Object) insideParenLevel)) {
+        if (null != insideParenLevel) {
             return insideParenLevel > 0;
         }
 
@@ -4243,7 +4240,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         String stopText = token.getText();
         int stopTextLength = 0;
         int newLineCnt = 0;
-        if (asBoolean((Object) stopText)) {
+        if (null != stopText) {
             stopTextLength = stopText.length();
             newLineCnt = (int) StringUtils.countChar(stopText, '\n');
         }
@@ -4456,9 +4453,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             List<String> declarationListStatementLabels = this.getStatementLabels();
 
             for (ExpressionStatement e: this.declarationStatements) {
-                if (asBoolean((Object) declarationListStatementLabels)) {
+                if (null != declarationListStatementLabels) {
                     // clear existing statement labels before setting labels
-                    if (asBoolean((Object) e.getStatementLabels())) {
+                    if (null != e.getStatementLabels()) {
                         e.getStatementLabels().clear();
                     }
                     for (String s : declarationListStatementLabels) {
