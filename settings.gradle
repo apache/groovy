@@ -30,9 +30,9 @@ def subprojects = ['groovy-ant',
         'groovy-swing',
         'groovy-templates',
         'groovy-test',
-        'groovy-tests-vm8',
         'groovy-testng',
-        'groovy-xml'
+        'groovy-xml',
+        'tests-vm8'
 ]
 
 if(JavaVersion.current().isJava7Compatible()) {
