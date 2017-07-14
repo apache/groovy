@@ -707,6 +707,7 @@ class AnnotationTest extends CompilableTestSupport {
 
     // GROOVY-8234
     void testAnnotationWithRepeatableSupported() {
+        if (System.getProperty('java.specification.version') < '1.8') return
         assertScript '''
             import java.lang.annotation.*
 
