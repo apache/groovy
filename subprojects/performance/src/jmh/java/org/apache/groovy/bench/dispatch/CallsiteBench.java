@@ -21,16 +21,15 @@ package org.apache.groovy.bench.dispatch;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class CallsiteBench {
 
     @Benchmark
@@ -69,7 +68,12 @@ public class CallsiteBench {
         }
     }
 
-    private static final int RECEIVER_COUNT = 1024;
+    private static final int RECEIVER_COUNT = 64;
+
+    private static final Object[] RECEIVERS = new Object[] {
+            new Receiver1(), new Receiver2(), new Receiver3(), new Receiver4(),
+            new Receiver5(), new Receiver6(), new Receiver7(), new Receiver8()
+    };
 
     @State(Scope.Thread)
     public static class MonomorphicState {
@@ -77,56 +81,66 @@ public class CallsiteBench {
         @Setup(Level.Trial)
         public void setUp() {
             receivers = new Object[RECEIVER_COUNT];
-            for (int i = 0; i < RECEIVER_COUNT; i++) {
-                receivers[i] = i;
-            }
+            Arrays.fill(receivers, RECEIVERS[0]);
         }
     }
 
     @State(Scope.Thread)
     public static class PolymorphicState {
+        final Random random = new Random();
         Object[] receivers;
-        @Setup(Level.Trial)
+        @Setup(Level.Iteration)
         public void setUp() {
             receivers = new Object[RECEIVER_COUNT];
             for (int i = 0; i < RECEIVER_COUNT; i++) {
-                switch (i % 3) {
-                    case 0:
-                        receivers[i] = 7;
-                        break;
-                    case 1:
-                        receivers[i] = new ArrayList<>();
-                        break;
-                    case 2:
-                        receivers[i] = "Test String";
-                        break;
-                    default:
-                        throw new IllegalStateException();
-                }
+                receivers[i] = RECEIVERS[random.nextInt(3)];
             }
         }
     }
 
     @State(Scope.Thread)
     public static class MegamorphicState {
+        final Random random = new Random();
         Object[] receivers;
-        @Setup(Level.Trial)
+        @Setup(Level.Iteration)
         public void setUp() {
-            Object[] suspects = new Object[] {
-                    9,
-                    new Object(),
-                    "Hello World",
-                    new ArrayList<>(),
-                    123.456f,
-                    new HashMap<>(),
-                    true,
-                    new Date()
-            };
             receivers = new Object[RECEIVER_COUNT];
             for (int i = 0; i < RECEIVER_COUNT; i++) {
-                receivers[i] = suspects[i % suspects.length];
+                receivers[i] = RECEIVERS[random.nextInt(8)];
             }
         }
+    }
+
+    private static class Receiver1 {
+        @Override public String toString() { return "receiver1"; }
+    }
+
+    private static class Receiver2 {
+        @Override public String toString() { return "receiver2"; }
+    }
+
+    private static class Receiver3 {
+        @Override public String toString() { return "receiver3"; }
+    }
+
+    private static class Receiver4 {
+        @Override public String toString() { return "receiver4"; }
+    }
+
+    private static class Receiver5 {
+        @Override public String toString() { return "receiver5"; }
+    }
+
+    private static class Receiver6 {
+        @Override public String toString() { return "receiver6"; }
+    }
+
+    private static class Receiver7 {
+        @Override public String toString() { return "receiver7"; }
+    }
+
+    private static class Receiver8 {
+        @Override public String toString() { return "receiver8"; }
     }
 
 }
