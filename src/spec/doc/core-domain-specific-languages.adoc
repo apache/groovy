@@ -196,6 +196,7 @@ include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_custom_co
 <3> then create a `GroovyShell` using that configuration
 <4> the script will then extend the base script class, giving direct access to the `name` property and `greet` method
 
+[[dsl-basescript]]
 === The @BaseScript annotation
 
 As an alternative, it is also possible to use the `@BaseScript` annotation directly into a script:
