@@ -786,6 +786,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype
 If you want to be able to call this in the trait, then you will explicitly need to cast `this` into a `Device`. This can
 quickly become unreadable with explicit casts to this everywhere.
 
+[[traits-selftype]]
 === The @SelfType annotation
 
 In order to make this contract explicit, and to make the type checker aware of the _type of itself_, Groovy provides

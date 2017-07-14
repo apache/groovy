@@ -1336,6 +1336,13 @@ The annotation attribute `forClass` is not supported for this strategy.
 This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,
 singleton, ...) by using a declarative style.
 
+[[xform-BaseScript]]
+===== `@groovy.transform.BaseScript`
+
+`@BaseScript` is used within scripts to indicate that the script should
+extend fron a custom script base class rather than `groovy.lang.Script`.
+See the documentation for <<dsl-basescript,domain specific languages>> for further details.
+
 [[xform-Delegate]]
 ===== `@groovy.lang.Delegate`
 
@@ -1491,6 +1498,11 @@ _protectedCacheSize>0_ would create an unlimited cache with some results protect
  create a limited cache but without any protection from garbage protection. Setting both would create a limited,
  protected cache.
 
+[[xform-TailRecursive]]
+===== `@groovy.transform.TailRecursive`
+
+TBD
+
 [[xform-Singleton]]
 ===== `@groovy.lang.Singleton`
 
@@ -1521,7 +1533,7 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=sin
 In this example, we also set the `strict` parameter to false, which allows us to define our own constructor.
 
 [[xform-Mixin]]
-===== `@groovy.transform.Mixin`
+===== `@groovy.lang.Mixin`
 
 Deprecated. Consider using traits instead.
 
@@ -2127,6 +2139,12 @@ for testing purposes, or when integrating with third-party libraries which requi
 using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described thoroughly in the
 <<section-delegatesto,DSL section>> of this guide.
 
+[[xform-SelfType]]
+===== `@groovy.transform.SelfType`
+
+`@SelfType` is not an AST transformation but rather a marker interface used
+with traits. See the <<traits-selftype,traits documentation>> for further details.
+
 ==== Swing patterns
 
 [[xform-Bindable]]
@@ -2215,7 +2233,7 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_
 
 ==== Test assistance
 [[xform-NotYetImplemented]]
-===== `@groovy.lang.NotYetImplemented`
+===== `@groovy.transform.NotYetImplemented`
 
 `@NotYetImplemented` is used to invert the result of a JUnit 3/4 test case. It is in particular useful if a feature is not yet implemented but the test is. In that case, it is expected
 that the test fails. Marking it with `@NotYetImplemented` will inverse the result of the test, like in this example:
