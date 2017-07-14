@@ -71,3 +71,8 @@ class OutputTransforms {
 class OutputTransforms2 {
         @Lazy  static localTransforms = loadOutputTransforms()
 }
+
+class XX {
+        def x
+        private x = 1
+}

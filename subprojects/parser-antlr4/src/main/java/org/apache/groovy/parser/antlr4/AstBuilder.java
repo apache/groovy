@@ -1562,7 +1562,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             VariableExpression variableExpression = (VariableExpression) declarationExpression.getLeftExpression();
 
             String fieldName = variableExpression.getName();
-            validateDuplicatedField(ctx, classNode, fieldName);
 
             int modifiers = modifierManager.getClassMemberModifiersOpValue();
 
@@ -1577,60 +1576,93 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 modifiers |= Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
             }
 
-            if (classNode.isInterface() || modifierManager.containsVisibilityModifier()) {
-                FieldNode fieldNode =
-                        classNode.addField(
-                                fieldName,
-                                modifiers,
-                                variableType,
-                                initialValue);
-                modifierManager.attachAnnotations(fieldNode);
-
-                groovydocManager.handle(fieldNode, ctx);
-
-                if (0 == i) {
-                    this.configureAST(fieldNode, ctx, initialValue);
-                } else {
-                    this.configureAST(fieldNode, variableExpression, initialValue);
-                }
-
+            if (isFieldDeclaration(modifierManager, classNode)) {
+                declareField(ctx, modifierManager, variableType, classNode, i, variableExpression, fieldName, modifiers, initialValue);
             } else {
-                PropertyNode propertyNode =
-                        classNode.addProperty(
-                                fieldName,
-                                modifiers | Opcodes.ACC_PUBLIC,
-                                variableType,
-                                initialValue,
-                                null,
-                                null);
-
-                FieldNode fieldNode = propertyNode.getField();
-                fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
-                fieldNode.setSynthetic(!classNode.isInterface());
-                modifierManager.attachAnnotations(fieldNode);
-
-                groovydocManager.handle(fieldNode, ctx);
-                groovydocManager.handle(propertyNode, ctx);
-
-                if (0 == i) {
-                    this.configureAST(fieldNode, ctx, initialValue);
-                    this.configureAST(propertyNode, ctx, initialValue);
-                } else {
-                    this.configureAST(fieldNode, variableExpression, initialValue);
-                    this.configureAST(propertyNode, variableExpression, initialValue);
-                }
+                declareProperty(ctx, modifierManager, variableType, classNode, i, variableExpression, fieldName, modifiers, initialValue);
             }
         }
 
         return null;
     }
 
-    private void validateDuplicatedField(VariableDeclarationContext ctx, ClassNode classNode, String fieldName) {
-        if (null == classNode.getDeclaredField(fieldName)) {
-            return;
+    private void declareProperty(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, ClassNode classNode, int i, VariableExpression variableExpression, String fieldName, int modifiers, Expression initialValue) {
+        if (classNode.hasProperty(fieldName)) {
+            throw createParsingFailedException("The property '" + fieldName + "' is declared multiple times", ctx);
         }
 
-        throw createParsingFailedException("The field '" + fieldName + "' is declared multiple times", ctx);
+        PropertyNode propertyNode;
+        FieldNode fieldNode = classNode.getDeclaredField(fieldName);
+
+        if (fieldNode != null && !classNode.hasProperty(fieldName)) {
+            classNode.getFields().remove(fieldNode);
+
+            propertyNode = new PropertyNode(fieldNode, modifiers | Opcodes.ACC_PUBLIC, null, null);
+            classNode.addProperty(propertyNode);
+        } else {
+            propertyNode =
+                    classNode.addProperty(
+                            fieldName,
+                            modifiers | Opcodes.ACC_PUBLIC,
+                            variableType,
+                            initialValue,
+                            null,
+                            null);
+
+            fieldNode = propertyNode.getField();
+        }
+
+        fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
+        fieldNode.setSynthetic(!classNode.isInterface());
+        modifierManager.attachAnnotations(fieldNode);
+
+        groovydocManager.handle(fieldNode, ctx);
+        groovydocManager.handle(propertyNode, ctx);
+
+        if (0 == i) {
+            this.configureAST(fieldNode, ctx, initialValue);
+            this.configureAST(propertyNode, ctx, initialValue);
+        } else {
+            this.configureAST(fieldNode, variableExpression, initialValue);
+            this.configureAST(propertyNode, variableExpression, initialValue);
+        }
+    }
+
+    private void declareField(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, ClassNode classNode, int i, VariableExpression variableExpression, String fieldName, int modifiers, Expression initialValue) {
+        FieldNode existingFieldNode = classNode.getDeclaredField(fieldName);
+        if (null != existingFieldNode && !existingFieldNode.isSynthetic()) {
+            throw createParsingFailedException("The field '" + fieldName + "' is declared multiple times", ctx);
+        }
+
+        FieldNode fieldNode;
+        PropertyNode propertyNode = classNode.getProperty(fieldName);
+
+        if (null != propertyNode && propertyNode.getField().isSynthetic()) {
+            classNode.getFields().remove(propertyNode.getField());
+            fieldNode = new FieldNode(fieldName, modifiers, variableType, classNode.redirect(), initialValue);
+            propertyNode.setField(fieldNode);
+            classNode.addField(fieldNode);
+        } else {
+            fieldNode =
+                    classNode.addField(
+                            fieldName,
+                            modifiers,
+                            variableType,
+                            initialValue);
+        }
+
+        modifierManager.attachAnnotations(fieldNode);
+        groovydocManager.handle(fieldNode, ctx);
+
+        if (0 == i) {
+            this.configureAST(fieldNode, ctx, initialValue);
+        } else {
+            this.configureAST(fieldNode, variableExpression, initialValue);
+        }
+    }
+
+    private boolean isFieldDeclaration(ModifierManager modifierManager, ClassNode classNode) {
+        return classNode.isInterface() || modifierManager.containsVisibilityModifier();
     }
 
     @Override

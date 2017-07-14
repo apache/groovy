@@ -22,7 +22,13 @@ class Base {
 }
 
 class FieldHolder extends Base {
-    def num = 1
+    def num
+    private num = 1
 }
 
-assert 1 == new FieldHolder().num
+class FieldHolder2 extends FieldHolder {
+    private num = 2
+    def num
+}
+
+assert 2 == new FieldHolder2().num
