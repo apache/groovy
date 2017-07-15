@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -78,6 +79,15 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
 
     // Lazily initialized and loaded, should be accessed internally using getMap()
     private volatile Map<String, GroovyRunner> runnerMap;
+
+    /*
+     * Cached unmodifiable List used for iteration. Any method that mutates
+     * the runnerMap must set to null to invalidate the cache. Volatile is
+     * used because reads for DCL are faster than a lock/unlock.
+     * The values are cached in order to speed up iteration and avoid
+     * allocation of new collections on each call to the iterator.
+     */
+    private volatile List<GroovyRunner> cachedValues;
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock readLock = rwLock.readLock();
@@ -145,6 +155,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             if (classLoader == null) {
                 classLoader = Thread.currentThread().getContextClassLoader();
             }
+            cachedValues = null;
             loadDefaultRunners();
             loadWithLock(classLoader);
         } catch (SecurityException se) {
@@ -305,6 +316,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
         Map<String, GroovyRunner> map = getMap();
         writeLock.lock();
         try {
+            cachedValues = null;
             return map.put(key, runner);
         } finally {
             writeLock.unlock();
@@ -326,6 +338,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
         Map<String, GroovyRunner> map = getMap();
         writeLock.lock();
         try {
+            cachedValues = null;
             return map.remove(key);
         } finally {
             writeLock.unlock();
@@ -342,10 +355,14 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
      */
     @Override
     public void putAll(Map<? extends String, ? extends GroovyRunner> m) {
+        Map<String, GroovyRunner> map = getMap();
         writeLock.lock();
         try {
+            cachedValues = null;
             for (Map.Entry<? extends String, ? extends GroovyRunner> entry : m.entrySet()) {
-                put(entry.getKey(), entry.getValue());
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    map.put(entry.getKey(), entry.getValue());
+                }
             }
         } finally {
             writeLock.unlock();
@@ -362,6 +379,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
         Map<String, GroovyRunner> map = getMap();
         writeLock.lock();
         try {
+            cachedValues = null;
             map.clear();
             loadDefaultRunners();
         } finally {
@@ -399,16 +417,20 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
      */
     @Override
     public Collection<GroovyRunner> values() {
-        Map<String, GroovyRunner> map = getMap();
-        readLock.lock();
-        try {
-            if (map.isEmpty()) {
-                return Collections.emptyList();
+        List<GroovyRunner> values = cachedValues;
+        if (values == null) {
+            Map<String, GroovyRunner> map = getMap();
+            // racy, multiple threads may set cachedValues but rather have that than take a write lock
+            readLock.lock();
+            try {
+                if ((values = cachedValues) == null) {
+                    cachedValues = values = Collections.unmodifiableList(new ArrayList<>(map.values()));
+                }
+            } finally {
+                readLock.unlock();
             }
-            return Collections.unmodifiableCollection(new ArrayList<>(map.values()));
-        } finally {
-            readLock.unlock();
         }
+        return values;
     }
 
     /**
