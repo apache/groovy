@@ -3370,7 +3370,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             parameterList.add(this.visitLastFormalParameter(ctx.lastFormalParameter()));
         }
 
+        validateParameterList(parameterList);
+
         return parameterList.toArray(new Parameter[0]);
+    }
+
+    private void validateParameterList(List<Parameter> parameterList) {
+        for (int n = parameterList.size(), i = n - 1; i >= 0; i--) {
+            Parameter parameter = parameterList.get(i);
+
+            for (Parameter otherParameter : parameterList) {
+                if (otherParameter == parameter) {
+                    continue;
+                }
+
+                if (otherParameter.getName().equals(parameter.getName())) {
+                    throw createParsingFailedException("Duplicated parameter '" + parameter.getName() + "' found.", parameter);
+                }
+            }
+        }
     }
 
     @Override
