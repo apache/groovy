@@ -1610,6 +1610,30 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Allows this AutoCloseable to be used within the closure, ensuring that it
+     * is closed once the closure has been executed and before this method returns.
+     *
+     * @param self the AutoCloseable
+     * @param action the closure taking the AutoCloseable as parameter
+     * @return the value returned by the closure
+     * @throws Exception if an Exception occurs.
+     * @since 2.5.0
+     */
+    public static <T, U extends AutoCloseable> T withAutoCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
+        try {
+            T result = action.call(self);
+
+            U temp = self;
+            self = null;
+            temp.close();
+
+            return result;
+        } finally {
+            DefaultGroovyMethodsSupport.closeWithWarning(self);
+        }
+    }
+
     static void writeUTF16BomIfRequired(final Writer writer, final String charset) throws IOException {
         writeUTF16BomIfRequired(writer, Charset.forName(charset));
     }
