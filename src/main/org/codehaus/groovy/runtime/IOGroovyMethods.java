@@ -1589,6 +1589,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Allows this closeable to be used within the closure, ensuring that it
      * is closed once the closure has been executed and before this method returns.
+     * <p>
+     * As with the try-with-resources statement, if multiple exceptions are thrown
+     * the exception from the closure will be returned and the exception from closing
+     * will be added as a suppressed exception.
      *
      * @param self the Closeable
      * @param action the closure taking the Closeable as parameter
@@ -1597,22 +1601,31 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T, U extends Closeable> T withCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws IOException {
+        Throwable thrown = null;
         try {
-            T result = action.call(self);
-
-            Closeable temp = self;
-            self = null;
-            temp.close();
-
-            return result;
+            return action.call(self);
+        } catch (Throwable e) {
+            thrown = e;
+            throw e;
         } finally {
-            DefaultGroovyMethodsSupport.closeWithWarning(self);
+            if (thrown != null) {
+                Throwable suppressed = tryClose(self, true);
+                if (suppressed != null) {
+                    thrown.addSuppressed(suppressed);
+                }
+            } else {
+                self.close();
+            }
         }
     }
 
     /**
      * Allows this AutoCloseable to be used within the closure, ensuring that it
      * is closed once the closure has been executed and before this method returns.
+     * <p>
+     * As with the try-with-resources statement, if multiple exceptions are thrown
+     * the exception from the closure will be returned and the exception from closing
+     * will be added as a suppressed exception.
      *
      * @param self the AutoCloseable
      * @param action the closure taking the AutoCloseable as parameter
@@ -1621,16 +1634,21 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T, U extends AutoCloseable> T withAutoCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
+        Throwable thrown = null;
         try {
-            T result = action.call(self);
-
-            U temp = self;
-            self = null;
-            temp.close();
-
-            return result;
+            return action.call(self);
+        } catch (Throwable e) {
+            thrown = e;
+            throw e;
         } finally {
-            DefaultGroovyMethodsSupport.closeWithWarning(self);
+            if (thrown != null) {
+                Throwable suppressed = tryClose(self, true);
+                if (suppressed != null) {
+                    thrown.addSuppressed(suppressed);
+                }
+            } else {
+                self.close();
+            }
         }
     }
 
