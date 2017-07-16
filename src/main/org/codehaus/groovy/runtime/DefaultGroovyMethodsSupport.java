@@ -86,10 +86,19 @@ public class DefaultGroovyMethodsSupport {
      * @param c the thing to close
      */
     public static void closeWithWarning(Closeable c) {
-        if (c != null) {
+        closeWithWarning((AutoCloseable) c);
+    }
+
+    /**
+     * Close the AutoCloseable. Logging a warning if any problems occur.
+     *
+     * @param closeable the thing to close
+     */
+    public static void closeWithWarning(AutoCloseable closeable) {
+        if (closeable != null) {
             try {
-                c.close();
-            } catch (IOException e) {
+                closeable.close();
+            } catch (Exception e) {
                 LOG.warning("Caught exception during close(): " + e);
             }
         }
