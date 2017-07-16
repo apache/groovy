@@ -50,7 +50,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import groovy.io.FileType;
@@ -60,7 +59,6 @@ import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
@@ -112,8 +110,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  */
 
 public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
-
-    private static final Logger LOG = Logger.getLogger(NioGroovyMethods.class.getName());
 
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Path</code>.
@@ -1948,45 +1944,5 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> T withCloseable(Closeable self, @ClosureParams(value = SimpleType.class, options = "java.io.Closeable") Closure<T> action) throws IOException {
         return IOGroovyMethods.withCloseable(self, action);
     }
-
-    /**
-     * Allows this autocloseable to be used within the closure, ensuring that it
-     * is closed once the closure has been executed and before this method returns.
-     *
-     * @param self the AutoCloseable
-     * @param action the closure taking the AutoCloseable as parameter
-     * @return the value returned by the closure
-     * @throws Exception if an Exception occurs.
-     * @since 2.5.0
-     */
-    public static <T, U extends AutoCloseable> T withAutoCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
-        try {
-            T result = action.call(self);
-
-            AutoCloseable temp = self;
-            self = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(self);
-        }
-    }
-
-    /**
-     * Close the AutoCloseable. Logging a warning if any problems occur.
-     *
-     * @param c the thing to close
-     */
-    public static void closeWithWarning(AutoCloseable c) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (Exception e) {
-                LOG.warning("Caught exception during close(): " + e);
-            }
-        }
-    }
-
 
 }
