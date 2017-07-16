@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyAssert
+
 class IOGroovyMethodsTest extends GroovyTestCase {
 
     void testWithAutoCloseable() {
@@ -34,13 +36,14 @@ class IOGroovyMethodsTest extends GroovyTestCase {
 
     void testWithAutoCloseableDoesNotSuppressException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
-        def message = shouldFail(UnsupportedOperationException) {
+        def throwable = GroovyAssert.shouldFail(UnsupportedOperationException) {
             closeable.withAutoCloseable {
                 throw new UnsupportedOperationException('not a close exception')
             }
         }
         assert closeable.closed
-        assert message == 'not a close exception'
+        assert throwable.message == 'not a close exception'
+        assert throwable.suppressed.find { it.message == 'close exception' }
     }
 
     void testWithAutoCloseableAndException() {
@@ -69,13 +72,14 @@ class IOGroovyMethodsTest extends GroovyTestCase {
 
     void testWithCloseableDoesNotSuppressException() {
         def closeable = new DummyCloseable(new IOException('close ioexception'))
-        def message = shouldFail(UnsupportedOperationException) {
+        def throwable = GroovyAssert.shouldFail(Exception) {
             closeable.withCloseable {
-                throw new UnsupportedOperationException('not a close ioexception')
+                throw new Exception('not a close ioexception')
             }
         }
         assert closeable.closed
-        assert message == 'not a close ioexception'
+        assert throwable.message == 'not a close ioexception'
+        assert throwable.suppressed.find { it.message == 'close ioexception' }
     }
 
     void testWithCloseableAndException() {
