@@ -21,6 +21,7 @@ package org.apache.groovy.parser.antlr4;
 import groovy.lang.IntRange;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -154,13 +155,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.moduleNode = new ModuleNode(sourceUnit);
         this.classLoader = classLoader; // unused for the time being
 
-        this.lexer = new GroovyLangLexer(
-                new ANTLRInputStream(
-                        this.readSourceCode(sourceUnit)));
-        this.parser = new GroovyLangParser(
-                new CommonTokenStream(this.lexer));
+        CharStream charStream =
+                    new ANTLRInputStream(
+                            this.readSourceCode(sourceUnit));
 
-        this.parser.setErrorHandler(new DescriptiveErrorStrategy());
+        this.lexer = new GroovyLangLexer(charStream);
+        this.parser =
+                new GroovyLangParser(
+                    new CommonTokenStream(this.lexer));
+
+        this.parser.setErrorHandler(new DescriptiveErrorStrategy(charStream));
 
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
         this.groovydocManager = new GroovydocManager(this);
