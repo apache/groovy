@@ -1633,7 +1633,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws Exception if an Exception occurs.
      * @since 2.5.0
      */
-    public static <T, U extends AutoCloseable> T withAutoCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
+    public static <T, U extends AutoCloseable> T withCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws Exception {
         Throwable thrown = null;
         try {
             return action.call(self);

@@ -25,7 +25,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
     void testWithAutoCloseable() {
         def closeable = new DummyAutoCloseable()
         def closeableParam = null
-        def result = closeable.withAutoCloseable {
+        def result = closeable.withCloseable {
             closeableParam = it
             123
         }
@@ -37,7 +37,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
     void testWithAutoCloseableDoesNotSuppressException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def throwable = GroovyAssert.shouldFail(UnsupportedOperationException) {
-            closeable.withAutoCloseable {
+            closeable.withCloseable {
                 throw new UnsupportedOperationException('not a close exception')
             }
         }
@@ -50,7 +50,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def result = null
         def message = shouldFail(Exception) {
-            closeable.withAutoCloseable {
+            closeable.withCloseable {
                 result = 123
             }
         }
