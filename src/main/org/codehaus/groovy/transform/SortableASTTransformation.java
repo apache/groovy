@@ -29,6 +29,8 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.AbstractComparator;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -124,14 +126,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
             // return this.hashCode() <=> other.hashCode()
             statements.add(declS(varX(THIS_HASH, ClassHelper.Integer_TYPE), callX(varX("this"), "hashCode")));
             statements.add(declS(varX(OTHER_HASH, ClassHelper.Integer_TYPE), callX(varX(OTHER), "hashCode")));
-            statements.add(returnS(cmpX(varX(THIS_HASH), varX(OTHER_HASH), reversed)));
+            statements.add(returnS(compareExpr(varX(THIS_HASH), varX(OTHER_HASH), reversed)));
         } else {
             // int value = 0;
             statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
             for (PropertyNode property : properties) {
                 String propName = property.getName();
                 // value = this.prop <=> other.prop;
-                statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), propX(varX(OTHER), propName), reversed)));
+                statements.add(assignS(varX(VALUE), compareExpr(propX(varX("this"), propName), propX(varX(OTHER), propName), reversed)));
                 // if (value != 0) return value;
                 statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
             }
@@ -154,7 +156,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 // if (arg0 == null && arg1 != null) return 1;
                 ifS(andX(equalsNullX(varX(ARG0)), notNullX(varX(ARG1))), returnS(constX(1))),
                 // return arg0.prop <=> arg1.prop;
-                returnS(cmpX(propX(varX(ARG0), propName), propX(varX(ARG1), propName), reversed))
+                returnS(compareExpr(propX(varX(ARG0), propName), propX(varX(ARG1), propName), reversed))
         );
     }
 
@@ -221,6 +223,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         }
         addError("Error during " + MY_TYPE_NAME + " processing: property '" +
                 pNode.getName() + "' must be Comparable", pNode);
+    }
+
+    /**
+     * Helper method used to build a binary expression that compares two values
+     * with the option to handle reverse order.
+     */
+    private static BinaryExpression compareExpr(Expression lhv, Expression rhv, boolean reversed) {
+        return (reversed) ? cmpX(rhv, lhv) : cmpX(lhv, rhv);
     }
 
 }
