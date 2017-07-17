@@ -83,16 +83,33 @@ public class DefaultGroovyMethodsSupport {
     /**
      * Close the Closeable. Logging a warning if any problems occur.
      *
-     * @param c the thing to close
+     * @param closeable the thing to close
      */
-    public static void closeWithWarning(Closeable c) {
-        if (c != null) {
+    public static void closeWithWarning(Closeable closeable) {
+        tryClose(closeable, true); // ignore result
+    }
+
+    /**
+     * Attempts to close the closeable returning rather than throwing
+     * any Exception that may occur.
+     *
+     * @param closeable the thing to close
+     * @param logWarning if true will log a warning if an exception occurs
+     * @return throwable Exception from the close method, else null
+     */
+    static Throwable tryClose(AutoCloseable closeable, boolean logWarning) {
+        Throwable thrown = null;
+        if (closeable != null) {
             try {
-                c.close();
-            } catch (IOException e) {
-                LOG.warning("Caught exception during close(): " + e);
+                closeable.close();
+            } catch (Exception e) {
+                thrown = e;
+                if (logWarning) {
+                    LOG.warning("Caught exception during close(): " + e);
+                }
             }
         }
+        return thrown;
     }
 
     /**
