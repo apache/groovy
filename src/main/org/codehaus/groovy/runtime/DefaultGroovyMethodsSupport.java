@@ -90,15 +90,6 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Close the AutoCloseable. Logging a warning if any problems occur.
-     *
-     * @param closeable the thing to close
-     */
-    public static void closeWithWarning(AutoCloseable closeable) {
-        tryClose(closeable, true); // ignore result
-    }
-
-    /**
      * Attempts to close the closeable returning rather than throwing
      * any Exception that may occur.
      *
