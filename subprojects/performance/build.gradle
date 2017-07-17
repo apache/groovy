@@ -36,7 +36,9 @@ dependencies {
 
 jmh {
     jmhVersion = '1.19'
-    include = ['.*']
+    if (project.hasProperty('benchInclude')) {
+        include = ['.*' + project.benchInclude + '.*']
+    }
     includeTests = true
     resultsFile = project.file("target/results${useIndy() ? '_indy' : ''}.txt")
 }
