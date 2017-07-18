@@ -2210,7 +2210,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                             VariableExpression.THIS_EXPRESSION,
 
                             (baseExpr instanceof VariableExpression)
-                                    ? this.createConstantExpression((VariableExpression) baseExpr)
+                                    ? this.createConstantExpression(baseExpr)
                                     : baseExpr,
 
                             this.configureAST(
@@ -3948,7 +3948,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         VariableExpression.THIS_EXPRESSION,
 
                         (baseExpr instanceof VariableExpression)
-                                ? this.createConstantExpression((VariableExpression) baseExpr)
+                                ? this.createConstantExpression(baseExpr)
                                 : baseExpr,
 
                         arguments
@@ -4108,11 +4108,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return true;
         }
 
-        if (isAnonymousInnerEnumDeclaration) {
-            return true;
-        }
+        return isAnonymousInnerEnumDeclaration;
 
-        return false;
     }
 
     // the mixins of interface and annotation should be null
@@ -4145,11 +4142,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private boolean isPackageInfoDeclaration() {
         String name = this.sourceUnit.getName();
 
-        if (null != name && name.endsWith(PACKAGE_INFO_FILE_NAME)) {
-            return true;
-        }
+        return null != name && name.endsWith(PACKAGE_INFO_FILE_NAME);
 
-        return false;
     }
 
     private boolean isBlankScript(CompilationUnitContext ctx) {
