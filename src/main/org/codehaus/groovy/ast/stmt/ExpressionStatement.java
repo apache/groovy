@@ -51,7 +51,7 @@ public class ExpressionStatement extends Statement {
     }
 
     public String getText() {
-        return this.toString();
+        return expression.getText();
     }
 
     public String toString() {
