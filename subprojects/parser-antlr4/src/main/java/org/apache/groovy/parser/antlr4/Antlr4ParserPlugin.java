@@ -47,14 +47,6 @@ public class Antlr4ParserPlugin implements ParserPlugin {
             return this.moduleNode;
         }
 
-        try {
-            if (null == sourceUnit.getSource().getReader()) {
-                return moduleNode;
-            }
-        } catch (IOException e) {
-            return moduleNode;
-        }
-
         AstBuilder builder = new AstBuilder(sourceUnit, classLoader);
         this.moduleNode = builder.buildAST();
 
