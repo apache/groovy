@@ -25,6 +25,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
+import java.io.IOException;
+
 /**
  * A parser plugin for the new parser
  *
@@ -32,6 +34,8 @@ import org.codehaus.groovy.syntax.Reduction;
  * Created on    2016/08/14
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
+    private ModuleNode moduleNode;
+
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
         return null;
@@ -39,7 +43,21 @@ public class Antlr4ParserPlugin implements ParserPlugin {
 
     @Override
     public ModuleNode buildAST(SourceUnit sourceUnit, java.lang.ClassLoader classLoader, Reduction cst) throws ParserException {
+        if (null != this.moduleNode) {
+            return this.moduleNode;
+        }
+
+        try {
+            if (null == sourceUnit.getSource().getReader()) {
+                return moduleNode;
+            }
+        } catch (IOException e) {
+            return moduleNode;
+        }
+
         AstBuilder builder = new AstBuilder(sourceUnit, classLoader);
-        return builder.buildAST();
+        this.moduleNode = builder.buildAST();
+
+        return this.moduleNode;
     }
 }
