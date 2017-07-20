@@ -354,4 +354,8 @@ public class SourceUnit extends ProcessingUnit {
     }
 
     public ReaderSource getSource() { return source; }
+
+    public void setSource(ReaderSource source) {
+        this.source = source;
+    }
 }
