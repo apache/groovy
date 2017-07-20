@@ -25,8 +25,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
-import java.io.IOException;
-
 /**
  * A parser plugin for the new parser
  *
