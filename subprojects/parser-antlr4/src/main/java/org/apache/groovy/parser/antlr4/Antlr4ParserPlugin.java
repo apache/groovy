@@ -18,12 +18,18 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.io.ReaderSource;
+import org.codehaus.groovy.control.io.StringReaderSource;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
+
+import java.io.IOException;
 
 /**
  * A parser plugin for the new parser
@@ -32,22 +38,27 @@ import org.codehaus.groovy.syntax.Reduction;
  * Created on    2016/08/14
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
-    private ModuleNode moduleNode;
+    private ReaderSource readerSource;
 
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
+        try {
+            this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
+        } catch (IOException e) {
+            throw new GroovyBugError("Failed to create StringReaderSource instance", e);
+        }
+
         return null;
     }
 
     @Override
     public ModuleNode buildAST(SourceUnit sourceUnit, java.lang.ClassLoader classLoader, Reduction cst) throws ParserException {
-        if (null != this.moduleNode) {
-            return this.moduleNode;
+        if (null != this.readerSource) {
+            sourceUnit.setSource(this.readerSource);
         }
 
         AstBuilder builder = new AstBuilder(sourceUnit, classLoader);
-        this.moduleNode = builder.buildAST();
 
-        return this.moduleNode;
+        return builder.buildAST();
     }
 }

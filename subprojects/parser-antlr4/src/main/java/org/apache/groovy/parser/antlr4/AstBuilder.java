@@ -4326,9 +4326,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private String readSourceCode(SourceUnit sourceUnit) {
         String text = null;
         try {
-            text = IOGroovyMethods.getText(
-                    new BufferedReader(
-                            sourceUnit.getSource().getReader()));
+            text = IOGroovyMethods.getText(sourceUnit.getSource().getReader());
         } catch (IOException e) {
             LOGGER.severe(createExceptionMessage(e));
             throw new RuntimeException("Error occurred when reading source code.", e);
