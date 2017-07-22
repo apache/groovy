@@ -151,7 +151,7 @@ configurations {
     tools
     examplesCompile.extendsFrom compile
     examplesRuntime.extendsFrom examplesCompile
-    antlr
+    antlr2
     spec
 }
 
@@ -255,7 +255,7 @@ dependencies {
 
 // TODO use antlr plugin
 //    antlr "antlr:antlr:$antlrVersion"
-    antlr "org.apache.ant:ant-antlr:$antVersion"
+    antlr2 "org.apache.ant:ant-antlr:$antVersion"
 
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
@@ -356,7 +356,7 @@ tasks.withType(Jar) {
 }
 
 task ensureGrammars {
-    description = 'Ensure all the Antlr generated files are up to date.'
+    description = 'Ensure all the Antlr2 generated files are up to date.'
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
@@ -370,15 +370,15 @@ task ensureGrammars {
         new File(groovyOutDir).mkdirs()
         new File(javaOutDir).mkdirs()
         ant {
-            taskdef(name: 'antlr',
+            taskdef(name: 'antlr2',
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
-                    classpath: configurations.antlr.asPath)
+                    classpath: configurations.antlr2.asPath)
 
             mkdir dir: ext.groovyParserDirectory
-            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
+            antlr2(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
                 classpath path: configurations.compile.asPath
             }
-            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
+            antlr2(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
                 classpath path: configurations.compile.asPath
             }
         }
