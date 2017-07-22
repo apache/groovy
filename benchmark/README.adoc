@@ -1,0 +1,45 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Benchmarks
+
+In order to run the benchmarks you must have the `JAVA_HOME` environment
+variable set.
+
+The benchmarks will be run using the version of Apache Groovy that executes
+the `bench.groovy` script.  For example, to execute benchmarks using version
+*2.4.12*:
+
+    groovy-2.4.12/bin/groovy ./benchmark/bench.groovy
+
+To execute the benchmarks against the current source directory, first
+build an installation:
+
+    ./gradlew installGroovy
+
+Then execute the benchmarks with that installation:
+
+    ./target/install/bin/groovy ./benchmark/bench.groovy
+
+To execute a single benchmark pass the name of the benchmark without the
+file extension:
+
+    ./target/install/bin/groovy ./benchmark/bench.groovy hello

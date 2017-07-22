@@ -70,12 +70,21 @@ def benchData = [
     wordfreq        :   [1],*/
 ]
 
-setGroovyLib()
+// Find base directory for script to allow executing from other directories
+benchmarkDir = new File(getClass().protectionDomain.codeSource.location.path).parent
+execDir = new File(benchmarkDir, 'exec')
+if (execDir.exists()) {
+    cleanFolder()
+} else {
+    execDir.mkdir()
+}
+
+groovyAllJar = getGroovyAllJar()
 
 horizontalBreak()
 println "Groovy benchmarking test"
 showJavaVersion()
-println "Groovy lib: $GROOVY_LIB"
+println "Groovy lib: $groovyAllJar"
 horizontalBreak()
 def executeBench= { bench, input ->
     println "Benchmark $bench"
@@ -85,6 +94,12 @@ def executeBench= { bench, input ->
         boolean exists = prepare(bench, ending)
         if (exists) {
             execBenchmark(bench, input)
+            if (ending == '.groovy') {
+                cleanFolder()
+                println "\t$bench$ending (indy) : "
+                prepare(bench, ending, true)
+                execBenchmark(bench, input)
+            }
         } else {
             println "skipped"
         }
@@ -97,26 +112,30 @@ if (args.length==0) {
 } else {
     executeBench(args[0],benchData[args[0]])
 }
-
+execDir.delete()
 
 void horizontalBreak() {
     println "-" * 80
 }
 
-boolean prepare(bench, ending) {
+boolean prepare(bench, ending, indy=false) {
     // copy file to exec folder it it exists
-    def orig = new File("bench/$bench$ending")
+    def orig = new File(benchmarkDir, "bench/$bench$ending")
     if (!orig.exists()) return false;
 
     // compile file using groovy compiler
     // in = orig, out = exec
-    Compiler.main("-j","-d", "exec", orig.absolutePath)
+    def args = ['-j', '-d', execDir.absolutePath]
+    if (indy) {
+        args << '-indy'
+    }
+    args << orig.absolutePath
+    Compiler.main(args as String[])
     true
 }
 
 void cleanFolder(){
-    def dir = new File("exec/")
-    dir.eachFile { file -> file.delete() }
+    execDir.eachFile { file -> file.delete() }
 }
 
 String javaHome() {
@@ -138,9 +157,8 @@ void showJavaVersion() {
 
 void execBenchmark(bench, input) {
     input.each { param -> 
-        def cp = "./exec/" + File.pathSeparatorChar
-        cp += GROOVY_LIB + File.pathSeparatorChar
-        cp += "../target/lib/runtime/*"
+        def cp = execDir.absolutePath + File.pathSeparatorChar
+        cp += groovyAllJar + File.pathSeparatorChar
 
         def time1 = System.nanoTime()
 
@@ -167,12 +185,12 @@ void printProgress(it) {
   if (n==3) print "\b-"
 }
 
-void setGroovyLib() {
-    def f = new File("../target/libs")
-    f.eachFile { entry ->
-        def name = entry.name
-        if (!name.startsWith("groovy-all")) return
-        if (name.contains("sources")) return
-        GROOVY_LIB = entry.absolutePath
+String getGroovyAllJar() {
+    String jar = ''
+    new File(System.getProperty('groovy.home'), 'embeddable').eachFile { entry ->
+        if (entry.name.startsWith('groovy-all')) {
+            jar = entry.absolutePath
+        }
     }
+    return jar
 }
