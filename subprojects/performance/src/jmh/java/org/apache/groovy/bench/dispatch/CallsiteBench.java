@@ -39,7 +39,7 @@ public class CallsiteBench {
 
     @Benchmark
     public void dispatch_1_monomorphic_java(MonomorphicState state, Blackhole bh) {
-        dispatch(state.receivers, bh);
+        JavaDispatch.dispatch(state.receivers, bh);
     }
 
     @Benchmark
@@ -49,7 +49,7 @@ public class CallsiteBench {
 
     @Benchmark
     public void dispatch_3_polymorphic_java(PolymorphicState state, Blackhole bh) {
-        dispatch(state.receivers, bh);
+        JavaDispatch.dispatch(state.receivers, bh);
     }
 
     @Benchmark
@@ -59,12 +59,14 @@ public class CallsiteBench {
 
     @Benchmark
     public void dispatch_8_megamorphic_java(MegamorphicState state, Blackhole bh) {
-        dispatch(state.receivers, bh);
+        JavaDispatch.dispatch(state.receivers, bh);
     }
 
-    private void dispatch(Object[] receivers, Blackhole bh) {
-        for (Object receiver : receivers) {
-            bh.consume(receiver.toString());
+    private static class JavaDispatch {
+        static void dispatch(Object[] receivers, Blackhole bh) {
+            for (Object receiver : receivers) {
+                bh.consume(receiver.toString());
+            }
         }
     }
 

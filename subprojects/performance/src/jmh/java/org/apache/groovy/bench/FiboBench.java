@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.plugin;
+package org.apache.groovy.bench;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -24,43 +24,38 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-public class GroovyRunnerRegistryBench {
+public class FiboBench {
 
-    static List<Object> control = new ArrayList<>();
-    static GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance();
-    static {
-        control.add(new Object());
-        control.add(new Object());
-        control.add(new Object());
-        registry.load(GroovyRunnerRegistryBench.class.getClassLoader());
+    @Param({"30", "31", "32", "33", "34"})
+    private int n;
+
+    @Benchmark
+    public int java() {
+        return JavaFibo.fib(n);
     }
 
     @Benchmark
-    public void registryIterator(Blackhole bh) {
-        for (GroovyRunner runner : registry) {
-            bh.consume(runner);
-        }
+    public int groovy() {
+        return Fibo.fib(n);
     }
 
-    @Benchmark
-    public void linkedListIterator(Blackhole bh) {
-        for (Object obj : control) {
-            bh.consume(obj);
+    private static class JavaFibo {
+        static int fib(int n) {
+            if (n < 2) return 1;
+            return fib(n - 2) + fib(n - 1);
         }
     }
 

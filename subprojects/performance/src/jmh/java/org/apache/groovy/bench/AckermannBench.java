@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.plugin;
+package org.apache.groovy.bench;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -24,43 +24,39 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-public class GroovyRunnerRegistryBench {
+public class AckermannBench {
 
-    static List<Object> control = new ArrayList<>();
-    static GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance();
-    static {
-        control.add(new Object());
-        control.add(new Object());
-        control.add(new Object());
-        registry.load(GroovyRunnerRegistryBench.class.getClassLoader());
+    @Param({"5", "6", "7", "8"})
+    private int n;
+
+    @Benchmark
+    public int java() {
+        return JavaAckermann.ack(3, n);
     }
 
     @Benchmark
-    public void registryIterator(Blackhole bh) {
-        for (GroovyRunner runner : registry) {
-            bh.consume(runner);
-        }
+    public int groovy() {
+        return Ackermann.ack(3, n);
     }
 
-    @Benchmark
-    public void linkedListIterator(Blackhole bh) {
-        for (Object obj : control) {
-            bh.consume(obj);
+    private static class JavaAckermann {
+        static int ack(int m, int n) {
+            if (m == 0) return n + 1;
+            if (n == 0) return ack(m - 1, 1);
+            return ack(m - 1, ack(m, n - 1));
         }
     }
 
