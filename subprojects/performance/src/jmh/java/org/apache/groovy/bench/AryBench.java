@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.plugin;
+package org.apache.groovy.bench;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -24,43 +24,46 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-public class GroovyRunnerRegistryBench {
+public class AryBench {
 
-    static List<Object> control = new ArrayList<>();
-    static GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance();
-    static {
-        control.add(new Object());
-        control.add(new Object());
-        control.add(new Object());
-        registry.load(GroovyRunnerRegistryBench.class.getClassLoader());
+    @Param({"10", "100", "1000", "1000000"})
+    private int n;
+
+    @Benchmark
+    public int java() {
+        return JavaAry.ary(n);
     }
 
     @Benchmark
-    public void registryIterator(Blackhole bh) {
-        for (GroovyRunner runner : registry) {
-            bh.consume(runner);
-        }
+    public int groovy() {
+        return Ary.ary(n);
     }
 
-    @Benchmark
-    public void linkedListIterator(Blackhole bh) {
-        for (Object obj : control) {
-            bh.consume(obj);
+    private static class JavaAry {
+        static int ary(int n) {
+            int[] x = new int[n];
+            int[] y = new int[n];
+
+            for (int i = 0; i < n; i++)
+                x[i] = i + 1;
+            for (int k = 0; k < 1000; k++ )
+                for (int j = n-1; j >= 0; j--)
+                    y[j] += x[j];
+
+            return y[0] + y[n-1];
         }
     }
 
