@@ -343,6 +343,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public AssertStatement visitAssertStatement(AssertStatementContext ctx) {
         Expression conditionExpression = (Expression) this.visit(ctx.ce);
+
+        if (conditionExpression instanceof BinaryExpression) {
+            BinaryExpression binaryExpression = (BinaryExpression) conditionExpression;
+
+            if (binaryExpression.getOperation().getType() == Types.ASSIGN) {
+                throw createParsingFailedException("Assignment expression is not allowed in the assert statement", conditionExpression);
+            }
+        }
+
         BooleanExpression booleanExpression =
                 this.configureAST(
                         new BooleanExpression(conditionExpression), conditionExpression);
