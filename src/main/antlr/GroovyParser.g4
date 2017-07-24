@@ -675,7 +675,7 @@ locals[boolean resourcesExists = false]
 
 assertStatement
 locals[ String footprint = "" ]
-    :   ASSERT ce=expression ((COLON | COMMA) nls me=expression)?
+    :   ASSERT ce=expression (nls (COLON | COMMA) nls me=expression)?
     ;
 
 statement

@@ -180,6 +180,10 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/FieldDeclaration_04x.groovy');
     }
 
+    void "test groovy core - Assert"() {
+        TestUtils.doRunAndShouldFail('fail/Assert_01x.groovy');
+    }
+
     /**************************************/
     static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
         ignoreClazzList.addAll(TestUtils.COMMON_IGNORE_CLASS_LIST)
