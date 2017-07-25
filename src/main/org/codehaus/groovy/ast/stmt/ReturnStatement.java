@@ -65,4 +65,8 @@ public class ReturnStatement extends Statement {
         return expression instanceof ConstantExpression
             && ((ConstantExpression)expression).isNullExpression();
     }
+
+    public String toString() {
+        return super.toString() + "[expression:" + expression + "]";
+    }
 }
