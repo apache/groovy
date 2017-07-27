@@ -2476,13 +2476,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public BinaryExpression visitPowerExprAlt(PowerExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
@@ -2531,24 +2525,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public BinaryExpression visitMultiplicativeExprAlt(MultiplicativeExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
     public BinaryExpression visitAdditiveExprAlt(AdditiveExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
@@ -2606,17 +2588,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             case GT:
             case LT:
             case IN:
-            case NOT_IN:
-            {
-                BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
+            case NOT_IN: {
                 if (ctx.op.getType() == IN || ctx.op.getType() == NOT_IN ) {
-                    if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-                        return this.configureAST(binaryExpression, ctx.op);
-                    }
+                    return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
                 }
 
-                return this.configureAST(binaryExpression, ctx);
+                return this.configureAST(
+                        this.createBinaryExpression(ctx.left, ctx.op, ctx.right),
+                        ctx);
             }
 
             default:
@@ -2640,35 +2619,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public BinaryExpression visitAndExprAlt(AndExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
     public BinaryExpression visitExclusiveOrExprAlt(ExclusiveOrExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
     public BinaryExpression visitInclusiveOrExprAlt(InclusiveOrExprAltContext ctx) {
-        BinaryExpression binaryExpression = this.createBinaryExpression(ctx.left, ctx.op, ctx.right);
-
-        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
-            return this.configureAST(binaryExpression, ctx.op);
-        }
-
-        return this.configureAST(binaryExpression, ctx);
+        return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
     @Override
@@ -4063,6 +4024,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private BinaryExpression createBinaryExpression(ExpressionContext left, Token op, ExpressionContext right) {
         return new BinaryExpression((Expression) this.visit(left), this.createGroovyToken(op), (Expression) this.visit(right));
+    }
+
+    private BinaryExpression createBinaryExpression(ExpressionContext left, Token op, ExpressionContext right, ExpressionContext ctx) {
+        BinaryExpression binaryExpression = this.createBinaryExpression(left, op, right);
+
+        if (isTrue(ctx, IS_INSIDE_CONDITIONAL_EXPRESSION)) {
+            return this.configureAST(binaryExpression, op);
+        }
+
+        return this.configureAST(binaryExpression, ctx);
     }
 
     private Statement unpackStatement(Statement statement) {
