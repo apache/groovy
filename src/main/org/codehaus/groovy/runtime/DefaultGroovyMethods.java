@@ -9836,7 +9836,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         public boolean hasNext() {
-            return delegate.hasNext() && num > 0;
+            return num > 0 && delegate.hasNext();
         }
 
         public E next() {
@@ -9911,7 +9911,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Collection<T> takeRight(Iterable<T> self, int num) {
-        if (!self.iterator().hasNext() || num <= 0) {
+        if (num <= 0 || !self.iterator().hasNext()) {
             return self instanceof Collection ? createSimilarCollection((Collection<T>) self, 0) : new ArrayList<T>();
         }
         Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);

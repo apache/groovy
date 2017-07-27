@@ -255,6 +255,19 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(1, iterableAsType[0])
     }
 
+    // GROOVY-8271
+    public void testTake() {
+        int hasNextCount = 0
+        int nextCount = 0
+        def iterator = [
+            hasNext: { -> hasNextCount++; true },
+            next: { -> nextCount++ }
+        ] as Iterator<Integer>
+        iterator.take(3).toList()
+        assertEquals(3, hasNextCount)
+        assertEquals(3, nextCount)
+    }
+
     private static class MyList extends ArrayList {
         public MyList() {}
     }
