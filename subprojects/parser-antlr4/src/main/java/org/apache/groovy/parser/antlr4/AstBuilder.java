@@ -2261,7 +2261,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 .forEach(e -> {
 
                     if (e instanceof MapEntryExpression) {
-                        mapEntryExpressionList.add((MapEntryExpression) e);
+                        MapEntryExpression mapEntryExpression = (MapEntryExpression) e;
+                        validateDuplicatedNamedParameter(mapEntryExpressionList, mapEntryExpression);
+
+                        mapEntryExpressionList.add(mapEntryExpression);
                     } else {
                         expressionList.add(e);
                     }
@@ -2290,6 +2293,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         throw createParsingFailedException("Unsupported argument list: " + ctx.getText(), ctx);
+    }
+
+    private void validateDuplicatedNamedParameter(List<MapEntryExpression> mapEntryExpressionList, MapEntryExpression mapEntryExpression) {
+        Expression keyExpression = mapEntryExpression.getKeyExpression();
+
+        if (null == keyExpression) {
+            return;
+        }
+
+        String parameterName = keyExpression.getText();
+
+        boolean isDuplicatedNamedParameter = mapEntryExpressionList.stream().anyMatch(m -> m.getKeyExpression().getText().equals(parameterName));
+        if (!isDuplicatedNamedParameter) {
+            return;
+        }
+
+        throw createParsingFailedException("Duplicated named parameter '" + parameterName + "' found", mapEntryExpression);
     }
 
     @Override
