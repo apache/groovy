@@ -1236,6 +1236,7 @@ keywords
     |   THROWS
     |   TRANSIENT
     |   TRAIT
+    |   THREADSAFE
     |   TRY
     |   VOLATILE
     |   WHILE

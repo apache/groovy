@@ -345,6 +345,7 @@ AS              : 'as';
 DEF             : 'def';
 IN              : 'in';
 TRAIT           : 'trait';
+THREADSAFE      : 'threadsafe'; // reserved keyword
 
 
 // §3.9 Keywords
@@ -409,8 +410,6 @@ INTERFACE     : 'interface';
 
 fragment
 LONG          : 'long';
-
-THREADSAFE    : 'threadsafe'; // reserved keyword
 
 NATIVE        : 'native';
 NEW           : 'new';
