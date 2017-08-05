@@ -410,6 +410,8 @@ INTERFACE     : 'interface';
 fragment
 LONG          : 'long';
 
+THREADSAFE    : 'threadsafe'; // reserved keyword
+
 NATIVE        : 'native';
 NEW           : 'new';
 PACKAGE       : 'package';
