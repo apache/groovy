@@ -905,4 +905,8 @@ public class CompilerConfiguration {
     public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
         this.bytecodePostprocessor = bytecodePostprocessor;
     }
+
+    public boolean isAntlr2Parser() {
+        return antlr2Parser;
+    }
 }
