@@ -18,6 +18,7 @@
  */
 package gls.generics
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class GenericsTest extends GenericsTestBase {
@@ -476,18 +477,35 @@ import java.util.concurrent.atomic.AtomicInteger
         shouldFailCompilationWithMessages '''
             class MyList extends ArrayList<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
-        shouldFailCompilationWithMessages '''
-            class MyList extends ArrayList<> {}
-        ''', ['(supplied with 0 type parameters)', 'which takes 1 parameter', 'invalid Diamond <> usage?']
+
+        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+            shouldFailCompilationWithMessages '''
+                class MyList extends ArrayList<> {}
+            ''', ['(supplied with 0 type parameters)', 'which takes 1 parameter', 'invalid Diamond <> usage?']
+        } else {
+            shouldFailCompilationWithMessages '''
+                class MyList extends ArrayList<> {}
+            ''', ['Unexpected input: \'ArrayList<>\'']
+        }
+
         shouldFailCompilationWithMessages '''
             class MyMap extends HashMap<String> {}
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
             class MyList implements List<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
-        shouldFailCompilationWithMessages '''
-            class MyList implements Map<> {}
-        ''', ['(supplied with 0 type parameters)', 'which takes 2 parameters', 'invalid Diamond <> usage?']
+
+        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+            shouldFailCompilationWithMessages '''
+                class MyList implements Map<> {}
+            ''', ['(supplied with 0 type parameters)', 'which takes 2 parameters', 'invalid Diamond <> usage?']
+        } else {
+            shouldFailCompilationWithMessages '''
+                class MyList implements Map<> {}
+            ''', ['Unexpected input: \'<\'']
+        }
+
+
         shouldFailCompilationWithMessages '''
             class MyMap implements Map<String> {}
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
