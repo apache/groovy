@@ -357,42 +357,81 @@ import java.util.concurrent.atomic.AtomicInteger
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        shouldFailCompilationWithExpectedMessage """
-            def list1 = new ArrayList<Integer()
-        """
+        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+            shouldFailCompilationWithExpectedMessage """
+                def list1 = new ArrayList<Integer()
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            List<Integer list2 = new ArrayList<Integer>()
-        """
+            shouldFailCompilationWithExpectedMessage """
+                List<Integer list2 = new ArrayList<Integer>()
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            def c = []
-            for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
-        """
+            shouldFailCompilationWithExpectedMessage """
+                def c = []
+                for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            def m(Class<Integer someParam) {}
-        """
+            shouldFailCompilationWithExpectedMessage """
+                def m(Class<Integer someParam) {}
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
-        """
+            shouldFailCompilationWithExpectedMessage """
+                abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-        """
+            shouldFailCompilationWithExpectedMessage """
+                abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
-        """
+            shouldFailCompilationWithExpectedMessage """
+                abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            def List<List<Integer> history = new ArrayList<List<Integer>>()
-        """
+            shouldFailCompilationWithExpectedMessage """
+                def List<List<Integer> history = new ArrayList<List<Integer>>()
+            """
 
-        shouldFailCompilationWithExpectedMessage """
-            def List<List<Integer>> history = new ArrayList<List<Integer>()
-        """
+            shouldFailCompilationWithExpectedMessage """
+                def List<List<Integer>> history = new ArrayList<List<Integer>()
+            """
+        } else {
+            shouldFailCompilationWithMessage """
+                def list1 = new ArrayList<Integer()
+            """, "Unexpected input: 'new ArrayList<Integer('"
+
+            shouldFailCompilationWithMessage """
+                List<Integer list2 = new ArrayList<Integer>()
+            """, "Unexpected input: 'list2'"
+
+            shouldFailCompilationWithMessage """
+                def c = []
+                for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
+            """, "Unexpected input: 'Iterator<String i'"
+
+            shouldFailCompilationWithMessage """
+                def m(Class<Integer someParam) {}
+            """, "Unexpected input: 'Class<Integer someParam'"
+
+            shouldFailCompilationWithMessage """
+                abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
+            """, "Unexpected input: 'implements'"
+
+            shouldFailCompilationWithMessage """
+                abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
+            """, "Unexpected input: 'AbstractList<E implements'"
+
+            shouldFailCompilationWithMessage """
+                abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
+            """, "Unexpected input: '<'"
+
+            shouldFailCompilationWithMessage """
+                def List<List<Integer> history = new ArrayList<List<Integer>>()
+            """, "Unexpected input: 'def List<List<Integer> history'"
+
+            shouldFailCompilationWithMessage """
+                def List<List<Integer>> history = new ArrayList<List<Integer>()
+            """, "Unexpected input: 'new ArrayList<List<Integer>('"
+        }
     }
 
     private void shouldFailCompilationWithExpectedMessage(scriptText) {
