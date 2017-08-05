@@ -178,7 +178,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             }
         } else if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
-            if (de == candidate || auto) {
+            if (shouldTransform(de)) {
                 candidate = null;
                 Expression left = de.getLeftExpression();
                 Expression right = transform(de.getRightExpression());
@@ -189,6 +189,14 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             return de;
         }
         return expr.transformExpression(this);
+    }
+
+    private boolean shouldTransform(DeclarationExpression exp) {
+        return exp == candidate || auto || hasClassesToNewify();
+    }
+
+    private boolean hasClassesToNewify() {
+        return classesToNewify != null && !classesToNewify.getExpressions().isEmpty();
     }
 
     private void newifyClass(ClassNode cNode, boolean autoFlag, ListExpression list) {
