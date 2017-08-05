@@ -377,8 +377,6 @@ public class GenericsType extends ASTNode {
             for (int i = 0; redirectBoundGenericTypes!=null && i < redirectBoundGenericTypes.length && match; i++) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
                 GenericsType classNodeType = cnTypes[i];
-                // The following code has been commented out because it causes GROOVY-5415
-                // However, commenting doesn't make any test fail, which is curious...
                 if (classNodeType.isPlaceholder()) {
                     String name = classNodeType.getName();
                     if (redirectBoundType.isPlaceholder()) {
