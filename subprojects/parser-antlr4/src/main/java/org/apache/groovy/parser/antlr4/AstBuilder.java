@@ -1914,9 +1914,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitPathExpression(PathExpressionContext ctx) {
-        return this.configureAST(
-                this.createPathExpression((Expression) this.visit(ctx.primary()), ctx.pathElement()),
-                ctx);
+        return //this.configureAST(
+                this.createPathExpression((Expression) this.visit(ctx.primary()), ctx.pathElement());
+                //ctx);
     }
 
     @Override
