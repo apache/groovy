@@ -173,6 +173,7 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - Map"() {
         doTest('core/Map_01.groovy');
+        doRunAndTest('core/Map_02x.groovy');
     }
 
     void "test groovy core - Expression"() {
