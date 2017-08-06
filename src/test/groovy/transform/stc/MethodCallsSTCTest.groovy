@@ -19,8 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.ParserVersion
-import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Unit tests for static type checking : method calls.
