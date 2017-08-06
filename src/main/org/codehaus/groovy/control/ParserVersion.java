@@ -16,22 +16,35 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package org.codehaus.groovy.control;
 
-import gls.CompilableTestSupport
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ParserVersion
+/**
+ * Represents the version of a parser
+ *
+ * @since 2.6.0
+ */
+public enum ParserVersion {
+    /**
+     * Before Groovy 2.6.0(including 2.6.0), the default version of parser is v2
+     */
+    V_2,
 
-class Groovy5318Bug extends CompilableTestSupport {
-    void testTypeArgumentsOnlyOnTheLastComponent() {
-        def message = shouldNotCompile """
-            def a = new java.util<Integer>.ArrayList<ArrayList<Integer>>()
-        """
+    /**
+     * After Groovy 3.0.0(including 3.0.0), the default version of parser is v4(i.e. the new parser Parrot)
+     */
+    V_4("Parrot");
 
-        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
-            assert message.contains('Unexpected type arguments found prior to: ArrayList')
-        } else {
-            assert message.contains('Unexpected input: \'new java.util<Integer>.\'')
-        }
+    private String name;
+
+    ParserVersion() {
+        this(null);
+    }
+
+    ParserVersion(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 }

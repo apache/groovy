@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.ParserVersion
+
 /**
  * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
  * with static type checking.
@@ -609,7 +611,6 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6165
     void testDelegatesToGenericArgumentTypeAndTypo() {
-        boolean isAntlr2Parser = config.isAntlr2Parser()
 
         String code = '''import groovy.transform.*
 
@@ -637,7 +638,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
         String msg = 'Cannot find matching method'
 
-        if (isAntlr2Parser) {
+        if (ParserVersion.V_2 == config.parserVersion) {
             shouldFailWithMessages code, msg
         } else {
             /*

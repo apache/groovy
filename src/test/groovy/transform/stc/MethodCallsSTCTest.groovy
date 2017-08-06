@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
@@ -794,7 +795,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
-        boolean isAntlr2Parser = config.isAntlr2Parser()
 
         String code = '''
             def closure = { String a, String b, String c -> println "$a $b $c" }
@@ -802,7 +802,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             closure(*strings)
         '''
 
-        if (isAntlr2Parser) {
+        if (ParserVersion.V_2 == config.parserVersion) {
             shouldFailWithMessages code, 'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
         } else {
             shouldFailWithMessages code,

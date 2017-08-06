@@ -20,6 +20,7 @@ package gls.generics
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.ParserVersion
 
 class GenericsTest extends GenericsTestBase {
 
@@ -357,7 +358,7 @@ import java.util.concurrent.atomic.AtomicInteger
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
             shouldFailCompilationWithExpectedMessage """
                 def list1 = new ArrayList<Integer()
             """
@@ -517,7 +518,7 @@ import java.util.concurrent.atomic.AtomicInteger
             class MyList extends ArrayList<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
             shouldFailCompilationWithMessages '''
                 class MyList extends ArrayList<> {}
             ''', ['(supplied with 0 type parameters)', 'which takes 1 parameter', 'invalid Diamond <> usage?']
@@ -534,7 +535,7 @@ import java.util.concurrent.atomic.AtomicInteger
             class MyList implements List<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (CompilerConfiguration.DEFAULT.antlr2Parser) {
+        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
             shouldFailCompilationWithMessages '''
                 class MyList implements Map<> {}
             ''', ['(supplied with 0 type parameters)', 'which takes 2 parameters', 'invalid Diamond <> usage?']

@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.transform.NotYetImplemented
+import org.codehaus.groovy.control.ParserVersion
 
 /**
  * Unit tests for static type checking : generics.
@@ -434,7 +435,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldComplainAboutToInteger() {
-        boolean isAntlr2Parser = config.isAntlr2Parser()
 
         String code = '''
             class Test {
@@ -459,7 +459,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Test()
         '''
 
-        if (isAntlr2Parser) {
+        if (ParserVersion.V_2 == config.parserVersion) {
             shouldFailWithMessages code, 'Cannot find matching method java.lang.Object#getAt(int)'
         } else {
             shouldFailWithMessages code,
