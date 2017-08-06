@@ -253,6 +253,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.configureScriptClassNode();
 
+        if (null != this.numberFormatError) {
+            throw createParsingFailedException(this.numberFormatError.value.getMessage(), this.numberFormatError.key);
+        }
+
         return moduleNode;
     }
 
@@ -2523,16 +2527,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
             case SUB: {
                 if (expression instanceof ConstantExpression && !insidePar) {
+                    this.numberFormatError = null; // reset the numberFormatError, try to parse the negative number
+
                     ConstantExpression constantExpression = (ConstantExpression) expression;
 
-                    String integerLiteralText = constantExpression.getNodeMetaData(INTEGER_LITERAL_TEXT);
-                    if (null != integerLiteralText) {
-                        return this.configureAST(new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText)), ctx);
-                    }
+                    try {
+                        String integerLiteralText = constantExpression.getNodeMetaData(INTEGER_LITERAL_TEXT);
+                        if (null != integerLiteralText) {
+                            return this.configureAST(new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText)), ctx);
+                        }
 
-                    String floatingPointLiteralText = constantExpression.getNodeMetaData(FLOATING_POINT_LITERAL_TEXT);
-                    if (null != floatingPointLiteralText) {
-                        return this.configureAST(new ConstantExpression(Numbers.parseDecimal(SUB_STR + floatingPointLiteralText)), ctx);
+                        String floatingPointLiteralText = constantExpression.getNodeMetaData(FLOATING_POINT_LITERAL_TEXT);
+                        if (null != floatingPointLiteralText) {
+                            return this.configureAST(new ConstantExpression(Numbers.parseDecimal(SUB_STR + floatingPointLiteralText)), ctx);
+                        }
+                    } catch (Exception e) {
+                        throw createParsingFailedException(e.getMessage(), ctx);
                     }
 
                     throw new GroovyBugError("Failed to find the original number literal text: " + constantExpression.getText());
@@ -3131,7 +3141,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ConstantExpression visitIntegerLiteralAlt(IntegerLiteralAltContext ctx) {
         String text = ctx.IntegerLiteral().getText();
 
-        ConstantExpression constantExpression = new ConstantExpression(Numbers.parseInteger(null, text), !text.startsWith(SUB_STR));
+        Number num = null;
+        try {
+            num = Numbers.parseInteger(null, text);
+        } catch (Exception e) {
+            this.numberFormatError = new Pair<>(ctx, e);
+        }
+
+        ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
         constantExpression.putNodeMetaData(IS_NUMERIC, true);
         constantExpression.putNodeMetaData(INTEGER_LITERAL_TEXT, text);
 
@@ -3142,7 +3159,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ConstantExpression visitFloatingPointLiteralAlt(FloatingPointLiteralAltContext ctx) {
         String text = ctx.FloatingPointLiteral().getText();
 
-        ConstantExpression constantExpression = new ConstantExpression(Numbers.parseDecimal(text), !text.startsWith(SUB_STR));
+        Number num = null;
+        try {
+            num = Numbers.parseDecimal(text);
+        } catch (Exception e) {
+            this.numberFormatError = new Pair<>(ctx, e);
+        }
+
+        ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
         constantExpression.putNodeMetaData(IS_NUMERIC, true);
         constantExpression.putNodeMetaData(FLOATING_POINT_LITERAL_TEXT, text);
 
@@ -4594,6 +4618,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private int anonymousInnerClassCounter = 1;
+
+    private Pair<GroovyParserRuleContext, Exception> numberFormatError;
+
     private static final String QUESTION_STR = "?";
     private static final String DOT_STR = ".";
     private static final String SUB_STR = "-";
