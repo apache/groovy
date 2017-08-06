@@ -53,6 +53,8 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.SourceUnit
 import org.junit.Before
 import org.junit.Test
@@ -99,7 +101,7 @@ class LineColumnCheckTest extends ASTTest {
         List testdata = extractData("${TEST_FILE_PREFIX}.txt")
         //flip if condition as per below and swap antlr2/4 ordering once antlr4 is the default
         //if (System.getProperty('groovy.antlr4') != 'false') {
-        if (System.getProperty('groovy.antlr4') != 'true') {
+        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
             testdata += extractData("${TEST_FILE_PREFIX}_antlr2.txt")
         } else {
             testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
