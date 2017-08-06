@@ -441,10 +441,11 @@ WHILE         : 'while';
 // §3.10.1 Integer Literals
 
 IntegerLiteral
-    :   DecimalIntegerLiteral
-    |   HexIntegerLiteral
-    |   OctalIntegerLiteral
-    |   BinaryIntegerLiteral
+    :   (   DecimalIntegerLiteral
+        |   HexIntegerLiteral
+        |   OctalIntegerLiteral
+        |   BinaryIntegerLiteral
+        ) (Underscore { require(false, "Invalid number", -1, true); })?
 
     // !!! Error Alternative !!!
     |   Zero ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
@@ -584,8 +585,9 @@ BinaryDigitOrUnderscore
 // §3.10.2 Floating-Point Literals
 
 FloatingPointLiteral
-    :   DecimalFloatingPointLiteral
-    |   HexadecimalFloatingPointLiteral
+    :   (   DecimalFloatingPointLiteral
+        |   HexadecimalFloatingPointLiteral
+        ) (Underscore { require(false, "Invalid number", -1, true); })?
     ;
 
 fragment
