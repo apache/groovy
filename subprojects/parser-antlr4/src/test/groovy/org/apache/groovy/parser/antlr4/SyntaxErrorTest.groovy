@@ -193,6 +193,9 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/ThreadSafe_01x.groovy');
     }
 
+    void "test groovy core - VarArgParameter"() {
+        TestUtils.doRunAndShouldFail('fail/VarArgParameter_01x.groovy');
+    }
 
     /**************************************/
     static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {

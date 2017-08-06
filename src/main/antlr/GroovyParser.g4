@@ -410,8 +410,7 @@ formalParameters
     ;
 
 formalParameterList
-    :   (formalParameter | thisFormalParameter) (COMMA nls formalParameter)* (COMMA nls lastFormalParameter)?
-    |   lastFormalParameter
+    :   (formalParameter | thisFormalParameter) (COMMA nls formalParameter)*
     ;
 
 thisFormalParameter
@@ -419,11 +418,7 @@ thisFormalParameter
     ;
 
 formalParameter
-    :   variableModifiersOpt type?          variableDeclaratorId (nls ASSIGN nls expression)?
-    ;
-
-lastFormalParameter
-    :   variableModifiersOpt type? ELLIPSIS variableDeclaratorId (nls ASSIGN nls expression)?
+    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 methodBody

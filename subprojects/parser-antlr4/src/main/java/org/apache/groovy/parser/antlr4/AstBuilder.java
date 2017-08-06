@@ -3349,20 +3349,28 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             parameterList.add(this.visitThisFormalParameter(ctx.thisFormalParameter()));
         }
 
-        if (asBoolean(ctx.formalParameter())) {
+        List<? extends FormalParameterContext> formalParameterList = ctx.formalParameter();
+        if (asBoolean(formalParameterList)) {
+            validateVarArgParameter(formalParameterList);
+
             parameterList.addAll(
-                    ctx.formalParameter().stream()
+                    formalParameterList.stream()
                             .map(this::visitFormalParameter)
                             .collect(Collectors.toList()));
-        }
-
-        if (asBoolean(ctx.lastFormalParameter())) {
-            parameterList.add(this.visitLastFormalParameter(ctx.lastFormalParameter()));
         }
 
         validateParameterList(parameterList);
 
         return parameterList.toArray(new Parameter[0]);
+    }
+
+    private void validateVarArgParameter(List<? extends FormalParameterContext> formalParameterList) {
+        for (int i = 0, n = formalParameterList.size(); i < n - 1; i++) {
+            FormalParameterContext formalParameterContext = formalParameterList.get(i);
+            if (asBoolean(formalParameterContext.ELLIPSIS())) {
+                throw createParsingFailedException("The var-arg parameter strs must be the last parameter", formalParameterContext);
+            }
+        }
     }
 
     private void validateParameterList(List<Parameter> parameterList) {
@@ -3383,17 +3391,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Parameter visitFormalParameter(FormalParameterContext ctx) {
-        return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), null, ctx.variableDeclaratorId(), ctx.expression());
+        return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), ctx.ELLIPSIS(), ctx.variableDeclaratorId(), ctx.expression());
     }
 
     @Override
     public Parameter visitThisFormalParameter(ThisFormalParameterContext ctx) {
         return this.configureAST(new Parameter(this.visitType(ctx.type()), THIS_STR), ctx);
-    }
-
-    @Override
-    public Parameter visitLastFormalParameter(LastFormalParameterContext ctx) {
-        return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), ctx.ELLIPSIS(), ctx.variableDeclaratorId(), ctx.expression());
     }
 
     @Override
