@@ -27,10 +27,8 @@ import org.objectweb.asm.Opcodes;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -906,7 +904,11 @@ public class CompilerConfiguration {
         this.bytecodePostprocessor = bytecodePostprocessor;
     }
 
-    public boolean isAntlr2Parser() {
-        return antlr2Parser;
+    public ParserVersion getParserVersion() {
+        if (this.antlr2Parser) {
+            return ParserVersion.V_2;
+        }
+
+        return ParserVersion.V_4;
     }
 }
