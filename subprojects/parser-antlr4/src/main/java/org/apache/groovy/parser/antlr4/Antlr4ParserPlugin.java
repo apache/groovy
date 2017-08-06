@@ -52,8 +52,13 @@ public class Antlr4ParserPlugin implements ParserPlugin {
     }
 
     @Override
-    public ModuleNode buildAST(SourceUnit sourceUnit, java.lang.ClassLoader classLoader, Reduction cst) throws ParserException {
-        if (null != this.readerSource) {
+    public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
+        try {
+            ReaderSource readerSource = sourceUnit.getSource();
+            if (null == readerSource || null == readerSource.getReader()) {
+                sourceUnit.setSource(this.readerSource);
+            }
+        } catch (IOException e) {
             sourceUnit.setSource(this.readerSource);
         }
 
