@@ -3145,7 +3145,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         try {
             num = Numbers.parseInteger(null, text);
         } catch (Exception e) {
-            this.numberFormatError = new Pair<>(ctx, e);
+            this.numberFormatError = new Pair<GroovyParserRuleContext, Exception>(ctx, e);
         }
 
         ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
@@ -3163,7 +3163,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         try {
             num = Numbers.parseDecimal(text);
         } catch (Exception e) {
-            this.numberFormatError = new Pair<>(ctx, e);
+            this.numberFormatError = new Pair<GroovyParserRuleContext, Exception>(ctx, e);
         }
 
         ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
