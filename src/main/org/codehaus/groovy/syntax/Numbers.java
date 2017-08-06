@@ -228,13 +228,13 @@ public class Numbers
         switch (type)
         {
             case 'i':
-                if (radix==10 && reportNode != null && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0) ) {
+                if (radix==10 && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0) ) {
                     throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of int, but int was enforced.");
                 } else {
                     return Integer.valueOf(value.intValue());
                 }
             case 'l':
-                if (radix==10 && reportNode != null && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0) ) {
+                if (radix==10 && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0) ) {
                     throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of long, but long was enforced.");
                 } else {
                     return new Long( value.longValue() );
