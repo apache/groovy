@@ -200,6 +200,9 @@ class SyntaxErrorTest extends GroovyTestCase {
     void "test groovy core - Number"() {
         TestUtils.doRunAndShouldFail('fail/Number_01x.groovy');
         TestUtils.doRunAndShouldFail('fail/Number_02x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Number_03x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Number_04x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Number_05x.groovy');
     }
 
     /**************************************/
