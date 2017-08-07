@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
@@ -30,6 +29,7 @@ import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.IOException;
+import java.io.Reader;
 
 /**
  * A parser plugin for the new parser
@@ -42,26 +42,17 @@ public class Antlr4ParserPlugin implements ParserPlugin {
     private AstBuilder builder;
 
     @Override
-    public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
-        try {
-
-            this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
-
-            handleSourceUnit(sourceUnit);
-
-            this.builder = new AstBuilder(sourceUnit, null);
-
-            builder.buildCST();
-        } catch (IOException e) {
-            throw new GroovyBugError("Failed to create StringReaderSource instance", e);
-        }
+    public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
+        handleSourceUnit(sourceUnit, reader);
+        this.builder = new AstBuilder(sourceUnit, null);
+        builder.buildCST();
 
         return null;
     }
 
     @Override
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
-        handleSourceUnit(sourceUnit);
+        handleSourceUnit(sourceUnit, null);
 
         if (null == this.builder) {
             this.builder = new AstBuilder(sourceUnit, classLoader);
@@ -70,14 +61,33 @@ public class Antlr4ParserPlugin implements ParserPlugin {
         return builder.buildAST();
     }
 
-    private void handleSourceUnit(SourceUnit sourceUnit) {
+    private void handleSourceUnit(SourceUnit sourceUnit, Reader reader) {
         try {
             ReaderSource readerSource = sourceUnit.getSource();
+            initReaderSource(sourceUnit, reader, readerSource);
+
             if (null == readerSource || null == readerSource.getReader()) {
                 sourceUnit.setSource(this.readerSource);
             }
         } catch (IOException e) {
             sourceUnit.setSource(this.readerSource);
         }
+    }
+
+    private void initReaderSource(SourceUnit sourceUnit, Reader reader, ReaderSource readerSource) throws IOException {
+        if (null != this.readerSource) {
+            return;
+        }
+
+        if (null != readerSource && null != readerSource.getReader()) {
+            this.readerSource = readerSource;
+            return;
+        }
+
+        if (null == reader) {
+            return;
+        }
+
+        this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
     }
 }
