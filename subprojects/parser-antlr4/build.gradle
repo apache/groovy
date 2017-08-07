@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+if (!rootProject.hasProperty('useAntlr4')) return
 
 apply plugin: 'antlr'
 
@@ -58,6 +59,12 @@ sourceSets.test.java.srcDirs += file("$srcTest/java");
 sourceSets.test.groovy.srcDirs += file("$srcTest/groovy");
 sourceSets.test.resources.srcDirs += file("$srcTest/resources");
 
+
+allprojects {
+    tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
+    }
+}
 
 test {
     jvmArgs "-Dgroovy.attach.groovydoc=true", "-Dgroovy.antlr4.cache.threshold=100"
