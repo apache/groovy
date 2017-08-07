@@ -169,22 +169,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.groovydocManager = new GroovydocManager(this);
     }
 
-    private GroovyParserRuleContext buildCST() {
+    private GroovyParserRuleContext buildCST() throws CompilationFailedException {
         GroovyParserRuleContext result;
 
-        // parsing have to wait util clearing is complete.
-        AtnManager.RRWL.readLock().lock();
         try {
-            result = buildCST(PredictionMode.SLL);
-        } catch (Throwable t) {
-            // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
-            if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
-                throw t;
-            }
+            // parsing have to wait util clearing is complete.
+            AtnManager.RRWL.readLock().lock();
+            try {
+                result = buildCST(PredictionMode.SLL);
+            } catch (Throwable t) {
+                // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
+                if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
+                    throw t;
+                }
 
-            result = buildCST(PredictionMode.LL);
-        } finally {
-            AtnManager.RRWL.readLock().unlock();
+                result = buildCST(PredictionMode.LL);
+            } finally {
+                AtnManager.RRWL.readLock().unlock();
+            }
+        } catch (Throwable t) {
+            throw createParsingFailedException(t);
         }
 
         return result;
