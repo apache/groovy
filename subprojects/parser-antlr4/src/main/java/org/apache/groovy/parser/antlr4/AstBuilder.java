@@ -188,7 +188,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 AtnManager.RRWL.readLock().unlock();
             }
         } catch (Throwable t) {
-            throw createParsingFailedException(t);
+            throw convertException(t);
         }
 
         return result;
@@ -207,23 +207,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return parser.compilationUnit();
     }
 
+    public CompilationFailedException convertException(Throwable t) {
+        CompilationFailedException cfe;
+
+        if (t instanceof CompilationFailedException) {
+            cfe = (CompilationFailedException) t;
+        } else if (t instanceof ParseCancellationException) {
+            cfe = createParsingFailedException(t.getCause());
+        } else {
+            cfe = createParsingFailedException(t);
+        }
+
+        return cfe;
+    }
+
     public ModuleNode buildAST() {
         try {
             return (ModuleNode) this.visit(this.buildCST());
         } catch (Throwable t) {
-            CompilationFailedException cfe;
-
-            if (t instanceof CompilationFailedException) {
-                cfe = (CompilationFailedException) t;
-            } else if (t instanceof ParseCancellationException) {
-                cfe = createParsingFailedException(t.getCause());
-            } else {
-                cfe = createParsingFailedException(t);
-            }
-
-//            LOGGER.log(Level.SEVERE, "Failed to build AST", cfe);
-
-            throw cfe;
+            throw convertException(t);
         }
     }
 
