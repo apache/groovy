@@ -39,11 +39,19 @@ import java.io.IOException;
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
     private ReaderSource readerSource;
+    private AstBuilder builder;
 
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
         try {
+
             this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
+
+            handleSourceUnit(sourceUnit);
+
+            this.builder = new AstBuilder(sourceUnit, null);
+
+            builder.buildCST();
         } catch (IOException e) {
             throw new GroovyBugError("Failed to create StringReaderSource instance", e);
         }
@@ -53,6 +61,16 @@ public class Antlr4ParserPlugin implements ParserPlugin {
 
     @Override
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
+        handleSourceUnit(sourceUnit);
+
+        if (null == this.builder) {
+            this.builder = new AstBuilder(sourceUnit, classLoader);
+        }
+
+        return builder.buildAST();
+    }
+
+    private void handleSourceUnit(SourceUnit sourceUnit) {
         try {
             ReaderSource readerSource = sourceUnit.getSource();
             if (null == readerSource || null == readerSource.getReader()) {
@@ -61,9 +79,5 @@ public class Antlr4ParserPlugin implements ParserPlugin {
         } catch (IOException e) {
             sourceUnit.setSource(this.readerSource);
         }
-
-        AstBuilder builder = new AstBuilder(sourceUnit, classLoader);
-
-        return builder.buildAST();
     }
 }
