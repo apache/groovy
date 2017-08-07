@@ -43,7 +43,12 @@ public class Antlr4ParserPlugin implements ParserPlugin {
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
         try {
-            this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
+            ReaderSource readerSource = sourceUnit.getSource();
+            if (null != readerSource && null != readerSource.getReader()) {
+                this.readerSource = readerSource;
+            } else {
+                this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
+            }
         } catch (IOException e) {
             throw new GroovyBugError("Failed to create StringReaderSource instance", e);
         }
