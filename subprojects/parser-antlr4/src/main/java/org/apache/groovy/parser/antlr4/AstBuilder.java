@@ -170,10 +170,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     public GroovyParserRuleContext buildCST() throws CompilationFailedException {
-        if (null != this.cst) {
-            return this.cst;
-        }
-
         GroovyParserRuleContext result;
 
         try {
@@ -194,8 +190,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         } catch (Throwable t) {
             throw convertException(t);
         }
-
-        this.cst = result;
 
         return result;
     }
@@ -4619,7 +4613,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
     }
 
-    private GroovyParserRuleContext cst;
     private final ModuleNode moduleNode;
     private final SourceUnit sourceUnit;
     private final ClassLoader classLoader; // Our ClassLoader, which provides information on external types
