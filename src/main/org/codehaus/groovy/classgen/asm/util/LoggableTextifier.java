@@ -76,8 +76,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Printer visitModule() {
-        Printer p = super.visitModule();
+    public Printer visitModule(final String name, final int access, final String version) {
+        Printer p = super.visitModule(name, access, version);
         log();
         return p;
     }
@@ -96,8 +96,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitClassTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        Textifier t = super.visitClassTypeAnnotation(typeRef, typePath, desc, visible);
+    public Printer visitClassTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        Printer t = super.visitClassTypeAnnotation(typeRef, typePath, desc, visible);
         log();
         return t;
     }
@@ -135,14 +135,14 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public void visitRequire(String require, int access) {
-        super.visitRequire(require, access);
+    public void visitRequire(String require, int access, String version) {
+        super.visitRequire(require, access, version);
         log();
     }
 
     @Override
-    public void visitExport(String export, String... tos) {
-        super.visitExport(export, tos);
+    public void visitExport(String export, int access, String... modules) {
+        super.visitExport(export, access, modules);
         log();
     }
 
@@ -153,8 +153,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public void visitProvide(String provide, String with) {
-        super.visitProvide(provide, with);
+    public void visitProvide(String provide, String... providers) {
+        super.visitProvide(provide, providers);
         log();
     }
 
@@ -204,8 +204,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitFieldTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        Textifier t = super.visitFieldTypeAnnotation(typeRef, typePath, desc, visible);
+    public Printer visitFieldTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        Printer t = super.visitFieldTypeAnnotation(typeRef, typePath, desc, visible);
         log();
         return t;
     }
@@ -243,8 +243,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitMethodTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        Textifier t = super.visitMethodTypeAnnotation(typeRef, typePath, desc, visible);
+    public Printer visitMethodTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        Printer t = super.visitMethodTypeAnnotation(typeRef, typePath, desc, visible);
         log();
         return t;
     }
@@ -365,8 +365,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        Textifier t = super.visitInsnAnnotation(typeRef, typePath, desc, visible);
+    public Printer visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        Printer t = super.visitInsnAnnotation(typeRef, typePath, desc, visible);
         log();
         return t;
     }
@@ -378,8 +378,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitTryCatchAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        Textifier t = super.visitTryCatchAnnotation(typeRef, typePath, desc, visible);
+    public Printer visitTryCatchAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        Printer t = super.visitTryCatchAnnotation(typeRef, typePath, desc, visible);
         log();
         return t;
     }
@@ -391,8 +391,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public Textifier visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String desc, boolean visible) {
-        Textifier t = super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, desc, visible);
+    public Printer visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String desc, boolean visible) {
+        Printer t = super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, desc, visible);
         log();
         return t;
     }
