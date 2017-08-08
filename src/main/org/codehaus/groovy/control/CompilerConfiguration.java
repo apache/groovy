@@ -197,7 +197,7 @@ public class CompilerConfiguration {
      * defines if antlr2 parser should be used or the antlr4 one if
      * no factory is set yet
      */
-    private boolean antlr2Parser = true;
+    private boolean antlr2Parser = true; // TODO replace it with ParserVersion
 
     /**
      * Sets the Flags to defaults.
@@ -910,5 +910,13 @@ public class CompilerConfiguration {
         }
 
         return ParserVersion.V_4;
+    }
+
+    public void setParserVersion(ParserVersion parserVersion) {
+        if (ParserVersion.V_2 == parserVersion) {
+            this.antlr2Parser = true;
+        } else {
+            this.antlr2Parser = false;
+        }
     }
 }
