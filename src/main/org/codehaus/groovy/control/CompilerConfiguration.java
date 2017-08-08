@@ -95,8 +95,6 @@ public class CompilerConfiguration {
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
 
-    private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
-
     /**
      * See {@link WarningMessage} for levels.
      */
@@ -198,11 +196,8 @@ public class CompilerConfiguration {
     /**
      * defines if antlr2 parser should be used or the antlr4 one if
      * no factory is set yet
-     *
-     * The antlr4 parser Parrot is enabled by default
-     *
      */
-    private boolean antlr2Parser = false; // TODO replace it with ParserVersion
+    private boolean antlr2Parser = true; // TODO replace it with ParserVersion
 
     /**
      * Sets the Flags to defaults.
@@ -258,11 +253,7 @@ public class CompilerConfiguration {
         setOptimizationOptions(options);
 
         try {
-            String groovyAntlr4Opt = System.getProperty(GROOVY_ANTLR4_OPT);
-
-            if (null != groovyAntlr4Opt) {
-                antlr2Parser = !Boolean.valueOf(groovyAntlr4Opt);
-            }
+            antlr2Parser = !"true".equals(System.getProperty("groovy.antlr4"));
         } catch (Exception e) {
             // IGNORE
         }

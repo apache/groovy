@@ -27,7 +27,9 @@ dependencies {
 }
 
 task console(type: JavaExec, dependsOn:classes) {
-    jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
+    if (rootProject.hasProperty('useAntlr4')) {
+        jvmArgs += ["-Dgroovy.antlr4=true", "-Dgroovy.attach.groovydoc=true"]
+    }
 
     main = 'groovy.ui.Console'
     classpath = sourceSets.main.runtimeClasspath
