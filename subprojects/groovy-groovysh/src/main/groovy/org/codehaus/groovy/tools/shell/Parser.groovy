@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -156,6 +157,7 @@ final class RigidParser implements Parsing
 
         try {
             parser = SourceUnit.create(SCRIPT_FILENAME, source, /*tolerance*/ 1)
+            parser.getConfiguration().setParserVersion(ParserVersion.V_2) // We have to stick to the old parser before GROOVY-8279 is fixed
             parser.parse()
 
             log.debug('Parse complete')
