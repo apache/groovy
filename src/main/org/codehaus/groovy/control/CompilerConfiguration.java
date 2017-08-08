@@ -197,7 +197,7 @@ public class CompilerConfiguration {
      * defines if antlr2 parser should be used or the antlr4 one if
      * no factory is set yet
      */
-    private boolean antlr2Parser = true; // TODO replace it with ParserVersion
+    private ParserVersion parserVersion = ParserVersion.V_2;
 
     /**
      * Sets the Flags to defaults.
@@ -253,7 +253,9 @@ public class CompilerConfiguration {
         setOptimizationOptions(options);
 
         try {
-            antlr2Parser = !"true".equals(System.getProperty("groovy.antlr4"));
+            if ("true".equals(System.getProperty("groovy.antlr4"))) {
+                this.parserVersion = ParserVersion.V_4;
+            }
         } catch (Exception e) {
             // IGNORE
         }
@@ -730,11 +732,9 @@ public class CompilerConfiguration {
 
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            if (antlr2Parser) {
-                pluginFactory = ParserPluginFactory.antlr2();
-            } else {
-                pluginFactory = ParserPluginFactory.antlr4();
-            }
+            pluginFactory = ParserVersion.V_2 == parserVersion
+                                ? ParserPluginFactory.antlr2()
+                                : ParserPluginFactory.antlr4();
         }
         return pluginFactory;
     }
@@ -905,18 +905,10 @@ public class CompilerConfiguration {
     }
 
     public ParserVersion getParserVersion() {
-        if (this.antlr2Parser) {
-            return ParserVersion.V_2;
-        }
-
-        return ParserVersion.V_4;
+        return this.parserVersion;
     }
 
     public void setParserVersion(ParserVersion parserVersion) {
-        if (ParserVersion.V_2 == parserVersion) {
-            this.antlr2Parser = true;
-        } else {
-            this.antlr2Parser = false;
-        }
+        this.parserVersion = parserVersion;
     }
 }
