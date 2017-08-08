@@ -41,52 +41,19 @@ options {
 
 @header {
     import java.util.Map;
-    import org.codehaus.groovy.util.ListHashMap;
     import org.codehaus.groovy.ast.NodeMetaDataHandler;
-    import org.codehaus.groovy.ast.NodeMetaDataHandlerHelper;
     import org.apache.groovy.parser.antlr4.SemanticPredicates;
 }
 
 @members {
 
     public static class GroovyParserRuleContext extends ParserRuleContext implements NodeMetaDataHandler {
-        private Map<?, ?> metaDataMap = null;
-        private NodeMetaDataHandlerHelper helper = new NodeMetaDataHandlerHelper(this);
+        private Map metaDataMap = null;
 
         public GroovyParserRuleContext() {}
 
         public GroovyParserRuleContext(ParserRuleContext parent, int invokingStateNumber) {
             super(parent, invokingStateNumber);
-        }
-
-        @Override
-        public <T> T getNodeMetaData(Object key) {
-            return helper.getNodeMetaData(key);
-        }
-
-        @Override
-        public void copyNodeMetaData(NodeMetaDataHandler other) {
-            helper.copyNodeMetaData(other);
-        }
-
-        @Override
-        public void setNodeMetaData(Object key, Object value) {
-            helper.setNodeMetaData(key, value);
-        }
-
-        @Override
-        public Object putNodeMetaData(Object key, Object value) {
-            return helper.putNodeMetaData(key, value);
-        }
-
-        @Override
-        public void removeNodeMetaData(Object key) {
-            helper.removeNodeMetaData(key);
-        }
-
-        @Override
-        public Map<?, ?> getNodeMetaData() {
-            return helper.getNodeMetaData();
         }
 
         @Override
@@ -595,7 +562,7 @@ elementValueArrayInitializer
 // STATEMENTS / BLOCKS
 
 block
-    :   LBRACE nls blockStatementsOpt RBRACE
+    :   LBRACE (nls | sep+) blockStatementsOpt RBRACE
     ;
 
 blockStatement
