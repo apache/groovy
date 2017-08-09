@@ -84,7 +84,7 @@ Build is image:{build-icon}[build status, link={groovy-ci}].
 
 To build you will need:
 
-* {jdk}[JDK 1.8+]
+* {jdk}[JDK 8+]
 
 To build everything using Gradle:
 
