@@ -83,7 +83,7 @@ Method test2Method = JSR308Class.class.getDeclaredMethods().find(e -> e.name == 
 assert JSR308Class.class == test2Method.getAnnotatedReceiverType().type
 
 Parameter listParameter = testMethod.getParameters()[0]
-assert 'java.util.List<?>' == listParameter.getAnnotatedType().type.typeName
+assert ['java.util.List<?>', 'java.util.List'].contains(listParameter.getAnnotatedType().type.typeName)
 
 Field nameField = JSR308Class.class.getDeclaredField('name');
 assert String.class == nameField.getAnnotatedType().type
