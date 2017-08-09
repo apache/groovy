@@ -77,7 +77,7 @@ assert ['JSR308Interface1<java.lang.String>', 'JSR308Interface2<java.lang.String
 Method testMethod = JSR308Class.class.getDeclaredMethods().find(e -> e.name == 'test')
 assert [IOException, SQLException] == testMethod.getAnnotatedExceptionTypes().collect(e -> e.type)
 assert 'java.util.List<java.lang.String>' == testMethod.getAnnotatedReturnType().type.typeName
-assert ['java.util.List<?>'] == testMethod.getAnnotatedParameterTypes().collect(e -> e.type.typeName)
+assert ['java.util.List<?>', 'java.util.List'].contains(testMethod.getAnnotatedParameterTypes().collect(e -> e.type.typeName).get(0))
 
 Method test2Method = JSR308Class.class.getDeclaredMethods().find(e -> e.name == 'test2')
 assert JSR308Class.class == test2Method.getAnnotatedReceiverType().type
