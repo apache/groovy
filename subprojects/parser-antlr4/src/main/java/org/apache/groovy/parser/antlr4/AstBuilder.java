@@ -2533,19 +2533,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
             case SUB: {
                 if (expression instanceof ConstantExpression && !insidePar) {
-                    this.numberFormatError = null; // reset the numberFormatError, try to parse the negative number
-
                     ConstantExpression constantExpression = (ConstantExpression) expression;
 
                     try {
                         String integerLiteralText = constantExpression.getNodeMetaData(INTEGER_LITERAL_TEXT);
                         if (null != integerLiteralText) {
-                            return this.configureAST(new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText)), ctx);
+
+                            ConstantExpression result = new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText));
+
+                            this.numberFormatError = null; // reset the numberFormatError
+
+                            return this.configureAST(result, ctx);
                         }
 
                         String floatingPointLiteralText = constantExpression.getNodeMetaData(FLOATING_POINT_LITERAL_TEXT);
                         if (null != floatingPointLiteralText) {
-                            return this.configureAST(new ConstantExpression(Numbers.parseDecimal(SUB_STR + floatingPointLiteralText)), ctx);
+                            ConstantExpression result = new ConstantExpression(Numbers.parseDecimal(SUB_STR + floatingPointLiteralText));
+
+                            this.numberFormatError = null; // reset the numberFormatError
+
+                            return this.configureAST(result, ctx);
                         }
                     } catch (Exception e) {
                         throw createParsingFailedException(e.getMessage(), ctx);
