@@ -57,7 +57,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
 
         private final SourceUnit sourceUnit;
 
-        public MacroClassTransformer(SourceUnit sourceUnit) {
+        MacroClassTransformer(SourceUnit sourceUnit) {
             this.sourceUnit = sourceUnit;
         }
 
@@ -82,7 +82,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
 
         private final SourceUnit sourceUnit;
 
-        public MacroClassTransformingCodeVisitor(ClassCodeExpressionTransformer transformer, SourceUnit sourceUnit) {
+        MacroClassTransformingCodeVisitor(ClassCodeExpressionTransformer transformer, SourceUnit sourceUnit) {
             super(transformer);
             this.sourceUnit = sourceUnit;
         }
