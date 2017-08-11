@@ -61,7 +61,7 @@ public enum MacroBuilder {
         return macro(compilePhase, false, source, context, resultClass);
     }
 
-    private final static AtomicInteger COUNTER = new AtomicInteger();
+    private static final AtomicInteger COUNTER = new AtomicInteger();
 
     @SuppressWarnings("unchecked")
     public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {

@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 public class TreeContext {
-    private static enum TreeContextKey {
+    private enum TreeContextKey {
         expression_replacement
     }
     final TreeContext parent;

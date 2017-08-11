@@ -595,7 +595,7 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     private static class MatchByClass implements ASTNodePredicate {
         private final Class<ASTNode> astNodeClass;
 
-        public MatchByClass(final Class<ASTNode> astNodeClass) {
+        MatchByClass(final Class<ASTNode> astNodeClass) {
             this.astNodeClass = astNodeClass;
         }
 
