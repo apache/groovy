@@ -276,7 +276,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             controller.getOperandStack().push(ret);
             return true;
         } else {
-            if (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS) {
+            if (target == StaticTypeCheckingVisitor.CLOSURE_CALL) {
                 // wrap arguments into an array
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));

@@ -161,17 +161,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
-    public static final MethodNode CLOSURE_CALL_NO_ARG;
-    public static final MethodNode CLOSURE_CALL_ONE_ARG;
-    public static final MethodNode CLOSURE_CALL_VARGS;
+    public static final MethodNode CLOSURE_CALL;
 
     static {
         // Cache closure call methods
-        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
-        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
-                new Parameter(OBJECT_TYPE, "arg")
-        });
-        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+        CLOSURE_CALL = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
                 new Parameter(OBJECT_TYPE.makeArray(), "args")
         });
     }
@@ -2903,18 +2897,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, data);
                     }
                 }
-                int nbOfArgs;
-                if (callArguments instanceof ArgumentListExpression) {
-                    ArgumentListExpression list = (ArgumentListExpression) callArguments;
-                    nbOfArgs = list.getExpressions().size();
-                } else {
-                    // todo : other cases
-                    nbOfArgs = 0;
-                }
-                storeTargetMethod(call,
-                        nbOfArgs == 0 ? CLOSURE_CALL_NO_ARG :
-                                nbOfArgs == 1 ? CLOSURE_CALL_ONE_ARG :
-                                        CLOSURE_CALL_VARGS);
+                storeTargetMethod(call, CLOSURE_CALL);
             } else {
                 // method call receivers are :
                 //   - possible "with" receivers
