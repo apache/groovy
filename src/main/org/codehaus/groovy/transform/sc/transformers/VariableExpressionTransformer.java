@@ -56,6 +56,7 @@ public class VariableExpressionTransformer {
         PropertyExpression pexp = new PropertyExpression(implicitThis, expr.getName());
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
+        pexp.getProperty().setSourcePosition(expr);
         ClassNode owner = expr.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (owner != null) {
             implicitThis.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
@@ -78,6 +79,7 @@ public class VariableExpressionTransformer {
                     expr.getName()
             );
             pexp.setImplicitThis(true);
+            pexp.getProperty().setSourcePosition(expr);
             // put the receiver inferred type so that the class writer knows that it will have to call a bridge method
             receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
             // add inferred type information
