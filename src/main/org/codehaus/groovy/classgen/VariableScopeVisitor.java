@@ -330,6 +330,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitDeclarationExpression(DeclarationExpression expression) {
+        visitAnnotations(expression);
         // visit right side first to avoid the usage of a
         // variable before its declaration
         expression.getRightExpression().visit(this);
