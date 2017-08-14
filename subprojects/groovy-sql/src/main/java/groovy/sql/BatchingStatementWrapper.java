@@ -59,6 +59,14 @@ public class BatchingStatementWrapper extends GroovyObjectSupport {
 
     public void addBatch(String sql) throws SQLException {
         delegate.addBatch(sql);
+        incrementBatchCount();
+    }
+
+    /**
+     * Increments batch count (after addBatch(..) has been called)
+     * and execute {@code delegate.executeBatch()} if batchSize has been reached.
+     */
+    protected void incrementBatchCount() throws SQLException {
         batchCount++;
         if (batchCount == batchSize /* never true for batchSize of 0 */) {
             int[] result = delegate.executeBatch();

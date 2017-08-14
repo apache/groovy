@@ -60,11 +60,6 @@ public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
             sql.setParameters(parameters, delegate);
         }
         delegate.addBatch();
-        batchCount++;
-        if (batchCount == batchSize /* never true for batchSize of 0 */) {
-            int[] result = delegate.executeBatch();
-            processResult(result);
-            batchCount = 0;
-        }
+        incrementBatchCount();
     }
 }
