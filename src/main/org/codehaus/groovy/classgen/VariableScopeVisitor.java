@@ -38,8 +38,6 @@ import static java.lang.reflect.Modifier.isFinal;
 
 /**
  * goes through an AST and initializes the scopes
- *
- * @author Jochen Theodorou
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
@@ -330,6 +328,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitDeclarationExpression(DeclarationExpression expression) {
+        visitAnnotations(expression);
         // visit right side first to avoid the usage of a
         // variable before its declaration
         expression.getRightExpression().visit(this);

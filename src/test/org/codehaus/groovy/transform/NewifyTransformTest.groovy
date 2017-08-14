@@ -211,4 +211,28 @@ class NewifyTransformTest extends GroovyShellTestCase {
             assert Foo.answer == 42
         '''
     }
+
+    // GROOVY-8249
+    void testLocalVariableDeclResolvesClass() {
+        assertScript '''
+            class A {
+                final int id
+                A(int id) { this.id = id + 10 }
+            }
+            class Foo {
+                static String test() {
+                    @Newify(String)
+                    String answer = String('bar')
+                    answer
+                }
+                static int test2() {
+                    @Newify(A)
+                    int answer = A(32).id
+                    answer
+                } 
+            }
+            assert Foo.test() == 'bar'
+            assert Foo.test2() == 42
+        '''
+    }
 }
