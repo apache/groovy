@@ -18,6 +18,8 @@
  */
 package groovy.sql
 
+import groovy.test.GroovyAssert
+
 import javax.sql.DataSource
 
 import static groovy.sql.SqlTestConstants.*
@@ -117,6 +119,44 @@ class SqlBatchTest extends GroovyTestCase {
         // end result the same as if no batching was in place but logging should show:
         // FINE: Successfully executed batch with 3 command(s)
         // FINE: Successfully executed batch with 1 command(s)
+    }
+
+    void testWithBatchHavingSizeSameSizeAsStatements() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        def result = sql.withBatch(myOthers.size(), "insert into PERSON (id, firstname, lastname) values (?, ?, ?)") { ps ->
+            myOthers.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                ps.addBatch(id, k, v)
+            }
+        }
+        assert result == [1] * myOthers.size()
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows + myOthers.size()
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 4 command(s)
+    }
+
+    void testWithBatchNothingAddedToBatch() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+
+        def result = sql.withBatch { ps ->
+            // Add nothing
+        }
+        assert result == [] as int[]
+    }
+
+    void testWithBatchWithPreparedStatementNothingAddedToBatch() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+
+        // If you create a PreparedStatement you have to use it - or else HSQL throws an exception
+        GroovyAssert.shouldFail {
+            sql.withBatch(3, "insert into PERSON (id, firstname, lastname) values (?, ?, ?)") { ps ->
+                // Add nothing - not a good practice at all...
+            }
+        }
     }
 
     void testWithBatchInsideWithTransaction() {
