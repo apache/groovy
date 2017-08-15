@@ -30,7 +30,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.Interval;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 /**
@@ -90,32 +89,32 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
     }
 
     @Override
-    protected void reportNoViableAlternative(@NotNull Parser recognizer,
-                                             @NotNull NoViableAltException e) {
+    protected void reportNoViableAlternative(Parser recognizer,
+                                             NoViableAltException e) {
 
         notifyErrorListeners(recognizer, this.createNoViableAlternativeErrorMessage(recognizer, e), e);
     }
 
-    protected String createInputMismatchErrorMessage(@NotNull Parser recognizer,
-                                                     @NotNull InputMismatchException e) {
+    protected String createInputMismatchErrorMessage(Parser recognizer,
+                                                     InputMismatchException e) {
         return "Unexpected input: " + getTokenErrorDisplay(e.getOffendingToken(recognizer)) +
                 "; Expecting " + e.getExpectedTokens().toString(recognizer.getVocabulary());
     }
 
-    protected void reportInputMismatch(@NotNull Parser recognizer,
-                                       @NotNull InputMismatchException e) {
+    protected void reportInputMismatch(Parser recognizer,
+                                       InputMismatchException e) {
 
         notifyErrorListeners(recognizer, this.createInputMismatchErrorMessage(recognizer, e), e);
     }
 
 
-    protected String createFailedPredicateErrorMessage(@NotNull Parser recognizer,
-                                                       @NotNull FailedPredicateException e) {
+    protected String createFailedPredicateErrorMessage(Parser recognizer,
+                                                       FailedPredicateException e) {
         return e.getMessage();
     }
 
-    protected void reportFailedPredicate(@NotNull Parser recognizer,
-                                         @NotNull FailedPredicateException e) {
+    protected void reportFailedPredicate(Parser recognizer,
+                                         FailedPredicateException e) {
         notifyErrorListeners(recognizer, this.createFailedPredicateErrorMessage(recognizer, e), e);
     }
 }
