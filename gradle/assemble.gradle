@@ -517,11 +517,11 @@ ext.distSpec = copySpec {
         from jar.archivePath
         from {
             configurations.runtime.findAll {
-                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
+                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('antlr4-') } +
                     modules()*.jar.archivePath +
                     modules().configurations.runtime*.findAll {
                         it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) &&
-                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('openbeans-')
+                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('antlr4-') && !it.name.startsWith('openbeans-')
                     }.flatten() as Set
         }
         from('src/bin/groovy.icns')
