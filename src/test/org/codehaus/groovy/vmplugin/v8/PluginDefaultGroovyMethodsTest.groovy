@@ -42,4 +42,17 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testStreamToList() {
+        assertScript '''
+            def list = [1, 2, 3]
+            assert list == list.stream().toList() 
+        '''
+    }
+
+    void testStreamToSet() {
+        assertScript '''
+            def set = [1, 2, 3] as Set
+            assert set.sort() == set.stream().toSet().sort()
+        '''
+    }
 }

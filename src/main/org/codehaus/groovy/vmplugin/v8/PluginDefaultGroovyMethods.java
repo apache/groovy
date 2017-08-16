@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Defines new Groovy methods which appear on normal JDK 8
@@ -42,4 +46,23 @@ public class PluginDefaultGroovyMethods {
         return optional.isPresent();
     }
 
+    /**
+     * Accumulates the elements of stream into a new List.
+     * @param stream the Stream
+     * @param <T>
+     * @return a new {@code java.util.List} instance
+     */
+    public static <T> List<T> toList(Stream<T> stream) {
+        return stream.collect(Collectors.toList());
+    }
+
+    /**
+     * Accumulates the elements of stream into a new Set.
+     * @param stream the Stream
+     * @param <T>
+     * @return a new {@code java.util.Set} instance
+     */
+    public static <T> Set<T> toSet(Stream<T> stream) {
+        return stream.collect(Collectors.toSet());
+    }
 }
