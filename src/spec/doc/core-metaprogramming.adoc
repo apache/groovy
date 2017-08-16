@@ -1063,7 +1063,7 @@ component annotations, like this:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
 ----
 
-Any applicable annotation attributes from `@Caonical` are passed along to the explicit annotation but
+Any applicable annotation attributes from `@Canonical` are passed along to the explicit annotation but
 attributes already existing in the explicit annotation take precedence.
 
 [[xform-InheritConstructors]]
