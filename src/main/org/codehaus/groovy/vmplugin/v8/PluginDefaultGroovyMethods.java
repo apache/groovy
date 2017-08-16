@@ -53,7 +53,7 @@ public class PluginDefaultGroovyMethods {
      * @return a new {@code java.util.List} instance
      */
     public static <T> List<T> toList(Stream<T> stream) {
-        return stream.collect(Collectors.toList());
+        return stream.collect(Collectors.<T>toList());
     }
 
     /**
@@ -63,6 +63,6 @@ public class PluginDefaultGroovyMethods {
      * @return a new {@code java.util.Set} instance
      */
     public static <T> Set<T> toSet(Stream<T> stream) {
-        return stream.collect(Collectors.toSet());
+        return stream.collect(Collectors.<T>toSet());
     }
 }
