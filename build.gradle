@@ -174,7 +174,7 @@ ext {
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
-    xstreamVersion = '1.4.9'
+    xstreamVersion = '1.4.10'
     spockVersion = '1.0-groovy-2.4'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
