@@ -441,6 +441,10 @@ public class TemplateServlet extends AbstractHttpServlet {
         } else {
             name = getScriptUri(request);
             URL url = servletContext.getResource(name);
+            if (url == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
             getMillis = System.currentTimeMillis();
             template = getTemplate(url);
             getMillis = System.currentTimeMillis() - getMillis;
