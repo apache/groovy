@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -149,5 +148,11 @@ public class StringUtils {
 			if (text.charAt(i) == c) count++;
 		}
 		return count; // return text.chars().filter(e -> c == e).count();
+	}
+
+	public static String trimQuotations(String text, int quotationLength) {
+		int length = text.length();
+
+		return length == quotationLength * 2 ? "" : text.substring(quotationLength, length - quotationLength);
 	}
 }

@@ -2378,17 +2378,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         if (text.startsWith("'''") || text.startsWith("\"\"\"")) {
             text = StringUtils.removeCR(text); // remove CR in the multiline string
 
-            text = text.length() == 6 ? "" : text.substring(3, text.length() - 3);
+            text = StringUtils.trimQuotations(text, 3);
         } else if (text.startsWith("'") || text.startsWith("/") || text.startsWith("\"")) {
             if (text.startsWith("/")) { // the slashy string can span rows, so we have to remove CR for it
                 text = StringUtils.removeCR(text); // remove CR in the multiline string
             }
 
-            text = text.length() == 2 ? "" : text.substring(1, text.length() - 1);
+            text = StringUtils.trimQuotations(text, 1);
         } else if (text.startsWith("$/")) {
             text = StringUtils.removeCR(text);
 
-            text = text.length() == 4 ? "" : text.substring(2, text.length() - 2);
+            text = StringUtils.trimQuotations(text, 2);
         }
 
         //handle escapes.
