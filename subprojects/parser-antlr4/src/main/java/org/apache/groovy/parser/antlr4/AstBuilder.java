@@ -122,7 +122,6 @@ import org.objectweb.asm.Opcodes;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -4121,14 +4120,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     // the mixins of interface and annotation should be null
     private void hackMixins(ClassNode classNode) {
-        try {
-            // FIXME Hack with visibility.
-            Field field = ClassNode.class.getDeclaredField("mixins");
-            field.setAccessible(true);
-            field.set(classNode, null);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new GroovyBugError("Failed to access mixins field", e);
-        }
+        classNode.setMixins(null);
     }
 
     private static final Map<ClassNode, Object> TYPE_DEFAULT_VALUE_MAP = Maps.of(
