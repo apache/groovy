@@ -20,8 +20,8 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.IntRange;
 import org.antlr.v4.runtime.ANTLRErrorListener;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -155,9 +155,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.moduleNode = new ModuleNode(sourceUnit);
         this.classLoader = classLoader; // unused for the time being
 
-        CharStream charStream =
-                    new ANTLRInputStream(
-                            this.readSourceCode(sourceUnit));
+        CharStream charStream = CharStreams.fromString(this.readSourceCode(sourceUnit));
 
         this.lexer = new GroovyLangLexer(charStream);
         this.parser =
@@ -201,7 +199,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         if (PredictionMode.SLL.equals(predictionMode)) {
             this.removeErrorListeners();
         } else {
-            ((CommonTokenStream) parser.getInputStream()).reset();
+            parser.getInputStream().seek(0);
             this.addErrorListeners();
         }
 
