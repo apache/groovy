@@ -23,8 +23,6 @@ import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.parser.antlr4.GroovyLangParser;
 import org.apache.groovy.util.Maps;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -38,6 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AtnManager {
     public static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);
     private static final String CACHE_THRESHOLD_NAME = "groovy.antlr4.cache.threshold";
+    private static final int DEFAULT_CACHE_THRESHOLD = 100;
     private static final int CACHE_THRESHOLD;
     private final Class ownerClass;
     private final ATN atn;
@@ -47,13 +46,13 @@ public class AtnManager {
     );
 
     static {
-        int t = 50;
+        int t = DEFAULT_CACHE_THRESHOLD;
 
         try {
             t = Integer.parseInt(System.getProperty(CACHE_THRESHOLD_NAME));
 
-            // cache threshold should be at least 50 for better performance
-            t = t < 50 ? 50 : t;
+            // cache threshold should be at least DEFAULT_CACHE_THRESHOLD for better performance
+            t = t < DEFAULT_CACHE_THRESHOLD ? DEFAULT_CACHE_THRESHOLD : t;
         } catch (Exception e) {
             // ignored
         }
