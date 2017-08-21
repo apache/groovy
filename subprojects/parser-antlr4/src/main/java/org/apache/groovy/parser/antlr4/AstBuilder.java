@@ -118,6 +118,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -171,7 +172,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         CharStream charStream = null;
 
         try {
-            charStream = CharStreams.fromReader(sourceUnit.getSource().getReader(), sourceUnit.getName());
+            charStream = CharStreams.fromReader(
+                    new BufferedReader(sourceUnit.getSource().getReader()),
+                    sourceUnit.getName());
         } catch (IOException e) {
             throw new RuntimeException("Error occurred when reading source code.", e);
         }
