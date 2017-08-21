@@ -112,7 +112,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -155,7 +154,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.moduleNode = new ModuleNode(sourceUnit);
         this.classLoader = classLoader; // unused for the time being
 
-        CharStream charStream = CharStreams.fromString(this.readSourceCode(sourceUnit));
+        CharStream charStream = createCharStream(sourceUnit);
 
         this.lexer = new GroovyLangLexer(charStream);
         this.parser =
@@ -166,6 +165,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
         this.groovydocManager = new GroovydocManager(this);
+    }
+
+    private CharStream createCharStream(SourceUnit sourceUnit) {
+        CharStream charStream = null;
+
+        try {
+            charStream = CharStreams.fromReader(sourceUnit.getSource().getReader(), sourceUnit.getName());
+        } catch (IOException e) {
+            throw new RuntimeException("Error occurred when reading source code.", e);
+        }
+
+        return charStream;
     }
 
     public GroovyParserRuleContext buildCST() throws CompilationFailedException {
@@ -4393,18 +4404,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private void collectException(Exception e) {
         sourceUnit.getErrorCollector().addException(e, this.sourceUnit);
-    }
-
-    private String readSourceCode(SourceUnit sourceUnit) {
-        String text = null;
-        try {
-            text = IOGroovyMethods.getText(sourceUnit.getSource().getReader());
-        } catch (IOException e) {
-            LOGGER.severe(createExceptionMessage(e));
-            throw new RuntimeException("Error occurred when reading source code.", e);
-        }
-
-        return text;
     }
 
     private ANTLRErrorListener createANTLRErrorListener() {
