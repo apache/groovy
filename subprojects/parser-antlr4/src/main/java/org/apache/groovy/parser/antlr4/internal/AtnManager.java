@@ -35,9 +35,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class AtnManager {
     public static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);
-    private static final String CACHE_THRESHOLD_NAME = "groovy.antlr4.cache.threshold";
-    private static final int DEFAULT_CACHE_THRESHOLD = 100;
-    private static final int CACHE_THRESHOLD;
+    private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
+    private static final int DEFAULT_DFA_CACHE_THRESHOLD = 100;
+    private static final int MIN_DFA_CACHE_THRESHOLD = 50;
+    private static final int DFA_CACHE_THRESHOLD;
     private final Class ownerClass;
     private final ATN atn;
     private static final Map<Class, AtnWrapper> ATN_MAP = Maps.of(
@@ -46,18 +47,18 @@ public class AtnManager {
     );
 
     static {
-        int t = DEFAULT_CACHE_THRESHOLD;
+        int t = DEFAULT_DFA_CACHE_THRESHOLD;
 
         try {
-            t = Integer.parseInt(System.getProperty(CACHE_THRESHOLD_NAME));
+            t = Integer.parseInt(System.getProperty(DFA_CACHE_THRESHOLD_OPT));
 
             // cache threshold should be at least DEFAULT_CACHE_THRESHOLD for better performance
-            t = t < DEFAULT_CACHE_THRESHOLD ? DEFAULT_CACHE_THRESHOLD : t;
+            t = t < MIN_DFA_CACHE_THRESHOLD ? MIN_DFA_CACHE_THRESHOLD : t;
         } catch (Exception e) {
             // ignored
         }
 
-        CACHE_THRESHOLD = t;
+        DFA_CACHE_THRESHOLD = t;
     }
 
     public AtnManager(GroovyLangLexer lexer) {
@@ -87,7 +88,7 @@ public class AtnManager {
         }
 
         public ATN checkAndClear() {
-            if (0 != counter.incrementAndGet() % CACHE_THRESHOLD) {
+            if (0 != counter.incrementAndGet() % DFA_CACHE_THRESHOLD) {
                 return atn;
             }
 
