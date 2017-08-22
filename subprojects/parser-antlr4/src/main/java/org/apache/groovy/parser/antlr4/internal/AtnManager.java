@@ -36,8 +36,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AtnManager {
     public static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);
     private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
-    private static final int DEFAULT_DFA_CACHE_THRESHOLD = 100;
-    private static final int MIN_DFA_CACHE_THRESHOLD = 50;
+    private static final int DEFAULT_DFA_CACHE_THRESHOLD = 64;
+    private static final int MIN_DFA_CACHE_THRESHOLD = 32;
     private static final int DFA_CACHE_THRESHOLD;
     private final Class ownerClass;
     private final ATN atn;
