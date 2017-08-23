@@ -75,6 +75,7 @@ public class MethodCallExpressionTransformer {
                 result.setSafe(expr.isSafe());
                 result.setSpreadSafe(expr.isSpreadSafe());
                 result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS);
+                result.copyNodeMetaData(expr);
                 return result;
             }
         }
@@ -159,9 +160,12 @@ public class MethodCallExpressionTransformer {
     }
 
     private static boolean isCallOnClosure(final MethodCallExpression expr) {
+        MethodNode target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         return expr.isImplicitThis()
-                && expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET) == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS
-                && !"call".equals(expr.getMethodAsString());
+                && !"call".equals(expr.getMethodAsString())
+                && (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS
+                    || target == StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG
+                    || target == StaticTypeCheckingVisitor.CLOSURE_CALL_ONE_ARG);
     }
 
     /**

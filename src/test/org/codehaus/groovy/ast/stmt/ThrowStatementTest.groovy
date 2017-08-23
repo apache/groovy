@@ -16,37 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def subprojects = ['groovy-ant',
-        'groovy-bsf',
-        'groovy-console',
-        'groovy-docgenerator',
-        'groovy-groovydoc',
-        'groovy-groovysh',
-        'groovy-jmx',
-        'groovy-json',
-        'groovy-jsr223',
-        'groovy-servlet',
-        'groovy-sql',
-        'groovy-swing',
-        'groovy-templates',
-        'groovy-test',
-        'groovy-testng',
-        'groovy-xml',
-        'tests-vm8'
-]
+package org.codehaus.groovy.ast.stmt
 
-if(JavaVersion.current().isJava7Compatible()) {
-    subprojects << 'groovy-nio'
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+
+class ThrowStatementTest extends GroovyTestCase {
+
+    void testGetText() {
+        assert new ThrowStatement(
+            new ConstructorCallExpression(
+                new ClassNode(Exception),
+                new ArgumentListExpression(
+                    new ConstantExpression('oops')))).
+            text == 'throw new java.lang.Exception(oops)'
+    }
+
 }
-
-if (hasProperty('stressTests')) {
-    subprojects << 'stress'
-}
-
-include(subprojects as String[])
-        
-rootProject.children.each { prj ->
-    prj.projectDir = new File("$rootDir/subprojects/$prj.name")
-}
-
-rootProject.name = 'groovy' // TODO should this be groovy-core?

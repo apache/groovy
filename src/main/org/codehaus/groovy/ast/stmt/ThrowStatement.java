@@ -45,4 +45,10 @@ public class ThrowStatement extends Statement {
     public void setExpression(Expression expression) {
         this.expression = expression;
     }
+
+    @Override
+    public String getText() {
+        return "throw " + expression.getText();
+    }
+
 }

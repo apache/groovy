@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation that supports writing constructor call expressions without the 'new'
  * keyword. Instead they can be written "Ruby-style" as a method call to a 'new'
- * method or "Python-style" by just omitting the keyword missing.
+ * method or "Python-style" by just omitting the 'new' keyword.
  * <p>
  * It allows you to write code snippets like this ("Python-style"):
  * <pre>
@@ -100,7 +100,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NewifyASTTransformation")
 public @interface Newify {
-    Class[] value();
+    Class<?>[] value() default {};
 
     /**
      * @return if automatic conversion of "Ruby-style" new method calls should occur

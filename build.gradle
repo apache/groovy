@@ -39,8 +39,8 @@ buildscript {
         //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
-        classpath 'com.gradle:build-scan-plugin:1.6'
-        classpath 'me.champeau.gradle:buildscan-recipes-plugin:0.1.7'
+        classpath 'com.gradle:build-scan-plugin:1.8'
+        classpath 'me.champeau.gradle:buildscan-recipes-plugin:0.2.0'
     }
 }
 
@@ -52,6 +52,8 @@ if (JavaVersion.current().java7Compatible) {
         licenseAgreementUrl = 'https://gradle.com/terms-of-service'
         licenseAgree = 'yes'
         publishAlways()
+    }
+    buildScanRecipes {
         recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
         recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
         recipes 'git-status', 'teamcity', 'travis-ci'
@@ -59,7 +61,7 @@ if (JavaVersion.current().java7Compatible) {
 }
 
 ext.modules = {
-    subprojects.findAll{ !['performance'].contains(it.name) }
+    subprojects.findAll{ !['performance', 'tests-vm8'].contains(it.name) }
 }
 
 apply from: 'gradle/filter.gradle'
@@ -168,7 +170,7 @@ ext {
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.6'
     xmlunitVersion = '1.5'
-    xstreamVersion = '1.4.7'
+    xstreamVersion = '1.4.10'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 

@@ -1206,7 +1206,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         BytecodeVariable variable = controller.getCompileStack().getVariable(variableName, false);
         if (variable == null) {
-            processClassVariable(variableName);
+            processClassVariable(expression);
         } else {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
         }
@@ -1230,7 +1230,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void processClassVariable(String name) {
+    private void processClassVariable(VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
             //TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
@@ -1239,11 +1239,13 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitInsn(DUP);
 
             loadThisOrOwner();
-            mv.visitLdcInsn(name);
+            mv.visitLdcInsn(expression.getName());
 
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
-            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), name);
+            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), expression.getName());
+            pexp.getObjectExpression().setSourcePosition(expression);
+            pexp.getProperty().setSourcePosition(expression);
             pexp.setImplicitThis(true);
             visitPropertyExpression(pexp);
         }

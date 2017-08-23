@@ -309,8 +309,8 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=multiple
 <2> trait `B` defines the very same method
 <3> class `C` implements both traits
 
-In this case, the default behavior is that methods from the *last declared trait* wins. Here, `B` is declared after `A`
-so the method from `B` will be picked up:
+In this case, the default behavior is that the method from the *last declared trait* in the `implements` clause wins.
+Here, `B` is declared after `A` so the method from `B` will be picked up:
 
 [source,groovy]
 ----
@@ -786,6 +786,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype
 If you want to be able to call this in the trait, then you will explicitly need to cast `this` into a `Device`. This can
 quickly become unreadable with explicit casts to this everywhere.
 
+[[traits-selftype]]
 === The @SelfType annotation
 
 In order to make this contract explicit, and to make the type checker aware of the _type of itself_, Groovy provides

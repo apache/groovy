@@ -2015,7 +2015,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.DGM_LIKE_CLASSES);
-            Collections.addAll(instanceExtClasses, DefaultGroovyMethods.additionals);
+            Collections.addAll(instanceExtClasses, DefaultGroovyMethods.ADDITIONAL_CLASSES);
             staticExtClasses.add(DefaultGroovyStaticMethods.class);
             instanceExtClasses.add(ObjectArrayStaticTypesHelper.class);
 
