@@ -263,9 +263,9 @@ class SyntaxTest extends CompilableTestSupport {
 
         // tag::quoted_id_with_gstring[]
         def firstname = "Homer"
-        map."Simson-${firstname}" = "Homer Simson"
+        map."Simpson-${firstname}" = "Homer Simpson"
 
-        assert map.'Simson-Homer' == "Homer Simson"
+        assert map.'Simpson-Homer' == "Homer Simpson"
         // end::quoted_id_with_gstring[]
 
         // tag::quoted_id_with_all_strings[]
