@@ -103,6 +103,10 @@ allprojects {
     if (JavaVersion.current().java7Compatible) {
         apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
     }
+
+    tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
+    }
 }
 
 // todo: use the conventional "resources" directory for classpath resources
