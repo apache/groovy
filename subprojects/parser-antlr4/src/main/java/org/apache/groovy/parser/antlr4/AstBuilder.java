@@ -3246,7 +3246,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     if (expression instanceof ClosureExpression && !asBoolean(e.closure().ARROW())) {
                         List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
 
-                        if (statementList.stream().allMatch(x -> !asBoolean(x))) {
+                        if (statementList.stream().noneMatch(x -> asBoolean(x))) {
                             return this.configureAST(new ConstantExpression(null), e);
                         }
 
