@@ -167,7 +167,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private CharStream createCharStream(SourceUnit sourceUnit) {
-        CharStream charStream = null;
+        CharStream charStream;
 
         try {
             charStream = CharStreams.fromReader(
@@ -180,7 +180,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return charStream;
     }
 
-    public GroovyParserRuleContext buildCST() throws CompilationFailedException {
+    private GroovyParserRuleContext buildCST() throws CompilationFailedException {
         GroovyParserRuleContext result;
 
         try {
@@ -218,7 +218,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return parser.compilationUnit();
     }
 
-    public CompilationFailedException convertException(Throwable t) {
+    private CompilationFailedException convertException(Throwable t) {
         CompilationFailedException cfe;
 
         if (t instanceof CompilationFailedException) {
@@ -623,7 +623,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
      * Multi-catch(1..*) clause will be unpacked to several normal catch clauses, so the return type is List
      *
      * @param ctx the parse tree
-     * @return
+     * @return a list of CatchStatement instances
      */
     @Override
     public List<CatchStatement> visitCatchClause(CatchClauseContext ctx) {
@@ -2603,8 +2603,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return this.configureAST(new RangeExpression(left, right, !ctx.rangeOp.getText().endsWith("<")), ctx);
         }
 
-        org.codehaus.groovy.syntax.Token op = null;
-        Token antlrToken = null;
+        org.codehaus.groovy.syntax.Token op;
+        Token antlrToken;
 
         if (asBoolean(ctx.dlOp)) {
             op = this.createGroovyToken(ctx.dlOp, 2);
@@ -4032,18 +4032,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     // e.g. m(1, 2) or m 1, 2
     private MethodCallExpression createMethodCallExpression(Expression baseExpr, Expression arguments) {
-        MethodCallExpression methodCallExpression =
-                new MethodCallExpression(
-                        VariableExpression.THIS_EXPRESSION,
+        return new MethodCallExpression(
+                VariableExpression.THIS_EXPRESSION,
 
-                        (baseExpr instanceof VariableExpression)
-                                ? this.createConstantExpression(baseExpr)
-                                : baseExpr,
+                (baseExpr instanceof VariableExpression)
+                        ? this.createConstantExpression(baseExpr)
+                        : baseExpr,
 
-                        arguments
-                );
-
-        return methodCallExpression;
+                arguments
+        );
     }
 
     private Parameter processFormalParameter(GroovyParserRuleContext ctx,
@@ -4527,7 +4524,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private class DeclarationListStatement extends Statement {
-        private List<ExpressionStatement> declarationStatements;
+        private final List<ExpressionStatement> declarationStatements;
 
         public DeclarationListStatement(DeclarationExpression... declarations) {
             this(Arrays.asList(declarations));
