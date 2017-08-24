@@ -52,7 +52,7 @@ public class AtnManager {
         try {
             t = Integer.parseInt(System.getProperty(DFA_CACHE_THRESHOLD_OPT));
 
-            // cache threshold should be at least DEFAULT_CACHE_THRESHOLD for better performance
+            // cache threshold should be at least MIN_DFA_CACHE_THRESHOLD for better performance
             t = t < MIN_DFA_CACHE_THRESHOLD ? MIN_DFA_CACHE_THRESHOLD : t;
         } catch (Exception e) {
             // ignored
