@@ -1839,7 +1839,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                             this.createMethodCallExpression(baseExpr, arguments),
                             arguments);
         } else { // e.g. a[x] b, new A() b, etc.
-            methodCallExpression = this.createCallMethodCallExpression(baseExpr, arguments);
+            methodCallExpression = this.configureAST(this.createCallMethodCallExpression(baseExpr, arguments), arguments);
         }
 
         if (!asBoolean(ctx.commandArgument())) {
