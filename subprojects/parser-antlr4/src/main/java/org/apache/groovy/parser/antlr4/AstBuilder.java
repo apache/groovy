@@ -2355,8 +2355,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ConstantExpression visitStringLiteral(StringLiteralContext ctx) {
         String text = ctx.StringLiteral().getText();
 
-        int slashyType = text.startsWith("/") ? StringUtils.SLASHY :
-                text.startsWith("$/") ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
+        int slashyType = getSlashyType(text);
 
         if (text.startsWith("'''") || text.startsWith("\"\"\"")) {
             text = StringUtils.removeCR(text); // remove CR in the multiline string
@@ -2383,6 +2382,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return this.configureAST(constantExpression, ctx);
     }
 
+    private int getSlashyType(String text) {
+        return text.startsWith("/") ? StringUtils.SLASHY :
+                    text.startsWith("$/") ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
+    }
 
     @Override
     public Pair<Token, Expression> visitIndexPropertyArgs(IndexPropertyArgsContext ctx) {
@@ -3182,9 +3185,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<ConstantExpression> strings = new LinkedList<>();
 
         String begin = ctx.GStringBegin().getText();
-        final int slashyType = begin.startsWith("/")
-                ? StringUtils.SLASHY
-                : begin.startsWith("$/") ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
+        final int slashyType = getSlashyType(begin);
 
         {
             String it = begin;
