@@ -31,7 +31,7 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     private transient MetaClass metaClass;
 
     public GroovyObjectSupport() {
-        this.metaClass = InvokerHelper.getMetaClass(this.getClass());
+        this.metaClass = getDefaultMetaClass();
     }
 
     public Object getProperty(String property) {
@@ -47,13 +47,17 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     }
 
     public MetaClass getMetaClass() {
-        if (metaClass == null) {
-            metaClass = InvokerHelper.getMetaClass(getClass());
-        }
-        return metaClass;
+        return this.metaClass;
     }
 
     public void setMetaClass(MetaClass metaClass) {
-        this.metaClass = metaClass;
+        this.metaClass =
+                null == metaClass
+                    ? getDefaultMetaClass()
+                    : metaClass;
+    }
+
+    private MetaClass getDefaultMetaClass() {
+        return InvokerHelper.getMetaClass(this.getClass());
     }
 }
