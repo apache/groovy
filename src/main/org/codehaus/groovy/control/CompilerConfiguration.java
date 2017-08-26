@@ -820,7 +820,7 @@ public class CompilerConfiguration {
     }
 
     private static String getVMVersion() {
-        return POST_JDK5;
+        return JDK8;
     }
 
     /**
