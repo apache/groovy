@@ -61,7 +61,7 @@ public class CompilerConfiguration {
     public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
 
     // Just call getVMVersion() once.
-    public static final String currentJVMVersion = getVMVersion();
+    public static final String CURRENT_JVM_VERSION = getVMVersion();
 
     // Static initializers are executed in text order,
     // therefore we must do this one last!
