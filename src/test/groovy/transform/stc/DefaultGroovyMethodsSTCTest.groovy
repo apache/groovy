@@ -179,5 +179,26 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             assert sorted3*.value == [10, 5, 20, 15]
         '''
     }
-}
 
+    // GROOVY-8205
+    void testEachOnEnumValues() {
+        assertScript '''
+            enum Functions {
+                A, B, C
+            }
+            def m() {
+                def results = []
+                Functions.values().each { results << it.name() }
+                results
+            }
+            def m2() {
+                def results = [:]
+                Functions.values().eachWithIndex { val, idx -> results[idx] = val.name() }
+                results
+            } 
+            assert m() == ['A', 'B', 'C']
+            assert m2() == [0: 'A', 1: 'B', 2: 'C']
+        '''
+    }
+
+}
