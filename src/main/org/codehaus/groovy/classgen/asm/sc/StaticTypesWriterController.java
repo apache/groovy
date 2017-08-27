@@ -18,16 +18,29 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.BinaryExpressionHelper;
+import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
+import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
+import org.codehaus.groovy.classgen.asm.DelegatingController;
+import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.StatementWriter;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
+import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 
 
 /**
@@ -62,7 +75,9 @@ public class StaticTypesWriterController extends DelegatingController {
         this.invocationWriter = new StaticInvocationWriter(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
-        this.binaryExprHelper = (getBytecodeVersion() > Opcodes.V1_6)
+
+        CompilerConfiguration config = cn.getCompileUnit().getConfig();
+        this.binaryExprHelper = config.isIndyEnabled()
                 ? new IndyStaticTypesMultiTypeDispatcher(this)
                 : new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }

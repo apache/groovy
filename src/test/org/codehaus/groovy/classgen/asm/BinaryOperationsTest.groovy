@@ -26,7 +26,7 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
 class BinaryOperationsTest extends AbstractBytecodeTestCase {
     
     void testIntPlus() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assert compile("""\
             int i = 1
             int j = 2
@@ -39,7 +39,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testIntCompareLessThan() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assert compile("""\
             int i = 0
             if (i < 100) println "true"
@@ -51,7 +51,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testCompareLessThanInClosure() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         // GROOVY-4741
         assert """
             int a = 0
@@ -63,7 +63,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testLongLeftShift() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assert compile("""\
             long a = 1
             long b = a << 32
@@ -74,7 +74,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
 
     void testIntConstants() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         (0..5).each {
             assert compile("""\
                 int a = $it
@@ -106,7 +106,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
 
     void testCharXor() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assert compile("""
             int i = ('a' as char) ^ ('b' as char) 
         """).hasStrictSequence ([

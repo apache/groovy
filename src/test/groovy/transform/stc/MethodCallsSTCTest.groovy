@@ -803,7 +803,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testBoxingShouldCostMore() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assertScript '''
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }

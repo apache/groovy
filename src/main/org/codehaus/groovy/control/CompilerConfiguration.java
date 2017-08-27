@@ -865,4 +865,18 @@ public class CompilerConfiguration {
     public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
         this.bytecodePostprocessor = bytecodePostprocessor;
     }
+
+    /**
+     * Check whether invoke dynamic enabled
+     * @return the result
+     */
+    public boolean isIndyEnabled() {
+        Boolean indyEnabled = this.getOptimizationOptions().get(INVOKEDYNAMIC);
+
+        if (null == indyEnabled) {
+            return false;
+        }
+
+        return indyEnabled;
+    }
 }
