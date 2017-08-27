@@ -24,7 +24,17 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.*;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Compilation control flags and coordination stuff.
@@ -368,10 +378,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.5+
      */
     public static boolean isPostJDK5(String bytecodeVersion) {
-        return JDK5.equals(bytecodeVersion)
-            || JDK6.equals(bytecodeVersion)
-            || JDK7.equals(bytecodeVersion)
-            || JDK8.equals(bytecodeVersion);
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK5)) >= 0;
     }
 
     /**
@@ -381,8 +388,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.7+
      */
     public static boolean isPostJDK7(String bytecodeVersion) {
-        return JDK7.equals(bytecodeVersion)
-            || JDK8.equals(bytecodeVersion);
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK7)) >= 0;
     }
 
     /**
