@@ -22,7 +22,6 @@ import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

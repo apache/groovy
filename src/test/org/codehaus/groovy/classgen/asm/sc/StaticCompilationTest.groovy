@@ -179,7 +179,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testArrayGet() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         // this test is done with indy in another tests case
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
@@ -193,7 +193,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testArraySet() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         // this test is done with indy in another tests case
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
