@@ -31,6 +31,19 @@ class ConstructorThisCallBug extends GroovyTestCase {
         assert msg.contains("Can't access instance method 'getData' before the class is constructed")
     }
 
+    void testNestedClassThisCallingInstanceMethod() {
+        def msg = shouldFail '''
+            class Base {
+                static class Nested {
+                    String getData() { return "ABCD" }
+                    Nested() { this(getData()) }
+                    Nested(String arg) {}
+                }
+            }
+        '''
+        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
+    }
+
     void testThisCallingStaticMethod() {
         assertScript '''
             class Base {
@@ -41,6 +54,21 @@ class ConstructorThisCallBug extends GroovyTestCase {
                 String toString() { b }
             }
             assert new Base().toString() == 'ABCD'
+        '''
+    }
+
+    void testNestedThisCallingStaticMethod() {
+        assertScript '''
+            class Base {
+                static class Nested {
+                    private String b
+                    static String getData() { return "ABCD" }
+                    Nested() { this(getData()) }
+                    Nested(String b) { this.b = b }
+                    String toString() { b }
+                }
+            }
+            assert new Base.Nested().toString() == 'ABCD'
         '''
     }
 
