@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -195,7 +196,14 @@ public class ClassNodeUtils {
         return null;
     }
 
+    /**
+     * Detect whether a given ClassNode is a inner class (non-static).
+     *
+     * @param currentClass the ClassNode of interest
+     * @return true if the given node is a (non-static) inner class, else false
+     */
     public static boolean isInnerClass(ClassNode currentClass) {
-        return currentClass.getOuterClass() != null && !currentClass.isStaticClass();
+        return currentClass.redirect().getOuterClass() != null
+                && !Modifier.isStatic(currentClass.getModifiers());
     }
 }
