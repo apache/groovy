@@ -26,6 +26,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -412,10 +413,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.5+
      */
     public static boolean isPostJDK5(String bytecodeVersion) {
-        return JDK5.equals(bytecodeVersion)
-                || JDK6.equals(bytecodeVersion)
-                || JDK7.equals(bytecodeVersion)
-                || JDK8.equals(bytecodeVersion);
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK5)) >= 0;
     }
 
     /**
@@ -425,8 +423,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.7+
      */
     public static boolean isPostJDK7(String bytecodeVersion) {
-        return JDK7.equals(bytecodeVersion)
-                || JDK8.equals(bytecodeVersion);
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK7)) >= 0;
     }
 
     /**
