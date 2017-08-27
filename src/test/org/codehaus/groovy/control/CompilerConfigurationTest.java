@@ -22,7 +22,6 @@ import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +74,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
     }
 
     private static String getVMVersion() {
-        return CompilerConfiguration.POST_JDK5;
+        return CompilerConfiguration.JDK8;
     }
 
     public void testSetViaSystemProperties() {

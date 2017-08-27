@@ -465,9 +465,9 @@ public class CompilerConfiguration {
         }
         setWarningLevel(numeric);
 
-        // 
-        // Source file encoding 
-        // 
+        //
+        // Source file encoding
+        //
         text = configuration.getProperty("groovy.source.encoding");
         if (text == null) {
             text = configuration.getProperty("file.encoding", "US-ASCII");
@@ -508,7 +508,7 @@ public class CompilerConfiguration {
 
         //
         // Tolerance
-        // 
+        //
         numeric = 10;
         try {
             text = configuration.getProperty("groovy.errors.tolerance", "10");
@@ -759,7 +759,7 @@ public class CompilerConfiguration {
     public Set<String> getScriptExtensions() {
         if(scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
-             *  this happens 
+             *  this happens
              *  *    when groovyc calls FileSystemCompiler in forked mode, or
              *  *    when FileSystemCompiler is run from the command line directly, or
              *  *    when groovy was not started using groovyc or FileSystemCompiler either
@@ -820,7 +820,7 @@ public class CompilerConfiguration {
     }
 
     private static String getVMVersion() {
-        return POST_JDK5;
+        return JDK8;
     }
 
     /**
@@ -832,7 +832,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets the joint compilation options for this configuration. 
+     * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
      * @param options the options
      */
@@ -849,9 +849,9 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets the optimization options for this configuration. 
-     * No entry or a true for that entry means to enable that optimization, 
-     * a false means the optimization is disabled. 
+     * Sets the optimization options for this configuration.
+     * No entry or a true for that entry means to enable that optimization,
+     * a false means the optimization is disabled.
      * Valid keys are "all" and "int".
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
@@ -918,5 +918,19 @@ public class CompilerConfiguration {
 
     public void setParserVersion(ParserVersion parserVersion) {
         this.parserVersion = parserVersion;
+    }
+
+    /**
+     * Check whether invoke dynamic enabled
+     * @return the result
+     */
+    public boolean isIndyEnabled() {
+        Boolean indyEnabled = this.getOptimizationOptions().get(INVOKEDYNAMIC);
+
+        if (null == indyEnabled) {
+            return false;
+        }
+
+        return indyEnabled;
     }
 }

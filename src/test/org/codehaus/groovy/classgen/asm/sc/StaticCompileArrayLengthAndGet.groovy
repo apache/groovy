@@ -38,7 +38,7 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
     }
 
     void testArrayGet1() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -55,7 +55,7 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
     }
 
     void testArraySet1() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic

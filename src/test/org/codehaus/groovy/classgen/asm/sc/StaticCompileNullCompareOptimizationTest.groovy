@@ -123,10 +123,11 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        if (Boolean.valueOf(System.getProperty('groovy.target.indy','false'))) {
+        if (config.indyEnabled) {
             return
         }
-        assert bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1', 'INVOKEVIRTUAL', 'L2', 'IFEQ'])
+        assert  bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1',                'INVOKEVIRTUAL', 'L2',                'IFEQ']) ||
+                bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1', 'FRAME SAME1', 'INVOKEVIRTUAL', 'L2', 'FRAME SAME1', 'IFEQ']) // bytecode with stack map frame
     }
 
     void testOptimizeGroovyTruthWithStringShouldNotBeTriggered() {
@@ -138,7 +139,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        if (config.optimizationOptions.indy) {
+        if (config.indyEnabled) {
             assert bytecode.hasStrictSequence([
                 'ALOAD 1',
                 'INVOKEDYNAMIC cast(Ljava/lang/String;)Z',
@@ -168,7 +169,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        if (config.optimizationOptions.indy) {
+        if (config.indyEnabled) {
             assert bytecode.hasStrictSequence([
                 'ALOAD 1',
                 'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z',
@@ -235,7 +236,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        if (config.optimizationOptions.indy) {
+        if (config.indyEnabled) {
             assert bytecode.hasStrictSequence([
                 'ALOAD 1',
                 'INVOKEDYNAMIC cast(LA$B;)Z',

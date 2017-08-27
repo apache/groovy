@@ -26,7 +26,7 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
 class HotSwapTest extends AbstractBytecodeTestCase {
     
     void testHotSwapMethodExistsAndCallsGetCallSiteArray() {
-        if (config.optimizationOptions.indy) return;
+        if (config.indyEnabled) return;
         assert compile(method: '__$swapInit', '''
             Long d = 123456L
         ''').hasSequence([
