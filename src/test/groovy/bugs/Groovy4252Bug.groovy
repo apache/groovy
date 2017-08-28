@@ -78,7 +78,7 @@ class Groovy4252Bug extends GroovyShellTestCase {
         } catch (MultipleCompilationErrorsException e) {
             def syntaxError = e.errorCollector.getSyntaxError(0)
             assert syntaxError.message.contains("Expression list of the form (a; b; c) is not supported in this context") ||
-                    syntaxError.message.contains("Missing ')'")
+                    syntaxError.message.contains("Unexpected input:")
         }
     }
 
