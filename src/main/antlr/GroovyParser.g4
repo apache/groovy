@@ -1251,8 +1251,8 @@ rparen
     :   RPAREN
     |
         // !!!Error Alternatives
-        { require(false, "Missing ')'"); }
-        ~RPAREN
+        ~LPAREN
+        { require(false, "Missing ')'", -1); }
     ;
 
 nls
