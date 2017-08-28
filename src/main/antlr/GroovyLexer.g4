@@ -145,7 +145,7 @@ options {
 
     private final Deque<Paren> parenStack = new ArrayDeque<>(32);
     private void enterParen() {
-        parenStack.push(new Paren(getText(), this.lastTokenType, getLine(), getCharPositionInLine() + 1));
+        parenStack.push(new Paren(getText(), this.lastTokenType, getLine(), getCharPositionInLine()));
     }
     private void exitParen() {
         Paren paren = parenStack.peek();
@@ -153,7 +153,7 @@ options {
 
         require(null != paren, "Too many '" + text + "'");
         require(text.equals(PAREN_MAP.get(paren.getText())),
-                "'" + paren.getText() + "'" + new PositionInfo(paren.getLine(), paren.getColumn()) + " can not match '" + text + "'");
+                "'" + paren.getText() + "'" + new PositionInfo(paren.getLine(), paren.getColumn()) + " can not match '" + text + "'", -1);
 
         parenStack.pop();
     }
