@@ -1263,6 +1263,7 @@ public class Groovyc extends MatchingTask {
 
     /**
      * @deprecated This method is not in use anymore. Use {@link Groovyc#makeCompileUnit(GroovyClassLoader)} instead.
+     * @see Groovyc#makeCompileUnit(GroovyClassLoader
      */
     @Deprecated
     protected CompilationUnit makeCompileUnit() {
