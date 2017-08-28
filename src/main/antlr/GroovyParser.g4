@@ -335,7 +335,7 @@ variableInitializers
     ;
 
 dims
-    :   (annotationsOpt LBRACK RBRACK)+
+    :   (annotationsOpt LBRACK rbrack)+
     ;
 
 dimsOpt
@@ -556,7 +556,7 @@ elementValue
     ;
 
 elementValueArrayInitializer
-    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? RBRACK
+    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? rbrack
     ;
 
 // STATEMENTS / BLOCKS
@@ -614,7 +614,7 @@ locals[ String footprint = "" ]
 
 loopStatement
 locals[ String footprint = "" ]
-    :   FOR LPAREN forControl rparen nls statement                                                          #forStmtAlt
+    :   FOR LPAREN forControl rparen nls statement                                                            #forStmtAlt
     |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
@@ -675,13 +675,13 @@ locals[ String footprint = "" ]
 
 statement
     :   block                                                                                               #blockStmtAlt
-    |   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?                              #ifElseStmtAlt
+    |   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?                            #ifElseStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
 
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
 
     |   switchStatement                                                                                     #switchStmtAlt
-    |   SYNCHRONIZED expressionInPar nls block                                                                #synchronizedStmtAlt
+    |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt
 
@@ -1040,11 +1040,11 @@ dynamicMemberName
  *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
  */
 indexPropertyArgs
-    :   QUESTION? LBRACK expressionList[true]? RBRACK
+    :   QUESTION? LBRACK expressionList[true]? rbrack
     ;
 
 namedPropertyArgs
-    :   LBRACK mapEntryList RBRACK
+    :   LBRACK mapEntryList rbrack
     ;
 
 primary
@@ -1073,7 +1073,7 @@ locals[boolean empty = true]
             COMMA
             { require(!$empty, "Empty list constructor should not contain any comma(,)", -1); }
         )?
-        RBRACK
+        rbrack
     ;
 
 map
@@ -1081,7 +1081,7 @@ map
         (   mapEntryList COMMA?
         |   COLON
         )
-        RBRACK
+        rbrack
     ;
 
 mapEntryList
@@ -1101,7 +1101,7 @@ mapEntryLabel
 creator
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
+        |   (annotationsOpt LBRACK expression rbrack)+ dimsOpt
         |   dims nls arrayInitializer
         )
     ;
@@ -1250,9 +1250,17 @@ keywords
 rparen
     :   RPAREN
     |
-        // !!!Error Alternatives
+        // !!!Error Alternative
         ~LPAREN
         { require(false, "Missing ')'", -1); }
+    ;
+
+rbrack
+    :   RBRACK
+    |
+        // !!!Error Alternative
+        ~LBRACK
+        { require(false, "Missing ']'", -1); }
     ;
 
 nls
