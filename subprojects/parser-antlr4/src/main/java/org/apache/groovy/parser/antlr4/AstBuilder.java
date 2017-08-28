@@ -20,8 +20,8 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.IntRange;
 import org.antlr.v4.runtime.ANTLRErrorListener;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -172,13 +172,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         CharStream charStream;
 
         try {
-            /*
             charStream = CharStreams.fromReader(
                     new BufferedReader(sourceUnit.getSource().getReader()),
                     sourceUnit.getName());
-            */
 
-            charStream = new ANTLRInputStream(new BufferedReader(sourceUnit.getSource().getReader()));
+            // charStream = new ANTLRInputStream(new BufferedReader(sourceUnit.getSource().getReader()));
         } catch (IOException e) {
             throw new RuntimeException("Error occurred when reading source code.", e);
         }
