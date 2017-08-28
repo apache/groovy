@@ -1283,8 +1283,9 @@ keywords
 rparen
     :   RPAREN
     |
-        // !!!Error Alternatives, impact the performance of parsing!!!
-        { require(false, "Missing ')'"); }
+        // !!!Error Alternatives
+        ~LPAREN
+        { require(false, "Missing ')'", -1); }
     ;
 
 nls
