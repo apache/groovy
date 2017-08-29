@@ -151,20 +151,17 @@ public class StringUtils {
 	}
 
 	public static StringBuilder replace(StringBuilder sb, Map<String, String> replacements) {
-
-		for (Map.Entry<String, String> entry : replacements.entrySet()) {
-			String key = entry.getKey();
+		for (Map.Entry<String, String> replacementEntry : replacements.entrySet()) {
+			String key = replacementEntry.getKey();
 			int keyLength = key.length();
 
-			String value = entry.getValue();
+			String value = replacementEntry.getValue();
 			int valueLength = value.length();
 
 			int start = sb.indexOf(key, 0);
 			while (start > -1) {
-				int end = start + keyLength;
-				int nextSearchStart = start + valueLength;
-				sb.replace(start, end, value);
-				start = sb.indexOf(key, nextSearchStart);
+				sb.replace(start, start + keyLength, value);
+				start = sb.indexOf(key, start + valueLength);
 			}
 		}
 
