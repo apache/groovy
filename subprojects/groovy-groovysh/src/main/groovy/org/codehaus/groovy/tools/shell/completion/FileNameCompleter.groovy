@@ -1,14 +1,4 @@
 /*
- * Adapted from JLine which has the following license
- *
- *  Copyright (c) 2002-2012, the original author or authors.
- *  This software is distributable under the BSD license. See the terms of the
- *  BSD license in the documentation provided with this software.
- *
- *    http://www.opensource.org/licenses/bsd-license.php
- *
- * Subsequent modifications by the Groovy community have been done under the Apache License v2:
- *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -28,22 +18,12 @@
  */
 package org.codehaus.groovy.tools.shell.completion
 
-import jline.console.completer.Completer
+import groovy.transform.PackageScope
 import jline.internal.Configuration
 
 import static jline.internal.Preconditions.checkNotNull
 
 /**
- * PATCHED copy from jline 2.12, with
- * https://github.com/jline/jline2/issues/90 (no trailing blank)
- * https://github.com/jline/jline2/pull/204
- *
- * NOTE: we hope to work with the jline project to have this functionality
- * absorbed into a future jline release and then remove this file, so keep
- * that in mind if you are thinking of changing this file.
- */
-
- /**
  * A file name completer takes the buffer and issues a list of
  * potential completions.
  * <p/>
@@ -52,145 +32,140 @@ import static jline.internal.Preconditions.checkNotNull
  * with the following exceptions:
  * <p/>
  * <ul>
- * <li>Candidates that are directories will end with "/"</li>
+ * <li>Candidates that are directories will end with "File.separator"</li>
  * <li>Wildcard regular expressions are not evaluated or replaced</li>
- * <li>The "~" character can be used to represent the user's home,
- * but it cannot complete to other users' homes, since java does
- * not provide any way of determining that easily</li>
+ * <li>The "~" character can be used to represent the user's home directory.
+ * It cannot fully complete to other users' homes in all operating systems, since java does
+ * not provide any way of determining that easily, but it will attempt a simplistic approach.</li>
  * </ul>
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public class FileNameCompleter
-implements Completer
-{
-    private static final boolean OS_IS_WINDOWS;
+class FileNameCompleter extends jline.console.completer.FileNameCompleter {
+    private static final boolean OS_IS_WINDOWS = Configuration.isWindows()
+    private final GroovyShell gs = new GroovyShell()
 
-    private boolean printSpaceAfterFullCompletion = true;
-
-    public boolean getPrintSpaceAfterFullCompletion() {
-        return printSpaceAfterFullCompletion;
+    FileNameCompleter(boolean printSpaceAfterFullCompletion = true, boolean escapeBackslash = false,
+                      boolean escapeSpaces = true) {
+        this.printSpaceAfterFullCompletion = printSpaceAfterFullCompletion
+        this.escapeBackslash = escapeBackslash
+        if (OS_IS_WINDOWS) separator = escapeBackslash ? "\\\\" : "\\"
+        this.escapeSpaces = escapeSpaces
     }
 
-    public void setPrintSpaceAfterFullCompletion(boolean printSpaceAfterFullCompletion) {
-        this.printSpaceAfterFullCompletion = printSpaceAfterFullCompletion;
+    private static boolean isWindowsSubsystemForLinux() {
+        System.getProperty("os.name").contains('Linux') && System.getProperty('os.version').contains('Microsoft')
     }
 
-    static {
-        String os = Configuration.getOsName();
-        OS_IS_WINDOWS = os.contains("windows");
-    }
+    /**
+     * True for say, a command-line arg, false for instance inside a String.
+     */
+    boolean printSpaceAfterFullCompletion
 
-    public FileNameCompleter() {
-    }
+    /**
+     * If the filename will be placed inside a single/double quoted String we must escape backslash when on e.g. Windows.
+     */
+    boolean escapeBackslash
 
-    public FileNameCompleter(boolean printSpaceAfterFullCompletion) {
-        this.printSpaceAfterFullCompletion = printSpaceAfterFullCompletion;
-    }
+    /**
+     * Set false if e.g. the filename will be inside a String. Should not be true if quoteFilenamesWithSpaces is true.
+     */
+    boolean escapeSpaces
 
+    private String separator
 
-    public int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
-        // buffer can be null
-        checkNotNull(candidates);
+    @Override
+    int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
+        checkNotNull(candidates)
 
-        if (buffer == null) {
-            buffer = "";
+        buffer = buffer ?: ""
+        String translated = buffer
+        int adjustment = 0
+        if (escapeBackslash) {
+            translated = gs.evaluate("'$translated'")
+            adjustment = buffer.size() - translated.size()
         }
-
-        if (OS_IS_WINDOWS) {
-            buffer = buffer.replace('/', '\\');
-        }
-
-        String translated = buffer;
 
         // Special character: ~ maps to the user's home directory in most OSs
-        if (!OS_IS_WINDOWS && translated.startsWith("~")) {
-            File homeDir = getUserHome();
-            if (translated.startsWith("~" + separator())) {
-                translated = homeDir.getPath() + translated.substring(1);
+        if (translated.startsWith("~")) {
+            File homeDir = getUserHome()
+            if ((OS_IS_WINDOWS || isWindowsSubsystemForLinux()) && (translated.equals("~" + separator()) || translated.equals("~/"))) {
+                // for windows ~ isn't recognized at the file system level so replace
+                def adjustSize = translated.size()
+                String result
+                String temp = (homeDir.path + translated.substring(separator().size())).toString().replace('"', '\\"').replace('\'', '\\\'')
+                if (escapeBackslash) {
+                    temp = temp.replace('\\', '\\\\')
+                }
+                result = escapeSpaces ? temp.replace(' ', '\\ ') : temp
+                candidates << result
+                return cursor - adjustSize - adjustment
+            } else if (translated.startsWith("~/")) {
+                translated = homeDir.path + translated.substring(2)
+            } else {
+                translated = homeDir.parentFile.absolutePath + separator() + translated.substring(1)
             }
-            else {
-                translated = homeDir.getParentFile().getAbsolutePath();
-            }
-        }
-        else if (!(new File(translated).isAbsolute())) {
-            String cwd = getUserDir().getAbsolutePath();
-            translated = cwd + separator() + translated;
+        } else if (!(new File(translated).canonicalFile.exists()) && !(new File(translated).canonicalFile.parentFile?.exists())) {
+            String cwd = getUserDir().absolutePath
+            translated = cwd + separator() + translated
         }
 
-        File file = new File(translated);
-        final File dir;
+        File file = new File(translated)
+        final File dir
 
-        if (translated.endsWith(separator())) {
-            dir = file;
+        if ((OS_IS_WINDOWS && translated.endsWith(separator())) || translated.endsWith('/')) {
+            dir = file
+        } else {
+            dir = file.parentFile
         }
-        else {
-            dir = file.getParentFile();
-        }
 
-        File[] entries = (dir == null) ? new File[0] : dir.listFiles();
+        File[] entries = (dir == null) ? new File[0] : dir.listFiles()
 
-        return matchFiles(buffer, translated, entries, candidates);
+        return matchFiles(buffer, translated, entries, candidates)
     }
 
-    protected static String separator() {
-        return File.separator;
+    private static String canonicalForm(String raw) {
+        String result = raw.replace('\\', '/')
+        OS_IS_WINDOWS ? result.toLowerCase() : result
     }
 
-    protected static File getUserHome() {
-        return Configuration.getUserHome();
-    }
-
-    /*
-     * non static for testing
-     */
-    protected File getUserDir() {
-        return new File(".");
-    }
-
-    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates) {
-        if (files == null) {
-            return -1;
-        }
-
+    protected int matchFiles(final String buffer, final String translated, final File[] files,
+                             final List<CharSequence> candidates) {
+        if (files == null) return -1
         for (File file : files) {
-            if (file.getAbsolutePath().startsWith(translated)) {
-                CharSequence name = file.getName();
-                String renderedName = render(name).toString();
+            if (canonicalForm(file.getAbsolutePath()).startsWith(canonicalForm(translated))) {
+                CharSequence name = file.name
+                String renderedName = render(name).toString()
                 if (file.isDirectory()) {
-                    renderedName += separator();
+                    renderedName += separator
                 } else {
                     if (printSpaceAfterFullCompletion) {
                         renderedName += ' '
                     }
                 }
-
-                candidates.add(renderedName);
+                candidates.add(renderedName)
             }
         }
 
-        final int index = buffer.lastIndexOf(separator());
-
-        return index + separator().length();
+        int index = -1
+        int sizeAdjust = 0
+        if (separator) {
+            index = buffer.lastIndexOf(separator)
+            sizeAdjust = separator.size()
+        }
+        int slashIndex = buffer.lastIndexOf('/')
+        if (slashIndex >= 0 && slashIndex > index) {
+            index = slashIndex
+            sizeAdjust = 1
+        }
+        return index + sizeAdjust
     }
 
-    /**
-     * @param name
-     * @param hyphenChar force hyphenation with this if not null
-     * @return name in hyphens if it contains a blank
-     */
-    protected static CharSequence render(final CharSequence name) {
-        return escapedName(name);
-    }
-
-    /**
-     *
-     * @return name in hyphens Strings with hyphens and backslashes escaped
-     */
-    private static String escapedName(final CharSequence name) {
-        // Escape blanks, hyphens and escape characters
-        return name.toString().replace('\\', '\\\\').replace('"', '\\"').replace('\'', '\\\'').replace(' ', '\\ ')
+    @PackageScope CharSequence render(CharSequence name) {
+        String temp = name.toString().replace('"', '\\"').replace('\'', '\\\'')
+        if (escapeBackslash) {
+            temp = temp.replace('\\', '\\\\')
+        }
+        escapeSpaces ? temp.replace(' ', '\\ ') : temp
     }
 }

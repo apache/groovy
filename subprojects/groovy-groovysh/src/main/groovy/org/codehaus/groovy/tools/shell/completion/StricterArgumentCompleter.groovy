@@ -25,19 +25,18 @@ import jline.console.completer.ArgumentCompleter.ArgumentList
 import jline.console.completer.Completer
 import jline.internal.Log
 
-import static jline.internal.Preconditions.checkNotNull;
+import static jline.internal.Preconditions.checkNotNull
 
 /**
  * This fixes strict jline 2.12 ArgumentCompleter
  * See https://github.com/jline/jline2/pull/202
- *
  */
 @CompileStatic
 class StricterArgumentCompleter extends ArgumentCompleter {
 
     /**
      *  Create a new completer with the default
-     *  { @link jline.console.completer.ArgumentCompleter.WhitespaceArgumentDelimiter } .
+     * {@link jline.console.completer.ArgumentCompleter.WhitespaceArgumentDelimiter}.
      *
      * @param completers The embedded completers
      */
@@ -45,71 +44,70 @@ class StricterArgumentCompleter extends ArgumentCompleter {
         super(completers)
     }
 
-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
+    int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
         // buffer can be null
-        checkNotNull(candidates);
+        checkNotNull(candidates)
 
-        ArgumentDelimiter delim = getDelimiter();
-        ArgumentList list = delim.delimit(buffer, cursor);
-        int argpos = list.getArgumentPosition();
-        int argIndex = list.getCursorArgumentIndex();
+        ArgumentDelimiter delim = delimiter
+        ArgumentList list = delim.delimit(buffer, cursor)
+        int argpos = list.argumentPosition
+        int argIndex = list.cursorArgumentIndex
 
         if (argIndex < 0) {
-            return -1;
+            return -1
         }
 
-        List<Completer> completers = getCompleters();
-        Completer completer;
+        List<Completer> completers = getCompleters()
+        Completer completer
 
         // if we are beyond the end of the completers, just use the last one
         if (argIndex >= completers.size()) {
-            completer = completers.get(completers.size() - 1);
-        }
-        else {
-            completer = completers.get(argIndex);
+            completer = completers.get(completers.size() - 1)
+        } else {
+            completer = completers.get(argIndex)
         }
 
         // ensure that all the previous completers are successful before allowing this completer to pass (only if strict).
         for (int i = 0; isStrict() && (i < argIndex); i++) {
-            Completer sub = completers.get(i >= completers.size() ? (completers.size() - 1) : i);
-            String[] args = list.getArguments();
-            String arg = (args == null || i >= args.length) ? "" : args[i];
+            Completer sub = completers.get(i >= completers.size() ? (completers.size() - 1) : i)
+            String[] args = list.getArguments()
+            String arg = (args == null || i >= args.length) ? "" : args[i]
 
-            List<CharSequence> subCandidates = new LinkedList<CharSequence>();
-            int offset = sub.complete(arg, arg.length(), subCandidates);
+            List<CharSequence> subCandidates = new LinkedList<CharSequence>()
+            int offset = sub.complete(arg, arg.length(), subCandidates)
             if (offset == -1) {
-                return -1;
+                return -1
             }
 
             // for strict matching, one of the candidates must equal the current argument "arg",
             // starting from offset within arg, but the suitable candidate may actually also have a
-            // delimiter at then end.
-            boolean candidateMatches = false;
-            for (CharSequence subCandidate: subCandidates) {
-                // each SUbcandidate may end with the delimiter.
-                // That it contains the delimiter is possible, but not plausible.
-                String[] candidateDelimList = delim.delimit(subCandidate, 0).getArguments();
+            // delimiter at the end.
+            boolean candidateMatches = false
+            for (CharSequence subCandidate : subCandidates) {
+                // each Subcandidate may end with the delimiter.
+                // That it contains the delimiter is possible, but not likely.
+                String[] candidateDelimList = delim.delimit(subCandidate, 0).arguments
                 if (candidateDelimList.length == 0) {
-                    continue;
+                    continue
                 }
-                String trimmedCand = candidateDelimList[0];
+                String trimmedCand = candidateDelimList[0]
                 if (trimmedCand.equals(arg.substring(offset))) {
-                    candidateMatches = true;
-                    break;
+                    candidateMatches = true
+                    break
                 }
             }
             if (!candidateMatches) {
-                return -1;
+                return -1
             }
         }
 
-        int ret = completer.complete(list.getCursorArgument(), argpos, candidates);
+        int ret = completer.complete(list.getCursorArgument(), argpos, candidates)
 
         if (ret == -1) {
-            return -1;
+            return -1
         }
 
-        int pos = ret + list.getBufferPosition() - argpos;
+        int pos = ret + list.bufferPosition - argpos
 
         // Special case: when completing in the middle of a line, and the area under the cursor is a delimiter,
         // then trim any delimiters from the candidates, since we do not need to have an extra delimiter.
@@ -119,18 +117,16 @@ class StricterArgumentCompleter extends ArgumentCompleter {
 
         if ((cursor != buffer.length()) && delim.isDelimiter(buffer, cursor)) {
             for (int i = 0; i < candidates.size(); i++) {
-                CharSequence val = candidates.get(i);
-
+                CharSequence val = candidates.get(i)
                 while (val.length() > 0 && delim.isDelimiter(val, val.length() - 1)) {
-                    val = val.subSequence(0, val.length() - 1);
+                    val = val.subSequence(0, val.length() - 1)
                 }
-
-                candidates.set(i, val);
+                candidates.set(i, val)
             }
         }
 
-        Log.trace("Completing ", buffer, " (pos=", cursor, ") with: ", candidates, ": offset=", pos);
+        Log.trace("Completing ", buffer, " (pos=", cursor, ") with: ", candidates, ": offset=", pos)
 
-        return pos;
+        return pos
     }
 }
