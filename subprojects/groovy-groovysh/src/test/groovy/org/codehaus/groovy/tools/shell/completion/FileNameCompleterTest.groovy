@@ -30,10 +30,11 @@ class FileNameCompleterTest extends GroovyTestCase {
 
     @Test
     void testRender() {
-        assert FileNameCompleter.render('foo') == 'foo'
-        assert FileNameCompleter.render('foo bar') == 'foo\\ bar'
+        def completer = new FileNameCompleter()
+        assert completer.render('foo') == 'foo'
+        assert completer.render('foo bar') == 'foo\\ bar'
         // intentionally adding empty String, to get better power assert output
-        assert FileNameCompleter.render('foo \'\"bar') == 'foo\\ \\\'\\\"bar' + ''
+        assert completer.render('foo \'\"bar') == 'foo\\ \\\'\\\"bar' + ''
     }
 
     @Test
