@@ -98,8 +98,7 @@ public class StringUtils {
 			}
 
 			if (slashyType == DOLLAR_SLASHY) {
-				replace(sb, Maps.of("$$", "$"));
-				replace(sb, Maps.of("$/", "/"));
+				replace(sb, Maps.of("$$", "$", "$/", "/"));
 			}
 
 			text = sb.toString();
