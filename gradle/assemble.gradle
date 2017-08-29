@@ -669,7 +669,6 @@ task updateLicenses {
     ext.licenseSrcFile = "${projectDir}/LICENSE"
     ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
     ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
-    ext.licenseGroovyshFile = "${projectDir}/subprojects/groovy-groovysh/LICENSE"
     ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
     ext.licenseAllJarJarFile = "${licensesDir}/LICENSE-ALLJARJAR"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
@@ -678,7 +677,7 @@ task updateLicenses {
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
     outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
-            licenseDocGeneratorFile, licenseGroovyDocFile, licenseGroovyshFile, licenseJsr223File, licenseSdkFile)
+            licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -695,7 +694,6 @@ task updateLicenses {
         }.sort { it.name }
         def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
-        def groovyshFiles = fileTree(licensesDir).include('jline2-patch-ALLJARJAR-SRC.txt')
         def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
@@ -706,7 +704,6 @@ task updateLicenses {
                 (licenseSrcFile)        : srcFiles,
                 (licenseDocGeneratorFile): docgeneratorFiles,
                 (licenseGroovyDocFile)   : groovydocFiles,
-                (licenseGroovyshFile)    : groovyshFiles,
                 (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->

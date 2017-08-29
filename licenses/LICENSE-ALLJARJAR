@@ -216,19 +216,6 @@ ASM 4 uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
 
 ------------------------------------------------------------------------
 
-JLine2 Patch License
-
-The following class within this product:
-
-    org.codehaus.groovy.tools.shell.completion.FileNameCompleter
-
-was derived from JLine 2.12, and the following patch:
-https://github.com/jline/jline2/issues/90
-JLine2 is made available under a BSD License.
-For details, see licenses/jline2-license.
-
-------------------------------------------------------------------------
-
 JSR223 License
 
 The following classes within this product:

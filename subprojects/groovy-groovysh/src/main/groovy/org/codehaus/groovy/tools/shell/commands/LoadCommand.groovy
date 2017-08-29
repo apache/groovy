@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import jline.console.completer.Completer
+import jline.internal.Configuration
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
@@ -28,20 +29,18 @@ import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class LoadCommand
-    extends CommandSupport
-{
+class LoadCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':load'
+    private static final boolean isWin = Configuration.isWindows()
 
     LoadCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':l')
-
         alias('.', ':.')
     }
 
     @Override
     protected List<Completer> createCompleters() {
-        return [ new FileNameCompleter(true) ]
+        return [new FileNameCompleter(true, true, true)]
     }
 
     @Override
@@ -54,19 +53,18 @@ class LoadCommand
 
         for (source in args) {
             URL url
-
+            if (isWin) {
+                source = source.replaceAll('\\\\ ', ' ')
+            }
             log.debug("Attempting to load: \"$source\"")
-
             try {
                 url = new URL("$source")
             }
             catch (MalformedURLException e) {
                 def file = new File("$source")
-
                 if (!file.exists()) {
                     fail("File not found: \"$file\"") // TODO: i18n
                 }
-
                 url = file.toURI().toURL()
             }
 
