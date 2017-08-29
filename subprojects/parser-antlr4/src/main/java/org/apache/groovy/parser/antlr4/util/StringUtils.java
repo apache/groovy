@@ -80,7 +80,7 @@ public class StringUtils {
 							}
 						});
 
-		return result.replace("\\\\", "\\");
+		return replace(result, Maps.of("\\\\", "\\"));
     }
 
 	public static final int NONE_SLASHY = 0;
@@ -92,15 +92,17 @@ public class StringUtils {
 			text = StringUtils.replaceHexEscapes(text);
 			text = StringUtils.replaceLineEscape(text);
 
+			StringBuilder sb = new StringBuilder(text);
 			if (slashyType == SLASHY) {
-				text = text.replace("\\/", "/");
+				replace(sb, Maps.of("\\/", "/"));
 			}
 
 			if (slashyType == DOLLAR_SLASHY) {
-				text = text.replace("$$", "$");
-				text = text.replace("$/", "/");
+				replace(sb, Maps.of("$$", "$"));
+				replace(sb, Maps.of("$/", "/"));
 			}
 
+			text = sb.toString();
 		} else if (slashyType == NONE_SLASHY) {
 			text = StringUtils.replaceEscapes(text);
 		} else {
@@ -111,8 +113,7 @@ public class StringUtils {
 	}
 
 	private static String replaceEscapes(String text) {
-		text = text.replace("\\$", "$");
-
+		text = replace(text, Maps.of("\\$", "$"));
 		text = StringUtils.replaceLineEscape(text);
 
         return StringUtils.replaceStandardEscapes(replaceHexEscapes(replaceOctalEscapes(text)));
@@ -138,16 +139,41 @@ public class StringUtils {
 	}
 
 	public static String removeCR(String text) {
-        return text.replace("\r\n", "\n");
+		return replace(text, Maps.of("\r\n", "\n"));
     }
 
 	public static long countChar(String text, char c) {
 		return text.chars().filter(e -> c == e).count();
 	}
 
+	public static String replace(String str, Map<String, String> replacements) {
+		return replace(new StringBuilder(str), replacements).toString();
+	}
+
+	public static StringBuilder replace(StringBuilder sb, Map<String, String> replacements) {
+
+		for (Map.Entry<String, String> entry : replacements.entrySet()) {
+			String key = entry.getKey();
+			int keyLength = key.length();
+
+			String value = entry.getValue();
+			int valueLength = value.length();
+
+			int start = sb.indexOf(key, 0);
+			while (start > -1) {
+				int end = start + keyLength;
+				int nextSearchStart = start + valueLength;
+				sb.replace(start, end, value);
+				start = sb.indexOf(key, nextSearchStart);
+			}
+		}
+
+		return sb;
+	}
+
 	public static String trimQuotations(String text, int quotationLength) {
 		int length = text.length();
 
-		return length == quotationLength * 2 ? "" : text.substring(quotationLength, length - quotationLength);
+		return length == quotationLength << 1 ? "" : text.substring(quotationLength, length - quotationLength);
 	}
 }
