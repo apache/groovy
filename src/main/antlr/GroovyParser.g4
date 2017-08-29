@@ -1283,7 +1283,7 @@ keywords
 rparen
     :   RPAREN
     |
-        // !!!Error Alternative
+        // !!!Error Alternative, impact the performance of parsing
         ~LPAREN
         { require(false, "Missing ')'", -1); }
     ;
@@ -1291,7 +1291,7 @@ rparen
 rbrack
     :   RBRACK
     |
-        // !!!Error Alternative
+        // !!!Error Alternative, impact the performance of parsing
         ~LBRACK
         { require(false, "Missing ']'", -1); }
     ;
