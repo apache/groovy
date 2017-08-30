@@ -296,7 +296,7 @@ def mergeModuleDescriptors() {
     def staticExtensionClasses = []
 
     modules().collect {
-        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
+        new File("${it.buildDir}/classes/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
     }.findAll { it.exists() }.each {
         def props = new Properties()
         props.load(it.newInputStream())
