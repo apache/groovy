@@ -27,6 +27,6 @@ dependencies {
 
 compileJava {
     doLast {
-        mkdir "$sourceSets.main.java.outputDir/META-INF"
+        mkdir "$sourceSets.main.output.classesDir/META-INF"
     }
 }

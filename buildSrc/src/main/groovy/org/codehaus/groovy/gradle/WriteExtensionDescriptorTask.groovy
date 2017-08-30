@@ -36,7 +36,7 @@ class WriteExtensionDescriptorTask extends DefaultTask {
 
 
     private File computeDescriptorFile() {
-        def metaInfDir = new File("${project.buildDir}/resources/main/META-INF/services")
+        def metaInfDir = new File("${project.buildDir}/classes/main/META-INF/services")
         return new File(metaInfDir, "org.codehaus.groovy.runtime.ExtensionModule")
     }
 

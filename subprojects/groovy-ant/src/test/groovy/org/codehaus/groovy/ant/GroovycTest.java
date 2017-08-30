@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * @author Russel Winder
  */
 public class GroovycTest extends GroovyTestCase {
-    private final String classDirectory = "target/classes/groovy/test/org/codehaus/groovy/ant/";
+    private final String classDirectory = "target/classes/test/org/codehaus/groovy/ant/";
     private final File antFile = new File("src/test-resources/org/codehaus/groovy/ant/GroovycTest.xml");
     private Project project;
     private static boolean warned = false;

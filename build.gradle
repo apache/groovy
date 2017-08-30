@@ -50,17 +50,15 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.8'
-    id 'me.champeau.buildscan-recipes' version '0.2.0'
+    id 'com.gradle.build-scan' version '1.6'
+    id 'me.champeau.buildscan-recipes' version '0.1.7'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
     publishAlways()
-}
 
-buildScanRecipes {
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
@@ -169,7 +167,7 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '4.1'
+    gradleVersion = '3.5.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.4.1'
@@ -346,14 +344,14 @@ processResources.doLast {
             include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
-        into sourceSets.main.java.outputDir
+        into sourceSets.main.output.classesDir
     }
 }
 
 tasks.withType(Jar) {
     doFirst {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
@@ -394,8 +392,8 @@ apply from: 'gradle/wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
-    def classesDir = sourceSets.main.java.outputDir
-    def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
+    def classesDir = sourceSets.main.output.classesDir
+    def classpath = files(classesDir, configurations.compile)
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
@@ -435,7 +433,7 @@ task bootstrapJar {
         destinationDir.mkdirs()
         ant.jar(
                 destfile: archivePath,
-                basedir: file(sourceSets.main.java.outputDir)
+                basedir: file(sourceSets.main.output.classesDir)
         )
     }
     inputs.property('indy', useIndy())
