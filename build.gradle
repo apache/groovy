@@ -88,7 +88,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        if (!InetAddress.getByName('www.google.com').isReachable(3000)) {
+        if (!InetAddress.getByName('twitter.com').isReachable(3000)) {
             // Try to use Aliyun maven repository when building in China
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
@@ -255,8 +255,6 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
-// TODO use antlr plugin
-//    antlr "antlr:antlr:$antlrVersion"
     antlr2 "org.apache.ant:ant-antlr:$antVersion"
 
     testCompile project(':groovy-ant')
