@@ -177,7 +177,7 @@ for /f "tokens=1,*" %%i in (%_ARGS%) do call :get_arg "%%i" "%%j"
 goto process_arg
 
 :get_arg
-rem remove quotes around first arg
+rem remove quotes around first arg and don't expand wildcards
 for /f %%i in (%1) do set _ARG=%_ARG% %%~i
 rem set the remaining args
 set _ARGS=%2
