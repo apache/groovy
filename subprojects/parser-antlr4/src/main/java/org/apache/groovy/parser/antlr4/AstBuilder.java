@@ -2345,19 +2345,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         throw createParsingFailedException("Unsupported enhanced argument list element: " + ctx.getText(), ctx);
     }
 
-
     @Override
     public ConstantExpression visitStringLiteral(StringLiteralContext ctx) {
         String text = ctx.StringLiteral().getText();
 
         int slashyType = getSlashyType(text);
+        boolean startsWithSlash = false;
 
         if (text.startsWith("'''") || text.startsWith("\"\"\"")) {
             text = StringUtils.removeCR(text); // remove CR in the multiline string
 
             text = StringUtils.trimQuotations(text, 3);
-        } else if (text.startsWith("'") || text.startsWith("/") || text.startsWith("\"")) {
-            if (text.startsWith("/")) { // the slashy string can span rows, so we have to remove CR for it
+        } else if (text.startsWith("'") || text.startsWith("\"") || (startsWithSlash = text.startsWith("/"))) {
+            if (startsWithSlash) { // the slashy string can span rows, so we have to remove CR for it
                 text = StringUtils.removeCR(text); // remove CR in the multiline string
             }
 
