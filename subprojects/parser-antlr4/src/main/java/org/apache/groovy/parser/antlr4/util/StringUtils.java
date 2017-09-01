@@ -32,33 +32,33 @@ import java.util.regex.Pattern;
  * Created on    2016/08/20
  */
 public class StringUtils {
-    public static String replaceHexEscapes(String text) {
-        Pattern p = Pattern.compile("(\\\\*)\\\\u+([0-9abcdefABCDEF]{4})");
-	    return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
-		    Object doCall(String _0, String _1, String _2) {
+	public static String replaceHexEscapes(String text) {
+		Pattern p = Pattern.compile("(\\\\*)\\\\u+([0-9abcdefABCDEF]{4})");
+		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
 					return _0;
 				}
 
-			    return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
-		    }
-	    });
-    }
+				return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
+			}
+		});
+	}
 
 	public static String replaceOctalEscapes(String text) {
-	    Pattern p = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
-	    return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
-		    Object doCall(String _0, String _1, String _2) {
+		Pattern p = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
+		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
 					return _0;
 				}
 
-			    return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
-		    }
-	    });
-    }
+				return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
+			}
+		});
+	}
 
-    private static final Map<Character, Character> STANDARD_ESCAPES = Maps.of(
+	private static final Map<Character, Character> STANDARD_ESCAPES = Maps.of(
 			'b', '\b',
 			't', '\t',
 			'n', '\n',
@@ -67,21 +67,21 @@ public class StringUtils {
 	);
 
 	public static String replaceStandardEscapes(String text) {
-	    Pattern p = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");
+		Pattern p = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");
 
-	    String result = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
-							Object doCall(String _0, String _1, String _2) {
-								if (isLengthOdd(_1)) {
-									return _0;
-								}
+		String result = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+			Object doCall(String _0, String _1, String _2) {
+				if (isLengthOdd(_1)) {
+					return _0;
+				}
 
-								Character character = STANDARD_ESCAPES.get(_2.charAt(0));
-								return _1 + (character != null ? character : _2);
-							}
-						});
+				Character character = STANDARD_ESCAPES.get(_2.charAt(0));
+				return _1 + (character != null ? character : _2);
+			}
+		});
 
-		return replace(result, Maps.of("\\\\", "\\"));
-    }
+		return result.replace("\\\\", "\\");
+	}
 
 	public static final int NONE_SLASHY = 0;
 	public static final int SLASHY = 1;
@@ -92,16 +92,15 @@ public class StringUtils {
 			text = StringUtils.replaceHexEscapes(text);
 			text = StringUtils.replaceLineEscape(text);
 
-			StringBuilder sb = new StringBuilder(text);
 			if (slashyType == SLASHY) {
-				replace(sb, Maps.of("\\/", "/"));
+				text = text.replace("\\/", "/");
 			}
 
 			if (slashyType == DOLLAR_SLASHY) {
-				replace(sb, Maps.of("$$", "$", "$/", "/"));
+				text = text.replace("$$", "$");
+				text = text.replace("$/", "/");
 			}
 
-			text = sb.toString();
 		} else if (slashyType == NONE_SLASHY) {
 			text = StringUtils.replaceEscapes(text);
 		} else {
@@ -112,11 +111,12 @@ public class StringUtils {
 	}
 
 	private static String replaceEscapes(String text) {
-		text = replace(text, Maps.of("\\$", "$"));
+		text = text.replace("\\$", "$");
+
 		text = StringUtils.replaceLineEscape(text);
 
-        return StringUtils.replaceStandardEscapes(replaceHexEscapes(replaceOctalEscapes(text)));
-    }
+		return StringUtils.replaceStandardEscapes(replaceHexEscapes(replaceOctalEscapes(text)));
+	}
 
 	private static String replaceLineEscape(String text) {
 		Pattern p = Pattern.compile("(\\\\*)\\\\\r?\n");
@@ -138,33 +138,11 @@ public class StringUtils {
 	}
 
 	public static String removeCR(String text) {
-		return replace(text, Maps.of("\r\n", "\n"));
-    }
+		return text.replace("\r\n", "\n");
+	}
 
 	public static long countChar(String text, char c) {
 		return text.chars().filter(e -> c == e).count();
-	}
-
-	public static String replace(String str, Map<String, String> replacements) {
-		return replace(new StringBuilder(str), replacements).toString();
-	}
-
-	public static StringBuilder replace(StringBuilder sb, Map<String, String> replacements) {
-		for (Map.Entry<String, String> replacementEntry : replacements.entrySet()) {
-			String key = replacementEntry.getKey();
-			int keyLength = key.length();
-
-			String value = replacementEntry.getValue();
-			int valueLength = value.length();
-
-			int start = sb.indexOf(key, 0);
-			while (start > -1) {
-				sb.replace(start, start + keyLength, value);
-				start = sb.indexOf(key, start + valueLength);
-			}
-		}
-
-		return sb;
 	}
 
 	public static String trimQuotations(String text, int quotationLength) {

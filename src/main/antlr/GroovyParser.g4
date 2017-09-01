@@ -280,7 +280,7 @@ memberDeclaration[int t]
  */
 methodDeclaration[int t, int ct]
     :   { 3 == $ct }?
-        returnType[$ct] methodName LPAREN rparen (DEFAULT nls elementValue)?
+        returnType[$ct] methodName LPAREN RPAREN (DEFAULT nls elementValue)?
     |
         (   { 0 == $t }?
             modifiersOpt typeParameters?
@@ -335,7 +335,7 @@ variableInitializers
     ;
 
 dims
-    :   (annotationsOpt LBRACK rbrack)+
+    :   (annotationsOpt LBRACK RBRACK)+
     ;
 
 dimsOpt
@@ -406,7 +406,7 @@ qualifiedClassNameList
     ;
 
 formalParameters
-    :   LPAREN formalParameterList? rparen
+    :   LPAREN formalParameterList? RPAREN
     ;
 
 formalParameterList
@@ -556,7 +556,7 @@ elementValue
     ;
 
 elementValueArrayInitializer
-    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? rbrack
+    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? RBRACK
     ;
 
 // STATEMENTS / BLOCKS
@@ -596,7 +596,7 @@ variableDeclaration[int t]
     ;
 
 typeNamePairs
-    :   LPAREN typeNamePair (COMMA typeNamePair)* rparen
+    :   LPAREN typeNamePair (COMMA typeNamePair)* RPAREN
     ;
 
 typeNamePair
@@ -1040,11 +1040,11 @@ dynamicMemberName
  *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
  */
 indexPropertyArgs
-    :   QUESTION? LBRACK expressionList[true]? rbrack
+    :   QUESTION? LBRACK expressionList[true]? RBRACK
     ;
 
 namedPropertyArgs
-    :   LBRACK mapEntryList rbrack
+    :   LBRACK mapEntryList RBRACK
     ;
 
 primary
@@ -1073,7 +1073,7 @@ locals[boolean empty = true]
             COMMA
             { require(!$empty, "Empty list constructor should not contain any comma(,)", -1); }
         )?
-        rbrack
+        RBRACK
     ;
 
 map
@@ -1081,7 +1081,7 @@ map
         (   mapEntryList COMMA?
         |   COLON
         )
-        rbrack
+        RBRACK
     ;
 
 mapEntryList
@@ -1101,7 +1101,7 @@ mapEntryLabel
 creator
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   (annotationsOpt LBRACK expression rbrack)+ dimsOpt
+        |   (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
         |   dims nls arrayInitializer
         )
     ;
@@ -1251,16 +1251,7 @@ rparen
     :   RPAREN
     |
         // !!!Error Alternative, impact the performance of parsing
-        ~LPAREN
-        { require(false, "Missing ')'", -1); }
-    ;
-
-rbrack
-    :   RBRACK
-    |
-        // !!!Error Alternative, impact the performance of parsing
-        ~LBRACK
-        { require(false, "Missing ']'", -1); }
+        { require(false, "Missing ')'"); }
     ;
 
 nls
