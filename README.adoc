@@ -70,13 +70,31 @@ Simply `git clone` the repo (or the repo you forked via the github website) and 
 
 Alternatively, you can download the source distribution and unpack it.
 
-If obtaining the source from this distribution and you intend to build from source,
-you also need to https://gradle.org/downloads/[download] and install http://gradle.org/[Gradle] and execute one bootstrap step.
-At the top directory of your unpacked source, you need to run the command:
+If obtaining the source from the source distribution and you intend to build from source,
+you also need to https://gradle.org/downloads/[download] and install http://gradle.org/[Gradle] and
+use the downloaded Gradle to execute one bootstrap step.
+
+==== Bootstrapping Gradle
+
+As mentioned in the previous paragraph, if you download the source distribution
+you need to bootstrap Gradle. This isn't needed if you clone from the Github repo.
+
+Each version of Groovy is built and tested using a specific version of Gradle.
+That version is specified by the `gradleVersion` property defined in the `build.gradle`
+file within the root directory. Luckily you shouldn't need to know that version and,
+after bootstrapping, you should use the `gradlew` command which will ensure the
+correct version is always used.
+
+The version of Gradle used for the bootstrap step has some flexibility though in general
+you might need to download a version similar to the version of Groovy the build is
+expecting.
+
+To bootstrap Gradle, at the top directory of your unpacked source, run the command:
 
     gradle wrapper
 
-This sets up the Gradle wrapper and from then on you just need the `gradlew` command instead of `gradle`.
+*NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
+the `gradlew` command instead of `gradle`.
 
 == Building from Source
 
