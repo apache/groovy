@@ -459,7 +459,7 @@ to omit the type.
 
 A property is a combination of a private field and getters/setters. You can define a property with:
 
-* an *absent* access modifier (no `public`, `protected` or `final`)
+* an *absent* access modifier (no `public`, `protected` or `private`)
 * one or more optional _modifiers_ (`static`, `final`, `synchronized`)
 * an optional _type_
 * a mandatory _name_
