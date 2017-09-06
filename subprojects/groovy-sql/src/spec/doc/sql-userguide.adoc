@@ -174,7 +174,7 @@ Use the `query` method if you want to iterate through the `ResultSet` returned b
 include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_reading_query,indent=0]
 ----
 
-Use the `eachRow` method if you want if you want a slightly higher-level abstraction which provides a Groovy friendly map-like abstraction for the `ResultSet` as shown here:
+Use the `eachRow` method if you want a slightly higher-level abstraction which provides a Groovy friendly map-like abstraction for the `ResultSet` as shown here:
 
 [source,groovy]
 .Reading data using `eachRow`
