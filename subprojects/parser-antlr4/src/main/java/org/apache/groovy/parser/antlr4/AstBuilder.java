@@ -149,7 +149,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  *         Created on 2016/08/14
  */
 public class AstBuilder extends GroovyParserBaseVisitor<Object> implements GroovyParserVisitor<Object> {
-
     public AstBuilder(SourceUnit sourceUnit, ClassLoader classLoader) {
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
@@ -2325,17 +2324,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         int slashyType = getSlashyType(text);
         boolean startsWithSlash = false;
 
-        if (text.startsWith("'''") || text.startsWith("\"\"\"")) {
+        if (text.startsWith(TSQ_STR) || text.startsWith(TDQ_STR)) {
             text = StringUtils.removeCR(text); // remove CR in the multiline string
 
             text = StringUtils.trimQuotations(text, 3);
-        } else if (text.startsWith("'") || text.startsWith("\"") || (startsWithSlash = text.startsWith("/"))) {
+        } else if (text.startsWith(SQ_STR) || text.startsWith(DQ_STR) || (startsWithSlash = text.startsWith(SLASH_STR))) {
             if (startsWithSlash) { // the slashy string can span rows, so we have to remove CR for it
                 text = StringUtils.removeCR(text); // remove CR in the multiline string
             }
 
             text = StringUtils.trimQuotations(text, 1);
-        } else if (text.startsWith("$/")) {
+        } else if (text.startsWith(DOLLAR_SLASH_STR)) {
             text = StringUtils.removeCR(text);
 
             text = StringUtils.trimQuotations(text, 2);
@@ -2351,8 +2350,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private int getSlashyType(String text) {
-        return text.startsWith("/") ? StringUtils.SLASHY :
-                    text.startsWith("$/") ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
+        return text.startsWith(SLASH_STR) ? StringUtils.SLASHY :
+                    text.startsWith(DOLLAR_SLASH_STR) ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
     }
 
     @Override
@@ -3157,13 +3156,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         {
             String it = begin;
-            if (it.startsWith("\"\"\"")) {
+            if (it.startsWith(TDQ_STR)) {
                 it = StringUtils.removeCR(it);
                 it = it.substring(2); // translate leading """ to "
-            } else if (it.startsWith("$/")) {
+            } else if (it.startsWith(DOLLAR_SLASH_STR)) {
                 it = StringUtils.removeCR(it);
-                it = "\"" + it.substring(2); // translate leading $/ to "
-            } else if (it.startsWith("/")) {
+                it = DQ_STR + it.substring(2); // translate leading $/ to "
+            } else if (it.startsWith(SLASH_STR)) {
                 it = StringUtils.removeCR(it);
             }
 
@@ -3190,13 +3189,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         {
             String it = ctx.GStringEnd().getText();
-            if (it.endsWith("\"\"\"")) {
+            if (it.endsWith(TDQ_STR)) {
                 it = StringUtils.removeCR(it);
                 it = StringGroovyMethods.getAt(it, new IntRange(true, 0, -3)); // translate tailing """ to "
-            } else if (it.endsWith("/$")) {
+            } else if (it.endsWith(SLASH_DOLLAR_STR)) {
                 it = StringUtils.removeCR(it);
-                it = StringGroovyMethods.getAt(it, new IntRange(false, 0, -2)) + "\""; // translate tailing /$ to "
-            } else if (it.endsWith("/")) {
+                it = StringGroovyMethods.getAt(it, new IntRange(false, 0, -2)) + DQ_STR; // translate tailing /$ to "
+            } else if (it.endsWith(SLASH_STR)) {
                 it = StringUtils.removeCR(it);
             }
 
@@ -4514,6 +4513,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String THIS_STR = "this";
     private static final String SUPER_STR = "super";
     private static final String VOID_STR = "void";
+    private static final String SLASH_STR = "/";
+    private static final String SLASH_DOLLAR_STR = "/$";
+    private static final String TDQ_STR = "\"\"\"";
+    private static final String TSQ_STR = "'''";
+    private static final String SQ_STR = "'";
+    private static final String DQ_STR = "\"";
+    private static final String DOLLAR_SLASH_STR = "$/";
+
     private static final String PACKAGE_INFO = "package-info";
     private static final String PACKAGE_INFO_FILE_NAME = PACKAGE_INFO + ".groovy";
     private static final String GROOVY_TRANSFORM_TRAIT = "groovy.transform.Trait";
