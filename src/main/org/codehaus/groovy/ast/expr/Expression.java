@@ -32,7 +32,7 @@ import org.codehaus.groovy.GroovyBugError;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class Expression extends AnnotatedNode {
-
+    public static final Expression[] EMPTY_ARRAY = new Expression[0];
     private ClassNode type=ClassHelper.DYNAMIC_TYPE;
     
     /**

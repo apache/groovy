@@ -441,7 +441,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(ctx.localVariableDeclaration())) {
             DeclarationListStatement declarationListStatement = this.visitLocalVariableDeclaration(ctx.localVariableDeclaration());
-            List<?> declarationExpressionList = declarationListStatement.getDeclarationExpressions();
+            List<? extends Expression> declarationExpressionList = declarationListStatement.getDeclarationExpressions();
 
             if (declarationExpressionList.size() == 1) {
                 return this.configureAST((Expression) declarationExpressionList.get(0), ctx);
@@ -2218,7 +2218,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public ClassNode[] visitTypeList(TypeListContext ctx) {
         if (!asBoolean(ctx)) {
-            return new ClassNode[0];
+            return ClassNode.EMPTY_ARRAY;
         }
 
         return ctx.type().stream()
@@ -2849,7 +2849,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     empties = new Expression[emptyDimList.size()];
                     Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
                 } else {
-                    empties = new Expression[0];
+                    empties = Expression.EMPTY_ARRAY;
                 }
 
                 arrayExpression =
@@ -3585,7 +3585,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (asBoolean(ctx.LT())) { // e.g. <>
-            return new GenericsType[0];
+            return GenericsType.EMPTY_ARRAY;
         }
 
         throw createParsingFailedException("Unsupported type arguments or diamond: " + ctx.getText(), ctx);
@@ -4129,11 +4129,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private boolean isInsideParentheses(NodeMetaDataHandler nodeMetaDataHandler) {
         Integer insideParenLevel = nodeMetaDataHandler.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
 
-        if (null != insideParenLevel) {
-            return insideParenLevel > 0;
-        }
+        return null != insideParenLevel && insideParenLevel > 0;
 
-        return false;
     }
 
     private void addEmptyReturnStatement() {
@@ -4238,9 +4235,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (0 == newLineCnt) {
-            return new Pair<Integer, Integer>(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
+            return new Pair<>(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
         } else { // e.g. GStringEnd contains newlines, we should fix the location info
-            return new Pair<Integer, Integer>(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
+            return new Pair<>(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
         }
     }
 
