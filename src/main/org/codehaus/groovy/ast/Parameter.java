@@ -29,8 +29,7 @@ import org.codehaus.groovy.ast.expr.*;
  */
 public class Parameter extends AnnotatedNode implements Variable {
 
-    public static final Parameter[] EMPTY_ARRAY = {
-    };
+    public static final Parameter[] EMPTY_ARRAY = {};
 
     private ClassNode type;
     private final String name;
