@@ -264,7 +264,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             this.addPackageInfoClassNode();
         } else {
             // if groovy source file only contains blank(including EOF), add "return null" to the AST
-            if (this.isBlankScript(ctx)) {
+            if (this.isBlankScript()) {
                 this.addEmptyReturnStatement();
             }
         }
@@ -3347,7 +3347,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Parameter[] visitFormalParameters(FormalParametersContext ctx) {
         if (!asBoolean(ctx)) {
-            return new Parameter[0];
+            return Parameter.EMPTY_ARRAY;
         }
 
         return this.visitFormalParameterList(ctx.formalParameterList());
@@ -3356,7 +3356,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Parameter[] visitFormalParameterList(FormalParameterListContext ctx) {
         if (!asBoolean(ctx)) {
-            return new Parameter[0];
+            return Parameter.EMPTY_ARRAY;
         }
 
         List<Parameter> parameterList = new LinkedList<>();
@@ -3377,7 +3377,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         validateParameterList(parameterList);
 
-        return parameterList.toArray(new Parameter[0]);
+        return parameterList.toArray(Parameter.EMPTY_ARRAY);
     }
 
     private void validateVarArgParameter(List<? extends FormalParameterContext> formalParameterList) {
@@ -3828,7 +3828,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public ClassNode[] visitQualifiedClassNameList(QualifiedClassNameListContext ctx) {
         if (!asBoolean(ctx)) {
-            return new ClassNode[0];
+            return ClassNode.EMPTY_ARRAY;
         }
 
         return ctx.annotatedQualifiedClassName().stream()
@@ -4122,7 +4122,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     }
 
-    private boolean isBlankScript(CompilationUnitContext ctx) {
+    private boolean isBlankScript() {
         return moduleNode.getStatementBlock().isEmpty() && moduleNode.getMethods().isEmpty() && moduleNode.getClasses().isEmpty();
     }
 
