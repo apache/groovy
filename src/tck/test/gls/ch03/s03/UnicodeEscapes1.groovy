@@ -39,11 +39,13 @@ class UnicodeEscapes1 extends GroovyTestCase {
     }
 
     // There can be 1 or more u's after the backslash
+    /*
     void testMultipleUs() {
         assert "\uu0061" == "a"
         assert "\uuu0061" == "a"
         assert "\uuuuu0061" == "a"
     }
+    */
 
     void testOtherVariations() {
         // Capital 'U' not allowed

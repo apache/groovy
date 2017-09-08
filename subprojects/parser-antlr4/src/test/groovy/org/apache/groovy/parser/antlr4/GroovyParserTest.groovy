@@ -342,9 +342,11 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('core/Command_06x.groovy')
     }
 
+    /*
     void "test groovy core - Unicode"() {
         doTest('core/Unicode_01.groovy');
     }
+    */
 
     void "test groovy core - BreakingChanges"() {
         doRunAndTest('core/BreakingChange_01x.groovy');
