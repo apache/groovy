@@ -2310,6 +2310,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return;
         }
 
+        if (isInsideParentheses(keyExpression)) {
+            return;
+        }
+
         String parameterName = keyExpression.getText();
         boolean isDuplicatedNamedParameter = false;
 
