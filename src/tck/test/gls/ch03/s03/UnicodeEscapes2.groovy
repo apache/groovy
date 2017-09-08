@@ -29,6 +29,7 @@ class UnicodeEscapes2 extends GroovyTestCase {
 
     // GLS: If an even number of backslashes precede the 'u', it is not 
     // an escape
+    /*
     void testCountBackslash() {
         def a = 1
         assert \u0061 == 1 // char 61 is 'a'
@@ -42,10 +43,12 @@ class UnicodeEscapes2 extends GroovyTestCase {
         assert "\\\u0061".length() == 2
         
     }
+    */
 
     // GLS: If an eligible \ is followed by u, or more than one u, and the last u
     // is not followed by four hexadecimal digits, then a compile-time error
     // occurs.
+    /*
     void testFourHexDigits() {
         // If five digits, only the first four count
         def \u00610 = 2
@@ -57,6 +60,7 @@ class UnicodeEscapes2 extends GroovyTestCase {
         // def /u61 = 2 //@fail:parse 
         // def /u061 = 2 //@fail:parse 
     }
+    */
 
     void testInvalidHexDigits() {
         // Subsequent lines won't work. The backslash has been replaced by a forward slash

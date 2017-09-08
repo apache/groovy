@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  */
 public class StringUtils {
 	public static String replaceHexEscapes(String text) {
-		Pattern p = Pattern.compile("(\\\\*)\\\\u+([0-9abcdefABCDEF]{4})");
+		Pattern p = Pattern.compile("(\\\\*)\\\\u([0-9abcdefABCDEF]{4})");
 		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
