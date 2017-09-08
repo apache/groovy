@@ -130,9 +130,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
 /**
  * The main class code visitor responsible for static type checking. It will perform various inspections like checking
  * assignment types, type inference, ... Eventually, class nodes may be annotated with inferred type information.
- *
- * @author Cedric Champeau
- * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
@@ -670,6 +667,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (typeCheckingContext.ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression
                         && !isNullConstant(rightExpression)) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
+                    if (accessedVariable instanceof Parameter) {
+                        accessedVariable = new ParameterVariableExpression((Parameter) accessedVariable);
+                    }
                     if (accessedVariable instanceof VariableExpression) {
                         VariableExpression var = (VariableExpression) accessedVariable;
                         List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTracker.get(var);
@@ -4849,4 +4849,65 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * Wrapper for a Parameter so it can be treated like a VariableExpression
+     * and tracked in the ifElseForWhileAssignmentTracker.
+     *
+     * This class purposely does not adhere to the normal equals and hashCode
+     * contract on the Object class and delegates those calls to the wrapped
+     * variable.
+     */
+    private static class ParameterVariableExpression extends VariableExpression {
+
+        private final Parameter parameter;
+
+        ParameterVariableExpression(Parameter parameter) {
+            super(parameter);
+            this.parameter = parameter;
+            ClassNode inferred = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            if (inferred == null) {
+                parameter.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, parameter.getOriginType());
+            }
+        }
+
+        @Override
+        public void copyNodeMetaData(ASTNode other) {
+            parameter.copyNodeMetaData(other);
+        }
+
+        @Override
+        public Object putNodeMetaData(Object key, Object value) {
+            return parameter.putNodeMetaData(key, value);
+        }
+
+        @Override
+        public void removeNodeMetaData(Object key) {
+            parameter.removeNodeMetaData(key);
+        }
+
+        @Override
+        public Map<?, ?> getNodeMetaData() {
+            return parameter.getNodeMetaData();
+        }
+
+        @Override
+        public <T> T getNodeMetaData(Object key) {
+            return parameter.getNodeMetaData(key);
+        }
+
+        @Override
+        public void setNodeMetaData(Object key, Object value) {
+            parameter.setNodeMetaData(key, value);
+        }
+
+        @Override
+        public int hashCode() {
+            return parameter.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return parameter.equals(other);
+        }
+    }
 }
