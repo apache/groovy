@@ -41,6 +41,8 @@ assert ['J', 'P', 'D'] == [new Person('Jochen'), new Person('Paul'), new Person(
 // class::instanceMethod
 assert ['Jochen', 'Paul', 'Daniel'] == [new Person('Jochen'), new Person('Paul'), new Person('Daniel')].stream().map(Person::getName).collect(Collectors.toList())
 
+// class::instanceMethod
+assert 6 == java.util.stream.Stream.of(1, 2, 3).reduce(0, BigDecimal::add)
 
 // ----------------------------------
 class BasePerson {
