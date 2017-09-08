@@ -446,6 +446,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    void testIfElseBranchParameter() {
+        shouldFailWithMessages '''
+            def foo(x) {
+                def y = 'foo'
+                if (y) {
+                    x = new HashSet()
+                } else {
+                    x = '123'
+                }
+                x.toInteger()
+            }
+            foo('bar')
+        ''', 'Cannot find matching method java.lang.Object#toInteger()'
+    }
+
     void testIfOnly() {
         shouldFailWithMessages '''
             def x = '123'
@@ -455,6 +470,20 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             }
             x.toInteger()
         ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testIfOnlyParameter() {
+        shouldFailWithMessages '''
+            def foo(x) {
+                def y = 'foo'
+                if (y) {
+                    x = new HashSet()
+                    assert x.isEmpty()
+                }
+                x.toInteger()
+            }
+            foo('123')
+        ''', 'Cannot find matching method java.lang.Object#toInteger()'
     }
 
     void testIfWithCommonInterface() {
@@ -872,5 +901,62 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         }            
         '''
     }
-}
 
+    // GROOVY-8220
+    void testFlowTypingParameterTempTypeAssignmentTracking() {
+        assertScript '''
+            class Foo {
+                CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
+                    if (env instanceof File) {
+                        env = env.toPath()
+                    }
+                    if (env instanceof String && env.contains('=')) {
+                        result << 'export ' << env << ';'
+                    }
+                    return result.toString()
+                }
+            }
+            assert new Foo().makeEnv('X=1') == 'export X=1;'
+        '''
+        // GROOVY-8237
+        assertScript '''
+            class Foo {
+                String parse(Reader reader) {
+                    if (reader == null)
+                        reader = new BufferedReader(reader)
+                    int i = reader.read()
+                    return (i != -1) ? 'bar' : 'baz'
+                }
+            }
+            assert new Foo().parse(new StringReader('foo')) == 'bar'
+        '''
+    }
+
+    void testFlowTypingParameterTempTypeAssignmentTrackingWithGenerics() {
+        assertScript '''
+            class M {
+                Map<String, List<Object>> mvm = new HashMap<String, List<Object>>()
+                void setProperty(String name, value) {
+                    if (value instanceof File) {
+                        value = new File(value, 'bar.txt')
+                    }
+                    else if (value instanceof URL) {
+                        value = value.toURI()
+                    }
+                    else if (value instanceof InputStream) {
+                        value = new BufferedInputStream(value)
+                    }
+                    else if (value instanceof GString) {
+                        value = value.toString()
+                    }
+                    if (mvm[name]) {
+                        mvm[name].add value
+                    } else {
+                        mvm.put(name, [value])
+                    }
+                }
+            }
+            new M().setProperty('foo', 'bar')
+        '''
+    }
+}
