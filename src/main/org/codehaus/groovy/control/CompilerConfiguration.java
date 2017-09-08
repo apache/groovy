@@ -227,7 +227,7 @@ public class CompilerConfiguration {
         setDefaultScriptExtension(safeGetSystemProperty("groovy.default.scriptExtension", ".groovy"));
 
         // Source file encoding
-        String encoding = safeGetSystemProperty("file.encoding", "US-ASCII");
+        String encoding = safeGetSystemProperty("file.encoding", "UTF-8");
         encoding = safeGetSystemProperty("groovy.source.encoding", encoding);
         setSourceEncoding(encoding);
 
