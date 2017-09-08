@@ -445,7 +445,7 @@ IntegerLiteral
         |   HexIntegerLiteral
         |   OctalIntegerLiteral
         |   BinaryIntegerLiteral
-        ) (Underscore { require(false, "Invalid number", -1, true); })?
+        ) (Underscore { require(false, "Number ending with underscores is invalid", -1, true); })?
 
     // !!! Error Alternative !!!
     |   Zero ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
@@ -587,7 +587,7 @@ BinaryDigitOrUnderscore
 FloatingPointLiteral
     :   (   DecimalFloatingPointLiteral
         |   HexadecimalFloatingPointLiteral
-        ) (Underscore { require(false, "Invalid number", -1, true); })?
+        ) (Underscore { require(false, "Number ending with underscores is invalid", -1, true); })?
     ;
 
 fragment
@@ -935,7 +935,7 @@ SL_COMMENT
 // Script-header comments.
 // The very first characters of the file may be "#!".  If so, ignore the first line.
 SH_COMMENT
-    :   '#!' { 0 == this.tokenIndex }?<fail={"Shebang comment should appear at the first line"}> ~[\r\n\uFFFF]* -> skip
+    :   '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ~[\r\n\uFFFF]* -> skip
     ;
 
 // Unexpected characters will be handled by groovy parser later.
