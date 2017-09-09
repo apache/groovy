@@ -52,7 +52,8 @@ public class GroovydocManager {
     private static final boolean ATTACHING_RUNTIME_GROOVYDOC_ENABLED;
     private static final String VALUE = "value";
     private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
-    private AstBuilder astBuilder;
+
+    private static final GroovydocManager INSTANCE = new GroovydocManager();
 
     static {
         ATTACHING_GROOVYDOC_ENABLED = isFeatureEnabled(ATTACH_GROOVYDOC) || isFeatureEnabled(EXTRACT_DOC_COMMENT);
@@ -71,8 +72,10 @@ public class GroovydocManager {
         return result;
     }
 
-    public GroovydocManager(AstBuilder astBuilder) {
-        this.astBuilder = astBuilder;
+    private GroovydocManager() {}
+
+    public static GroovydocManager getInstance() {
+        return INSTANCE;
     }
 
     /**
