@@ -88,7 +88,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        if (!InetAddress.getByName('twitter.com').isReachable(3000)) {
+        if (isBuildInChina()) {
             // Try to use Aliyun maven repository when building in China
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
@@ -521,6 +521,14 @@ licenseReport {
             'com.googlecode', // openbeans has no pom but is ASLv2
             'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
+}
+
+def isBuildInChina() {
+    try {
+        return !InetAddress.getByName('www.twitter.com').isReachable(3000)
+    } catch(e) {
+        return true
+    }
 }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
