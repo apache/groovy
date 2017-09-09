@@ -4213,9 +4213,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         astNode.setLineNumber(start.getLine());
         astNode.setColumnNumber(start.getCharPositionInLine() + 1);
 
-        Pair<Integer, Integer> stopTokenEndPosition = endPosition(stop);
-        astNode.setLastLineNumber(stopTokenEndPosition.getKey());
-        astNode.setLastColumnNumber(stopTokenEndPosition.getValue());
+        configureEndPosition(astNode, stop);
 
         return astNode;
     }
@@ -4268,12 +4266,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             astNode.setLastLineNumber(stop.getLastLineNumber());
             astNode.setLastColumnNumber(stop.getLastColumnNumber());
         } else {
-            Pair<Integer, Integer> endPosition = endPosition(start);
-            astNode.setLastLineNumber(endPosition.getKey());
-            astNode.setLastColumnNumber(endPosition.getValue());
+            configureEndPosition(astNode, start);
         }
 
         return astNode;
+    }
+
+    private <T extends ASTNode> void configureEndPosition(T astNode, Token token) {
+        Pair<Integer, Integer> endPosition = endPosition(token);
+        astNode.setLastLineNumber(endPosition.getKey());
+        astNode.setLastColumnNumber(endPosition.getValue());
     }
 
     private <T extends ASTNode> T configureAST(T astNode, ASTNode start, ASTNode stop) {
