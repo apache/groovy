@@ -18890,7 +18890,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return runtime groovydoc
      * @since 2.6.0
      */
-    public static String getGroovydoc(AnnotatedElement holder) {
-        return holder.<Groovydoc>getAnnotation(Groovydoc.class).value();
+    public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
+        return new groovy.lang.groovydoc.Groovydoc(holder.<Groovydoc>getAnnotation(Groovydoc.class).value(), holder);
     }
 }

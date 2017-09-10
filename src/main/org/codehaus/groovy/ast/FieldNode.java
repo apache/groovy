@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.groovydoc.Groovydoc;
-import org.codehaus.groovy.ast.groovydoc.GroovydocHolder;
+import groovy.lang.groovydoc.Groovydoc;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Field;
@@ -196,5 +196,10 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable, Groov
     @Override
     public Groovydoc getGroovydoc() {
         return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
+    }
+
+    @Override
+    public Object getInstance() {
+        return this;
     }
 }

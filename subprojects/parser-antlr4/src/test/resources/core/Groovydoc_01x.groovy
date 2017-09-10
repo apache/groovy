@@ -62,9 +62,9 @@ class AA {
 
 }
 
-assert AA.class.groovydoc.contains('class AA')
-assert AA.class.getMethod('m', new Class[0]).groovydoc.contains('method m')
-assert AA.class.getConstructor().groovydoc.contains('constructor AA')
-assert AA.class.getField('SOME_FIELD').groovydoc.contains('field SOME_FIELD')
-assert AA.class.getDeclaredClasses().find {it.simpleName.contains('InnerClass')}.groovydoc.contains('class InnerClass')
-assert BB.class.groovydoc.contains('annotation BB')
+assert AA.class.groovydoc.content.contains('class AA')
+assert AA.class.getMethod('m', new Class[0]).groovydoc.content.contains('method m')
+assert AA.class.getConstructor().groovydoc.content.contains('constructor AA')
+assert AA.class.getField('SOME_FIELD').groovydoc.content.contains('field SOME_FIELD')
+assert AA.class.getDeclaredClasses().find {it.simpleName.contains('InnerClass')}.groovydoc.content.contains('class InnerClass')
+assert BB.class.groovydoc.content.contains('annotation BB')

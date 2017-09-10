@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.groovydoc.GroovydocHolder;
+import groovy.lang.groovydoc.GroovydocHolder;
 
 import java.util.List;
 
@@ -109,7 +109,7 @@ public class GroovydocManager {
             return;
         }
 
-        node.putNodeMetaData(DOC_COMMENT, new org.codehaus.groovy.ast.groovydoc.Groovydoc(docCommentNodeText, (GroovydocHolder) node));
+        node.putNodeMetaData(DOC_COMMENT, new groovy.lang.groovydoc.Groovydoc(docCommentNodeText, (GroovydocHolder) node));
     }
 
     /*
