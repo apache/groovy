@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.groovydoc.Groovydoc;
+import org.codehaus.groovy.ast.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -103,7 +105,8 @@ import java.util.Set;
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  */
-public class ClassNode extends AnnotatedNode implements Opcodes {
+public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder {
+
     private static class MapOfLists {
         private Map<Object, List<MethodNode>> map;
         public List<MethodNode> get(Object key) {
@@ -1492,5 +1495,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     @Override
     public String getText() {
         return getName();
+    }
+
+    @Override
+    public Groovydoc getGroovydoc() {
+        return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
     }
 }

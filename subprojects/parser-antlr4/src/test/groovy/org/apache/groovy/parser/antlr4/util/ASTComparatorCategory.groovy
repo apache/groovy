@@ -190,7 +190,7 @@ class ASTComparatorCategory {
             }
 
 
-            !(name in ignore) && (name != 'nodeMetaData' && name != 'metaDataMap') && a."$name" != b."$name"
+            !(name in ignore) && (name != 'nodeMetaData' && name != 'metaDataMap' && name != 'groovydoc') && a."$name" != b."$name"
         }
 
         if (difference)

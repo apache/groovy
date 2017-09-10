@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.groovydoc.GroovydocHolder;
 
 import java.util.List;
 
@@ -40,7 +41,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * 3) attach groovydoc to AST node as metadata
  */
 public class GroovydocManager {
-    public static final String DOC_COMMENT = "_DOC_COMMENT"; // keys for meta data
+    public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT; // keys for meta data
     private static final String DOC_COMMENT_PREFIX = "/**";
     private static final String TRUE_STR = "true";
 
@@ -104,7 +105,11 @@ public class GroovydocManager {
             return;
         }
 
-        node.putNodeMetaData(DOC_COMMENT, docCommentNodeText);
+        if (!(node instanceof GroovydocHolder)) {
+            return;
+        }
+
+        node.putNodeMetaData(DOC_COMMENT, new org.codehaus.groovy.ast.groovydoc.Groovydoc(docCommentNodeText, (GroovydocHolder) node));
     }
 
     /*
