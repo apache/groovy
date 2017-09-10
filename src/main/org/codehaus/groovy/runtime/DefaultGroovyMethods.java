@@ -117,8 +117,8 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18884,44 +18884,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self.remove(o);
     }
 
-
     /**
      * Get runtime groovydoc
      * @param holder the groovydoc hold
      * @return runtime groovydoc
      * @since 2.6.0
      */
-    public static String getGroovydoc(Class<?> holder) {
-        return holder.<Groovydoc>getAnnotation(Groovydoc.class).value();
-    }
-
-    /**
-     * Get runtime groovydoc
-     * @param holder the groovydoc hold
-     * @return runtime groovydoc
-     * @since 2.6.0
-     */
-    public static String getGroovydoc(Method holder) {
-        return holder.<Groovydoc>getAnnotation(Groovydoc.class).value();
-    }
-
-    /**
-     * Get runtime groovydoc
-     * @param holder the groovydoc hold
-     * @return runtime groovydoc
-     * @since 2.6.0
-     */
-    public static String getGroovydoc(Constructor holder) {
-        return ((Groovydoc) holder.<Groovydoc>getAnnotation(Groovydoc.class)).value();
-    }
-
-    /**
-     * Get runtime groovydoc
-     * @param holder the groovydoc hold
-     * @return runtime groovydoc
-     * @since 2.6.0
-     */
-    public static String getGroovydoc(Field holder) {
+    public static String getGroovydoc(AnnotatedElement holder) {
         return holder.<Groovydoc>getAnnotation(Groovydoc.class).value();
     }
 }
