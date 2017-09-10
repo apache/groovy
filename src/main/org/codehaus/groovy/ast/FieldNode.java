@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.groovydoc.Groovydoc;
 import groovy.lang.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.ast.expr.Expression;
-import groovy.lang.groovydoc.Groovydoc;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Field;
@@ -30,7 +30,7 @@ import java.lang.reflect.Field;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class FieldNode extends AnnotatedNode implements Opcodes, Variable, GroovydocHolder {
+public class FieldNode extends AnnotatedNode implements Opcodes, Variable, GroovydocHolder<FieldNode> {
 
     private String name;
     private int modifiers;
@@ -199,7 +199,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable, Groov
     }
 
     @Override
-    public Object getInstance() {
+    public FieldNode getInstance() {
         return this;
     }
 }

@@ -28,23 +28,23 @@ import java.util.Objects;
 public class Groovydoc {
     private final String content;
     private List<GroovydocTag> tagList;
-    private final GroovydocHolder groovydocHolder;
+    private final GroovydocHolder holder;
 
     public Groovydoc(String content, GroovydocHolder groovydocHolder) {
         this.content = content;
-        this.groovydocHolder = groovydocHolder;
+        this.holder = groovydocHolder;
     }
 
     public Groovydoc(final String content, final AnnotatedElement annotatedElement) {
         this.content = content;
-        this.groovydocHolder = new GroovydocHolder() {
+        this.holder = new GroovydocHolder<AnnotatedElement>() {
             @Override
             public Groovydoc getGroovydoc() {
                 return Groovydoc.this;
             }
 
             @Override
-            public Object getInstance() {
+            public AnnotatedElement getInstance() {
                 return annotatedElement;
             }
         };
@@ -71,8 +71,8 @@ public class Groovydoc {
      * Get the holder of the groovydoc
      * @return the groovydoc holder
      */
-    public GroovydocHolder getGroovydocHolder() {
-        return groovydocHolder;
+    public GroovydocHolder getHolder() {
+        return holder;
     }
 
     @Override
@@ -81,12 +81,12 @@ public class Groovydoc {
         if (o == null || getClass() != o.getClass()) return false;
         Groovydoc groovydoc = (Groovydoc) o;
         return Objects.equals(content, groovydoc.content) &&
-                Objects.equals(groovydocHolder, groovydoc.groovydocHolder);
+                Objects.equals(holder, groovydoc.holder);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(content, groovydocHolder);
+        return Objects.hash(content, holder);
     }
 
     @Override

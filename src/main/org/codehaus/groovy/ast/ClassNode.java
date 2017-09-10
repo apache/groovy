@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.groovydoc.Groovydoc;
 import groovy.lang.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
-import groovy.lang.groovydoc.Groovydoc;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -105,7 +105,7 @@ import java.util.Set;
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  */
-public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder {
+public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder<ClassNode> {
 
     private static class MapOfLists {
         private Map<Object, List<MethodNode>> map;
@@ -1503,7 +1503,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     }
 
     @Override
-    public Object getInstance() {
+    public ClassNode getInstance() {
         return this;
     }
 }
