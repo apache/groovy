@@ -33,7 +33,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hamlet D'Arcy
  */
-public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolder {
+public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolder<MethodNode> {
 
     public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
     private final String name;
@@ -278,7 +278,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolde
     }
 
     @Override
-    public Object getInstance() {
+    public MethodNode getInstance() {
         return this;
     }
 }
