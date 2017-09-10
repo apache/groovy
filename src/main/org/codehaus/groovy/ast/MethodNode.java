@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.groovydoc.Groovydoc;
+import groovy.lang.groovydoc.GroovydocHolder;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
-import org.codehaus.groovy.ast.groovydoc.Groovydoc;
-import org.codehaus.groovy.ast.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
@@ -275,5 +275,10 @@ public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolde
     @Override
     public Groovydoc getGroovydoc() {
         return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
+    }
+
+    @Override
+    public Object getInstance() {
+        return this;
     }
 }

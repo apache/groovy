@@ -16,53 +16,53 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.groovydoc;
+package groovy.lang.groovydoc;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
- * Represents groovydoc
+ * TODO parse groovydoc to get tag content
  */
-public class Groovydoc {
+public class GroovydocTag {
+    private String name;
     private String content;
-    private List<GroovydocTag> tagList;
-    private GroovydocHolder groovydocHolder;
+    private Groovydoc groovydoc;
 
-    public Groovydoc(String content, GroovydocHolder groovydocHolder) {
+    public GroovydocTag(String name, String content, Groovydoc groovydoc) {
+        this.name = name;
         this.content = content;
-        this.groovydocHolder = groovydocHolder;
+        this.groovydoc = groovydoc;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getContent() {
         return content;
     }
 
-    public List<GroovydocTag> getTagList() {
-        throw new UnsupportedOperationException("[TODO]parsing tags will be a new features of the next releases");
-//        return tagList;
-    }
-
-    public GroovydocHolder getGroovydocHolder() {
-        return groovydocHolder;
+    public Groovydoc getGroovydoc() {
+        return groovydoc;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Groovydoc groovydoc = (Groovydoc) o;
-        return Objects.equals(content, groovydoc.content) &&
-                Objects.equals(groovydocHolder, groovydoc.groovydocHolder);
+        GroovydocTag that = (GroovydocTag) o;
+        return Objects.equals(name, that.name) &&
+                Objects.equals(content, that.content) &&
+                Objects.equals(groovydoc, that.groovydoc);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(content, groovydocHolder);
+        return Objects.hash(name, content, groovydoc);
     }
 
     @Override
     public String toString() {
-        return this.content;
+        return content;
     }
 }

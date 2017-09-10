@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.groovydoc;
+package groovy.lang.groovydoc;
 
 /**
  * Represents Groovydoc Holder
@@ -28,4 +28,6 @@ public interface GroovydocHolder {
      * @return the groovydoc
      */
     Groovydoc getGroovydoc();
+
+    Object getInstance();
 }
