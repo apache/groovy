@@ -19,7 +19,9 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import antlr.TokenStreamException
+import groovy.transform.TupleConstructor
 import jline.console.completer.Completer
+import jline.internal.Configuration
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
@@ -45,9 +47,14 @@ class GroovySyntaxCompletor implements Completer {
     private final IdentifierCompletor classnameCompletor
     private final ReflectionCompletor reflectionCompletor
     private final InfixKeywordSyntaxCompletor infixCompletor
-    private final Completer filenameCompletor
+    private final Completer defaultFilenameCompletor
+    private final Completer windowsFilenameCompletor
+    private final Completer instringFilenameCompletor
+    private final Completer backslashCompletor
+    private static final boolean isWin = Configuration.isWindows()
+    private final GroovyShell gs = new GroovyShell()
 
-    static final enum CompletionCase {
+    static enum CompletionCase {
         SECOND_IDENT,
         NO_COMPLETION,
         DOT_LAST,
@@ -67,13 +74,16 @@ class GroovySyntaxCompletor implements Completer {
         this.classnameCompletor = classnameCompletor
         this.identifierCompletors = identifierCompletors
         infixCompletor = new InfixKeywordSyntaxCompletor()
+        backslashCompletor = new BackslashEscapeCompleter()
         this.reflectionCompletor = reflectionCompletor
-        this.filenameCompletor = filenameCompletor
+        defaultFilenameCompletor = filenameCompletor
+        windowsFilenameCompletor = new FileNameCompleter(false, true, false)
+        instringFilenameCompletor = new FileNameCompleter(false, false, false)
     }
 
     @Override
     int complete(final String bufferLine, final int cursor, final List<CharSequence> candidates) {
-        if (! bufferLine) {
+        if (!bufferLine) {
             return -1
         }
         if (isCommand(bufferLine, shell.registry)) {
@@ -83,17 +93,37 @@ class GroovySyntaxCompletor implements Completer {
         // Build a single string for the lexer
         List<GroovySourceToken> tokens = []
         try {
-            if (! tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
+            if (!tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
                 return -1
             }
         } catch (InStringException ise) {
-            int completionStart = ise.column + 1
-            int fileResult = + filenameCompletor.complete(bufferLine.substring(completionStart),
-                    cursor - completionStart, candidates)
-            if (fileResult >= 0) {
-                return completionStart + fileResult
+            int completionStart = ise.column + ise.openDelim.size()
+            def remainder = bufferLine.substring(completionStart)
+            def completer = instringFilenameCompletor
+            if (['"', "'", '"""', "'''"].contains(ise.openDelim)) {
+                if (isWin) {
+                    completer = windowsFilenameCompletor
+                }
+                // perhaps a backslash
+                if (remainder.contains("\\")) {
+                    try {
+                        gs.evaluate("'$remainder'")
+                    } catch (Exception ex1) {
+                        try {
+                            gs.evaluate("'${remainder.substring(0, remainder.size() - 1)}'")
+                            // only get here if there is an unescaped backslash at the end of the buffer
+                            // ignore the result since it is only informational
+                            return backslashCompletor.complete(remainder, cursor, candidates)
+                        } catch (Exception ex2) {
+                        }
+                    }
+                }
             }
-            return -1
+            int completionResult = completer.complete(remainder, cursor - completionStart, candidates)
+            if (completionResult >= 0) {
+                return completionStart + completionResult
+            }
+            return completionResult
         }
 
         CompletionCase completionCase = getCompletionCase(tokens)
@@ -151,11 +181,11 @@ class GroovySyntaxCompletor implements Completer {
                 }
                 return CompletionCase.PREFIX_AFTER_DOT
             } else if (previousToken.type == SPREAD_DOT) {
-                    // we have a dot, so need to evaluate the statement up to the dot for completion
-                    if (tokens.size() < 3) {
-                        return CompletionCase.NO_COMPLETION
-                    }
-                    return CompletionCase.PREFIX_AFTER_SPREAD_DOT
+                // we have a dot, so need to evaluate the statement up to the dot for completion
+                if (tokens.size() < 3) {
+                    return CompletionCase.NO_COMPLETION
+                }
+                return CompletionCase.PREFIX_AFTER_SPREAD_DOT
             } else {
                 // no dot, so we complete a varname, classname, or similar
                 switch (previousToken.type) {
@@ -212,9 +242,9 @@ class GroovySyntaxCompletor implements Completer {
         return CompletionCase.NO_COMPLETION
     }
 
-    int completeIdentifier(final  List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    int completeIdentifier(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         boolean foundMatches = false
-        for (IdentifierCompletor completor: identifierCompletors) {
+        for (IdentifierCompletor completor : identifierCompletors) {
             foundMatches |= completor.complete(tokens, candidates)
         }
         if (foundMatches) {
@@ -244,19 +274,25 @@ class GroovySyntaxCompletor implements Completer {
         return lexer
     }
 
+    @TupleConstructor
     static class InStringException extends Exception {
         int column
-        InStringException(int column) {
-            this.column  = column
+        String openDelim
+
+        @Override
+        String toString() {
+            super.toString() + "[column=$column, openDelim=$openDelim]"
         }
     }
+
+    private static final STRING_STARTERS = [/"""/, /'''/, /"/, /'/, '$/', '/']
 
     /**
      * Adds to result the identified tokens for the bufferLines
      * @param bufferLine
      * @param previousLines
      * @param result
-     * @return true if lexing was successfull
+     * @return true if lexing was successful
      */
     static boolean tokenizeBuffer(final String bufferLine,
                                   final List<String> previousLines,
@@ -264,7 +300,7 @@ class GroovySyntaxCompletor implements Completer {
         GroovyLexer groovyLexer
         if (previousLines.size() > 0) {
             StringBuilder src = new StringBuilder()
-            for (String line: previousLines) {
+            for (String line : previousLines) {
                 src.append(line).append('\n')
             }
             src.append(bufferLine)
@@ -275,33 +311,30 @@ class GroovySyntaxCompletor implements Completer {
         // Build a list of tokens using a GroovyLexer
         GroovySourceToken nextToken
         GroovySourceToken lastToken
-        boolean isGString = false
         while (true) {
             try {
                 nextToken = groovyLexer.nextToken() as GroovySourceToken
                 if (nextToken.type == EOF) {
-                    if (! result.isEmpty() && nextToken.line > result.last().line) {
+                    if (!result.isEmpty() && nextToken.line > result.last().line) {
                         // no completion if EOF line has no tokens
                         return false
                     }
                     break
                 }
-                if (nextToken.type == STRING_CTOR_START) {
-                    isGString = true
-                }
                 result << nextToken
                 lastToken = nextToken
             } catch (TokenStreamException e) {
-                // getting the next token failed, possibly due to unclosed hyphens, need to investigate rest of the line to confirm
-                if (! isGString && lastToken != null) {
+                // getting the next token failed, possibly due to unclosed quotes; investigate rest of the line to confirm
+                if (lastToken != null) {
                     String restline = bufferLine.substring(lastToken.columnLast - 1)
                     int leadingBlanks = restline.find('^[ ]*').length()
                     if (restline) {
-                        char firstChar = restline.charAt(leadingBlanks)
-                        // Exception with following hyphen either means we're in String or at end of GString.
-                        if (firstChar.toString() in ['"', "'"]
-                                && previousLines.size() + 1 == lastToken.line) {
-                            throw new InStringException(lastToken.columnLast + leadingBlanks - 1)
+                        String remainder = restline.substring(leadingBlanks)
+                        //System.err.println "|" + remainder + "|"
+                        // Exception with following quote either means we're in String or at end of GString.
+                        String openDelim = STRING_STARTERS.find { remainder.startsWith(it) }
+                        if (openDelim && previousLines.size() + 1 == lastToken.line) {
+                            throw new InStringException(lastToken.columnLast + leadingBlanks - 1, openDelim)
                         }
                     }
                 }
