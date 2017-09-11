@@ -697,7 +697,7 @@ locals[boolean resourcesExists = false]
             nls finallyBlock
         |
             // catch and finally clauses required unless it's a try-with-resources block
-            { require($resourcesExists, "either a catch or finally clause or both is required for a try-catch-finally statement", -5); }
+            { require($resourcesExists, "either a catch or finally clause or both is required for a try-catch-finally statement"); }
         )
     ;
 
