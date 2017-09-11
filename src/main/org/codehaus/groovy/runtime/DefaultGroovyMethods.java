@@ -18891,6 +18891,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.6.0
      */
     public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
-        return new groovy.lang.groovydoc.Groovydoc(holder.<Groovydoc>getAnnotation(Groovydoc.class).value(), holder);
+        Groovydoc groovydocAnnotation = holder.<Groovydoc>getAnnotation(Groovydoc.class);
+
+        return null == groovydocAnnotation
+                    ? null
+                    : new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
     }
 }
