@@ -290,7 +290,7 @@ sourceSets {
             srcDirs = ['src/main', 'src/resources']
             include 'META-INF/services/*',
                     'META-INF/groovy-release-info.properties',
-                    'groovy/grape/*.xml',
+                    'groovy/grape/*.xml'
         }
     }
     test {
@@ -321,6 +321,13 @@ sourceSets {
 }
 
 apply from: 'subprojects/parser-antlr4/build.gradle'
+sourceSets {
+    main {
+        antlr {
+            srcDirs = ['src/antlr']
+        }
+    }
+}
 
 // make sure examples can be compiled, even if we don't run them
 // todo: reorganize examples so that we can run them too
