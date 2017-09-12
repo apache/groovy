@@ -27,6 +27,8 @@ matrix:
 
 install: true
 
+before_script: unset _JAVA_OPTIONS
+
 script: travis_wait 60 ./gradlew test
 
 before_cache:
@@ -35,3 +37,4 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+
