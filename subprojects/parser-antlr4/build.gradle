@@ -18,6 +18,13 @@
  */
 
 apply plugin: 'antlr'
+sourceSets {
+    main {
+        antlr {
+            srcDirs = ['src/antlr']
+        }
+    }
+}
 
 def srcBase = "subprojects/parser-antlr4/src"
 def srcMain = "$srcBase/main"
