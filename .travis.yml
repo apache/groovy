@@ -27,6 +27,8 @@ matrix:
 
 install: true
 
+before_script: unset _JAVA_OPTIONS
+
 script: travis_wait 60 ./gradlew -PuseAntlr4=true test
 
 before_cache:
