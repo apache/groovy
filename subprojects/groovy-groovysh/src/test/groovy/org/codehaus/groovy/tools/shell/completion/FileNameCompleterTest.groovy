@@ -37,7 +37,7 @@ class FileNameCompleterTest extends GroovyTestCase {
         assert completer.render('foo \'\"bar') == 'foo\\ \\\'\\\"bar' + ''
     }
 
-    @Test
+//    @Test
     void _FIXME_testCompletionNoFiles() {
         // abusing junit testrule
         TemporaryFolder testFolder = null;
