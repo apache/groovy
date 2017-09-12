@@ -277,17 +277,10 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ['src/main', 'src/tools', 'src/resources']
+            srcDirs = ['src/main', 'src/resources']
             include 'META-INF/services/*',
                     'META-INF/groovy-release-info.properties',
-                    'groovy/grape/*.xml',
-                    'groovy/ui/*.properties',
-                    'groovy/ui/**/*.png',
-                    'groovy/inspect/swingui/AstBrowserProperties.groovy',
-                    'org/codehaus/groovy/tools/shell/**/*.properties',
-                    'org/codehaus/groovy/tools/shell/**/*.xml',
-                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*',
-                    'org/codehaus/groovy/tools/groovy.ico'
+                    'groovy/grape/*.xml'
         }
     }
     test {
