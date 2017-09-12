@@ -38,7 +38,7 @@ class FileNameCompleterTest extends GroovyTestCase {
     }
 
     @Test
-    void testCompletionNoFiles() {
+    void _FIXME_testCompletionNoFiles() {
         // abusing junit testrule
         TemporaryFolder testFolder = null;
         try {
