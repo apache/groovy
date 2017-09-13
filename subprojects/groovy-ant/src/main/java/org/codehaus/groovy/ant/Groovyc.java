@@ -291,7 +291,7 @@ public class Groovyc extends MatchingTask {
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
-        
+
         for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
             if (allowedJdk.equals(version)) {
                 this.targetBytecode = version;
@@ -304,8 +304,8 @@ public class Groovyc extends MatchingTask {
      * Retrieves the compiler bytecode compatibility mode.
      *
      * @return bytecode compatibility mode. Can be one of the values
-     *         <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or
-     *         <tt>1.4</tt>.
+     * <tt>1.8</tt>, <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or
+     * <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
@@ -666,7 +666,7 @@ public class Groovyc extends MatchingTask {
      * Get the result of the groovyc task (success or failure).
      *
      * @return true if compilation succeeded, or
-     *         was not necessary, false if the compilation failed.
+     * was not necessary, false if the compilation failed.
      */
     public boolean getTaskSuccess() {
         return taskSuccess;
@@ -786,7 +786,7 @@ public class Groovyc extends MatchingTask {
 
     /**
      * Set the forceLookupUnnamedFiles flag. Defaults to false.
-     *
+     * <p>
      * The Groovyc Ant task is frequently used in the context of a build system
      * that knows the complete list of source files to be compiled. In such a
      * context, it is wasteful for the Groovy compiler to go searching the
@@ -1195,7 +1195,9 @@ public class Groovyc extends MatchingTask {
             }
 
             if (!fileNameErrors) {
-                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, forceLookupUnnamedFiles);
+                try (GroovyClassLoader loader = buildClassLoaderFor()) {
+                    FileSystemCompiler.doCompilation(configuration, makeCompileUnit(loader), filenames, forceLookupUnnamedFiles);
+                }
             }
 
         } catch (Exception re) {
@@ -1259,7 +1261,15 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * @deprecated This method is not in use anymore. Use {@link Groovyc#makeCompileUnit(GroovyClassLoader)} instead.
+     */
+    @Deprecated
     protected CompilationUnit makeCompileUnit() {
+        return makeCompileUnit(buildClassLoaderFor());
+    }
+
+    protected CompilationUnit makeCompileUnit(GroovyClassLoader loader) {
         Map<String, Object> options = configuration.getJointCompilationOptions();
         if (options != null) {
             if (keepStubs) {
@@ -1276,9 +1286,9 @@ public class Groovyc extends MatchingTask {
                     throw new BuildException(ioe);
                 }
             }
-            return new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
+            return new JavaAwareCompilationUnit(configuration, loader);
         } else {
-            return new CompilationUnit(configuration, null, buildClassLoaderFor());
+            return new CompilationUnit(configuration, null, loader);
         }
     }
 
@@ -1313,12 +1323,11 @@ public class Groovyc extends MatchingTask {
                  * may not exist in the classpath yet
                  */
                 if (!found && new File(cpEntry).exists()) {
-                	try {
-                		antLoader.addPathElement(cpEntry);
-                	}
-                	catch(BuildException e) {
-                		log.warn("The classpath entry " + cpEntry + " is not a valid Java resource");
-                	}
+                    try {
+                        antLoader.addPathElement(cpEntry);
+                    } catch (BuildException e) {
+                        log.warn("The classpath entry " + cpEntry + " is not a valid Java resource");
+                    }
                 }
             }
         }
@@ -1346,11 +1355,14 @@ public class Groovyc extends MatchingTask {
 
             Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
             final String[] pe = classpath.list();
-            final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
-            for (String file : pe) {
-                loader.addClasspath(file);
+            try (GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader())) {
+                for (String file : pe) {
+                    loader.addClasspath(file);
+                }
+                scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
         }
     }
 }
