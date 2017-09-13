@@ -1168,11 +1168,18 @@ public abstract class StaticTypeCheckingSupport {
     private static void removeMethodWithSuperReturnType(List<MethodNode> toBeRemoved, MethodNode one, MethodNode two) {
         ClassNode oneRT = one.getReturnType();
         ClassNode twoRT = two.getReturnType();
-        if (oneRT.isDerivedFrom(twoRT) || oneRT.implementsInterface(twoRT)) {
+        if (isCovariant(oneRT, twoRT)) {
             toBeRemoved.add(two);
-        } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
+        } else if (isCovariant(twoRT, oneRT)) {
             toBeRemoved.add(one);
         }
+    }
+
+    private static boolean isCovariant(ClassNode left, ClassNode right) {
+        if (left.isArray() && right.isArray()) {
+            return isCovariant(left.getComponentType(), right.getComponentType());
+        }
+        return left.isDerivedFrom(right) || left.implementsInterface(right);
     }
 
     private static boolean areOverloadMethodsInSameClass(MethodNode one, MethodNode two) {
