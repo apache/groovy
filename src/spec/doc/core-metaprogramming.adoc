@@ -2357,6 +2357,43 @@ The `@PackageScope` annotation is seldom used as part of normal Groovy conventio
 for factory methods that should be visible internally within a package or for methods or constructors provided
 for testing purposes, or when integrating with third-party libraries which require such visibility conventions.
 
+[[xform-AutoFinal]]
+===== `@groovy.transform.AutoFinal`
+
+The `@AutoFinal` annotation instructs the compiler to automatically insert the final modifier
+in numerous places within the annotated node. If applied on a method (or constructor), the parameters
+for that method (or constructor) will be marked as final. If applied on a class definition, the same
+treatment will occur for all declared methods and constructors within that class.
+
+It is often considered bad practice to reassign parameters of a method or constructor with its body.
+By adding the final modifier to all parameter declarations you can avoid this practice entirely.
+Some programmers feel that adding final everywhere increases the amount of boilerplate code and makes the
+method signatures somewhat noisy. An alternative might instead be to use a code review process or apply
+a http://codenarc.org[codenarc] http://codenarc.sourceforge.net/codenarc-rules-convention.html#ParameterReassignment[rule]
+to give warnings if that practice is observed but these alternatives might lead to delayed feedback during
+quality checking rather than within the IDE or during compilation. The `@AutoFinal` annotation aims to
+maximise compiler/IDE feedback while retaining succinct code with minimum boilerplate noise.
+
+The following example illustrates applying the annotation at the class level:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=autofinal_class,indent=0]
+----
+
+In this example, the two parameters for the constructor and the single parameter for
+both the `fullname` and `greeting` methods will be final. Attempts to modify those parameters within the
+constructor or method bodies will be flagged by the compiler.
+
+The following example illustrates applying the annotation at the method level:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=autofinal_method,indent=0]
+----
+
+Here, the `add` method will have final parameters but the `mult` method will remain unchanged.
+
 [[xform-AnnotationCollector]]
 ===== `@groovy.transform.AnnotationCollector`
 

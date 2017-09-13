@@ -96,6 +96,52 @@ new MyScript().run()
 '''
     }
 
+    void testAutoFinalClass() {
+        assertScript '''
+// tag::autofinal_class[]
+import groovy.transform.AutoFinal
+
+@AutoFinal
+class Person {
+    private String first, last
+
+    Person(String first, String last) {
+        this.first = first
+        this.last = last
+    }
+    
+    String fullName(String separator) {
+        "$first$separator$last"
+    }
+    
+    String greeting(String salutation) {
+        "$salutation, $first"
+    }
+}
+// end::autofinal_class[]
+def john = new Person('John', 'Smith')
+assert john.fullName(' ') == 'John Smith'
+assert john.greeting('Hello') == 'Hello, John'
+'''
+    }
+
+    void testAutoFinalMethod() {
+        assertScript '''
+import groovy.transform.AutoFinal
+// tag::autofinal_method[]
+class Calc {
+    @AutoFinal
+    int add(int a, int b) { a + b }
+
+    int mult(int a, int b) { a * b }
+}
+// end::autofinal_method[]
+def calc = new Calc()
+assert calc.add(3, 6) == 9
+assert calc.mult(3, 6) == 18
+'''
+    }
+
     void testPackageScope() {
         assertScript '''import java.lang.reflect.Modifier
 // tag::packagescope_property[]
