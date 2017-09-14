@@ -2419,18 +2419,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 blockParameterTypes = extractTypesFromParameters(p);
             }
         }
-        for (int i=0; i<blockParameterTypes.length; i++) { //TODO: equal length guaranteed?
-            extractGenericsConnections(SAMTypeConnections, blockParameterTypes[i], parameterTypesForSAM[i]);
+        for (int i=0; i<blockParameterTypes.length; i++) {
+            extractGenericsConnections(SAMTypeConnections, blockParameterTypes[i], typeOrNull(parameterTypesForSAM, i));
         }
 
         // and finally we apply the generics information to the parameters and
         // store the type of parameter and block type as meta information
-        for (int i=0; i<blockParameterTypes.length; i++) { //TODO: equal length guaranteed?
+        for (int i=0; i<blockParameterTypes.length; i++) {
             ClassNode resolvedParameter =
-                    applyGenericsContext(SAMTypeConnections, parameterTypesForSAM[i]);
+                    applyGenericsContext(SAMTypeConnections, typeOrNull(parameterTypesForSAM, i));
             blockParameterTypes[i] = resolvedParameter;
         }
         openBlock.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, blockParameterTypes);
+    }
+
+    private ClassNode typeOrNull(ClassNode[] parameterTypesForSAM, int i) {
+        return i < parameterTypesForSAM.length ? parameterTypesForSAM[i] : null;
     }
 
     private List<ClassNode[]> getSignaturesFromHint(final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
