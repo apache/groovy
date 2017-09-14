@@ -3999,7 +3999,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode[] closureParamTypes = (ClassNode[])(enclosingClosure!=null?enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS):null);
                 if (type==null && enclosingClosure !=null && "it".equals(variable.getName()) && closureParamTypes!=null) {
                     final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
-                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null) {
+                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null && closureParamTypes.length!=0) {
                         type = closureParamTypes[0];
                     }
                 }
