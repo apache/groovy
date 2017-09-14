@@ -139,6 +139,7 @@ jar {
             into('licenses')
             include('asm-license.txt')
             include('antlr2-license.txt')
+            include('antlr4-license.txt')
         }
         from("$projectDir/notices/NOTICE-JARJAR")
         from('src/resources/META-INF/groovy-release-info.properties') {
@@ -554,6 +555,7 @@ ext.distSpec = copySpec {
     into('licenses') {
         from 'licenses'
         include 'antlr2-license.txt'
+        include 'antlr4-license.txt'
         include 'asm-license.txt'
         include 'hamcrest-license.txt'
         include 'jline2-license.txt'
