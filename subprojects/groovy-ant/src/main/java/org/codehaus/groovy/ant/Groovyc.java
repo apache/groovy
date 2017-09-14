@@ -1162,13 +1162,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (!fileNameErrors) {
-              GroovyClassLoader loader = buildClassLoaderFor();
-              try {
-                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(loader), filenames, forceLookupUnnamedFiles);
-              } finally {
-                if (loader != null)
-                  loader.close();
-              }
+                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, forceLookupUnnamedFiles);
             }
 
         } catch (Exception re) {
@@ -1232,7 +1226,7 @@ public class Groovyc extends MatchingTask {
         }
     }
 
-    protected CompilationUnit makeCompileUnit(GroovyClassLoader loader) {
+    protected CompilationUnit makeCompileUnit() {
         Map<String, Object> options = configuration.getJointCompilationOptions();
         if (options != null) {
             if (keepStubs) {
@@ -1249,9 +1243,9 @@ public class Groovyc extends MatchingTask {
                     throw new BuildException(ioe);
                 }
             }
-            return new JavaAwareCompilationUnit(configuration, loader);
+            return new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
         } else {
-            return new CompilationUnit(configuration, null, loader);
+            return new CompilationUnit(configuration, null, buildClassLoaderFor());
         }
     }
 
@@ -1320,19 +1314,10 @@ public class Groovyc extends MatchingTask {
             Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
             final String[] pe = classpath.list();
             final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
-            try {
-              for (String file : pe) {
+            for (String file : pe) {
                 loader.addClasspath(file);
-              }
-              scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
-            } finally {
-              try {
-                loader.close();
-              }
-              catch ( IOException e ) {
-                throw new RuntimeException( e );
-              }
             }
+            scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
         }
     }
 }
