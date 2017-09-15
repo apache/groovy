@@ -20,6 +20,8 @@ jdk:
   - openjdk7
   - oraclejdk8
 
+dist: precise
+
 install: true
 
 before_script: unset _JAVA_OPTIONS
