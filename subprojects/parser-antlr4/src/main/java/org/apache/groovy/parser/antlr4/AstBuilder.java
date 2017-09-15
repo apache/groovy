@@ -1499,9 +1499,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private DeclarationListStatement createMultiAssignmentDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager) {
+        /*
         if (!modifierManager.contains(DEF)) {
             throw createParsingFailedException("keyword def is required to declare tuple, e.g. def (int a, int b) = [1, 2]", ctx);
         }
+        */
 
         return configureAST(
                 new DeclarationListStatement(
