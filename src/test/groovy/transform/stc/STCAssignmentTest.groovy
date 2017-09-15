@@ -844,5 +844,33 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert fooParameterAssignment(null) == 42            
         '''
     }
+
+    void testIntegerArraySmartType() {
+        assertScript '''
+        def m() {
+            def a  = 1
+            Integer[] b = [a]
+        }            
+        '''
+    }
+
+    void testIntegerSecondDimArraySmartType() {
+        assertScript '''
+        def m() {
+            def a = new int[5]
+            int[][] b = [a]
+        }            
+        '''
+    }
+
+    void testMultiAssign() {
+        assertScript '''
+        def m() {
+            def row = ["", "", ""]
+            def (left, right) = [row[0], row[1]]
+            left.toUpperCase()
+        }            
+        '''
+    }
 }
 

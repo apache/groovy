@@ -875,6 +875,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!isAssignableTo(elemType, tupleType)) {
                 addStaticTypeError("Cannot assign value of type " + elemType.toString(false) + " to variable of type " + tupleType.toString(false), rightExpression);
                 return false; // avoids too many errors
+            } else {
+                storeType(tupleExpression, elemType);
             }
         }
 
@@ -925,7 +927,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else if (rightExpression instanceof ListExpression) {
             for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
-                ClassNode rightComponentType = element.getType().redirect();
+                ClassNode rightComponentType = this.getType(element);
                 if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)
                         && !(isNullConstant(element) && !isPrimitiveType(leftComponentType))) {
                     addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
