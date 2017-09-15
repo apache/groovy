@@ -4084,7 +4084,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return statement;
     }
 
-    public BlockStatement createBlockStatement(Statement... statements) {
+    BlockStatement createBlockStatement(Statement... statements) {
         return this.createBlockStatement(Arrays.asList(statements));
     }
 
@@ -4299,7 +4299,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         ctx.stop.getCharPositionInLine() + 1 + ctx.stop.getText().length()));
     }
 
-    public CompilationFailedException createParsingFailedException(String msg, ASTNode node) {
+    CompilationFailedException createParsingFailedException(String msg, ASTNode node) {
         Objects.requireNonNull(node, "node passed into createParsingFailedException should not be null");
 
         return createParsingFailedException(
