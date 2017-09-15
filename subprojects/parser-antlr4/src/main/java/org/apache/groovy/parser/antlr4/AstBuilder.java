@@ -1779,6 +1779,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
+    public Expression visitEnhancedExpression(EnhancedExpressionContext ctx) {
+        Expression expression;
+
+        if (asBoolean(ctx.expression())) {
+            expression = (Expression) this.visit(ctx.expression());
+        } else if (asBoolean(ctx.standardLambdaExpression())) {
+            expression = this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
+        } else {
+            throw createParsingFailedException("Unsupported enhanced expression: " + ctx.getText(), ctx);
+        }
+
+        return configureAST(expression, ctx);
+    }
+
+
+    @Override
     public ExpressionStatement visitCommandExprAlt(CommandExprAltContext ctx) {
         return configureAST(new ExpressionStatement(this.visitCommandExpression(ctx.commandExpression())), ctx);
     }
@@ -1907,7 +1923,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitExpressionInPar(ExpressionInParContext ctx) {
-        return this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
+        return this.visitEnhancedExpression(ctx.enhancedExpression());
     }
 
     @Override
