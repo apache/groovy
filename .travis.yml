@@ -26,6 +26,8 @@ matrix:
           packages:
             - oracle-java8-installer
 
+dist: precise
+
 install: true
 
 before_script: unset _JAVA_OPTIONS
