@@ -112,6 +112,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -3222,7 +3223,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     if (expression instanceof ClosureExpression && !asBoolean(e.closure().ARROW())) {
                         List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
 
-                        if (statementList.stream().noneMatch(x -> asBoolean(x))) {
+                        if (statementList.stream().noneMatch(DefaultGroovyMethods::asBoolean)) {
                             return configureAST(new ConstantExpression(null), e);
                         }
 
@@ -3682,7 +3683,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 this.createBlockStatement(
                         ctx.blockStatement().stream()
                                 .map(this::visitBlockStatement)
-                                .filter(e -> asBoolean(e))
+                                .filter(DefaultGroovyMethods::asBoolean)
                                 .collect(Collectors.toList())),
                 ctx);
     }
@@ -3737,9 +3738,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<Pair<String, Expression>> annotationElementValues = new LinkedList<>();
 
         if (asBoolean(ctx.elementValuePairs())) {
-            this.visitElementValuePairs(ctx.elementValuePairs()).entrySet().forEach(e -> {
-                annotationElementValues.add(new Pair<>(e.getKey(), e.getValue()));
-            });
+            this.visitElementValuePairs(ctx.elementValuePairs()).forEach((key, value) -> annotationElementValues.add(new Pair<>(key, value)));
         } else if (asBoolean(ctx.elementValue())) {
             annotationElementValues.add(new Pair<>(VALUE_STR, this.visitElementValue(ctx.elementValue())));
         }
@@ -4005,7 +4004,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return statement;
     }
 
-    public BlockStatement createBlockStatement(Statement... statements) {
+    BlockStatement createBlockStatement(Statement... statements) {
         return this.createBlockStatement(Arrays.asList(statements));
     }
 
@@ -4222,7 +4221,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         ctx.stop.getCharPositionInLine() + 1 + ctx.stop.getText().length()));
     }
 
-    public CompilationFailedException createParsingFailedException(String msg, ASTNode node) {
+    CompilationFailedException createParsingFailedException(String msg, ASTNode node) {
         Objects.requireNonNull(node, "node passed into createParsingFailedException should not be null");
 
         return createParsingFailedException(
