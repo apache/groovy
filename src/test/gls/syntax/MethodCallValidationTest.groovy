@@ -18,17 +18,9 @@
  */
 package gls.syntax
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ParserVersion
-
 public class MethodCallValidationTest extends gls.CompilableTestSupport {
 
     void testDeclarationInMethodCall() {
-        if (ParserVersion.V_4 == CompilerConfiguration.DEFAULT.parserVersion) {
-            // FIXME GROOVY-8277
-            return
-        }
-
         shouldNotCompile """
             foo(String a)
         """
