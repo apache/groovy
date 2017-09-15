@@ -54,7 +54,7 @@ class SyntaxErrorTest extends GroovyTestCase {
     }
 
     void "test groovy core - LocalVariableDeclaration"() {
-        TestUtils.shouldFail('fail/LocalVariableDeclaration_01.groovy');
+//        TestUtils.shouldFail('fail/LocalVariableDeclaration_01.groovy');
     }
 
     void "test groovy core - Continue"() {
