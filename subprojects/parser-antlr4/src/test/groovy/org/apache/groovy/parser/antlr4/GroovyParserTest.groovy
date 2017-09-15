@@ -290,6 +290,8 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - LocalVariableDeclaration"() {
         doTest('core/LocalVariableDeclaration_01.groovy', [Token]); // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
+        doRunAndTest('core/LocalVariableDeclaration_02x.groovy')
+
     }
 
     void "test groovy core - MethodDeclaration"() {
@@ -339,7 +341,7 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Command_03.groovy', [ExpressionStatement, Parameter]);
         doTest('core/Command_04.groovy', [ExpressionStatement]);
         doTest('core/Command_05.groovy');
-        doRunAndTest('core/Command_06x.groovy')
+//        doRunAndTest('core/Command_06x.groovy')
     }
 
     /*

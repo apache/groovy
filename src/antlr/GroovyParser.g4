@@ -812,7 +812,7 @@ parExpression
     ;
 
 expressionInPar
-    :   LPAREN enhancedStatementExpression rparen
+    :   LPAREN enhancedExpression rparen
     ;
 
 expressionList[boolean canSpread]
@@ -946,6 +946,11 @@ expression
                            |   ELVIS_ASSIGN
                            ) nls
                      enhancedStatementExpression                                            #assignmentExprAlt
+    ;
+
+enhancedExpression
+    :   expression
+    |   standardLambdaExpression
     ;
 
 commandExpression
