@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import java.util.AbstractList;
 import java.util.List;
 
 /**
@@ -25,8 +28,9 @@ import java.util.List;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class Tuple<E> extends AbstractTuple<E> {
+public class Tuple<E> extends AbstractList<E> {
     private final E[] contents;
+    private int hashCode;
 
     public Tuple(E... contents) {
         if (contents == null) throw new NullPointerException();
@@ -53,5 +57,35 @@ public class Tuple<E> extends AbstractTuple<E> {
 
     public Tuple<E> subTuple(int fromIndex, int toIndex) {
         return (Tuple<E>) subList(fromIndex, toIndex);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof Tuple)) return false;
+
+        Tuple that = (Tuple) o;
+        if (size() != that.size()) return false;
+        for (int i = 0; i < size(); i++) {
+            if (!DefaultTypeTransformation.compareEqual(get(i), that.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        if (hashCode == 0) {
+            for (int i = 0; i < size(); i++) {
+                Object value = get(i);
+                int hash = (value != null) ? value.hashCode() : 0xbabe;
+                hashCode ^= hash;
+            }
+            if (hashCode == 0) {
+                hashCode = 0xbabe;
+            }
+        }
+        return hashCode;
     }
 }
