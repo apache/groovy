@@ -21,11 +21,13 @@ package groovy.lang;
 /**
  * Represents a list of 2 typed Objects.
  */
-public class Tuple2<T1, T2> extends AbstractTuple {
+public class Tuple2<T1, T2> extends Tuple {
     private final T1 first;
     private final T2 second;
 
     public Tuple2(T1 first, T2 second) {
+        super(first, second);
+
         this.first = first;
         this.second = second;
     }

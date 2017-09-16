@@ -23,10 +23,12 @@ package groovy.lang;
  *
  * @since 2.5.0
  */
-public class Tuple1<T1> extends AbstractTuple {
+public class Tuple1<T1> extends Tuple {
     private final T1 first;
 
     public Tuple1(T1 first) {
+        super(first);
+
         this.first = first;
     }
 
