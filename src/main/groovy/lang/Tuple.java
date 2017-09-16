@@ -25,16 +25,16 @@ import java.util.List;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class Tuple extends AbstractTuple {
-    private final Object[] contents;
+public class Tuple<E> extends AbstractTuple<E> {
+    private final E[] contents;
 
-    public Tuple(Object... contents) {
+    public Tuple(E... contents) {
         if (contents == null) throw new NullPointerException();
         this.contents = contents;
     }
 
     @Override
-    public Object get(int index) {
+    public E get(int index) {
         return contents[index];
     }
 
@@ -44,10 +44,10 @@ public class Tuple extends AbstractTuple {
     }
 
     @Override
-    public List subList(int fromIndex, int toIndex) {
+    public List<E> subList(int fromIndex, int toIndex) {
         int size = toIndex - fromIndex;
-        Object[] newContent = new Object[size];
+        E[] newContent = (E[]) new Object[size];
         System.arraycopy(contents, fromIndex, newContent, 0, size);
-        return new Tuple(newContent);
+        return new Tuple<>(newContent);
     }
 }
