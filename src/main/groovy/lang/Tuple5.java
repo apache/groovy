@@ -24,7 +24,7 @@ package groovy.lang;
  *
  * @since 2.5.0
  */
-public class Tuple5<T1, T2, T3, T4, T5> extends AbstractTuple {
+public class Tuple5<T1, T2, T3, T4, T5> extends Tuple {
     private final T1 first;
     private final T2 second;
     private final T3 third;
@@ -32,6 +32,8 @@ public class Tuple5<T1, T2, T3, T4, T5> extends AbstractTuple {
     private final T5 fifth;
 
     public Tuple5(T1 first, T2 second, T3 third, T4 fourth, T5 fifth) {
+        super(first, second, third, fourth, fifth);
+
         this.first = first;
         this.second = second;
         this.third = third;

@@ -24,13 +24,15 @@ package groovy.lang;
  *
  * @since 2.5.0
  */
-public class Tuple4<T1, T2, T3, T4> extends AbstractTuple {
+public class Tuple4<T1, T2, T3, T4> extends Tuple {
     private final T1 first;
     private final T2 second;
     private final T3 third;
     private final T4 fourth;
 
     public Tuple4(T1 first, T2 second, T3 third, T4 fourth) {
+        super(first, second, third, fourth);
+
         this.first = first;
         this.second = second;
         this.third = third;
