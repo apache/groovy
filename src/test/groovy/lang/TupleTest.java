@@ -68,6 +68,14 @@ public class TupleTest extends TestCase {
         assertEquals("size", 1, s.size());
     }
 
+    public void testSubTuple() {
+        Tuple s = t.subTuple(1, 2);
+
+        assertTrue("is a Tuple", s instanceof Tuple);
+
+        assertEquals("size", 1, s.size());
+    }
+
     public void testHashCodeAndEquals() {
         Tuple a = new Tuple(new Object[]{"a", "b", "c"});
         Tuple b = new Tuple(new Object[]{"a", "b", "c"});
@@ -93,4 +101,210 @@ public class TupleTest extends TestCase {
     public void testIterator() {
     }
 
+    public void testTuple1() {
+        Tuple1<Integer> t = new Tuple1<>(1);
+
+        assertEquals(1, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple2() {
+        Tuple2<Integer, Integer> t = new Tuple2<>(1, 2);
+
+        assertEquals(2, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple3() {
+        Tuple3<Integer, Integer, Integer> t = new Tuple3<>(1, 2, 3);
+
+        assertEquals(3, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple4() {
+        Tuple4<Integer, Integer, Integer, Integer> t = new Tuple4<>(1, 2, 3, 4);
+
+        assertEquals(4, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple5() {
+        Tuple5<Integer, Integer, Integer, Integer, Integer> t = new Tuple5<>(1, 2, 3, 4, 5);
+
+        assertEquals(5, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(5, t.get(4));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple6() {
+        Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> t = new Tuple6<>(1, 2, 3, 4, 5, 6);
+
+        assertEquals(6, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(5, t.get(4));
+
+        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(6, t.get(5));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple7() {
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t = new Tuple7<>(1, 2, 3, 4, 5, 6, 7);
+
+        assertEquals(7, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(5, t.get(4));
+
+        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(6, t.get(5));
+
+        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(7, t.get(6));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple8() {
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> t = new Tuple8<>(1, 2, 3, 4, 5, 6, 7, 8);
+
+        assertEquals(8, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(5, t.get(4));
+
+        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(6, t.get(5));
+
+        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(7, t.get(6));
+
+        assertEquals(new Integer(8), t.getEighth());
+        assertEquals(8, t.get(7));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
+
+    public void testTuple9() {
+        Tuple9<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> t = new Tuple9<>(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        assertEquals(9, t.size());
+
+        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(1, t.get(0));
+
+        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(2, t.get(1));
+
+        assertEquals(new Integer(3), t.getThird());
+        assertEquals(3, t.get(2));
+
+        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(4, t.get(3));
+
+        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(5, t.get(4));
+
+        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(6, t.get(5));
+
+        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(7, t.get(6));
+
+        assertEquals(new Integer(8), t.getEighth());
+        assertEquals(8, t.get(7));
+
+        assertEquals(new Integer(9), t.getNinth());
+        assertEquals(9, t.get(8));
+
+        assertEquals(t, t.subTuple(0, t.size()));
+    }
 }
