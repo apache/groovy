@@ -223,30 +223,13 @@ public class SourceUnit extends ProcessingUnit {
         //
         // Create a reader on the source and run the parser.
 
-        Reader reader = null;
-        try {
-            reader = source.getReader();
-
+        try (Reader reader = source.getReader()) {
             // let's recreate the parser each time as it tends to keep around state
             parserPlugin = getConfiguration().getPluginFactory().createParserPlugin();
 
             cst = parserPlugin.parseCST(this, reader);
-
-            reader.close();
-
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             getErrorCollector().addFatalError(new SimpleMessage(e.getMessage(), this));
-        }
-        finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                }
-                catch (IOException e) {
-                    // Ignore
-                }
-            }
         }
     }
 
