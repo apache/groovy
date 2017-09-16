@@ -50,4 +50,8 @@ public class Tuple<E> extends AbstractTuple<E> {
         System.arraycopy(contents, fromIndex, newContent, 0, size);
         return new Tuple<>(newContent);
     }
+
+    public Tuple<E> subTuple(int fromIndex, int toIndex) {
+        return (Tuple<E>) subList(fromIndex, toIndex);
+    }
 }
