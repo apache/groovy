@@ -1198,7 +1198,7 @@ import groovy.transform.stc.FirstParam
         return self
     }
         callee01(["a","b","c"]) { a ->
-            println(a.toUpperCase()) // [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is right and if the method exists.
+            println(a.toUpperCase()) // [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
         }
     '''
     }

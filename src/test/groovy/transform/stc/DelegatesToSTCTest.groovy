@@ -645,8 +645,8 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
              * Because the Parrot parser provides more accurate node position information,
              * org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.addError will not be interfered by wrong node position.
              *
-             * 1) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method TestScripttestDelegatesToGenericArgumentTypeAndTypo0#getname(). Please check if the declared type is right and if the method exists.
-             * 2) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is right and if the method exists.
+             * 1) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method TestScripttestDelegatesToGenericArgumentTypeAndTypo0#getname(). Please check if the declared type is correct and if the method exists.
+             * 2) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
              *
              */
             shouldFailWithMessages code, msg, msg

@@ -353,7 +353,7 @@ include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typ
 will fail compilation with errors like this one:
 
 ----
-[Static type checking] - Cannot find matching method MyScript#from(java.lang.String). Please check if the declared type is right and if the method exists.
+[Static type checking] - Cannot find matching method MyScript#from(java.lang.String). Please check if the declared type is correct and if the method exists.
  @ line 31, column 21.
                        from 'dsl-guru@mycompany.com'
 ----
