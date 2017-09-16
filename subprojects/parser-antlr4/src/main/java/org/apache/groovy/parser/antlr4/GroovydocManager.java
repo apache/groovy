@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Groovydoc;
+import groovy.lang.groovydoc.GroovydocHolder;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -28,7 +29,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import groovy.lang.groovydoc.GroovydocHolder;
 
 import java.util.List;
 

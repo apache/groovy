@@ -30,12 +30,9 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
