@@ -22,6 +22,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.AbstractList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a list of Objects.
@@ -30,7 +31,6 @@ import java.util.List;
  */
 public class Tuple<E> extends AbstractList<E> {
     private final E[] contents;
-    private int hashCode;
 
     public Tuple(E... contents) {
         if (contents == null) throw new NullPointerException();
@@ -47,6 +47,7 @@ public class Tuple<E> extends AbstractList<E> {
         return contents.length;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
         int size = toIndex - fromIndex;
@@ -65,8 +66,9 @@ public class Tuple<E> extends AbstractList<E> {
         if (o == null || !(o instanceof Tuple)) return false;
 
         Tuple that = (Tuple) o;
-        if (size() != that.size()) return false;
-        for (int i = 0; i < size(); i++) {
+        int size = size();
+        if (size != that.size()) return false;
+        for (int i = 0; i < size; i++) {
             if (!DefaultTypeTransformation.compareEqual(get(i), that.get(i))) {
                 return false;
             }
@@ -76,16 +78,6 @@ public class Tuple<E> extends AbstractList<E> {
 
     @Override
     public int hashCode() {
-        if (hashCode == 0) {
-            for (int i = 0; i < size(); i++) {
-                Object value = get(i);
-                int hash = (value != null) ? value.hashCode() : 0xbabe;
-                hashCode ^= hash;
-            }
-            if (hashCode == 0) {
-                hashCode = 0xbabe;
-            }
-        }
-        return hashCode;
+        return Objects.hash(contents);
     }
 }
