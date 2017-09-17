@@ -1142,7 +1142,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * A helper method which determines which receiver class should be used in error messages when a field or attribute
-     * is not found. The returned type class depends on whether we have temporary type information availble (due to
+     * is not found. The returned type class depends on whether we have temporary type information available (due to
      * instanceof checks) and whether there is a single candidate in that case.
      *
      * @param expr the expression for which an unknown field has been found
@@ -2075,8 +2075,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
         for (VariableExpression ve : closureSharedExpressions) {
-            // GROOVY-6921: We must force a call to getType in order to update closure shared variable which types are
-            // inferred thanks to closure parameter type inference
+            // GROOVY-6921: We must force a call to getType in order to update closure shared variable whose
+            // types are inferred thanks to closure parameter type inference
             getType(ve);
             ListHashMap<StaticTypesMarker, Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
             for (StaticTypesMarker marker : StaticTypesMarker.values()) {
@@ -2137,7 +2137,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // for example, in a mixed mode where only some methods are statically checked
         // we must not visit a method which used dynamic dispatch.
         // We do not check for an annotation because some other AST transformations
-        // may use this visitor without the annotation being explicitely set
+        // may use this visitor without the annotation being explicitly set
         if (!typeCheckingContext.methodsToBeVisited.isEmpty() && !typeCheckingContext.methodsToBeVisited.contains(node)) return;
 
         // alreadyVisitedMethods prevents from visiting the same method multiple times
@@ -3479,7 +3479,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
                 List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
                 if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
-                    // a type inference has been made on a variable which type was defined in an instanceof block
+                    // a type inference has been made on a variable whose type was defined in an instanceof block
                     // we erase available information with the new type
                     temporaryTypesForExpression.clear();
                 }
