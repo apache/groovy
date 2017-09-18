@@ -3996,12 +3996,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
-                ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
+                ClassNode type = null;
+                // check if param part of control structure - but not if inside instanceof
+                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(vexp);
+                if (temporaryTypesForExpression == null || temporaryTypesForExpression.isEmpty()) {
+                    type = typeCheckingContext.controlStructureVariables.get(parameter);
+                }
+                // now check for closure override
                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
                 ClassNode[] closureParamTypes = (ClassNode[])(enclosingClosure!=null?enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS):null);
                 if (type==null && enclosingClosure !=null && "it".equals(variable.getName()) && closureParamTypes!=null) {
                     final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
-                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null && closureParamTypes.length!=0) {
+                    if (parameters.length == 0 && temporaryTypesForExpression == null && closureParamTypes.length != 0) {
                         type = closureParamTypes[0];
                     }
                 }
