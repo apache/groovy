@@ -700,7 +700,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
 
-            } else if (op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF) {
+            } else if (op == KEYWORD_INSTANCEOF /*|| op == COMPARE_NOT_INSTANCEOF*/) {
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             }
             if (!isEmptyDeclaration) {
