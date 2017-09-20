@@ -3993,19 +3993,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected ClassNode getType(ASTNode exp) {
+    protected ClassNode getType(final ASTNode exp) {
         ClassNode cn = exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (cn != null) return cn;
+        if (cn != null) {
+            return cn;
+        }
         if (exp instanceof ClassExpression) {
             ClassNode node = CLASS_Type.getPlainNodeReference();
             node.setGenericsTypes(new GenericsType[]{
                     new GenericsType(((ClassExpression) exp).getType())
             });
             return node;
-        } else if (exp instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) exp;
+        }
+        if (exp instanceof VariableExpression) {
+            final VariableExpression vexp = (VariableExpression) exp;
             ClassNode selfTrait = isTraitSelf(vexp);
-            if (selfTrait!=null) return makeSelf(selfTrait);
+            if (selfTrait != null) return makeSelf(selfTrait);
             if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
             if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
@@ -4020,24 +4023,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Parameter parameter = (Parameter) variable;
                 ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                ClassNode[] closureParamTypes = (ClassNode[])(enclosingClosure!=null?enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS):null);
-                if (type==null && enclosingClosure !=null && "it".equals(variable.getName()) && closureParamTypes!=null) {
+                ClassNode[] closureParamTypes = (ClassNode[]) (enclosingClosure != null ? enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) : null);
+                if (type == null && enclosingClosure != null && "it".equals(variable.getName()) && closureParamTypes != null) {
                     final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
-                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null && closureParamTypes.length!=0) {
+                    if (parameters.length == 0 && getTemporaryTypesForExpression(vexp) == null && closureParamTypes.length != 0) {
                         type = closureParamTypes[0];
                     }
                 }
                 if (type != null) {
-                    storeType((VariableExpression)exp, type);
+                    storeType(vexp, type);
                     return type;
                 }
                 return getType((Parameter) variable);
             }
+            return vexp.getOriginType();
         }
 
         if (exp instanceof ListExpression) {
             return inferListExpressionType((ListExpression) exp);
-        } else if (exp instanceof MapExpression) {
+        }
+        if (exp instanceof MapExpression) {
             return inferMapExpressionType((MapExpression) exp);
         }
         if (exp instanceof ConstructorCallExpression) {
@@ -4049,15 +4054,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             ClassNode ret = getInferredReturnType(exp);
             return ret != null ? ret : ((MethodNode) exp).getReturnType();
-        }
-        if (exp instanceof ClosureExpression) {
-            ClassNode irt = getInferredReturnType(exp);
-            if (irt != null) {
-                irt = wrapTypeIfNecessary(irt);
-                ClassNode result = CLOSURE_TYPE.getPlainNodeReference();
-                result.setGenericsTypes(new GenericsType[]{new GenericsType(irt)});
-                return result;
-            }
         }
         if (exp instanceof RangeExpression) {
             ClassNode plain = ClassHelper.RANGE_TYPE.getPlainNodeReference();
@@ -4084,12 +4080,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (exp instanceof BitwiseNegationExpression) {
             return getType(((BitwiseNegationExpression) exp).getExpression());
         }
-        if (exp instanceof MethodCall) {
-            MethodNode target = (MethodNode) exp.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-            if (target!=null) {
-                return getType(target);
-            }
-        }
         if (exp instanceof Parameter) {
             return ((Parameter) exp).getOriginType();
         }
@@ -4101,7 +4091,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             PropertyNode pn = (PropertyNode) exp;
             return getGenericsResolvedTypeOfFieldOrProperty(pn, pn.getOriginType());
         }
-        return exp instanceof VariableExpression ? ((VariableExpression) exp).getOriginType() : ((Expression) exp).getType();
+        if (exp instanceof ClosureExpression) {
+            ClassNode irt = getInferredReturnType(exp);
+            if (irt != null) {
+                irt = wrapTypeIfNecessary(irt);
+                ClassNode result = CLOSURE_TYPE.getPlainNodeReference();
+                result.setGenericsTypes(new GenericsType[]{new GenericsType(irt)});
+                return result;
+            }
+        } else if (exp instanceof MethodCall) {
+            MethodNode target = (MethodNode) exp.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (target != null) {
+                return getType(target);
+            }
+        }
+        return ((Expression) exp).getType();
     }
 
     /**
