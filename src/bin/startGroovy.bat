@@ -266,7 +266,12 @@ if not "%TOOLS_JAR%" == "" set GROOVY_OPTS=%GROOVY_OPTS% -Dtools.jar="%TOOLS_JAR
 set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
 set GROOVY_OPTS=%GROOVY_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
 
-set JAVA_OPTS=%JAVA_OPTS% --add-modules ALL-SYSTEM
+for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr /i "version"') do (
+  SET JAVA_VERSION=%%g
+)
+for /f "useback tokens=*" %%a in ('%JAVA_VERSION%') do set JAVA_VERSION=%%~a
+set JAVA_VERSION=%JAVA_VERSION:~0,5%
+if "%JAVA_VERSION%" gtr "1.8.0" set JAVA_OPTS=%JAVA_OPTS% --add-modules ALL-SYSTEM
 
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 

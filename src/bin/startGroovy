@@ -221,8 +221,6 @@ if $darwin; then
     JAVA_OPTS="$JAVA_OPTS -Xdock:name=$GROOVY_APP_NAME -Xdock:icon=$GROOVY_HOME/lib/groovy.icns"
 fi
 
-JAVA_OPTS="$JAVA_OPTS --add-modules ALL-SYSTEM"
-
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
     GROOVY_HOME=`cygpath --mixed "$GROOVY_HOME"`
@@ -280,6 +278,11 @@ if $cygwin ; then
 fi
 
 startGroovy ( ) {
+    JAVA_VERSION=`"$JAVACMD" -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d "_" -f1`
+    if [[ "$JAVA_VERSION" > "1.8.0" ]]; then
+        JAVA_OPTS="$JAVA_OPTS --add-modules ALL-SYSTEM"
+    fi
+
     CLASS=$1
     shift
     # Start the Profiler or the JVM
