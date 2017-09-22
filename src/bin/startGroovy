@@ -221,6 +221,8 @@ if $darwin; then
     JAVA_OPTS="$JAVA_OPTS -Xdock:name=$GROOVY_APP_NAME -Xdock:icon=$GROOVY_HOME/lib/groovy.icns"
 fi
 
+JAVA_OPTS="$JAVA_OPTS --add-modules ALL-SYSTEM"
+
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
     GROOVY_HOME=`cygpath --mixed "$GROOVY_HOME"`
