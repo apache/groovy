@@ -192,7 +192,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolde
     }
 
     public String toString() {
-        return "MethodNode@" + hashCode() + "[" + getTypeDescriptor() + "]";
+        return "MethodNode@" + hashCode() + "[" + getDeclaringClass().getName() + "#" + getTypeDescriptor() + "]";
     }
 
     public void setReturnType(ClassNode returnType) {
