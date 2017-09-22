@@ -121,8 +121,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -4396,6 +4394,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         parser.addErrorListener(this.createANTLRErrorListener());
     }
 
+    /*
     private String createExceptionMessage(Throwable t) {
         StringWriter sw = new StringWriter();
 
@@ -4405,6 +4404,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return sw.toString();
     }
+    */
 
     private class DeclarationListStatement extends Statement {
         private final List<ExpressionStatement> declarationStatements;
