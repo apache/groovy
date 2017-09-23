@@ -271,7 +271,8 @@ for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr /i "version"') do (
 )
 for /f "useback tokens=*" %%a in ('%JAVA_VERSION%') do set JAVA_VERSION=%%~a
 set JAVA_VERSION=%JAVA_VERSION:~0,5%
-if "%JAVA_VERSION%" gtr "1.8.0" set JAVA_OPTS=%JAVA_OPTS% --add-modules ALL-SYSTEM
+set ADD_MODULES_OPT=--add-modules
+if "%JAVA_VERSION%" gtr "1.8.0" echo.%JAVA_OPTS% | findstr /C:"%ADD_MODULES_OPT%" >nul 2>&1 || set JAVA_OPTS=%JAVA_OPTS% %ADD_MODULES_OPT% ALL-SYSTEM
 
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
