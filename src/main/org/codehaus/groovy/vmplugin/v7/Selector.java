@@ -499,7 +499,13 @@ public abstract class Selector {
                     "\n\t\tspreadCall: "+spreadCall+
                     "\n\t\twith "+arguments.length+" arguments";
                 for (int i=0; i<arguments.length; i++) {
-                    msg += "\n\t\t\targument["+i+"] = "+arguments[i];
+                    msg += "\n\t\t\targument["+i+"] = ";
+                    if (arguments[i] == null) {
+                        msg += "null";
+                    } else {
+                        msg += arguments[i].getClass().getName()+
+                            "@"+Integer.toHexString(System.identityHashCode(arguments[i]));
+                    }
                 }
                 LOG.info(msg);
             }
