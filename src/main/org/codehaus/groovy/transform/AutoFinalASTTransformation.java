@@ -19,13 +19,8 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -34,7 +29,7 @@ import java.lang.reflect.Modifier;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 
 /**
- * Handles generation of code for the {@code @}AutoFinal annotation.
+ * Handles generation of code for the {@link AutoFinal} annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AutoFinalASTTransformation extends AbstractASTTransformation {
@@ -45,6 +40,11 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
+        processClassesConstructorsMethods(nodes, source);
+        processClosures(nodes, source);
+    }
+
+    private void processClassesConstructorsMethods(ASTNode[] nodes, final SourceUnit unit) {
         AnnotatedNode candidate = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
@@ -56,6 +56,33 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
             processConstructorOrMethod((MethodNode) candidate);
         }
     }
+
+    private void processClosures(ASTNode[] nodes, final SourceUnit source) {
+        final ASTNode node = nodes[1];
+        if(node instanceof ClassNode) {
+            ClassNode annotatedClass = (ClassNode) node;
+
+            final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
+                @Override
+                public void visitClosureExpression(ClosureExpression expression) {
+                    if (expression.isSynthetic()) { return; }
+                    Parameter[] origParams = expression.getParameters();
+                    for (Parameter p : origParams) {
+                        p.setModifiers(p.getModifiers() | Modifier.FINAL);
+                    }
+                    super.visitClosureExpression(expression);
+                }
+
+                protected SourceUnit getSourceUnit() {
+                    return source;
+                }
+            };
+
+            visitor.visitClass(annotatedClass);
+        }
+    }
+
+
 
     private void processClass(ClassNode cNode) {
         if (cNode.isInterface()) {
