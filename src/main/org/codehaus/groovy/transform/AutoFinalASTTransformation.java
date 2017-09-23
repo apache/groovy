@@ -34,7 +34,7 @@ import java.lang.reflect.Modifier;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 
 /**
- * Handles generation of code for the {@code @}AutoFinal annotation.
+ * Handles generation of code for the {@link AutoFinal} annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AutoFinalASTTransformation extends AbstractASTTransformation {

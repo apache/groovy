@@ -47,7 +47,7 @@ import java.lang.annotation.Target;
  *     }
  * }
  *
- * def js = new Person('John', 'Smith')
+ * final js = new Person('John', 'Smith')
  * assert js.fullName() == 'John Smith'
  * assert js.fullName(true, ', ') == 'Smith, John'
  * </pre>
