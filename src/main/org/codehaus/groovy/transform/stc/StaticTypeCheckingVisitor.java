@@ -665,10 +665,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 // if we are in an if/else branch, keep track of assignment
-                if (typeCheckingContext.ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression
+                if (leftExpression instanceof VariableExpression
                         && !isNullConstant(rightExpression)) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
-                    if (accessedVariable instanceof VariableExpression) {
+                    if (typeCheckingContext.ifElseForWhileAssignmentTracker != null && accessedVariable instanceof VariableExpression) {
                         VariableExpression var = (VariableExpression) accessedVariable;
                         List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTracker.get(var);
                         if (types == null) {
@@ -676,6 +676,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             ClassNode type = var.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
                             types.add(type);
                             typeCheckingContext.ifElseForWhileAssignmentTracker.put(var, types);
+                        }
+                        types.add(resultType);
+                    } else if (typeCheckingContext.ifElseForWhileAssignmentTrackerParams != null && accessedVariable instanceof Parameter && !((Parameter)accessedVariable).isClosureSharedVariable()) {
+                        Parameter param = (Parameter) accessedVariable;
+                        List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTrackerParams.get(param);
+                        if (types == null) {
+                            types = new LinkedList<ClassNode>();
+                            ClassNode type = param.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                            if (type == null) type = param.getOriginType();
+                            types.add(type);
+                            typeCheckingContext.ifElseForWhileAssignmentTrackerParams.put(param, types);
                         }
                         types.add(resultType);
                     }
@@ -1679,8 +1690,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitWhileLoop(final WhileStatement loop) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        Map<Parameter, List<ClassNode>> oldTrackerParams = pushAssignmentTrackingParams();
         super.visitWhileLoop(loop);
         popAssignmentTracking(oldTracker);
+        popAssignmentTrackingParams(oldTrackerParams);
     }
 
     @Override
@@ -3248,6 +3261,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        Map<Parameter, List<ClassNode>> oldTrackerParams = pushAssignmentTrackingParams();
 
         try {
             // create a new temporary element in the if-then-else type info
@@ -3272,15 +3286,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } finally {
             popAssignmentTracking(oldTracker);
+            popAssignmentTrackingParams(oldTrackerParams);
         }
     }
 
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        Map<Parameter, List<ClassNode>> oldTrackerParams = pushAssignmentTrackingParams();
         try {
             super.visitSwitch(statement);
         } finally {
+            popAssignmentTrackingParams(oldTrackerParams);
             popAssignmentTracking(oldTracker);
         }
     }
@@ -3298,6 +3315,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<ClassNode> items = entry.getValue();
             ClassNode originValue = items.get(0);
             storeType(var, originValue);
+        }
+        Set<Map.Entry<Parameter, List<ClassNode>>> paramEntries = typeCheckingContext.ifElseForWhileAssignmentTrackerParams.entrySet();
+        for (Map.Entry<Parameter, List<ClassNode>> entry : paramEntries) {
+            Parameter param = entry.getKey();
+            List<ClassNode> items = entry.getValue();
+            ClassNode originValue = items.get(0);
+            storeType(param, originValue);
         }
     }
 
@@ -3321,10 +3345,37 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return assignments;
     }
 
+    protected Map<Parameter, ClassNode> popAssignmentTrackingParams(final Map<Parameter, List<ClassNode>> oldTracker) {
+        Map<Parameter, ClassNode> assignments = new HashMap<Parameter, ClassNode>();
+        if (!typeCheckingContext.ifElseForWhileAssignmentTrackerParams.isEmpty()) {
+            for (Map.Entry<Parameter, List<ClassNode>> entry : typeCheckingContext.ifElseForWhileAssignmentTrackerParams.entrySet()) {
+                Parameter key = entry.getKey();
+                List<ClassNode> allValues = entry.getValue();
+                // GROOVY-6099: First element of the list may be null, if no assignment was made before the branch
+                List<ClassNode> nonNullValues = new ArrayList<ClassNode>(allValues.size());
+                for (ClassNode value : allValues) {
+                    if (value!=null) nonNullValues.add(value);
+                }
+                ClassNode cn = lowestUpperBound(nonNullValues);
+                storeType(key, cn);
+                assignments.put(key, cn);
+            }
+        }
+        typeCheckingContext.ifElseForWhileAssignmentTrackerParams = oldTracker;
+        return assignments;
+    }
+
     protected Map<VariableExpression, List<ClassNode>> pushAssignmentTracking() {
         // memorize current assignment context
         Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.ifElseForWhileAssignmentTracker;
         typeCheckingContext.ifElseForWhileAssignmentTracker = new HashMap<VariableExpression, List<ClassNode>>();
+        return oldTracker;
+    }
+
+    protected Map<Parameter, List<ClassNode>> pushAssignmentTrackingParams() {
+        // memorize current assignment context
+        Map<Parameter, List<ClassNode>> oldTracker = typeCheckingContext.ifElseForWhileAssignmentTrackerParams;
+        typeCheckingContext.ifElseForWhileAssignmentTrackerParams = new HashMap<Parameter, List<ClassNode>>();
         return oldTracker;
     }
 
@@ -3378,6 +3429,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        Map<Parameter, List<ClassNode>> oldTrackerParams = pushAssignmentTrackingParams();
         // create a new temporary element in the if-then-else type info
         typeCheckingContext.pushTemporaryTypeInfo();
         expression.getBooleanExpression().visit(this);
@@ -3407,6 +3459,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
+        popAssignmentTrackingParams(oldTrackerParams);
     }
 
     @Override
@@ -3424,6 +3477,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+    }
+
+    protected void storeType(Parameter param, ClassNode cn) {
+        param.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
     }
 
     protected void storeType(Expression exp, ClassNode cn) {
@@ -3464,7 +3521,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 storeType((Expression) accessedVariable, cn);
             }
             if (accessedVariable instanceof Parameter) {
-                ((Parameter) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
+                storeType((Parameter) accessedVariable, cn);
             }
             if (var.isClosureSharedVariable() && cn!=null) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
@@ -4022,6 +4079,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
                 ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
+                if (type == null && typeCheckingContext.ifElseForWhileAssignmentTrackerParams != null) {
+                    List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTrackerParams.get(parameter);
+                    if (types != null && types.size() == 1) {
+                        type = types.get(0);
+                    }
+                }
                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
                 ClassNode[] closureParamTypes = (ClassNode[]) (enclosingClosure != null ? enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) : null);
                 if (type == null && enclosingClosure != null && "it".equals(variable.getName()) && closureParamTypes != null) {
