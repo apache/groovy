@@ -19,17 +19,15 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.codehaus.groovy.ast.ClassHelper.make;
 
 /**
  * Handles {@link AutoFinal} annotation code generation for arguments of closures.
