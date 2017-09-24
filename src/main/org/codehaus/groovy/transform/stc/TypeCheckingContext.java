@@ -55,6 +55,10 @@ public class TypeCheckingContext {
      */
     protected Map<VariableExpression, List<ClassNode>> ifElseForWhileAssignmentTracker = null;
     /**
+     * As above but for Parameters - it's often considered bad style to reassign params but we track it anyway
+     */
+    protected Map<Parameter, List<ClassNode>> ifElseForWhileAssignmentTrackerParams = null;
+    /**
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
      */
