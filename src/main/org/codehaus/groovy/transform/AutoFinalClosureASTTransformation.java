@@ -41,6 +41,7 @@ class AutoFinalClosureASTTransformation implements ASTTransformation {
         final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
             @Override
             public void visitClosureExpression(ClosureExpression expression) {
+                if(expression.isSynthetic()) { return; }
                 Parameter[] origParams = expression.getParameters();
                 for (Parameter p : origParams) {
                     p.setModifiers(p.getModifiers() | Modifier.FINAL);
