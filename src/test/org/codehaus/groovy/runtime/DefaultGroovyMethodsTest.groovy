@@ -279,4 +279,56 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
             delegate.iterator()
         }
     }
+
+
+    @IgnoreDefaultEqualsAndToString
+    private static class CustomList extends ArrayList {
+        CustomList( Object... items) {
+            addAll(items)
+        }
+
+        @Override
+        boolean equals(Object other) {
+            return this.sum() == other.sum()
+        }
+    }
+
+    @IgnoreDefaultEqualsAndToString
+    private static class CustomSet extends HashSet {
+        CustomSet( Object... items) {
+            addAll(items)
+        }
+
+        @Override
+        boolean equals(Object other) {
+            return this.collect { it.toString().toUpperCase() } == other.collect { it.toString().toUpperCase() }
+        }
+    }
+
+    @IgnoreDefaultEqualsAndToString
+    private static class CustomMap extends HashMap {
+        CustomMap(Map params) {
+            this.putAll(params)
+        }
+
+        boolean equals(Object other) {
+            this.values().sum() == other.values().sum()
+        }
+    }
+
+    public void testCustomEqualsForList() {
+
+        assertTrue(new CustomList(1,2,3).equals(new CustomList(3,3)))
+        assertTrue(new CustomList(1,2,3) == new CustomList(3,3) )
+
+        assertTrue(new CustomSet('a','b','c').equals(new CustomSet('A','B','C')))
+        assertTrue(new CustomSet('a','b','c') == new CustomSet('A','B','C') )
+
+        assertTrue(new CustomMap(a:10) == new CustomMap(b:3,c:7))
+        assertTrue(new CustomMap(a:10).equals(new CustomMap(b:3,c:7)))
+        assertFalse(new CustomMap(a:1) == new CustomMap(b:2))
+
+    }
+
+
 }

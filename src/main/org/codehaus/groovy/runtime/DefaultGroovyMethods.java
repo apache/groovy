@@ -12113,6 +12113,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (left == right) {
             return true;
         }
+        if( left.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null && right.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null ) {
+            return left.equals(right);
+        }
         if (left.size() != right.size()) {
             return false;
         }
@@ -12165,6 +12168,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == other) {
             return true;
         }
+        if( self.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null && other.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null ) {
+            return self.equals(other);
+        }
         if (self.size() != other.size()) {
             return false;
         }
@@ -12208,6 +12214,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         if (self == other) {
             return true;
+        }
+        if( self.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null && other.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null ) {
+            return self.equals(other);
         }
         if (self.size() != other.size()) {
             return false;

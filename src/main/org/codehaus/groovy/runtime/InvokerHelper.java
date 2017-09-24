@@ -25,6 +25,7 @@ import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import groovy.lang.IgnoreDefaultEqualsAndToString;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
@@ -685,6 +686,9 @@ public class InvokerHelper {
     }
 
     private static String formatMap(Map map, boolean verbose, int maxSize, boolean safe) {
+        if (map.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null) {
+            return map.toString();
+        }
         if (map.isEmpty()) {
             return "[:]";
         }
@@ -723,6 +727,9 @@ public class InvokerHelper {
     }
 
     private static String formatCollection(Collection collection, boolean verbose, int maxSize, boolean safe) {
+        if (collection.getClass().getAnnotation(IgnoreDefaultEqualsAndToString.class)!=null) {
+            return collection.toString();
+        }
         StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
         buffer.append('[');
         boolean first = true;
