@@ -26,7 +26,7 @@ install: true
 
 before_script: unset _JAVA_OPTIONS
 
-script: travis_wait 60 ./gradlew test
+script: travis_wait 60 ./gradlew --no-daemon test
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
