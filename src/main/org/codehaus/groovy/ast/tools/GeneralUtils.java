@@ -679,14 +679,18 @@ public class GeneralUtils {
     public static Expression getterThisX(ClassNode annotatedNode, PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
-            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
-            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
-                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
-            }
-            return callThisX(getterName);
+            return callThisX(getterName(annotatedNode, pNode));
         }
         return propX(new VariableExpression("this"), pNode.getName());
+    }
+
+    private static String getterName(ClassNode annotatedNode, PropertyNode pNode) {
+        String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+        boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+        if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+            getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+        }
+        return getterName;
     }
 
     /**
@@ -701,12 +705,7 @@ public class GeneralUtils {
     public static Expression getterX(ClassNode annotatedNode, Expression receiver, PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
-            boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
-            if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
-                getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
-            }
-            return callX(receiver, getterName);
+            return callX(receiver, getterName(annotatedNode, pNode));
         }
         return propX(receiver, pNode.getName());
     }
