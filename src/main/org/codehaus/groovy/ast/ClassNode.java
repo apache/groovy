@@ -537,26 +537,27 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     }
 
     public void addField(FieldNode node) {
-        final ClassNode r = redirect();
-        node.setDeclaringClass(r);
-        node.setOwner(r);
-        if (r.fields == null)
-            r.fields = new LinkedList<FieldNode> ();
-        if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<String,FieldNode> ();
-        r.fields.add(node);
-        r.fieldIndex.put(node.getName(), node);
+        addField(node, false);
     }
 
     public void addFieldFirst(FieldNode node) {
+        addField(node, true);
+    }
+
+    private void addField(FieldNode node, boolean isFirst) {
         final ClassNode r = redirect();
         node.setDeclaringClass(r);
         node.setOwner(r);
         if (r.fields == null)
-            r.fields = new LinkedList<FieldNode> ();
+            r.fields = new LinkedList<>();
         if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<String,FieldNode> ();
-        r.fields.addFirst(node);
+            r.fieldIndex = new HashMap<>();
+
+        if (isFirst)
+            r.fields.addFirst(node);
+        else
+            r.fields.add(node);
+
         r.fieldIndex.put(node.getName(), node);
     }
 
