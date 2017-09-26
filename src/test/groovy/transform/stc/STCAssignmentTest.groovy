@@ -872,5 +872,31 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         }            
         '''
     }
+
+    void testNarrowingConversion() {
+        assertScript '''
+        interface A1{}
+        interface A2 extends A1{}
+        
+        class C1 implements A1{}
+        
+        def m(A2 a2) {
+            C1 c1 = (C1) a2
+        }
+        '''
+    }
+
+    void testFinalNarrowingConversion() {
+        shouldFailWithMessages '''
+        interface A1{}
+        interface A2 extends A1{}
+        
+        final class C1 implements A1{}
+        
+        def m(A2 a2) {
+            C1 c1 = (C1) a2
+        }
+        ''', "Inconvertible types: cannot cast A2 to C1"
+    }
 }
 
