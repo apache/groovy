@@ -1975,40 +1975,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode[] getArgumentTypes(ArgumentListExpression args) {
         List<Expression> arglist = args.getExpressions();
         ClassNode[] ret = new ClassNode[arglist.size()];
-        int i = 0;
-        Map<Object, List<ClassNode>> info = typeCheckingContext.temporaryIfBranchTypeInformation.empty() ? null : typeCheckingContext.temporaryIfBranchTypeInformation.peek();
-        for (Expression exp : arglist) {
-            if (isNullConstant(exp)) {
-                ret[i] = UNKNOWN_PARAMETER_TYPE;
-            } else {
-                ret[i] = getType(exp);
-                if (exp instanceof VariableExpression && info != null) {
-                    List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
-                    if (classNodes != null && !classNodes.isEmpty()) {
-                        ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size() + 1);
-                        arr.add(ret[i]);
-                        arr.addAll(classNodes);
-                        // GROOVY-7333: filter out Object
-                        Iterator<ClassNode> iterator = arr.iterator();
-                        while (iterator.hasNext()) {
-                            ClassNode next = iterator.next();
-                            if (ClassHelper.OBJECT_TYPE.equals(next)) {
-                                iterator.remove();
-                            }
-                        }
-                        if (arr.isEmpty()) {
-                            ret[i] = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
-                        } else if (arr.size()==1) {
-                            ret[i] = arr.get(0);
-                        } else {
-                            ret[i] = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
-                        }
-                    }
+        for (int i = 0; i < arglist.size(); i++) {
+            Expression exp = arglist.get(i);
+                if (isNullConstant(exp)) {
+                    ret[i] = UNKNOWN_PARAMETER_TYPE;
+                } else {
+                    ret[i] = getInferredTypeFromTempInfo(exp, getType(exp));
                 }
-            }
-            i++;
         }
         return ret;
+    }
+
+    private ClassNode getInferredTypeFromTempInfo(Expression exp, ClassNode result) {
+        Map<Object, List<ClassNode>> info = typeCheckingContext.temporaryIfBranchTypeInformation.empty() ? null : typeCheckingContext.temporaryIfBranchTypeInformation.peek();
+        if (exp instanceof VariableExpression && info != null) {
+            List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
+            if (classNodes != null && !classNodes.isEmpty()) {
+                ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size() + 1);
+                if (result != null) arr.add(result);
+                arr.addAll(classNodes);
+                // GROOVY-7333: filter out Object
+                Iterator<ClassNode> iterator = arr.iterator();
+                while (iterator.hasNext()) {
+                    ClassNode next = iterator.next();
+                    if (ClassHelper.OBJECT_TYPE.equals(next)) {
+                        iterator.remove();
+                    }
+                }
+                if (arr.isEmpty()) {
+                    result = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
+                } else if (arr.size()==1) {
+                    result = arr.get(0);
+                } else {
+                    result = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                }
+            }
+        }
+        return result;
     }
 
     @Override
