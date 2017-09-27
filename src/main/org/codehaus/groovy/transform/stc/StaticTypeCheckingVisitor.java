@@ -1964,7 +1964,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
             if (classNodes != null && !classNodes.isEmpty()) {
                 ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size() + 1);
-                if (result != null) arr.add(result);
+                if (result != null && !classNodes.contains(result)) arr.add(result);
                 arr.addAll(classNodes);
                 // GROOVY-7333: filter out Object
                 Iterator<ClassNode> iterator = arr.iterator();
