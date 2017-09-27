@@ -201,7 +201,7 @@ package groovy.lang;
 public interface GroovyInterceptable extends GroovyObject {
 }
 ----
-When a Groovy object implements the `GroovyInterceptable` interface, its `invokeMethod()` is called for any method calls. Below you can see a simple example of a object of this type:
+When a Groovy object implements the `GroovyInterceptable` interface, its `invokeMethod()` is called for any method calls. Below you can see a simple example of an object of this type:
 
 [source,groovy]
 ----

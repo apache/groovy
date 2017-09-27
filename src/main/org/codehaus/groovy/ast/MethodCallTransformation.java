@@ -87,7 +87,7 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                             }
                         }
                     } catch (MissingPropertyException ignored) {
-                        // todo: inner class nodes don't have a objectInitializers field available
+                        // todo: inner class nodes don't have an objectInitializers field available
                     }
 
                     // todo: is there anything to do with the module ???
