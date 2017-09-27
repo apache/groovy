@@ -1959,23 +1959,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
 
             if (asBoolean(ctx.DOT())) {
-                if (asBoolean(ctx.AT())) { // e.g. obj.@a
-                    return configureAST(new AttributeExpression(baseExpr, namePartExpr), ctx);
-                } else { // e.g. obj.p
-                    PropertyExpression propertyExpression = new PropertyExpression(baseExpr, namePartExpr);
-                    propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
+                boolean isSafeChain = isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
 
-                    return configureAST(propertyExpression, ctx);
-                }
+                return createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, isSafeChain);
             } else if (asBoolean(ctx.SAFE_DOT())) {
-                if (asBoolean(ctx.AT())) { // e.g. obj?.@a
-                    return configureAST(new AttributeExpression(baseExpr, namePartExpr, true), ctx);
-                } else { // e.g. obj?.p
-                    PropertyExpression propertyExpression = new PropertyExpression(baseExpr, namePartExpr, true);
-                    propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
+                return createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, true);
+            } else if (asBoolean(ctx.SAFE_CHAIN_DOT())) { // e.g. obj??.a  OR obj??.@a
+                Expression expression = createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, true);
+                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, true);
 
-                    return configureAST(propertyExpression, ctx);
-                }
+                return expression;
             } else if (asBoolean(ctx.METHOD_POINTER())) { // e.g. obj.&m
                 return configureAST(new MethodPointerExpression(baseExpr, namePartExpr), ctx);
             } else if (asBoolean(ctx.METHOD_REFERENCE())) { // e.g. obj::m
@@ -2208,6 +2201,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         throw createParsingFailedException("Unsupported path element: " + ctx.getText(), ctx);
+    }
+
+    private Expression createDotExpression(PathElementContext ctx, Expression baseExpr, Expression namePartExpr, GenericsType[] genericsTypes, boolean safe) {
+        if (asBoolean(ctx.AT())) { // e.g. obj.@a  OR  obj?.@a
+            return configureAST(new AttributeExpression(baseExpr, namePartExpr, safe), ctx);
+        } else { // e.g. obj.p  OR  obj?.p
+            PropertyExpression propertyExpression = new PropertyExpression(baseExpr, namePartExpr, safe);
+            propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
+
+            return configureAST(propertyExpression, ctx);
+        }
     }
 
     private MethodCallExpression createCallMethodCallExpression(Expression baseExpr, Expression argumentsExpr) {
@@ -3973,10 +3977,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 .reduce(primaryExpr,
                         (r, e) -> {
                             PathElementContext pathElementContext = (PathElementContext) e;
-
                             pathElementContext.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR, r);
+                            Expression expression = this.visitPathElement(pathElementContext);
 
-                            return this.visitPathElement(pathElementContext);
+                            boolean isSafeChain = isTrue((Expression) r, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
+                            if (isSafeChain) {
+                                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, true);
+                            }
+
+                            return expression;
                         }
                 );
     }
@@ -4415,6 +4424,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private static final String PATH_EXPRESSION_BASE_EXPR = "_PATH_EXPRESSION_BASE_EXPR";
     private static final String PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES = "_PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES";
+    private static final String PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN = "_PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN";
     private static final String CMD_EXPRESSION_BASE_EXPR = "_CMD_EXPRESSION_BASE_EXPR";
     private static final String TYPE_DECLARATION_MODIFIERS = "_TYPE_DECLARATION_MODIFIERS";
     private static final String CLASS_DECLARATION_CLASS_NODE = "_CLASS_DECLARATION_CLASS_NODE";
