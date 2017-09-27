@@ -906,7 +906,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             class Foo {
                 CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
                     if (env instanceof File) {
-                        env = env.toPath()
+                        env = env.toURI()
                     }
                     if (env instanceof String && env.contains('=')) {
                         result << 'export ' << env << ';'
