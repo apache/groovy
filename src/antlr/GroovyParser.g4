@@ -980,12 +980,16 @@ locals[ boolean isInsideClosure ]
     :   nls
 
         // AT: foo.@bar selects the field (or attribute), not property
-        ( SPREAD_DOT nls (AT | nonWildcardTypeArguments)?       // Spread operator:  x*.y  ===  x?.collect{it.y}
-        | SAFE_DOT nls (AT | nonWildcardTypeArguments)?         // Optional-null operator:  x?.y  === (x==null)?null:x.y
-        | SAFE_CHAIN_DOT nls (AT | nonWildcardTypeArguments)?   // Optional-null chain operator:  x??.y.z  === x?.y?.z
-        | METHOD_POINTER nls                                    // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
-        | METHOD_REFERENCE nls                                  // Method reference: System.out::println
-        | DOT nls (AT | nonWildcardTypeArguments)?              // The all-powerful dot.
+        (
+            (   DOT                 // The all-powerful dot.
+            |   SPREAD_DOT          // Spread operator:  x*.y  ===  x?.collect{it.y}
+            |   SAFE_DOT            // Optional-null operator:  x?.y  === (x==null)?null:x.y
+            |   SAFE_CHAIN_DOT      // Optional-null chain operator:  x??.y.z  === x?.y?.z
+            ) nls (AT | nonWildcardTypeArguments)?
+        |
+            METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+        |
+            METHOD_REFERENCE nls    // Method reference: System.out::println
         )
         namePart
         { $t = 1; }
