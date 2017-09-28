@@ -279,7 +279,7 @@ fi
 
 startGroovy ( ) {
     JAVA_VERSION=`"$JAVACMD" -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d "_" -f1`
-    if [[ "$JAVA_VERSION" > "1.8.0" ]]; then
+    if [ "$JAVA_VERSION" \> "1.8.0" ]; then
     		ADD_MODULES_OPT="--add-modules"
     		test "${JAVA_OPTS#*$ADD_MODULES_OPT}" == "$JAVA_OPTS" && JAVA_OPTS="$JAVA_OPTS $ADD_MODULES_OPT ALL-SYSTEM"
     fi
