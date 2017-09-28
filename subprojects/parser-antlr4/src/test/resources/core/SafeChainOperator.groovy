@@ -1,3 +1,5 @@
+import groovy.transform.CompileStatic
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,15 +18,45 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-assert 3 == 1??.plus(2)
-assert 6 == 1??.plus(2).plus(3)
-assert 6 == 1??.plus(2)?.plus(3)
-assert 6 == 1??.plus(2)??.plus(3)
-assert 10 == 1??.plus(2)?.plus(3).plus(4)
-assert 10 == 1?.plus(2)??.plus(3).plus(4)
-assert 10 == 1?.plus(2)?.plus(3)??.plus(4)
-assert 10 == 1.plus(2).plus(3)??.plus(4)
-assert null == null??.plus(2).plus(3)
-assert null == null??.plus(2).plus(3).plus(4)
-assert null == null??.plus(2)??.plus(3).plus(4)
-assert null == null??.plus(2)??.plus(3)?.plus(4)
+def testSCO() {
+    assert 3 == 1??.plus(2)
+    assert 6 == 1??.plus(2).plus(3)
+    assert 6 == 1??.plus(2)?.plus(3)
+    assert 6 == 1??.plus(2)??.plus(3)
+    assert 10 == 1??.plus(2)?.plus(3).plus(4)
+    assert 10 == 1?.plus(2)??.plus(3).plus(4)
+    assert 10 == 1?.plus(2)?.plus(3)??.plus(4)
+    assert 10 == 1.plus(2).plus(3)??.plus(4)
+
+    Integer num = null
+    assert null == num??.plus(2).plus(3)
+    assert null == num??.plus(2).plus(3).plus(4)
+    assert null == num??.plus(2)??.plus(3).plus(4)
+    assert null == num??.plus(2)??.plus(3)?.plus(4)
+
+    String str = null
+    assert null == str??.substring(0, 1)[0]
+}
+testSCO()
+
+@CompileStatic
+def testCsSCO() {
+    assert 3 == 1??.plus(2)
+    assert 6 == 1??.plus(2).plus(3)
+    assert 6 == 1??.plus(2)?.plus(3)
+    assert 6 == 1??.plus(2)??.plus(3)
+    assert 10 == 1??.plus(2)?.plus(3).plus(4)
+    assert 10 == 1?.plus(2)??.plus(3).plus(4)
+    assert 10 == 1?.plus(2)?.plus(3)??.plus(4)
+    assert 10 == 1.plus(2).plus(3)??.plus(4)
+
+    Integer num = null
+    assert null == num??.plus(2).plus(3)
+    assert null == num??.plus(2).plus(3).plus(4)
+    assert null == num??.plus(2)??.plus(3).plus(4)
+    assert null == num??.plus(2)??.plus(3)?.plus(4)
+
+    String str = null
+    assert null == str??.substring(0, 1)[0]
+}
+testCsSCO()
