@@ -2252,6 +2252,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitArguments(ArgumentsContext ctx) {
+        if (asBoolean(ctx) && asBoolean(ctx.COMMA()) && !asBoolean(ctx.enhancedArgumentList())) {
+            throw createParsingFailedException("Expression expected", ctx);
+        }
+
         if (!asBoolean(ctx) || !asBoolean(ctx.enhancedArgumentList())) {
             return new ArgumentListExpression();
         }
