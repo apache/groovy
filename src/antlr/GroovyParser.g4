@@ -1177,11 +1177,7 @@ typeArgumentsOrDiamond
     ;
 
 arguments
-    :   LPAREN
-        (   enhancedArgumentList?
-        |   enhancedArgumentList COMMA
-        )
-        rparen
+    :   LPAREN enhancedArgumentList? COMMA? rparen
     ;
 
 argumentList
