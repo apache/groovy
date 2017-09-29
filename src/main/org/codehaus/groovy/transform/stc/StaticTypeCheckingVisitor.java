@@ -487,7 +487,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 variable = (VariableExpression) vexp.getAccessedVariable();
             }
             if (variable != null) {
-                ClassNode inferredType = getInferredTypeFromTempInfo(variable, variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
+                ClassNode inferredType = getInferredTypeFromTempInfo(variable, (ClassNode) variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
                 if (inferredType != null && !inferredType.getName().equals("java.lang.Object")) {
                     if (typeCheckingContext.getEnclosingBinaryExpression() != null) {
                         // TODO narrow this down to assignment
