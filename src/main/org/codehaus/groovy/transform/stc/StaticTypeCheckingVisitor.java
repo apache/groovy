@@ -470,30 +470,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (!(vexp.getAccessedVariable() instanceof DynamicVariable)) {
-            VariableExpression variable = null;
-            if (vexp.getAccessedVariable() instanceof Parameter) {
-                variable = new ParameterVariableExpression((Parameter) vexp.getAccessedVariable());
-            } else if (vexp.getAccessedVariable() instanceof VariableExpression) {
-                variable = (VariableExpression) vexp.getAccessedVariable();
-            }
-            if (variable != null) {
-                ClassNode inferredType = getInferredTypeFromTempInfo(variable, variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
-                if (inferredType != null && !inferredType.getName().equals("java.lang.Object")) {
-                    if (typeCheckingContext.getEnclosingBinaryExpression() != null) {
-                        // TODO narrow this down to assignment
-                        if (typeCheckingContext.getEnclosingBinaryExpression().getRightExpression() == vexp) {
-                            vexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, inferredType);
-                        }
-                    } else {
-                        // stash away type info that will be lost later to handle case
-                        // where this expression has return added later - piggy back on existing key
-                        vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
-                    }
-                }
-            }
-            return;
-        }
+        if (! (vexp.getAccessedVariable() instanceof DynamicVariable)) return;
 
         // a dynamic variable is either an undeclared variable
         // or a member of a class used in a 'with'
@@ -1858,9 +1835,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (typeCheckingContext.getEnclosingClosure()!=null) {
             return type;
         }
-        if ((expression instanceof VariableExpression) && hasInferredReturnType(expression)) {
-            type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && typeCheckingContext.getEnclosingClosure()==null) {
             if (!enclosingMethod.isVoidMethod()
@@ -3209,9 +3183,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
         while (classNodes == null && depth > 0) {
             final Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            Object key = objectExpression instanceof ParameterVariableExpression
-                    ? ((ParameterVariableExpression) objectExpression).parameter
-                    : extractTemporaryTypeInfoKey(objectExpression);
+            Object key = extractTemporaryTypeInfoKey(objectExpression);
             classNodes = tempo.get(key);
         }
         return classNodes;
@@ -3399,14 +3371,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.popTemporaryTypeInfo();
         falseExpression.visit(this);
         ClassNode resultType;
-        ClassNode typeOfFalse = getType(falseExpression);
-        ClassNode typeOfTrue = getType(trueExpression);
-        if (hasInferredReturnType(falseExpression)) {
-            typeOfFalse = falseExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        }
-        if (hasInferredReturnType(trueExpression)) {
-            typeOfTrue = trueExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        }
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
             if (enclosingBinaryExpression != null && enclosingBinaryExpression.getRightExpression()==expression) {
@@ -3414,21 +3378,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
                 resultType = OBJECT_TYPE;
             } else if (isNullConstant(trueExpression)) {
-                resultType = wrapTypeIfNecessary(typeOfFalse);
+                resultType = wrapTypeIfNecessary(getType(falseExpression));
             } else {
-                resultType = wrapTypeIfNecessary(typeOfTrue);
+                resultType = wrapTypeIfNecessary(getType(trueExpression));
             }
         } else {
             // store type information
+            final ClassNode typeOfTrue = getType(trueExpression);
+            final ClassNode typeOfFalse = getType(falseExpression);
             resultType = lowestUpperBound(typeOfTrue, typeOfFalse);
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
-    }
-
-    private boolean hasInferredReturnType(Expression expression) {
-        ClassNode type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        return type != null && !type.getName().equals("java.lang.Object");
     }
 
     @Override
