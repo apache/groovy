@@ -1282,9 +1282,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private ModifierManager createModifierManager(MethodDeclarationContext ctx) {
         List<ModifierNode> modifierNodeList = Collections.emptyList();
 
-        if (asBoolean(ctx.modifiers())) {
-            modifierNodeList = this.visitModifiers(ctx.modifiers());
-        } else if (asBoolean(ctx.modifiersOpt())) {
+        if (asBoolean(ctx.modifiersOpt())) {
             modifierNodeList = this.visitModifiersOpt(ctx.modifiersOpt());
         }
 
@@ -1305,6 +1303,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public MethodNode visitMethodDeclaration(MethodDeclarationContext ctx) {
+        validateMethodDeclaration(ctx);
+
         ModifierManager modifierManager = createModifierManager(ctx);
         String methodName = this.visitMethodName(ctx.methodName());
         ClassNode returnType = this.visitReturnType(ctx.returnType());
@@ -1351,6 +1351,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         groovydocManager.handle(methodNode, ctx);
 
         return methodNode;
+    }
+
+    private void validateMethodDeclaration(MethodDeclarationContext ctx) {
+        if (1 == ctx.t || 2 == ctx.t || 3 == ctx.t) { // 1: normal method declaration; 2: abstract method declaration; 3: normal method declaration OR abstract method declaration
+            if (!(asBoolean(ctx.modifiersOpt().modifiers()) || asBoolean(ctx.returnType()))) {
+                throw createParsingFailedException("Modifiers or return type is required", ctx);
+            }
+        }
+
+        if (1 == ctx.t) {
+            if (!asBoolean(ctx.methodBody())) {
+                throw createParsingFailedException("Method body is required", ctx);
+            }
+        }
+
+        if (2 == ctx.t) {
+            if (asBoolean(ctx.methodBody())) {
+                throw createParsingFailedException("Abstract method should not have method body", ctx);
+            }
+        }
     }
 
     private void validateMethodDeclaration(MethodDeclarationContext ctx, MethodNode methodNode, ModifierManager modifierManager, ClassNode classNode) {
