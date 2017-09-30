@@ -542,6 +542,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Statement visitTryCatchStatement(TryCatchStatementContext ctx) {
+        boolean resourcesExists = asBoolean(ctx.resources());
+        boolean catchExists = asBoolean(ctx.catchClause());
+        boolean finallyExists = asBoolean(ctx.finallyBlock());
+
+        if (!(resourcesExists || catchExists || finallyExists)) {
+            throw createParsingFailedException("Either a catch or finally clause or both is required for a try-catch-finally statement", ctx);
+        }
+
         TryCatchStatement tryCatchStatement =
                 new TryCatchStatement((Statement) this.visit(ctx.block()),
                         this.visitFinallyBlock(ctx.finallyBlock()));
