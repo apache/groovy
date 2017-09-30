@@ -282,19 +282,9 @@ methodDeclaration[int t, int ct]
     :   { 3 == $ct }?
         returnType[$ct] methodName LPAREN RPAREN (DEFAULT nls elementValue)?
     |
-        (   { 0 == $t }?
-            modifiersOpt typeParameters?
-        |   modifiersOpt  typeParameters? returnType[$ct]
-        |   modifiers  typeParameters? returnType[$ct]?
-        )
+        modifiersOpt typeParameters? returnType[$ct]?
         methodName formalParameters (nls THROWS nls qualifiedClassNameList)?
-        (
-            { 0 == $t || 3 == $t || 1 == $t}?
-            nls methodBody
-        |
-            { 0 == $t || 3 == $t || 2 == $t }?
-            /* no method body */
-        )
+        nls methodBody?
     ;
 
 methodName
