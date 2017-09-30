@@ -1064,17 +1064,7 @@ primary
     ;
 
 list
-locals[boolean empty = true]
-    :   LBRACK
-        (
-            expressionList[true]
-            { $empty = false; }
-        )?
-        (
-            COMMA
-            { require(!$empty, "Empty list constructor should not contain any comma(,)", -1); }
-        )?
-        RBRACK
+    :   LBRACK expressionList[true]? COMMA? RBRACK
     ;
 
 map

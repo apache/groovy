@@ -2261,7 +2261,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Expression visitArguments(ArgumentsContext ctx) {
         if (asBoolean(ctx) && asBoolean(ctx.COMMA()) && !asBoolean(ctx.enhancedArgumentList())) {
-            throw createParsingFailedException("Expression expected", ctx);
+            throw createParsingFailedException("Expression expected", ctx.COMMA());
         }
 
         if (!asBoolean(ctx) || !asBoolean(ctx.enhancedArgumentList())) {
@@ -3094,6 +3094,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ListExpression visitList(ListContext ctx) {
+        if (asBoolean(ctx.COMMA()) && !asBoolean(ctx.expressionList())) {
+            throw createParsingFailedException("Empty list constructor should not contain any comma(,)", ctx.COMMA());
+        }
+
         return configureAST(
                 new ListExpression(
                         this.visitExpressionList(ctx.expressionList())),
@@ -4271,7 +4275,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         node.getLastColumnNumber()));
     }
 
-    /*
+
+    private CompilationFailedException createParsingFailedException(String msg, TerminalNode node) {
+        return createParsingFailedException(msg, node.getSymbol());
+    }
+
     private CompilationFailedException createParsingFailedException(String msg, Token token) {
         return createParsingFailedException(
                 new SyntaxException(msg,
@@ -4280,7 +4288,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         token.getLine(),
                         token.getCharPositionInLine() + 1 + token.getText().length()));
     }
-    */
 
     private CompilationFailedException createParsingFailedException(Throwable t) {
         if (t instanceof SyntaxException) {
