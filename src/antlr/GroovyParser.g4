@@ -654,18 +654,9 @@ locals[ boolean isInsideLoop, boolean isInsideSwitch ]
     ;
 
 tryCatchStatement
-locals[boolean resourcesExists = false]
-    :   TRY (resources { $resourcesExists = true; })? nls
-        block
-        (
-            (nls catchClause)+
-            (nls finallyBlock)?
-        |
-            nls finallyBlock
-        |
-            // catch and finally clauses required unless it's a try-with-resources block
-            { require($resourcesExists, "either a catch or finally clause or both is required for a try-catch-finally statement"); }
-        )
+    :   TRY resources? nls block
+        (nls catchClause)*
+        (nls finallyBlock)?
     ;
 
 assertStatement
