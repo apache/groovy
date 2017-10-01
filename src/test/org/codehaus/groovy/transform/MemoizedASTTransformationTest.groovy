@@ -205,6 +205,20 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
             }.a() == 'a'
         '''
     }
+
+    // GROOVY-8326
+    void testMemoizedMethodWithOverrideAnnotation() {
+        assertScript '''
+            class A {            
+                @groovy.transform.Memoized
+                @Override
+                String toString() {
+                    'an expensive toString operation'
+                }
+            }
+            assert new A().toString() == 'an expensive toString operation'
+        '''
+    }
 }
 
 class MemoizedTestClass2 {
