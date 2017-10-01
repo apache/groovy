@@ -565,24 +565,24 @@ localVariableDeclaration
         variableDeclaration[0]
     ;
 
+classifiedModifiers[int t]
+    :   { 0 == $t }? variableModifiers
+    |   { 1 == $t }? modifiers
+    ;
+
+
 /**
  *  t   0: local variable declaration; 1: field declaration
  */
 variableDeclaration[int t]
-    :   (   { 0 == $t }? variableModifiers
-        |   { 1 == $t }? modifiers
+@leftfactor { classifiedModifiers }
+    :   classifiedModifiers[$t]
+        (   type? variableDeclarators
+        |   typeNamePairs nls ASSIGN nls variableInitializer
         )
-        type? variableDeclarators
     |
-        (   { 0 == $t }? variableModifiersOpt
-        |   { 1 == $t }? modifiersOpt
-        )
+        classifiedModifiers[$t]?
         type variableDeclarators
-    |
-        (   { 0 == $t }? variableModifiers
-        |   { 1 == $t }? modifiers
-        )
-        typeNamePairs nls ASSIGN nls variableInitializer
     ;
 
 typeNamePairs
