@@ -18,12 +18,31 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MixinNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.ASTTransformation;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class node type is very special and should only be used by the static type checker
@@ -34,21 +53,19 @@ import java.util.*;
  *
  * This class node type should never leak outside of the type checker. More precisely, it should
  * only be used to check method call arguments, and nothing more.
- *
- * @author Cedric Champeau
  */
 class UnionTypeClassNode extends ClassNode {
     private final ClassNode[] delegates;
-    
+
     public UnionTypeClassNode(ClassNode... classNodes) {
-        super("<UnionType"+asArrayDescriptor(classNodes)+">", 0, ClassHelper.OBJECT_TYPE);
-        delegates = classNodes==null ? ClassNode.EMPTY_ARRAY : classNodes;
+        super("<UnionType:" + asArrayDescriptor(classNodes) + ">", 0, ClassHelper.OBJECT_TYPE);
+        delegates = classNodes == null ? ClassNode.EMPTY_ARRAY : classNodes;
     }
-    
+
     private static String asArrayDescriptor(ClassNode... nodes) {
         StringBuilder sb = new StringBuilder();
         for (ClassNode node : nodes) {
-            if (sb.length()>0) sb.append("+");
+            if (sb.length() > 0) sb.append("+");
             sb.append(node.getText());
         }
         return sb.toString();
@@ -178,7 +195,7 @@ class UnionTypeClassNode extends ClassNode {
         List<AnnotationNode> nodes = new LinkedList<AnnotationNode>();
         for (ClassNode delegate : delegates) {
             List<AnnotationNode> annotations = delegate.getAnnotations();
-            if (annotations!=null) nodes.addAll(annotations);
+            if (annotations != null) nodes.addAll(annotations);
         }
         return nodes;
     }
@@ -188,7 +205,7 @@ class UnionTypeClassNode extends ClassNode {
         List<AnnotationNode> nodes = new LinkedList<AnnotationNode>();
         for (ClassNode delegate : delegates) {
             List<AnnotationNode> annotations = delegate.getAnnotations(type);
-            if (annotations!=null) nodes.addAll(annotations);
+            if (annotations != null) nodes.addAll(annotations);
         }
         return nodes;
     }
@@ -211,7 +228,7 @@ class UnionTypeClassNode extends ClassNode {
     public FieldNode getDeclaredField(final String name) {
         for (ClassNode delegate : delegates) {
             FieldNode node = delegate.getDeclaredField(name);
-            if (node!=null) return node;
+            if (node != null) return node;
         }
         return null;
     }
@@ -220,7 +237,7 @@ class UnionTypeClassNode extends ClassNode {
     public MethodNode getDeclaredMethod(final String name, final Parameter[] parameters) {
         for (ClassNode delegate : delegates) {
             MethodNode node = delegate.getDeclaredMethod(name, parameters);
-            if (node!=null) return node;
+            if (node != null) return node;
         }
         return null;
     }
@@ -230,7 +247,7 @@ class UnionTypeClassNode extends ClassNode {
         List<MethodNode> nodes = new LinkedList<MethodNode>();
         for (ClassNode delegate : delegates) {
             List<MethodNode> methods = delegate.getDeclaredMethods(name);
-            if (methods!=null) nodes.addAll(methods);
+            if (methods != null) nodes.addAll(methods);
         }
         return nodes;
     }
@@ -249,7 +266,7 @@ class UnionTypeClassNode extends ClassNode {
     public FieldNode getField(final String name) {
         for (ClassNode delegate : delegates) {
             FieldNode field = delegate.getField(name);
-            if (field!=null) return field;
+            if (field != null) return field;
         }
         return null;
     }
@@ -259,7 +276,7 @@ class UnionTypeClassNode extends ClassNode {
         List<FieldNode> nodes = new LinkedList<FieldNode>();
         for (ClassNode delegate : delegates) {
             List<FieldNode> fields = delegate.getFields();
-            if (fields!=null) nodes.addAll(fields);
+            if (fields != null) nodes.addAll(fields);
         }
         return nodes;
     }
@@ -274,7 +291,7 @@ class UnionTypeClassNode extends ClassNode {
         Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getInterfaces();
-            if (interfaces!=null) Collections.addAll(nodes, interfaces);
+            if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
         return nodes.toArray(new ClassNode[nodes.size()]);
     }
@@ -284,7 +301,7 @@ class UnionTypeClassNode extends ClassNode {
         List<MethodNode> nodes = new LinkedList<MethodNode>();
         for (ClassNode delegate : delegates) {
             List<MethodNode> methods = delegate.getMethods();
-            if (methods!=null) nodes.addAll(methods);
+            if (methods != null) nodes.addAll(methods);
         }
         return nodes;
     }
@@ -294,7 +311,7 @@ class UnionTypeClassNode extends ClassNode {
         List<PropertyNode> nodes = new LinkedList<PropertyNode>();
         for (ClassNode delegate : delegates) {
             List<PropertyNode> properties = delegate.getProperties();
-            if (properties!=null) nodes.addAll(properties);
+            if (properties != null) nodes.addAll(properties);
         }
         return nodes;
     }
@@ -309,7 +326,7 @@ class UnionTypeClassNode extends ClassNode {
         Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces();
-            if (interfaces!=null) Collections.addAll(nodes, interfaces);
+            if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
         return nodes.toArray(new ClassNode[nodes.size()]);
     }
@@ -319,7 +336,7 @@ class UnionTypeClassNode extends ClassNode {
         Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces(useRedirect);
-            if (interfaces!=null) Collections.addAll(nodes, interfaces);
+            if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
         return nodes.toArray(new ClassNode[nodes.size()]);
     }
@@ -328,7 +345,7 @@ class UnionTypeClassNode extends ClassNode {
     public int hashCode() {
         int hash = 13;
         for (ClassNode delegate : delegates) {
-            hash = 31*hash + delegate.hashCode();
+            hash = 31 * hash + delegate.hashCode();
         }
         return hash;
     }
