@@ -669,4 +669,78 @@ public class BytecodeHelper implements Opcodes {
         }
         return h;
     }
+
+    /**
+     * Converts a primitive type to boolean.
+     *
+     * @param mv method visitor
+     * @param type primitive type to convert
+     */
+    public static void convertPrimitiveToBoolean(MethodVisitor mv, ClassNode type) {
+        if (type == ClassHelper.boolean_TYPE) {
+            return;
+        }
+        // Special handling is done for floating point types in order to
+        // handle checking for 0 or NaN values.
+        if (type == ClassHelper.double_TYPE) {
+            convertDoubleToBoolean(mv, type);
+            return;
+        } else if (type == ClassHelper.float_TYPE) {
+            convertFloatToBoolean(mv, type);
+            return;
+        }
+        Label trueLabel = new Label();
+        Label falseLabel = new Label();
+        // Convert long to int for IFEQ comparison using LCMP
+        if (type==ClassHelper.long_TYPE) {
+            mv.visitInsn(LCONST_0);
+            mv.visitInsn(LCMP);
+        }
+        // This handles byte, short, char and int
+        mv.visitJumpInsn(IFEQ, falseLabel);
+        mv.visitInsn(ICONST_1);
+        mv.visitJumpInsn(GOTO, trueLabel);
+        mv.visitLabel(falseLabel);
+        mv.visitInsn(ICONST_0);
+        mv.visitLabel(trueLabel);
+    }
+
+    private static void convertDoubleToBoolean(MethodVisitor mv, ClassNode type) {
+        Label trueLabel = new Label();
+        Label falseLabel = new Label();
+        Label falseLabelWithPop = new Label();
+        mv.visitInsn(DUP2); // will need the extra for isNaN call if required
+        mv.visitInsn(DCONST_0);
+        mv.visitInsn(DCMPL);
+        mv.visitJumpInsn(IFEQ, falseLabelWithPop);
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "isNaN", "(D)Z", false);
+        mv.visitJumpInsn(IFNE, falseLabel);
+        mv.visitInsn(ICONST_1);
+        mv.visitJumpInsn(GOTO, trueLabel);
+        mv.visitLabel(falseLabelWithPop);
+        mv.visitInsn(POP2);
+        mv.visitLabel(falseLabel);
+        mv.visitInsn(ICONST_0);
+        mv.visitLabel(trueLabel);
+    }
+
+    private static void convertFloatToBoolean(MethodVisitor mv, ClassNode type) {
+        Label trueLabel = new Label();
+        Label falseLabel = new Label();
+        Label falseLabelWithPop = new Label();
+        mv.visitInsn(DUP); // will need the extra for isNaN call if required
+        mv.visitInsn(FCONST_0);
+        mv.visitInsn(FCMPL);
+        mv.visitJumpInsn(IFEQ, falseLabelWithPop);
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "isNaN", "(F)Z", false);
+        mv.visitJumpInsn(IFNE, falseLabel);
+        mv.visitInsn(ICONST_1);
+        mv.visitJumpInsn(GOTO, trueLabel);
+        mv.visitLabel(falseLabelWithPop);
+        mv.visitInsn(POP);
+        mv.visitLabel(falseLabel);
+        mv.visitInsn(ICONST_0);
+        mv.visitLabel(trueLabel);
+    }
+
 }
