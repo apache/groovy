@@ -152,7 +152,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private final Map<String, MetaMethod> listeners = new HashMap<String, MetaMethod>();
     private FastArray constructors;
     private final List<MetaMethod> allMethods = new ArrayList<MetaMethod>();
-    private boolean initialized;
+    private volatile boolean initialized;
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
