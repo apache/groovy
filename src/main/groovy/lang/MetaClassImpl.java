@@ -149,7 +149,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected MetaClassRegistry registry;
     private ClassNode classNode;
     private FastArray constructors;
-    private boolean initialized;
+    private volatile boolean initialized;
     private MetaMethod genericGetMethod;
     private MetaMethod genericSetMethod;
     private MetaMethod propertyMissingGet;
