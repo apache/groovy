@@ -629,7 +629,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         // now try with flow type instead of declaration type
         rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (receiver instanceof VariableExpression && receiver.getNodeMetaData().isEmpty()) {
+        if (receiver instanceof VariableExpression && rType == null) {
             // TODO: can STCV be made smarter to avoid this check?
             VariableExpression ve = (VariableExpression) ((VariableExpression)receiver).getAccessedVariable();
             rType = ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
