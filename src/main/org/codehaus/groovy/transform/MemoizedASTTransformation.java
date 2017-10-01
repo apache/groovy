@@ -67,6 +67,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MAX_CACHE_SIZE_NAME = "maxCacheSize";
     private static final String CLOSURE_LABEL = "Closure";
     private static final String METHOD_LABEL = "Priv";
+    private static final ClassNode OVERRIDE_CLASSNODE = make(Override.class);
 
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
@@ -127,9 +128,18 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 annotatedMethod.getExceptions(),
                 code
         );
-        List<AnnotationNode> sourceAnnotations = annotatedMethod.getAnnotations();
-        method.addAnnotations(new ArrayList<AnnotationNode>(sourceAnnotations));
+        method.addAnnotations(filterAnnotations(annotatedMethod.getAnnotations()));
         return method;
+    }
+
+    private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
+        for (AnnotationNode annotation : annotations) {
+            if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
+                result.add(annotation);
+            }
+        }
+        return result;
     }
 
     private static final String MEMOIZE_METHOD_NAME = "memoize";
