@@ -194,18 +194,6 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(MemoizedTestClass.privateStaticMethodWithParamsCounter, 3)
     }
 
-    void testMemoizedAIC_Groovy8043() {
-        assertScript '''
-            class A {}
-            assert new A() {
-                @groovy.transform.Memoized()
-                String a() {
-                    return "a"
-                }
-            }.a() == 'a'
-        '''
-    }
-
     // GROOVY-8326
     void testMemoizedMethodWithOverrideAnnotation() {
         assertScript '''
