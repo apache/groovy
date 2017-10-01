@@ -53,7 +53,7 @@ import java.util.*;
  * @since 1.5
  */
 public final class ClosureMetaClass extends MetaClassImpl {
-    private boolean initialized;
+    private volatile boolean initialized;
     private final FastArray closureMethods = new FastArray(3);
     private Map<String, CachedField> attributes = new HashMap<String, CachedField>();
     private MethodChooser chooser;
