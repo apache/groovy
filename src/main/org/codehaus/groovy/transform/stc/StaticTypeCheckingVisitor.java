@@ -470,7 +470,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (! (vexp.getAccessedVariable() instanceof DynamicVariable)) return;
+        if (!(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+            if (typeCheckingContext.getEnclosingClosure() == null) {
+                VariableExpression variable = null;
+                if (vexp.getAccessedVariable() instanceof Parameter) {
+                    variable = new ParameterVariableExpression((Parameter) vexp.getAccessedVariable());
+                } else if (vexp.getAccessedVariable() instanceof VariableExpression) {
+                    variable = (VariableExpression) vexp.getAccessedVariable();
+                }
+                if (variable != null) {
+                    ClassNode inferredType = getInferredTypeFromTempInfo(variable, variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
+                    // instanceof applies, stash away the type, reusing key used elsewhere
+                    if (inferredType != null && !inferredType.getName().equals("java.lang.Object")) {
+                        vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
+                    }
+                }
+            }
+            return;
+        }
 
         // a dynamic variable is either an undeclared variable
         // or a member of a class used in a 'with'
@@ -1007,9 +1024,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Expression leftExpression,
             final ClassNode leftExpressionType,
             final Expression rightExpression,
-            final ClassNode inferredRightExpressionType)
+            final ClassNode inferredRightExpressionTypeOrig)
     {
-
+        ClassNode inferredRightExpressionType = inferredRightExpressionTypeOrig;
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
         if (leftExpression instanceof VariableExpression
@@ -1021,6 +1038,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
         ClassNode leftRedirect = leftExpressionType.redirect();
+        // see if instanceof applies
+        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
+            inferredRightExpressionType = rightExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        }
         ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
 
         // check types are compatible for assignment
@@ -1834,6 +1855,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode type = getType(expression);
         if (typeCheckingContext.getEnclosingClosure()!=null) {
             return type;
+        }
+        // handle instanceof cases
+        if ((expression instanceof VariableExpression) && hasInferredReturnType(expression)) {
+            type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
         }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && typeCheckingContext.getEnclosingClosure()==null) {
@@ -3186,7 +3211,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
         while (classNodes == null && depth > 0) {
             final Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            Object key = extractTemporaryTypeInfoKey(objectExpression);
+            Object key = objectExpression instanceof ParameterVariableExpression
+                    ? ((ParameterVariableExpression) objectExpression).parameter
+                    : extractTemporaryTypeInfoKey(objectExpression);
             classNodes = tempo.get(key);
         }
         return classNodes;
@@ -3374,6 +3401,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.popTemporaryTypeInfo();
         falseExpression.visit(this);
         ClassNode resultType;
+        ClassNode typeOfFalse = getType(falseExpression);
+        ClassNode typeOfTrue = getType(trueExpression);
+        // handle instanceof cases
+        if (hasInferredReturnType(falseExpression)) {
+            typeOfFalse = falseExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        }
+        if (hasInferredReturnType(trueExpression)) {
+            typeOfTrue = trueExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        }
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
             if (enclosingBinaryExpression != null && enclosingBinaryExpression.getRightExpression()==expression) {
@@ -3381,18 +3417,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
                 resultType = OBJECT_TYPE;
             } else if (isNullConstant(trueExpression)) {
-                resultType = wrapTypeIfNecessary(getType(falseExpression));
+                resultType = wrapTypeIfNecessary(typeOfFalse);
             } else {
-                resultType = wrapTypeIfNecessary(getType(trueExpression));
+                resultType = wrapTypeIfNecessary(typeOfTrue);
             }
         } else {
             // store type information
-            final ClassNode typeOfTrue = getType(trueExpression);
-            final ClassNode typeOfFalse = getType(falseExpression);
             resultType = lowestUpperBound(typeOfTrue, typeOfFalse);
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
+    }
+
+    private boolean hasInferredReturnType(Expression expression) {
+        ClassNode type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        return type != null && !type.getName().equals("java.lang.Object");
     }
 
     @Override

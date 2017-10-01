@@ -22,8 +22,6 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
  */
 class MiscSTCTest extends StaticTypeCheckingTestCase {
 
@@ -272,8 +270,85 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    public static class MiscSTCTestSupport {
+    static class MiscSTCTestSupport {
         static def foo() { '123' }
     }
-}
 
+    void testTernaryParam() {
+        assertScript '''
+            Date ternaryParam(Object input) {
+                input instanceof Date ? input : null
+            }
+            def d = new Date()
+            assert ternaryParam(42) == null
+            assert ternaryParam('foo') == null
+            assert ternaryParam(d) == d
+        '''
+    }
+
+    void testTernaryLocalVar() {
+        assertScript '''
+            Date ternaryLocalVar(Object input) {
+                Object copy = input
+                copy instanceof Date ? copy : null
+            }
+            def d = new Date()
+            assert ternaryLocalVar(42) == null
+            assert ternaryLocalVar('foo') == null
+            assert ternaryLocalVar(d) == d
+        '''
+    }
+
+    void testIfThenElseParam() {
+        assertScript '''
+            Date ifThenElseParam(Object input) {
+                if (input instanceof Date) {
+                    input
+                } else {
+                    null
+                }
+            }
+            def d = new Date()
+            assert ifThenElseParam(42) == null
+            assert ifThenElseParam('foo') == null
+            assert ifThenElseParam(d) == d
+        '''
+    }
+
+    void testIfThenElseLocalVar() {
+        assertScript '''
+            Date ifThenElseLocalVar(Object input) {
+                Date result
+                if (input instanceof Date) {
+                    result = input
+                } else {
+                    result = null
+                }
+                result
+            }
+            def d = new Date()
+            assert ifThenElseLocalVar(42) == null
+            assert ifThenElseLocalVar('foo') == null
+            assert ifThenElseLocalVar(d) == d
+        '''
+    }
+
+    void testIfThenElseLocalVar2() {
+        assertScript '''
+            class FooBase {}
+            class FooChild extends FooBase{}
+            FooChild ifThenElseLocalVar2(FooBase input) {
+                FooChild result
+                if (input instanceof FooChild) {
+                    result = input
+                } else {
+                    result = null
+                }
+                result
+            }
+            def fc = new FooChild()
+            assert ifThenElseLocalVar2(fc) == fc
+            assert ifThenElseLocalVar2(new FooBase()) == null
+        '''
+    }
+}
