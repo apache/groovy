@@ -39,15 +39,25 @@ import groovy.lang.Closure;
  * assert new CurriedClosure(unitAdder, "six", "ty")("minutes") == "sixty minutes"
  * </pre>
  *
- * @author Jochen Theodorou
- * @author Paul King
+ * Notes:
+ * <ul>
+ *     <li>Caters for Groovy's lazy (rcurry) and eager (ncurry) calculation of argument position</li>
+ * </ul>
  */
 public final class CurriedClosure<V> extends Closure<V> {
 
-    private Object[] curriedParams;
+    private final Object[] curriedParams;
+    private final int minParamsExpected;
     private int index;
     private Class varargType = null;
 
+    /**
+     * Creates the curried closure.
+     *
+     * @param index the position where the parameters should be injected (-ve for lazy)
+     * @param uncurriedClosure the closure to be called after the curried parameters are injected
+     * @param arguments the supplied parameters
+     */
     public CurriedClosure(int index, Closure<V> uncurriedClosure, Object... arguments) {
         super(uncurriedClosure.clone());
         curriedParams = arguments;
@@ -65,6 +75,9 @@ public final class CurriedClosure<V> extends Closure<V> {
             if (index < 0) {
                 // normalise
                 this.index += origMaxLen;
+                minParamsExpected = 0;
+            } else {
+                minParamsExpected = index + arguments.length;
             }
             if (maximumNumberOfParameters < 0) {
                 throw new IllegalArgumentException("Can't curry " + arguments.length + " arguments for a closure with " + origMaxLen + " parameters.");
@@ -77,6 +90,8 @@ public final class CurriedClosure<V> extends Closure<V> {
                 throw new IllegalArgumentException("To curry " + arguments.length + " argument(s) expect index range 0.." +
                         maximumNumberOfParameters + " but found " + index);
             }
+        } else {
+            minParamsExpected = 0;
         }
     }
 
@@ -98,8 +113,13 @@ public final class CurriedClosure<V> extends Closure<V> {
                 System.arraycopy(arguments, normalizedIndex, newCurriedParams, curriedParams.length + normalizedIndex, arguments.length - normalizedIndex);
             return newCurriedParams;
         }
+        if (curriedParams.length + arguments.length < minParamsExpected) {
+            throw new IllegalArgumentException("When currying expected at least " + index + " argument(s) to be supplied before known curried arguments but found " + arguments.length);
+        }
         final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
         int newIndex = Math.min(index, curriedParams.length + arguments.length - 1);
+        // rcurried arguments are done lazily to allow normal method selection between overloaded alternatives
+        newIndex = Math.min(newIndex, arguments.length);
         System.arraycopy(arguments, 0, newCurriedParams, 0, newIndex);
         System.arraycopy(curriedParams, 0, newCurriedParams, newIndex, curriedParams.length);
         if (arguments.length - newIndex > 0)

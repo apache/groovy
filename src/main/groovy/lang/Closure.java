@@ -555,6 +555,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * assert halver(8) == 4
      * </pre>
      *
+     * The position of the curried parameters will be calculated lazily, for example,
+     * if two overloaded doCall methods are available, the supplied arguments plus the
+     * curried arguments will be concatenated and the result used for method selection.
+     *
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
      * @see #curry(Object...)
@@ -598,6 +602,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * // [BEE, ant, dog]       Not found but would belong in position 2
      * // [BEE, Cat, ant, dog]  Not found but would belong in position 3
      * </pre>
+     *
+     * The position of the curried parameters will be calculated eagerly
+     * and implies all arguments prior to the specified n index are supplied.
+     * Default parameter values prior to the n index will not be available.
      *
      * @param n the index from which to bind parameters (may be -ve in which case it will be normalized)
      * @param arguments the arguments to bind

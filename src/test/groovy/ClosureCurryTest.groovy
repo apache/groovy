@@ -21,7 +21,7 @@ package groovy
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
- * @author Hallvard Tr�tteberg
+ * Tests for curried closures
  */
 class ClosureCurryTest extends GroovyTestCase {
 
@@ -252,6 +252,7 @@ class ClosureCurryTest extends GroovyTestCase {
     private a(b,c){ "2Obj: $b $c" }
     private a(b){ "1Obj: $b" }
 
+
     void testCurryWithMethodClosure() {
         def c = (this.&a).curry(0)
         assert c(1,2) == '3Int: 0 1 2'
@@ -264,5 +265,30 @@ class ClosureCurryTest extends GroovyTestCase {
         assert b("foo",2) == '3Obj: foo 2 0'
         assert b(1) == '2Obj: 1 0'
         assert b() == '1Obj: 0'
+    }
+
+    void testInsufficientSuppliedArgsWhenUsingNCurry() {
+        def cl = { a, b, c = 'x' -> a + b + c }
+        assert cl.ncurry(1, 'b')('a') == 'abx'
+        // ncurry is done eagerly and implies a minimum number of params
+        shouldFail(IllegalArgumentException) {
+            cl.ncurry(1, 'b')()
+        }
+        // rcurry is done lazily
+        assert cl.rcurry('b', 'c')('a') == 'abc'
+        assert cl.rcurry('b', 'c')() == 'bcx'
+    }
+
+    void testCurryInComboWithDefaultArgs() {
+        def cl = { a, b, c='c', d='d' -> a + b + c + d }
+        assert 'abcd' == cl.ncurry(0, 'a')('b')
+        assert 'xycd' == cl.ncurry(1, 'y')('x')
+        assert 'abdd' == cl.ncurry(0, 'a').rcurry('d')('b')
+        assert 'abcx' == cl.ncurry(3, 'x')('a', 'b', 'c')
+        shouldFail(IllegalArgumentException) {
+            // ncurry is done eagerly and implies a minimum number of params
+            // default arguments are ignored prior to the ncurried argument
+            cl.ncurry(4, 'd')('a', 'b')
+        }
     }
 }
