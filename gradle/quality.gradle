@@ -54,6 +54,7 @@ allprojects {
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
+        dependsOn jarAll
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
         codenarcClasspath = files(rootProject.jarAll.archivePath) +
