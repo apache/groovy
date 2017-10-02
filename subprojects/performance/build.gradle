@@ -30,7 +30,7 @@ configurations {
 
 dependencies {
     jmh rootProject
-    testCompile 'org.codehaus.groovy:groovy:2.4.7'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.7'
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
@@ -113,7 +113,7 @@ task performanceTests {
                     groovyConf.files[0]
             ]
             rootProject.sourceSets.test.compileClasspath.files
-                    .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') }
+                    .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') && !it.name.contains('antlr') && !it.name.contains('asm') }
                     .collect(compileClassPath) { it.absolutePath }
 
             args = [
