@@ -28,7 +28,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     // Execute single test:
     // gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
     void testAutoFinalOnClass() {
-        throw new Exception("TEST FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        throw new Exception("AutoFinalClosureTransformTest#testAutoFinalOnClass FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
         assertScript '''
             import groovy.transform.AutoFinal
