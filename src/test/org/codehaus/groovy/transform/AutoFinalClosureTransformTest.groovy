@@ -20,9 +20,17 @@ package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
 
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+
 /**
  * Tests for the {@code @AutoFinal} AST transform.
  */
+
+@RunWith(JUnit4)
 class AutoFinalClosureTransformTest extends CompilableTestSupport {
 
     // Execute single test:
@@ -67,10 +75,11 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAutoFinalOnClass2() {
-        //throw new Exception("AutoFinalClosureTransformTest#testAutoFinalOnClass FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
-        assertScript '''
+        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+        final result = shouldNotCompile('''
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
@@ -104,6 +113,8 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             final js = new Person('John', 'Smith')
             assert js.fullName() == 'John Smith'
             assert js.fullName(true, ', ') == 'Smith, John'
-        '''
+        ''')
+        //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
+        assert result.contains('The parameter [reversed] is declared final but is reassigned')
     }
 }
