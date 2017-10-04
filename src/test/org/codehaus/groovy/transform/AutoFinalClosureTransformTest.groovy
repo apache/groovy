@@ -76,7 +76,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     }
 
     @Test
-    void testAutoFinalOnClass2() {
+    void testAutoFinalOnClass_v2() {
         // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
         // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
         final result = shouldNotCompile('''
@@ -115,6 +115,38 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
         //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
+        assert result.contains('The parameter [reversed] is declared final but is reassigned')
+    }
+
+    @Test
+    void testAutoFinalOnClosure_v1() {
+        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+        final result = shouldNotCompile('''
+            import groovy.transform.AutoFinal
+            import groovy.transform.ASTTest
+            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
+            import static java.lang.reflect.Modifier.isFinal
+
+            @AutoFinal
+            class Person {
+                final String first, last
+                Person(String first, String last) {
+                    this.first = first
+                    this.last = last
+                }
+                String fullName(boolean reversed = false, String separator = ' ') {
+                    final cls = { String s -> s = "abc"; s }
+                    final clsResult = cls()
+                    return clsResult
+                }
+            }
+
+            final js = new Person('John', 'Smith')
+            assert js.fullName() == 'John Smith'
+            assert js.fullName(true, ', ') == 'Smith, John'
+        ''')
+        println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
         assert result.contains('The parameter [reversed] is declared final but is reassigned')
     }
 }
