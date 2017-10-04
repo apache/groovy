@@ -597,6 +597,11 @@ variableNames
     :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ rparen
     ;
 
+conditionalStatement
+    :   ifElseStatement
+    |   switchStatement
+    ;
+
 ifElseStatement
     :   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?
     ;
@@ -660,12 +665,11 @@ locals[ String footprint = "" ]
 
 statement
     :   block                                                                                               #blockStmtAlt
-    |   ifElseStatement                                                                                     #ifElseStmtAlt
+    |   conditionalStatement                                                                                #conditionalStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
 
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
 
-    |   switchStatement                                                                                     #switchStmtAlt
     |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt

@@ -387,8 +387,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public IfStatement visitIfElseStmtAlt(IfElseStmtAltContext ctx) {
-        return configureAST(this.visitIfElseStatement(ctx.ifElseStatement()), ctx);
+    public Statement visitConditionalStmtAlt(ConditionalStmtAltContext ctx) {
+        return configureAST(this.visitConditionalStatement(ctx.conditionalStatement()), ctx);
+    }
+
+    @Override
+    public Statement visitConditionalStatement(ConditionalStatementContext ctx) {
+        if (asBoolean(ctx.ifElseStatement())) {
+            return configureAST(this.visitIfElseStatement(ctx.ifElseStatement()), ctx);
+        } else if (asBoolean(ctx.switchStatement())) {
+            return configureAST(this.visitSwitchStatement(ctx.switchStatement()), ctx);
+        }
+
+        throw createParsingFailedException("Unsupported conditional statement", ctx);
     }
 
     @Override
@@ -667,11 +678,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return configureAST(
                 this.createBlockStatement((Statement) this.visit(ctx.block())),
                 ctx);
-    }
-
-    @Override
-    public SwitchStatement visitSwitchStmtAlt(SwitchStmtAltContext ctx) {
-        return configureAST(this.visitSwitchStatement(ctx.switchStatement()), ctx);
     }
 
     @Override
