@@ -392,6 +392,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public IfStatement visitIfElseStmtAlt(IfElseStmtAltContext ctx) {
+        return configureAST(this.visitIfElseStatement(ctx.ifElseStatement()), ctx);
+    }
+
+    @Override
+    public IfStatement visitIfElseStatement(IfElseStatementContext ctx) {
         Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
         BooleanExpression booleanExpression =
                 configureAST(
@@ -408,6 +413,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return configureAST(new IfStatement(booleanExpression, ifBlock, elseBlock), ctx);
     }
+
 
     @Override
     public Statement visitLoopStmtAlt(LoopStmtAltContext ctx) {
@@ -684,6 +690,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return configureAST(this.visitSwitchStatement(ctx.switchStatement()), ctx);
     }
 
+    @Override
     public SwitchStatement visitSwitchStatement(SwitchStatementContext ctx) {
         List<Statement> statementList = new LinkedList<>();
         for (SwitchBlockStatementGroupContext c : ctx.switchBlockStatementGroup()) {
