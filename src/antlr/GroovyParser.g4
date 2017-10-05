@@ -468,12 +468,16 @@ qualifiedNameElement
     |   TRAIT
     ;
 
+qualifiedNameElements
+    :   (qualifiedNameElement DOT)*
+    ;
+
 qualifiedClassName
-    :   (qualifiedNameElement DOT)* identifier
+    :   qualifiedNameElements identifier
     ;
 
 qualifiedStandardClassName
-    :   (qualifiedNameElement DOT)* (className DOT)* className
+    :   qualifiedNameElements className (DOT className)*
     ;
 
 literal
