@@ -427,11 +427,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
             shouldFailCompilationWithMessage """
                 def List<List<Integer> history = new ArrayList<List<Integer>>()
-            """, "Unexpected input: 'def List<List<Integer> history'"
+            """, "Unexpected input: '<'"
 
             shouldFailCompilationWithMessage """
                 def List<List<Integer>> history = new ArrayList<List<Integer>()
-            """, "Unexpected input: 'new ArrayList<List<Integer>('"
+            """, "Unexpected input:"
         }
     }
 
