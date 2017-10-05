@@ -147,14 +147,24 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName() == 'John Smith'
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
+
         printStackTrace(throwable)
+
+        //println "\n\n${throwable.printStackTrace()}"
+        
         //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
         //assert result.contains('The parameter [reversed] is declared final but is reassigned')
     }
 
     void printStackTrace(final Throwable throwable) {
-        println throwable.message
+        //println "throwable: ${throwable.message}"
+        println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
         throwable.stackTrace.each { println it }
+        final inner = throwable.cause
+        if(inner != null) {
+            println "Caused by........................................................................................."
+            printStackTrace(inner)
+        }
     }
 
 

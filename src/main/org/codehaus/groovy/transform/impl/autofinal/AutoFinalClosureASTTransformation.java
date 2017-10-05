@@ -51,7 +51,9 @@ class AutoFinalClosureASTTransformation implements ASTTransformation {
                 super.visitClosureExpression(expression);
             }
 
-            protected SourceUnit getSourceUnit() { return unit; }
+            protected SourceUnit getSourceUnit() {
+                return unit;
+            }
         };
         
         visitor.visitClass(annotatedClass);
