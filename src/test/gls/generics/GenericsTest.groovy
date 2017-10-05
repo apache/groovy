@@ -398,7 +398,7 @@ import java.util.concurrent.atomic.AtomicInteger
         } else {
             shouldFailCompilationWithMessage """
                 def list1 = new ArrayList<Integer()
-            """, "Unexpected input:"
+            """, "Unexpected input: 'new ArrayList<Integer('"
 
             shouldFailCompilationWithMessage """
                 List<Integer list2 = new ArrayList<Integer>()
@@ -427,11 +427,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
             shouldFailCompilationWithMessage """
                 def List<List<Integer> history = new ArrayList<List<Integer>>()
-            """, "Unexpected input: '<'"
+            """, "Unexpected input: 'def List<List<Integer> history'"
 
             shouldFailCompilationWithMessage """
                 def List<List<Integer>> history = new ArrayList<List<Integer>()
-            """, "Unexpected input:"
+            """, "Unexpected input: 'new ArrayList<List<Integer>('"
         }
     }
 

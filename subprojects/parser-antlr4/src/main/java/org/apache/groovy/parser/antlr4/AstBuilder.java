@@ -1979,24 +1979,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             expression = ((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression();
         } else if (asBoolean(ctx.standardLambdaExpression())) {
             expression = this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
-        } else if (asBoolean(ctx.conditionalStatement())) {
-            expression =
-                    configureAST(
-                        createCallMethodCallExpression(
-                            configureAST(
-                                    new ClosureExpression(
-                                        Parameter.EMPTY_ARRAY,
-                                        configureAST(
-                                            this.createBlockStatement(this.visitConditionalStatement(ctx.conditionalStatement())),
-                                            ctx
-                                        )
-                                    ),
-                                    ctx
-                            ),
-                            new ArgumentListExpression()
-                        ),
-                        ctx
-                    );
         } else {
             throw createParsingFailedException("Unsupported enhanced statement expression: " + ctx.getText(), ctx);
         }

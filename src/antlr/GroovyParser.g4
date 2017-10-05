@@ -784,7 +784,6 @@ expressionListElement[boolean canSpread]
 enhancedStatementExpression
     :   statementExpression
     |   standardLambdaExpression
-    |   conditionalStatement        // treat conditional statement as expression
     ;
 
 /**
