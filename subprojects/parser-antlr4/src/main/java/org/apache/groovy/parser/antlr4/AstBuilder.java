@@ -281,7 +281,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return Collections.emptyList();
         }
 
-        List<ASTNode> nodeList = new ArrayList<>();
+        List<ASTNode> nodeList = new ArrayList<>(ctx.statement().size());
 
         for (StatementContext statementContext : ctx.statement()) {
             nodeList.add((ASTNode) this.visit(statementContext));
