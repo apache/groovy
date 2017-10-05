@@ -119,16 +119,16 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     }
 
     @Test
-    void testAutoFinalOnClosure_v1() {
+    void testAutoFinalClosure_v1() {
         // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
         // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
         final result = shouldNotCompile('''
-            import groovy.transform.AutoFinal
+            import groovy.transform.impl.autofinal.AutoFinalClosure
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
 
-            @AutoFinal
+            @AutoFinalClosure
             class Person {
                 final String first, last
                 Person(String first, String last) {
