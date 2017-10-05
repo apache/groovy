@@ -246,9 +246,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public ModuleNode visitCompilationUnit(CompilationUnitContext ctx) {
         this.visit(ctx.packageDeclaration());
 
-        ctx.statement().stream()
-                .map(this::visit)
-//                .filter(e -> e instanceof Statement)
+        this.visitStatements(ctx.statements())
                 .forEach(e -> {
                     if (e instanceof DeclarationListStatement) { // local variable declaration
                         ((DeclarationListStatement) e).getDeclarationStatements().forEach(moduleNode::addStatement);
@@ -277,6 +275,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         return moduleNode;
+    }
+
+    @Override
+    public List<ASTNode> visitStatements(StatementsContext ctx) {
+        if (!asBoolean(ctx)) {
+            return Collections.emptyList();
+        }
+
+        return ctx.statement().stream()
+                .map(e -> (ASTNode) visit(e))
+                .collect(Collectors.toList());
     }
 
     @Override
