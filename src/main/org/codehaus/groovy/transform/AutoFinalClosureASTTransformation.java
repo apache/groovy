@@ -39,7 +39,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 //class AutoFinalClosureASTTransformation implements ASTTransformation {
-class AutoFinalClosureASTTransformation implements ASTTransformation {
+class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
 
     private static final Class MY_CLASS = AutoFinalClosure.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
