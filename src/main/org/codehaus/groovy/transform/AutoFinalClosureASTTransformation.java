@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.transform.impl.autofinal;
+package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
 import groovy.transform.impl.autofinal.AutoFinalClosure;
