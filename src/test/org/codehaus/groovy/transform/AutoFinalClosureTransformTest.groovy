@@ -29,50 +29,10 @@ import org.junit.runners.JUnit4
  * Tests for the {@code @AutoFinal} AST transform.
  */
 
+// Execute single test:
+// gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
 @RunWith(JUnit4)
 class AutoFinalClosureTransformTest extends CompilableTestSupport {
-
-  // Execute single test:
-  // gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
-  void testAutoFinalOnClass() {
-    //throw new Exception("AutoFinalClosureTransformTest#testAutoFinalOnClass FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
-    assertScript '''
-            import groovy.transform.AutoFinal
-            import groovy.transform.ASTTest
-            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-            import static java.lang.reflect.Modifier.isFinal
-
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value = {
-                assert node.methods.size() == 1
-                node.methods[0].with {
-                    assert it.name == 'fullName'
-                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
-                }
-                assert node.constructors.size() == 1
-                node.constructors[0].with {
-                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
-                }
-            })
-            @AutoFinal
-            class Person {
-                final String first, last
-                Person(String first, String last) {
-                    this.first = first
-                    this.last = last
-                }
-                String fullName(boolean reversed = false, String separator = ' ') {
-                    reversed = true
-                    seperator = '<!#!>'
-                    "${reversed ? last : first}$separator${reversed ? first : last}"
-                }
-            }
-
-            final js = new Person('John', 'Smith')
-            assert js.fullName() == 'John Smith'
-            assert js.fullName(true, ', ') == 'Smith, John'
-        '''
-  }
 
   @Test
   @Ignore
@@ -119,6 +79,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
   }
 
   @Test
+  @Ignore
   void testAutoFinalClosure_v1() {
     final result = shouldNotCompile('''
         //final throwable = shouldThrow(' ''
