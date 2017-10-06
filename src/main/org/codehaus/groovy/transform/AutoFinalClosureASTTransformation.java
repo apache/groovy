@@ -67,7 +67,7 @@ class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
-        if(true) { throw new RuntimeException("!!!!!!!!!!!!!!!!!!!!!!! AutoFinalClosureASTTransformation TEST !!!!!!!!!!!!!!!!!!!!!!!"); }
+        //if(true) { throw new RuntimeException("!!!!!!!!!!!!!!!!!!!!!!! AutoFinalClosureASTTransformation TEST !!!!!!!!!!!!!!!!!!!!!!!"); }
         processClassesConstructorsMethods(nodes, source);
         processClosures(nodes, source);
     }
