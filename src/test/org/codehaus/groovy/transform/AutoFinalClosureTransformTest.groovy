@@ -156,6 +156,79 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
         assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
     }
 
+
+
+
+    @Test
+    void testAutoFinalClosure_v2() {
+        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+
+        final script = autoFinalTestScript([
+            """
+                String fooName(boolean reversed = false, String separator = ' ') {
+                    final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
+                    final clsResult = cls()
+                    return clsResult
+                }
+            """
+        ])
+
+        final result = shouldNotCompile(script)
+        println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
+        assert result.contains('The parameter [finalClsParam1] is declared final but is reassigned')
+    }
+
+   @Test
+    void testAutoFinalClosure_v3() {
+        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+        assertAutoFinalTestScript("finalClsParam1", [
+            """
+                String fooName(boolean reversed = false, String separator = ' ') {
+                    final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
+                    final clsResult = cls()
+                    return clsResult
+                }
+            """
+        ])
+    }
+
+
+    void assertAutoFinalTestScript(final String paramName, final List<String> classBodyTerms) {
+        assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
+        assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
+    }
+
+    void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
+        final script = autoFinalTestScript(true, classBodyTerms)
+        final result = shouldNotCompile(script)
+        println "\nassertAutoFinalTestScript result: |$result|\n\n"
+        assert result.contains("The parameter [$paramName] is declared final but is reassigned")
+    }
+
+    void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final List<String> classBodyTerms) {
+        final script = autoFinalTestScript(false, classBodyTerms)
+        shouldCompile(script)
+    }
+
+    String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
+        final String script = """
+            import groovy.transform.impl.autofinal.AutoFinalClosure
+            import groovy.transform.ASTTest
+            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
+            import static java.lang.reflect.Modifier.isFinal
+
+            ${autoFinalAnnotationQ ? '@AutoFinalClosure' : ''}
+            class AutoFinalFoo {
+                ${classBodyTerms.collect { "\t\t\t\t$it" }.join('\n')}
+            }
+        """
+        println "script: |$script|"
+        return script
+    }
+
+
     void printStackTrace(final Throwable throwable) {
         println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
         throwable.stackTrace.each { println it }
