@@ -42,28 +42,6 @@ class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
-//    public void visit(ASTNode[] nodes, SourceUnit unit) {
-//        ClassNode annotatedClass = (ClassNode) nodes[1];
-//
-//        final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
-//            @Override
-//            public void visitClosureExpression(ClosureExpression expression) {
-//                if(expression.isSynthetic()) { return; }
-//                Parameter[] origParams = expression.getParameters();
-//                for (Parameter p : origParams) {
-//                    p.setModifiers(p.getModifiers() | Modifier.FINAL);
-//                }
-//                super.visitClosureExpression(expression);
-//            }
-//
-//            protected SourceUnit getSourceUnit() {
-//                return unit;
-//            }
-//        };
-//
-//        visitor.visitClass(annotatedClass);
-//    }
-
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
