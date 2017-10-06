@@ -38,18 +38,17 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   void testAutoFinal() {
-    //assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }"])
-    assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }"])
+    assertAutoFinalClassTestScript("param0", "String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }")
   }
 
   @Test
   void testAutoFinalClassMethod1() {
-    assertAutoFinalClassTestScript("param1", ["String foo(String param1, param2) {  param1 = 'abc'; param1 }"])
+    assertAutoFinalClassTestScript("param1", "String foo(String param1, param2) {  param1 = 'abc'; param1 }")
   }
 
   @Test
   void testAutoFinalClassMethod2() {
-    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
+    assertAutoFinalClassTestScript("param2", "String foo(String param1, param2) {  param2 = new Object(); param2 }")
   }
 
   // Check default parameters are not negatively impacted by @AutoFinal
@@ -62,7 +61,7 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
         return param1 
       }
     """
-    final script = autoFinalTestScript(true, [ classPart ], "final foo = new $autoFinalTestClassName(); foo.foo()")
+    final script = autoFinalTestScript(true, classPart, "final foo = new $autoFinalTestClassName(); foo.foo()" )
     assert script.contains('@AutoFinal')
     assertScript(script)
   }
@@ -70,27 +69,27 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
 
 
-  void assertAutoFinalClassTestScript(final String paramName, final List<String> classBodyTerms) {
-    assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
-    assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
+  void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
+    assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
+    assertAutoFinalTestScriptWithoutAnnotation(paramName, classPart)
   }
 
-  // Checks Groovy compiler behavior when putting the passed classBodyTerms into an @AutoFinal annotated class
-  void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
-    final script = autoFinalTestScript(true, classBodyTerms)
+  // Checks Groovy compiler behavior when putting the passed classPart into an @AutoFinal annotated class
+  void assertAutoFinalTestScriptWithAnnotation(final String paramName, final String classPart) {
+    final script = autoFinalTestScript(true, classPart)
     assert script.contains('@AutoFinal')
     final result = shouldNotCompile(script)
     println "\nassertAutoFinalTestScript result: |$result|\n\n"
     assert result.contains("The parameter [$paramName] is declared final but is reassigned")
   }
 
-  void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final List<String> classBodyTerms) {
-    final script = autoFinalTestScript(false, classBodyTerms)
+  void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final String classPart) {
+    final script = autoFinalTestScript(false, classPart)
     assert !script.contains('@AutoFinal')
     shouldCompile(script)
   }
 
-  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms, final String scriptTerm = '') {
+  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final String classPart, final String scriptPart = '') {
     final String script = """
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
@@ -99,10 +98,10 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
             ${autoFinalAnnotationQ ? '@AutoFinal' : ''}
             class $autoFinalTestClassName {
-                ${classBodyTerms.collect { "\t\t\t\t$it" }.join('\n')}
+                $classPart
             } 
 
-            $scriptTerm
+            $scriptPart
         """
     println "script: |$script|"
     return script
