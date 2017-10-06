@@ -19,12 +19,9 @@
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-
-import java.lang.reflect.Modifier
 
 
 /**
@@ -37,17 +34,17 @@ import java.lang.reflect.Modifier
 class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
-  void testAutoFinal() {
+  void testAutoFinal_Closure() {
     assertAutoFinalClassTestScript("param0", "String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }")
   }
 
   @Test
-  void testAutoFinalClassMethod1() {
+  void testAutoFinal_ClassMethod1() {
     assertAutoFinalClassTestScript("param1", "String foo(String param1, param2) {  param1 = 'abc'; param1 }")
   }
 
   @Test
-  void testAutoFinalClassMethod2() {
+  void testAutoFinal_ClassMethod2() {
     assertAutoFinalClassTestScript("param2", "String foo(String param1, param2) {  param2 = new Object(); param2 }")
   }
 
@@ -111,7 +108,9 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
     'AutoFinalFoo'
   }
 
-
+  /**
+   * Prints better readable, unabbreviated stack trace for passed Throwable
+   */
   void printStackTrace(final Throwable throwable) {
     println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
     throwable.stackTrace.each { println it }
@@ -121,7 +120,6 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
       printStackTrace(inner)
     }
   }
-
 
   Throwable shouldThrow(final String script) {
     try {
