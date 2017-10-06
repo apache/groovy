@@ -156,28 +156,6 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     }
 
 
-
-
-    @Test
-    void testAutoFinalClosure_v2() {
-        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-
-        final script = autoFinalTestScript([
-            """
-                String fooName(boolean reversed = false, String separator = ' ') {
-                    final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
-                    final clsResult = cls()
-                    return clsResult
-                }
-            """
-        ])
-
-        final result = shouldNotCompile(script)
-        println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
-        assert result.contains('The parameter [finalClsParam1] is declared final but is reassigned')
-    }
-
    @Test
     void testAutoFinalClosure_v3() {
         // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
