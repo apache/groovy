@@ -30,9 +30,9 @@ import org.junit.runners.JUnit4
  */
 
 // Execute single test:
-// gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
+// gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalTransformTest
 @RunWith(JUnit4)
-class AutoFinalClosureTransformTest extends CompilableTestSupport {
+class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   @Ignore
@@ -74,21 +74,21 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName() == 'John Smith'
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
-    //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
+    //println "\n\nAutoFinalTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
     assert result.contains('The parameter [reversed] is declared final but is reassigned')
   }
 
   @Test
   @Ignore
-  void testAutoFinalClosure_v1() {
+  void testAutoFinal_v1() {
     final result = shouldNotCompile('''
         //final throwable = shouldThrow(' ''
-            import groovy.transform.AutoFinalClosure
+            import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
 
-            @AutoFinalClosure
+            @AutoFinal
             class Person {
                 final String first, last
                 Person(String first, String last) {
@@ -111,14 +111,14 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
 
     //println "\n\n${throwable.printStackTrace()}"
 
-    println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
+    println "\n\nAutoFinalTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
     assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
   }
 
 
 
   @Test
-  void testAutoFinalClosure() {
+  void testAutoFinal() {
     assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }"])
   }
 
@@ -132,6 +132,10 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
   }
 
+  @Test
+  void testAutoFinalClassMethodDefaultParameters() {
+    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
+  }
 
 
 
@@ -155,13 +159,12 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
 
   String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
     final String script = """
-            //import groovy.transform.impl.autofinal.AutoFinalClosure
-            import groovy.transform.AutoFinalClosure
+            import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
 
-            ${autoFinalAnnotationQ ? '@AutoFinalClosure' : ''}
+            ${autoFinalAnnotationQ ? '@AutoFinal' : ''}
             class AutoFinalFoo {
                 ${classBodyTerms.collect { "\t\t\t\t$it" }.join('\n')}
             }
