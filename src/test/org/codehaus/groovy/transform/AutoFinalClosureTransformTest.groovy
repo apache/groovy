@@ -32,12 +32,12 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4)
 class AutoFinalClosureTransformTest extends CompilableTestSupport {
 
-    // Execute single test:
-    // gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
-    void testAutoFinalOnClass() {
-        //throw new Exception("AutoFinalClosureTransformTest#testAutoFinalOnClass FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
-        assertScript '''
+  // Execute single test:
+  // gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalClosureTransformTest
+  void testAutoFinalOnClass() {
+    //throw new Exception("AutoFinalClosureTransformTest#testAutoFinalOnClass FAILED BY DESIGN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
+    assertScript '''
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
@@ -72,13 +72,13 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName() == 'John Smith'
             assert js.fullName(true, ', ') == 'Smith, John'
         '''
-    }
+  }
 
-    @Test
-    void testAutoFinalOnClass_v2() {
-        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-        final result = shouldNotCompile('''
+  @Test
+  void testAutoFinalOnClass_v2() {
+    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+    final result = shouldNotCompile('''
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
@@ -113,15 +113,15 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName() == 'John Smith'
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
-        //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
-        assert result.contains('The parameter [reversed] is declared final but is reassigned')
-    }
+    //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
+    assert result.contains('The parameter [reversed] is declared final but is reassigned')
+  }
 
-    @Test
-    void testAutoFinalClosure_v1() {
-        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-        final result = shouldNotCompile('''
+  @Test
+  void testAutoFinalClosure_v1() {
+    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+    final result = shouldNotCompile('''
         //final throwable = shouldThrow(' ''
             import groovy.transform.impl.autofinal.AutoFinalClosure
             import groovy.transform.ASTTest
@@ -147,66 +147,70 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
 
-        //printStackTrace(throwable)
+    //printStackTrace(throwable)
 
-        //println "\n\n${throwable.printStackTrace()}"
-        
-        println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
-        assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
-    }
+    //println "\n\n${throwable.printStackTrace()}"
+
+    println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
+    assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
+  }
 
 
-   @Test
-    void testAutoFinalClosure_v3() {
-        // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-        // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-        assertAutoFinalClassTestScript("finalClsParam1", [
-            """
+  @Test
+  void testAutoFinalClosure_v3() {
+    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
+    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
+    assertAutoFinalClassTestScript("finalClsParam1", [
+        """
                 String fooName(boolean reversed = false, String separator = ' ') {
                     final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
                     final clsResult = cls()
                     return clsResult
                 }
             """
-        ])
-    }
+    ])
+  }
 
 
   @Test
   void testAutoFinalClosure() {
-      assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }" ])
+    assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }"])
   }
 
   @Test
   void testAutoFinalClassMethod1() {
-    assertAutoFinalClassTestScript("param1", ["String foo(String param1, param2) {  param1 = 'abc'; param1 }" ])
+    assertAutoFinalClassTestScript("param1", ["String foo(String param1, param2) {  param1 = 'abc'; param1 }"])
   }
 
   @Test
   void testAutoFinalClassMethod2() {
-    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }" ])
+    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
   }
 
 
+
+
+  
+
   void assertAutoFinalClassTestScript(final String paramName, final List<String> classBodyTerms) {
-        assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
-        assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
-    }
+    assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
+    assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
+  }
 
-    void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
-        final script = autoFinalTestScript(true, classBodyTerms)
-        final result = shouldNotCompile(script)
-        println "\nassertAutoFinalTestScript result: |$result|\n\n"
-        assert result.contains("The parameter [$paramName] is declared final but is reassigned")
-    }
+  void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
+    final script = autoFinalTestScript(true, classBodyTerms)
+    final result = shouldNotCompile(script)
+    println "\nassertAutoFinalTestScript result: |$result|\n\n"
+    assert result.contains("The parameter [$paramName] is declared final but is reassigned")
+  }
 
-    void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final List<String> classBodyTerms) {
-        final script = autoFinalTestScript(false, classBodyTerms)
-        shouldCompile(script)
-    }
+  void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final List<String> classBodyTerms) {
+    final script = autoFinalTestScript(false, classBodyTerms)
+    shouldCompile(script)
+  }
 
-    String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
-        final String script = """
+  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
+    final String script = """
             import groovy.transform.impl.autofinal.AutoFinalClosure
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
@@ -217,30 +221,30 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
                 ${classBodyTerms.collect { "\t\t\t\t$it" }.join('\n')}
             }
         """
-        println "script: |$script|"
-        return script
+    println "script: |$script|"
+    return script
+  }
+
+
+  void printStackTrace(final Throwable throwable) {
+    println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
+    throwable.stackTrace.each { println it }
+    final inner = throwable.cause
+    if(inner != null) {
+      println "Caused by........................................................................................."
+      printStackTrace(inner)
     }
+  }
 
 
-    void printStackTrace(final Throwable throwable) {
-        println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
-        throwable.stackTrace.each { println it }
-        final inner = throwable.cause
-        if(inner != null) {
-            println "Caused by........................................................................................."
-            printStackTrace(inner)
-        }
+  Throwable shouldThrow(final String script) {
+    try {
+      final GroovyClassLoader gcl = new GroovyClassLoader()
+      gcl.parseClass(script, getTestClassName())
     }
-
-
-    Throwable shouldThrow(final String script) {
-        try {
-            final GroovyClassLoader gcl = new GroovyClassLoader()
-            gcl.parseClass(script, getTestClassName())
-        }
-        catch (Throwable throwable) {
-            return throwable
-        }
-        throw new Exception("Script was expected to throw here!")
+    catch(Throwable throwable) {
+      return throwable
     }
+    throw new Exception("Script was expected to throw here!")
+  }
 }
