@@ -20,10 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
 import groovy.transform.AutoFinalClosure;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -68,17 +65,29 @@ class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
 //    }
 
 
-    public void visit(ASTNode[] nodes, SourceUnit unit) {
-        //init(nodes, source);
-        processClosures(nodes[1], unit);
+    public void visit(ASTNode[] nodes, SourceUnit source) {
+        init(nodes, source);
+        if(true) { throw new RuntimeException("!!!!!!!!!!!!!!!!!!!!!!! AutoFinalClosureASTTransformation TEST !!!!!!!!!!!!!!!!!!!!!!!"); }
+        processClassesConstructorsMethods(nodes, source);
+        processClosures(nodes, source);
     }
 
-    protected void processClassesConstructorsMethods(final ASTNode node, final SourceUnit unit) {
+    private void processClassesConstructorsMethods(ASTNode[] nodes, final SourceUnit unit) {
+        AnnotatedNode candidate = (AnnotatedNode) nodes[1];
+        AnnotationNode node = (AnnotationNode) nodes[0];
+        if (!MY_TYPE.equals(node.getClassNode())) return;
 
+        if (candidate instanceof ClassNode) {
+            processClass((ClassNode) candidate);
+        } else if (candidate instanceof MethodNode) {
+            // handles constructors and methods
+            processConstructorOrMethod((MethodNode) candidate);
+        }
     }
 
 
-    protected void processClosures(final ASTNode node, final SourceUnit unit) {
+    private void processClosures(ASTNode[] nodes, final SourceUnit source) {
+        final ASTNode node = nodes[1];
         ClassNode annotatedClass = (ClassNode) node;
 
         final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
@@ -96,10 +105,35 @@ class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
             }
 
             protected SourceUnit getSourceUnit() {
-                return unit;
+                return source;
             }
         };
 
         visitor.visitClass(annotatedClass);
     }
+
+
+
+    private void processClass(ClassNode cNode) {
+        if (cNode.isInterface()) {
+            addError("Error processing interface '" + cNode.getName() +
+                    "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
+            return;
+        }
+        for (ConstructorNode cn : cNode.getDeclaredConstructors()) {
+            processConstructorOrMethod(cn);
+        }
+        for (MethodNode mn : cNode.getAllDeclaredMethods()) {
+            processConstructorOrMethod(mn);
+        }
+    }
+
+    private void processConstructorOrMethod(MethodNode node) {
+        if (node.isSynthetic()) return;
+        Parameter[] origParams = node.getParameters();
+        for (Parameter p : origParams) {
+            p.setModifiers(p.getModifiers() | Modifier.FINAL);
+        }
+    }
+
 }
