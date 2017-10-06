@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.transform.ASTTransformation;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
 
@@ -38,7 +36,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
  * Handles {@link AutoFinal} annotation code generation for arguments of closures.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-class AutoFinalClosureASTTransformation implements ASTTransformation {
+class AutoFinalClosureASTTransformation__BAK implements ASTTransformation {
 //class AutoFinalClosureASTTransformation extends AutoFinalASTTransformation {
 
     private static final Class MY_CLASS = AutoFinalClosure.class;
