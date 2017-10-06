@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.transform.ASTTransformation;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
 
@@ -39,7 +37,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 //class AutoFinalClosureASTTransformation implements ASTTransformation {
-class AutoFinalClosureASTTransformation implements ASTTransformation {
+class AutoFinalClosureASTTransformation__BAK2 implements ASTTransformation {
 
     private static final Class MY_CLASS = AutoFinalClosure.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
