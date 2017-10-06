@@ -24,6 +24,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+import java.lang.reflect.Modifier
+
 
 /**
  * Tests for the {@code @AutoFinal} AST transform.
@@ -35,91 +37,9 @@ import org.junit.runners.JUnit4
 class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
-  @Ignore
-  void testAutoFinalOnClass_v2() {
-    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-    final result = shouldNotCompile('''
-            import groovy.transform.AutoFinal
-            import groovy.transform.ASTTest
-            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-            import static java.lang.reflect.Modifier.isFinal
-
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value = {
-                assert node.methods.size() == 1
-                node.methods[0].with {
-                    assert it.name == 'fullName'
-                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
-                }
-                assert node.constructors.size() == 1
-                node.constructors[0].with {
-                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
-                }
-            })
-            @AutoFinal
-            class Person {
-                final String first, last
-                Person(String first, String last) {
-                    this.first = first
-                    this.last = last
-                }
-                String fullName(boolean reversed = false, String separator = ' ') {
-                    reversed = true
-                    seperator = '<!#!>'
-                    "${reversed ? last : first}$separator${reversed ? first : last}"
-                }
-            }
-
-            final js = new Person('John', 'Smith')
-            assert js.fullName() == 'John Smith'
-            assert js.fullName(true, ', ') == 'Smith, John'
-        ''')
-    //println "\n\nAutoFinalTransformTest#testAutoFinalOnClass2 result: |$result|\n\n"
-    assert result.contains('The parameter [reversed] is declared final but is reassigned')
-  }
-
-  @Test
-  @Ignore
-  void testAutoFinal_v1() {
-    final result = shouldNotCompile('''
-        //final throwable = shouldThrow(' ''
-            import groovy.transform.AutoFinal
-            import groovy.transform.ASTTest
-            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-            import static java.lang.reflect.Modifier.isFinal
-
-            @AutoFinal
-            class Person {
-                final String first, last
-                Person(String first, String last) {
-                    this.first = first
-                    this.last = last
-                }
-                String fullName(boolean reversed = false, String separator = ' ') {
-                    final cls = { String finalClsParam0 -> finalClsParam0 = "abc"; finalClsParam0 }
-                    final clsResult = cls()
-                    return clsResult
-                }
-            }
-
-            final js = new Person('John', 'Smith')
-            assert js.fullName() == 'John Smith'
-            assert js.fullName(true, ', ') == 'Smith, John'
-        ''')
-
-    //printStackTrace(throwable)
-
-    //println "\n\n${throwable.printStackTrace()}"
-
-    println "\n\nAutoFinalTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
-    assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
-  }
-
-
-
-  @Test
   void testAutoFinal() {
-    assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }"])
+    //assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }"])
+    assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }"])
   }
 
   @Test
@@ -132,10 +52,21 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
     assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
   }
 
+  // Check default parameters are not negatively impacted by @AutoFinal
   @Test
   void testAutoFinalClassMethodDefaultParameters() {
-    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }"])
+    final String classPart = """
+      String foo(String param1 = 'XyZ', param2 = Closure.IDENTITY ) { 
+        assert param1.equals('XyZ')
+        assert param2.is(Closure.IDENTITY)
+        return param1 
+      }
+    """
+    final script = autoFinalTestScript(true, [ classPart ], "final foo = new $autoFinalTestClassName(); foo.foo()")
+    assert script.contains('@AutoFinal')
+    assertScript(script)
   }
+
 
 
 
@@ -144,9 +75,10 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
     assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
   }
 
-  // Checks that the Groovy compiler rejects an attempt to assign a value to a method parameter
+  // Checks Groovy compiler behavior when putting the passed classBodyTerms into an @AutoFinal annotated class
   void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
     final script = autoFinalTestScript(true, classBodyTerms)
+    assert script.contains('@AutoFinal')
     final result = shouldNotCompile(script)
     println "\nassertAutoFinalTestScript result: |$result|\n\n"
     assert result.contains("The parameter [$paramName] is declared final but is reassigned")
@@ -154,10 +86,11 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
   void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final List<String> classBodyTerms) {
     final script = autoFinalTestScript(false, classBodyTerms)
+    assert !script.contains('@AutoFinal')
     shouldCompile(script)
   }
 
-  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
+  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms, final String scriptTerm = '') {
     final String script = """
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
@@ -165,12 +98,18 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
             import static java.lang.reflect.Modifier.isFinal
 
             ${autoFinalAnnotationQ ? '@AutoFinal' : ''}
-            class AutoFinalFoo {
+            class $autoFinalTestClassName {
                 ${classBodyTerms.collect { "\t\t\t\t$it" }.join('\n')}
-            }
+            } 
+
+            $scriptTerm
         """
     println "script: |$script|"
     return script
+  }
+
+  String getAutoFinalTestClassName() {
+    'AutoFinalFoo'
   }
 
 
