@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform.impl.autofinal;
+package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -72,6 +72,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 //@Target({ElementType.TYPE})
 //@GroovyASTTransformationClass("org.codehaus.groovy.transform.impl.autofinal.AutoFinalClosureASTTransformation")
+//@GroovyASTTransformationClass("org.codehaus.groovy.transform.autofinal.AutoFinalClosureASTTransformation")
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoFinalClosureASTTransformation")
 public @interface AutoFinalClosure {
 }

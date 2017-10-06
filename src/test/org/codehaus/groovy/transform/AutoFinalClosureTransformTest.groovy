@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
-
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -75,6 +75,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
   }
 
   @Test
+  @Ignore
   void testAutoFinalOnClass_v2() {
     // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
     // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
@@ -119,11 +120,9 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
 
   @Test
   void testAutoFinalClosure_v1() {
-    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
     final result = shouldNotCompile('''
         //final throwable = shouldThrow(' ''
-            import groovy.transform.impl.autofinal.AutoFinalClosure
+            import groovy.transform.AutoFinalClosure
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
@@ -156,21 +155,6 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
   }
 
 
-  @Test
-  void testAutoFinalClosure_v3() {
-    // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
-    // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-    assertAutoFinalClassTestScript("finalClsParam1", [
-        """
-                String fooName(boolean reversed = false, String separator = ' ') {
-                    final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
-                    final clsResult = cls()
-                    return clsResult
-                }
-            """
-    ])
-  }
-
 
   @Test
   void testAutoFinalClosure() {
@@ -188,30 +172,14 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
   }
 
 
-  /*
-* Conditions under which the error occurs:
-# ASTTransformation which does not reside in the org.codehaus.groovy.transform package (but instead e.g. in org.codehaus.groovy.transform.autofinal)
-# ASTTransformation  implementation uses an ASTTransformationVisitor
-# => NullPointerException when the ASTTransformation is to be applied to ASTNode|s
-in ASTTransformationVisitor#visitClass(ClassNode classNode)
-{code}
-// second pass, call visit on all of the collected nodes
-for (ASTNode[] node : targetNodes) {
-    for (ASTTransformation snt : transforms.get(node[0])) {
-        // <zip>
-        snt.visit(node, source); // NullPointerException
-    }
-}
-{code}
-   */
 
-  
 
   void assertAutoFinalClassTestScript(final String paramName, final List<String> classBodyTerms) {
     assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
     assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
   }
 
+  // Checks that the Groovy compiler rejects an attempt to assign a value to a method parameter
   void assertAutoFinalTestScriptWithAnnotation(final String paramName, final List<String> classBodyTerms) {
     final script = autoFinalTestScript(true, classBodyTerms)
     final result = shouldNotCompile(script)
@@ -226,7 +194,8 @@ for (ASTNode[] node : targetNodes) {
 
   String autoFinalTestScript(final boolean autoFinalAnnotationQ, final List<String> classBodyTerms) {
     final String script = """
-            import groovy.transform.impl.autofinal.AutoFinalClosure
+            //import groovy.transform.impl.autofinal.AutoFinalClosure
+            import groovy.transform.AutoFinalClosure
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal

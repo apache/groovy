@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
-import groovy.transform.impl.autofinal.AutoFinalClosure;
+import groovy.transform.AutoFinalClosure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
@@ -74,6 +74,9 @@ class AutoFinalClosureASTTransformation implements ASTTransformation {
         final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
             @Override
             public void visitClosureExpression(ClosureExpression expression) {
+
+                //if(true) { throw new RuntimeException("TEST!!!!!!!!!!!!!!!!!!!!!!!"); }
+
                 if(expression.isSynthetic()) { return; }
                 Parameter[] origParams = expression.getParameters();
                 for (Parameter p : origParams) {
