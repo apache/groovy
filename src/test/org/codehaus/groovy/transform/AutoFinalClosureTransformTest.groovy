@@ -122,8 +122,8 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     void testAutoFinalClosure_v1() {
         // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
         // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-        //final result = shouldNotCompile('''
-        final throwable = shouldThrow('''
+        final result = shouldNotCompile('''
+        //final throwable = shouldThrow(' ''
             import groovy.transform.impl.autofinal.AutoFinalClosure
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
@@ -137,7 +137,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
                     this.last = last
                 }
                 String fullName(boolean reversed = false, String separator = ' ') {
-                    final cls = { String s -> s = "abc"; s }
+                    final cls = { String finalClsParam0 -> finalClsParam0 = "abc"; finalClsParam0 }
                     final clsResult = cls()
                     return clsResult
                 }
@@ -148,16 +148,15 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
             assert js.fullName(true, ', ') == 'Smith, John'
         ''')
 
-        printStackTrace(throwable)
+        //printStackTrace(throwable)
 
         //println "\n\n${throwable.printStackTrace()}"
         
-        //println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
-        //assert result.contains('The parameter [reversed] is declared final but is reassigned')
+        println "\n\nAutoFinalClosureTransformTest#testAutoFinalOnClosure_v1 result: |$result|\n\n"
+        assert result.contains('The parameter [finalClsParam0] is declared final but is reassigned')
     }
 
     void printStackTrace(final Throwable throwable) {
-        //println "throwable: ${throwable.message}"
         println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
         throwable.stackTrace.each { println it }
         final inner = throwable.cause
