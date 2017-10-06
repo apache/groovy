@@ -21,7 +21,6 @@ package org.codehaus.groovy.transform
 import gls.CompilableTestSupport
 
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
@@ -183,7 +182,7 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     void testAutoFinalClosure_v3() {
         // 1) ASTTest explicitely checks for final modifier (which isn't put into bytecode)
         // 2) shouldNotCompile checks that the Groovy compiler responds in the expected way to an attempt at assigning a value to a method parameter
-        assertAutoFinalTestScript("finalClsParam1", [
+        assertAutoFinalClassTestScript("finalClsParam1", [
             """
                 String fooName(boolean reversed = false, String separator = ' ') {
                     final cls = { String finalClsParam1 -> finalClsParam1 = "abc"; finalClsParam1 }
@@ -195,7 +194,23 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
     }
 
 
-    void assertAutoFinalTestScript(final String paramName, final List<String> classBodyTerms) {
+  @Test
+  void testAutoFinalClosure() {
+      assertAutoFinalClassTestScript("param0", ["String foo() { final cls = { String param0 -> param0 = 'abc'; finalClsParam1 }; cls() }" ])
+  }
+
+  @Test
+  void testAutoFinalClassMethod1() {
+    assertAutoFinalClassTestScript("param1", ["String foo(String param1, param2) {  param1 = 'abc'; param1 }" ])
+  }
+
+  @Test
+  void testAutoFinalClassMethod2() {
+    assertAutoFinalClassTestScript("param2", ["String foo(String param1, param2) {  param2 = new Object(); param2 }" ])
+  }
+
+
+  void assertAutoFinalClassTestScript(final String paramName, final List<String> classBodyTerms) {
         assertAutoFinalTestScriptWithAnnotation(paramName, classBodyTerms)
         assertAutoFinalTestScriptWithoutAnnotation(paramName, classBodyTerms)
     }
