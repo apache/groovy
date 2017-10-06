@@ -71,5 +71,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoFinalClosureASTTransformation")
-public @interface AutoFinalClosure {
-}
+public @interface AutoFinalClosure {}

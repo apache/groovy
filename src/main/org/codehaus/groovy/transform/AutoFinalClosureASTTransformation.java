@@ -88,6 +88,10 @@ class AutoFinalClosureASTTransformation extends AbstractASTTransformation {
 
     private void processClosures(ASTNode[] nodes, final SourceUnit source) {
         final ASTNode node = nodes[1];
+
+        //memberHasValue(node, "allowRelative", true)
+
+
         ClassNode annotatedClass = (ClassNode) node;
 
         final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
