@@ -188,7 +188,22 @@ class AutoFinalClosureTransformTest extends CompilableTestSupport {
   }
 
 
-
+  /*
+* Conditions under which the error occurs:
+# ASTTransformation which does not reside in the org.codehaus.groovy.transform package (but instead e.g. in org.codehaus.groovy.transform.autofinal)
+# ASTTransformation  implementation uses an ASTTransformationVisitor
+# => NullPointerException when the ASTTransformation is to be applied to ASTNode|s
+in ASTTransformationVisitor#visitClass(ClassNode classNode)
+{code}
+// second pass, call visit on all of the collected nodes
+for (ASTNode[] node : targetNodes) {
+    for (ASTTransformation snt : transforms.get(node[0])) {
+        // <zip>
+        snt.visit(node, source); // NullPointerException
+    }
+}
+{code}
+   */
 
   
 
