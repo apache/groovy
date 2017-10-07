@@ -30,9 +30,9 @@ import java.lang.annotation.Target;
 /**
  * Annotation to automatically add the final qualifier to method, constructor,
  * and closure parameters.
- * The annotation may be placed on any method or constructor.
- * It can also be placed at the class level in which case it applies to
- * all methods, constructors, and closures within the class.
+ * <p>The annotation can be placed at the class level in which case it applies to
+ * all methods, constructors, and closures within the class, or on individual
+ * methods or constructors.
  * <p>In general it will make the most sense to automatically apply the
  * annotation to all classes of a project
  * (groovyc --configscript; google "Customising The Groovy Compiler", or see {@link CompilerConfiguration} and
