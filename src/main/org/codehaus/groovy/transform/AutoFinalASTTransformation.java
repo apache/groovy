@@ -59,25 +59,27 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
 
     private void processClosures(ASTNode[] nodes, final SourceUnit source) {
         final ASTNode node = nodes[1];
-        ClassNode annotatedClass = (ClassNode) node;
+        if(node instanceof ClassNode) {
+            ClassNode annotatedClass = (ClassNode) node;
 
-        final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
-            @Override
-            public void visitClosureExpression(ClosureExpression expression) {
-                if(expression.isSynthetic()) { return; }
-                Parameter[] origParams = expression.getParameters();
-                for (Parameter p : origParams) {
-                    p.setModifiers(p.getModifiers() | Modifier.FINAL);
+            final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
+                @Override
+                public void visitClosureExpression(ClosureExpression expression) {
+                    if (expression.isSynthetic()) { return; }
+                    Parameter[] origParams = expression.getParameters();
+                    for (Parameter p : origParams) {
+                        p.setModifiers(p.getModifiers() | Modifier.FINAL);
+                    }
+                    super.visitClosureExpression(expression);
                 }
-                super.visitClosureExpression(expression);
-            }
 
-            protected SourceUnit getSourceUnit() {
-                return source;
-            }
-        };
+                protected SourceUnit getSourceUnit() {
+                    return source;
+                }
+            };
 
-        visitor.visitClass(annotatedClass);
+            visitor.visitClass(annotatedClass);
+        }
     }
 
 

@@ -19,7 +19,6 @@
 package groovy.transform;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -35,8 +34,7 @@ import java.lang.annotation.Target;
  * methods or constructors.
  * <p>In general it will make the most sense to automatically apply the
  * annotation to all classes of a project
- * (groovyc --configscript; google "Customising The Groovy Compiler", or see {@link CompilerConfiguration} and
- * {@link CompilerCustomizationBuilder}),
+ * (groovyc --configscript; google "Customising The Groovy Compiler", or see {@link CompilerConfiguration}
  * so that one can be sure that all arguments will automatically be final,
  * completely eliminating the need to clutter the code with final keywords
  * in any paramete list.
