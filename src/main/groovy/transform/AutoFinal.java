@@ -18,6 +18,8 @@
  */
 package groovy.transform;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -26,18 +28,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to automatically add final to various syntactic structures,
- * saving you typing of some boilerplate code.
- * Method, constructor, and closure parameters are supported.
+ * Annotation to automatically add the final qualifier to method, constructor,
+ * and closure parameters.
  * The annotation may be placed on any method or constructor.
  * It can also be placed at the class level in which case it applies to
  * all methods, constructors, and closures within the class.
  * <p>In general it will make the most sense to automatically apply the
  * annotation to all classes of a project
- * (see e.g. http://mrhaki.blogspot.co.at/2016/01/groovy-goodness-customising-groovy.html),
+ * (groovyc --configscript; google "Customising The Groovy Compiler", or see {@link CompilerConfiguration} and
+ * {@link CompilerCustomizationBuilder}),
  * so that one can be sure that all arguments will automatically be final,
  * completely eliminating the need to clutter the code with final keywords
- * in parameter lists.
+ * in any paramete list.
  * <p>
  * <em>Example usage:</em>
  * <pre class="groovyTestCase">
