@@ -39,23 +39,28 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
   }
 
   @Test
-  void testAutoFinal_ClassMethod1() {
-    assertAutoFinalClassTestScript("param1", "String foo(String param1, param2) {  param1 = 'abc'; param1 }")
+  void testAutoFinal_ClosureInClosure() {
+    assertAutoFinalClassTestScript("param1", "String foo() { final cls0 = { String param0 -> final cls1 = { String param1 -> param1 = 'xyz'; param1 }; cls1() }; cls0() }")
   }
 
   @Test
-  void testAutoFinal_ClassMethod2() {
-    assertAutoFinalClassTestScript("param2", "String foo(String param1, param2) {  param2 = new Object(); param2 }")
+  void testAutoFinal_ClassMethod_Param0() {
+    assertAutoFinalClassTestScript("param0", "String foo(String param0, param1) {  param0 = 'abc'; param0 }")
+  }
+
+  @Test
+  void testAutoFinal_ClassMethod_Param1() {
+    assertAutoFinalClassTestScript("param1", "String foo(String param0, param1) {  param1 = new Object(); param1 }")
   }
 
   // Check default parameters are not negatively impacted by @AutoFinal
   @Test
   void testAutoFinalClassMethodDefaultParameters() {
     final String classPart = """
-      String foo(String param1 = 'XyZ', param2 = Closure.IDENTITY ) { 
-        assert param1.equals('XyZ')
-        assert param2.is(Closure.IDENTITY)
-        return param1 
+      String foo(String param0 = 'XyZ', param1 = Closure.IDENTITY) { 
+        assert param0.equals('XyZ')
+        assert param1.is(Closure.IDENTITY)
+        return param0 
       }
     """
     final script = autoFinalTestScript(true, classPart, "final foo = new $autoFinalTestClassName(); foo.foo()" )
