@@ -51,7 +51,8 @@ import java.lang.annotation.Target;
  *         this.last = last
  *     }
  *     String fullName(boolean reversed = false, String separator = ' ') {
- *         "${reversed ? last : first}$separator${reversed ? first : last}"
+ *         final concatCls = { String n0, String n1 -> "$n0$separator$n1" }
+ *         concatCls(reversed ? last : first, reversed ? first : last)
  *     }
  * }
  *
@@ -63,7 +64,7 @@ import java.lang.annotation.Target;
  * equivalent to the following code:
  * <pre>
  * Person(final String first, final String last) {
- *     //...
+ *   ...
  * }
  * </pre>
  * And after normal default parameter processing takes place, the following overloaded methods will exist:
@@ -71,6 +72,10 @@ import java.lang.annotation.Target;
  * String fullName(final boolean reversed, final String separator) { ... }
  * String fullName(final boolean reversed) { fullName(reversed, ' ') }
  * String fullName() { fullName(false) }
+ * </pre>
+ * and the closure will have become:
+ * <pre>
+ * { final String n0, final String n1 -> "$n0$separator$n1" }
  * </pre>
  *
  * @since 2.5.0
