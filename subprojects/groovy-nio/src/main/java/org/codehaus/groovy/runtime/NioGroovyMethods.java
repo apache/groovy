@@ -760,7 +760,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * Both regular files and subfolders/subdirectories can be processed depending
      * on the fileType enum value.
      *
-     * @param self     a file object
+     * @param self     a Path (that happens to be a folder/directory)
      * @param fileType if normal files or directories or both should be processed
      * @param closure  the closure to invoke
      * @throws java.io.FileNotFoundException    if the given directory does not exist
@@ -788,7 +788,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * Both regular files and subfolders/subdirectories are processed.
      *
      * @param self    a Path (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the 'child' file)
+     * @param closure a closure (the parameter is the Path for the 'child' file)
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
@@ -803,7 +803,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * ignoring regular files.
      *
      * @param self    a Path (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the subdirectory file)
+     * @param closure a closure (the parameter is the Path for the subdirectory file)
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
@@ -814,12 +814,13 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories may be passed to the closure
-     * depending on the value of fileType.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of potentially calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory. Whether the closure is called is determined by whether
+     * the file was a normal file or subdirectory and the value of fileType.
      *
-     * @param self     a file object
+     * @param self     a Path (that happens to be a folder/directory)
      * @param fileType if normal files or directories or both should be processed
      * @param closure  the closure to invoke on each file
      * @throws java.io.FileNotFoundException    if the given directory does not exist
@@ -842,8 +843,11 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes <code>closure</code> for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed as found.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of potentially calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory.
+     *
      * The traversal can be adapted by providing various options in the <code>options</code> Map according
      * to the following keys:<dl>
      * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
@@ -886,7 +890,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * ) {it -> totalSize += it.size(); count++ }
      * </pre>
      *
-     * @param self    a Path
+     * @param self    a Path (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
      * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *                which can be used to control subsequent processing
@@ -963,12 +967,11 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed in a depth-first fashion.
+     * Processes each descendant file in this directory and any sub-directories.
      * Convenience method for {@link #traverse(Path, java.util.Map, groovy.lang.Closure)} when
      * no options to alter the traversal behavior are required.
      *
-     * @param self    a Path
+     * @param self    a Path (that happens to be a folder/directory)
      * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *                which can be used to control subsequent processing
      * @throws java.io.FileNotFoundException    if the given directory does not exist
@@ -987,7 +990,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * for {@link #traverse(Path, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
      * to be included in the options Map rather than as a parameter.
      *
-     * @param self    a Path
+     * @param self    a Path (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory or illegal filter combinations are supplied
@@ -1062,12 +1065,13 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories are passed to the closure.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory.
      *
-     * @param self    a Path
-     * @param closure a closure
+     * @param self    a Path (that happens to be a folder/directory)
+     * @param closure a Closure
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
@@ -1078,11 +1082,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant directory of this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Only subdirectories are passed to the closure; regular files are ignored.
+     * Recursively processes each descendant subdirectory in this directory.
+     * Processing consists of calling <code>closure</code> passing it the current
+     * subdirectory and then recursively processing that subdirectory.
+     * Regular files are ignored during traversal.
      *
-     * @param self    a directory
+     * @param self    a Path (that happens to be a folder/directory)
      * @param closure a closure
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
@@ -1113,7 +1118,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * baseDir.eachFileMatch FILES, { new Path(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
      * </pre>
      *
-     * @param self       a file
+     * @param self       a Path (that happens to be a folder/directory)
      * @param fileType   whether normal files or directories or both should be processed
      * @param nameFilter the filter to perform on the name of the file/directory (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
@@ -1144,7 +1149,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories are matched.
      *
-     * @param self       a file
+     * @param self       a Path (that happens to be a folder/directory)
      * @param nameFilter the nameFilter to perform on the name of the file (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException    if the given directory does not exist
@@ -1163,7 +1168,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Only subdirectories are matched; regular files are ignored.
      *
-     * @param self       a file
+     * @param self       a Path (that happens to be a folder/directory)
      * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException    if the given directory does not exist
