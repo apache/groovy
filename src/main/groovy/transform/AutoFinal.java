@@ -30,9 +30,11 @@ import java.lang.annotation.Target;
  * Annotation to automatically add the final qualifier to method, constructor,
  * and closure parameters.
  * <p>The annotation can be placed at the class level in which case it applies to
- * all methods, constructors, and closures within the class. It can also be applied
- * to an individual method, constructor, field with a Closure initial value
- * or a Closure assigned to a local variable.
+ * all methods, constructors, and closures within the class and any inner classes.
+ * It can also be applied to an individual method, constructor, field with a
+ * Closure initial value or a Closure assigned to a local variable. In the case
+ * of fields (or local variables) it only adjusts the parameters of the referenced
+ * Closure not the field (or local variable) itself.
  * <p>If you wish to automatically apply the
  * annotation to all classes of a project, consider using
  * {@code groovyc --configscript}. Google "Customising The Groovy Compiler",
@@ -85,4 +87,13 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoFinalASTTransformation")
 public @interface AutoFinal {
+    /**
+     * Indicates that adding final to parameters should not be applied on this node.
+     * <p>Normally not required since leaving off the annotation will achieve the same affect.
+     * However, it can be useful for selectively disabling this annotation in just a small part
+     * of an otherwise annotated class. As an example, it would make sense to set this to {@code false} on
+     * a method which altered parameters in a class already marked as {@code @AutoFinal}.
+     * All nodes in the class except that single method would be processed.
+     */
+    boolean enabled() default true;
 }
