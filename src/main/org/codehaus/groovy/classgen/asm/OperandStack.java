@@ -108,7 +108,7 @@ public class OperandStack {
             if (!ClassHelper.isPrimitiveType(last)) {
                 controller.getInvocationWriter().castNonPrimitiveToBool(last);
             } else {
-                primitive2b(mv,last);
+                BytecodeHelper.convertPrimitiveToBoolean(mv, last);
             }            
         } else { 
             throw new GroovyBugError(
@@ -118,40 +118,7 @@ public class OperandStack {
         }
         stack.set(mark,ClassHelper.boolean_TYPE);
     }
-    
-    /**
-     * convert primitive (not boolean) to boolean or byte.
-     * type needs to be a primitive type (not checked) 
-     */
-    private static void primitive2b(MethodVisitor mv, ClassNode type) {
-        Label trueLabel = new Label();
-        Label falseLabel = new Label();
-        // for the various types we make first a 
-        // kind of conversion to int using a compare
-        // operation and then handle the result common
-        // for all cases. In case of long that is LCMP,
-        // for int nothing is to be done
-        if (type==ClassHelper.double_TYPE) {
-            mv.visitInsn(DCONST_0);
-            mv.visitInsn(DCMPL);
-        } else if (type==ClassHelper.long_TYPE) {
-            mv.visitInsn(LCONST_0);
-            mv.visitInsn(LCMP);
-        } else if (type==ClassHelper.float_TYPE) {
-            mv.visitInsn(FCONST_0);
-            mv.visitInsn(FCMPL);
-        } else if (type==ClassHelper.int_TYPE) {
-            // nothing, see comment above
-        }
-        mv.visitJumpInsn(IFEQ, falseLabel);
-        mv.visitInsn(ICONST_1);
-        mv.visitJumpInsn(GOTO, trueLabel);
-        mv.visitLabel(falseLabel);
-        mv.visitInsn(ICONST_0);
-        mv.visitLabel(trueLabel);
-        // other cases can be used directly
-    }
-    
+
     /**
      * remove operand stack top element using bytecode pop
      */

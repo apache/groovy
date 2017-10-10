@@ -54,11 +54,10 @@ allprojects {
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
+        dependsOn jarAll
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
-        codenarcClasspath = rootProject.sourceSets.main.output +
-                project(':groovy-templates').sourceSets.main.output +
-                project(':groovy-xml').sourceSets.main.output +
+        codenarcClasspath = files(rootProject.jarAll.archivePath) +
                 configurations.compile +
                 files { configurations.codenarc.findAll { !(it.name =~ /groovy|junit/)} }
     }

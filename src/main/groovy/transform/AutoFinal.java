@@ -30,14 +30,16 @@ import java.lang.annotation.Target;
  * Annotation to automatically add the final qualifier to method, constructor,
  * and closure parameters.
  * <p>The annotation can be placed at the class level in which case it applies to
- * all methods, constructors, and closures within the class, or on individual
- * methods or constructors.
- * <p>In general it will make the most sense to automatically apply the
- * annotation to all classes of a project
- * (groovyc --configscript; google "Customising The Groovy Compiler", or see {@link CompilerConfiguration}
- * so that one can be sure that all arguments will automatically be final,
+ * all methods, constructors, and closures within the class. It can also be applied
+ * to an individual method, constructor, field with a Closure initial value
+ * or a Closure assigned to a local variable.
+ * <p>If you wish to automatically apply the
+ * annotation to all classes of a project, consider using
+ * {@code groovyc --configscript}. Google "Customising The Groovy Compiler",
+ * or see {@link CompilerConfiguration} for further details.
+ * This will ensure that all arguments will automatically be final,
  * completely eliminating the need to clutter the code with final keywords
- * in any paramete list.
+ * in any parameter list.
  * <p>
  * <em>Example usage:</em>
  * <pre class="groovyTestCase">
@@ -80,7 +82,7 @@ import java.lang.annotation.Target;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoFinalASTTransformation")
 public @interface AutoFinal {
 }

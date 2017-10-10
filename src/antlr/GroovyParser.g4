@@ -98,7 +98,11 @@ options {
 // starting point for parsing a groovy file
 compilationUnit
     :   nls
-        (packageDeclaration (sep | EOF))? (statement (sep | EOF))* EOF
+        packageDeclaration? sep? statements? EOF
+    ;
+
+statements
+    :   statement (sep statement)* sep?
     ;
 
 packageDeclaration
@@ -282,19 +286,9 @@ methodDeclaration[int t, int ct]
     :   { 3 == $ct }?
         returnType[$ct] methodName LPAREN RPAREN (DEFAULT nls elementValue)?
     |
-        (   { 0 == $t }?
-            modifiersOpt typeParameters?
-        |   modifiersOpt  typeParameters? returnType[$ct]
-        |   modifiers  typeParameters? returnType[$ct]?
-        )
+        modifiersOpt typeParameters? returnType[$ct]?
         methodName formalParameters (nls THROWS nls qualifiedClassNameList)?
-        (
-            { 0 == $t || 3 == $t || 1 == $t}?
-            nls methodBody
-        |
-            { 0 == $t || 3 == $t || 2 == $t }?
-            /* no method body */
-        )
+        nls methodBody?
     ;
 
 methodName
@@ -441,12 +435,16 @@ qualifiedNameElement
     |   TRAIT
     ;
 
+qualifiedNameElements
+    :   (qualifiedNameElement DOT)*
+    ;
+
 qualifiedClassName
-    :   (qualifiedNameElement DOT)* identifier
+    :   qualifiedNameElements identifier
     ;
 
 qualifiedStandardClassName
-    :   (qualifiedNameElement DOT)* (className DOT)* className
+    :   qualifiedNameElements className (DOT className)*
     ;
 
 literal
@@ -575,24 +573,24 @@ localVariableDeclaration
         variableDeclaration[0]
     ;
 
+classifiedModifiers[int t]
+    :   { 0 == $t }? variableModifiers
+    |   { 1 == $t }? modifiers
+    ;
+
+
 /**
  *  t   0: local variable declaration; 1: field declaration
  */
 variableDeclaration[int t]
-    :   (   { 0 == $t }? variableModifiers
-        |   { 1 == $t }? modifiers
+@leftfactor { classifiedModifiers }
+    :   classifiedModifiers[$t]
+        (   type? variableDeclarators
+        |   typeNamePairs nls ASSIGN nls variableInitializer
         )
-        type? variableDeclarators
     |
-        (   { 0 == $t }? variableModifiersOpt
-        |   { 1 == $t }? modifiersOpt
-        )
+        classifiedModifiers[$t]?
         type variableDeclarators
-    |
-        (   { 0 == $t }? variableModifiers
-        |   { 1 == $t }? modifiers
-        )
-        typeNamePairs nls ASSIGN nls variableInitializer
     ;
 
 typeNamePairs
@@ -605,6 +603,15 @@ typeNamePair
 
 variableNames
     :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ rparen
+    ;
+
+conditionalStatement
+    :   ifElseStatement
+    |   switchStatement
+    ;
+
+ifElseStatement
+    :   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?
     ;
 
 switchStatement
@@ -654,18 +661,9 @@ locals[ boolean isInsideLoop, boolean isInsideSwitch ]
     ;
 
 tryCatchStatement
-locals[boolean resourcesExists = false]
-    :   TRY (resources { $resourcesExists = true; })? nls
-        block
-        (
-            (nls catchClause)+
-            (nls finallyBlock)?
-        |
-            nls finallyBlock
-        |
-            // catch and finally clauses required unless it's a try-with-resources block
-            { require($resourcesExists, "either a catch or finally clause or both is required for a try-catch-finally statement"); }
-        )
+    :   TRY resources? nls block
+        (nls catchClause)*
+        (nls finallyBlock)?
     ;
 
 assertStatement
@@ -675,12 +673,11 @@ locals[ String footprint = "" ]
 
 statement
     :   block                                                                                               #blockStmtAlt
-    |   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?                            #ifElseStmtAlt
+    |   conditionalStatement                                                                                #conditionalStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
 
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
 
-    |   switchStatement                                                                                     #switchStmtAlt
     |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt
@@ -980,11 +977,16 @@ locals[ boolean isInsideClosure ]
     :   nls
 
         // AT: foo.@bar selects the field (or attribute), not property
-        ( SPREAD_DOT nls (AT | nonWildcardTypeArguments)?       // Spread operator:  x*.y  ===  x?.collect{it.y}
-        | SAFE_DOT nls (AT | nonWildcardTypeArguments)?         // Optional-null operator:  x?.y  === (x==null)?null:x.y
-        | METHOD_POINTER nls                                    // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
-        | METHOD_REFERENCE nls                                  // Method reference: System.out::println
-        | DOT nls (AT | nonWildcardTypeArguments)?              // The all-powerful dot.
+        (
+            (   DOT                 // The all-powerful dot.
+            |   SPREAD_DOT          // Spread operator:  x*.y  ===  x?.collect{it.y}
+            |   SAFE_DOT            // Optional-null operator:  x?.y  === (x==null)?null:x.y
+            |   SAFE_CHAIN_DOT      // Optional-null chain operator:  x??.y.z  === x?.y?.z
+            ) nls (AT | nonWildcardTypeArguments)?
+        |
+            METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+        |
+            METHOD_REFERENCE nls    // Method reference: System.out::println
         )
         namePart
         { $t = 1; }
@@ -1068,17 +1070,7 @@ primary
     ;
 
 list
-locals[boolean empty = true]
-    :   LBRACK
-        (
-            expressionList[true]
-            { $empty = false; }
-        )?
-        (
-            COMMA
-            { require(!$empty, "Empty list constructor should not contain any comma(,)", -1); }
-        )?
-        RBRACK
+    :   LBRACK expressionList[true]? COMMA? RBRACK
     ;
 
 map
@@ -1139,11 +1131,7 @@ typeArgumentsOrDiamond
     ;
 
 arguments
-    :   LPAREN
-        (   enhancedArgumentList?
-        |   enhancedArgumentList COMMA
-        )
-        rparen
+    :   LPAREN enhancedArgumentList? COMMA? rparen
     ;
 
 argumentList

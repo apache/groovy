@@ -501,7 +501,7 @@ public class MethodRankHelper{
      * No objects may be null.
      * This implementation is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
-     * @param s a Object array
+     * @param s an Object array
      * @param t this array is compared to s
      * @return the edit distance between the two arrays
      */

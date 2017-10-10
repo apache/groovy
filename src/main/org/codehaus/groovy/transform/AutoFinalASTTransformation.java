@@ -19,12 +19,23 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoFinal;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Modifier;
+import java.util.Iterator;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 
@@ -37,72 +48,129 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
     private static final Class MY_CLASS = AutoFinal.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private AnnotatedNode candidate;
+
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
-        processClassesConstructorsMethods(nodes, source);
-        processClosures(nodes, source);
+        final ClassCodeVisitorSupport visitor = createVisitor();
+        process(nodes, visitor);
     }
 
-    private void processClassesConstructorsMethods(ASTNode[] nodes, final SourceUnit unit) {
-        AnnotatedNode candidate = (AnnotatedNode) nodes[1];
+    private ClassCodeVisitorSupport createVisitor() {
+        return new ClassCodeVisitorSupport() {
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                if (expression.isSynthetic()) {
+                    return;
+                }
+                Parameter[] origParams = expression.getParameters();
+                for (Parameter p : origParams) {
+                    p.setModifiers(p.getModifiers() | Modifier.FINAL);
+                }
+                super.visitClosureExpression(expression);
+            }
+
+            @Override
+            protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+                if (hasNoExplicitAutoFinal(node) || candidate == node) {
+                    super.visitConstructorOrMethod(node, isConstructor);
+                }
+            }
+
+            @Override
+            public void visitField(FieldNode node) {
+                if (hasNoExplicitAutoFinal(node) || candidate == node) {
+                    super.visitField(node);
+                }
+            }
+
+            @Override
+            public void visitDeclarationExpression(DeclarationExpression expr) {
+                if (hasNoExplicitAutoFinal(expr) || candidate == expr) {
+                    super.visitDeclarationExpression(expr);
+                }
+            }
+
+            protected SourceUnit getSourceUnit() {
+                return sourceUnit;
+            }
+        };
+    }
+
+    private void process(ASTNode[] nodes, final ClassCodeVisitorSupport visitor) {
+        candidate = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (candidate instanceof ClassNode) {
-            processClass((ClassNode) candidate);
+            ClassNode cNode = (ClassNode) candidate;
+            processClass(cNode, visitor);
         } else if (candidate instanceof MethodNode) {
             // handles constructors and methods
-            processConstructorOrMethod((MethodNode) candidate);
+            MethodNode mNode = (MethodNode) candidate;
+            processConstructorOrMethod(mNode, visitor);
+        } else if (candidate instanceof FieldNode) {
+            FieldNode fNode = (FieldNode) candidate;
+            processField(fNode, visitor);
+        } else if (candidate instanceof DeclarationExpression) {
+            DeclarationExpression de = (DeclarationExpression) candidate;
+            processLocalVariable(de, visitor);
         }
     }
 
-    private void processClosures(ASTNode[] nodes, final SourceUnit source) {
-        final ASTNode node = nodes[1];
-        if(node instanceof ClassNode) {
-            ClassNode annotatedClass = (ClassNode) node;
-
-            final ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
-                @Override
-                public void visitClosureExpression(ClosureExpression expression) {
-                    if (expression.isSynthetic()) { return; }
-                    Parameter[] origParams = expression.getParameters();
-                    for (Parameter p : origParams) {
-                        p.setModifiers(p.getModifiers() | Modifier.FINAL);
-                    }
-                    super.visitClosureExpression(expression);
-                }
-
-                protected SourceUnit getSourceUnit() {
-                    return source;
-                }
-            };
-
-            visitor.visitClass(annotatedClass);
+    private void processLocalVariable(DeclarationExpression de, ClassCodeVisitorSupport visitor) {
+        if (de.getRightExpression() instanceof ClosureExpression) {
+            visitor.visitDeclarationExpression(de);
         }
     }
 
+    private void processField(FieldNode fNode, ClassCodeVisitorSupport visitor) {
+        if (fNode.hasInitialExpression() && fNode.getInitialExpression() instanceof ClosureExpression) {
+            visitor.visitField(fNode);
+        }
+    }
 
-
-    private void processClass(ClassNode cNode) {
+    private void processClass(ClassNode cNode, final ClassCodeVisitorSupport visitor) {
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() +
                     "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
             return;
         }
+
         for (ConstructorNode cn : cNode.getDeclaredConstructors()) {
-            processConstructorOrMethod(cn);
+            if (hasNoExplicitAutoFinal(cn)) {
+                processConstructorOrMethod(cn, visitor);
+            }
         }
+
         for (MethodNode mn : cNode.getAllDeclaredMethods()) {
-            processConstructorOrMethod(mn);
+            if (hasNoExplicitAutoFinal(mn)) {
+                processConstructorOrMethod(mn, visitor);
+            }
         }
+
+        Iterator<InnerClassNode> it = cNode.getInnerClasses();
+        while (it.hasNext()) {
+            InnerClassNode in = it.next();
+            if (in.getAnnotations(MY_TYPE).isEmpty()) {
+                processClass(in, visitor);
+            }
+        }
+
+        visitor.visitClass(cNode);
     }
 
-    private void processConstructorOrMethod(MethodNode node) {
-        if (node.isSynthetic()) return;
-        Parameter[] origParams = node.getParameters();
+    private boolean hasNoExplicitAutoFinal(AnnotatedNode node) {
+        return node.getAnnotations(MY_TYPE).isEmpty();
+    }
+
+    private void processConstructorOrMethod(MethodNode mNode, ClassCodeVisitorSupport visitor) {
+        if (mNode.isSynthetic()) return;
+        Parameter[] origParams = mNode.getParameters();
         for (Parameter p : origParams) {
             p.setModifiers(p.getModifiers() | Modifier.FINAL);
         }
+        visitor.visitMethod(mNode);
     }
 }

@@ -11130,9 +11130,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Coerce a Float instance to a boolean value.
+     *
+     * @param object the Float
+     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @since 2.6.0
+     */
+    public static boolean asBoolean(Float object) {
+        float f = object;
+        return f != 0.0f && !Float.isNaN(f);
+    }
+
+    /**
+     * Coerce a Double instance to a boolean value.
+     *
+     * @param object the Double
+     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @since 2.6.0
+     */
+    public static boolean asBoolean(Double object) {
+        double d = object;
+        return d != 0.0d && !Double.isNaN(d);
+    }
+
+    /**
      * Coerce a number to a boolean value.
-     * A number is coerced to false if its double value is equal to 0, and to true otherwise,
-     * and to true otherwise.
+     * A number is coerced to false if its double value is equal to 0, and to true otherwise.
      *
      * @param number the number
      * @return the boolean value
@@ -15929,7 +15952,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean and(Boolean left, Boolean right) {
-        return left && right;
+        return left && Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15941,7 +15964,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean or(Boolean left, Boolean right) {
-        return left || right;
+        return left || Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15953,7 +15976,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.3
      */
     public static Boolean implies(Boolean left, Boolean right) {
-        return !left || right;
+        return !left || Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15965,7 +15988,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Boolean xor(Boolean left, Boolean right) {
-        return left ^ right;
+        return left ^ Boolean.TRUE.equals(right);
     }
 
 //    public static Boolean negate(Boolean left) {
