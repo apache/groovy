@@ -23,6 +23,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+import java.util.Map.Entry
+
 
 /**
  * Tests for the {@code @AutoFinal} AST transform.
@@ -63,42 +65,57 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
         return param0 
       }
     """
-    final script = autoFinalTestScript(true, classPart, "final foo = new $autoFinalTestClassName(); foo.foo()" )
+    final script = autoFinalTestScript(true, [:], classPart, "final foo = new $autoFinalTestClassName(); foo.foo()" )
     assert script.contains('@AutoFinal')
     assertScript(script)
   }
 
 
 
-
   void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
     assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
-    assertAutoFinalTestScriptWithoutAnnotation(paramName, classPart)
+    assertAutoFinalTestScriptWithoutAnnotation(classPart)
+    assertAutoFinalTestScriptWithDisabledAnnotation(classPart)
   }
 
+  //
   // Checks Groovy compiler behavior when putting the passed classPart into an @AutoFinal annotated class
+  //
+
+  // @AutoFinal
   void assertAutoFinalTestScriptWithAnnotation(final String paramName, final String classPart) {
-    final script = autoFinalTestScript(true, classPart)
+    final script = autoFinalTestScript(true, [:], classPart)
     assert script.contains('@AutoFinal')
     final result = shouldNotCompile(script)
     println "\nassertAutoFinalTestScript result: |$result|\n\n"
     assert result.contains("The parameter [$paramName] is declared final but is reassigned")
   }
 
-  void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final String classPart) {
-    final script = autoFinalTestScript(false, classPart)
+  // @AutoFinal(enabled=false)
+  void assertAutoFinalTestScriptWithDisabledAnnotation(final String classPart) {
+    final script = autoFinalTestScript(true, [enabled:false], classPart)
+    assert script.contains('@AutoFinal(enabled=false)')
+    shouldCompile(script)
+  }
+
+  // No annotation
+  void assertAutoFinalTestScriptWithoutAnnotation(final String classPart) {
+    final script = autoFinalTestScript(false, null, classPart)
     assert !script.contains('@AutoFinal')
     shouldCompile(script)
   }
 
-  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final String classPart, final String scriptPart = '') {
+
+  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final Map<String,Object> autoFinalAnnotationParamaters, final String classPart, final String scriptPart = '') {
+    assert !autoFinalAnnotationQ || (autoFinalAnnotationParamaters != null); assert classPart
+    final String autoFinalAnnotationParamatersTerm = autoFinalAnnotationParamaters ? "(${autoFinalAnnotationParamaters.collect { final Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
     final String script = """
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
 
-            ${autoFinalAnnotationQ ? '@AutoFinal' : ''}
+            ${autoFinalAnnotationQ ? "@AutoFinal${autoFinalAnnotationParamatersTerm}" : ''}
             class $autoFinalTestClassName {
                 $classPart
             } 
