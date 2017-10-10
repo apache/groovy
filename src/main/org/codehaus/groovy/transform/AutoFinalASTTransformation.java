@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 
@@ -104,34 +105,18 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (candidate instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) candidate;
-            processClass(cNode, visitor);
+            processClass((ClassNode) candidate, visitor);
         } else if (candidate instanceof MethodNode) {
-            // handles constructors and methods
-            MethodNode mNode = (MethodNode) candidate;
-            processConstructorOrMethod(mNode, visitor);
+            processConstructorOrMethod((MethodNode) candidate, visitor);
         } else if (candidate instanceof FieldNode) {
-            FieldNode fNode = (FieldNode) candidate;
-            processField(fNode, visitor);
+            processField((FieldNode) candidate, visitor);
         } else if (candidate instanceof DeclarationExpression) {
-            DeclarationExpression de = (DeclarationExpression) candidate;
-            processLocalVariable(de, visitor);
-        }
-    }
-
-    private void processLocalVariable(DeclarationExpression de, ClassCodeVisitorSupport visitor) {
-        if (de.getRightExpression() instanceof ClosureExpression) {
-            visitor.visitDeclarationExpression(de);
-        }
-    }
-
-    private void processField(FieldNode fNode, ClassCodeVisitorSupport visitor) {
-        if (fNode.hasInitialExpression() && fNode.getInitialExpression() instanceof ClosureExpression) {
-            visitor.visitField(fNode);
+            processLocalVariable((DeclarationExpression) candidate, visitor);
         }
     }
 
     private void processClass(ClassNode cNode, final ClassCodeVisitorSupport visitor) {
+        if (!isEnabled(cNode)) return;
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() +
                     "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
@@ -161,16 +146,46 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
         visitor.visitClass(cNode);
     }
 
-    private boolean hasNoExplicitAutoFinal(AnnotatedNode node) {
-        return node.getAnnotations(MY_TYPE).isEmpty();
+    private void processLocalVariable(DeclarationExpression de, ClassCodeVisitorSupport visitor) {
+        if (!isEnabled(de)) return;
+        if (de.getRightExpression() instanceof ClosureExpression) {
+            visitor.visitDeclarationExpression(de);
+        }
+    }
+
+    private void processField(FieldNode fNode, ClassCodeVisitorSupport visitor) {
+        if (!isEnabled(fNode)) return;
+        if (fNode.hasInitialExpression() && fNode.getInitialExpression() instanceof ClosureExpression) {
+            visitor.visitField(fNode);
+        }
     }
 
     private void processConstructorOrMethod(MethodNode mNode, ClassCodeVisitorSupport visitor) {
+        if (!isEnabled(mNode)) return;
         if (mNode.isSynthetic()) return;
         Parameter[] origParams = mNode.getParameters();
         for (Parameter p : origParams) {
             p.setModifiers(p.getModifiers() | Modifier.FINAL);
         }
         visitor.visitMethod(mNode);
+    }
+
+    private boolean isEnabled(final AnnotatedNode node) {
+        if (node == null) return false;
+        List<AnnotationNode> annotations = node.getAnnotations(MY_TYPE);
+        if (annotations != null) {
+            // any explicit false for enabled disables functionality
+            // this allows, for example, configscript to set all
+            // classes to true and one class to be explicitly disabled
+            for (AnnotationNode anno : annotations) {
+                // abort if explicit false found
+                if (memberHasValue(anno, "enabled", false)) return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasNoExplicitAutoFinal(AnnotatedNode node) {
+        return node.getAnnotations(MY_TYPE).isEmpty();
     }
 }
