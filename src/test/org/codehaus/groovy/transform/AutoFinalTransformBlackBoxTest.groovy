@@ -72,15 +72,17 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
 
 
-
   void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
     assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
-    //assertAutoFinalTestScriptWithoutAnnotation(paramName, classPart)
     assertAutoFinalTestScriptWithoutAnnotation(classPart)
     assertAutoFinalTestScriptWithDisabledAnnotation(classPart)
   }
 
+  //
   // Checks Groovy compiler behavior when putting the passed classPart into an @AutoFinal annotated class
+  //
+
+  // @AutoFinal
   void assertAutoFinalTestScriptWithAnnotation(final String paramName, final String classPart) {
     final script = autoFinalTestScript(true, [:], classPart)
     assert script.contains('@AutoFinal')
@@ -89,20 +91,21 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
     assert result.contains("The parameter [$paramName] is declared final but is reassigned")
   }
 
+  // @AutoFinal(enabled=false)
   void assertAutoFinalTestScriptWithDisabledAnnotation(final String classPart) {
     final script = autoFinalTestScript(true, [enabled:false], classPart)
     assert script.contains('@AutoFinal(enabled=false)')
     shouldCompile(script)
   }
 
-  //void assertAutoFinalTestScriptWithoutAnnotation(final String paramName, final String classPart) {
+  // No annotation
   void assertAutoFinalTestScriptWithoutAnnotation(final String classPart) {
     final script = autoFinalTestScript(false, null, classPart)
     assert !script.contains('@AutoFinal')
     shouldCompile(script)
   }
 
-  //String autoFinalTestScript(final boolean autoFinalAnnotationQ, final String classPart, final String scriptPart = '') {
+
   String autoFinalTestScript(final boolean autoFinalAnnotationQ, final Map<String,Object> autoFinalAnnotationParamaters, final String classPart, final String scriptPart = '') {
     assert !autoFinalAnnotationQ || (autoFinalAnnotationParamaters != null); assert classPart
     final String autoFinalAnnotationParamatersTerm = autoFinalAnnotationParamaters ? "(${autoFinalAnnotationParamaters.collect { final Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
