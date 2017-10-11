@@ -25,132 +25,130 @@ import org.junit.runners.JUnit4
 
 import java.util.Map.Entry
 
-
 /**
  * Tests for the {@code @AutoFinal} AST transform.
  */
-
-// Execute single test:
-// gradlew :test --build-cache --tests org.codehaus.groovy.transform.AutoFinalTransformTest
 @RunWith(JUnit4)
 class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
-  @Test
-  void testAutoFinal_Closure() {
-    assertAutoFinalClassTestScript("param0", "String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }")
-  }
+    @Test
+    void testAutoFinal_Closure() {
+        assertAutoFinalClassTestScript("param0", "String foo() { final cls = { String param0 -> param0 = 'abc'; param0 }; cls() }")
+    }
 
-  @Test
-  void testAutoFinal_ClosureInClosure() {
-    assertAutoFinalClassTestScript("param1", "String foo() { final cls0 = { String param0 -> final cls1 = { String param1 -> param1 = 'xyz'; param1 }; cls1() }; cls0() }")
-  }
+    @Test
+    void testAutoFinal_ClosureInClosure() {
+        assertAutoFinalClassTestScript("param1", "String foo() { final cls0 = { String param0 -> final cls1 = { String param1 -> param1 = 'xyz'; param1 }; cls1() }; cls0() }")
+    }
 
-  @Test
-  void testAutoFinal_ClassMethod_Param0() {
-    assertAutoFinalClassTestScript("param0", "String foo(String param0, param1) {  param0 = 'abc'; param0 }")
-  }
+    @Test
+    void testAutoFinal_ClassMethod_Param0() {
+        assertAutoFinalClassTestScript("param0", "String foo(String param0, param1) {  param0 = 'abc'; param0 }")
+    }
 
-  @Test
-  void testAutoFinal_ClassMethod_Param1() {
-    assertAutoFinalClassTestScript("param1", "String foo(String param0, param1) {  param1 = new Object(); param1 }")
-  }
+    @Test
+    void testAutoFinal_ClassMethod_Param1() {
+        assertAutoFinalClassTestScript("param1", "String foo(String param0, param1) {  param1 = new Object(); param1 }")
+    }
 
-  // Check default parameters are not negatively impacted by @AutoFinal
-  @Test
-  void testAutoFinalClassMethodDefaultParameters() {
-    final String classPart = """
-      String foo(String param0 = 'XyZ', param1 = Closure.IDENTITY) { 
-        assert param0.equals('XyZ')
-        assert param1.is(Closure.IDENTITY)
-        return param0 
-      }
-    """
-    final script = autoFinalTestScript(true, [:], classPart, "final foo = new $autoFinalTestClassName(); foo.foo()" )
-    assert script.contains('@AutoFinal')
-    assertScript(script)
-  }
-
-
-
-  void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
-    assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
-    assertAutoFinalTestScriptWithoutAnnotation(classPart)
-    assertAutoFinalTestScriptWithDisabledAnnotation(classPart)
-  }
-
-  //
-  // Checks Groovy compiler behavior when putting the passed classPart into an @AutoFinal annotated class
-  //
-
-  // @AutoFinal
-  void assertAutoFinalTestScriptWithAnnotation(final String paramName, final String classPart) {
-    final script = autoFinalTestScript(true, [:], classPart)
-    assert script.contains('@AutoFinal')
-    final result = shouldNotCompile(script)
-    println "\nassertAutoFinalTestScript result: |$result|\n\n"
-    assert result.contains("The parameter [$paramName] is declared final but is reassigned")
-  }
-
-  // @AutoFinal(enabled=false)
-  void assertAutoFinalTestScriptWithDisabledAnnotation(final String classPart) {
-    final script = autoFinalTestScript(true, [enabled:false], classPart)
-    assert script.contains('@AutoFinal(enabled=false)')
-    shouldCompile(script)
-  }
-
-  // No annotation
-  void assertAutoFinalTestScriptWithoutAnnotation(final String classPart) {
-    final script = autoFinalTestScript(false, null, classPart)
-    assert !script.contains('@AutoFinal')
-    shouldCompile(script)
-  }
+    // Check default parameters are not negatively impacted by @AutoFinal
+    @Test
+    void testAutoFinalClassMethodDefaultParameters() {
+        final String classPart = """
+        String foo(String param0 = 'XyZ', param1 = Closure.IDENTITY) { 
+            assert param0.equals('XyZ')
+            assert param1.is(Closure.IDENTITY)
+            return param0 
+        }
+        """
+        final script = autoFinalTestScript(true, [:], classPart, "final foo = new $autoFinalTestClassName(); foo.foo()")
+        assert script.contains('@AutoFinal')
+        assertScript(script)
+    }
 
 
-  String autoFinalTestScript(final boolean autoFinalAnnotationQ, final Map<String,Object> autoFinalAnnotationParamaters, final String classPart, final String scriptPart = '') {
-    assert !autoFinalAnnotationQ || (autoFinalAnnotationParamaters != null); assert classPart
-    final String autoFinalAnnotationParamatersTerm = autoFinalAnnotationParamaters ? "(${autoFinalAnnotationParamaters.collect { final Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
-    final String script = """
+    void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
+        assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
+        assertAutoFinalTestScriptWithoutAnnotation(classPart)
+        assertAutoFinalTestScriptWithDisabledAnnotation(classPart)
+    }
+
+    //
+    // Checks Groovy compiler behavior when putting the passed classPart into an @AutoFinal annotated class
+    //
+
+    // @AutoFinal
+    void assertAutoFinalTestScriptWithAnnotation(final String paramName, final String classPart) {
+        final script = autoFinalTestScript(true, [:], classPart)
+        assert script.contains('@AutoFinal')
+        final result = shouldNotCompile(script)
+        //println "\nassertAutoFinalTestScript result: |$result|\n\n"
+        assert result.contains("The parameter [$paramName] is declared final but is reassigned")
+    }
+
+    // @AutoFinal(enabled=false)
+    void assertAutoFinalTestScriptWithDisabledAnnotation(final String classPart) {
+        final script = autoFinalTestScript(true, [enabled: false], classPart)
+        assert script.contains('@AutoFinal(enabled=false)')
+        shouldCompile(script)
+    }
+
+    // No annotation
+    void assertAutoFinalTestScriptWithoutAnnotation(final String classPart) {
+        final script = autoFinalTestScript(false, null, classPart)
+        assert !script.contains('@AutoFinal')
+        shouldCompile(script)
+    }
+
+
+    String autoFinalTestScript(
+            final boolean hasAnnotation,
+            final Map<String, Object> annotationParameters,
+            final String classPart, final String scriptPart = '') {
+        assert !hasAnnotation || (annotationParameters != null); assert classPart
+        final String annotationParametersTerm = annotationParameters ? "(${annotationParameters.collect { final Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
+        final String script = """
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
             import static java.lang.reflect.Modifier.isFinal
 
-            ${autoFinalAnnotationQ ? "@AutoFinal${autoFinalAnnotationParamatersTerm}" : ''}
+            ${hasAnnotation ? "@AutoFinal${annotationParametersTerm}" : ''}
             class $autoFinalTestClassName {
                 $classPart
             } 
 
             $scriptPart
         """
-    println "script: |$script|"
-    return script
-  }
-
-  String getAutoFinalTestClassName() {
-    'AutoFinalFoo'
-  }
-
-  /**
-   * Prints better readable, unabbreviated stack trace for passed Throwable
-   */
-  void printStackTrace(final Throwable throwable) {
-    println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
-    throwable.stackTrace.each { println it }
-    final inner = throwable.cause
-    if(inner != null) {
-      println "Caused by........................................................................................."
-      printStackTrace(inner)
+        //println "script: |$script|"
+        return script
     }
-  }
 
-  Throwable shouldThrow(final String script) {
-    try {
-      final GroovyClassLoader gcl = new GroovyClassLoader()
-      gcl.parseClass(script, getTestClassName())
+    String getAutoFinalTestClassName() {
+        'AutoFinalFoo'
     }
-    catch(Throwable throwable) {
-      return throwable
+
+    /**
+     * Prints better readable, unabbreviated stack trace for passed Throwable
+     */
+    void printStackTrace(final Throwable throwable) {
+        println "${throwable.getClass().name}${throwable.message ? ": $throwable.message" : ""}"
+        throwable.stackTrace.each { println it }
+        final inner = throwable.cause
+        if (inner != null) {
+            println "Caused by........................................................................................."
+            printStackTrace(inner)
+        }
     }
-    throw new Exception("Script was expected to throw here!")
-  }
+
+    Throwable shouldThrow(final String script) {
+        try {
+            final GroovyClassLoader gcl = new GroovyClassLoader()
+            gcl.parseClass(script, getTestClassName())
+        }
+        catch (Throwable throwable) {
+            return throwable
+        }
+        throw new Exception("Script was expected to throw here!")
+    }
 }
