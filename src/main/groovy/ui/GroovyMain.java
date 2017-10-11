@@ -38,6 +38,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.StackTraceUtils;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -47,6 +48,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -272,24 +274,34 @@ public class GroovyMain {
              main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
          }
 
-         if (line.hasOption("configscript")) {
-             String path = line.getOptionValue("configscript");
-             File groovyConfigurator = new File(path);
-             Binding binding = new Binding();
-             binding.setVariable("configuration", main.conf);
+        String configScripts = System.getProperty("groovy.starter.configscripts", null);
+        if (line.hasOption("configscript") || (configScripts != null && !configScripts.isEmpty())) {
+            List<String> scripts = new ArrayList<String>();
+            if (line.hasOption("configscript")) {
+                scripts.add(line.getOptionValue("configscript"));
+            }
+            if (configScripts != null) {
+                scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
+            }
+            processConfigScripts(scripts, main.conf);
+        }
 
-             CompilerConfiguration configuratorConfig = new CompilerConfiguration();
-             ImportCustomizer customizer = new ImportCustomizer();
-             customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
-             configuratorConfig.addCompilationCustomizers(customizer);
-
-             GroovyShell shell = new GroovyShell(binding, configuratorConfig);
-             shell.evaluate(groovyConfigurator);
-         }
-
-         main.args = args;
-
+        main.args = args;
         return main.run();
+    }
+
+    public static void processConfigScripts(List<String> scripts, CompilerConfiguration conf) throws IOException {
+        if (scripts.isEmpty()) return;
+        Binding binding = new Binding();
+        binding.setVariable("configuration", conf);
+        CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+        ImportCustomizer customizer = new ImportCustomizer();
+        customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+        configuratorConfig.addCompilationCustomizers(customizer);
+        GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+        for (String script : scripts) {
+            shell.evaluate(new File(script));
+        }
     }
 
 
