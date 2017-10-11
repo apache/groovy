@@ -46,9 +46,6 @@ import org.codehaus.groovy.control.CompilationFailedException
  * not appear in the tree.
  *
  * The String label of a tree node is defined by classname in AstBrowserProperties.properties.
- *
- * @author Hamlet D'Arcy 
- * @author Roshan Dawrani
  */
 class ScriptToTreeNodeAdapter {
 
@@ -56,6 +53,7 @@ class ScriptToTreeNodeAdapter {
     boolean showScriptFreeForm, showScriptClass, showClosureClasses
     final GroovyClassLoader classLoader
     final AstBrowserNodeMaker nodeMaker
+    private final CompilerConfiguration config
 
     static {
         try {
@@ -83,12 +81,13 @@ class ScriptToTreeNodeAdapter {
         }
     }
     
-    ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker) {
+    ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker, config = null) {
         this.classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
         this.showClosureClasses = showClosureClasses
         this.nodeMaker = nodeMaker
+        this.config = config
     }
 
     /**
@@ -104,9 +103,12 @@ class ScriptToTreeNodeAdapter {
     def compile(String script, int compilePhase, boolean indy=false) {
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
-        CompilerConfiguration cc = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        CompilerConfiguration cc = new CompilerConfiguration(config ?: CompilerConfiguration.DEFAULT)
+        if (config) {
+            cc.addCompilationCustomizers(*config.compilationCustomizers)
+        }
         if (indy) {
-            cc.getOptimizationOptions().put(CompilerConfiguration.INVOKEDYNAMIC, true)
+            cc.optimizationOptions.put(CompilerConfiguration.INVOKEDYNAMIC, true)
         }
         CompilationUnit cu = new CompilationUnit(cc, codeSource.codeSource, classLoader)
         cu.setClassgenCallback(classLoader.createCollector(cu, null))

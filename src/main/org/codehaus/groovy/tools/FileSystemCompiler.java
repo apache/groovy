@@ -18,9 +18,7 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.lang.Binding;
 import groovy.lang.GroovyResourceLoader;
-import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -31,8 +29,8 @@ import org.apache.commons.cli.Options;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
-import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import java.io.BufferedReader;
@@ -46,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
+
+import static groovy.ui.GroovyMain.processConfigScripts;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
@@ -305,21 +305,18 @@ public class FileSystemCompiler {
             configuration.getOptimizationOptions().put("indy", true);
         }
 
-        if (cli.hasOption("configscript")) {
-            String path = cli.getOptionValue("configscript");
-            File groovyConfigurator = new File(path);
-            Binding binding = new Binding();
-            binding.setVariable("configuration", configuration);
-
-            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
-            ImportCustomizer customizer = new ImportCustomizer();
-            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
-            configuratorConfig.addCompilationCustomizers(customizer);
-
-            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
-            shell.evaluate(groovyConfigurator);
+        String configScripts = System.getProperty("groovy.starter.configscripts", null);
+        if (cli.hasOption("configscript") || (configScripts != null && !configScripts.isEmpty())) {
+            List<String> scripts = new ArrayList<String>();
+            if (cli.hasOption("configscript")) {
+                scripts.add(cli.getOptionValue("configscript"));
+            }
+            if (configScripts != null) {
+                scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
+            }
+            processConfigScripts(scripts, configuration);
         }
-        
+
         return configuration;
     }
 
