@@ -85,7 +85,7 @@ import org.codehaus.groovy.control.CompilationUnit
  */
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
     private final AnnotationNode annotationNode;
-    private final ASTTransformation transformation
+    final ASTTransformation transformation
 
     protected CompilationUnit compilationUnit;
     private boolean applied = false; // used for global AST transformations

@@ -78,9 +78,11 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
      *    Whether or not to show the script portion of the source code
      * @param showScriptClass
      *    Whether or not to show the Script class from the source code
+     * @param config
+     *    optional compiler configuration
      * @returns the source code from the AST state
      */
-    String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
+    String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true, CompilerConfiguration config = null) {
 
         def writer = new StringWriter()
 
@@ -88,7 +90,7 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
 
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
+        CompilationUnit cu = new CompilationUnit(config ?: CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         cu.addPhaseOperation(new AstNodeToScriptVisitor(writer, showScriptFreeForm, showScriptClass), compilePhase)
         cu.addSource(codeSource.getName(), script)
         try {

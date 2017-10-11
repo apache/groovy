@@ -24,7 +24,9 @@ import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.messages.SimpleMessage
+import org.codehaus.groovy.runtime.StringGroovyMethods
 import org.codehaus.groovy.tools.shell.util.MessageSource
+import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 
 import java.awt.Component
 import java.awt.EventQueue
@@ -191,7 +193,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action selectWordAction
     Action selectPreviousWordAction
 
-    ConsolePreferences consolePreferences;
+    ConsolePreferences consolePreferences
 
     static void main(args) {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
@@ -204,6 +206,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
             i(longOpt: 'indy', messages['cli.option.indy.description'])
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', messages['cli.option.define.description'])
+            _(longOpt: 'configscript', args: 1, messages['cli.option.configscript.description'])
         }
         OptionAccessor options = cli.parse(args)
 
@@ -235,7 +238,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
         def baseConfig = new CompilerConfiguration()
-        baseConfig.setParameters((boolean) options.hasOption("pa"))
+        String starterConfigScripts = System.getProperty("groovy.starter.configscripts", null)
+        if (options.configscript || (starterConfigScripts != null && !starterConfigScripts.isEmpty())) {
+            List<String> configScripts = new ArrayList<String>()
+            if (options.configscript) {
+                configScripts.add(options.configscript)
+            }
+            if (starterConfigScripts != null) {
+                configScripts.addAll(StringGroovyMethods.tokenize((CharSequence) starterConfigScripts, ','))
+            }
+            GroovyMain.processConfigScripts(configScripts, baseConfig)
+        }
+
+        baseConfig.setParameters(options.hasOption("pa"))
 
         if (options.i) {
             enableIndy(baseConfig)
@@ -311,8 +326,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void newScript(ClassLoader parent, Binding binding) {
         config = new CompilerConfiguration(baseConfig)
-        if (threadInterrupt) config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
-
+        config.addCompilationCustomizers(*baseConfig.compilationCustomizers)
+        if (threadInterrupt) {
+            config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+        }
         shell = new GroovyShell(parent, binding, config)
     }
 
@@ -620,8 +637,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void threadInterruption(EventObject evt) {
         threadInterrupt = evt.source.selected
         prefs.putBoolean('threadInterrupt', threadInterrupt)
-        def customizers = config.compilationCustomizers
-        customizers.clear()
+        def customizers = config.compilationCustomizers.iterator()
+        while (customizers.hasNext()) {
+            def next = customizers.next()
+            if (next instanceof ASTTransformationCustomizer) {
+                ASTTransformationCustomizer astCustomizer = next
+                if (astCustomizer.transformation instanceof ThreadInterruptibleASTTransformation) {
+                    customizers.remove()
+                }
+            }
+        }
         if (threadInterrupt) {
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
@@ -910,7 +935,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void inspectAst(EventObject evt = null) {
-        new AstBrowser(inputArea, rootElement, shell.getClassLoader()).run({ inputArea.getText() } )
+        new AstBrowser(inputArea, rootElement, shell.getClassLoader(), config).run({ inputArea.getText() } )
     }
 
     void inspectTokens(EventObject evt = null) {
