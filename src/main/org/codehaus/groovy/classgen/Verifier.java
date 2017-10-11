@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import groovy.transform.Generated;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -123,6 +124,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final Parameter[] SET_METACLASS_PARAMS = new Parameter[]{
             new Parameter(ClassHelper.METACLASS_TYPE, "mc")
     };
+
+    private static final Class GENERATED_ANNOTATION = Generated.class;
 
     private ClassNode classNode;
     private MethodNode methodNode;
@@ -384,6 +387,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
         FieldNode metaClassField = getMetaClassField(node);
+        AnnotationNode generatedAnnotation = new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION));
 
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
@@ -425,7 +429,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            );
+            ).addAnnotation(generatedAnnotation);
         }
 
         Parameter[] parameters = new Parameter[]{new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
@@ -459,7 +463,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     ACC_PUBLIC, ClassHelper.VOID_TYPE,
                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
                     setMetaClassCode
-            );
+            ).addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
@@ -485,7 +489,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            );
+            ).addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
@@ -505,7 +509,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            );
+            ).addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
@@ -526,7 +530,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(RETURN);
                         }
                     })
-            );
+            ).addAnnotation(generatedAnnotation);
         }
     }
 
@@ -535,12 +539,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      * call will either be made to ClassNode.addSyntheticMethod() or ClassNode.addMethod(). If a non-synthetic method
      * is to be added the ACC_SYNTHETIC modifier is removed if it has been accidentally supplied.
      */
-    protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
-                             ClassNode[] exceptions, Statement code) {
+    protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
+                                   ClassNode[] exceptions, Statement code) {
         if (shouldBeSynthetic) {
-            node.addSyntheticMethod(name, modifiers, returnType, parameters, exceptions, code);
+            return node.addSyntheticMethod(name, modifiers, returnType, parameters, exceptions, code);
         } else {
-            node.addMethod(name, modifiers & ~ACC_SYNTHETIC, returnType, parameters, exceptions, code);
+            return node.addMethod(name, modifiers & ~ACC_SYNTHETIC, returnType, parameters, exceptions, code);
         }
     }
 
