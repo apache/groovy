@@ -387,11 +387,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
         FieldNode metaClassField = getMetaClassField(node);
-        AnnotationNode generatedAnnotation = new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION));
+
+        boolean shouldAnnotate = classNode.getModule().getContext() != null;
+        AnnotationNode generatedAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION)) : null;
 
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
-            addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
                     "getMetaClass",
                     ACC_PUBLIC,
                     ClassHelper.METACLASS_TYPE,
@@ -429,7 +431,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            ).addAnnotation(generatedAnnotation);
+            );
+            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
         }
 
         Parameter[] parameters = new Parameter[]{new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
@@ -458,12 +461,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 setMetaClassCode = new BytecodeSequence(list);
             }
 
-            addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
                     "setMetaClass",
                     ACC_PUBLIC, ClassHelper.VOID_TYPE,
                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
                     setMetaClassCode
-            ).addAnnotation(generatedAnnotation);
+            );
+            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
@@ -473,7 +477,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             blockScope.putReferencedLocalVariable(vMethods);
             blockScope.putReferencedLocalVariable(vArguments);
 
-            addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
                     "invokeMethod",
                     ACC_PUBLIC,
                     ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
@@ -489,11 +493,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            ).addAnnotation(generatedAnnotation);
+            );
+            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-            addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
                     "getProperty",
                     ACC_PUBLIC,
                     ClassHelper.OBJECT_TYPE,
@@ -509,11 +514,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(ARETURN);
                         }
                     })
-            ).addAnnotation(generatedAnnotation);
+            );
+            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
         }
 
         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-            addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
                     "setProperty",
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
@@ -530,7 +536,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitInsn(RETURN);
                         }
                     })
-            ).addAnnotation(generatedAnnotation);
+            );
+            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
         }
     }
 
