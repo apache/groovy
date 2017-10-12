@@ -46,18 +46,16 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.cli.Option.builder;
 
 /**
  * A Command line to execute groovy.
- *
- * @author Jeremy Rayner
- * @author Yuri Schimke
- * @author Roshan Dawrani
  */
 public class GroovyMain {
 
@@ -178,47 +176,28 @@ public class GroovyMain {
         return new Options()
                 .addOption(builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build())
                 .addOption(builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build())
-                .addOption(builder("D").longOpt("define").desc("define a system property").hasArg().argName("name=value").build())
+                .addOption(builder("D").longOpt("define").desc("Define a system property").numberOfArgs(2).valueSeparator().argName("name=value").build())
                 .addOption(
                         builder().longOpt("disableopt")
-                                .desc("disables one or all optimization elements. " +
+                                .desc("Disables one or all optimization elements; " +
                                         "optlist can be a comma separated list with the elements: " +
                                         "all (disables all optimizations), " +
                                         "int (disable any int based optimizations)")
                                 .hasArg().argName("optlist").build())
-                .addOption(builder("h").hasArg(false).desc("usage information").longOpt("help").build())
-                .addOption(builder("d").hasArg(false).desc("debug mode will print out full stack traces").longOpt("debug").build())
-                .addOption(builder("v").hasArg(false).desc("display the Groovy and JVM versions").longOpt("version").build())
-                .addOption(builder("c").argName("charset").hasArg().desc("specify the encoding of the files").longOpt("encoding").build())
-                .addOption(builder("e").argName("script").hasArg().desc("specify a command line script").build())
-                .addOption(builder("i").argName("extension").optionalArg(true).desc("modify files in place; create backup if extension is given (e.g. \'.bak\')").build())
-                .addOption(builder("n").hasArg(false).desc("process files line by line using implicit 'line' variable").build())
-                .addOption(builder("p").hasArg(false).desc("process files line by line and print result (see also -n)").build())
+                .addOption(builder("h").hasArg(false).desc("Usage information").longOpt("help").build())
+                .addOption(builder("d").hasArg(false).desc("Debug mode will print out full stack traces").longOpt("debug").build())
+                .addOption(builder("v").hasArg(false).desc("Display the Groovy and JVM versions").longOpt("version").build())
+                .addOption(builder("c").argName("charset").hasArg().desc("Specify the encoding of the files").longOpt("encoding").build())
+                .addOption(builder("e").argName("script").hasArg().desc("Specify a command line script").build())
+                .addOption(builder("i").argName("extension").optionalArg(true).desc("Modify files in place; create backup if extension is given (e.g. \'.bak\')").build())
+                .addOption(builder("n").hasArg(false).desc("Process files line by line using implicit 'line' variable").build())
+                .addOption(builder("p").hasArg(false).desc("Process files line by line and print result (see also -n)").build())
                 .addOption(builder("pa").hasArg(false).desc("Generate metadata for reflection on method parameter names (jdk8+ only)").longOpt("parameters").build())
-                .addOption(builder("l").argName("port").optionalArg(true).desc("listen on a port and process inbound lines (default: 1960)").build())
-                .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
-                .addOption(builder().longOpt("indy").desc("enables compilation using invokedynamic").build())
+                .addOption(builder("l").argName("port").optionalArg(true).desc("Listen on a port and process inbound lines (default: 1960)").build())
+                .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("Split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
+                .addOption(builder().longOpt("indy").desc("Enables compilation using invokedynamic").build())
                 .addOption(builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build())
                 .addOption(builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
-    }
-
-    private static void setSystemPropertyFrom(final String nameValue) {
-        if(nameValue==null) throw new IllegalArgumentException("argument should not be null");
-
-        String name, value;
-        int i = nameValue.indexOf("=");
-
-        if (i == -1) {
-            name = nameValue;
-            value = Boolean.TRUE.toString();
-        }
-        else {
-            name = nameValue.substring(0, i);
-            value = nameValue.substring(i + 1, nameValue.length());
-        }
-        name = name.trim();
-
-        System.setProperty(name, value);
     }
 
     /**
@@ -231,10 +210,11 @@ public class GroovyMain {
         List args = line.getArgList();
         
         if (line.hasOption('D')) {
-            String[] values = line.getOptionValues('D');
-
-            for (int i=0; i<values.length; i++) {
-                setSystemPropertyFrom(values[i]);
+            Properties optionProperties = line.getOptionProperties("D");
+            Enumeration<String> propertyNames = (Enumeration<String>) optionProperties.propertyNames();
+            while (propertyNames.hasMoreElements()) {
+                String nextName = propertyNames.nextElement();
+                System.setProperty(nextName, optionProperties.getProperty(nextName));
             }
         }
 

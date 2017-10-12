@@ -262,7 +262,7 @@ import org.apache.ivy.util.Message
 // command line parsing
 @Field Options options = new Options();
 
-options.addOption(Option.builder("D").longOpt("define").desc("define a system property").hasArg(true).argName("name=value").build());
+options.addOption(Option.builder("D").longOpt("define").desc("define a system property").numberOfArgs(2).valueSeparator().argName("name=value").build());
 options.addOption(Option.builder("r").longOpt("resolver").desc("define a grab resolver (for install)").hasArg(true).argName("url").build());
 options.addOption(Option.builder("h").hasArg(false).desc("usage information").longOpt("help").build());
 
@@ -292,10 +292,10 @@ if (cmd.hasOption('v')) {
     return
 }
 
-
-cmd.getOptionValues('D')?.each {String prop ->
-    def (k, v) = prop.split ('=', 2) as List // array multiple assignment quirk
-    System.setProperty(k, v ?: "")
+if (options.hasOption('D')) {
+    options.getOptionProperties('D')?.each { k, v ->
+        System.setProperty(k, v)
+    }
 }
 
 String[] arg = cmd.args

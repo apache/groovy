@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools;
 
+import org.apache.groovy.util.SystemUtil;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +74,6 @@ import java.util.regex.Pattern;
  * not exist, an empty string will be used. If the path or file after the load
  * command does not exist, the path will be ignored.
  *
- * @author Jochen Theodorou
  * @see RootLoader
  */
 public class LoaderConfiguration {
@@ -126,13 +127,8 @@ public class LoaderConfiguration {
                 main = line.substring(MAIN_PREFIX.length()).trim();
             } else if (line.startsWith(PROP_PREFIX)) {
                 String params = line.substring(PROP_PREFIX.length()).trim();
-                int index = params.indexOf('=');
-                if (index == -1) {
-                    throw new IOException("unexpected property format - expecting name=value" + lineNumber + " : " + line);
-                }
-                String propName = params.substring(0, index);
-                String propValue = assignProperties(params.substring(index + 1));
-                System.setProperty(propName, propValue);
+                String key = SystemUtil.setSystemPropertyFrom(params);
+                System.setProperty(key, assignProperties(System.getProperty(key)));
             } else {
                 throw new IOException("unexpected line in " + lineNumber + " : " + line);
             }
