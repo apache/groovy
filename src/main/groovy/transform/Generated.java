@@ -25,10 +25,6 @@ import java.lang.annotation.Target;
 
 /**
  * The Generated annotation is used to mark members that have been generated.
- *
- * @author Andres Almiray
- * @author Jochen Theodorou
- * @author Mark Hoffmann
  */
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
