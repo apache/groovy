@@ -67,15 +67,6 @@ import javax.swing.event.DocumentListener
  * Groovy Swing console.
  *
  * Allows user to interactively enter and execute Groovy.
- *
- * @author Danno Ferrin
- * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
- * @author Alan Green more features: history, System.out capture, bind result to _
- * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
- * @author Hamlet D'Arcy, AST browser
- * @author Roshan Dawrani
- * @author Paul King
- * @author Andre Steingress
  */
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
@@ -212,6 +203,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             V(longOpt: 'version', messages['cli.option.version.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
             i(longOpt: 'indy', messages['cli.option.indy.description'])
+            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', messages['cli.option.define.description'])
         }
         OptionAccessor options = cli.parse(args)
 
@@ -230,6 +222,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             System.exit(0)
         }
 
+        if (options.hasOption('D')) {
+            options.getOptionProperties('D')?.each { k, v ->
+                System.setProperty(k, v)
+            }
+        }
+
         // full stack trace should not be logged to the output window - GROOVY-4663
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = false
 
@@ -246,8 +244,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
-        if (args.length > 0 && !args[-1].toString().startsWith("-")) {
-            console.loadScriptFile(args[-1] as File)
+        def remaining = options.arguments()
+        if (remaining && !remaining[-1].startsWith("-")) {
+            console.loadScriptFile(remaining[-1] as File)
         }
 
     }
