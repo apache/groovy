@@ -203,7 +203,6 @@ public class GroovyTestCase extends TestCase {
         GroovyAssert.assertScript(script);
     }
 
-    // TODO should this be synchronised?
     protected String getTestClassName() {
         return TEST_SCRIPT_NAME_PREFIX + getMethodName() + (scriptFileNameCounter.getAndIncrement()) + ".groovy";
     }
