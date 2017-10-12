@@ -47,17 +47,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
  * A Command line to execute groovy.
- *
- * @author Jeremy Rayner
- * @author Yuri Schimke
- * @author Roshan Dawrani
- * @version $Revision$
  */
 public class GroovyMain {
 
@@ -177,107 +174,46 @@ public class GroovyMain {
     @SuppressWarnings("static-access")
     private static synchronized Options buildOptions() {
         Options options = new Options();
-        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
-        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
-
         options.addOption(
-            OptionBuilder.withLongOpt("define").
-            withDescription("define a system property").
-            hasArg(true).
-            withArgName("name=value").
-            create('D'));
+            OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
+        options.addOption(
+            OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
+        options.addOption(
+            OptionBuilder.withLongOpt("define").withDescription("define a system property").hasArgs(2).withValueSeparator().withArgName("name=value").create('D'));
         options.addOption(
             OptionBuilder.withLongOpt("disableopt").
             withDescription("disables one or all optimization elements. " +
                             "optlist can be a comma separated list with the elements: " +
                             "all (disables all optimizations), " +
                             "int (disable any int based optimizations)").
-            hasArg(true).
-            withArgName("optlist").
-            create());
+            hasArg(true).withArgName("optlist").create());
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("usage information")
-            .withLongOpt("help")
-            .create('h'));
+            OptionBuilder.hasArg(false).withDescription("usage information").withLongOpt("help").create('h'));
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("debug mode will print out full stack traces")
-            .withLongOpt("debug")
-            .create('d'));
+            OptionBuilder.hasArg(false).withDescription("debug mode will print out full stack traces").withLongOpt("debug").create('d'));
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("display the Groovy and JVM versions")
-            .withLongOpt("version")
-            .create('v'));
+            OptionBuilder.hasArg(false).withDescription("display the Groovy and JVM versions").withLongOpt("version").create('v'));
         options.addOption(
-            OptionBuilder.withArgName("charset")
-            .hasArg()
-            .withDescription("specify the encoding of the files")
-            .withLongOpt("encoding")
-            .create('c'));
+            OptionBuilder.withArgName("charset").hasArg().withDescription("specify the encoding of the files").withLongOpt("encoding").create('c'));
         options.addOption(
-            OptionBuilder.withArgName("script")
-            .hasArg()
-            .withDescription("specify a command line script")
-            .create('e'));
+            OptionBuilder.withArgName("script").hasArg().withDescription("specify a command line script").create('e'));
         options.addOption(
-            OptionBuilder.withArgName("extension")
-            .hasOptionalArg()
-            .withDescription("modify files in place; create backup if extension is given (e.g. \'.bak\')")
-            .create('i'));
+            OptionBuilder.withArgName("extension").hasOptionalArg().withDescription("modify files in place; create backup if extension is given (e.g. \'.bak\')").create('i'));
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line using implicit 'line' variable")
-            .create('n'));
+            OptionBuilder.hasArg(false).withDescription("process files line by line using implicit 'line' variable").create('n'));
         options.addOption(
-            OptionBuilder.hasArg(false)
-            .withDescription("process files line by line and print result (see also -n)")
-            .create('p'));
+            OptionBuilder.hasArg(false).withDescription("process files line by line and print result (see also -n)").create('p'));
         options.addOption(
-            OptionBuilder.withArgName("port")
-            .hasOptionalArg()
-            .withDescription("listen on a port and process inbound lines (default: 1960)")
-            .create('l'));
+            OptionBuilder.withArgName("port").hasOptionalArg().withDescription("listen on a port and process inbound lines (default: 1960)").create('l'));
         options.addOption(
-            OptionBuilder.withArgName("splitPattern")
-            .hasOptionalArg()
-            .withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable")
-            .withLongOpt("autosplit")
-            .create('a'));
+            OptionBuilder.withArgName("splitPattern").hasOptionalArg().withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable").withLongOpt("autosplit").create('a'));
         options.addOption(
-            OptionBuilder.withLongOpt("indy")
-            .withDescription("enables compilation using invokedynamic")
-            .create());
+            OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
         options.addOption(
-            OptionBuilder.withLongOpt("configscript")
-            .hasArg().withDescription("A script for tweaking the configuration options")
-            .create());
+            OptionBuilder.withLongOpt("configscript").hasArg().withDescription("A script for tweaking the configuration options").create());
         options.addOption(
-                OptionBuilder.withLongOpt("basescript")
-                .hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)")
-                .create('b'));
+            OptionBuilder.withLongOpt("basescript").hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)").create('b'));
         return options;
-
-    }
-
-    private static void setSystemPropertyFrom(final String nameValue) {
-        if(nameValue==null) throw new IllegalArgumentException("argument should not be null");
-
-        String name, value;
-        int i = nameValue.indexOf("=");
-
-        if (i == -1) {
-            name = nameValue;
-            value = Boolean.TRUE.toString();
-        }
-        else {
-            name = nameValue.substring(0, i);
-            value = nameValue.substring(i + 1, nameValue.length());
-        }
-        name = name.trim();
-
-        System.setProperty(name, value);
     }
 
     /**
@@ -290,10 +226,11 @@ public class GroovyMain {
         List args = line.getArgList();
         
         if (line.hasOption('D')) {
-            String[] values = line.getOptionValues('D');
-
-            for (int i=0; i<values.length; i++) {
-                setSystemPropertyFrom(values[i]);
+            Properties optionProperties = line.getOptionProperties("D");
+            Enumeration<String> propertyNames = (Enumeration<String>) optionProperties.propertyNames();
+            while (propertyNames.hasMoreElements()) {
+                String nextName = propertyNames.nextElement();
+                System.setProperty(nextName, optionProperties.getProperty(nextName));
             }
         }
 

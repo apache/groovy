@@ -276,7 +276,8 @@ import org.apache.commons.cli.*
 options.addOption(
     OptionBuilder.withLongOpt("define")
         .withDescription("define a system property")
-        .hasArg(true)
+        .hasArgs(2)
+	.withValueSeparator()
         .withArgName("name=value")
         .create('D')
 );
@@ -348,10 +349,10 @@ if (cmd.hasOption('v')) {
     return
 }
 
-
-cmd.getOptionValues('D')?.each {String prop ->
-    def (k, v) = prop.split ('=', 2) as List // array multiple assignment quirk
-    System.setProperty(k, v ?: "")
+if (options.hasOption('D')) {
+    options.getOptionProperties('D')?.each { k, v ->
+        System.setProperty(k, v)
+    }
 }
 
 String[] arg = cmd.args
