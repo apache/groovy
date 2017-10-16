@@ -27,8 +27,6 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Support class for static type checking test cases.
- *
- * @author Cedric Champeau
  */
 abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
     protected CompilerConfiguration config
@@ -86,8 +84,11 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
             if (success && mce.errorCollector.errorCount!=messages.length) {
                 throw new AssertionError("Expected error messages were found, but compiler threw additional errors : " + mce.toString())
             }
+            if (!success) {
+                throw new AssertionError("Not all expected error messages were found, compiler threw these errors : " + mce.toString())
+            }
         }
-        if (!success) throw new AssertionError("Test should have failed with messages [$messages]")
+        if (!success) throw new AssertionError("Test passed but should have failed with messages [$messages]")
     }
 
 }
