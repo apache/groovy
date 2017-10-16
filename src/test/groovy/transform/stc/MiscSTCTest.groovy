@@ -351,4 +351,42 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             assert ifThenElseLocalVar2(new FooBase()) == null
         '''
     }
+
+    // GROOVY-8325
+    void testNumericCoercion() {
+        assertScript '''
+            class Foo {
+                Long val
+                static Foo newInstance(Long val) {
+                    return new Foo(val: val)
+                }
+            }
+            class FooFactory {
+                static Foo create() {
+                    Foo.newInstance(123)
+                }
+            }
+            assert FooFactory.create().val == 123
+        '''
+    }
+
+    void testNumericCoercionWithCustomNumber() {
+        shouldFailWithMessages '''
+            class CustomNumber extends Number {
+                @Delegate Long delegate = 42L
+            }
+            class Foo {
+                Integer val
+                static Foo newInstance2(Integer val) {
+                    return new Foo(val: val)
+                }
+            }
+            class FooFactory {
+                static Foo create() {
+                    Foo.newInstance2(new CustomNumber())
+                }
+            }
+        ''', 'Cannot find matching method Foo#newInstance2(CustomNumber)'
+    }
+
 }
