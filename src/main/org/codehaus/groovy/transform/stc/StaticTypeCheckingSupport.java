@@ -346,32 +346,8 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
         if (isPrimitiveType(type)) type = getWrapper(type);
-        if (Double_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE);
-        }
-        if (Float_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE) && Double_TYPE!=type.redirect();
-        }
-        if (Long_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE)
-                    && Double_TYPE!=type.redirect()
-                    && Float_TYPE!=type.redirect();
-        }
-        if (Integer_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE)
-                    && Double_TYPE!=type.redirect()
-                    && Float_TYPE!=type.redirect()
-                    && Long_TYPE!=type.redirect();
-        }
-        if (Short_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE)
-                    && Double_TYPE!=type.redirect()
-                    && Float_TYPE!=type.redirect()
-                    && Long_TYPE!=type.redirect()
-                    && Integer_TYPE!=type.redirect();
-        }
-        if (Byte_TYPE==toBeAssignedTo) {
-            return type.redirect() == Byte_TYPE;
+        if (NUMBER_TYPES.containsKey(type.redirect()) && NUMBER_TYPES.containsKey(toBeAssignedTo.redirect())) {
+            return NUMBER_TYPES.get(type.redirect()) <= NUMBER_TYPES.get(toBeAssignedTo.redirect());
         }
         if (type.isArray() && toBeAssignedTo.isArray()) {
             return isAssignableTo(type.getComponentType(),toBeAssignedTo.getComponentType());
