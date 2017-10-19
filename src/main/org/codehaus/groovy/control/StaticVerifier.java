@@ -39,7 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.tools.ClassNodeUtils.isInnerClass;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 
 /**
  * Verifier to check non-static access in static contexts
