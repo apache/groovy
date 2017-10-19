@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.groovydoc.Groovydoc;
 import groovy.lang.groovydoc.GroovydocHolder;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -28,7 +29,6 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
@@ -450,15 +450,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     }
 
     public Map<String, MethodNode> getDeclaredMethodsMap() {
-        // Start off with the methods from the superclass.
-        ClassNode parent = getSuperClass();
-        Map<String, MethodNode> result;
-        if (parent != null) {
-            result = parent.getDeclaredMethodsMap();
-        } else {
-            result = new HashMap<String, MethodNode>();
-        }
-        ClassNodeUtils.addInterfaceMethods(this, result);
+        Map<String, MethodNode> result = ClassNodeUtils.getDeclaredMethodsFromSuper(this);
+        ClassNodeUtils.addDeclaredMethodsFromInterfaces(this, result);
 
         // And add in the methods implemented in this class.
         for (MethodNode method : getMethods()) {
