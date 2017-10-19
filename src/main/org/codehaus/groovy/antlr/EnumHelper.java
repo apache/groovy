@@ -39,6 +39,7 @@ public class EnumHelper {
             enumClass = new ClassNode(name,modifiers,null,interfaces,MixinNode.EMPTY_ARRAY);
         } else {
             name = outerClass.getName() + "$" + name;
+            modifiers |= Opcodes.ACC_STATIC;
             enumClass = new InnerClassNode(outerClass,name,modifiers,null,interfaces,MixinNode.EMPTY_ARRAY);
         }
         
