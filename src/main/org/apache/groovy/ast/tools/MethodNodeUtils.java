@@ -34,7 +34,6 @@ public class MethodNodeUtils {
      */
     public static String methodDescriptorWithoutReturnType(MethodNode mNode) {
         StringBuilder sb = new StringBuilder();
-        mNode.getTypeDescriptor();
         sb.append(mNode.getName()).append(':');
         for (Parameter p : mNode.getParameters()) {
             sb.append(ClassNodeUtils.formatTypeName(p.getType())).append(',');
