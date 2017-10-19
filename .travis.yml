@@ -21,12 +21,12 @@ matrix:
   include:
     - jdk: openjdk7
     - jdk: oraclejdk8
-      addons:
-        apt:
-          packages:
-            - oracle-java8-installer
+#      addons:
+#        apt:
+#          packages:
+#            - oracle-java8-installer
 
-dist: precise
+dist: trusty
 
 install: true
 
