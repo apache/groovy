@@ -19,7 +19,7 @@ sudo: required
 
 matrix:
   include:
-    - jdk: openjdk7
+    - jdk: oraclejdk7
     - jdk: oraclejdk8
 #      addons:
 #        apt:
