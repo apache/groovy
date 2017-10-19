@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.transform.Generated;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -39,7 +40,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.PropertyNodeUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -1201,9 +1201,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Map genericsSpec = new HashMap();
 
         // unimplemented abstract methods from interfaces
-        Map<String, MethodNode> abstractMethods = ClassNodeUtils.getDeclaredMethodMapsFromInterfaces(classNode);
+        Map<String, MethodNode> abstractMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(classNode);
         Map<String, MethodNode> allInterfaceMethods = new HashMap<String, MethodNode>(abstractMethods);
-        ClassNodeUtils.addDeclaredMethodMapsFromSuperInterfaces(classNode, allInterfaceMethods);
+        ClassNodeUtils.addDeclaredMethodsFromAllInterfaces(classNode, allInterfaceMethods);
 
         List<MethodNode> declaredMethods = new ArrayList<MethodNode>(classNode.getMethods());
         // remove all static, private and package private methods
