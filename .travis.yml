@@ -20,10 +20,12 @@ sudo: required
 matrix:
   include:
     - jdk: oraclejdk8
-      addons:
-        apt:
-          packages:
-            - oracle-java8-installer
+#      addons:
+#        apt:
+#          packages:
+#            - oracle-java8-installer
+
+dist: trusty
 
 install: true
 
@@ -33,6 +35,7 @@ script: travis_wait 60 ./gradlew --no-daemon -PuseAntlr4=true test
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+
 cache:
   directories:
     - $HOME/.gradle/caches/
