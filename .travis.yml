@@ -43,7 +43,15 @@ before_install:
 
 install: true
 
-before_script: unset _JAVA_OPTIONS
+before_script:
+  - |
+    if [ $TRAVIS_JDK_VERSION == "openjdk6" ]; then
+      export _JAVA_OPTIONS=-Xms1024m\ -Xmx3072m
+    elif [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
+      export _JAVA_OPTIONS=-Xms1024m\ -Xmx3072m
+    else
+      unset _JAVA_OPTIONS
+    fi
 
 script: travis_wait 60 ./gradlew --no-daemon test
 
