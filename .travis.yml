@@ -36,7 +36,13 @@ before_install:
 
 install: true
 
-before_script: unset _JAVA_OPTIONS
+before_script:
+  - |
+    if [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
+      _JAVA_OPTIONS=-XX:-UseGCOverheadLimit
+    else
+      unset _JAVA_OPTIONS
+    fi
 
 script: travis_wait 60 ./gradlew --no-daemon -PuseAntlr4=true test
 
