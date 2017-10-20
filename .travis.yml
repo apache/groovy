@@ -39,7 +39,7 @@ install: true
 before_script:
   - |
     if [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
-      _JAVA_OPTIONS=-Xms1024m -Xmx3072m
+      _JAVA_OPTIONS=-Xms1024m\ -Xmx3072m
     else
       unset _JAVA_OPTIONS
     fi
