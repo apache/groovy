@@ -19,14 +19,20 @@ sudo: required
 
 matrix:
   include:
-    - jdk: oraclejdk7
+    - jdk: openjdk7
     - jdk: oraclejdk8
-#      addons:
-#        apt:
-#          packages:
-#            - oracle-java8-installer
 
 dist: trusty
+
+before_install:
+  - |
+    if [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
+      BCPROV_FILENAME=bcprov-ext-jdk15on-158.jar
+      wget "https://bouncycastle.org/download/${BCPROV_FILENAME}"
+      sudo mv $BCPROV_FILENAME /usr/lib/jvm/java-7-openjdk-amd64/jre/lib/ext
+      sudo perl -pi.bak -e 's/^(security\.provider\.)([0-9]+)/$1.($2+1)/ge' /etc/java-7-openjdk/security/java.security
+      echo "security.provider.1=org.bouncycastle.jce.provider.BouncyCastleProvider" | sudo tee -a /etc/java-7-openjdk/security/java.security
+    fi
 
 install: true
 
@@ -34,8 +40,11 @@ before_script: unset _JAVA_OPTIONS
 
 script: travis_wait 60 ./gradlew --no-daemon -PuseAntlr4=true test
 
+# As recommended in:
+# https://docs.travis-ci.com/user/languages/java/#Caching
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 cache:
   directories:
