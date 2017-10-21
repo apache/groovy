@@ -34,11 +34,7 @@ import java.util.zip.ZipFile
 
 /**
  * Utilities for test
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/09/21
  */
-
 @Log
 class TestUtils {
     public static final String DEFAULT_RESOURCES_PATH = 'subprojects/parser-antlr4/src/test/resources';
