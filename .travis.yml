@@ -22,8 +22,12 @@ matrix:
     - jdk: openjdk6
     - jdk: openjdk7
     - jdk: oraclejdk8
+addons:
+  apt:
+    packages:
+      - openjdk-6-jdk
 
-dist: precise
+dist: trusty
 
 before_install:
   - |
@@ -45,15 +49,13 @@ install: true
 
 before_script:
   - |
-    if [ $TRAVIS_JDK_VERSION == "openjdk6" ]; then
-      export _JAVA_OPTIONS=-Xms1024m\ -Xmx2048m
-    elif [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
+    if [ $TRAVIS_JDK_VERSION -eq "openjdk6" ] || [ $TRAVIS_JDK_VERSION -eq "openjdk6" ]; then
       export _JAVA_OPTIONS=-Xms1024m\ -Xmx2048m
     else
       unset _JAVA_OPTIONS
     fi
 
-script: travis_wait 60 ./gradlew --no-daemon test
+script: travis_wait 60 ./gradlew test
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
