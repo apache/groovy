@@ -84,19 +84,19 @@ public class CachedConstructor extends ParameterTypes {
         } catch (InvocationTargetException e) {
             throw e.getCause() instanceof RuntimeException ? (RuntimeException)e.getCause() : new InvokerInvocationException(e);
         } catch (IllegalArgumentException e) {
-            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, false);
+            throw createException("failed to invoke constructor: ", constr, argumentArray, e, false);
         } catch (IllegalAccessException e) {
-            throw createExceptionText("could not access constructor: ", constr, argumentArray, e, false);
+            throw createException("could not access constructor: ", constr, argumentArray, e, false);
         } catch (Exception e) {
             if (e instanceof RuntimeException)
                 throw (RuntimeException)e;
             else
-                throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
+                throw createException("failed to invoke constructor: ", constr, argumentArray, e, true);
         }
     }
 
-    private static GroovyRuntimeException createExceptionText(String init, Constructor constructor, Object[] argumentArray, Throwable e, boolean setReason) {
-        throw new GroovyRuntimeException(
+    private static GroovyRuntimeException createException(String init, Constructor constructor, Object[] argumentArray, Throwable e, boolean setReason) {
+        return new GroovyRuntimeException(
                 init
                         + constructor
                         + " with arguments: "

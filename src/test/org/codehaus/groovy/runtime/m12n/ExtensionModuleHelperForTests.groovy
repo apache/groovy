@@ -55,6 +55,10 @@ public class ExtensionModuleHelperForTests {
         }
 
         def ant = new AntBuilder()
+        def allowed = [
+                'Picked up JAVA_TOOL_OPTIONS: .*',
+                'Picked up _JAVA_OPTIONS: .*'
+        ]
         try {
             ant.with {
                 taskdef(name:'groovyc', classname:"org.codehaus.groovy.ant.Groovyc")
@@ -80,7 +84,7 @@ public class ExtensionModuleHelperForTests {
             String out = ant.project.properties.out
             String err = ant.project.properties.err
             baseDir.deleteDir()
-            if (err && err.trim() != 'Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8') {
+            if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
             } else if ( out.contains('FAILURES') || ! out.contains("OK")) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
