@@ -15,26 +15,29 @@
 
 language: groovy
 
-sudo: required
+sudo: false
 
 matrix:
   include:
     - jdk: oraclejdk8
-#      addons:
-#        apt:
-#          packages:
-#            - oracle-java8-installer
+    - jdk: oraclejdk9
 
 dist: trusty
 
 install: true
 
-before_script: unset _JAVA_OPTIONS
+# adjust gradle.properties
+before_script:
+  - unset _JAVA_OPTIONS
+  - sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xmx1G/' gradle.properties
 
-script: travis_wait 60 ./gradlew --no-daemon test
+script: travis_wait 60 ./gradlew test
 
+# As recommended in:
+# https://docs.travis-ci.com/user/languages/java/#Caching
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 cache:
   directories:
