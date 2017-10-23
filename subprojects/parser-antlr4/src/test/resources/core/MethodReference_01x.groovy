@@ -17,37 +17,6 @@
  *  under the License.
  */
 
-def robot = new Robot()
-
-class BasePerson {
-    static String getText(Person p) {
-        return p.name
-    }
-}
-
-class Person extends BasePerson {
-    private String name
-
-    Person(String name) {
-        this.name = name
-    }
-
-    String getName() {
-        return this.name
-    }
-
-}
-
-class Robot {
-    String greet(Person p) {
-        return "Hi, ${p.name}"
-    }
-
-    static char firstCharOfName(Person p) {
-        return p.getName().charAt(0)
-    }
-}
-
 def mr = String::toUpperCase
 assert 'ABC' == mr('abc')
 assert 'ABC' == String::toUpperCase('abc')

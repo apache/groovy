@@ -20,13 +20,43 @@
 // additional tests that use jdk8 api calls
 
 import java.util.stream.Collectors
+import java.util.stream.Stream
+
+def robot = new Robot()
+
+class BasePerson {
+    static String getText(Person p) {
+        return p.name
+    }
+}
+
+class Person extends BasePerson {
+    private String name
+
+    Person(String name) {
+        this.name = name
+    }
+
+    String getName() {
+        return this.name
+    }
+}
+
+class Robot {
+    String greet(Person p) {
+        return "Hi, ${p.name}"
+    }
+
+    static char firstCharOfName(Person p) {
+        return p.getName().charAt(0)
+    }
+}
 
 // class::staticMethod
 assert ['1', '2', '3'] == [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
 
 // class::instanceMethod
 assert ['A', 'B', 'C'] == ['a', 'b', 'c'].stream().map(String::toUpperCase).collect(Collectors.toList())
-
 
 // instance::instanceMethod
 assert ['Hi, Jochen', 'Hi, Paul', 'Hi, Daniel'] == [new Person('Jochen'), new Person('Paul'), new Person('Daniel')].stream().map(robot::greet).collect(Collectors.toList())
@@ -42,8 +72,7 @@ assert ['J', 'P', 'D'] == [new Person('Jochen'), new Person('Paul'), new Person(
 assert ['Jochen', 'Paul', 'Daniel'] == [new Person('Jochen'), new Person('Paul'), new Person('Daniel')].stream().map(Person::getName).collect(Collectors.toList())
 
 // class::instanceMethod
-assert 6 == java.util.stream.Stream.of(1, 2, 3).reduce(0, BigDecimal::add)
-
+assert 6 == Stream.of(1, 2, 3).reduce(0, BigDecimal::add)
 
 assert [new String[1], new String[2], new String[3]] == [1, 2, 3].stream().map(String[]::new).collect(Collectors.toList())
 assert [1, 2, 3] as String[] == [1, 2, 3].stream().map(String::valueOf).toArray(String[]::new)
