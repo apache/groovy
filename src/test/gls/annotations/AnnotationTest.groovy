@@ -712,7 +712,11 @@ class AnnotationTest extends CompilableTestSupport {
             import java.lang.annotation.*
 
             class MyClass {
-                private static final expected = '@MyAnnotationArray(value=[@MyAnnotation(value=val1), @MyAnnotation(value=val2)])'
+                // TODO confirm the JDK9 behavior is what we expect
+                private static final List<String> expected = [
+                    '@MyAnnotationArray(value=[@MyAnnotation(value=val1), @MyAnnotation(value=val2)])',    // JDK5-8
+                    '@MyAnnotationArray(value={@MyAnnotation(value="val1"), @MyAnnotation(value="val2")})' // JDK9
+                ]
 
                 // control
                 @MyAnnotationArray([@MyAnnotation("val1"), @MyAnnotation("val2")])
@@ -727,8 +731,8 @@ class AnnotationTest extends CompilableTestSupport {
                     MyClass myc = new MyClass()
                     assert 'method1' == myc.method1()
                     assert 'method2' == myc.method2()
-                    assert checkAnnos(myc, "method1") == expected
-                    assert checkAnnos(myc, "method2") == expected
+                    assert expected.contains(checkAnnos(myc, "method1"))
+                    assert expected.contains(checkAnnos(myc, "method2"))
                 }
 
                 private static String checkAnnos(MyClass myc, String name) {
