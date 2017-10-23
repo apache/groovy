@@ -159,7 +159,7 @@ configurations {
 
 ext {
     antVersion = '1.9.9'
-    asmVersion = '6.0_BETA'
+    asmVersion = '6.0'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
@@ -222,6 +222,9 @@ dependencies {
     testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    if (JavaVersion.current().isJava9Compatible()) {
+        testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
+    }
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
@@ -231,7 +234,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:$asmVersion"
+    tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     examplesCompile project(':groovy-test')

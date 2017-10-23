@@ -19,8 +19,9 @@ sudo: required
 
 matrix:
   include:
-    - jdk: openjdk7
+    - jdk: oraclejdk9
     - jdk: oraclejdk8
+    - jdk: openjdk7
 
 dist: trusty
 
@@ -36,6 +37,7 @@ before_install:
 
 install: true
 
+# adjust gradle.properties and _JAVA_OPTIONS if needed
 before_script:
   - |
     if [ $TRAVIS_JDK_VERSION == "openjdk7" ]; then
@@ -43,8 +45,11 @@ before_script:
     else
       unset _JAVA_OPTIONS
     fi
+    if [ $TRAVIS_JDK_VERSION == "oraclejdk9" ]; then
+      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xmx1G/' gradle.properties
+    fi
 
-script: travis_wait 60 ./gradlew --no-daemon -PuseAntlr4=true test
+script: travis_wait 60 ./gradlew -PuseAntlr4=true test
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
