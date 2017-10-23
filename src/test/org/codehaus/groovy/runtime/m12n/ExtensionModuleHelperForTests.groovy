@@ -80,7 +80,7 @@ public class ExtensionModuleHelperForTests {
             baseDir.deleteDir()
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
-            } else if ( out.contains('FAILURES') || ! out.contains("OK")) {
+            } else if (out && out.contains('FAILURES') || ! out.contains("OK")) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }
