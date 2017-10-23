@@ -34,10 +34,11 @@ import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
  * Some basic test cases for the new parser
  */
 class GroovyParserTest extends GroovyTestCase {
+    private boolean jdk8orGreater
 
-    void setUp() {}
-
-    void tearDown() {}
+    void setUp() {
+        jdk8orGreater = System.getProperty('java.specification.version') >= '1.8'
+    }
 
     void "test groovy core - Comments"() {
         doTest('core/Comments_01.groovy', [ExpressionStatement])
@@ -141,18 +142,16 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - Lambda"() {
-        if (Runtime.class.getPackage().getImplementationVersion().startsWith("1.7.")) {
-            doRunAndTest('core/Lambda_01x_1_7.groovy')
-        } else {
-            doRunAndTest('core/Lambda_01x.groovy')
+        doRunAndTest('core/Lambda_01x.groovy ')
+        if (jdk8orGreater) {
+            doRunAndTest('core/Lambda_01x_1_8.groovy')
         }
     }
 
     void "test groovy core - MethodReference"() {
-        if (Runtime.class.getPackage().getImplementationVersion().startsWith("1.7.")) {
-            doRunAndTest('core/MethodReference_01x_1_7.groovy')
-        } else {
-            doRunAndTest('core/MethodReference_01x.groovy')
+        doRunAndTest('core/MethodReference_01x.groovy ')
+        if (jdk8orGreater) {
+            doRunAndTest('core/MethodReference_01x_1_8.groovy')
         }
     }
 
@@ -288,7 +287,6 @@ class GroovyParserTest extends GroovyTestCase {
     void "test groovy core - LocalVariableDeclaration"() {
         doTest('core/LocalVariableDeclaration_01.groovy', [Token]) // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
         doRunAndTest('core/LocalVariableDeclaration_02x.groovy')
-
     }
 
     void "test groovy core - MethodDeclaration"() {
@@ -388,7 +386,7 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('bugs/BUG-GROOVY-8161.groovy')
         doRunAndTest('bugs/GROOVY-3898.groovy')
         doRunAndTest('bugs/BUG-GROOVY-8311.groovy')
-        if (System.getProperty('java.specification.version') < '1.8') return
+        if (!jdk8orGreater) return
         doRunAndTest('bugs/GROOVY-8228.groovy')
     }
 }
