@@ -20,8 +20,7 @@ sudo: false
 matrix:
   include:
     - jdk: oraclejdk9
-
-#    - jdk: oraclejdk8
+    - jdk: oraclejdk8
 
 dist: trusty
 
@@ -35,7 +34,7 @@ before_script:
       sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xmx1G/' gradle.properties
     fi
 
-script: travis_wait 60 ./gradlew -S --info clean generateGrammarSource
+script: travis_wait 60 ./gradlew test
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
