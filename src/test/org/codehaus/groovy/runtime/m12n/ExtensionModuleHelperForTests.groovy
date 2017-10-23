@@ -74,8 +74,7 @@ class ExtensionModuleHelperForTests {
             }
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
-            }
-            if (out && (out.contains('FAILURES') || !out.contains("OK"))) {
+            } else if (out && out.contains('FAILURES') || ! out.contains("OK")) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }
