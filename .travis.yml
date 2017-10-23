@@ -26,10 +26,13 @@ dist: trusty
 
 install: true
 
-# adjust gradle.properties
+# adjust gradle.properties if needed
 before_script:
-  - unset _JAVA_OPTIONS
-  - sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xmx1G/' gradle.properties
+  - |
+    unset _JAVA_OPTIONS
+    if [ $TRAVIS_JDK_VERSION == "oraclejdk9" ]; then
+      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xmx1G/' gradle.properties
+    fi
 
 script: travis_wait 60 ./gradlew test
 
