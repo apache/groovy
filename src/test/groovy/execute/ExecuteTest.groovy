@@ -74,7 +74,7 @@ class ExecuteTest extends GroovyTestCase {
                 "sleep(2000); println('Done'); System.exit(0)"]
         if (System.getProperty('java.specification.version') >= '9') {
             javaArgs.add(3, '--add-modules')
-            javaArgs.add(4, 'ALL-SYSTEM')
+            javaArgs.add(4, 'java.xml.bind')
         }
         String[] java = javaArgs.toArray()
         println "Executing this command for two cases:\n${java.join(' ')}"
@@ -126,7 +126,7 @@ class ExecuteTest extends GroovyTestCase {
                 "println(System.getenv('foo'))"]
         if (System.getProperty('java.specification.version') >= '9') {
             javaArgs.add(3, '--add-modules')
-            javaArgs.add(4, 'ALL-SYSTEM')
+            javaArgs.add(4, 'java.xml.bind')
         }
         String[] java = javaArgs.toArray()
         println "Executing this command:\n${java.join(' ')}"

@@ -62,6 +62,10 @@ class ExtensionModuleHelperForTests {
                             pathelement location: it
                         }
                     }
+                    if (jdk9) {
+                        jvmarg(value: '--add-modules')
+                        jvmarg(value: 'java.xml.bind')
+                    }
                 }
             }
         } finally {
@@ -74,7 +78,8 @@ class ExtensionModuleHelperForTests {
             }
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
-            } else if (out && out.contains('FAILURES') || ! out.contains("OK")) {
+            }
+            if (out && (out.contains('FAILURES') || !out.contains("OK"))) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }
