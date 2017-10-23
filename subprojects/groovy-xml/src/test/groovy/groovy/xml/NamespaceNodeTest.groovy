@@ -93,15 +93,15 @@ class NamespaceNodeTest extends TestXmlSupport {
             innerWithoutNewNamespace("bar")
         }
         
-        def expected = """<?xml version="1.0" encoding="UTF-8"?>\
+        def expected = pretty("""<?xml version="1.0" encoding="UTF-8"?>\
 <outer xmlns="http://foo/bar" id="3">
   <ns1:innerWithNewNamespace xmlns:ns1="http://foo/other" someAttr="someValue">
     <ns1:nested>foo</ns1:nested>
   </ns1:innerWithNewNamespace>
   <innerWithoutNewNamespace>bar</innerWithoutNewNamespace>
 </outer>
-""".replaceAll('[\r\n]','')
-        def actual = XmlUtil.serialize(result).replaceAll("[\r\n]", "")
+""")
+        def actual = pretty(XmlUtil.serialize(result))
         assert actual == expected
     }
 
@@ -111,13 +111,17 @@ class NamespaceNodeTest extends TestXmlSupport {
             inner(name: "foo")
             inner("bar")
         }
-        def expected = """<?xml version="1.0" encoding="UTF-8"?>\
+        def expected = pretty("""<?xml version="1.0" encoding="UTF-8"?>\
 <outer id="3">
   <inner name="foo"/>
   <inner>bar</inner>
 </outer>
-""".replaceAll('[\r\n]','')
-        def actual = XmlUtil.serialize(result).replaceAll("[\r\n]", "")
+""")
+        def actual = pretty(XmlUtil.serialize(result))
         assert actual == expected
+    }
+
+    private static String pretty(String s) {
+        s.normalize().replaceAll("[\n]", "").replaceAll('[ ]+',' ').replaceAll('> <','><')
     }
 }
