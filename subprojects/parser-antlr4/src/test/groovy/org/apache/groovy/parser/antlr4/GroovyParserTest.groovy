@@ -142,14 +142,14 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - Lambda"() {
-        doRunAndTest('core/Lambda_01x.groovy ')
+        doRunAndTest('core/Lambda_01x.groovy')
         if (jdk8orGreater) {
             doRunAndTest('core/Lambda_01x_1_8.groovy')
         }
     }
 
     void "test groovy core - MethodReference"() {
-        doRunAndTest('core/MethodReference_01x.groovy ')
+        doRunAndTest('core/MethodReference_01x.groovy')
         if (jdk8orGreater) {
             doRunAndTest('core/MethodReference_01x_1_8.groovy')
         }
