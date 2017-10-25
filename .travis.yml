@@ -30,8 +30,8 @@ install: true
 before_script:
   - |
     if [ $TRAVIS_JDK_VERSION == "oraclejdk9" ]; then
-      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xms800m -Xmx2800m/' gradle.properties
-      export _JAVA_OPTIONS=-Xms800m\ -Xmx2800m
+      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xms1500m -Xmx2800m/' gradle.properties
+      export _JAVA_OPTIONS=-Xms1500m\ -Xmx2800m
     else
       unset _JAVA_OPTIONS
     fi
