@@ -35,9 +35,14 @@ class DurationTest extends GroovyTestCase {
 
     void testDurationToString() {
         use(TimeCategory) {
-            def duration = 4.days + 2.hours + 5.minutes + 12.milliseconds
-
-            assert "4 days, 2 hours, 5 minutes, 0.012 seconds" == duration.toString()
+            assert (0.years).toString() == "0"
+            assert (3.years + 8.months + 4.days + 2.hours + 5.minutes + 12.milliseconds).toString() == "3 years, 8 months, 4 days, 2 hours, 5 minutes, 0.012 seconds"
+            assert (4.days + 2.hours + 5.minutes + 12.milliseconds).toString() == "4 days, 2 hours, 5 minutes, 0.012 seconds"
+            assert (4.days + 2.hours + 5.minutes).toString() == "4 days, 2 hours, 5 minutes"
+            assert (5.seconds).toString() == "5.000 seconds"
+            assert ((-12).milliseconds).toString() == "-0.012 seconds"
+            assert (5.seconds + 12.milliseconds).toString() == "5.012 seconds"
+            assert (5.seconds + 1012.milliseconds).toString() == "6.012 seconds"
         }
     }
 
