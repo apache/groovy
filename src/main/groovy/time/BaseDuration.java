@@ -108,9 +108,10 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         if (this.minutes != 0) buffer.add(this.minutes + " minutes");
 
         if (this.seconds != 0 || this.millis != 0) {
-            int norm_millis = millis % 1000;
-            int norm_seconds = seconds + DefaultGroovyMethods.intdiv(millis - norm_millis, 1000).intValue();
-            buffer.add((norm_seconds == 0 ? (norm_millis < 0 ? "-0" : "0") : norm_seconds) + "." + StringGroovyMethods.padLeft("" + Math.abs(norm_millis), 3, "0") + " seconds");
+            int norm_millis = this.millis % 1000;
+            int norm_seconds = this.seconds + DefaultGroovyMethods.intdiv(this.millis - norm_millis, 1000).intValue();
+            CharSequence millisToPad = "" + Math.abs(norm_millis);
+            buffer.add((norm_seconds == 0 ? (norm_millis < 0 ? "-0" : "0") : norm_seconds) + "." + StringGroovyMethods.padLeft(millisToPad, 3, "0") + " seconds");
         }
 
         if (!buffer.isEmpty()) {
