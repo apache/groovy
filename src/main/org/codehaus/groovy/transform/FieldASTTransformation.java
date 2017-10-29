@@ -27,15 +27,19 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
@@ -44,6 +48,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -59,9 +64,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles transformation for the @Field annotation.
- *
- * @author Paul King
- * @author Cedric Champeau
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
@@ -77,6 +79,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private String variableName;
     private FieldNode fieldNode;
     private ClosureExpression currentClosure;
+    private ConstructorCallExpression currentAIC;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
@@ -166,21 +169,74 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         } else if (insideScriptBody && expr instanceof VariableExpression && currentClosure != null) {
             VariableExpression ve = (VariableExpression) expr;
             if (ve.getName().equals(variableName)) {
-                // we may only check the variable name because the Groovy compiler
-                // already fails if a variable with the same name already exists in the scope.
-                // this means that a closure cannot shadow a class variable
-                ve.setAccessedVariable(fieldNode);
-                final VariableScope variableScope = currentClosure.getVariableScope();
-                final Iterator<Variable> iterator = variableScope.getReferencedLocalVariablesIterator();
-                while (iterator.hasNext()) {
-                    Variable next = iterator.next();
-                    if (next.getName().equals(variableName)) iterator.remove();
-                }
-                variableScope.putReferencedClassVariable(fieldNode);
+                adjustToClassVar(ve);
                 return ve;
+            }
+        } else if (currentAIC != null && expr instanceof ArgumentListExpression) {
+            // if a match is found, the compiler will have already set up aic constructor to hav
+            // an argument which isn't needed since we'll be accessing the field; we must undo it
+            Expression skip = null;
+            List<Expression> origArgList = ((ArgumentListExpression) expr).getExpressions();
+            for (int i = 0; i < origArgList.size(); i++) {
+                Expression arg = origArgList.get(i);
+                if (matchesCandidate(arg)) {
+                    skip = arg;
+                    adjustConstructorAndFields(i, currentAIC.getType());
+                    break;
+                }
+            }
+            if (skip != null) {
+                return adjustedArgList(skip, origArgList);
             }
         }
         return expr.transformExpression(this);
+    }
+
+    private boolean matchesCandidate(Expression arg) {
+        return arg instanceof VariableExpression && ((VariableExpression) arg).getAccessedVariable() == candidate.getVariableExpression().getAccessedVariable();
+    }
+
+    private Expression adjustedArgList(Expression skip, List<Expression> origArgs) {
+        List<Expression> newArgs = new ArrayList<Expression>(origArgs.size() - 1);
+        for (Expression origArg : origArgs) {
+            if (skip != origArg) {
+                newArgs.add(origArg);
+            }
+        }
+        return new ArgumentListExpression(newArgs);
+    }
+
+    private void adjustConstructorAndFields(int skipIndex, ClassNode type) {
+        List<ConstructorNode> constructors = type.getDeclaredConstructors();
+        if (constructors.size() == 1) {
+            ConstructorNode constructor = constructors.get(0);
+            Parameter[] params = constructor.getParameters();
+            Parameter[] newParams = new Parameter[params.length - 1];
+            int to = 0;
+            for (int from = 0; from < params.length; from++) {
+                if (from != skipIndex) {
+                    newParams[to++] = params[from];
+                }
+            }
+            type.removeConstructor(constructor);
+            // code doesn't mention the removed param at this point, okay to leave as is
+            type.addConstructor(constructor.getModifiers(), newParams, constructor.getExceptions(), constructor.getCode());
+            type.removeField(variableName);
+        }
+    }
+
+    private void adjustToClassVar(VariableExpression expr) {
+        // we only need to check the variable name because the Groovy compiler
+        // already fails if a variable with the same name already exists in the scope.
+        // this means that a closure cannot shadow a class variable
+        expr.setAccessedVariable(fieldNode);
+        final VariableScope variableScope = currentClosure.getVariableScope();
+        final Iterator<Variable> iterator = variableScope.getReferencedLocalVariablesIterator();
+        while (iterator.hasNext()) {
+            Variable next = iterator.next();
+            if (next.getName().equals(variableName)) iterator.remove();
+        }
+        variableScope.putReferencedClassVariable(fieldNode);
     }
 
     @Override
@@ -189,6 +245,20 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         currentClosure = expression;
         super.visitClosureExpression(expression);
         currentClosure = old;
+    }
+
+    @Override
+    public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
+        if (!insideScriptBody || !cce.isUsingAnonymousInnerClass()) return;
+        ConstructorCallExpression old = currentAIC;
+        currentAIC = cce;
+        Expression newArgs = transform(cce.getArguments());
+        if (cce.getArguments() instanceof TupleExpression && newArgs instanceof TupleExpression) {
+            List<Expression> argList = ((TupleExpression) cce.getArguments()).getExpressions();
+            argList.clear();
+            argList.addAll(((TupleExpression) newArgs).getExpressions());
+        }
+        currentAIC = old;
     }
 
     @Override
@@ -202,9 +272,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     @Override
     public void visitExpressionStatement(ExpressionStatement es) {
         Expression exp = es.getExpression();
-        if (exp instanceof BinaryExpression) {
-            exp.visit(this);
-        }
+        exp.visit(this);
         super.visitExpressionStatement(es);
     }
 
