@@ -61,6 +61,9 @@ class Base64Test extends GroovyTestCase {
         assert line0.size() == 76
         assert line0 == 'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31hc2RmZ2hq'
         assert line1 == 'a2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4/A//wDw=='
+        // check we allow \n \r \t and space to be ignored when decoding for round-tripping purposes
+        assert encodedBytes.decodeBase64() == testBytes
+        assert (encodedBytes + '\t ').decodeBase64() == testBytes
     }
 
     void testNonChunked() {
