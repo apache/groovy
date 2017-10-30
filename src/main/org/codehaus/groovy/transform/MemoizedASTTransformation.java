@@ -54,8 +54,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Handles generation of code for the {@link Memoized} annotation.
- *
- * @author Andrey Bloschetsov
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class MemoizedASTTransformation extends AbstractASTTransformation {
@@ -110,7 +108,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             closureCallExpression.setImplicitThis(false);
             newCode.addStatement(returnS(closureCallExpression));
             methodNode.setCode(newCode);
-            VariableScopeVisitor visitor = new VariableScopeVisitor(source);
+            VariableScopeVisitor visitor = new VariableScopeVisitor(source, ownerClassNode instanceof InnerClassNode);
             if (ownerClassNode instanceof InnerClassNode) {
                 visitor.visitClass(((InnerClassNode) ownerClassNode).getOuterMostClass());
             } else {
