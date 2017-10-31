@@ -696,4 +696,21 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
             assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$02 (LA;Ljava/lang/String;)Ljava/lang/String;')
         }
     }
+
+    //GROOVY-8369
+    void testPropertyAccessOnEnumClass() {
+        try {
+            assertScript '''
+                enum Foo {}
+
+                def test() {
+                    println Foo.getModifiers() // => 16401 // ENUM | FINAL | PUBLIC (see GROOVY_8360 wrt STATIC)
+                    println Foo.modifiers      // java.lang.NoSuchFieldError: modifiers
+                }    
+                test()
+            '''
+        } finally {
+            //println astTrees
+        }
+    }
 }
