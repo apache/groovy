@@ -704,8 +704,7 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
                 enum Foo {}
 
                 def test() {
-                    println Foo.getModifiers() // => 16401 // ENUM | FINAL | PUBLIC (see GROOVY_8360 wrt STATIC)
-                    println Foo.modifiers      // java.lang.NoSuchFieldError: modifiers
+                    assert Foo.getModifiers() == Foo.modifiers
                 }    
                 test()
             '''

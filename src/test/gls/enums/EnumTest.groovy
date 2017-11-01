@@ -592,6 +592,17 @@ class EnumTest extends CompilableTestSupport {
             assert UsState.ID.toString() == 'Idaho'
         '''
     }
+
+    void testEnumConstantsTakePrecedenceOverClassProperties() {
+        assertScript '''
+            @Deprecated
+            enum Foo {
+                annotations
+            }
+            assert 'annotations' == Foo.annotations.toString()
+            assert Foo.getAnnotations().size() == 1
+          '''
+    }
 }
 
 enum UsCoin {
