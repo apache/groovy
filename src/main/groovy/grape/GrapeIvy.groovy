@@ -476,8 +476,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     private void createAndAddDependencyArtifactDescriptor(DefaultDependencyDescriptor dd, IvyGrabRecord grabRecord, List<String> conf) {
-        // TODO: find out "unknown" reason and change comment below - also, confirm conf[0] check vs conf.contains('optional')
-        if (conf[0]!="optional" || grabRecord.classifier) {  // for some unknown reason optional dependencies should not have an artifactDescriptor
+        if (grabRecord.classifier) {
             def dad = new DefaultDependencyArtifactDescriptor(dd,
                     grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier: grabRecord.classifier] : null)
             conf.each { dad.addConfiguration(it) }
