@@ -1,5 +1,10 @@
 version: '{branch} {build}'
-skip_tags: true
+branches:
+  only:
+    - master
+    - GROOVY_2_6_X
+    - GROOVY_2_5_X
+    - GROOVY_2_4_X
 skip_commits:
   message: /\[ci skip\]/
 clone_depth: 10
