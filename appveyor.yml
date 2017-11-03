@@ -1,27 +1,36 @@
 version: '{branch} {build}'
+
 branches:
   only:
     - master
     - GROOVY_2_6_X
     - GROOVY_2_5_X
     - GROOVY_2_4_X
+
 skip_commits:
   message: /\[ci skip\]/
-clone_depth: 10
+
 environment:
   TERM: dumb
   matrix:
     - JAVA_HOME: C:\Program Files\Java\jdk1.7.0
     - JAVA_HOME: C:\Program Files\Java\jdk1.8.0
+
 install:
   # prepend Java entry, remove Ruby entry (C:\Ruby193\bin;) from PATH
   - SET PATH=%JAVA_HOME%\bin;%PATH:C:\Ruby193\bin;=%
   - echo %PATH%
   - gradlew.bat --version
+
+build:
+  verbosity: detailed
+
 build_script:
   - gradlew.bat -u -i clean assemble
+
 test_script:
   - gradlew.bat -u -i -S check
+
 cache:
   - .gradle
   - C:\Users\appveyor\.gradle
