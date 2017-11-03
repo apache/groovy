@@ -16,84 +16,81 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime
 
-import java.util.*;
+import java.util.*
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Marc Guillemot
  * @author Brad Long
  */
-public class DefaultGroovyMethodsTest extends GroovyTestCase {
+class DefaultGroovyMethodsTest extends GroovyTestCase {
 
-    public void testPrint() throws Exception {
-        Map<String, String> map = new LinkedHashMap<String, String>();
-        map.put("bob", "drools");
-        map.put("james", "geronimo");
-        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
-        list.add(map);
-        assertEquals("[[bob:drools, james:geronimo]]", InvokerHelper.toString(list));
+    void testPrint() throws Exception {
+        Map<String, String> map = ['bob': 'drools', 'james': 'geronimo']
+        List<Map<String, String>> list = [map]
+        assertEquals("[[bob:drools, james:geronimo]]", InvokerHelper.toString(list))
     }
 
-    public void testFloatRounding() throws Exception {
-        Float f = 1000.123456f;
+    void testFloatRounding() throws Exception {
+        Float f = 1000.123456f
 
-        assertEquals(DefaultGroovyMethods.round(f), 1000);
-        assertEquals(DefaultGroovyMethods.round(f, 0), 1000.0f);
-        assertEquals(DefaultGroovyMethods.round(f, 1), 1000.1f);
-        assertEquals(DefaultGroovyMethods.round(f, 2), 1000.12f);
-        assertEquals(DefaultGroovyMethods.round(f, 3), 1000.123f);
-        assertEquals(DefaultGroovyMethods.round(f, 4), 1000.1235f);
-        assertEquals(DefaultGroovyMethods.round(f, 5), 1000.12346f);
-        assertEquals(DefaultGroovyMethods.round(f, 6), 1000.123456f);
+        assertEquals(DefaultGroovyMethods.round(f), 1000)
+        assertEquals(DefaultGroovyMethods.round(f, 0), 1000.0f)
+        assertEquals(DefaultGroovyMethods.round(f, 1), 1000.1f)
+        assertEquals(DefaultGroovyMethods.round(f, 2), 1000.12f)
+        assertEquals(DefaultGroovyMethods.round(f, 3), 1000.123f)
+        assertEquals(DefaultGroovyMethods.round(f, 4), 1000.1235f)
+        assertEquals(DefaultGroovyMethods.round(f, 5), 1000.12346f)
+        assertEquals(DefaultGroovyMethods.round(f, 6), 1000.123456f)
     }
 
-    public void testDoubleRounding() throws Exception {
-        Double d = 1000.123456;
+    void testDoubleRounding() throws Exception {
+        Double d = 1000.123456
 
-        assertEquals(DefaultGroovyMethods.round(d), 1000L);
-        assertEquals(DefaultGroovyMethods.round(d, 0), 1000.0);
-        assertEquals(DefaultGroovyMethods.round(d, 1), 1000.1);
-        assertEquals(DefaultGroovyMethods.round(d, 2), 1000.12);
-        assertEquals(DefaultGroovyMethods.round(d, 3), 1000.123);
-        assertEquals(DefaultGroovyMethods.round(d, 4), 1000.1235);
-        assertEquals(DefaultGroovyMethods.round(d, 5), 1000.12346);
-        assertEquals(DefaultGroovyMethods.round(d, 6), 1000.123456);
+        assertEquals(DefaultGroovyMethods.round(d), 1000L)
+        assertEquals(DefaultGroovyMethods.round(d, 0), 1000.0)
+        assertEquals(DefaultGroovyMethods.round(d, 1), 1000.1)
+        assertEquals(DefaultGroovyMethods.round(d, 2), 1000.12)
+        assertEquals(DefaultGroovyMethods.round(d, 3), 1000.123)
+        assertEquals(DefaultGroovyMethods.round(d, 4), 1000.1235)
+        assertEquals(DefaultGroovyMethods.round(d, 5), 1000.12346)
+        assertEquals(DefaultGroovyMethods.round(d, 6), 1000.123456)
     }
 
-    public void testBigDecimalRounding() throws Exception {
+    void testBigDecimalRounding() throws Exception {
         BigDecimal bd = new BigDecimal('1000.123456')
 
-        assertEquals(DefaultGroovyMethods.round(bd), new BigDecimal('1000'));
-        assertEquals(DefaultGroovyMethods.round(bd, 0), new BigDecimal('1000.0'));
-        assertEquals(DefaultGroovyMethods.round(bd, 1), new BigDecimal('1000.1'));
-        assertEquals(DefaultGroovyMethods.round(bd, 2), new BigDecimal('1000.12'));
-        assertEquals(DefaultGroovyMethods.round(bd, 3), new BigDecimal('1000.123'));
-        assertEquals(DefaultGroovyMethods.round(bd, 4), new BigDecimal('1000.1235'));
-        assertEquals(DefaultGroovyMethods.round(bd, 5), new BigDecimal('1000.12346'));
-        assertEquals(DefaultGroovyMethods.round(bd, 6), new BigDecimal('1000.123456'));
+        assertEquals(DefaultGroovyMethods.round(bd), new BigDecimal('1000'))
+        assertEquals(DefaultGroovyMethods.round(bd, 0), new BigDecimal('1000.0'))
+        assertEquals(DefaultGroovyMethods.round(bd, 1), new BigDecimal('1000.1'))
+        assertEquals(DefaultGroovyMethods.round(bd, 2), new BigDecimal('1000.12'))
+        assertEquals(DefaultGroovyMethods.round(bd, 3), new BigDecimal('1000.123'))
+        assertEquals(DefaultGroovyMethods.round(bd, 4), new BigDecimal('1000.1235'))
+        assertEquals(DefaultGroovyMethods.round(bd, 5), new BigDecimal('1000.12346'))
+        assertEquals(DefaultGroovyMethods.round(bd, 6), new BigDecimal('1000.123456'))
 
         BigDecimal bd2 = new BigDecimal('-123.739')
 
-        assertEquals(DefaultGroovyMethods.round(bd2), new BigDecimal('-124'));
-        assertEquals(DefaultGroovyMethods.round(bd2, 0), new BigDecimal('-124.0'));
-        assertEquals(DefaultGroovyMethods.round(bd2, 1), new BigDecimal('-123.7'));
-        assertEquals(DefaultGroovyMethods.round(bd2, 2), new BigDecimal('-123.74'));
-        assertEquals(DefaultGroovyMethods.round(bd2, 3), new BigDecimal('-123.739'));
+        assertEquals(DefaultGroovyMethods.round(bd2), new BigDecimal('-124'))
+        assertEquals(DefaultGroovyMethods.round(bd2, 0), new BigDecimal('-124.0'))
+        assertEquals(DefaultGroovyMethods.round(bd2, 1), new BigDecimal('-123.7'))
+        assertEquals(DefaultGroovyMethods.round(bd2, 2), new BigDecimal('-123.74'))
+        assertEquals(DefaultGroovyMethods.round(bd2, 3), new BigDecimal('-123.739'))
     }
 
-    public void testFloatTruncate() throws Exception {
-        Float f = 1000.123456f;
+    void testFloatTruncate() throws Exception {
+        Float f = 1000.123456f
 
-        assertEquals(DefaultGroovyMethods.trunc(f), 1000.0f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 0), 1000.0f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 1), 1000.1f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 2), 1000.12f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 3), 1000.123f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 4), 1000.1234f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 5), 1000.12345f);
-        assertEquals(DefaultGroovyMethods.trunc(f, 6), 1000.123456f);
+        assertEquals(DefaultGroovyMethods.trunc(f), 1000.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 0), 1000.0f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 1), 1000.1f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 2), 1000.12f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 3), 1000.123f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 4), 1000.1234f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 5), 1000.12345f)
+        assertEquals(DefaultGroovyMethods.trunc(f, 6), 1000.123456f)
 
         Float f2 = -123.739f
 
@@ -103,17 +100,17 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(f2, 2), -123.73f)
     }
 
-    public void testDoubleTruncate() throws Exception {
-        Double d = 1000.123456;
+    void testDoubleTruncate() throws Exception {
+        Double d = 1000.123456
 
-        assertEquals(DefaultGroovyMethods.trunc(d), 1000.0);
-        assertEquals(DefaultGroovyMethods.trunc(d, 0), 1000.0);
-        assertEquals(DefaultGroovyMethods.trunc(d, 1), 1000.1);
-        assertEquals(DefaultGroovyMethods.trunc(d, 2), 1000.12);
-        assertEquals(DefaultGroovyMethods.trunc(d, 3), 1000.123);
-        assertEquals(DefaultGroovyMethods.trunc(d, 4), 1000.1234);
-        assertEquals(DefaultGroovyMethods.trunc(d, 5), 1000.12345);
-        assertEquals(DefaultGroovyMethods.trunc(d, 6), 1000.123456);
+        assertEquals(DefaultGroovyMethods.trunc(d), 1000.0)
+        assertEquals(DefaultGroovyMethods.trunc(d, 0), 1000.0)
+        assertEquals(DefaultGroovyMethods.trunc(d, 1), 1000.1)
+        assertEquals(DefaultGroovyMethods.trunc(d, 2), 1000.12)
+        assertEquals(DefaultGroovyMethods.trunc(d, 3), 1000.123)
+        assertEquals(DefaultGroovyMethods.trunc(d, 4), 1000.1234)
+        assertEquals(DefaultGroovyMethods.trunc(d, 5), 1000.12345)
+        assertEquals(DefaultGroovyMethods.trunc(d, 6), 1000.123456)
 
         Double d2 = -123.739d
 
@@ -123,7 +120,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(d2, 2), -123.73d)
     }
 
-    public void testBigDecimalTruncate() throws Exception {
+    void testBigDecimalTruncate() throws Exception {
         BigDecimal bd = new BigDecimal('1000.123456')
 
         assertEquals(DefaultGroovyMethods.trunc(bd), new BigDecimal('1000.0'))
@@ -149,95 +146,95 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assert DefaultGroovyMethods.power(13G, 15G) == DefaultGroovyMethods.power(13G, 15)
     }
 
-    public void testToMethods() throws Exception {
-        Number n = 7L;
-        assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
-        assertEquals(DefaultGroovyMethods.toLong(n), new Long(7));
-        assertEquals(DefaultGroovyMethods.toFloat(n), new Float(7));
-        assertEquals(DefaultGroovyMethods.toDouble(n), new Double(7));
-        assertEquals(DefaultGroovyMethods.toBigInteger(n), new BigInteger("7"));
-        assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
+    void testToMethods() throws Exception {
+        Number n = 7L
+        assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7))
+        assertEquals(DefaultGroovyMethods.toLong(n), new Long(7))
+        assertEquals(DefaultGroovyMethods.toFloat(n), new Float(7))
+        assertEquals(DefaultGroovyMethods.toDouble(n), new Double(7))
+        assertEquals(DefaultGroovyMethods.toBigInteger(n), new BigInteger("7"))
+        assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"))
         // The following is true starting with 1.6 (GROOVY-3171):
-        assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(0.1));
-        assertEquals(ResourceGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
-        assertEquals(ResourceGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
-        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.FALSE), Boolean.FALSE);
-        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.TRUE), Boolean.TRUE);
+        assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(0.1))
+        assertEquals(ResourceGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"))
+        assertEquals(ResourceGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"))
+        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.FALSE), Boolean.FALSE)
+        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.TRUE), Boolean.TRUE)
     }
 
-    public void testGetBytes() {
+    void testGetBytes() {
         byte[] bytes = [42,45,47,14,10,84] as byte[]
-        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes)
         try {
-            byte[] answer = IOGroovyMethods.getBytes(is);
-            assertEquals(bytes.length, answer.length);
-            for (int i = 0; i < bytes.length; i++) {
-                assertEquals(bytes[i], answer[i]);       
+            byte[] answer = IOGroovyMethods.getBytes(is)
+            assertEquals(bytes.length, answer.length)
+            bytes.eachWithIndex{ byte entry, int i ->
+                assertEquals(entry, answer[i])
             }
         } catch (IOException e) {
-            fail();
+            fail()
         }
     }
 
-    public void testSetBytes() {
+    void testSetBytes() {
         byte[] bytes = [42,45,47,14,10,84] as byte[]
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ByteArrayOutputStream os = new ByteArrayOutputStream()
         try {
-            IOGroovyMethods.setBytes(os, bytes);
-            byte[] answer = os.toByteArray();
-            assertEquals(bytes.length, answer.length);
-            for (int i = 0; i < bytes.length; i++) {
-                assertEquals(bytes[i], answer[i]);
+            IOGroovyMethods.setBytes(os, bytes)
+            byte[] answer = os.toByteArray()
+            assertEquals(bytes.length, answer.length)
+            bytes.eachWithIndex{ byte entry, int i ->
+                assertEquals(entry, answer[i])
             }
         } catch (IOException e) {
-            fail();
+            fail()
         }
     }
 
-    public void testDownto() {
+    void testDownto() {
         final int[] count = [0] as int[]
         final Closure closure = new Closure(null) {
-            public Object doCall(final Object params) {
-                count[0]++;
-                return null;
+            Object doCall(final Object params) {
+                count[0]++
+                return null
             }
-        };
+        }
 
-        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0"), closure);
-        assertEquals(count[0], 2);
+        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0"), closure)
+        assertEquals(count[0], 2)
 
-        count[0] = 0;
+        count[0] = 0
 
-        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure);
-        assertEquals(count[0], 1);
+        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure)
+        assertEquals(count[0], 1)
     }
 
-    public void testBulkCollectionForArrayOperations() {
-        List<String> list = new ArrayList<String>();
-        assertTrue(DefaultGroovyMethods.addAll(list, "abcd".split("")));
-        assertTrue(DefaultGroovyMethods.removeAll(list, "def".split("")));
-        assertTrue(DefaultGroovyMethods.retainAll(list, "bcd".split("")));
-        List<String> bAndC = Arrays.asList("b", "c");
-        assertTrue(DefaultGroovyMethods.containsAll(list, bAndC.toArray(new String[2])));
-        assertEquals(list, bAndC);
-        assertTrue(DefaultGroovyMethods.addAll(list, 1, Arrays.asList("a", "s", "i").toArray(new String[3])));
-        assertEquals(list, Arrays.asList("b", "a", "s", "i", "c"));
+    void testBulkCollectionForArrayOperations() {
+        List<String> list = []
+        assertTrue(DefaultGroovyMethods.addAll(list, "abcd".split("")))
+        assertTrue(DefaultGroovyMethods.removeAll(list, "def".split("")))
+        assertTrue(DefaultGroovyMethods.retainAll(list, "bcd".split("")))
+        List<String> bAndC = ['b', 'c']
+        assertTrue(DefaultGroovyMethods.containsAll(list, bAndC.toArray(new String[2])))
+        assertEquals(list, bAndC)
+        assertTrue(DefaultGroovyMethods.addAll(list, 1, ['a', 's', 'i'].toArray(new String[3])))
+        assertEquals(list, ['b', 'a', 's', 'i', 'c'])
     }
 
     /**
      * Tests that a List subclass without a constructor for Collections is still coerced
      * into the correct list type. 
      */
-    public void testCollectionTypeConstructors() {
-        MyList list = DefaultGroovyMethods.asType(Arrays.asList(1, 2, 3), MyList.class);
-        assertEquals(3, list.size());
-        assertEquals(1, list.get(0));
-        assertEquals(2, list.get(1));
-        assertEquals(3, list.get(2));
+    void testCollectionTypeConstructors() {
+        MyList list = DefaultGroovyMethods.asType([1, 2, 3], MyList.class)
+        assertEquals(3, list.size())
+        assertEquals(1, list.get(0))
+        assertEquals(2, list.get(1))
+        assertEquals(3, list.get(2))
     }
 
     // GROOVY-7654
-    public void testIterableAsList() {
+    void testIterableAsList() {
         def list = [1, 2, 3]
         def iterable = new IterableWrapper(delegate: list)
 
@@ -256,7 +253,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     // GROOVY-8271
-    public void testTake() {
+    void testTake() {
         int hasNextCount = 0
         int nextCount = 0
         def iterator = [
@@ -269,7 +266,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     private static class MyList extends ArrayList {
-        public MyList() {}
+        MyList() {}
     }
 
     private static class IterableWrapper implements Iterable {
@@ -280,39 +277,47 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         }
     }
 
-    public void testBooleanOr() {
+    void testBooleanOr() {
         assertTrue(DefaultGroovyMethods.or(true, true))
         assertTrue(DefaultGroovyMethods.or(true, false))
         assertTrue(DefaultGroovyMethods.or(false, true))
         assertFalse(DefaultGroovyMethods.or(false, false))
         assertFalse(DefaultGroovyMethods.or(false, null))
+        assertFalse(DefaultGroovyMethods.or(null, false))
         assertTrue(DefaultGroovyMethods.or(true, null))
+        assertTrue(DefaultGroovyMethods.or(null, true))
     }
 
-    public void testBooleanAnd() {
+    void testBooleanAnd() {
         assertTrue(DefaultGroovyMethods.and(true, true))
         assertFalse(DefaultGroovyMethods.and(true, false))
         assertFalse(DefaultGroovyMethods.and(false, true))
         assertFalse(DefaultGroovyMethods.and(false, false))
         assertFalse(DefaultGroovyMethods.and(false, null))
+        assertFalse(DefaultGroovyMethods.and(null, false))
         assertFalse(DefaultGroovyMethods.and(true, null))
+        assertFalse(DefaultGroovyMethods.and(null, true))
     }
 
-    public void testBooleanXor() {
+    void testBooleanXor() {
         assertFalse(DefaultGroovyMethods.xor(true, true))
         assertTrue(DefaultGroovyMethods.xor(true, false))
         assertTrue(DefaultGroovyMethods.xor(false, true))
         assertFalse(DefaultGroovyMethods.xor(false, false))
         assertFalse(DefaultGroovyMethods.xor(false, null))
+        assertFalse(DefaultGroovyMethods.xor(null, false))
         assertTrue(DefaultGroovyMethods.xor(true, null))
+        assertTrue(DefaultGroovyMethods.xor(null, true))
     }
 
-    public void testBooleanImplication() {
+    void testBooleanImplication() {
         assertTrue(DefaultGroovyMethods.implies(true, true))
         assertFalse(DefaultGroovyMethods.implies(true, false))
         assertTrue(DefaultGroovyMethods.implies(false, true))
         assertTrue(DefaultGroovyMethods.implies(false, false))
         assertTrue(DefaultGroovyMethods.implies(false, null))
+        assertTrue(DefaultGroovyMethods.implies(null, false))
         assertFalse(DefaultGroovyMethods.implies(true, null))
+        assertTrue(DefaultGroovyMethods.implies(null, true))
     }
 }
