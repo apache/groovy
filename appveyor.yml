@@ -25,10 +25,10 @@ build:
   verbosity: detailed
 
 build_script:
-  - gradlew.bat --no-daemon -i clean assemble
+  - gradlew.bat --no-daemon -i clean classes
 
 test_script:
-  - gradlew.bat --no-daemon -i -S check
+  - gradlew.bat --no-daemon -i -S test
 
 cache:
   - .gradle
