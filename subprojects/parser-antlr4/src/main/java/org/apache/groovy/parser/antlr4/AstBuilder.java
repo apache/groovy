@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import groovy.lang.IntRange;
 import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -2409,8 +2408,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ConstantExpression visitStringLiteral(StringLiteralContext ctx) {
-        String text = ctx.StringLiteral().getText();
+        String text = parseStringLiteral(ctx.StringLiteral().getText());
 
+        ConstantExpression constantExpression = new ConstantExpression(text, true);
+        constantExpression.putNodeMetaData(IS_STRING, true);
+
+        return configureAST(constantExpression, ctx);
+    }
+
+    private String parseStringLiteral(String text) {
         int slashyType = getSlashyType(text);
         boolean startsWithSlash = false;
 
@@ -2431,12 +2437,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         //handle escapes.
-        text = StringUtils.replaceEscapes(text, slashyType);
-
-        ConstantExpression constantExpression = new ConstantExpression(text, true);
-        constantExpression.putNodeMetaData(IS_STRING, true);
-
-        return configureAST(constantExpression, ctx);
+        return StringUtils.replaceEscapes(text, slashyType);
     }
 
     private int getSlashyType(String text) {
@@ -3243,63 +3244,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     // gstring {       --------------------------------------------------------------------
     @Override
     public GStringExpression visitGstring(GstringContext ctx) {
-        List<ConstantExpression> strings = new LinkedList<>();
-
-        String begin = ctx.GStringBegin().getText();
-        final int slashyType = getSlashyType(begin);
-
-        {
-            String it = begin;
-            if (it.startsWith(TDQ_STR)) {
-                it = StringUtils.removeCR(it);
-                it = it.substring(2); // translate leading """ to "
-            } else if (it.startsWith(DOLLAR_SLASH_STR)) {
-                it = StringUtils.removeCR(it);
-                it = DQ_STR + it.substring(2); // translate leading $/ to "
-            } else if (it.startsWith(SLASH_STR)) {
-                it = StringUtils.removeCR(it);
-            }
-
-            it = StringUtils.replaceEscapes(it, slashyType);
-            it = (it.length() == 2)
-                    ? ""
-                    : StringGroovyMethods.getAt(it, new IntRange(true, 1, -2));
-
-            strings.add(configureAST(new ConstantExpression(it), ctx.GStringBegin()));
-        }
+        final List<ConstantExpression> stringLiteralList = new LinkedList<>();
+        final String begin = ctx.GStringBegin().getText();
+        final String beginQuotation = beginQuotation(begin);
+        stringLiteralList.add(configureAST(new ConstantExpression(parseGStringBegin(ctx, beginQuotation)), ctx.GStringBegin()));
 
         List<ConstantExpression> partStrings =
                 ctx.GStringPart().stream()
-                        .map(e -> {
-                            String it = e.getText();
+                        .map(e -> configureAST(new ConstantExpression(parseGStringPart(e, beginQuotation)), e))
+                        .collect(Collectors.toList());
+        stringLiteralList.addAll(partStrings);
 
-                            it = StringUtils.removeCR(it);
-                            it = StringUtils.replaceEscapes(it, slashyType);
-                            it = it.length() == 1 ? "" : StringGroovyMethods.getAt(it, new IntRange(true, 0, -2));
-
-                            return configureAST(new ConstantExpression(it), e);
-                        }).collect(Collectors.toList());
-        strings.addAll(partStrings);
-
-        {
-            String it = ctx.GStringEnd().getText();
-            if (it.endsWith(TDQ_STR)) {
-                it = StringUtils.removeCR(it);
-                it = StringGroovyMethods.getAt(it, new IntRange(true, 0, -3)); // translate tailing """ to "
-            } else if (it.endsWith(SLASH_DOLLAR_STR)) {
-                it = StringUtils.removeCR(it);
-                it = StringGroovyMethods.getAt(it, new IntRange(false, 0, -2)) + DQ_STR; // translate tailing /$ to "
-            } else if (it.endsWith(SLASH_STR)) {
-                it = StringUtils.removeCR(it);
-            }
-
-            it = StringUtils.replaceEscapes(it, slashyType);
-            it = (it.length() == 1)
-                    ? ""
-                    : StringGroovyMethods.getAt(it, new IntRange(true, 0, -2));
-
-            strings.add(configureAST(new ConstantExpression(it), ctx.GStringEnd()));
-        }
+        stringLiteralList.add(configureAST(new ConstantExpression(parseGStringEnd(ctx, beginQuotation)), ctx.GStringEnd()));
 
         List<Expression> values = ctx.gstringValue().stream()
                 .map(e -> {
@@ -3320,8 +3276,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 .collect(Collectors.toList());
 
         StringBuilder verbatimText = new StringBuilder(ctx.getText().length());
-        for (int i = 0, n = strings.size(), s = values.size(); i < n; i++) {
-            verbatimText.append(strings.get(i).getValue());
+        for (int i = 0, n = stringLiteralList.size(), s = values.size(); i < n; i++) {
+            verbatimText.append(stringLiteralList.get(i).getValue());
 
             if (i == s) {
                 continue;
@@ -3336,7 +3292,42 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             verbatimText.append(value.getText());
         }
 
-        return configureAST(new GStringExpression(verbatimText.toString(), strings, values), ctx);
+        return configureAST(new GStringExpression(verbatimText.toString(), stringLiteralList, values), ctx);
+    }
+
+    private String parseGStringEnd(GstringContext ctx, String beginQuotation) {
+        String text = ctx.GStringEnd().getText();
+        text = beginQuotation + text;
+
+        return this.parseStringLiteral(text);
+    }
+
+    private String parseGStringPart(TerminalNode e, String beginQuotation) {
+        String text = e.getText();
+        text = text.substring(0, text.length() - 1);  // remove the tailing $
+        text = beginQuotation + text + QUOTATION_MAP.get(beginQuotation);
+
+        return this.parseStringLiteral(text);
+    }
+
+    private String parseGStringBegin(GstringContext ctx, String beginQuotation) {
+        String text = ctx.GStringBegin().getText();
+        text = text.substring(0, text.length() - 1);  // remove the tailing $
+        text = text + QUOTATION_MAP.get(beginQuotation);
+
+        return this.parseStringLiteral(text);
+    }
+
+    private String beginQuotation(String text) {
+        if (text.startsWith(TDQ_STR)) {
+            return TDQ_STR;
+        } else if (text.startsWith(DOLLAR_SLASH_STR)) {
+            return DOLLAR_SLASH_STR;
+        } else if (text.startsWith(SLASH_STR)) {
+            return SLASH_STR;
+        } else {
+            return String.valueOf(text.charAt(0));
+        }
     }
 
     @Override
@@ -4473,6 +4464,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String SQ_STR = "'";
     private static final String DQ_STR = "\"";
     private static final String DOLLAR_SLASH_STR = "$/";
+
+    private static final Map<String, String> QUOTATION_MAP = Maps.of(
+            DQ_STR, DQ_STR,
+            SQ_STR, SQ_STR,
+            TDQ_STR, TDQ_STR,
+            TSQ_STR, TSQ_STR,
+            SLASH_STR, SLASH_STR,
+            DOLLAR_SLASH_STR, SLASH_DOLLAR_STR
+    );
 
     private static final String PACKAGE_INFO = "package-info";
     private static final String PACKAGE_INFO_FILE_NAME = PACKAGE_INFO + ".groovy";
