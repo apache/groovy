@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.ReadOnlyPropertyException;
+import groovy.transform.AccessModifier;
 import groovy.transform.Immutable;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -40,6 +41,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -54,18 +56,49 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.SortedMap;
-import java.util.Collections;
+import java.util.SortedSet;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.createConstructorStatementDefault;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.findArg;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOneX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isTrueX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.safeExpression;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createHashCode;
 import static org.codehaus.groovy.transform.ToStringASTTransformation.createToString;
@@ -113,6 +146,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
     static final String MEMBER_ADD_COPY_WITH = "copyWith";
+    static final String MEMBER_CONSTRUCTORS_MODIFIER = "constructorsModifier";
     static final String COPY_WITH_METHOD = "copyWith";
 
     private static final ClassNode DATE_TYPE = make(Date.class);
@@ -173,7 +207,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
                 if (unsupportedTupleAttribute(tupleCons, "force")) return;
             }
-            createConstructors(cNode, knownImmutableClasses, knownImmutables, includeSuperProperties);
+            int constructorModifier = getConstructorsModifier(node);
+            createConstructors(cNode, knownImmutableClasses, knownImmutables, includeSuperProperties, constructorModifier);
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
                 createHashCode(cNode, true, false, false, null, null);
                 createEquals(cNode, false, false, false, null, null);
@@ -187,6 +222,15 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 createCopyWith( cNode, pList ) ;
             }
         }
+    }
+
+    private int getConstructorsModifier(AnnotationNode node) {
+        Expression value = node.getMember(MEMBER_CONSTRUCTORS_MODIFIER);
+        if (value != null && value instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) value;
+            return AccessModifier.valueOf(pe.getPropertyAsString()).getModifier();
+        }
+        return AccessModifier.PUBLIC.getModifier();
     }
 
     protected boolean unsupportedTupleAttribute(AnnotationNode anno, String memberName) {
@@ -282,7 +326,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables, boolean includeSuperProperties) {
+    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables, boolean includeSuperProperties, int constructorModifier) {
         if (!validateConstructors(cNode)) return;
 
         List<PropertyNode> list = getInstanceProperties(cNode);
@@ -297,14 +341,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
         boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
         if (specialHashMapCase) {
-            createConstructorMapSpecial(cNode, list);
+            createConstructorMapSpecial(cNode, list, constructorModifier);
         } else {
-            createConstructorMap(cNode, list, knownImmutableClasses, knownImmutables);
-            createConstructorOrdered(cNode, list);
+            createConstructorMap(cNode, list, knownImmutableClasses, knownImmutables, constructorModifier);
+            createConstructorOrdered(cNode, list, constructorModifier);
         }
     }
 
-    private static void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
+    private static void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list, int constructorModifier) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -315,7 +359,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(stmt(ctorX(ClassNode.THIS, args(castX(HASHMAP_TYPE, argMap)))));
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
+        doAddConstructor(cNode, new ConstructorNode(constructorModifier, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
     private static Statement createGetterBodyDefault(FieldNode fNode) {
@@ -357,13 +401,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return castX(type, smce);
     }
 
-    private static void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list) {
+    private static void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list, int constructorModifier) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
-        createConstructorMapCommon(cNode, body);
+        createConstructorMapCommon(cNode, body, constructorModifier);
     }
 
-    private void createConstructorMap(ClassNode cNode, List<PropertyNode> list, List<String> knownImmutableClasses, List<String> knownImmutables) {
+    private void createConstructorMap(ClassNode cNode, List<PropertyNode> list, List<String> knownImmutableClasses, List<String> knownImmutables, int constructorModifier) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         for (PropertyNode pNode : list) {
@@ -371,18 +415,18 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
         // check for missing properties
         body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
-        createConstructorMapCommon(cNode, body);
+        createConstructorMapCommon(cNode, body, constructorModifier);
         if (!list.isEmpty()) {
-            createNoArgConstructor(cNode);
+            createNoArgConstructor(cNode, constructorModifier);
         }
     }
 
-    private static void createNoArgConstructor(ClassNode cNode) {
+    private static void createNoArgConstructor(ClassNode cNode, int constructorModifier) {
         Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        doAddConstructor(cNode, new ConstructorNode(constructorModifier, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
+    private static void createConstructorMapCommon(ClassNode cNode, BlockStatement body, int constructorModifier) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
@@ -393,7 +437,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
             body.addStatement(createConstructorStatementDefault(fNode));
         }
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params(new Parameter(HASHMAP_TYPE, "args")), ClassNode.EMPTY_ARRAY, body));
+        doAddConstructor(cNode, new ConstructorNode(constructorModifier, params(new Parameter(HASHMAP_TYPE, "args")), ClassNode.EMPTY_ARRAY, body));
     }
 
     private static Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
