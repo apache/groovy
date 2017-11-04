@@ -94,7 +94,7 @@ To bootstrap Gradle, at the top directory of your unpacked source, run the comma
     gradle wrapper
 
 *NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
-the `gradlew` command instead of `gradle`.
+the `gradlew` command instead of `gradle`. On Unix-like systems, the command is `./gradlew`.
 
 == Building from Source
 
