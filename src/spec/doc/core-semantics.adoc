@@ -1414,7 +1414,7 @@ Groovy provides a syntax for various type literals. There are three native colle
 
 * lists, using the `[]` literal
 * maps, using the `[:]` literal
-* ranges, using the `(..,..)` literal
+* ranges, using `from..to` (inclusive) and `from..<to` (exclusive)
 
 The inferred type of a literal depends on the elements of the literal, as illustrated in the following table:
 
