@@ -3345,35 +3345,37 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private String parseGStringEnd(GstringContext ctx, String beginQuotation) {
-        String text = ctx.GStringEnd().getText();
-        text = beginQuotation + text;
+        StringBuilder text = new StringBuilder(ctx.GStringEnd().getText());
+        text.insert(0, beginQuotation);
 
-        return this.parseStringLiteral(text);
+        return this.parseStringLiteral(text.toString());
     }
 
     private String parseGStringPart(TerminalNode e, String beginQuotation) {
-        String text = e.getText();
-        text = text.substring(0, text.length() - 1);  // remove the tailing $
-        text = beginQuotation + text + QUOTATION_MAP.get(beginQuotation);
+        StringBuilder text = new StringBuilder(e.getText());
+        text.deleteCharAt(text.length() - 1);  // remove the tailing $
+        text.insert(0, beginQuotation).append(QUOTATION_MAP.get(beginQuotation));
 
-        return this.parseStringLiteral(text);
+        return this.parseStringLiteral(text.toString());
     }
 
     private String parseGStringBegin(GstringContext ctx, String beginQuotation) {
-        String text = ctx.GStringBegin().getText();
-        text = text.substring(0, text.length() - 1);  // remove the tailing $
-        text = text + QUOTATION_MAP.get(beginQuotation);
+        StringBuilder text = new StringBuilder(ctx.GStringBegin().getText());
+        text.deleteCharAt(text.length() - 1);  // remove the tailing $
+        text.append(QUOTATION_MAP.get(beginQuotation));
 
-        return this.parseStringLiteral(text);
+        return this.parseStringLiteral(text.toString());
     }
 
     private String beginQuotation(String text) {
         if (text.startsWith(TDQ_STR)) {
             return TDQ_STR;
-        } else if (text.startsWith(DOLLAR_SLASH_STR)) {
-            return DOLLAR_SLASH_STR;
+        } else if (text.startsWith(DQ_STR)) {
+            return DQ_STR;
         } else if (text.startsWith(SLASH_STR)) {
             return SLASH_STR;
+        } else if (text.startsWith(DOLLAR_SLASH_STR)) {
+            return DOLLAR_SLASH_STR;
         } else {
             return String.valueOf(text.charAt(0));
         }
