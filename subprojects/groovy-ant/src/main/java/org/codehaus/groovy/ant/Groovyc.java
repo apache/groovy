@@ -20,23 +20,6 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -61,6 +44,22 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Compiles Groovy source files using Ant.
@@ -1029,7 +1028,7 @@ public class Groovyc extends MatchingTask {
             commandLineList.add(javaHome + separator + "bin" + separator + "java");
         }
         commandLineList.add("-classpath");
-        commandLineList.add(classpath.toString());
+        commandLineList.add(getClasspathRelative(classpath));
 
         final String fileEncodingProp = System.getProperty("file.encoding");
         if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
@@ -1057,6 +1056,15 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    private String getClasspathRelative(Path classpath) {
+        String raw = classpath.toString();
+        String baseDir = getProject().getBaseDir().getAbsolutePath();
+        if (!raw.startsWith(baseDir)) {
+            return raw;
+        }
+        return "." + raw.substring(baseDir.length());
+    }
+
     /**
      * Add "groovyc" parameters to the commandLineList, based on the ant configuration.
      *
@@ -1066,7 +1074,7 @@ public class Groovyc extends MatchingTask {
      */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
         commandLineList.add("--classpath");
-        commandLineList.add(classpath.toString());
+        commandLineList.add(getClasspathRelative(classpath));
         if (jointCompilation) {
             commandLineList.add("-j");
             commandLineList.addAll(jointOptions);
@@ -1133,18 +1141,12 @@ public class Groovyc extends MatchingTask {
     }
 
     private String[] makeCommandLine(List<String> commandLineList) {
-        final String[] commandLine = new String[commandLineList.size()];
-        for (int i = 0; i < commandLine.length; ++i) {
-            commandLine[i] = commandLineList.get(i);
-        }
-        log.verbose("Compilation arguments:");
-        log.verbose(DefaultGroovyMethods.join(commandLine, "\n"));
-        return commandLine;
+        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join(commandLineList, "\n"));
+        return commandLineList.toArray(new String[commandLineList.size()]);
     }
 
     private void runForked(String[] commandLine) {
-        // use the main method in FileSystemCompiler
-        final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
+        final Execute executor = new Execute();
         executor.setAntRun(getProject());
         executor.setWorkingDirectory(getProject().getBaseDir());
         executor.setCommandline(commandLine);
