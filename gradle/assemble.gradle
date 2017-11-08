@@ -247,6 +247,7 @@ allprojects {
                         if (isRootProject) {
                             zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
                         }
+                        zap pattern: 'org.codehaus.groovy.vmplugin.v7.IndyInterface'
                         rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
                         rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
                         rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
