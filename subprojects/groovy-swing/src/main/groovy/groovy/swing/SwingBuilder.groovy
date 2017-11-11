@@ -87,20 +87,18 @@ import groovy.swing.factory.CollectionFactory
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class SwingBuilder extends FactoryBuilderSupport {
+class SwingBuilder extends FactoryBuilderSupport {
 
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     private static boolean headless = false
 
-    public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";
-    public static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id";
+    static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id"
+    static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id"
 
     private static final Random random = new Random()
 
-    public SwingBuilder(boolean init = true) {
+    SwingBuilder(boolean init = true) {
         super(init)
         headless = GraphicsEnvironment.isHeadless()
         containingWindows = new LinkedList()
@@ -129,7 +127,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("bind", bindFactory)
         addAttributeDelegate(bindFactory.&bindingAttributeDelegate)
         registerFactory("bindProxy", new BindProxyFactory())
-        registerFactory ("bindGroup", new BindGroupFactory());
+        registerFactory ("bindGroup", new BindGroupFactory())
     }
 
     def registerPassThruNodes() {
@@ -294,7 +292,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     /**
      * Do some overrides for standard component handlers, else use super
      */
-    public void registerBeanFactory(String nodeName, String groupName, Class klass) {
+    void registerBeanFactory(String nodeName, String groupName, Class klass) {
         // poke at the type to see if we need special handling
         if (LayoutManager.isAssignableFrom(klass)) {
             registerFactory(nodeName, groupName, new LayoutFactory(klass))
@@ -321,12 +319,12 @@ public class SwingBuilder extends FactoryBuilderSupport {
      *
      * @param c this closure is run in the EDT
      */
-    public SwingBuilder edt(Closure c) {
+    SwingBuilder edt(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
         if (headless || SwingUtilities.isEventDispatchThread()) {
             c.call(this)
         } else {
-            Map<String, Object> continuationData = getContinuationData();
+            Map<String, Object> continuationData = getContinuationData()
             try {
                 if (!(c instanceof MethodClosure)) {
                     c = c.curry([this])
@@ -341,7 +339,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
             } catch (InvocationTargetException e) {
                 throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException())
             } finally {
-                restoreFromContinuationData(continuationData);
+                restoreFromContinuationData(continuationData)
             }
         }
         return this
@@ -353,7 +351,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
      *
      * @param c this closure is run in the EDT
      */
-    public SwingBuilder doLater(Closure c) {
+    SwingBuilder doLater(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
         if (headless) {
             c.call()
@@ -375,7 +373,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
      *
      * @param c this closure is started outside of the EDT
      */
-    public SwingBuilder doOutside(Closure c) {
+    SwingBuilder doOutside(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
         if (!(c instanceof MethodClosure)) {
             c = c.curry([this])
@@ -393,7 +391,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
      *
      * @param c run this closure in the new builder using the edt method
      */
-    public static SwingBuilder edtBuilder(Closure c) {
+    static SwingBuilder edtBuilder(@DelegatesTo(SwingBuilder) Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
     }
@@ -403,7 +401,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * @param c run this closure in the builder using the edt method
      */
     @Deprecated
-    public static SwingBuilder '$static_methodMissing'(String method, Object args) {
+    static SwingBuilder '$static_methodMissing'(String method, Object args) {
         if (method == 'build' && args.length == 1 && args[0] instanceof Closure) {
             return edtBuilder(args[0])
         } else {
@@ -416,16 +414,16 @@ public class SwingBuilder extends FactoryBuilderSupport {
      *
      * @param c run this closure in the builder
      */
-    public Object build(Closure c) {
+    Object build(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
         return c.call()
     }
 
-    public KeyStroke shortcut(key, modifier = 0) {
+    KeyStroke shortcut(key, modifier = 0) {
         return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier)
     }
 
-    public KeyStroke shortcut(String key, modifier = 0) {
+    KeyStroke shortcut(String key, modifier = 0) {
         KeyStroke ks = KeyStroke.getKeyStroke(key)
         if (ks == null) {
             return null
@@ -433,11 +431,11 @@ public class SwingBuilder extends FactoryBuilderSupport {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
     }
 
-    public static LookAndFeel lookAndFeel(Object laf, Closure initCode) {
+    static LookAndFeel lookAndFeel(Object laf, Closure initCode) {
         lookAndFeel([:], laf, initCode)
     }
 
-    public static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
+    static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
         //if (context) {
         //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuilder node, initialization of the Look and Feel may be inconsistent."
@@ -445,9 +443,9 @@ public class SwingBuilder extends FactoryBuilderSupport {
         groovy.swing.LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }
 
-    public static LookAndFeel lookAndFeel(Object... lafs) {
+    static LookAndFeel lookAndFeel(Object... lafs) {
         if (lafs.length == 1) {
-            lookAndFeel([:], lafs[0], null as Closure);
+            lookAndFeel([:], lafs[0], null as Closure)
         }
         for (Object laf in lafs) {
             try {
@@ -486,7 +484,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         lookAndFeel([:], laf, null as Closure)
     }
 
-    public static objectIDAttributeDelegate(def builder, def node, def attributes) {
+    static objectIDAttributeDelegate(def builder, def node, def attributes) {
         def idAttr = builder.getAt(DELEGATE_PROPERTY_OBJECT_ID) ?: DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
         def theID = attributes.remove(idAttr)
         if (theID) {
@@ -501,7 +499,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
     }
 
-    public static clientPropertyAttributeDelegate(def builder, def node, def attributes) {
+    static clientPropertyAttributeDelegate(def builder, def node, def attributes) {
         def clientPropertyMap = attributes.remove("clientProperties")
         clientPropertyMap.each { key, value ->
            node.putClientProperty key, value
@@ -512,7 +510,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
     }
 
-    public void createKeyStrokeAction( Map attributes, JComponent component = null ) {
+    void createKeyStrokeAction( Map attributes, JComponent component = null ) {
         component = findTargetComponent(attributes, component)
         if( !attributes.containsKey("keyStroke") ) {
             throw new RuntimeException("You must define a value for keyStroke:")
