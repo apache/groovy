@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : bug fixes.
- *
- * @author Cedric Champeau
  */
 class BugsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5456
@@ -715,6 +713,35 @@ Printer
             }
 
             assert Child.name == 'Child'
+        '''
+    }
+
+    // GROOVY-7315
+    void testNamedArgConstructorSupportWithInnerClassesAndCS() {
+        assertScript '''
+            import groovy.transform.*
+            @ToString
+            class X {
+                int a
+                static X makeX() { new X(a:1) }
+                Y makeY() {
+                    new Y(b:2)
+                }
+                @ToString
+                private class Y {
+                    int b
+                    @ToString
+                    private class Z {
+                        int c
+                    }
+                    Z makeZ() {
+                        new Z(c:3)
+                    }
+                }
+            }
+            assert X.makeX().toString() == 'X(1)'
+            assert X.makeX().makeY().toString() == 'X$Y(2)'
+            assert X.makeX().makeY().makeZ().toString() == 'X$Y$Z(3)'
         '''
     }
 }
