@@ -25,7 +25,8 @@ configurations {
 }
 
 dependencies {
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.7'
+    jmh rootProject
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
