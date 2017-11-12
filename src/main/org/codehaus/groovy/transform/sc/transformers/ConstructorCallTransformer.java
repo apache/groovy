@@ -22,6 +22,8 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -55,15 +57,16 @@ public class ConstructorCallTransformer {
     Expression transformConstructorCall(final ConstructorCallExpression expr) {
         ConstructorNode node = (ConstructorNode) expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (node == null) return expr;
-        if (node.getParameters().length == 1
-                && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)
+        Parameter[] params = node.getParameters();
+        if ((params.length == 1 || params.length == 2) // 2 is for inner class case
+                && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(params[params.length - 1].getType(), ClassHelper.MAP_TYPE)
                 && node.getCode() == StaticTypeCheckingVisitor.GENERATED_EMPTY_STATEMENT) {
             Expression arguments = expr.getArguments();
             if (arguments instanceof TupleExpression) {
                 TupleExpression tupleExpression = (TupleExpression) arguments;
                 List<Expression> expressions = tupleExpression.getExpressions();
-                if (expressions.size() == 1) {
-                    Expression expression = expressions.get(0);
+                if (expressions.size() == 1 || expressions.size() == 2) { // 2 = inner class case
+                    Expression expression = expressions.get(expressions.size() - 1);
                     if (expression instanceof MapExpression) {
                         MapExpression map = (MapExpression) expression;
                         // check that the node doesn't belong to the list of declared constructors
@@ -73,7 +76,8 @@ public class ConstructorCallTransformer {
                                 return staticCompilationTransformer.superTransform(expr);
                             }
                         }
-                        // replace this call with a call to <init>() + appropriate setters
+                        // replace call to <init>(Map) or <init>(this, Map)
+                        // with a call to <init>() or <init>(this) + appropriate setters
                         // for example, foo(x:1, y:2) is replaced with:
                         // { def tmp = new Foo(); tmp.x = 1; tmp.y = 2; return tmp }()
                         MapStyleConstructorCall result = new MapStyleConstructorCall(
@@ -95,21 +99,25 @@ public class ConstructorCallTransformer {
     private static class MapStyleConstructorCall extends BytecodeExpression implements Opcodes {
         private StaticCompilationTransformer staticCompilationTransformer;
         private AsmClassGenerator acg;
-        private ClassNode declaringClass;
-        private MapExpression map;
-        private ConstructorCallExpression orginalCall;
+        private final ClassNode declaringClass;
+        private final MapExpression map;
+        private final ConstructorCallExpression originalCall;
+        private final boolean innerClassCall;
 
         public MapStyleConstructorCall(
                 final StaticCompilationTransformer transformer,
                 final ClassNode declaringClass,
                 final MapExpression map,
-                ConstructorCallExpression orginalCall) {
+                final ConstructorCallExpression originalCall) {
             this.staticCompilationTransformer = transformer;
             this.declaringClass = declaringClass;
             this.map = map;
-            this.orginalCall = orginalCall;
-            this.setSourcePosition(orginalCall);
-            this.copyNodeMetaData(orginalCall);
+            this.originalCall = originalCall;
+            this.setSourcePosition(originalCall);
+            this.copyNodeMetaData(originalCall);
+            List<Expression> originalExpressions = originalCall.getArguments() instanceof TupleExpression ?
+                    ((TupleExpression)originalCall.getArguments()).getExpressions() : null;
+            this.innerClassCall = originalExpressions != null && originalExpressions.size() == 2;
         }
 
         @Override
@@ -117,7 +125,7 @@ public class ConstructorCallTransformer {
             if (visitor instanceof AsmClassGenerator) {
                 acg = (AsmClassGenerator) visitor;
             } else {
-                orginalCall.visit(visitor);
+                originalCall.visit(visitor);
             } 
             super.visit(visitor);
         }
@@ -137,7 +145,15 @@ public class ConstructorCallTransformer {
             String classInternalName = BytecodeHelper.getClassInternalName(declaringClass);
             mv.visitTypeInsn(NEW, classInternalName);
             mv.visitInsn(DUP);
-            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V", false);
+            String desc = "()V";
+            if (innerClassCall && declaringClass.isRedirectNode() && declaringClass.redirect() instanceof InnerClassNode) {
+                // load "this"
+                mv.visitVarInsn(ALOAD, 0);
+                InnerClassNode icn = (InnerClassNode) declaringClass.redirect();
+                Parameter[] params = { new Parameter(icn.getOuterClass(), "$p$") };
+                desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
+            }
+            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", desc, false);
             mv.visitVarInsn(ASTORE, tmpObj); // store it into tmp variable
 
             // load every field
