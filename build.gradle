@@ -70,6 +70,7 @@ ext.modules = {
     subprojects.findAll{ !['performance'].contains(it.name) }
 }
 
+apply from: 'gradle/bad-practices.gradle'
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
