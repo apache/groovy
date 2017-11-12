@@ -25,7 +25,7 @@ configurations {
 }
 
 dependencies {
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
@@ -60,7 +60,7 @@ task performanceTests {
     }
 }
 
-['1.8.9', '2.0.8', '2.1.9', '2.2.2', '2.3.10', '2.3.11', '2.4.4', 'current'].each { version ->
+['1.8.9', '2.0.8', '2.1.9', '2.2.2', '2.3.10', '2.3.11', '2.4.12', 'current'].each { version ->
     def t = task "performanceTestGroovy${version.replace('.', '_')}"(type: JavaExec) {
         dependsOn compileTestJava
         def groovyConf = configurations.detachedConfiguration(
