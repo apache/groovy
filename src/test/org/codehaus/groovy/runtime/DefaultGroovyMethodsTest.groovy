@@ -283,9 +283,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.or(false, true))
         assertFalse(DefaultGroovyMethods.or(false, false))
         assertFalse(DefaultGroovyMethods.or(false, null))
-        assertFalse(DefaultGroovyMethods.or(null, false))
         assertTrue(DefaultGroovyMethods.or(true, null))
-        assertTrue(DefaultGroovyMethods.or(null, true))
     }
 
     void testBooleanAnd() {
@@ -294,9 +292,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.and(false, true))
         assertFalse(DefaultGroovyMethods.and(false, false))
         assertFalse(DefaultGroovyMethods.and(false, null))
-        assertFalse(DefaultGroovyMethods.and(null, false))
         assertFalse(DefaultGroovyMethods.and(true, null))
-        assertFalse(DefaultGroovyMethods.and(null, true))
     }
 
     void testBooleanXor() {
@@ -305,9 +301,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.xor(false, true))
         assertFalse(DefaultGroovyMethods.xor(false, false))
         assertFalse(DefaultGroovyMethods.xor(false, null))
-        assertFalse(DefaultGroovyMethods.xor(null, false))
         assertTrue(DefaultGroovyMethods.xor(true, null))
-        assertTrue(DefaultGroovyMethods.xor(null, true))
     }
 
     void testBooleanImplication() {
@@ -316,8 +310,6 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.implies(false, true))
         assertTrue(DefaultGroovyMethods.implies(false, false))
         assertTrue(DefaultGroovyMethods.implies(false, null))
-        assertTrue(DefaultGroovyMethods.implies(null, false))
         assertFalse(DefaultGroovyMethods.implies(true, null))
-        assertTrue(DefaultGroovyMethods.implies(null, true))
     }
 }
