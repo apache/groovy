@@ -169,9 +169,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
      * @return result of calling the closure
+     * @see #with(Object, Closure)
      * @since 1.0
      */
-    public static <T> T identity(Object self, Closure<T> closure) {
+    public static <T,U> T identity(
+            @DelegatesTo.Target("self") U self,
+            @DelegatesTo(value=DelegatesTo.Target.class,
+                    target="self",
+                    strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class)
+                    Closure<T> closure) {
         return DefaultGroovyMethods.with(self, closure);
     }
 
@@ -224,7 +231,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows the closure to be called for the object reference self.
      * <p/>
      * Any method invoked inside the closure will first be invoked on the
-     * self reference. For exampe, the following method calls to the append()
+     * self reference. For example, the following method calls to the append()
      * method are invoked on the StringBuilder instance and then, because
      * 'returning' is true, the self instance is returned:
      * <pre class="groovyTestCase">
