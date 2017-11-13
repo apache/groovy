@@ -744,4 +744,34 @@ Printer
             assert X.makeX().makeY().makeZ().toString() == 'X$Y$Z(3)'
         '''
     }
+
+    // GROOVY-8255
+    void testTargetTypingEmptyCollectionLiterals() {
+        assertScript '''
+            class Foo {
+                List<List<String>> items = [['x']]
+                def bar() {
+                    List<String> result = []
+                    List<String> selections = items.size() ? (items.get(0) ?: []) : items.size() > 1 ? items.get(1) : []
+                    for (String selection: selections) {
+                        result << selection
+                    }
+                    result
+                }
+            }
+            assert new Foo().bar() == ['x']
+        '''
+        assertScript '''
+            class Foo {
+                def bar() {
+                    def items = [x:1]
+                    Map<String, Integer> empty = [:]
+                    Map<String, Integer> first = items ?: [:]
+                    Map<String, Integer> second = first.isEmpty() ? [:] : [y:2]
+                    [first, second]
+                }
+            }
+            assert new Foo().bar() == [[x:1], [y:2]]
+        '''
+    }
 }
