@@ -149,10 +149,9 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  *         Created on 2016/08/14
  */
 public class AstBuilder extends GroovyParserBaseVisitor<Object> implements GroovyParserVisitor<Object> {
-    public AstBuilder(SourceUnit sourceUnit, ClassLoader classLoader) {
+    public AstBuilder(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
-        this.classLoader = classLoader; // unused for the time being
 
         CharStream charStream = createCharStream(sourceUnit);
 
@@ -4437,7 +4436,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private final ModuleNode moduleNode;
     private final SourceUnit sourceUnit;
-    private final ClassLoader classLoader; // Our ClassLoader, which provides information on external types
     private final GroovyLangLexer lexer;
     private final GroovyLangParser parser;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
