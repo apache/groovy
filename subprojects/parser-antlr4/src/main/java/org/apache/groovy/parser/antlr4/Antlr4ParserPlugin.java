@@ -67,7 +67,7 @@ public class Antlr4ParserPlugin implements ParserPlugin {
             sourceUnit.setSource(this.readerSource);
         }
 
-        AstBuilder builder = new AstBuilder(sourceUnit, classLoader);
+        AstBuilder builder = new AstBuilder(sourceUnit);
 
         return builder.buildAST();
     }
