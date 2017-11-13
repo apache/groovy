@@ -3442,6 +3442,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (hasInferredReturnType(trueExpression)) {
             typeOfTrue = trueExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
         }
+        // TODO consider moving next two statements "up a level", i.e. have just one more widely invoked
+        // check but determine no -ve consequences first
+        typeOfFalse = checkForTargetType(falseExpression, typeOfFalse);
+        typeOfTrue = checkForTargetType(trueExpression, typeOfTrue);
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
             if (enclosingBinaryExpression != null && enclosingBinaryExpression.getRightExpression()==expression) {
@@ -3461,7 +3465,37 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         popAssignmentTracking(oldTracker);
     }
 
-    private boolean hasInferredReturnType(Expression expression) {
+    // currently just for empty literals, not for e.g. Collections.emptyList() at present
+    /// it seems attractive to want to do this for more cases but perhaps not all cases
+    private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
+        if (typeCheckingContext.getEnclosingBinaryExpression() != null && isEmptyCollection(expr)) {
+            int op = typeCheckingContext.getEnclosingBinaryExpression().getOperation().getType();
+            if (isAssignment(op)) {
+                VariableExpression target = (VariableExpression) typeCheckingContext.getEnclosingBinaryExpression().getLeftExpression();
+                return adjustForTargetType(target.getType(), type);
+            }
+        }
+        return type;
+    }
+
+    private static ClassNode adjustForTargetType(final ClassNode targetType, final ClassNode resultType) {
+        if (targetType.isUsingGenerics() && missesGenericsTypes(resultType)) {
+            // unchecked assignment within ternary/elvis
+            // examples:
+            // List<A> list = existingAs ?: []
+            // in that case, the inferred type of the RHS is the type of the RHS
+            // "completed" with generics type information available in the LHS
+            return GenericsUtils.parameterizeType(targetType, resultType.getPlainNodeReference());
+        }
+        return resultType;
+    }
+
+    private static boolean isEmptyCollection(Expression expr) {
+        return (expr instanceof ListExpression && ((ListExpression) expr).getExpressions().size() == 0) ||
+        (expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().size() == 0);
+    }
+
+    private static boolean hasInferredReturnType(Expression expression) {
         ClassNode type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
         return type != null && !type.getName().equals("java.lang.Object");
     }
