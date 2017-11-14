@@ -17,5 +17,5 @@
  *  under the License.
  */
 tasks.withType(Wrapper) {
-    gradleVersion = project.gradleVersion
+    gradleVersion = gradle_version
 }

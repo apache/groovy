@@ -80,7 +80,7 @@ As mentioned in the previous paragraph, if you download the source distribution
 you need to bootstrap Gradle. This isn't needed if you clone from the Github repo.
 
 Each version of Groovy is built and tested using a specific version of Gradle.
-That version is specified by the `gradleVersion` property defined in the `build.gradle`
+That version is specified by the `gradle_version` property defined in the `gradle.properties`
 file within the root directory. Luckily you shouldn't need to know that version and,
 after bootstrapping, you should use the `gradlew` command which will ensure the
 correct version is always used.
@@ -91,9 +91,12 @@ expecting.
 
 To bootstrap Gradle, at the top directory of your unpacked source, run the command:
 
-    gradle wrapper
+    gradle -b wrapper.gradle wrapper
 
 On Unix-like systems, use `./gradle`.
+If the version of Gradle you have installed is close to the required version,
+you might be able to get away without the `-b wrapper.gradle` above, but if in
+doubt leave it in.
 
 *NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
 the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew`).
