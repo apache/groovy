@@ -167,7 +167,6 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '3.5.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.4.1'
@@ -381,7 +380,7 @@ task ensureGrammars {
 }
 
 apply from: 'gradle/utils.gradle'
-apply from: 'gradle/wrapper.gradle'
+apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
