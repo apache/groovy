@@ -40,8 +40,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -121,7 +121,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
 
         public void put(Object key, MethodNode value) {
             if (map == null) {
-                 map = new HashMap<Object, List<MethodNode>>();
+                 map = new LinkedHashMap<Object, List<MethodNode>>();
             }
             if (map.containsKey(key)) {
                 get(key).add(value);
@@ -544,7 +544,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
         if (r.fields == null)
             r.fields = new LinkedList<>();
         if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<>();
+            r.fieldIndex = new LinkedHashMap<>();
 
         if (isFirst)
             r.fields.addFirst(node);
@@ -1447,7 +1447,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     public void renameField(String oldName, String newName) {
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
         final Map<String,FieldNode> index = r.fieldIndex;
         index.put(newName, index.remove(oldName));
     }
@@ -1455,7 +1455,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     public void removeField(String oldName) {
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
         final Map<String,FieldNode> index = r.fieldIndex;
         r.fields.remove(index.get(oldName));
         index.remove(oldName);
@@ -1476,7 +1476,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
         if(transformInstances == null){
             transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
             for (CompilePhase phase : CompilePhase.values()) {
-                transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
+                transformInstances.put(phase, new LinkedHashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
             }
         }
         return transformInstances;
