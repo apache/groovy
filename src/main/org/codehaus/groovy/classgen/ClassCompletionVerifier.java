@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -35,7 +36,6 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -104,7 +104,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             result = new HashMap<String, MethodNode>();
         }
         // add in unimplemented abstract methods from the interfaces
-        ClassNodeUtils.addInterfaceMethods(node, result);
+        ClassNodeUtils.addDeclaredMethodsFromInterfaces(node, result);
         for (MethodNode methodNode : node.getMethods()) {
             MethodNode mn = result.get(methodNode.getTypeDescriptor());
             if (mn != null && (mn.isStatic() ^ methodNode.isStatic()) && !methodNode.isStaticConstructor()) {

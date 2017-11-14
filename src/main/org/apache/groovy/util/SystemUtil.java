@@ -16,10 +16,31 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
+package org.apache.groovy.util;
 
-class GroovycTest1 {
-  static void main ( String[] args ) {
-    ( new File ( 'target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest1_Result.txt' ) ).write ( 'OK.' )
-  }
+public class SystemUtil {
+    /**
+     * Sets a system property from a name=value String
+     *
+     * @param nameValue the non-null name=value String
+     * @return the found name
+     */
+    public static String setSystemPropertyFrom(final String nameValue) {
+        if (nameValue == null) throw new IllegalArgumentException("argument should not be null");
+
+        String name, value;
+        int i = nameValue.indexOf("=");
+
+        if (i == -1) {
+            name = nameValue;
+            value = Boolean.TRUE.toString();
+        } else {
+            name = nameValue.substring(0, i);
+            value = nameValue.substring(i + 1, nameValue.length());
+        }
+        name = name.trim();
+
+        System.setProperty(name, value);
+        return name;
+    }
 }

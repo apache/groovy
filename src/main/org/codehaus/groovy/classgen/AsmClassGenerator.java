@@ -434,6 +434,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitStdMethod(MethodNode node, boolean isConstructor, Parameter[] parameters, Statement code) {
+        controller.getCompileStack().init(node.getVariableScope(), parameters);
+        controller.getCallSiteWriter().makeSiteEntry();
+
         MethodVisitor mv = controller.getMethodVisitor();
         final ClassNode superClass = controller.getClassNode().getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
@@ -462,9 +465,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V", false);
             }
         }
-
-        controller.getCompileStack().init(node.getVariableScope(), parameters);
-        controller.getCallSiteWriter().makeSiteEntry();
 
         // handle body
         super.visitConstructorOrMethod(node, isConstructor);

@@ -131,21 +131,21 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     public void addSources(String[] paths) {
         for (String path : paths) {
-            File file = new File(path);
-            if (file.getName().endsWith(".java"))
-                addJavaSource(file);
-            else
-                addSource(file);
+            addJavaOrGroovySource(new File(path));
         }
     }
 
     public void addSources(File[] files) {
         for (File file : files) {
-            if (file.getName().endsWith(".java"))
-                addJavaSource(file);
-            else
-                addSource(file);
+            addJavaOrGroovySource(file);
         }
+    }
+
+    private void addJavaOrGroovySource(File file) {
+        if (file.getName().endsWith(".java"))
+            addJavaSource(file);
+        else
+            addSource(file);
     }
 
     public JavaCompilerFactory getCompilerFactory() {

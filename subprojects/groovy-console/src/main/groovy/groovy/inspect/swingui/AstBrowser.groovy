@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.objectweb.asm.ClassReader
@@ -70,11 +71,13 @@ class AstBrowser {
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
     Action refreshAction
+    private CompilerConfiguration config
 
-    AstBrowser(inputArea, rootElement, classLoader) {
+    AstBrowser(inputArea, rootElement, classLoader, config = null) {
         this.inputArea = inputArea
         this.rootElement = rootElement
         this.classLoader = new GeneratedBytecodeAwareGroovyClassLoader(classLoader)
+        this.config = config
     }
 
     SwingBuilder swing
@@ -445,7 +448,7 @@ class AstBrowser {
         swing.doOutside {
             try {
 
-                String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass)
+                String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass, config)
                 swing.doLater {
                     decompiledSource.textEditor.text = result 
                     decompiledSource.textEditor.setCaretPosition(0)
@@ -474,7 +477,7 @@ class AstBrowser {
         swing.doOutside {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
-                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker, config)
                 classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase, showIndyBytecode)
                 swing.doLater {

@@ -1927,9 +1927,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
         MethodNode node;
-        if (args.length == 1
-                && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)
-                && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size() == 1
+        if (looksLikeNamedArgConstructor(receiver, args)
+                && findMethod(receiver, "<init>", DefaultGroovyMethods.init(args)).size() == 1
                 && findMethod(receiver, "<init>", args).isEmpty()) {
             // bean-style constructor
             node = typeCheckMapConstructor(call, receiver, arguments);
@@ -1941,7 +1940,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         node = findMethodOrFail(call, receiver, "<init>", args);
         if (node != null) {
-            if (node.getParameters().length == 0 && args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)) {
+            if (looksLikeNamedArgConstructor(receiver, args) && node.getParameters().length + 1 == args.length) {
                 node = typeCheckMapConstructor(call, receiver, arguments);
             } else {
                 typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
@@ -1951,17 +1950,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.afterMethodCall(call);
     }
 
+    private boolean looksLikeNamedArgConstructor(ClassNode receiver, ClassNode[] args) {
+        return (args.length == 1 || args.length == 2 && isInnerConstructor(receiver, args[0]))
+                && implementsInterfaceOrIsSubclassOf(args[args.length - 1], MAP_TYPE);
+    }
+
+    private boolean isInnerConstructor(ClassNode receiver, ClassNode parent) {
+        return receiver.isRedirectNode() && receiver.redirect() instanceof InnerClassNode &&
+                receiver.redirect().getOuterClass().equals(parent);
+    }
+
     protected MethodNode typeCheckMapConstructor(final ConstructorCallExpression call, final ClassNode receiver, final Expression arguments) {
         MethodNode node = null;
         if (arguments instanceof TupleExpression) {
             TupleExpression texp = (TupleExpression) arguments;
             List<Expression> expressions = texp.getExpressions();
-            if (expressions.size() == 1) {
-                Expression expression = expressions.get(0);
+            // should only get here with size = 2 when inner class constructor
+            if (expressions.size() == 1 || expressions.size() == 2) {
+                Expression expression = expressions.get(expressions.size() - 1);
                 if (expression instanceof MapExpression) {
                     MapExpression argList = (MapExpression) expression;
                     checkGroovyConstructorMap(call, receiver, argList);
-                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                    Parameter[] params = expressions.size() == 1
+                            ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
+                            : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
+                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(receiver);
                 }
             }

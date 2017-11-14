@@ -16,10 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
 
-class GroovycTest1 {
-  static void main ( String[] args ) {
-    ( new File ( 'target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest1_Result.txt' ) ).write ( 'OK.' )
-  }
+// Check if dependency resolution is happening at configuration time
+allprojects { p ->
+    p.ext.resolvingAllowed  = false
+    afterEvaluate { pj ->
+        pj.ext.resolvingAllowed = true
+    }
+    configurations.all { cnf ->
+        incoming.beforeResolve {
+            if (!p.ext.resolvingAllowed) {
+                throw new IllegalStateException("Configuration $cnf is being resolved at configuration time. This shouldn't be necessary and usually indicates an error in the build script.")
+            }
+        }
+    }
 }

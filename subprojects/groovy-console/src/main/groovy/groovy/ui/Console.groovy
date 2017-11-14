@@ -24,7 +24,9 @@ import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.messages.SimpleMessage
+import org.codehaus.groovy.runtime.StringGroovyMethods
 import org.codehaus.groovy.tools.shell.util.MessageSource
+import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 
 import java.awt.Component
 import java.awt.EventQueue
@@ -67,15 +69,6 @@ import javax.swing.event.DocumentListener
  * Groovy Swing console.
  *
  * Allows user to interactively enter and execute Groovy.
- *
- * @author Danno Ferrin
- * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
- * @author Alan Green more features: history, System.out capture, bind result to _
- * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
- * @author Hamlet D'Arcy, AST browser
- * @author Roshan Dawrani
- * @author Paul King
- * @author Andre Steingress
  */
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
@@ -200,7 +193,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action selectWordAction
     Action selectPreviousWordAction
 
-    ConsolePreferences consolePreferences;
+    ConsolePreferences consolePreferences
 
     static void main(args) {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
@@ -212,6 +205,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             V(longOpt: 'version', messages['cli.option.version.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
             i(longOpt: 'indy', messages['cli.option.indy.description'])
+            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', messages['cli.option.define.description'])
+            _(longOpt: 'configscript', args: 1, messages['cli.option.configscript.description'])
         }
         OptionAccessor options = cli.parse(args)
 
@@ -230,6 +225,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             System.exit(0)
         }
 
+        if (options.hasOption('D')) {
+            options.getOptionProperties('D')?.each { k, v ->
+                System.setProperty(k, v)
+            }
+        }
+
         // full stack trace should not be logged to the output window - GROOVY-4663
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = false
 
@@ -237,7 +238,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
         def baseConfig = new CompilerConfiguration()
-        baseConfig.setParameters((boolean) options.hasOption("pa"))
+        String starterConfigScripts = System.getProperty("groovy.starter.configscripts", null)
+        if (options.configscript || (starterConfigScripts != null && !starterConfigScripts.isEmpty())) {
+            List<String> configScripts = new ArrayList<String>()
+            if (options.configscript) {
+                configScripts.add(options.configscript)
+            }
+            if (starterConfigScripts != null) {
+                configScripts.addAll(StringGroovyMethods.tokenize((CharSequence) starterConfigScripts, ','))
+            }
+            GroovyMain.processConfigScripts(configScripts, baseConfig)
+        }
+
+        baseConfig.setParameters(options.hasOption("pa"))
 
         if (options.i) {
             enableIndy(baseConfig)
@@ -246,8 +259,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
-        if (args.length > 0 && !args[-1].toString().startsWith("-")) {
-            console.loadScriptFile(args[-1] as File)
+        def remaining = options.arguments()
+        if (remaining && !remaining[-1].startsWith("-")) {
+            console.loadScriptFile(remaining[-1] as File)
         }
 
     }
@@ -312,8 +326,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void newScript(ClassLoader parent, Binding binding) {
         config = new CompilerConfiguration(baseConfig)
-        if (threadInterrupt) config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
-
+        config.addCompilationCustomizers(*baseConfig.compilationCustomizers)
+        if (threadInterrupt) {
+            config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+        }
         shell = new GroovyShell(parent, binding, config)
     }
 
@@ -621,8 +637,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void threadInterruption(EventObject evt) {
         threadInterrupt = evt.source.selected
         prefs.putBoolean('threadInterrupt', threadInterrupt)
-        def customizers = config.compilationCustomizers
-        customizers.clear()
+        def customizers = config.compilationCustomizers.iterator()
+        while (customizers.hasNext()) {
+            def next = customizers.next()
+            if (next instanceof ASTTransformationCustomizer) {
+                ASTTransformationCustomizer astCustomizer = next
+                if (astCustomizer.transformation instanceof ThreadInterruptibleASTTransformation) {
+                    customizers.remove()
+                }
+            }
+        }
         if (threadInterrupt) {
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
@@ -911,7 +935,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void inspectAst(EventObject evt = null) {
-        new AstBrowser(inputArea, rootElement, shell.getClassLoader()).run({ inputArea.getText() } )
+        new AstBrowser(inputArea, rootElement, shell.getClassLoader(), config).run({ inputArea.getText() } )
     }
 
     void inspectTokens(EventObject evt = null) {

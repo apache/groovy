@@ -592,6 +592,91 @@ class EnumTest extends CompilableTestSupport {
             assert UsState.ID.toString() == 'Idaho'
         '''
     }
+
+    void testEnumConstantsTakePrecedenceOverClassProperties() {
+        assertScript '''
+            @Deprecated
+            enum Foo {
+                annotations
+            }
+            assert 'annotations' == Foo.annotations.toString()
+            assert Foo.getAnnotations().size() == 1
+          '''
+    }
+
+    void testNestedEnumHasStaticModifier_GROOVY_8360() {
+        assertScript '''
+            class Foo {
+                enum Bar {
+                    X('x'), Y
+                    String s
+                    Bar(String s) { this.s = s }
+                    Bar() {}
+                }
+            }            
+            assert java.lang.reflect.Modifier.isStatic(Foo.Bar.modifiers)
+            assert Foo.Bar.X.s == 'x'
+        '''
+    }
+
+    void testEnumWithinInnerClassHasStaticModifier_GROOVY_8360() {
+        assertScript '''
+            class Foo {
+                class Baz {
+                    enum Bar {
+                        X('x'), Y                                                                        
+                        String s                                                                                                
+                        Bar(String s) { this.s = s }
+                        Bar() {}                                                
+                    }                
+                }
+            }            
+            assert java.lang.reflect.Modifier.isStatic(Foo.Baz.Bar.modifiers)
+            assert Foo.Baz.Bar.X.s == 'x'
+        '''
+    }
+
+    void testNestedEnumHasStaticModifierSC_GROOVY_8360() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                enum Bar {
+                    X('x'), Y
+                    String s
+                    Bar(String s) { this.s = s }
+                    Bar() {}
+                }
+            }          
+            @groovy.transform.CompileStatic
+            void test() {
+                assert java.lang.reflect.Modifier.isStatic(Foo.Bar.getModifiers())
+                assert Foo.Bar.X.s == 'x'
+            }
+            test()
+        '''
+    }
+
+    void testEnumWithinInnerClassHasStaticModifierSC_GROOVY_8360() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                class Baz {
+                    enum Bar {
+                        X('x'), Y                                                                        
+                        String s                                                                                                
+                        Bar(String s) { this.s = s }
+                        Bar() {}                                                
+                    }                
+                }
+            }
+            @groovy.transform.CompileStatic
+            void test() {
+                assert java.lang.reflect.Modifier.isStatic(Foo.Baz.Bar.getModifiers())
+                assert Foo.Baz.Bar.X.s == 'x'            
+            }
+            test()                       
+        '''
+    }
 }
 
 enum UsCoin {

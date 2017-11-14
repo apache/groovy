@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -214,6 +215,10 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForInvokeOnPackagePrivateMethodsInRestrictedJavaPackages() throws Exception {
+        // FIX_JDK9 remove this exemption for JDK9
+        if (new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("9.0")) >= 0) {
+            return;
+        }
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "getBootstrapClassPath", new Class[0]);
         System.setSecurityManager(restrictiveSecurityManager);
 

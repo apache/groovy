@@ -16,10 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
+package groovy.transform;
 
-class GroovycTest1 {
-  static void main ( String[] args ) {
-    ( new File ( 'target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest1_Result.txt' ) ).write ( 'OK.' )
-  }
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * The Generated annotation is used to mark members that have been generated.
+ */
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Generated {
 }

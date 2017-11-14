@@ -155,8 +155,8 @@ public class JavaStubGenerator {
                     doAddMethod(method);
                 }
                 protected void addReturnIfNeeded(MethodNode node) {}
-                protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-                    doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
+                protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+                    return doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
 
                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
@@ -184,13 +184,15 @@ public class JavaStubGenerator {
                     }
                 }
 
-                private void doAddMethod(MethodNode method) {
+                private MethodNode doAddMethod(MethodNode method) {
                     String sig = method.getTypeDescriptor();
 
-                    if (propertyMethodsWithSigs.containsKey(sig)) return;
+                    if (propertyMethodsWithSigs.containsKey(sig)) return method;
 
                     propertyMethods.add(method);
                     propertyMethodsWithSigs.put(sig, method);
+
+                    return method;
                 }
 
                 @Override

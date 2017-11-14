@@ -16,10 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
+package groovy.bugs
 
-class GroovycTest1 {
-  static void main ( String[] args ) {
-    ( new File ( 'target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest1_Result.txt' ) ).write ( 'OK.' )
-  }
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+
+class Groovy8289Bug extends AbstractBytecodeTestCase {
+    void testConstructorLineIndex() {
+        def bytecode= compile(method:'<init>', '''
+            @groovy.transform.CompileStatic
+            class C {
+                String string
+                C(String s = null) { string = s }
+                static void main(args) {
+                    def c = new C('') // put breakpoint on this line, run as Java app, and step
+                    println c
+                }
+            }
+        ''')
+
+        assert bytecode.hasStrictSequence([
+                'L0',
+                'ALOAD 0',
+                'INVOKESPECIAL java/lang/Object.<init> ()V'
+        ])
+    }
 }

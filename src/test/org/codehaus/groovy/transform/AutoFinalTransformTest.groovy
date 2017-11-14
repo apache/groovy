@@ -61,4 +61,51 @@ class AutoFinalTransformTest extends CompilableTestSupport {
             assert js.fullName(true, ', ') == 'Smith, John'
         '''
     }
+
+    void testAutoFinalOnClassButDisabledOnMethod() {
+        // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
+        assertScript '''
+            import groovy.transform.AutoFinal
+            import groovy.transform.ASTTest
+            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
+            import static java.lang.reflect.Modifier.isFinal
+
+            @ASTTest(phase=SEMANTIC_ANALYSIS, value = {
+                assert node.methods.size() == 2
+                node.methods[0].with {
+                    assert it.name == 'fullName'
+                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
+                }
+                node.methods[1].with {
+                    assert it.name == 'initials'
+                    assert it.parameters.every{ p -> !isFinal(p.modifiers) }
+                }
+                assert node.constructors.size() == 1
+                node.constructors[0].with {
+                    assert it.parameters.every{ p -> isFinal(p.modifiers) }
+                }
+            })
+            @AutoFinal
+            class Person {
+                final String first, last
+                Person(String first, String last) {
+                    this.first = first
+                    this.last = last
+                }
+                String fullName(boolean reversed = false, String separator = ' ') {
+                    "${reversed ? last : first}$separator${reversed ? first : last}"
+                }
+                @AutoFinal(enabled=false)
+                String initials(boolean lower) {
+                    def raw = "${first[0]}${last[0]}"
+                    lower ? raw.toLowerCase() : raw
+                }
+            }
+
+            def js = new Person('John', 'Smith')
+            assert js.fullName() == 'John Smith'
+            assert js.fullName(true, ', ') == 'Smith, John'
+            assert js.initials(true) == 'js'
+        '''
+    }
 }

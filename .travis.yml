@@ -15,26 +15,36 @@
 
 language: groovy
 
+# set sudo required for non-container vm with more mem even though we don't need sudo
+# https://docs.travis-ci.com/user/reference/overview/
 sudo: required
 
 matrix:
   include:
+    - jdk: oraclejdk9
     - jdk: oraclejdk8
-      addons:
-        apt:
-          packages:
-            - oracle-java8-installer
+
+dist: trusty
 
 install: true
 
-before_script: unset _JAVA_OPTIONS
+# adjust gradle.properties if needed
+before_script:
+  - |
+    unset _JAVA_OPTIONS
+    if [ $TRAVIS_JDK_VERSION == "oraclejdk9" ]; then
+      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xms500m -Xmx1500m/' gradle.properties
+    fi
 
-script: travis_wait 60 ./gradlew --no-daemon test
+script: travis_wait 60 ./gradlew test
 
+# As recommended in:
+# https://docs.travis-ci.com/user/languages/java/#Caching
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
 cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-

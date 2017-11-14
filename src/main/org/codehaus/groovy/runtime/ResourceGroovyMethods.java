@@ -1179,7 +1179,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * Both regular files and subfolders/subdirectories can be processed depending
      * on the fileType enum value.
      *
-     * @param self     a file object
+     * @param self     a File (that happens to be a folder/directory)
      * @param fileType if normal files or directories or both should be processed
      * @param closure  the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
@@ -1206,7 +1206,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * Both regular files and subfolders/subdirectories are processed.
      *
      * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the 'child' file)
+     * @param closure a closure (the parameter passed is the 'child' file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see java.io.File#listFiles()
@@ -1222,7 +1222,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * ignoring regular files.
      *
      * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the subdirectory file)
+     * @param closure a closure (the parameter passed is the subdirectory file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see java.io.File#listFiles()
@@ -1234,12 +1234,13 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories may be passed to the closure
-     * depending on the value of fileType.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of potentially calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory. Whether the closure is called is determined by whether
+     * the file was a normal file or subdirectory and the value of fileType.
      *
-     * @param self     a file object
+     * @param self     a File (that happens to be a folder/directory)
      * @param fileType if normal files or directories or both should be processed
      * @param closure  the closure to invoke on each file
      * @throws FileNotFoundException    if the given directory does not exist
@@ -1263,8 +1264,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes <code>closure</code> for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed as found.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of potentially calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory.
+     *
      * The traversal can be adapted by providing various options in the <code>options</code> Map according
      * to the following keys:<dl>
      * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
@@ -1272,7 +1276,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * which can be used to control subsequent processing.</dd>
      * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
      * <dt>postDir</dt><dd>A {@link groovy.lang.Closure} run after each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
-     * which can be used to control subsequent processing.</dd>
+     * which can be used to control subsequent processing. Particularly useful when strict depth-first traversal is required.</dd>
      * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
      * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
      * (not applicable if the 'type' is set to {@link groovy.io.FileType#FILES})</dd>
@@ -1307,7 +1311,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * ) {it -> totalSize += it.size(); count++ }
      * </pre>
      *
-     * @param self    a File
+     * @param self    a File (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
      * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *                which can be used to control subsequent processing
@@ -1383,12 +1387,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed in a depth-first fashion.
+     * Processes each descendant file in this directory and any sub-directories.
      * Convenience method for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} when
      * no options to alter the traversal behavior are required.
      *
-     * @param self    a File
+     * @param self    a File (that happens to be a folder/directory)
      * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *                which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
@@ -1407,7 +1410,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
      * to be included in the options Map rather than as a parameter.
      *
-     * @param self    a File
+     * @param self    a File (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
@@ -1477,12 +1480,13 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories are passed to the closure.
+     * Processes each descendant file in this directory and any sub-directories.
+     * Processing consists of calling <code>closure</code> passing it the current
+     * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
+     * recursively processing the subdirectory.
      *
-     * @param self    a File
-     * @param closure a closure
+     * @param self    a File (that happens to be a folder/directory)
+     * @param closure a Closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
@@ -1493,11 +1497,12 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each descendant directory of this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Only subdirectories are passed to the closure; regular files are ignored.
+     * Recursively processes each descendant subdirectory in this directory.
+     * Processing consists of calling <code>closure</code> passing it the current
+     * subdirectory and then recursively processing that subdirectory.
+     * Regular files are ignored during traversal.
      *
-     * @param self    a directory
+     * @param self    a File (that happens to be a folder/directory)
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
@@ -1528,7 +1533,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
      * </pre>
      *
-     * @param self       a file
+     * @param self       a File (that happens to be a folder/directory)
      * @param fileType   whether normal files or directories or both should be processed
      * @param nameFilter the filter to perform on the name of the file/directory (using the {@link DefaultGroovyMethods#isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
@@ -1559,7 +1564,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories are matched.
      *
-     * @param self       a file
+     * @param self       a File (that happens to be a folder/directory)
      * @param nameFilter the nameFilter to perform on the name of the file (using the {@link DefaultGroovyMethods#isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
@@ -1578,7 +1583,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Only subdirectories are matched; regular files are ignored.
      *
-     * @param self       a file
+     * @param self       a File (that happens to be a folder/directory)
      * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link DefaultGroovyMethods#isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist

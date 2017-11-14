@@ -93,8 +93,10 @@ To bootstrap Gradle, at the top directory of your unpacked source, run the comma
 
     gradle wrapper
 
+On Unix-like systems, use `./gradle`.
+
 *NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
-the `gradlew` command instead of `gradle`.
+the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew`).
 
 == Building from Source
 
@@ -104,7 +106,7 @@ To build you will need:
 
 * {jdk}[JDK 8+]
 
-To build everything using Gradle:
+To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
     gradlew clean dist
 

@@ -122,9 +122,9 @@ class OperatorsTest extends CompilableTestSupport {
     void testBitwiseOperators() {
         // tag::bitwise_op[]
         int a = 0b00101010
-        assert a==42
+        assert a == 42
         int b = 0b00001000
-        assert b==8
+        assert b == 8
         assert (a & a) == a                     // <1>
         assert (a & b) == b                     // <2>
         assert (a | a) == a                     // <3>
@@ -512,7 +512,7 @@ assert function(*args,5,6) == 26
             Long id
             String name
             def asType(Class target) {                                              // <1>
-                if (target==Identifiable) {
+                if (target == Identifiable) {
                     return new Identifiable(name: name)
                 }
                 throw new ClassCastException("User cannot be coerced into $target")

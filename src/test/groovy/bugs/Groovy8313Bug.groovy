@@ -16,10 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
+package groovy.bugs
 
-class GroovycTest1 {
-  static void main ( String[] args ) {
-    ( new File ( 'target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest1_Result.txt' ) ).write ( 'OK.' )
-  }
+class Groovy8313Bug extends GroovyTestCase {
+    void testCorrectBridgeMethodForGenericArrayReturnType() {
+        assertScript '''
+            interface HasItems<T> {
+                T[] getItems()
+            }
+
+            class Things implements HasItems<String> {
+                final String[] items
+                Things(String... items) {
+                    this.items = items
+                }
+            }
+
+            assert new Things('item1').items.size() == 1
+        '''
+    }
 }

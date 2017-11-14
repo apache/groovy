@@ -50,15 +50,17 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.6'
-    id 'me.champeau.buildscan-recipes' version '0.1.7'
+    id 'com.gradle.build-scan' version '1.10.2'
+    id 'me.champeau.buildscan-recipes' version '0.2.0'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
     publishAlways()
+}
 
+buildScanRecipes {
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
@@ -68,6 +70,7 @@ ext.modules = {
     subprojects.findAll{ !['performance'].contains(it.name) }
 }
 
+apply from: 'gradle/bad-practices.gradle'
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
@@ -88,7 +91,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        if (isBuildInChina()) {
+        if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
@@ -159,7 +162,7 @@ configurations {
 
 ext {
     antVersion = '1.10.1'
-    asmVersion = '6.0_BETA'
+    asmVersion = '6.0'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
@@ -167,7 +170,7 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '3.5.1'
+    gradleVersion = '4.3.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
     jarjarVersion = '1.4.1'
@@ -222,6 +225,9 @@ dependencies {
     testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    if (JavaVersion.current().isJava9Compatible()) {
+        testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
+    }
 
     tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
@@ -231,7 +237,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:$asmVersion"
+    tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     examplesCompile project(':groovy-test')
@@ -332,14 +338,14 @@ processResources.doLast {
             include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
-        into sourceSets.main.output.classesDir
+        into sourceSets.main.java.outputDir
     }
 }
 
 tasks.withType(Jar) {
     doFirst {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
@@ -380,8 +386,8 @@ apply from: 'gradle/wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
-    def classesDir = sourceSets.main.output.classesDir
-    def classpath = files(classesDir, configurations.compile)
+    def classesDir = sourceSets.main.java.outputDir
+    def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
@@ -421,7 +427,7 @@ task bootstrapJar {
         destinationDir.mkdirs()
         ant.jar(
                 destfile: archivePath,
-                basedir: file(sourceSets.main.output.classesDir)
+                basedir: file(sourceSets.main.java.outputDir)
         )
     }
     inputs.property('indy', useIndy())
@@ -512,14 +518,6 @@ licenseReport {
             'com.googlecode', // openbeans has no pom but is ASLv2
             'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
-}
-
-def isBuildInChina() {
-    try {
-        return !InetAddress.getByName('www.twitter.com').isReachable(3000)
-    } catch(e) {
-        return true
-    }
 }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING

@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.tools;
 
+import org.apache.groovy.util.SystemUtil;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -72,12 +75,11 @@ import java.util.regex.Pattern;
  * not exist, an empty string will be used. If the path or file after the load
  * command does not exist, the path will be ignored.
  *
- * @author Jochen Theodorou
  * @see RootLoader
  */
 public class LoaderConfiguration {
 
-    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", GRAB_PREFIX = "grab", PROP_PREFIX = "property";
+    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", GRAB_PREFIX = "grab", PROP_PREFIX = "property", CONFIGSCRIPT_PREFIX = "configscript";
     private final List<URL> classPath = new ArrayList<URL>();
     private String main;
     private boolean requireMain;
@@ -86,6 +88,7 @@ public class LoaderConfiguration {
     private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
     private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
     private final List<String> grabList = new ArrayList<String>();
+    private final List<String> configScripts = new ArrayList<String>();
 
     /**
      * creates a new loader configuration
@@ -126,19 +129,20 @@ public class LoaderConfiguration {
                 main = line.substring(MAIN_PREFIX.length()).trim();
             } else if (line.startsWith(PROP_PREFIX)) {
                 String params = line.substring(PROP_PREFIX.length()).trim();
-                int index = params.indexOf('=');
-                if (index == -1) {
-                    throw new IOException("unexpected property format - expecting name=value" + lineNumber + " : " + line);
-                }
-                String propName = params.substring(0, index);
-                String propValue = assignProperties(params.substring(index + 1));
-                System.setProperty(propName, propValue);
+                String key = SystemUtil.setSystemPropertyFrom(params);
+                System.setProperty(key, assignProperties(System.getProperty(key)));
+            } else if (line.startsWith(CONFIGSCRIPT_PREFIX)) {
+                String script = line.substring(CONFIGSCRIPT_PREFIX.length()).trim();
+                configScripts.add(assignProperties(script));
             } else {
                 throw new IOException("unexpected line in " + lineNumber + " : " + line);
             }
         }
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");
+        if (!configScripts.isEmpty()) {
+            System.setProperty("groovy.starter.configscripts", DefaultGroovyMethods.join((Iterable)configScripts, ","));
+        }
     }
 
     /*

@@ -20,8 +20,6 @@ package groovy.execute
 
 /**
  *  Cross platform tests for the DGM#execute() family of methods.
- *
- *  @author Paul King
  */
 class ExecuteTest extends GroovyTestCase {
     private String getCmd() {
@@ -68,12 +66,17 @@ class ExecuteTest extends GroovyTestCase {
     }
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
-        String[] java = [System.getProperty('java.home') + "/bin/java",
+        List<String> javaArgs = [System.getProperty('java.home') + "/bin/java",
                 "-classpath",
                 System.getProperty('java.class.path'),
                 "groovy.ui.GroovyMain",
                 "-e",
                 "sleep(2000); println('Done'); System.exit(0)"]
+        if (System.getProperty('java.specification.version') >= '9') {
+            javaArgs.add(3, '--add-modules')
+            javaArgs.add(4, 'java.xml.bind')
+        }
+        String[] java = javaArgs.toArray()
         println "Executing this command for two cases:\n${java.join(' ')}"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -115,12 +118,17 @@ class ExecuteTest extends GroovyTestCase {
     }
 
     void testExecuteCommandLineWithEnvironmentProperties() {
-        String[] java = [System.getProperty('java.home') + "/bin/java",
+        List<String> javaArgs = [System.getProperty('java.home') + "/bin/java",
                 "-classpath",
                 System.getProperty('java.class.path'),
                 "groovy.ui.GroovyMain",
                 "-e",
                 "println(System.getenv('foo'))"]
+        if (System.getProperty('java.specification.version') >= '9') {
+            javaArgs.add(3, '--add-modules')
+            javaArgs.add(4, 'java.xml.bind')
+        }
+        String[] java = javaArgs.toArray()
         println "Executing this command:\n${java.join(' ')}"
         def props = ["foo=bar"]
         StringBuffer sbout = new StringBuffer()

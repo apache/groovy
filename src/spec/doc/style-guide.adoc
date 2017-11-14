@@ -492,7 +492,12 @@ def list = [1, 4, 6, 9]
 // you can wrap keys with () like [(variableStateAcronym): stateName] to insert a variable or object as a key.
 def map = [CA: 'California', MI: 'Michigan']
 
-def range = 10..20
+// ranges can be inclusive and exclusive
+def range = 10..20 // inclusive
+assert range.size() == 21
+// use brackets if you need to call a method on a range definition
+assert (10..<20).size() == 20 // exclusive
+
 def pattern = ~/fo*/
 
 // equivalent to add()
