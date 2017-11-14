@@ -23,8 +23,7 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
- * @author Rick Hightower
- * @author Stephane Landelle
+ * Internal class for fast processing of Strings during JSON parsing
  */
 public class FastStringUtils {
 
