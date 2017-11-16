@@ -20,7 +20,6 @@ package org.codehaus.groovy.macro.matcher
 
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
-import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.macro.matcher.internal.AnyTokenMatch
 import org.codehaus.groovy.macro.matcher.internal.ConstraintPredicate
 import org.codehaus.groovy.syntax.Token
@@ -28,7 +27,6 @@ import org.codehaus.groovy.syntax.Token
 /**
  * Represents constraints in AST pattern matching.
  *
- * @author Cedric Champeau
  * @since 2.5.0
  */
 @CompileStatic
@@ -39,5 +37,4 @@ class MatchingConstraints {
     final Set<String> placeholders
     final ConstraintPredicate<Token> tokenPredicate
     final ConstraintPredicate<TreeContext> eventually
-
 }
