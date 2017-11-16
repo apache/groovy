@@ -194,6 +194,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected TypeCheckingContext typeCheckingContext;
     protected DefaultTypeCheckingExtension extension;
+    protected FieldNode currentField;
+    protected PropertyNode currentProperty;
 
     public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
         this.typeCheckingContext = new TypeCheckingContext(this);
@@ -1580,8 +1582,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final boolean osc = typeCheckingContext.isInStaticContext;
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
+            currentProperty = node;
             super.visitProperty(node);
         } finally {
+            currentProperty = null;
             typeCheckingContext.isInStaticContext = osc;
         }
     }
@@ -1591,6 +1595,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final boolean osc = typeCheckingContext.isInStaticContext;
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
+            currentField = node;
             super.visitField(node);
             Expression init = node.getInitialExpression();
             if (init != null) {
@@ -1607,6 +1612,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } finally {
+            currentField = null;
             typeCheckingContext.isInStaticContext = osc;
         }
     }
@@ -3470,12 +3476,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     // currently just for empty literals, not for e.g. Collections.emptyList() at present
     /// it seems attractive to want to do this for more cases but perhaps not all cases
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        if (typeCheckingContext.getEnclosingBinaryExpression() != null && isEmptyCollection(expr)) {
-            int op = typeCheckingContext.getEnclosingBinaryExpression().getOperation().getType();
-            if (isAssignment(op)) {
-                VariableExpression target = (VariableExpression) typeCheckingContext.getEnclosingBinaryExpression().getLeftExpression();
-                return adjustForTargetType(target.getType(), type);
-            }
+        BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+        if (enclosingBinaryExpression != null && enclosingBinaryExpression instanceof DeclarationExpression
+                && isEmptyCollection(expr) && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
+            VariableExpression target = (VariableExpression) enclosingBinaryExpression.getLeftExpression();
+            return adjustForTargetType(target.getType(), type);
+        }
+        if (currentField != null) {
+            return adjustForTargetType(currentField.getType(), type);
+        }
+        if (currentProperty != null) {
+            return adjustForTargetType(currentProperty.getType(), type);
         }
         return type;
     }
