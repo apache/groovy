@@ -761,6 +761,21 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             assert d1 == d2
         """
     }
+
+    void testHashCodeForInstanceWithNullPropertyAndField() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+            
+            @EqualsAndHashCode(includeFields = true)
+            class FieldAndPropertyIncludedInHashCode {            
+                private String field
+                String property            
+            }
+            
+            assert new FieldAndPropertyIncludedInHashCode().hashCode() == 442087
+        """
+    }
+
 }
 
 @TupleConstructor
