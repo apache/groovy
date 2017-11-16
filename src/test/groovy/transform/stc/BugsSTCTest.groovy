@@ -745,7 +745,7 @@ Printer
         '''
     }
 
-    // GROOVY-8255
+    // GROOVY-8255 and GROOVY-8382
     void testTargetTypingEmptyCollectionLiterals() {
         assertScript '''
             class Foo {
@@ -772,6 +772,23 @@ Printer
                 }
             }
             assert new Foo().bar() == [[x:1], [y:2]]
+        '''
+        assertScript '''
+            import groovy.transform.*
+            @ToString(includeFields=true)
+            class Foo {
+                List<String> propWithGen = ['propWithGen'] ?: []
+                List propNoGen = ['propNoGen'] ?: []
+                private Map<String, Integer> fieldGen = [fieldGen:42] ?: [:]
+                def bar() {
+                    this.propNoGen = ['notDecl'] ?: [] // not applicable here
+                    List<String> localVar = ['localVar'] ?: []
+                    localVar
+                }
+            }
+            def foo = new Foo()
+            assert foo.bar() == ['localVar']
+            assert foo.toString() == 'Foo([propWithGen], [notDecl], [fieldGen:42])'
         '''
     }
 }
