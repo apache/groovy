@@ -282,7 +282,7 @@ public class GroovyShell extends GroovyObjectSupport {
         }
         try {
             // let's find a main method
-            scriptClass.getMethod("main", new Class[]{String[].class});
+            scriptClass.getMethod("main", String[].class);
             // if that main method exist, invoke it
             return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
         } catch (NoSuchMethodException e) {
@@ -330,7 +330,7 @@ public class GroovyShell extends GroovyObjectSupport {
         Throwable reason = null;
         try {
             // first, fetch the constructor taking String[] as parameter
-            constructor = scriptClass.getConstructor(new Class[]{(new String[]{}).getClass()});
+            constructor = scriptClass.getConstructor((new String[]{}).getClass());
             try {
                 // instantiate a runnable and run it
                 runnable = (Runnable) constructor.newInstance(new Object[]{args});
@@ -340,7 +340,7 @@ public class GroovyShell extends GroovyObjectSupport {
         } catch (NoSuchMethodException e1) {
             try {
                 // otherwise, find the default constructor
-                constructor = scriptClass.getConstructor(new Class[]{});
+                constructor = scriptClass.getConstructor();
                 try {
                     // instantiate a runnable and run it
                     runnable = (Runnable) constructor.newInstance();
