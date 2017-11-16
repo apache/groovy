@@ -1456,7 +1456,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return invokeStaticClosureProperty(arguments, prop);
         }
 
-        Object[] originalArguments = (Object[]) arguments.clone();
+        Object[] originalArguments = arguments.clone();
         MetaClassHelper.unwrap(arguments);
 
         Class superClass = sender.getSuperclass();
@@ -1836,7 +1836,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             } else if (object instanceof Object[]) {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
             } else {
-                MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
+                MetaMethod addListenerMethod = listeners.get(name);
                 if (addListenerMethod != null) {
                     //TODO: one day we could try return the previously registered Closure listener for easy removal
                     return null;
@@ -1990,7 +1990,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             };
         } else {
-            MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
+            MetaMethod addListenerMethod = listeners.get(name);
             if (addListenerMethod != null) {
                 //TODO: one day we could try return the previously registered Closure listener for easy removal
                 return new MetaProperty(name, Object.class) {
@@ -2656,7 +2656,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         boolean ambiguousListener = false;
         if (method == null) {
-            method = (MetaMethod) listeners.get(name);
+            method = listeners.get(name);
             ambiguousListener = method == AMBIGUOUS_LISTENER_METHOD;
             if (method != null &&
                     !ambiguousListener &&
@@ -3892,7 +3892,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         public void put(CachedClass key, SingleKeyHashMap value) {
-            ((Entry) getOrPut(key)).value = value;
+            getOrPut(key).value = value;
         }
 
         public SingleKeyHashMap getNullable(CachedClass clazz) {
