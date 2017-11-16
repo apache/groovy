@@ -458,8 +458,7 @@ public class GenericsType extends ASTNode {
                     }
                 }
             }
-            if (!match) return false;
-            return true;
+            return match;
         }
     }
 
