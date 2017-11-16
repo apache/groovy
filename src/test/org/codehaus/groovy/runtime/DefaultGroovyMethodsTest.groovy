@@ -21,9 +21,7 @@ package org.codehaus.groovy.runtime
 import java.util.*
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Marc Guillemot
- * @author Brad Long
+ * Tests for DGM methods
  */
 class DefaultGroovyMethodsTest extends GroovyTestCase {
 
@@ -167,9 +165,9 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         ByteArrayInputStream is = new ByteArrayInputStream(bytes)
         try {
             byte[] answer = IOGroovyMethods.getBytes(is)
-            assertEquals(bytes.length, answer.length)
-            bytes.eachWithIndex{ byte entry, int i ->
-                assertEquals(entry, answer[i])
+            assert bytes.length == answer.length
+            (0..<bytes.length).each{
+                assert answer[it] == answer[it]
             }
         } catch (IOException e) {
             fail()
@@ -182,9 +180,9 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         try {
             IOGroovyMethods.setBytes(os, bytes)
             byte[] answer = os.toByteArray()
-            assertEquals(bytes.length, answer.length)
-            bytes.eachWithIndex{ byte entry, int i ->
-                assertEquals(entry, answer[i])
+            assert bytes.length == answer.length
+            (0..<bytes.length).each{
+                assert answer[it] == answer[it]
             }
         } catch (IOException e) {
             fail()
