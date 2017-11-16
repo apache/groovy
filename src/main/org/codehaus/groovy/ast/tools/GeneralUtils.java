@@ -72,6 +72,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
+
 /**
  * Handy methods when working with the Groovy AST
  */
@@ -79,6 +81,7 @@ public class GeneralUtils {
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
     public static final Token EQ = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     public static final Token NE = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
+    public static final Token NOT_IDENTICAL = Token.newSymbol(COMPARE_NOT_IDENTICAL, -1, -1);
     public static final Token LT = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
     public static final Token AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
     public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
@@ -563,6 +566,10 @@ public class GeneralUtils {
 
     public static BinaryExpression ltX(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, LT, rhv);
+    }
+
+    public static BinaryExpression notIdenticalX(Expression lhv, Expression rhv) {
+        return new BinaryExpression(lhv, NOT_IDENTICAL, rhv);
     }
 
     /**
