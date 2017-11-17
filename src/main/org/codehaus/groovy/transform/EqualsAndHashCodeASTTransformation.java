@@ -131,7 +131,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             Expression getter = getterThisX(cNode, pNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
             body.addStatement(ifS(
-                    notIdenticalX(getter, varX("this")),
+                    notX(sameX(getter, varX("this"))),
                     assignS(result, current)));
 
         }
@@ -141,7 +141,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             final Expression fieldExpr = varX(fNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, fieldExpr));
             body.addStatement(ifS(
-                    notIdenticalX(fieldExpr, varX("this")),
+                    notX(sameX(fieldExpr, varX("this"))),
                     assignS(result, current)));
         }
         if (callSuper) {
