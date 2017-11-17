@@ -389,4 +389,24 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method Foo#newInstance2(CustomNumber)'
     }
 
+    // GROOVY-8380
+    void testBitOperatorsWithNumbers() {
+        assertScript '''
+            def method() {
+                Long wl = 2L
+                long pl = 3L
+                assert new Long(wl & 3L) == 2
+                assert new Long(pl & pl) == 3
+                assert new Long(6L & 3L) == 2
+                assert new Long(-2L & 3L) == 2
+                Integer wi = 2
+                int pi = 2
+                assert new Integer(wi & 34) == 2
+                assert new Integer(pi & pi) == 2
+                assert new Integer(6 & 3) == 2
+                assert new Integer(-2 & 3) == 2
+            }
+            method()
+        '''
+    }
 }
