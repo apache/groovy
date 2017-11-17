@@ -161,8 +161,8 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     }
 
     private static void createComparatorFor(ClassNode classNode, PropertyNode property, boolean reversed) {
-        String propName = property.getName();
-        String className = classNode.getName() + "$" + StringGroovyMethods.capitalize(propName) + "Comparator";
+        String propName = StringGroovyMethods.capitalize((CharSequence) property.getName());
+        String className = classNode.getName() + "$" + propName + "Comparator";
         ClassNode superClass = makeClassSafeWithGenerics(AbstractComparator.class, classNode);
         InnerClassNode cmpClass = new InnerClassNode(classNode, className, ACC_PRIVATE | ACC_STATIC, superClass);
         classNode.getModule().addClass(cmpClass);
@@ -176,7 +176,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 createCompareMethodBody(property, reversed)
         ));
 
-        String fieldName = "this$" + StringGroovyMethods.capitalize(propName) + "Comparator";
+        String fieldName = "this$" + propName + "Comparator";
         // private final Comparator this$<property>Comparator = new <type>$<property>Comparator();
         FieldNode cmpField = classNode.addField(
                 fieldName,
@@ -185,7 +185,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 ctorX(cmpClass));
 
         classNode.addMethod(new MethodNode(
-                "comparatorBy" + StringGroovyMethods.capitalize(propName),
+                "comparatorBy" + propName,
                 ACC_PUBLIC | ACC_STATIC,
                 COMPARATOR_TYPE,
                 Parameter.EMPTY_ARRAY,
