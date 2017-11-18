@@ -29,11 +29,13 @@ public class NumberMathModificationInfo {
 
     public static final NumberMathModificationInfo instance = new NumberMathModificationInfo();
 
-    private final HashSet<String> names = new HashSet<String>();
+    private static final HashSet<String> NAMES = new HashSet<String>();
 
-    private NumberMathModificationInfo() {
-        Collections.addAll(names, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+    static {
+        Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
     }
+
+    private NumberMathModificationInfo() { }
 
     public void checkIfStdMethod(MetaMethod method) {
         if (method.getClass() != NewInstanceMetaMethod.class) {
@@ -45,7 +47,7 @@ public class NumberMathModificationInfo {
             if (!method.getParameterTypes()[0].isNumber && method.getParameterTypes()[0].getTheClass() != Object.class)
                 return;
 
-            if (!names.contains(name))
+            if (!NAMES.contains(name))
                 return;
 
             checkNumberOps(name, method.getDeclaringClass().getTheClass());

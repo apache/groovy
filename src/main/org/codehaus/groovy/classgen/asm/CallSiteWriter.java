@@ -34,16 +34,9 @@ import static org.objectweb.asm.Opcodes.*;
 /**
  * This class represents non public API used by AsmClassGenerator. Don't
  * use this class in your code
- * @author Jochen Theodorou
  */
 public class CallSiteWriter {
     
-    private static final Set<String> NAMES = new HashSet<String>();
-    private static final Set<String> BASIC = new HashSet<String>();
-    static {
-        Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
-        Collections.addAll(BASIC, "plus", "minus", "multiply", "div");
-    }
     private static String [] sig = new String [255];
     private static String getCreateArraySignature(int numberOfArguments) {
         if (sig[numberOfArguments] == null) {

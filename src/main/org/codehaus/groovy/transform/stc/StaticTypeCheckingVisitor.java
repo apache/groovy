@@ -110,9 +110,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
 //import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
@@ -121,6 +119,8 @@ import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.ELVIS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.EQUAL;
 import static org.codehaus.groovy.syntax.Types.FIND_REGEX;
+import static org.codehaus.groovy.syntax.Types.INTDIV;
+import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
@@ -930,7 +930,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void addPrecisionErrors(ClassNode leftRedirect, ClassNode lhsType, ClassNode inferredrhsType, Expression rightExpression) {
         if (isNumberType(leftRedirect) && isNumberType(inferredrhsType)) {
-            if (checkPossibleLooseOfPrecision(leftRedirect, inferredrhsType, rightExpression)) {
+            if (checkPossibleLossOfPrecision(leftRedirect, inferredrhsType, rightExpression)) {
                 addStaticTypeError("Possible loss of precision from " + inferredrhsType + " to " + leftRedirect, rightExpression);
                 return;
             }
@@ -3098,6 +3098,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
+            // adjust typing for explicit math methods which have special handling - operator variants handled elsewhere
+            if (NUMBER_OPS.containsKey(name) && isNumberType(receiver) && argumentList.getExpressions().size() == 1
+                    && isNumberType(getType(argumentList.getExpression(0)))) {
+                ClassNode right = getType(argumentList.getExpression(0));
+                ClassNode resultType = getMathResultType(NUMBER_OPS.get(name), receiver, right, name);
+                if (resultType != null) {
+                    storeType(call, resultType);
+                }
+            }
+
             // now that a method has been chosen, we are allowed to visit the closures
             if (!callArgsVisited) {
                 MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -3132,8 +3142,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *
      * @param directMethodCallCandidate a method selected by the type checker
      * @param receiver the receiver of the method call
-     *@param args the arguments of the method call
-     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     * @param args the arguments of the method call
+     * @param returnType the original return type, as inferred by the type checker
+     * @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
     private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
         if (directMethodCallCandidate instanceof ExtensionMethodNode) {
@@ -3593,10 +3604,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
 
-        if (op == COMPARE_NOT_IDENTICAL || op == COMPARE_IDENTICAL) {
-            return boolean_TYPE;
-        }
-
         Expression leftExpression = expr.getLeftExpression();
         Expression rightExpression = expr.getRightExpression();
         if (op == ASSIGN || op == ASSIGNMENT_OPERATOR || op == ELVIS_EQUAL) {
@@ -3638,9 +3645,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             return right;
-        } else if (isBoolIntrinsicOp(op)) {
+        }
+        if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
-        } else if (isArrayOp(op)) {
+        }
+        if (isArrayOp(op)) {
             // using getPNR() to ignore generics at this point
             // and a different binary expression not to pollute the AST
             BinaryExpression newExpr = binX(expr.getLeftExpression(), expr.getOperation(), rightExpression);
@@ -3650,13 +3659,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return inferReturnTypeGenerics(left, method, rightExpression);
             }
             return method!=null?inferComponentType(left, right):null;
-        } else if (op == FIND_REGEX) {
+        }
+        if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
         }
         // the left operand is determining the result of the operation
         // for primitives and their wrapper we use a fixed table here
-        else if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
+        String operationName = getOperationName(op);
+        ClassNode mathResultType = getMathResultType(op, leftRedirect, rightRedirect, operationName);
+        if (mathResultType != null) {
+            return mathResultType;
+        }
+
+        // GROOVY-5890
+        // do not mix Class<Foo> with Foo
+        if (leftExpression instanceof ClassExpression) {
+            left = CLASS_Type.getPlainNodeReference();
+        }
+
+        MethodNode method = findMethodOrFail(expr, left, operationName, right);
+        if (method != null) {
+            storeTargetMethod(expr, method);
+            typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
+            if (isAssignment(op)) return left;
+            if (isCompareToBoolean(op)) return boolean_TYPE;
+            if (op == COMPARE_TO) return int_TYPE;
+            return inferReturnTypeGenerics(left, method, args(rightExpression));
+        }
+        //TODO: other cases
+        return null;
+    }
+
+    private ClassNode getMathResultType(int op, ClassNode leftRedirect, ClassNode rightRedirect, String operationName) {
+        if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
             if (isOperationInGroup(op)) {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;
                 if (isLongCategory(leftRedirect) && isLongCategory(rightRedirect)) return long_TYPE;
@@ -3664,7 +3700,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isDouble(leftRedirect) && isDouble(rightRedirect)) return double_TYPE;
             } else if (isPowerOperator(op)) {
                 return Number_TYPE;
-            } else if (isBitOperator(op)) {
+            } else if (isBitOperator(op) || op == INTDIV || op == INTDIV_EQUAL) {
                 if (isIntCategory(getUnwrapper(leftRedirect)) && isIntCategory(getUnwrapper(rightRedirect))) return int_TYPE;
                 if (isLongCategory(getUnwrapper(leftRedirect)) && isLongCategory(getUnwrapper(rightRedirect))) return long_TYPE;
                 if (isBigIntCategory(getUnwrapper(leftRedirect)) && isBigIntCategory(getUnwrapper(rightRedirect))) return BigInteger_TYPE;
@@ -3677,9 +3713,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-
         // try to find a method for the operation
-        String operationName = getOperationName(op);
         if (isShiftOperation(operationName) && isNumberCategory(leftRedirect) && (isIntCategory(rightRedirect) || isLongCategory(rightRedirect))) {
             return leftRedirect;
         }
@@ -3704,23 +3738,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isNumberCategory(getWrapper(rightRedirect)) && isNumberCategory(getWrapper(leftRedirect)) && (MOD == op || MOD_EQUAL == op)) {
             return leftRedirect;
         }
-
-        // GROOVY-5890
-        // do not mix Class<Foo> with Foo
-        if (leftExpression instanceof ClassExpression) {
-            left = CLASS_Type.getPlainNodeReference();
-        }
-
-        MethodNode method = findMethodOrFail(expr, left, operationName, right);
-        if (method != null) {
-            storeTargetMethod(expr, method);
-            typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
-            if (isAssignment(op)) return left;
-            if (isCompareToBoolean(op)) return boolean_TYPE;
-            if (op == COMPARE_TO) return int_TYPE;
-            return inferReturnTypeGenerics(left, method, args(rightExpression));
-        }
-        //TODO: other cases
         return null;
     }
 

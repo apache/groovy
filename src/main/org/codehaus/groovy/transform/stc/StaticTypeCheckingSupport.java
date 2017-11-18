@@ -76,6 +76,22 @@ public abstract class StaticTypeCheckingSupport {
                 put(Double_TYPE, 5);
             }});
 
+    protected static final Map<String, Integer> NUMBER_OPS = Collections.unmodifiableMap(
+            new HashMap<String, Integer>() {{
+                put("plus", PLUS);
+                put("minus", MINUS);
+                put("multiply", MULTIPLY);
+                put("div", DIVIDE);
+                put("or", BITWISE_OR);
+                put("and", BITWISE_AND);
+                put("xor", BITWISE_XOR);
+                put("mod", MOD);
+                put("intdiv", INTDIV);
+                put("leftShift", LEFT_SHIFT);
+                put("rightShift", RIGHT_SHIFT);
+                put("rightShiftUnsigned", RIGHT_SHIFT_UNSIGNED);
+            }});
+
     protected static final ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
             STRING_TYPE,
             GSTRING_TYPE
@@ -373,7 +389,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static boolean isBoolIntrinsicOp(int op) {
-        return op == LOGICAL_AND || op == LOGICAL_OR ||
+        return op == LOGICAL_AND || op == LOGICAL_OR || op == COMPARE_NOT_IDENTICAL || op == COMPARE_IDENTICAL ||
                 op == MATCH_REGEX || op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF;
     }
 
@@ -660,7 +676,12 @@ public abstract class StaticTypeCheckingSupport {
         return node.getCompileUnit() != null;
     }
 
+    @Deprecated
     static boolean checkPossibleLooseOfPrecision(ClassNode left, ClassNode right, Expression rightExpr) {
+        return checkPossibleLossOfPrecision(left, right, rightExpr);
+    }
+
+    static boolean checkPossibleLossOfPrecision(ClassNode left, ClassNode right, Expression rightExpr) {
         if (left == right || left.equals(right)) return false; // identical types
         int leftIndex = NUMBER_TYPES.get(left);
         int rightIndex = NUMBER_TYPES.get(right);
