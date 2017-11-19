@@ -33,18 +33,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+
 /**
  * Visitor to produce several optimizations:
  * <ul>
- *     <li>to replace numbered constants with references to static fields</li>
- *     <li>remove superfluous references to GroovyObject interface</li>
+ * <li>to replace numbered constants with references to static fields</li>
+ * <li>remove superfluous references to GroovyObject interface</li>
  * </ul>
  */
 public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private SourceUnit source;
 
-    private final Map const2Var = new HashMap();
+    // TODO make @CS lookup smarter so that we don't need both these maps
+    private final Map<Object, FieldNode> const2Objects = new HashMap<Object, FieldNode>();
+    private final Map<Object, FieldNode> const2Prims = new HashMap<Object, FieldNode>();
+    private int index;
     private final List<FieldNode> missingFields = new LinkedList<FieldNode>();
 
     public OptimizerVisitor(CompilationUnit cu) {
@@ -53,8 +58,10 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     public void visitClass(ClassNode node, SourceUnit source) {
         this.currentClass = node;
         this.source = source;
-        const2Var.clear();
+        const2Objects.clear();
+        const2Prims.clear();
         missingFields.clear();
+        index = 0;
         super.visitClass(node);
         addMissingFields();
         pruneUnneededGroovyObjectInterface(node);
@@ -85,8 +92,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void addMissingFields() {
-        for (Object missingField : missingFields) {
-            FieldNode f = (FieldNode) missingField;
+        for (FieldNode f : missingFields) {
             currentClass.addField(f);
         }
     }
@@ -95,35 +101,38 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         final Object n = constantExpression.getValue();
         if (!(n instanceof Number)) return;
         if (n instanceof Integer || n instanceof Double) return;
-        if (n instanceof Long && (0L== (Long) n || 1L==(Long) n )) return; // LCONST_0, LCONST_1
+        if (n instanceof Long && (0L == (Long) n || 1L == (Long) n)) return; // LCONST_0, LCONST_1
 
-        FieldNode field = (FieldNode) const2Var.get(n);
-        if (field!=null) {
+        boolean isPrimitive = isPrimitiveType(constantExpression.getType());
+        FieldNode field = isPrimitive ? const2Prims.get(n) : const2Objects.get(n);
+        if (field != null) {
             constantExpression.setConstantName(field.getName());
             return;
         }
-        final String name = "$const$" + const2Var.size();
-        //TODO: this part here needs a bit of rethinking. If it can happen that the field is defined already,
-        //      then is this code still valid?
-        field = currentClass.getDeclaredField(name);
-        if (field==null) {
-            field = new FieldNode(name,
-                    Opcodes.ACC_PRIVATE|Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_FINAL,
-                    constantExpression.getType(),
-                    currentClass,
-                    constantExpression
-                    );
-            field.setSynthetic(true);
-            missingFields.add(field);
+        String name;
+        while (true) {
+            name = "$const$" + index++;
+            if (currentClass.getDeclaredField(name) == null) break;
         }
+        field = new FieldNode(name,
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_FINAL,
+                constantExpression.getType(),
+                currentClass,
+                constantExpression);
+        field.setSynthetic(true);
+        missingFields.add(field);
         constantExpression.setConstantName(field.getName());
-        const2Var.put(n, field);
+        if (isPrimitive) {
+            const2Prims.put(n, field);
+        } else {
+            const2Objects.put(n, field);
+        }
     }
 
     public Expression transform(Expression exp) {
         if (exp == null) return null;
         if (!currentClass.isInterface() && exp.getClass() == ConstantExpression.class) {
-            setConstField((ConstantExpression)exp);
+            setConstField((ConstantExpression) exp);
         }
         return exp.transformExpression(this);
     }
