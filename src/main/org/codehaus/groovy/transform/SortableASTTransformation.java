@@ -51,9 +51,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Injects a set of Comparators and sort methods.
- *
- * @author Andres Almiray
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 
