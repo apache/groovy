@@ -66,7 +66,6 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             this.isFinal = isFinal;
         }
 
-
         public VariableState getNext() {
             switch (this) {
                 case is_uninitialized:
@@ -102,11 +101,12 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private static Variable getTarget(Variable v) {
         if (v instanceof VariableExpression) {
             Variable t = ((VariableExpression) v).getAccessedVariable();
-            if (t==v) return t;
+            if (t == v) return t;
             return getTarget(t);
         }
         return v;
     }
+
     private Map<Variable, VariableState> popState() {
         return assignmentTracker.removeLast();
     }
@@ -131,7 +131,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         Set<VariableExpression> old = declaredFinalVariables;
         declaredFinalVariables = new HashSet<VariableExpression>();
         super.visitBlockStatement(block);
-        if (callback!=null) {
+        if (callback != null) {
             Map<Variable, VariableState> state = getState();
             for (VariableExpression declaredFinalVariable : declaredFinalVariables) {
                 VariableState variableState = state.get(declaredFinalVariable.getAccessedVariable());
@@ -218,7 +218,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             Map<Variable, VariableState> state = getState();
             Variable key = expression.getAccessedVariable();
             VariableState variableState = state.get(key);
-            if (variableState==VariableState.is_uninitialized) {
+            if (variableState == VariableState.is_uninitialized) {
                 variableState = VariableState.is_var;
                 state.put(key, variableState);
             }
@@ -254,16 +254,15 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             VariableState ifValue = ifState.get(var);
             VariableState elseValue = elseState.get(var);
             // merge if and else values
-            VariableState mergedIfElse ;
-            mergedIfElse = ifValue!=null
-                        && elseValue!=null
-                        && ifValue.isFinal && elseValue.isFinal?VariableState.is_final:VariableState.is_var;
+            VariableState mergedIfElse;
+            mergedIfElse = ifValue != null && ifValue.isFinal
+                    && elseValue != null && elseValue.isFinal ? VariableState.is_final : VariableState.is_var;
             if (beforeValue == null) {
                 curState.put(var, mergedIfElse);
             } else {
                 if (beforeValue == VariableState.is_uninitialized) {
                     curState.put(var, mergedIfElse);
-                } else if (ifValue!=null || elseValue!=null) {
+                } else if (ifValue != null || elseValue != null) {
                     curState.put(var, VariableState.is_var);
                 }
             }
@@ -294,10 +293,10 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             Variable var = entry.getKey();
             VariableState afterFinallyState = entry.getValue();
             VariableState beforeTryCatchState = beforeTryCatch.get(var);
-            if (afterFinallyState==VariableState.is_final
-                    && beforeTryCatchState !=VariableState.is_final
-                    && afterTryCatchState.get(var)!=beforeTryCatchState) {
-                getState().put(var, beforeTryCatchState==null?VariableState.is_uninitialized:beforeTryCatchState);
+            if (afterFinallyState == VariableState.is_final
+                    && beforeTryCatchState != VariableState.is_final
+                    && afterTryCatchState.get(var) != beforeTryCatchState) {
+                getState().put(var, beforeTryCatchState == null ? VariableState.is_uninitialized : beforeTryCatchState);
             }
         }
     }
@@ -344,6 +343,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
         /**
          * Callback used whenever a variable is declared as final, but can remain in an uninitialized state
+         *
          * @param var the variable detected as potentially uninitialized
          */
         void variableNotAlwaysInitialized(VariableExpression var);
@@ -352,7 +352,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private static class StateMap extends HashMap<Variable, VariableState> {
         @Override
         public VariableState get(final Object key) {
-            return super.get(getTarget((Variable)key));
+            return super.get(getTarget((Variable) key));
         }
 
         @Override
