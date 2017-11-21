@@ -35,7 +35,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 public class StatementMetaTypeChooser implements TypeChooser {
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         if (exp instanceof ClassExpression) return ClassHelper.CLASS_Type;
-        OptimizingStatementWriter.StatementMeta meta = exp.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
+        OptimizingStatementWriter.StatementMeta meta = (OptimizingStatementWriter.StatementMeta) exp.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
         ClassNode type = null;
         if (meta != null) type = meta.type;
         if (type != null) return type;

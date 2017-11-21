@@ -239,7 +239,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         Expression leftExpression = binExp.getLeftExpression();
         if (!(leftExpression instanceof BinaryExpression)) return false;
         BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
-        return leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET;
+        if (leftBinExpr.getOperation().getType() != LEFT_SQUARE_BRACKET) return false;
+        return true;
     }
 
     private boolean doAssignmentToArray(BinaryExpression binExp) {

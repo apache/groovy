@@ -270,7 +270,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     private void writeListDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv, final boolean safe) {
-        ClassNode componentType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
+        ClassNode componentType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
         if (componentType==null) {
             componentType = OBJECT_TYPE;
         }
@@ -386,7 +386,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (field!=null && Modifier.isPrivate(field.getModifiers())
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
                 && !receiverType.equals(classNode)) {
-            Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
+            Map<String, MethodNode> accessors = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
             if (accessors!=null) {
                 MethodNode methodNode = accessors.get(fieldName);
                 if (methodNode!=null) {
@@ -417,7 +417,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
                 MethodCallExpression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
                 if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
-                    property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+                    property = (String) currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                     String[] props = property.split("\\.");
                     BytecodeExpression thisLoader = new BytecodeExpression() {
                         @Override
