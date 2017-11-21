@@ -186,7 +186,7 @@ public class StatementWriter {
         mv.visitLabel(cond);
         // visit condition leave boolean on stack
         {
-            Expression condExpr = (Expression) expressions.get(condIndex);
+            Expression condExpr = expressions.get(condIndex);
             int mark = controller.getOperandStack().getStackLength();
             condExpr.visit(controller.getAcg());
             controller.getOperandStack().castToBool(mark,true);
