@@ -329,7 +329,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         if (field != null && Modifier.isPrivate(field.getModifiers())
             && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
             && !receiverType.equals(classNode)) {
-            Map<String, MethodNode> mutators = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
+            Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
             if (mutators != null) {
                 MethodNode methodNode = mutators.get(fieldName);
                 if (methodNode != null) {
