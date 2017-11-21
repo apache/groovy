@@ -221,7 +221,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:$asmVersion"
+    tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     examplesCompile project(':groovy-test')
