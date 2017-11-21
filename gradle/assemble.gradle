@@ -188,7 +188,9 @@ allprojects {
                             // explanation of excludes:
                             // GROOVY-7386: stop copy of incorrect maven meta info
                             // GROOVY-8332: stop copy of annotation processor which is for some reason included in antlr runtime artifact
-                            zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*,META-INF/services/javax.annotation.processing.Processor')
+                            // GROOVY-8387: we don't want module-info.class from any dependencies
+                            zipfileset(src: jarjarFile,
+                                    excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*,META-INF/services/javax.annotation.processing.Processor,module-info.class')
                         }
 
                         zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
