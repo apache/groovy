@@ -27,6 +27,7 @@ assert i == 1
 i=0
 try {
     5.maxRetries {
+        i++
         throw new RuntimeException("oops")
     }
 } catch (RuntimeException e) {
