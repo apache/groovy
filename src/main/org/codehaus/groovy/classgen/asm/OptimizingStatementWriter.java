@@ -148,7 +148,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     @Override
     public void writeBlockStatement(BlockStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+        StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
         FastPathData fastPathData = writeGuards(meta, statement);
 
         if (fastPathData==null) {
@@ -175,7 +175,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeDoWhileLoop(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -213,7 +213,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeForInLoop(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -233,7 +233,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeForLoopWithClosureList(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -253,7 +253,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeWhileLoop(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -294,8 +294,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         // fastPathBlocked -> slow path
         if (fastPathBlocked) return false;
         // controller.isFastPath() -> fastPath
-        if (controller.isFastPath()) return false;
-        return true;
+        return !controller.isFastPath();
     }
 
     @Override
@@ -303,7 +302,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeReturn(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
                 if (meta.declaredVariableExpression != null) {
                     // declaration was replaced by assignment so we need to define the variable
@@ -331,7 +330,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) {
             super.writeExpressionStatement(statement);
         } else {
-            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
             // we have to have handle DelcarationExpressions special, since their 
             // entry should be outside the optimization path, we have to do that of
             // course only if we are actually going to do two different paths, 
@@ -417,7 +416,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private static StatementMeta addMeta(ASTNode node) {
-        StatementMeta metaOld = (StatementMeta) node.getNodeMetaData(StatementMeta.class);
+        StatementMeta metaOld = node.getNodeMetaData(StatementMeta.class);
         StatementMeta meta = metaOld;
         if (meta==null) meta = new StatementMeta();
         meta.optimize = true;
@@ -882,8 +881,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         private static boolean validTypeForCall(ClassNode type) {
             // do call only for final classes and primitive types
             if (isPrimitiveType(type)) return true;
-            if ((type.getModifiers() & ACC_FINAL)>0) return true;
-            return false;
+            return (type.getModifiers() & ACC_FINAL) > 0;
         }
 
         @Override
