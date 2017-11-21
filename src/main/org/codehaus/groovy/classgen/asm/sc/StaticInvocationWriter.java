@@ -383,11 +383,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 Parameter curParam = para[i];
                 ClassNode curParamType = curParam.getType();
                 Expression curArg = j < argumentList.size() ? argumentList.get(j) : null;
-                Expression initialExpression = curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
+                Expression initialExpression = (Expression) curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
                 if (initialExpression == null && curParam.hasInitialExpression())
                     initialExpression = curParam.getInitialExpression();
                 if (initialExpression == null && curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION)!=null) {
-                    initialExpression = curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION);
+                    initialExpression = (Expression) curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION);
                 }
                 ClassNode curArgType = curArg == null ? null : typeChooser.resolveType(curArg, classNode);
 
