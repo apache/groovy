@@ -269,7 +269,7 @@ public class InvocationWriter {
                 }
 
                 StatementMeta meta = null;
-                if (origin!=null) meta = (StatementMeta) origin.getNodeMetaData(StatementMeta.class);
+                if (origin!=null) meta = origin.getNodeMetaData(StatementMeta.class);
                 MethodNode mn = null;
                 if (meta!=null) mn = meta.target;
 
@@ -517,7 +517,7 @@ public class InvocationWriter {
     private boolean writeDirectConstructorCall(ConstructorCallExpression call) {
         if (!controller.isFastPath()) return false;
         
-        StatementMeta meta = (StatementMeta) call.getNodeMetaData(StatementMeta.class);
+        StatementMeta meta = call.getNodeMetaData(StatementMeta.class);
         ConstructorNode cn = null;
         if (meta!=null) cn = (ConstructorNode) meta.target;
         if (cn==null) return false;
