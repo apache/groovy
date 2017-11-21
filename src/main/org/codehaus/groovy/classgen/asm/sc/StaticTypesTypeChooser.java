@@ -37,9 +37,9 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         ASTNode target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
-        ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+        ClassNode inferredType = target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
-            inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            inferredType = target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
             if (inferredType == null && target instanceof VariableExpression && ((VariableExpression) target).getAccessedVariable() instanceof Parameter) {
                 target = (Parameter) ((VariableExpression) target).getAccessedVariable();
                 inferredType = ((Parameter) target).getOriginType();
