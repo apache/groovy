@@ -39,8 +39,6 @@ import javax.management.ObjectName
  *     occurences:long
  * )
  * </pre>
- *
- * @author Vladimir Vivien
  */
 class JmxTimerFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
@@ -67,10 +65,10 @@ class JmxTimerFactory extends AbstractFactory {
         metaMap.listeners = getNormalizedRecipientList(metaMap.listeners)
 
         def result = registerTimer(metaMap)
-        return result
+        result
     }
 
-    private def getNormalizedName(fsb, timer, name) {
+    private static getNormalizedName(fsb, timer, name) {
         def result
         if (!name) {
             result = getDefaultName(fsb, timer)
@@ -80,18 +78,18 @@ class JmxTimerFactory extends AbstractFactory {
             } else if (name instanceof ObjectName) {
                 result = name
             } else {
-                result = getDefaultName(fsb, time)
+                result = getDefaultName(fsb, timer)
             }
         }
-        return result
+        result
     }
 
-    private def getDefaultName(fsb, timer) {
+    private static getDefaultName(fsb, timer) {
         def name = "${fsb.getDefaultJmxNameDomain()}:type=TimerService,name=Timer@${timer.hashCode()}"
-        return new ObjectName(name)
+        new ObjectName(name)
     }
 
-    private def getNormalizedDate(date) {
+    private static getNormalizedDate(date) {
         if (!date) return new Date()
         if (date instanceof Date) {
             return date
@@ -103,10 +101,10 @@ class JmxTimerFactory extends AbstractFactory {
             default:
                 startDate = new Date()
         }
-        return startDate
+        startDate
     }
 
-    private def getNormalizedPeriod(period) {
+    private static getNormalizedPeriod(period) {
         if (!period) return 1000L
         if (period instanceof Number) {
             return period
@@ -117,8 +115,9 @@ class JmxTimerFactory extends AbstractFactory {
             def value
             try {
                 value = period[0..-2].toLong()
-            } catch (e) {
+            } catch (ignore) {
                 multiplier = "x"
+                value = 0
             }
             switch (multiplier) {
                 case "s":
@@ -137,28 +136,29 @@ class JmxTimerFactory extends AbstractFactory {
                     result = 1000L
             }
         }
-        return result
+        result
     }
 
-    private def getNormalizedRecipientList(list) {
+    private static getNormalizedRecipientList(list) {
         if (!list) return null
         def result = []
 
-        list.each {name ->
+        list.each { name ->
             def on
             if (name instanceof String) {
                 on = new ObjectName(name)
-            }
-            if (name instanceof ObjectName) {
+            } else if (name instanceof ObjectName) {
                 on = name
+            } else {
+                on = new ObjectName(name.toString())
             }
             result.add(on)
         }
 
-        return result
+        result
     }
 
-    private def registerTimer(metaMap) {
+    private static registerTimer(metaMap) {
         def server = (MBeanServer) metaMap.server
         def timer = metaMap.timer
         timer.addNotification(
@@ -173,24 +173,24 @@ class JmxTimerFactory extends AbstractFactory {
             server.unregisterMBean metaMap.name
         }
         server.registerMBean(timer, metaMap.name)
-        return new GroovyMBean(metaMap.server, metaMap.name)
+        new GroovyMBean(metaMap.server, metaMap.name)
     }
 
-    private NotificationFilter getEventFilter(type) {
+    private static NotificationFilter getEventFilter(type) {
         def noteFilter = new NotificationFilterSupport()
         noteFilter.enableType type
-        return noteFilter
+        noteFilter
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
-        return false;
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
+        false
     }
 
-    public boolean isLeaf() {
-        return true;
+    boolean isLeaf() {
+        true
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         if (parentNode != null) {
             parentNode.add(thisNode)
         }
