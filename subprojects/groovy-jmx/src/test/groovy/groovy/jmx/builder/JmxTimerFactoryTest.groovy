@@ -135,9 +135,6 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         shouldFail {
             timer = builder.timer(period: "2d")
             assert timer.getPeriod(1) == (22000 * 60 * 60)
-
-            timer = builder.timer(period: "Mood")
-            assert timer.getPeriod(1) == 0
         }
     }
 
