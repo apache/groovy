@@ -18,15 +18,16 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
-import java.lang.invoke.*;
-import java.math.BigDecimal;
-import java.util.*;
-
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
 
-import groovy.lang.MetaMethod;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
 import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
 
 /**

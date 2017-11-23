@@ -18,22 +18,6 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.DefaultCachedMethodKey;
@@ -55,6 +39,22 @@ import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
 import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 import org.codehaus.groovy.util.FastArray;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * ExpandoMetaClass is a MetaClass that behaves like an Expando, allowing the addition or replacement

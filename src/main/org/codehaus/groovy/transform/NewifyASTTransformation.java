@@ -39,9 +39,9 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;

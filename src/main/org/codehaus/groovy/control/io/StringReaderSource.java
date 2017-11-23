@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.control.io;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  *  A ReaderSource for source strings.

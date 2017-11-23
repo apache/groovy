@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.control.messages;
 
-import java.io.PrintWriter;
-
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.CSTNode;
+
+import java.io.PrintWriter;
 
 
 

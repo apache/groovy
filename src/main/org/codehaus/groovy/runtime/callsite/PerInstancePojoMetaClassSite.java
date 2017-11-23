@@ -19,10 +19,9 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
-
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.reflection.ClassInfo;
 
 public class PerInstancePojoMetaClassSite extends AbstractCallSite{
     private final ClassInfo info;

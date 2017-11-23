@@ -18,7 +18,12 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaBeanProperty;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Method;
 

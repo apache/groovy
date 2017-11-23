@@ -36,11 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 
 /**

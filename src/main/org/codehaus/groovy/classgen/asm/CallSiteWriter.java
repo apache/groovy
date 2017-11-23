@@ -21,13 +21,19 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 

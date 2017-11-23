@@ -21,17 +21,21 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
-
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.callsite.*;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.CallSiteGenerator;
+import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
+import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
+import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * @author Alex.Tkachman

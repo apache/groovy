@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.syntax;
 
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.control.SourceUnit;
 

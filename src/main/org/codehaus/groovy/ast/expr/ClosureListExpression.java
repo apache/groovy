@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.VariableScope;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents a list of expressions used to

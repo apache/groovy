@@ -18,19 +18,25 @@
  */
 package groovy.util.logging;
 
+import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation;
+import org.objectweb.asm.Opcodes;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Locale;
-
-import groovy.lang.GroovyClassLoader;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
-import org.codehaus.groovy.transform.LogASTTransformation;
-import org.objectweb.asm.Opcodes;
 
 /**
  * This local transform adds a logging ability to your program using

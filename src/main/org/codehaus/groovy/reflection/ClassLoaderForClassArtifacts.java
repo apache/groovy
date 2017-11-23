@@ -18,18 +18,17 @@
  */
 package org.codehaus.groovy.reflection;
 
-import org.codehaus.groovy.runtime.callsite.GroovySunClassLoader;
+import groovy.lang.MetaClassImpl;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.GroovySunClassLoader;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClassLoaderForClassArtifacts extends ClassLoader {
     public final SoftReference<Class> klazz;

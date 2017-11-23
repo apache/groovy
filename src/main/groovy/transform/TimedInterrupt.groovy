@@ -18,14 +18,11 @@
  */
 package groovy.transform
 
-import java.lang.annotation.Documented
-import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-import java.lang.annotation.Target
+import org.codehaus.groovy.transform.GroovyASTTransformationClass
+
+import java.lang.annotation.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
 /**
  * Allows safe timed executions of scripts by adding elapsed time checks into loops (for, while)

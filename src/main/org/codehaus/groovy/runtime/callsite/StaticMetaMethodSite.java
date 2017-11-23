@@ -21,9 +21,9 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * POJO call site

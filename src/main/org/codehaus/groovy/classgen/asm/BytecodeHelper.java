@@ -18,7 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;

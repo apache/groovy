@@ -15,7 +15,11 @@
  */
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 //import javax.annotation.concurrent.NotThreadSafe;
 

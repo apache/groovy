@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.runtime;
 
-import java.io.OutputStreamWriter;
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 /**
  * Stream writer which flushes after each write operation.

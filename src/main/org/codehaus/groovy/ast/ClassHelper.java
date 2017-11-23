@@ -18,8 +18,16 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.*;
-
+import groovy.lang.Binding;
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyObjectSupport;
+import groovy.lang.MetaClass;
+import groovy.lang.Range;
+import groovy.lang.Reference;
+import groovy.lang.Script;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -30,14 +38,14 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.ref.SoftReference;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.Modifier;
 
 /**
  * This class is a Helper for ClassNode and classes handling ClassNodes.

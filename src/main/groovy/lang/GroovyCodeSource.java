@@ -20,6 +20,8 @@ package groovy.lang;
 
 import groovy.security.GroovyCodeSourcePermission;
 import groovy.util.CharsetToolkit;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,9 +36,6 @@ import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
-
-import org.codehaus.groovy.runtime.IOGroovyMethods;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class

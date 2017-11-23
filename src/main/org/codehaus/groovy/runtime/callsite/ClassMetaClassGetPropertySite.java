@@ -20,7 +20,6 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
-
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 

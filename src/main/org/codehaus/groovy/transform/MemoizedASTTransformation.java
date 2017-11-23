@@ -41,15 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**

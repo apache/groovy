@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import static org.objectweb.asm.Opcodes.*;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
+
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>

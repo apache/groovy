@@ -43,23 +43,7 @@ import java.util.Map;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 /**
  * Handles generation of code for the @MapConstructor annotation.

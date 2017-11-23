@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime.typehandling;
 import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
-
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;

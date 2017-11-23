@@ -18,17 +18,44 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.*;
-
+import groovy.lang.Closure;
+import groovy.lang.ExpandoMetaClass;
+import groovy.lang.ExpandoMetaClassCreationHandle;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
-import org.codehaus.groovy.reflection.stdclasses.*;
-import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.reflection.stdclasses.ArrayCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.BigDecimalCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.BigIntegerCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.BooleanCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.ByteCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.reflection.stdclasses.CharacterCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.DoubleCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.FloatCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.IntegerCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.LongCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.NumberCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.ObjectCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.ShortCachedClass;
+import org.codehaus.groovy.reflection.stdclasses.StringCachedClass;
+import org.codehaus.groovy.util.Finalizable;
+import org.codehaus.groovy.util.LazyReference;
+import org.codehaus.groovy.util.LockableObject;
+import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
+import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ManagedReference;
+import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

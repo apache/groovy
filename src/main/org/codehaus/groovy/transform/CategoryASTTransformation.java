@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.Reference;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
@@ -34,18 +35,16 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
-
-import groovy.lang.Reference;
 
 import java.util.HashSet;
 import java.util.LinkedList;

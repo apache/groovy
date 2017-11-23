@@ -31,12 +31,12 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.VariableScopeVisitor;
-import org.codehaus.groovy.runtime.AbstractComparator;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.AbstractComparator;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.util.ArrayList;
@@ -47,9 +47,7 @@ import java.util.List;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.*;
 
 /**
  * Injects a set of Comparators and sort methods.

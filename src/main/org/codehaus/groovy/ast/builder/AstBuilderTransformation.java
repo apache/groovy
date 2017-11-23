@@ -18,8 +18,17 @@
  */
 package org.codehaus.groovy.ast.builder;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.MethodCallTransformation;
+import org.codehaus.groovy.ast.MethodInvocationTrap;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;

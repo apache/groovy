@@ -18,7 +18,14 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.classgen.Verifier;
 
 import java.lang.reflect.Modifier;

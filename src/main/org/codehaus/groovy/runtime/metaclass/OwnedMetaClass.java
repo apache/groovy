@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.*;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.ClassNode;
 
 import java.util.List;

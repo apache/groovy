@@ -18,13 +18,12 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.util.Iterator;
-import java.util.List;
-
+import antlr.collections.AST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 
-import antlr.collections.AST;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A simple iterator over an ordered (flat) List of the nodes of the AST.

@@ -19,7 +19,6 @@
 package org.codehaus.groovy.syntax;
 
 import groovy.lang.GroovyRuntimeException;
-
 import org.codehaus.groovy.ast.ASTNode;
 
 /**

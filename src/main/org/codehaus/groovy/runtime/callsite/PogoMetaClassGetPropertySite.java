@@ -18,11 +18,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
-import groovy.lang.GroovyObject;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 public class PogoMetaClassGetPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;

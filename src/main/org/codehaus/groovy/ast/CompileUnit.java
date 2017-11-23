@@ -19,6 +19,10 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -27,11 +31,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * Represents the entire contents of a compilation step which consists of one or more

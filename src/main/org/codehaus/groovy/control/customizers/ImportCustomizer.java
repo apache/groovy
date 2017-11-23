@@ -26,7 +26,8 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This compilation customizer allows addiing various types of imports to the compilation unit. Supports adding :

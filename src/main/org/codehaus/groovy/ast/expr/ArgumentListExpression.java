@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.List;
-
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
+
+import java.util.List;
 
 /**
  * Represents one or more arguments being passed into a method

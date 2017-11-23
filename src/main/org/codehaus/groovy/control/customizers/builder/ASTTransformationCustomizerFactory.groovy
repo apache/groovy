@@ -19,8 +19,8 @@
 
 package org.codehaus.groovy.control.customizers.builder
 
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 /**
  * This factory generates an {@link ASTTransformationCustomizer ast transformation customizer}.

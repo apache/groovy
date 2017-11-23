@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.util.List;
-import java.util.ArrayList;
-
-import org.codehaus.groovy.antlr.GroovySourceAST;
+import antlr.collections.AST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
+import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
-import antlr.collections.AST;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper Class for Antlr AST traversal and visitation.

@@ -18,13 +18,9 @@
  */
 package groovy.beans
 
-import java.lang.annotation.Documented
-import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-import java.lang.annotation.Target
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
+import java.lang.annotation.*
 
 /**
  * This annotation adds Java-style listener support to a class based on an annotated Collection-property.

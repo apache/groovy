@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.lang.reflect.Method;
-
 import org.codehaus.groovy.classgen.ClassGeneratorException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import java.lang.reflect.Method;
 
 /**
  * A helper class to invoke methods more easily in ASM

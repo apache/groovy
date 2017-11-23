@@ -18,7 +18,19 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.Closure;
+import groovy.lang.EmptyRange;
+import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.IntRange;
+import groovy.lang.MetaClass;
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.NumberRange;
+import groovy.lang.ObjectRange;
+import groovy.lang.Tuple;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;

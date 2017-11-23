@@ -20,8 +20,8 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
 
-import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 
 /**
