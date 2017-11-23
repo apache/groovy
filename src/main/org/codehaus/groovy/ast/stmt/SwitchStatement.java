@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a switch (object) { case value: ... case [1, 2, 3]: ...  default: ... } statement in Groovy.

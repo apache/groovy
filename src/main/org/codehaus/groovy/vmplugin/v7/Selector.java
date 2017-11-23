@@ -49,7 +49,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
+import org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -65,11 +65,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG_ENABLED;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.makeFallBack;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.switchPoint;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
 
 public abstract class Selector {
     public Object[] args, originalArguments;

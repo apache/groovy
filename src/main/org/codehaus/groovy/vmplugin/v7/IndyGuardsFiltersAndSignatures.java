@@ -26,6 +26,15 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -37,17 +46,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
-import org.codehaus.groovy.runtime.wrappers.Wrapper;
-
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
 
 /**
  * This class contains guards, runtime filters and

@@ -18,19 +18,18 @@
  */
 package org.codehaus.groovy.antlr;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.FileReader;
-
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-
 import antlr.ASTFactory;
 import antlr.CommonAST;
 import antlr.Token;
 import antlr.collections.AST;
 import antlr.debug.misc.ASTFrame;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileReader;
 
 class Main {
 

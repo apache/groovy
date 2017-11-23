@@ -19,15 +19,7 @@
 package org.codehaus.groovy.transform
 
 import groovy.transform.TimedInterrupt
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.AnnotatedNode
-import org.codehaus.groovy.ast.AnnotationNode
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.FieldNode
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
@@ -43,17 +35,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 import static org.codehaus.groovy.ast.ClassHelper.make
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ltX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding timer expiration

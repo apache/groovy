@@ -18,12 +18,12 @@
  */
 package groovy.transform;
 
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 /**
  * Method annotation that creates a cache for the results of the execution of the annotated method. Whenever the method

@@ -18,8 +18,8 @@
  */
 package groovy.lang;
 
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Allows frameworks that integrate with Groovy to determine how Groovy files are resolved.

@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+
 import java.lang.reflect.Method;
 import java.util.Map;
-
-import groovy.lang.Closure;
 
 /**
  * This class is a general adapter to adapt a map of closures to

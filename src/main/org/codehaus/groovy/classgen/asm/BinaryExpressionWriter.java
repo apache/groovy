@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import static org.codehaus.groovy.syntax.Types.*;
-import static org.objectweb.asm.Opcodes.*;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import static org.codehaus.groovy.syntax.Types.*;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * Base class for writing primitive typed operations

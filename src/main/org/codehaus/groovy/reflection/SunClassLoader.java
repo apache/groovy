@@ -18,17 +18,17 @@
  */
 package org.codehaus.groovy.reflection;
 
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Special class loader, which when running on Sun VM allows to generate accessor classes for any method

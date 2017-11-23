@@ -18,12 +18,11 @@
  */
 package org.codehaus.groovy.tools.shell.util;
 
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
+import groovy.lang.GroovyObjectSupport;
 
 import java.text.MessageFormat;
-
-import groovy.lang.GroovyObjectSupport;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 /**
  * Message source backed up by one or more {@link java.util.ResourceBundle}

@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.ref.WeakReference;
-
-import groovy.lang.*;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * @author Alex Tkachman

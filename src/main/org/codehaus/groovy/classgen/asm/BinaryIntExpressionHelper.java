@@ -24,7 +24,8 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.objectweb.asm.Opcodes.*;
 
 public class BinaryIntExpressionHelper extends BinaryExpressionWriter {

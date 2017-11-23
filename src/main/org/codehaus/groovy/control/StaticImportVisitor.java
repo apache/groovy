@@ -54,12 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.groovy.ast.tools.ClassNodeUtils.getPropNameForAccessor;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticMethod;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProperty;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.*;
 import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 
 /**

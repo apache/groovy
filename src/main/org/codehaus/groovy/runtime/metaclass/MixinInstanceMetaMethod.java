@@ -19,8 +19,8 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
 
 /**
  * MetaMethod for mixed in classes

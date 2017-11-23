@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.antlr;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple buffer that provides line/col access to chunks of source code

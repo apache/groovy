@@ -19,8 +19,8 @@
 package groovy.io;
 
 import java.io.BufferedWriter;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
  * A buffered writer that gobbles any \r characters

@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.tools;
 
-import java.io.File;
-
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+
+import java.io.File;
 
 /**
  *  A convenience front end for getting standard compilations done.

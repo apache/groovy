@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.control.io;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Janitor;
+
+import java.io.BufferedReader;
+import java.io.IOException;
 
 /**
  * For ReaderSources that can choose a parent class, a base that

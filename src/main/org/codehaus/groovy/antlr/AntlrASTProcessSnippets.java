@@ -26,7 +26,10 @@ package org.codehaus.groovy.antlr;
  */
 
 import antlr.collections.AST;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class AntlrASTProcessSnippets implements AntlrASTProcessor{
 

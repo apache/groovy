@@ -18,12 +18,12 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Helper to turn a list with an even number of elements into a Map.

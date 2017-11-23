@@ -18,13 +18,13 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.GroovyBugError;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a base class for expressions which evaluate as an object

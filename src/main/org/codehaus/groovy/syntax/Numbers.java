@@ -21,8 +21,8 @@ package org.codehaus.groovy.syntax;
 import antlr.collections.AST;
 import org.codehaus.groovy.antlr.ASTRuntimeException;
 
-import java.math.BigInteger;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  *  Helper class for processing Groovy numeric literals.

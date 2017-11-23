@@ -29,13 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareEqual;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareGreaterThan;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareGreaterThanEqual;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareLessThan;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareLessThanEqual;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareNotEqual;
-import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.compareTo;
+import static org.codehaus.groovy.runtime.ScriptBytecodeAdapter.*;
 import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus.minus;
 import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply.multiply;
 import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;

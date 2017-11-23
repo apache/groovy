@@ -19,8 +19,8 @@
 package org.codehaus.groovy.reflection.stdclasses;
 
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ClassInfo;
 
 public class CachedClosureClass extends CachedClass {
     private final Class[] parameterTypes;

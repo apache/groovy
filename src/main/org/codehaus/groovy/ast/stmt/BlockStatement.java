@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.VariableScope;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.VariableScope;
 
 /**
  * A list of statements and a scope. 

@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.tools.shell;
 
+import org.codehaus.groovy.tools.shell.util.Preferences;
+import org.fusesource.jansi.AnsiRenderWriter;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,9 +28,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-
-import org.codehaus.groovy.tools.shell.util.Preferences;
-import org.fusesource.jansi.AnsiRenderWriter;
 
 /**
  * Container for input/output handles.
