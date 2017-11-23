@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.Closure;
+
 import java.util.Map;
 import java.util.Map.Entry;
-
-import groovy.lang.Closure;
 
 /**
  * Helper class for internal use only. This allows to call a {@link Closure} and 

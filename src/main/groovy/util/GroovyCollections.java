@@ -18,11 +18,16 @@
  */
 package groovy.util;
 
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A Collections utility class

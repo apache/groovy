@@ -19,7 +19,11 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**

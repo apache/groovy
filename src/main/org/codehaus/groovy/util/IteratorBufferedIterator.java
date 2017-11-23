@@ -18,8 +18,9 @@
  */
 package org.codehaus.groovy.util;
 
-import java.util.Iterator;
 import groovy.util.BufferedIterator;
+
+import java.util.Iterator;
 
 /**
  * An implementation for BufferedIterator wraps Iterator.

@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-import org.codehaus.groovy.runtime.MethodKey;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.MethodKey;
 
 
 /**

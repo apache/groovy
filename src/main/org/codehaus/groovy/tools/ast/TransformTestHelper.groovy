@@ -18,15 +18,16 @@
  */
 package org.codehaus.groovy.tools.ast
 
-import org.codehaus.groovy.transform.ASTTransformation
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilerConfiguration
-import java.security.CodeSource
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.transform.ASTTransformation
+
+import java.security.CodeSource
 
 /*
 * This TestHarness exists so that a global transform can be run without

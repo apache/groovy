@@ -54,9 +54,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.*;
 
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the

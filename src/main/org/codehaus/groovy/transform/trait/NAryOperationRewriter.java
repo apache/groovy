@@ -34,7 +34,7 @@ import org.codehaus.groovy.syntax.TokenUtil;
 
 import java.util.Collection;
 
-import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.syntax.Types.EQUAL;
 
 
 /**

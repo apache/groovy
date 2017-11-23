@@ -18,10 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.List;
-import java.util.Map;
-
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
@@ -34,6 +33,9 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Visitor to transform expressions in a whole class.

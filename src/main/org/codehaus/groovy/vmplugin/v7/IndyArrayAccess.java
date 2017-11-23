@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.codehaus.groovy.GroovyBugError;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
-
-import org.codehaus.groovy.GroovyBugError;
 
 /**
  * Class for handling array access through invokedynamic using static callsite information

@@ -18,13 +18,13 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a sequence of objects which represents zero or many instances of

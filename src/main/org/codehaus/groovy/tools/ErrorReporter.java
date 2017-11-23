@@ -19,12 +19,12 @@
 
 package org.codehaus.groovy.tools;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
-
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyExceptionInterface;
 import org.codehaus.groovy.control.CompilationFailedException;
-import groovy.lang.GroovyRuntimeException;
+
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 
 /**

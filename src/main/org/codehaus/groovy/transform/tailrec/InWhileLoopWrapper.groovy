@@ -25,13 +25,7 @@ import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.CatchStatement
-import org.codehaus.groovy.ast.stmt.ContinueStatement
-import org.codehaus.groovy.ast.stmt.EmptyStatement
-import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.ast.stmt.TryCatchStatement
-import org.codehaus.groovy.ast.stmt.WhileStatement
+import org.codehaus.groovy.ast.stmt.*
 
 /**
  * Wrap the body of a method in a while loop, nested in a try-catch.

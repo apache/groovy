@@ -18,6 +18,15 @@
  */
 package org.codehaus.groovy.reflection.stdclasses;
 
+import groovy.lang.Closure;
+import groovy.util.ProxyGenerator;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.ConvertedClosure;
+import org.codehaus.groovy.transform.trait.Traits;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -30,16 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-
-import groovy.lang.Closure;
-import groovy.util.ProxyGenerator;
-
-import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ClassInfo;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.ConvertedClosure;
-import org.codehaus.groovy.transform.trait.Traits;
 
 public class CachedSAMClass extends CachedClass {
 

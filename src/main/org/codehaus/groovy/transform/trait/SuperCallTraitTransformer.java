@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.MetaProperty;
-import java.util.List;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -37,10 +36,9 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
-import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import java.util.List;
+
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * This transformer is used to transform calls to <code>SomeTrait.super.foo()</code> into the appropriate trait call.

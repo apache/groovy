@@ -21,10 +21,20 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 
-import java.lang.reflect.Modifier;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.io.*;
-import java.util.*;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class GeneratedMetaMethod extends MetaMethod {
     private final String name;

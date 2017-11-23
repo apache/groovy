@@ -18,9 +18,13 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.*;
-
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Represents a tuple expression {1, 2, 3} which creates an immutable List

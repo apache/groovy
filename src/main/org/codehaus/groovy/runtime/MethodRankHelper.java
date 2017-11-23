@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -29,9 +31,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
  * Utility class for MissingMethodException, MissingPropertyException etc.

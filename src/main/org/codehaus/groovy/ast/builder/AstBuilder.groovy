@@ -19,8 +19,8 @@
 package org.codehaus.groovy.ast.builder
 
 import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.control.CompilePhase
 
 /**
  * The AstBuilder provides several ways to build an abstract syntax tree (AST) of Groovy code.

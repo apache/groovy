@@ -20,12 +20,7 @@ package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
 import groovy.transform.Field
-import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.DefaultParser
-import org.apache.commons.cli.HelpFormatter
-import org.apache.commons.cli.Option
-import org.apache.commons.cli.OptionGroup
-import org.apache.commons.cli.Options
+import org.apache.commons.cli.*
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 

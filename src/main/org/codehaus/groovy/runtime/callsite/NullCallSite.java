@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;

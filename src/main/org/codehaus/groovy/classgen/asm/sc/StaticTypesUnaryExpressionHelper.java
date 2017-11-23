@@ -18,10 +18,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import static org.codehaus.groovy.ast.ClassHelper.*;
-
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
@@ -29,6 +32,8 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import static org.codehaus.groovy.ast.ClassHelper.*;
 
 /**
  * An unary expression helper which generates optimized bytecode depending on

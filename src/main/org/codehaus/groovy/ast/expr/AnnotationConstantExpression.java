@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.Map;
-
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.Map;
 
 /**
  * Represents an annotation "constant" that may appear in annotation attributes

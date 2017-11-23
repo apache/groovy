@@ -19,7 +19,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;

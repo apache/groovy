@@ -43,17 +43,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.antlr.AntlrParserPlugin.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.*;
 
 /**
  * Handles generation of code for the @AutoImplement annotation.

@@ -18,6 +18,9 @@
  */
 package groovy.beans
 
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
@@ -27,9 +30,6 @@ import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.objectweb.asm.Opcodes
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
 
 /**
  * Handles generation of code for the {@code @ListenerList} annotation.

@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.util;
 
+import groovy.util.BufferedIterator;
+
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import groovy.util.BufferedIterator;
 
 /**
  * An implementation for BufferedIterator wraps ListIterator.  This version

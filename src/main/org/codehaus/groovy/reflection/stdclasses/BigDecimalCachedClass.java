@@ -18,9 +18,10 @@
  */
 package org.codehaus.groovy.reflection.stdclasses;
 
+import org.codehaus.groovy.reflection.ClassInfo;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
  * @author Alex.Tkachman
