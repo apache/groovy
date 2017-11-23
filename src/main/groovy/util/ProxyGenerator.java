@@ -50,7 +50,8 @@ import java.util.Set;
  * @author Cedric Champeau
  */
 public class ProxyGenerator {
-    private static final Class[] EMPTY_INTERFACE_ARRAY = new Class[0];
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    private static final Class[] EMPTY_INTERFACE_ARRAY = EMPTY_CLASS_ARRAY;
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
     private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
@@ -160,8 +161,8 @@ public class ProxyGenerator {
 
     @SuppressWarnings("unchecked")
     public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
-        if (clazz!=null && Modifier.isFinal(clazz.getModifiers())) {
-            throw new GroovyCastException("Cannot coerce a map to class "+clazz.getName()+" because it is a final class");
+        if (clazz != null && Modifier.isFinal(clazz.getModifiers())) {
+            throw new GroovyCastException("Cannot coerce a map to class " + clazz.getName() + " because it is a final class");
         }
         Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
         ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, null, clazz);
@@ -208,7 +209,7 @@ public class ProxyGenerator {
     }
 
     private ProxyGeneratorAdapter createAdapter(Map closureMap, List<Class> interfaces, Class delegateClass, Class baseClass) {
-        Class[] intfs = interfaces != null ? interfaces.toArray(new Class[interfaces.size()]) : EMPTY_INTERFACE_ARRAY;
+        Class[] intfs = interfaces != null ? interfaces.toArray(EMPTY_CLASS_ARRAY) : EMPTY_INTERFACE_ARRAY;
         Class base = baseClass;
         if (base == null) {
             if (intfs.length > 0) {
@@ -327,7 +328,7 @@ public class ProxyGenerator {
             @Override
             public int hashCode() {
                 Class thisClass = this.get();
-                if (thisClass==null) return 0;
+                if (thisClass == null) return 0;
                 return thisClass.hashCode();
             }
         }
