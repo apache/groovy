@@ -18,15 +18,28 @@
  */
 package groovy.util;
 
-import groovy.lang.*;
-import org.codehaus.groovy.runtime.*;
+import groovy.lang.Closure;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ProxyGeneratorAdapter;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Classes to generate 'Proxy' objects which implement interfaces,
@@ -150,26 +163,9 @@ public class ProxyGenerator {
         if (clazz!=null && Modifier.isFinal(clazz.getModifiers())) {
             throw new GroovyCastException("Cannot coerce a map to class "+clazz.getName()+" because it is a final class");
         }
-        Map<Object,Object> map = closureMap!=null?closureMap: EMPTY_CLOSURE_MAP;
-        Class[] intfs = interfaces!=null? interfaces.toArray(new Class[interfaces.size()]): EMPTY_INTERFACE_ARRAY;
-        Class base = clazz;
-        if (base==null) {
-            if (intfs.length>0) {
-                base=intfs[0];
-            } else {
-                base = Object.class;
-            }
-        }
-        Set<String> keys = map==EMPTY_CLOSURE_MAP?EMPTY_KEYSET:new HashSet<String>();
-        for (Object o : map.keySet()) {
-            keys.add(o.toString());
-        }
-        CacheKey key = new CacheKey(base, Object.class, keys, intfs, emptyMethods, false);
-        ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
-        if (adapter==null) {
-            adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods, null);
-            adapterCache.put(key, adapter);
-        }
+        Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
+        ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, null, clazz);
+
         return adapter.proxy(map, constructorArgs);
     }
 
@@ -205,27 +201,35 @@ public class ProxyGenerator {
      */
     @SuppressWarnings("unchecked")
     public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate, Class baseClass, String name) {
-        Map<Object,Object> map = closureMap!=null?closureMap: EMPTY_CLOSURE_MAP;
-        Class[] intfs = interfaces!=null? interfaces.toArray(new Class[interfaces.size()]): EMPTY_INTERFACE_ARRAY;
+        Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
+        ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, delegate.getClass(), baseClass);
+
+        return adapter.delegatingProxy(delegate, map, (Object[])null);
+    }
+
+    private ProxyGeneratorAdapter createAdapter(Map closureMap, List<Class> interfaces, Class delegateClass, Class baseClass) {
+        Class[] intfs = interfaces != null ? interfaces.toArray(new Class[interfaces.size()]) : EMPTY_INTERFACE_ARRAY;
         Class base = baseClass;
-        if (base==null) {
-            if (intfs.length>0) {
-                base=intfs[0];
+        if (base == null) {
+            if (intfs.length > 0) {
+                base = intfs[0];
             } else {
                 base = Object.class;
             }
         }
-        Set<String> keys = map==EMPTY_CLOSURE_MAP?EMPTY_KEYSET:new HashSet<String>();
-        for (Object o : map.keySet()) {
+        Set<String> keys = closureMap == EMPTY_CLOSURE_MAP ? EMPTY_KEYSET : new HashSet<String>();
+        for (Object o : closureMap.keySet()) {
             keys.add(o.toString());
         }
-        CacheKey key = new CacheKey(base, delegate.getClass(), keys, intfs, emptyMethods, true);
+        boolean useDelegate = null != delegateClass;
+        CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, keys, intfs, emptyMethods, useDelegate);
         ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
-        if (adapter==null) {
-            adapter = new ProxyGeneratorAdapter(map, base, intfs, delegate.getClass().getClassLoader(), emptyMethods, delegate.getClass());
+        if (adapter == null) {
+            adapter = new ProxyGeneratorAdapter(closureMap, base, intfs, useDelegate ? delegateClass.getClassLoader() : base.getClassLoader(), emptyMethods, useDelegate ? delegateClass : null);
             adapterCache.put(key, adapter);
         }
-        return adapter.delegatingProxy(delegate, map, (Object[])null);
+
+        return adapter;
     }
 
     private static void setMetaClass(final MetaClass metaClass) {
