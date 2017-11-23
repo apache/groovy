@@ -18,13 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
@@ -37,6 +30,10 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 

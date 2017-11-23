@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.syntax;
 
-import java.math.BigInteger;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  *  Helper class for processing Groovy numeric literals.

@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.runtime.powerassert;
 
-import java.util.*;
-
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Creates a string representation of an assertion and its recorded values.

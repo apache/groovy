@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.io.PrintStream;
-import java.util.Stack;
-
 import antlr.collections.AST;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+
+import java.io.PrintStream;
+import java.util.Stack;
 
 /**
  * An antlr AST visitor that prints groovy source code for each visited node

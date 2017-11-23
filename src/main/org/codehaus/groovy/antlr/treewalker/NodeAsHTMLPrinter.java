@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.io.PrintStream;
-import java.util.Stack;
-
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+
+import java.io.PrintStream;
+import java.util.Stack;
 
 /**
  * A visitor that prints a html tags of each node to the supplied PrintStream

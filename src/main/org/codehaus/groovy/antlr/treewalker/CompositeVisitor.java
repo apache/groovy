@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.util.*;
-
 import org.codehaus.groovy.antlr.GroovySourceAST;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A composite of many visitors. Any call to a method from Visitor

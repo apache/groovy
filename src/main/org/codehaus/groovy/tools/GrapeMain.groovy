@@ -20,9 +20,9 @@ package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
 import groovy.transform.Field
+import org.apache.commons.cli.*
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.apache.commons.cli.*
 
 //commands
 

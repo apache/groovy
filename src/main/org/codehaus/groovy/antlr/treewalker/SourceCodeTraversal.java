@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * A treewalker for the antlr generated AST that attempts to visit the

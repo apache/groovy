@@ -18,9 +18,9 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Modifier;
-
 import org.codehaus.groovy.runtime.MetaClassHelper;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter

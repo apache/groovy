@@ -18,9 +18,9 @@
  */
 package groovy.util;
 
-import java.util.Map;
-
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import java.util.Map;
 
 /**
  * A Map.Entry implementation.

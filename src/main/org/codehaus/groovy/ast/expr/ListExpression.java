@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List

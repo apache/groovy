@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a try { ... } catch () finally {} statement in Groovy

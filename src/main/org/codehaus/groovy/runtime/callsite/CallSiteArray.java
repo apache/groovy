@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassImpl;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
-
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;

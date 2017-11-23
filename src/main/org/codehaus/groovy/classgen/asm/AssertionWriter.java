@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -35,6 +32,9 @@ import org.codehaus.groovy.runtime.powerassert.SourceTextNotAvailableException;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 

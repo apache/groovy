@@ -19,7 +19,8 @@
 package org.codehaus.groovy.classgen.asm.indy;
 
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.WriterController;
 
 /**
  * Dummy class used by the indy implementation.

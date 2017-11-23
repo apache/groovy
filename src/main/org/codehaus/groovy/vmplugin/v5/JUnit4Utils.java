@@ -23,9 +23,9 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.util.List;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Java 5 code for working with JUnit 4 tests.

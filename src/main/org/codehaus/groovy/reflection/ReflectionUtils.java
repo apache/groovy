@@ -19,9 +19,9 @@
 package org.codehaus.groovy.reflection;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Collections;
 
 /**
  * This class contains utility methods to determine which class called the

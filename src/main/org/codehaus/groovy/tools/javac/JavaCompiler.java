@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.tools.javac;
 
-import java.util.List;
-
 import org.codehaus.groovy.control.CompilationUnit;
+
+import java.util.List;
 
 /**
  * @author Alex.Tkachman

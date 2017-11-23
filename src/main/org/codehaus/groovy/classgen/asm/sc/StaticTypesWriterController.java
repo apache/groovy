@@ -18,10 +18,23 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.BinaryExpressionHelper;
+import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
+import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
+import org.codehaus.groovy.classgen.asm.DelegatingController;
+import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.StatementWriter;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
+import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;

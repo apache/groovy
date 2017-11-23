@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents an array object construction either using a fixed size

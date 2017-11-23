@@ -19,10 +19,10 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaBeanProperty;
-import groovy.lang.MetaProperty;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.MixinInMetaClass;
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;

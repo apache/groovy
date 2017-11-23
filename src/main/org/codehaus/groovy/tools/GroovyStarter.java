@@ -18,8 +18,9 @@
  */
 package org.codehaus.groovy.tools;
 
-import java.lang.reflect .*;
 import java.io.FileInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Helper class to initialize the Groovy runtime.

@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -32,10 +29,13 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 import static org.codehaus.groovy.syntax.TokenUtil.removeAssignment;
 import static org.codehaus.groovy.syntax.Types.*;
-import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
  * This class is for internal use only!

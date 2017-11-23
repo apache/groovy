@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.MetaClass;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
-
-import java.lang.reflect.Field;
-
+import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
+
+import java.lang.reflect.Field;
 
 public class GetEffectivePogoFieldSite extends AbstractCallSite {
     private final MetaClass metaClass;

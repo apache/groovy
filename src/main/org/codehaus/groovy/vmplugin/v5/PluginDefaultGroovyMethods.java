@@ -18,14 +18,14 @@
  */
 package org.codehaus.groovy.vmplugin.v5;
 
-import groovy.lang.IntRange;
 import groovy.lang.EmptyRange;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.lang.IntRange;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.RangeInfo;
 
-import java.util.Arrays;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * This class defines new Java 5 specific groovy methods which extend the normal

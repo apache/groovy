@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map

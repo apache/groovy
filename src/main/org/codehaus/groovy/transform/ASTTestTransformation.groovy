@@ -18,29 +18,18 @@
  */
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.AnnotationNode
-import org.codehaus.groovy.ast.ClassHelper
+import groovy.transform.CompilationUnitAware
+import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ErrorCollector
-import org.codehaus.groovy.control.Janitor
-import org.codehaus.groovy.control.ProcessingUnit
-import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.control.*
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.io.ReaderSource
+import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.tools.Utilities
-import groovy.transform.CompilationUnitAware
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport
-import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.runtime.MethodClosure
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX

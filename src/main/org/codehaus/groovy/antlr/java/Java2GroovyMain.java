@@ -22,6 +22,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GroovyInternalPosixParser;
 import org.apache.commons.cli.Options;
+
 import java.util.Arrays;
 
 public class Java2GroovyMain {

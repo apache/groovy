@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.control.messages;
 
-import java.io.PrintWriter;
-
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.ProcessingUnit;
+
+import java.io.PrintWriter;
 
 
 

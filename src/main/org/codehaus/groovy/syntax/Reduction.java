@@ -20,9 +20,9 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 
 /** 

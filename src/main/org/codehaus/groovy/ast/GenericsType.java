@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
-
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 
@@ -27,6 +25,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 
 /**
  * This class is used to describe generic type signatures for ClassNodes.

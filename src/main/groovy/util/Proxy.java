@@ -18,11 +18,11 @@
  */
 package groovy.util;
 
-import java.util.Iterator;
-
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.util.Iterator;
 
 /**
  * Dynamic groovy proxy for another object.  All method

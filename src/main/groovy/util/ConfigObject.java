@@ -31,7 +31,12 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * A ConfigObject at a simple level is a Map that creates configuration entries (other ConfigObjects) when referencing them.

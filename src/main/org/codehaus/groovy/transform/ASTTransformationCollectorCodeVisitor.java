@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.transform.AnnotationCollector;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -30,9 +32,6 @@ import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
-
-import groovy.lang.GroovyClassLoader;
-import groovy.transform.AnnotationCollector;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 

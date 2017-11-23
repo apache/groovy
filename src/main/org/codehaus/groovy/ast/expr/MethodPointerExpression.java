@@ -19,7 +19,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.Closure;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;

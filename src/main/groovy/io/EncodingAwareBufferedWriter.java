@@ -18,7 +18,8 @@
  */
 package groovy.io;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
 /**

@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.lang.reflect.Field;
-
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
+
+import java.lang.reflect.Field;
 
 /**
  * Represents a field (member variable)

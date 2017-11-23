@@ -36,23 +36,11 @@ import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
-import static org.codehaus.groovy.transform.BuilderASTTransformation.MY_TYPE_NAME;
-import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
-import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.codehaus.groovy.transform.BuilderASTTransformation.*;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * This strategy is used with the {@link Builder} AST transform to populate a builder helper class

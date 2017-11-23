@@ -18,16 +18,17 @@
  */
 package groovy.lang;
 
-import groovy.ui.GroovyMain;
 import groovy.security.GroovyCodeSourcePermission;
-
+import groovy.ui.GroovyMain;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;

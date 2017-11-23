@@ -18,14 +18,14 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.transform.CompileStatic;
+import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.control.CompilePhase
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding Thread.currentThread().isInterrupted()

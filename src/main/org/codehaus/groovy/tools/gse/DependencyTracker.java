@@ -18,10 +18,6 @@
  */
 package org.codehaus.groovy.tools.gse;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -36,6 +32,10 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class DependencyTracker extends ClassCodeVisitorSupport {
     private Set<String> current;

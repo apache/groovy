@@ -17,18 +17,27 @@
  *  under the License.
  */
 package org.codehaus.groovy.antlr;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.Hashtable;
+
+import antlr.CharScanner;
+import antlr.Token;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
-import org.codehaus.groovy.antlr.parser.*;
-
-import antlr.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.Hashtable;
 
 /**
  * @author Santhosh Kumar T

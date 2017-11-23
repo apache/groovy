@@ -18,25 +18,21 @@
  */
 package org.codehaus.groovy.control.customizers
 
-import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.transform.ASTTransformation
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.transform.GroovyASTTransformation
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.AnnotationNode
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
-import java.lang.annotation.Annotation
-import org.codehaus.groovy.ast.expr.ClosureExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ListExpression
 import groovy.transform.CompilationUnitAware
+import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.AnnotationNode
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.transform.ASTTransformation
+import org.codehaus.groovy.transform.GroovyASTTransformation
+import org.codehaus.groovy.transform.GroovyASTTransformationClass
+
+import java.lang.annotation.Annotation
 
 /**
  * This customizer allows applying an AST transformation to a source unit with

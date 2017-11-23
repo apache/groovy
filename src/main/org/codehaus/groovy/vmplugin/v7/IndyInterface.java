@@ -21,13 +21,17 @@ package org.codehaus.groovy.vmplugin.v7;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistryChangeEvent;
 import groovy.lang.MetaClassRegistryChangeEventListener;
+import org.codehaus.groovy.GroovyBugError;
 
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.codehaus.groovy.GroovyBugError;
 
 /**
  * Bytecode level interface for bootstrap methods used by invokedynamic.

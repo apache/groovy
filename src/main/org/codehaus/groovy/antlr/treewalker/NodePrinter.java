@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.io.PrintStream;
-
 import org.codehaus.groovy.antlr.GroovySourceAST;
+
+import java.io.PrintStream;
 
 /**
  * A simple antlr AST visitor that outputs the tokenName of each node in a pseudo xml style.

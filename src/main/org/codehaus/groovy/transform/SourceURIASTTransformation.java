@@ -34,9 +34,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.File;
 import java.net.URI;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 /**
  * Handles transformation for the @SourceURI annotation.

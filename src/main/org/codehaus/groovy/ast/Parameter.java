@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**

@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.List;
-import java.util.Map;
-
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -43,6 +40,9 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+
+import java.util.List;
+import java.util.Map;
 
 public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport implements GroovyClassVisitor {
 

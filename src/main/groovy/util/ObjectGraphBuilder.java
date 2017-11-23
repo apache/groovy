@@ -22,17 +22,16 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingPropertyException;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.Pattern;
-import java.lang.reflect.Type;
-import java.lang.reflect.ParameterizedType;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * A builder for creating object graphs.<br>

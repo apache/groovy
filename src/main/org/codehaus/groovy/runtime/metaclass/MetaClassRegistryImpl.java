@@ -18,23 +18,39 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.*;
-
+import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaClassRegistryChangeEvent;
+import groovy.lang.MetaClassRegistryChangeEventListener;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.reflection.*;
-import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.GeneratedMetaMethod;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
-import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
+import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
 import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * A registry of MetaClass instances which caches introspection &

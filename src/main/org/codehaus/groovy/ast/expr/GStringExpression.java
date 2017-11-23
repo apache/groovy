@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a String expression which contains embedded values inside

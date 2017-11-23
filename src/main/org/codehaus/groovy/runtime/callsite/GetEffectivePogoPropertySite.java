@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaProperty;
-import groovy.lang.GroovyObject;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 

@@ -24,7 +24,16 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Compilation control flags and coordination stuff.

@@ -29,10 +29,7 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement
 
 import java.lang.reflect.Modifier
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*
 
 /**
  * Helping to create a few standard AST constructs

@@ -18,10 +18,10 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 import java.util.AbstractList;
 import java.util.List;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a list of Objects.

@@ -23,7 +23,6 @@ import groovy.lang.EmptyRange;
 import groovy.lang.GString;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
-
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.SimpleType;
