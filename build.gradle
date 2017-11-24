@@ -172,7 +172,7 @@ ext {
     gparsVersion = '1.2.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
-    jarjarVersion = '1.4.1'
+    jarjarVersion = '1.6.5'
     jlineVersion = '2.14.5'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
@@ -228,7 +228,7 @@ dependencies {
         testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
     }
 
-    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
