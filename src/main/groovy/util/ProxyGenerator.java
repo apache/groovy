@@ -50,7 +50,8 @@ import java.util.Set;
  * @author Cedric Champeau
  */
 public class ProxyGenerator {
-    private static final Class[] EMPTY_INTERFACE_ARRAY = new Class[0];
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    private static final Class[] EMPTY_INTERFACE_ARRAY = EMPTY_CLASS_ARRAY;
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
     private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
@@ -208,7 +209,9 @@ public class ProxyGenerator {
     }
 
     private ProxyGeneratorAdapter createAdapter(Map closureMap, List<Class> interfaces, Class delegateClass, Class baseClass) {
-        Class[] intfs = interfaces != null ? interfaces.toArray(new Class[interfaces.size()]) : EMPTY_INTERFACE_ARRAY;
+        // According to https://shipilev.net/blog/2016/arrays-wisdom-ancients/#_conclusion
+        // toArray(new T[0]) seems faster, safer, and contractually cleaner, and therefore should be the default choice now.
+        Class[] intfs = interfaces != null ? interfaces.toArray(EMPTY_CLASS_ARRAY) : EMPTY_INTERFACE_ARRAY;
         Class base = baseClass;
         if (base == null) {
             if (intfs.length > 0) {
