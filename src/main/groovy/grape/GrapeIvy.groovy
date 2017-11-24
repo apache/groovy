@@ -23,7 +23,11 @@ import org.apache.ivy.core.cache.ResolutionCacheManager
 import org.apache.ivy.core.event.IvyListener
 import org.apache.ivy.core.event.download.PrepareDownloadEvent
 import org.apache.ivy.core.event.resolve.StartResolveEvent
-import org.apache.ivy.core.module.descriptor.*
+import org.apache.ivy.core.module.descriptor.Configuration
+import org.apache.ivy.core.module.descriptor.DefaultDependencyArtifactDescriptor
+import org.apache.ivy.core.module.descriptor.DefaultDependencyDescriptor
+import org.apache.ivy.core.module.descriptor.DefaultExcludeRule
+import org.apache.ivy.core.module.descriptor.DefaultModuleDescriptor
 import org.apache.ivy.core.module.id.ArtifactId
 import org.apache.ivy.core.module.id.ModuleId
 import org.apache.ivy.core.module.id.ModuleRevisionId
