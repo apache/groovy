@@ -22,6 +22,7 @@ apply plugin: 'osgi'
 
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
+jarjarTaskClassName = 'org.pantsbuild.jarjar.JarJarTask'
 
 ext.srcSpec = copySpec {
     from(projectDir) {
@@ -173,7 +174,7 @@ allprojects {
             boolean isRoot = project == rootProject
             def gradleProject = project
             ant {
-                taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
+                taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: rootProject.configurations.tools.asPath
                 jarjar(jarfile: targetTmp) {
                     zipfileset(
                             src: jar.archivePath,
@@ -243,7 +244,7 @@ allprojects {
             doFirst {
                 from zipTree(target)
                 ant {
-                    taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
+                    taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: rootProject.configurations.tools.asPath
                     jarjar(jarfile: target) {
                         zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
                         zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
@@ -413,7 +414,7 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
 
         def archivePathTmp = new File("${archivePath}.1.tmp")
         ant {
-            taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: configurations.tools.asPath
+            taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: configurations.tools.asPath
             jarjar(jarfile: archivePathTmp, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
                 zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF')
                 zipfileset(src: jar.archivePath, excludes:'META-INF/NOTICE,META-INF/LICENSE')
