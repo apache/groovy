@@ -890,11 +890,29 @@ public class AsmClassGenerator extends ClassGenerator {
         return name;
     }
 
+    private FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(ClassNode current, String name, boolean skipCurrent) {
+        if (!skipCurrent) {
+            FieldNode currentClassField = current.getDeclaredField(name);
+            if (currentClassField != null) return currentClassField;
+        }
+        for (ClassNode node = current.getSuperClass(); node!=null; node = node.getSuperClass()) {
+            FieldNode fn = node.getDeclaredField(name);
+            if (fn != null && (fn.isPublic() || fn.isProtected())) return fn;
+        }
+        return null;
+    }
+
     private void visitAttributeOrProperty(PropertyExpression expression, MethodCallerMultiAdapter adapter) {
         MethodVisitor mv = controller.getMethodVisitor();
 
         Expression objectExpression = expression.getObjectExpression();
         ClassNode classNode = controller.getClassNode();
+
+        //TODO (blackdrag): this if branch needs a rework. There should be no direct method calls be produced, the
+        // handling of this/super could be much simplified (see visitAttributeExpression), the field accessibility check
+        // could be moved directly into the search, which would also no longer require the GroovyBugError then
+        // the outer class field access seems to be without any tests (if there are tests for that, then the code
+        // here is dead code)
         if (isThisOrSuper(objectExpression)) {
             // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
@@ -1058,6 +1076,23 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitAttributeExpression(AttributeExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
+        ClassNode classNode = controller.getClassNode();
+        // TODO: checking for isThisOrSuper is enough for AttributeExpression, but if this is moved into
+        // visitAttributeOrProperty to handle attributes and properties equally, then the extended check should be done
+        if (isThisOrSuper(objectExpression) /*&&
+            !(expression.isImplicitThis() && controller.isInClosure()) */
+                ) {
+            // let's use the field expression if it's available
+            String name = expression.getPropertyAsString();
+            if (name != null) {
+                FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, name, isSuperExpression(objectExpression));
+                if (field != null) {
+                    visitFieldExpression(new FieldExpression(field));
+                    return;
+                }
+            }
+        }
+
         MethodCallerMultiAdapter adapter;
         OperandStack operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength()-1;
