@@ -36,7 +36,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 
 /**
  * This class provides helper methods to determine the type from a widening

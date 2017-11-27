@@ -38,7 +38,10 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.List;
 
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * This transformer is used to transform calls to <code>SomeTrait.super.foo()</code> into the appropriate trait call.

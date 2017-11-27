@@ -59,8 +59,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.*;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
+import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
+import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code

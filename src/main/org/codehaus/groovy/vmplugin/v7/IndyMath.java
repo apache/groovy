@@ -28,7 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isBigDecCategory;
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isDoubleCategory;
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isIntCategory;
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isLongCategory;
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.replaceWithMoreSpecificType;
 
 /**
  * This class contains math operations used by indy instead of the normal
