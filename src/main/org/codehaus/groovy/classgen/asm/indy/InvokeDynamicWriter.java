@@ -44,8 +44,15 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.CAST;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.GET;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.INIT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.GROOVY_OBJECT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.IMPLICIT_THIS;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SAFE_NAVIGATION;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SPREAD_CALL;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.THIS_CALL;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
 /**
