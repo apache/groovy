@@ -33,10 +33,25 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.codehaus.groovy.ast.ClassHelper.*;
-import static org.codehaus.groovy.ast.tools.WideningCategories.*;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isDoubleCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.syntax.TokenUtil.removeAssignment;
-import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.syntax.Types.DIVIDE;
+import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
 /**
  * This class is for internal use only!

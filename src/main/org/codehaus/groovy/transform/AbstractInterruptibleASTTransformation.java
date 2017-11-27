@@ -45,7 +45,11 @@ import org.objectweb.asm.Opcodes;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 
 /**
  * Base class for AST Transformations which will automatically throw an {@link InterruptedException} when
