@@ -50,7 +50,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.codehaus.groovy.ast.tools.ClosureUtils.hasSingleCharacterArg;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.*;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLine;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
 
 /**
  * This class defines new groovy methods which appear on String-related JDK

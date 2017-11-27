@@ -18,7 +18,36 @@
  */
 package org.codehaus.groovy.syntax;
 
-import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
+import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
+import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
+import static org.codehaus.groovy.syntax.Types.BITWISE_OR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
+import static org.codehaus.groovy.syntax.Types.BITWISE_XOR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.DIVIDE;
+import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.INTDIV;
+import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
+import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_AND;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_AND_EQUAL;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.MINUS;
+import static org.codehaus.groovy.syntax.Types.MINUS_EQUAL;
+import static org.codehaus.groovy.syntax.Types.MOD;
+import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
+import static org.codehaus.groovy.syntax.Types.MULTIPLY;
+import static org.codehaus.groovy.syntax.Types.MULTIPLY_EQUAL;
+import static org.codehaus.groovy.syntax.Types.PLUS;
+import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
+import static org.codehaus.groovy.syntax.Types.POWER;
+import static org.codehaus.groovy.syntax.Types.POWER_EQUAL;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
+import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
 
 /**
  * Utility methods for working with Tokens.

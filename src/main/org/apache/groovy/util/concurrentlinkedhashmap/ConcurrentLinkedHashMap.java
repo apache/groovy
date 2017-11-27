@@ -39,8 +39,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static java.util.Collections.*;
-import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
+import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.IDLE;
+import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.PROCESSING;
+import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.REQUIRED;
 
 //import javax.annotation.concurrent.GuardedBy;
 //import javax.annotation.concurrent.Immutable;
