@@ -18,7 +18,13 @@
  */
 package groovy.text;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+import groovy.lang.Writable;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,9 +33,6 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
-
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Processes template source files substituting variables and expressions into

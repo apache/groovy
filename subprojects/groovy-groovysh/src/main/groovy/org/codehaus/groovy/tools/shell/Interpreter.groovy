@@ -20,8 +20,9 @@ package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.runtime.MethodClosure
+import org.codehaus.groovy.tools.shell.util.Logger
+
 import java.lang.reflect.Method
 
 /**

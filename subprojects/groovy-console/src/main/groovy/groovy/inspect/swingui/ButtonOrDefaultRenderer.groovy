@@ -19,10 +19,9 @@
  */
 package groovy.inspect.swingui
 
-import javax.swing.JComponent
-import javax.swing.JTable
+import javax.swing.*
 import javax.swing.table.DefaultTableCellRenderer
-import java.awt.Component
+import java.awt.*
 
 /**
  * A table cell renderer that will return a component instead of drawing it,

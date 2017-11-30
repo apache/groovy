@@ -19,7 +19,6 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import jline.console.completer.Completer
-
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 

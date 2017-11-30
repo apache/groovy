@@ -18,7 +18,7 @@
  */
 package groovy.swing.factory
 
-import javax.swing.JWindow
+import javax.swing.*
 
 public class WindowFactory extends RootPaneContainerFactory {
     

@@ -18,12 +18,11 @@
  */
 package groovy.util.slurpersupport;
 
-import java.util.Iterator;
-import java.util.Map;
-
+import groovy.lang.Closure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import groovy.lang.Closure;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Lazy evaluated representation of a node's attributes filtered by a Closure.

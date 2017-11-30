@@ -22,8 +22,8 @@ import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.PackageHelper
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'set' command, used to set preferences.

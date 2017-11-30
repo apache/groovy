@@ -18,8 +18,8 @@
  */
 package groovy.swing.factory
 
-import java.awt.Image
-import javax.swing.ImageIcon
+import javax.swing.*
+import java.awt.*
 
 class ImageIconFactory extends AbstractFactory {
 

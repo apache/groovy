@@ -18,9 +18,8 @@
  */
 package groovy.ui.view
 
-import java.awt.BorderLayout
-import java.awt.GridBagConstraints
-import javax.swing.SwingConstants
+import javax.swing.*
+import java.awt.*
 
 statusPanel = panel(constraints: BorderLayout.SOUTH) {
     gridBagLayout()

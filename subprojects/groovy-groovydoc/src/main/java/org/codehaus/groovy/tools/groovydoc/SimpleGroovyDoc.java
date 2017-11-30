@@ -23,7 +23,9 @@ import org.codehaus.groovy.groovydoc.GroovyDoc;
 import org.codehaus.groovy.groovydoc.GroovyTag;
 
 import java.text.BreakIterator;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

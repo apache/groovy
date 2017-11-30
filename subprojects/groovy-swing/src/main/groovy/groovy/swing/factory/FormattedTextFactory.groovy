@@ -18,8 +18,8 @@
  */
 package groovy.swing.factory
 
+import javax.swing.*
 import java.text.Format
-import javax.swing.JFormattedTextField
 
 public class FormattedTextFactory extends AbstractFactory {
     

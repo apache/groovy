@@ -18,18 +18,19 @@
  */
 package groovy.ui.view
 
-import groovy.ui.ConsoleTextEditor
 import groovy.ui.Console
-import java.awt.*
-import java.awt.image.BufferedImage
-import static javax.swing.JSplitPane.VERTICAL_SPLIT
+import groovy.ui.ConsoleTextEditor
+
+import javax.swing.*
 import javax.swing.text.Style
+import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
+import java.awt.*
+import java.awt.image.BufferedImage
 import java.util.prefs.Preferences
-import javax.swing.text.StyleConstants
-import javax.swing.WindowConstants
-import javax.swing.JSplitPane
+
+import static javax.swing.JSplitPane.VERTICAL_SPLIT
 
 def prefs = Preferences.userNodeForPackage(Console)
 def detachedOutputFlag = prefs.getBoolean('detachedOutput', false)

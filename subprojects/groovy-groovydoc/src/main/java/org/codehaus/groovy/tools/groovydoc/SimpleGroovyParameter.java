@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
+import org.codehaus.groovy.groovydoc.GroovyParameter;
+import org.codehaus.groovy.groovydoc.GroovyType;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class SimpleGroovyParameter implements GroovyParameter {
     private final String name;

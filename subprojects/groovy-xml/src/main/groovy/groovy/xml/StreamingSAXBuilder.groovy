@@ -20,8 +20,8 @@ package groovy.xml
 
 import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
-import org.xml.sax.helpers.AttributesImpl
 import org.xml.sax.ext.LexicalHandler
+import org.xml.sax.helpers.AttributesImpl
 
 class StreamingSAXBuilder extends AbstractStreamingBuilder {
     def pendingStack = []

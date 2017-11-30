@@ -18,10 +18,11 @@
  */
 package groovy.inspect.swingui
 
-import java.awt.*
-import javax.swing.*
-import groovy.swing.SwingBuilder
 import groovy.inspect.Inspector
+import groovy.swing.SwingBuilder
+
+import javax.swing.*
+import java.awt.*
 
 /**
 A little GUI to show some of the Inspector capabilities.

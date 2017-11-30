@@ -18,10 +18,8 @@
  */
 package groovy.swing.factory
 
-import java.awt.Component
-import java.awt.Window
-import javax.swing.JScrollPane
-import javax.swing.JViewport
+import javax.swing.*
+import java.awt.*
 
 class ScrollPaneFactory extends groovy.swing.factory.BeanFactory {
 

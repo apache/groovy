@@ -18,12 +18,11 @@
  */
 package groovy.ui
 
-import groovy.grape.GrapeIvy
 import groovy.grape.Grape
-
-import org.apache.ivy.core.event.resolve.StartResolveEvent
-import org.apache.ivy.core.event.download.PrepareDownloadEvent
+import groovy.grape.GrapeIvy
 import org.apache.ivy.core.event.IvyListener
+import org.apache.ivy.core.event.download.PrepareDownloadEvent
+import org.apache.ivy.core.event.resolve.StartResolveEvent
 
 /**
  * Groovy Swing console.

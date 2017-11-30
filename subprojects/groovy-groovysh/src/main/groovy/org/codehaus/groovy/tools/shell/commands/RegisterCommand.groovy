@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Command
 
 /**
  * The 'register' command.

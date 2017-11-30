@@ -20,7 +20,13 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.Tuple;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
+import javax.sql.DataSource;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -33,18 +39,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.sql.DataSource;
-
-import groovy.lang.MissingPropertyException;
-import groovy.lang.Tuple;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.SimpleType;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
 

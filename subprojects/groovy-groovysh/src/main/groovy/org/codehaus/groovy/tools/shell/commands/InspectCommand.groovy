@@ -20,13 +20,13 @@ package org.codehaus.groovy.tools.shell.commands
 
 import groovy.inspect.swingui.ObjectBrowser
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.Groovysh
-
-import java.awt.HeadlessException
-import javax.swing.UIManager
-
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+
+import javax.swing.*
+import java.awt.*
+import java.util.List
 
 /**
  * The 'inspect' command.
