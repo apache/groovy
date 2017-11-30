@@ -168,48 +168,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
-            long matchesDistance = -1;
-            LinkedList matches = new LinkedList();
-            for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-                Object method = iter.next();
-                final ParameterTypes parameterTypes = (ParameterTypes) method;
-                Class[] paramTypes = parameterTypes.getNativeParameterTypes();
-                if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
-                long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
-                if (dist == 0) return method;
-                if (matches.isEmpty()) {
-                    matches.add(method);
-                    matchesDistance = dist;
-                } else if (dist < matchesDistance) {
-                    matchesDistance = dist;
-                    matches.clear();
-                    matches.add(method);
-                } else if (dist == matchesDistance) {
-                    matches.add(method);
-                }
-
-            }
-            if (matches.size() == 1) {
-                return matches.getFirst();
-            }
-            if (matches.isEmpty()) {
-                return null;
-            }
-
-            // more than one matching method found --> ambiguous!
-            String msg = "Ambiguous method overloading for method ";
-            msg += theClass.getName() + "#" + name;
-            msg += ".\nCannot resolve which method to invoke for ";
-            msg += InvokerHelper.toString(arguments);
-            msg += " due to overlapping prototypes between:";
-            for (Object match : matches) {
-                CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
-                msg += "\n\t" + InvokerHelper.toString(types);
-            }
-            throw new GroovyRuntimeException(msg);
+            return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, true);
         }
     }
-
 
     public ClosureMetaClass(MetaClassRegistry registry, Class theClass) {
         super(registry, theClass);
