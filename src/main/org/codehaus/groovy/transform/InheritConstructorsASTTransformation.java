@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -116,7 +117,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         return theArgs;
     }
 
-    private boolean isExisting(ClassNode classNode, Parameter[] params) {
+    private static boolean isExisting(ClassNode classNode, Parameter[] params) {
         for (ConstructorNode consNode : classNode.getDeclaredConstructors()) {
             if (matchingTypes(params, consNode.getParameters())) {
                 return true;
@@ -125,13 +126,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         return false;
     }
 
-    private boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
-        if (params.length != existingParams.length) return false;
-        for (int i = 0; i < params.length; i++) {
-            if (!params[i].getType().equals(existingParams[i].getType())) {
-                return false;
-            }
-        }
-        return true;
+    private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
+        return MopWriter.equalParameterTypes(params, existingParams);
     }
 }
