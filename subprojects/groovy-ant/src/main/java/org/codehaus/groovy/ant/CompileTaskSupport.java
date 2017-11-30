@@ -19,18 +19,16 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
-
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.File;
-import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * Support for compilation related tasks.
