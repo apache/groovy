@@ -106,24 +106,23 @@ public final class CurriedClosure<V> extends Closure<V> {
                 throw new IllegalArgumentException("When currying expected index range between " +
                         (-arguments.length - curriedParams.length) + ".." + (arguments.length + curriedParams.length) + " but found " + index);
             }
-            final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
-            System.arraycopy(arguments, 0, newCurriedParams, 0, normalizedIndex);
-            System.arraycopy(curriedParams, 0, newCurriedParams, normalizedIndex, curriedParams.length);
-            if (arguments.length - normalizedIndex > 0)
-                System.arraycopy(arguments, normalizedIndex, newCurriedParams, curriedParams.length + normalizedIndex, arguments.length - normalizedIndex);
-            return newCurriedParams;
+            return createNewCurriedParams(normalizedIndex, arguments);
         }
         if (curriedParams.length + arguments.length < minParamsExpected) {
             throw new IllegalArgumentException("When currying expected at least " + index + " argument(s) to be supplied before known curried arguments but found " + arguments.length);
         }
-        final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
         int newIndex = Math.min(index, curriedParams.length + arguments.length - 1);
         // rcurried arguments are done lazily to allow normal method selection between overloaded alternatives
         newIndex = Math.min(newIndex, arguments.length);
-        System.arraycopy(arguments, 0, newCurriedParams, 0, newIndex);
-        System.arraycopy(curriedParams, 0, newCurriedParams, newIndex, curriedParams.length);
-        if (arguments.length - newIndex > 0)
-            System.arraycopy(arguments, newIndex, newCurriedParams, curriedParams.length + newIndex, arguments.length - newIndex);
+        return createNewCurriedParams(newIndex, arguments);
+    }
+
+    private Object[] createNewCurriedParams(int normalizedIndex, Object[] arguments) {
+        Object[] newCurriedParams = new Object[curriedParams.length + arguments.length];
+        System.arraycopy(arguments, 0, newCurriedParams, 0, normalizedIndex);
+        System.arraycopy(curriedParams, 0, newCurriedParams, normalizedIndex, curriedParams.length);
+        if (arguments.length - normalizedIndex > 0)
+            System.arraycopy(arguments, normalizedIndex, newCurriedParams, curriedParams.length + normalizedIndex, arguments.length - normalizedIndex);
         return newCurriedParams;
     }
 
