@@ -18,11 +18,11 @@
  */
 package groovy.ui
 
+import org.codehaus.groovy.runtime.InvokerHelper
+
+import javax.swing.*
 import java.awt.*
 import java.awt.image.BufferedImage
-import javax.swing.Icon
-import javax.swing.ImageIcon
-import org.codehaus.groovy.runtime.InvokerHelper
 
 class OutputTransforms {
 

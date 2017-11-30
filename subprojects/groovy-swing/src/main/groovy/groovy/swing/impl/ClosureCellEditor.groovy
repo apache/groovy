@@ -18,10 +18,11 @@
  */
 package groovy.swing.impl
 
-import java.awt.Component
+import javax.swing.*
 import javax.swing.table.TableCellEditor
 import javax.swing.tree.TreeCellEditor
-import javax.swing.*
+import java.awt.*
+import java.util.List
 
 /**
  * @author Alexander Klein

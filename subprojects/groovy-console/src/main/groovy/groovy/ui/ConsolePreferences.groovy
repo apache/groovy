@@ -22,9 +22,8 @@ import groovy.beans.Bindable
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
-import java.awt.Dimension
-import javax.swing.JDialog
-import static java.awt.GridBagConstraints.*
+import javax.swing.*
+import java.awt.*
 
 class ConsolePreferences {
 

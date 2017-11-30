@@ -18,14 +18,14 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.io.File;
-import java.util.Iterator;
-import java.util.Properties;
-
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
+
+import java.io.File;
+import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * Write GroovyDoc resources to destination.

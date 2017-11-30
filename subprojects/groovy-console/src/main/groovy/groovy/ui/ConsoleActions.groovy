@@ -18,14 +18,10 @@
  */
 package groovy.ui
 
-import groovy.swing.factory.ActionFactory;
-
+import javax.swing.*
+import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
-
-import javax.swing.KeyStroke
-
-import java.awt.Toolkit
 
 newFileAction = action(
     name: 'New File',

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
-import java.util.*;
+import java.util.Map;
 
 /**
  * This has the same interface as the original JsonSlurper written for version 1.8.0, but its

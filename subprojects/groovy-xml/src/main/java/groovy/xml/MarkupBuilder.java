@@ -25,8 +25,8 @@ import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.Map;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A helper class for creating XML or HTML markup.

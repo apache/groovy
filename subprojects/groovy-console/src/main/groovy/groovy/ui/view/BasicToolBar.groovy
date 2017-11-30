@@ -18,8 +18,8 @@
  */
 package groovy.ui.view
 
-import javax.swing.SwingConstants
-import java.awt.BorderLayout
+import javax.swing.*
+import java.awt.*
 
 toolbar = toolBar(rollover:true, visible:controller.showToolbar, constraints:BorderLayout.NORTH) {
     button(newFileAction, text:null)

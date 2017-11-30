@@ -19,13 +19,9 @@
  */
 package groovy.inspect.swingui
 
-import javax.swing.AbstractCellEditor
-import javax.swing.JButton
-import javax.swing.JComponent
-import javax.swing.JTable
-import javax.swing.JTextArea
+import javax.swing.*
 import javax.swing.table.TableCellEditor
-import java.awt.Component
+import java.awt.*
 import java.awt.event.ActionListener
 import java.awt.event.FocusListener
 

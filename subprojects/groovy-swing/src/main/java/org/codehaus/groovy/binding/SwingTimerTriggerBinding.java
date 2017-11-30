@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.binding;
 
-import javax.swing.Timer;
-import java.awt.event.ActionListener;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>

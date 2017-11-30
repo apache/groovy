@@ -19,8 +19,8 @@
 package groovy.xml
 
 import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
-import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
+import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
 
 /**
  * A builder class for creating XML markup.  This implementation uses a

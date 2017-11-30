@@ -23,12 +23,16 @@ import groovy.ui.view.GTKDefaults
 import groovy.ui.view.MacOSXDefaults
 import groovy.ui.view.WindowsDefaults
 
-import javax.swing.Action
+import javax.swing.*
+import javax.swing.event.DocumentListener
 import javax.swing.text.DefaultEditorKit
 import java.awt.datatransfer.DataFlavor
-import java.awt.dnd.*
-import javax.swing.UIManager
-import javax.swing.event.DocumentListener
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DropTargetEvent
+import java.awt.dnd.DropTargetListener
 
 switch (UIManager.getSystemLookAndFeelClassName()) {
     case 'com.sun.java.swing.plaf.windows.WindowsLookAndFeel':

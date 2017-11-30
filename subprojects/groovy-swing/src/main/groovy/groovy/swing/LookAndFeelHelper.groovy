@@ -18,8 +18,7 @@
  */
 package groovy.swing
 
-import javax.swing.LookAndFeel
-import javax.swing.UIManager
+import javax.swing.*
 import javax.swing.plaf.metal.DefaultMetalTheme
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.plaf.metal.MetalTheme

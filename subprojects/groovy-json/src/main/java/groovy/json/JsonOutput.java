@@ -25,7 +25,12 @@ import groovy.util.Expando;
 
 import java.io.StringReader;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.

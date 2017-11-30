@@ -18,21 +18,20 @@
  */
 package org.codehaus.groovy.tools.shell
 
-import org.codehaus.groovy.control.ParserVersion
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.Preferences
+import antlr.RecognitionException
+import antlr.TokenStreamException
+import antlr.collections.AST
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer
-import antlr.collections.AST
-import antlr.RecognitionException
-import antlr.TokenStreamException
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.ParserVersion
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 import java.util.regex.Pattern
-
 
 interface Parsing {
     ParseStatus parse(final Collection<String> buffer)

@@ -19,7 +19,12 @@
 package groovy.json.internal;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * This maps only builds once you ask for a key for the first time.

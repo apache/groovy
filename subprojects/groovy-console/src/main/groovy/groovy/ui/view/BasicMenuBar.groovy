@@ -18,10 +18,6 @@
  */
 package groovy.ui.view
 
-import java.awt.MenuItem;
-
-import groovy.swing.factory.SeparatorFactory;
-
 menuBar {
     menu(text: 'File', mnemonic: 'F') {
         menuItem(newFileAction)

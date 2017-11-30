@@ -18,8 +18,7 @@
  */
 package groovy.swing.factory
 
-import java.awt.Component
-import java.awt.Window
+import java.awt.*
 
 class TabbedPaneFactory extends BeanFactory {
 

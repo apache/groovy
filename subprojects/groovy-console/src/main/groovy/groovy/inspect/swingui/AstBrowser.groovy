@@ -18,7 +18,6 @@
  */
 package groovy.inspect.swingui
 
-import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
@@ -29,21 +28,16 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.ASMifier
 import org.objectweb.asm.util.TraceClassVisitor
 
-import javax.swing.Action
-import javax.swing.JFrame
-import javax.swing.JSplitPane
-import javax.swing.KeyStroke
-import javax.swing.UIManager
-import javax.swing.WindowConstants
+import javax.swing.*
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
-import java.awt.Cursor
-import java.awt.Font
+import java.awt.*
 import java.awt.event.KeyEvent
+import java.util.List
 import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
