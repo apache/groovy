@@ -3236,43 +3236,57 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
+        return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, false);
+    }
 
+    protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
         long matchesDistance = -1;
         LinkedList matches = new LinkedList();
         for (Object method : matchingMethods) {
-            ParameterTypes paramTypes = (ParameterTypes) method;
-            long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
+            final ParameterTypes parameterTypes = (ParameterTypes) method;
+            if (checkParametersCompatible && !MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes())) continue;
+            long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
             if (dist == 0) return method;
-            if (matches.isEmpty()) {
-                matches.add(method);
-                matchesDistance = dist;
-            } else if (dist < matchesDistance) {
-                matchesDistance = dist;
-                matches.clear();
-                matches.add(method);
-            } else if (dist == matchesDistance) {
-                matches.add(method);
-            }
-
+            matchesDistance = handleMatches(matchesDistance, matches, method, dist);
         }
-        if (matches.size() == 1) {
+
+        int size = matches.size();
+        if (1 == size) {
             return matches.getFirst();
         }
-        if (matches.isEmpty()) {
+        if (0 == size) {
             return null;
         }
 
         //more than one matching method found --> ambiguous!
+        throw new GroovyRuntimeException(createErrorMessageForAmbiguity(theClassName, name, arguments, matches));
+    }
+
+    protected static String createErrorMessageForAmbiguity(String theClassName, String name, Class[] arguments, LinkedList matches) {
         StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
-        msg.append(theClass.getName()).append("#").append(name)
+        msg.append(theClassName).append("#").append(name)
            .append(".\nCannot resolve which method to invoke for ")
            .append(InvokerHelper.toString(arguments))
            .append(" due to overlapping prototypes between:");
-        for (final Object matche : matches) {
-            Class[] types = ((ParameterTypes) matche).getNativeParameterTypes();
+        for (final Object match : matches) {
+            CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
             msg.append("\n\t").append(InvokerHelper.toString(types));
         }
-        throw new GroovyRuntimeException(msg.toString());
+        return msg.toString();
+    }
+
+    protected static long handleMatches(long matchesDistance, LinkedList matches, Object method, long dist) {
+        if (matches.isEmpty()) {
+            matches.add(method);
+            matchesDistance = dist;
+        } else if (dist < matchesDistance) {
+            matchesDistance = dist;
+            matches.clear();
+            matches.add(method);
+        } else if (dist == matchesDistance) {
+            matches.add(method);
+        }
+        return matchesDistance;
     }
 
     private static boolean isGenericGetMethod(MetaMethod method) {
