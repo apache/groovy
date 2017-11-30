@@ -128,4 +128,16 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
                 new BinaryExpression(fe, Token.newSymbol(Types.ASSIGN, -1, -1), ve)
         ));
     }
+
+    protected static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+        if (cn.isEnum() || cn.isInterface()) return false;
+        if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
+
+        if (!(cn instanceof InnerClassNode)) return false;
+        InnerClassNode innerClass = (InnerClassNode) cn;
+        // scope != null means aic, we don't handle that here
+        if (innerClass.getVariableScope() != null) return false;
+        // static inner classes don't need this$0
+        return (innerClass.getModifiers() & Opcodes.ACC_STATIC) == 0;
+    }
 }
