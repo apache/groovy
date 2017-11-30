@@ -356,17 +356,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
     }
 
-    private static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
-        if (cn.isEnum() || cn.isInterface()) return false;
-        if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
-        if (!(cn instanceof InnerClassNode)) return false;
-        InnerClassNode innerClass = (InnerClassNode) cn;
-        // scope != null means aic, we don't handle that here
-        if (innerClass.getVariableScope() != null) return false;
-        // static inner classes don't need this$0
-        return (innerClass.getModifiers() & ACC_STATIC) == 0;
-    }
-
     private void addThisReference(ConstructorNode node) {
         if (!shouldHandleImplicitThisForInnerClass(classNode)) return;
         Statement code = node.getCode();
