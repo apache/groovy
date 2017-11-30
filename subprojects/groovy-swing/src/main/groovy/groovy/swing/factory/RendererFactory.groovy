@@ -18,10 +18,10 @@
  */
 package groovy.swing.factory
 
-import java.awt.Component
-import javax.swing.JList
-import javax.swing.JTree
 import groovy.swing.impl.ClosureRenderer
+
+import javax.swing.*
+import java.awt.*
 
 /**
  * @author Danno Ferrin

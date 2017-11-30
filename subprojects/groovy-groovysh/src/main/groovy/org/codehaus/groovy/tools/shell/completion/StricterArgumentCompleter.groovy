@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell.completion
 
 import groovy.transform.CompileStatic
 import jline.console.completer.ArgumentCompleter
-import jline.console.completer.ArgumentCompleter.ArgumentDelimiter
-import jline.console.completer.ArgumentCompleter.ArgumentList
 import jline.console.completer.Completer
 import jline.internal.Log
 

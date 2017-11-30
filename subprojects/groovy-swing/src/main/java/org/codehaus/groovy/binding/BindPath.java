@@ -18,16 +18,15 @@
  */
 package org.codehaus.groovy.binding;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
-import java.beans.PropertyChangeListener;
-import java.util.Set;
-import java.util.Map;
-import java.util.TreeMap;
-
 import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Reference;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.beans.PropertyChangeListener;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * The bind path object.  This class represents one "step" in the bind path.

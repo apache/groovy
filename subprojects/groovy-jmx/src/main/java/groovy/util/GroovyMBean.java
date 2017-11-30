@@ -21,9 +21,21 @@ package groovy.util;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 
-import javax.management.*;
+import javax.management.Attribute;
+import javax.management.JMException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A GroovyObject facade for an underlying MBean which acts like a normal

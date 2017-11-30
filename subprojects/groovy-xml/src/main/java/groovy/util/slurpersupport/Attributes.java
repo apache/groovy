@@ -25,10 +25,10 @@ import groovy.xml.QName;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Lazy evaluated representation of a node's attributes.

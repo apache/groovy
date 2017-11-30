@@ -18,11 +18,11 @@
  */
 package groovy.jmx.builder
 
-import java.lang.management.ManagementFactory
 import javax.management.DynamicMBean
 import javax.management.MBeanServerConnection
 import javax.management.MBeanServerFactory
 import javax.management.ObjectName
+import java.lang.management.ManagementFactory
 
 /**
  * This is a utility class used as a helper for JmxBuilder.

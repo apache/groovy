@@ -18,11 +18,17 @@
  */
 package org.codehaus.groovy.macro;
 
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.macro.runtime.MacroContext;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 
 public class ExampleMacroMethods {
 

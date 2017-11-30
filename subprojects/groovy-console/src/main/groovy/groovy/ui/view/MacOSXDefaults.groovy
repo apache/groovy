@@ -19,8 +19,9 @@
 package groovy.ui.view
 
 import groovy.ui.text.GroovyFilter
-import java.awt.Color
+
 import javax.swing.text.StyleConstants
+import java.awt.*
 import java.util.prefs.Preferences
 
 build(Defaults)

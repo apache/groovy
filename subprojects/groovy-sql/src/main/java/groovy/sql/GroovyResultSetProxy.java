@@ -21,13 +21,12 @@ package groovy.sql;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.ResultSet;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * GroovyResultSetProxy is used to create a proxy for GroovyResultSet.

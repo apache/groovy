@@ -41,12 +41,16 @@ import org.codehaus.groovy.tools.shell.util.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
 
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)

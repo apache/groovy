@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.macro
 
-import groovy.transform.CompileStatic;
-import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
+import groovy.transform.CompileStatic
+import org.codehaus.groovy.runtime.metaclass.MethodSelectionException
 
 /**
  *

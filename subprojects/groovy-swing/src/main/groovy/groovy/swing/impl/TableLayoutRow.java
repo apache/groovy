@@ -18,7 +18,7 @@
  */
 package groovy.swing.impl;
 
-import java.awt.GridBagConstraints;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

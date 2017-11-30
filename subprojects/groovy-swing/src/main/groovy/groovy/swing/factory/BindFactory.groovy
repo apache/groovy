@@ -19,18 +19,28 @@
 package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
+import groovy.swing.binding.AbstractButtonProperties
+import groovy.swing.binding.JComboBoxProperties
+import groovy.swing.binding.JComponentProperties
+import groovy.swing.binding.JListProperties
+import groovy.swing.binding.JScrollBarProperties
+import groovy.swing.binding.JSliderProperties
+import groovy.swing.binding.JSpinnerProperties
+import groovy.swing.binding.JTableProperties
+import groovy.swing.binding.JTextComponentProperties
+import org.codehaus.groovy.binding.AggregateBinding
+import org.codehaus.groovy.binding.BindingUpdatable
+import org.codehaus.groovy.binding.ClosureSourceBinding
+import org.codehaus.groovy.binding.ClosureTriggerBinding
+import org.codehaus.groovy.binding.EventTriggerBinding
+import org.codehaus.groovy.binding.FullBinding
+import org.codehaus.groovy.binding.MutualPropertyBinding
+import org.codehaus.groovy.binding.PropertyBinding
+import org.codehaus.groovy.binding.SourceBinding
+import org.codehaus.groovy.binding.TargetBinding
+import org.codehaus.groovy.binding.TriggerBinding
 
 import java.util.Map.Entry
-import org.codehaus.groovy.binding.*
-import groovy.swing.binding.JComponentProperties
-import groovy.swing.binding.JSliderProperties
-import groovy.swing.binding.JTextComponentProperties
-import groovy.swing.binding.JTableProperties
-import groovy.swing.binding.JListProperties
-import groovy.swing.binding.AbstractButtonProperties
-import groovy.swing.binding.JScrollBarProperties
-import groovy.swing.binding.JComboBoxProperties
-import groovy.swing.binding.JSpinnerProperties
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>

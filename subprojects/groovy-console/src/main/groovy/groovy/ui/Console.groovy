@@ -18,52 +18,46 @@
  */
 package groovy.ui
 
-import groovy.inspect.swingui.ObjectBrowser
 import groovy.inspect.swingui.AstBrowser
+import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
+import groovy.transform.ThreadInterrupt
 import groovy.ui.text.FindReplaceUtility
 import org.codehaus.groovy.antlr.LexerFrame
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ErrorCollector
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.messages.ExceptionMessage
 import org.codehaus.groovy.control.messages.SimpleMessage
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.runtime.StringGroovyMethods
+import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 
-import java.awt.Component
-import java.awt.EventQueue
-import java.awt.Font
-import java.awt.Toolkit
-import java.awt.Window
-import java.awt.event.ActionEvent
-import java.awt.event.ComponentEvent
-import java.awt.event.ComponentListener
-import java.awt.event.FocusListener
-import java.awt.event.FocusEvent
-import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
-import javax.swing.event.HyperlinkListener
+import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
+import javax.swing.event.HyperlinkListener
+import javax.swing.filechooser.FileFilter
 import javax.swing.text.AttributeSet
 import javax.swing.text.Element
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
-import javax.swing.filechooser.FileFilter
-
-import org.codehaus.groovy.runtime.StackTraceUtils
-import org.codehaus.groovy.control.ErrorCollector
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage
-import org.codehaus.groovy.syntax.SyntaxException
-import org.codehaus.groovy.control.messages.ExceptionMessage
-import java.awt.Dimension
-import java.awt.BorderLayout
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.transform.ThreadInterrupt
-import javax.swing.event.DocumentListener
+import java.awt.*
+import java.awt.event.ActionEvent
+import java.awt.event.ComponentEvent
+import java.awt.event.ComponentListener
+import java.awt.event.FocusEvent
+import java.awt.event.FocusListener
+import java.util.List
+import java.util.prefs.Preferences
 
 /**
  * Groovy Swing console.

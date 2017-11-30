@@ -19,10 +19,9 @@
 package groovy.swing.factory
 
 import groovy.swing.impl.DefaultAction
-import javax.swing.Action
-import javax.swing.JComponent
-import javax.swing.KeyStroke
 import org.codehaus.groovy.runtime.InvokerHelper
+
+import javax.swing.*
 
 /**
  *

@@ -22,15 +22,13 @@ import groovy.lang.Closure;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
-
-import java.io.IOException;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
+import java.io.IOException;
 
 /**
  * This servlet will run Groovy scripts as Groovlets.  Groovlets are scripts

@@ -18,10 +18,10 @@
  */
 package groovy.ui.text
 
-import java.awt.event.ActionEvent
-import javax.swing.AbstractAction
+import javax.swing.*
 import javax.swing.text.AttributeSet
 import javax.swing.text.SimpleAttributeSet
+import java.awt.event.ActionEvent
 
 class AutoIndentAction extends AbstractAction {
     AttributeSet simpleAttributeSet = new SimpleAttributeSet()

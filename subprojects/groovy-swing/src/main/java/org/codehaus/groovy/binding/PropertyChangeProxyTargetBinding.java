@@ -20,8 +20,8 @@ package org.codehaus.groovy.binding;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 public class PropertyChangeProxyTargetBinding implements TargetBinding {
     Object proxyObject;

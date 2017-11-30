@@ -25,7 +25,11 @@ import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.ast.GroovyClassVisitor
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.control.*
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
 
 import java.security.CodeSource
 
