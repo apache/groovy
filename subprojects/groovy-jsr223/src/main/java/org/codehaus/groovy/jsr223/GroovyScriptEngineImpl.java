@@ -55,14 +55,13 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.lang.Tuple;
-
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.util.ManagedConcurrentValueMap;
-import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.util.ManagedConcurrentValueMap;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -73,12 +72,10 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;

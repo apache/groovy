@@ -18,7 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyMemberDoc;
 
 public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc implements GroovyMemberDoc {
     protected GroovyClassDoc belongsToClass;

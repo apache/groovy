@@ -18,12 +18,12 @@
  */
 package groovy.xml;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 /**
  * Support class for creating XML Factories

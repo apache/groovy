@@ -19,7 +19,8 @@
 package groovy.swing.factory
 
 import groovy.swing.impl.ClosureCellEditor
-import java.awt.Component
+
+import java.awt.*
 
 /**
 * @author Alexander Klein

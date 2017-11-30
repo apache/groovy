@@ -18,7 +18,7 @@
  */
 package groovy.swing.factory
 
-import javax.swing.BorderFactory
+import javax.swing.*
 
 /**
  * matteBorder requires essentially two parameter, a mat definition and a

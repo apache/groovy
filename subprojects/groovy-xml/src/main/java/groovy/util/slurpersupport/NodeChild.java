@@ -21,14 +21,13 @@ package groovy.util.slurpersupport;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Lazy evaluated representation of a child node.

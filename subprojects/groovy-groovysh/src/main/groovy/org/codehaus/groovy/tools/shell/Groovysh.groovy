@@ -31,9 +31,14 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.commands.LoadCommand
 import org.codehaus.groovy.tools.shell.commands.RecordCommand
-import org.codehaus.groovy.tools.shell.util.*
+import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
+import org.codehaus.groovy.tools.shell.util.DefaultCommandsRegistrar
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
+import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.ScriptVariableAnalyzer
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern

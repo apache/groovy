@@ -22,7 +22,6 @@ import groovy.transform.CompileStatic
 import jline.console.ConsoleReader
 import jline.internal.Log
 import org.codehaus.groovy.tools.shell.util.JAnsiHelper
-import org.fusesource.jansi.AnsiOutputStream
 
 @CompileStatic
 class PatchedConsoleReader extends ConsoleReader {

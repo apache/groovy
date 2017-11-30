@@ -25,7 +25,12 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
-import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.ArrayList;

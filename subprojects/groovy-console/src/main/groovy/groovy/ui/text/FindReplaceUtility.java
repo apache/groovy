@@ -18,11 +18,14 @@
  */
 package groovy.ui.text;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-
+import javax.swing.*;
+import javax.swing.event.EventListenerList;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.Segment;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -30,28 +33,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.TextEvent;
 import java.awt.event.TextListener;
-
 import java.util.EventListener;
-
-import javax.swing.Action;
-import javax.swing.AbstractAction;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JRootPane;
-import javax.swing.KeyStroke;
-
-import javax.swing.event.EventListenerList;
-
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.Segment;
 
 /**
  * @author Evan "Hippy" Slatis

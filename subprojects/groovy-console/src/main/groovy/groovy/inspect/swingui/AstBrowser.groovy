@@ -19,32 +19,32 @@
 package groovy.inspect.swingui
 
 import groovy.swing.SwingBuilder
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.TraceClassVisitor
 
-import java.awt.Cursor
-import java.awt.Font
-import java.awt.event.KeyEvent
-import java.util.prefs.Preferences
-import javax.swing.JSplitPane
-import javax.swing.KeyStroke
-import javax.swing.UIManager
-import javax.swing.WindowConstants
+import javax.swing.*
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
-import org.codehaus.groovy.control.Phases
-
+import java.awt.*
+import java.awt.event.KeyEvent
+import java.util.List
+import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
-import static java.awt.GridBagConstraints.*
-import org.codehaus.groovy.ast.ClassNode
-import groovy.lang.GroovyClassLoader.ClassCollector
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.SourceUnit
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.util.TraceClassVisitor
+import static java.awt.GridBagConstraints.BOTH
+import static java.awt.GridBagConstraints.HORIZONTAL
+import static java.awt.GridBagConstraints.NONE
+import static java.awt.GridBagConstraints.NORTHEAST
+import static java.awt.GridBagConstraints.NORTHWEST
+import static java.awt.GridBagConstraints.WEST
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 

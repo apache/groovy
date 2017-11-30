@@ -19,14 +19,13 @@
 package groovy.xml;
 
 import groovy.util.BuilderSupport;
-
-import java.util.Iterator;
-import java.util.Map;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A builder for generating W3C SAX events.  Use similar to MarkupBuilder.

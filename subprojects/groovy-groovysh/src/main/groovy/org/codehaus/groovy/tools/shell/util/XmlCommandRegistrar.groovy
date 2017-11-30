@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.tools.shell.util
 
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.Command
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * Registers {@link Command} classes from an XML file like:

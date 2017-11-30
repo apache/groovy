@@ -18,12 +18,12 @@
  */
 package groovy.sql;
 
-import java.sql.ResultSetMetaData;
-
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.ReadOnlyPropertyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.sql.ResultSetMetaData;
 
 /**
  * This class defines a wrapper for accessing a specific column in <code>ResultSetMetaData</code>.

@@ -18,11 +18,11 @@
  */
 package groovy.xml
 
-import javax.xml.parsers.DocumentBuilderFactory
-import org.w3c.dom.Node
-
 import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
+import org.w3c.dom.Node
+
+import javax.xml.parsers.DocumentBuilderFactory
 
 class StreamingDOMBuilder extends AbstractStreamingBuilder {
     def pendingStack = []

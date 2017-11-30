@@ -18,11 +18,12 @@
  */
 package groovy.swing.binding
 
-import javax.swing.JTable
+import org.codehaus.groovy.runtime.InvokerHelper
+
+import javax.swing.*
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 import javax.swing.table.TableModel
-import org.codehaus.groovy.runtime.InvokerHelper
 
 class JTableMetaMethods {
 

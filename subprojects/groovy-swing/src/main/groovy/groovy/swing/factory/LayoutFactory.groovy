@@ -18,8 +18,8 @@
  */
 package groovy.swing.factory
 
-import java.awt.Container
-import javax.swing.RootPaneContainer
+import javax.swing.*
+import java.awt.*
 
 class LayoutFactory extends groovy.swing.factory.BeanFactory {
 

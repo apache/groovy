@@ -18,9 +18,17 @@
  */
 package org.codehaus.groovy.runtime;
 
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
+import groovy.io.FileType;
+import groovy.io.FileVisitResult;
+import groovy.io.GroovyPrintWriter;
+import groovy.lang.Closure;
+import groovy.lang.MetaClass;
+import groovy.lang.Writable;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
+import groovy.transform.stc.SimpleType;
+import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -52,17 +60,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import groovy.io.FileType;
-import groovy.io.FileVisitResult;
-import groovy.io.GroovyPrintWriter;
-import groovy.lang.Closure;
-import groovy.lang.MetaClass;
-import groovy.lang.Writable;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.FromString;
-import groovy.transform.stc.SimpleType;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
 
 /**
  * This class defines new groovy methods for Readers, Writers, InputStreams and

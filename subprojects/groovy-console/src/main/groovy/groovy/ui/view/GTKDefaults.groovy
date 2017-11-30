@@ -18,11 +18,8 @@
  */
 package groovy.ui.view
 
-import javax.swing.JComponent
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
-import org.codehaus.groovy.runtime.InvokerHelper
-
 import java.util.prefs.Preferences
 
 build(Defaults)

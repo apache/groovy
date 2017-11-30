@@ -18,9 +18,9 @@
  */
 package groovy.swing.factory
 
-import java.awt.Component
-import java.awt.Window
-import javax.swing.JComponent
+import javax.swing.*
+import java.awt.*
+
 import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
 public class WidgetFactory extends AbstractFactory {

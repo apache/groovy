@@ -18,10 +18,9 @@
  */
 package groovy.swing.factory
 
-import java.awt.Color
-import java.awt.Font
 import javax.swing.border.Border
 import javax.swing.border.TitledBorder
+import java.awt.*
 
 /**
  * The node must be called with either a value argument or a title: attribute. <br>

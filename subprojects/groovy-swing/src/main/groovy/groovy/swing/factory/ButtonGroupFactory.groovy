@@ -18,8 +18,7 @@
  */
 package groovy.swing.factory
 
-import javax.swing.AbstractButton
-import javax.swing.ButtonGroup
+import javax.swing.*
 
 class ButtonGroupFactory extends BeanFactory {
 
