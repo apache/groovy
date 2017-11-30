@@ -18,6 +18,7 @@
  */
 package groovy.inspect.swingui
 
+import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
