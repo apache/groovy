@@ -1243,19 +1243,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = null;
         if (arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
-            method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
-            if (method != null) {
-                method = new TransformMetaMethod(method) {
-                    public Object invoke(Object object, Object[] arguments) {
-                        Object firstArgument = arguments[0];
-                        List list = (List) firstArgument;
-                        arguments = list.toArray();
-                        return super.invoke(object, arguments);
-                    }
-                };
-            }
+            method = createTransformMetaMethod(getMethodWithCaching(sender, methodName, newArguments, isCallToSuper));
         }
         return method;
+    }
+
+    protected MetaMethod createTransformMetaMethod(MetaMethod method) {
+        if (method == null) {
+            return null;
+        }
+
+        return new TransformMetaMethod(method) {
+            public Object invoke(Object object, Object[] arguments) {
+                Object firstArgument = arguments[0];
+                List list = (List) firstArgument;
+                arguments = list.toArray();
+                return super.invoke(object, arguments);
+            }
+        };
     }
 
     private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass, boolean isCallToSuper) {
