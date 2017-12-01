@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import groovy.lang.GroovyRuntimeException;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -30,12 +31,14 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A utility class responsible for decompiling JVM class files and producing {@link ClassStub} objects reflecting their structure.
@@ -46,12 +49,12 @@ public abstract class AsmDecompiler {
 
     private static class StubCache {
         /**
-         * Caches stubs per URL. This cache is useful when performing multiple compilations in the same JVM/class loader and in tests.
+         * Caches stubs per URI. This cache is useful when performing multiple compilations in the same JVM/class loader and in tests.
          *
          * It's synchronized "just in case". Occasional misses are expected if several threads attempt to load the same class,
          * but this shouldn't result in serious memory issues.
          */
-        static final Map<URL, SoftReference<ClassStub>> map = Collections.synchronizedMap(new HashMap<URL, SoftReference<ClassStub>>());
+        static final Map<URI, SoftReference<ClassStub>> map = new ConcurrentHashMap<URI, SoftReference<ClassStub>>();         // According to http://michaelscharf.blogspot.jp/2006/11/javaneturlequals-and-hashcode-make.html, use java.net.URI instead.
     }
 
     /**
@@ -63,7 +66,14 @@ public abstract class AsmDecompiler {
      * @throws IOException if reading from this URL is impossible
      */
     public static ClassStub parseClass(URL url) throws IOException {
-        SoftReference<ClassStub> ref = StubCache.map.get(url);
+        URI uri;
+        try {
+            uri = url.toURI();
+        } catch (URISyntaxException e) {
+            throw new GroovyRuntimeException(e);
+        }
+
+        SoftReference<ClassStub> ref = StubCache.map.get(uri);
         ClassStub stub = ref == null ? null : ref.get();
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
@@ -74,7 +84,7 @@ public abstract class AsmDecompiler {
                 stream.close();
             }
             stub = visitor.result;
-            StubCache.map.put(url, new SoftReference<ClassStub>(stub));
+            StubCache.map.put(uri, new SoftReference<ClassStub>(stub));
         }
         return stub;
     }
