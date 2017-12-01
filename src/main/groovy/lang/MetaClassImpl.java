@@ -1580,19 +1580,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     this.theClass.getName() + " do not match. Expected " + numberOfConstructors + " but got " + constructors.size());
         }
 
-        if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        }
-        if (constructor == null) {
-            throw new GroovyRuntimeException(
-                    "Could not find matching constructor for: "
-                            + theClass.getName()
-                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
-        }
+        CachedConstructor constructor = createCachedConstructor(arguments);
         List l = new ArrayList(constructors.toList());
         Comparator comp = new Comparator() {
             public int compare(Object arg0, Object arg1) {
@@ -1612,6 +1600,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         // NOTE: must be changed to "1 |" if constructor was vargs
         return 0 | (found << 8);
+    }
+
+    private CachedConstructor createCachedConstructor(Object[] arguments) {
+        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        MetaClassHelper.unwrap(arguments);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        if (constructor == null) {
+            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        }
+        if (constructor == null) {
+            throw new GroovyRuntimeException(
+                    "Could not find matching constructor for: "
+                            + theClass.getName()
+                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
+        }
+        return constructor;
     }
 
     /**
@@ -1635,19 +1640,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @since 2.1.9
      */
     private int selectConstructorAndTransformArguments1(Object[] arguments) {
-        if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        }
-        if (constructor == null) {
-            throw new GroovyRuntimeException(
-                    "Could not find matching constructor for: "
-                            + theClass.getName()
-                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
-        }
+        CachedConstructor constructor = createCachedConstructor(arguments);
         final String methodDescriptor = BytecodeHelper.getMethodDescriptor(Void.TYPE, constructor.getNativeParameterTypes());
         // keeping 3 bits for additional information such as vargs
         return BytecodeHelper.hashCode(methodDescriptor);
