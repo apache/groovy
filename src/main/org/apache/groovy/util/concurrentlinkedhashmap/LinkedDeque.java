@@ -15,13 +15,12 @@
  */
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-//import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * Linked list implementation of the {@link Deque} interface where the link
@@ -45,7 +44,7 @@ import java.util.NoSuchElementException;
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */
-//@NotThreadSafe
+@NotThreadSafe
 final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> implements Deque<E> {
 
   // This class provides a doubly-linked list that is optimized for the virtual

@@ -15,7 +15,7 @@
  */
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
-//import javax.annotation.concurrent.ThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A listener registered for notification when an entry is evicted. An instance
@@ -35,7 +35,7 @@ package org.apache.groovy.util.concurrentlinkedhashmap;
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */
-//@ThreadSafe
+@ThreadSafe
 public interface EvictionListener<K, V> {
 
   /**
