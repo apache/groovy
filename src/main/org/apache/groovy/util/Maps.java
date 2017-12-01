@@ -24,6 +24,7 @@ import java.util.Map;
 
 /**
  * Map utilities.
+ * @since 2.5.0
  */
 public abstract class Maps {
 
