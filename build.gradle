@@ -184,6 +184,7 @@ ext {
     xstreamVersion = '1.4.10'
     spockVersion = '1.1-groovy-2.4'
     antlr4Version = '4.7'
+    jsr305Version = '3.0.2'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
@@ -210,9 +211,12 @@ dependencies {
     }
     compile files("${buildDir}/generated-classes")
 
+    compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
+
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
+
     testCompile "jmock:jmock:$jmockVersion"
     testCompile "jmock:jmock-cglib:$jmockVersion"
     testCompile "xmlunit:xmlunit:$xmlunitVersion"

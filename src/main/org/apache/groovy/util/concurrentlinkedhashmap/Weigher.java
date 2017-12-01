@@ -15,7 +15,7 @@
  */
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
-//import javax.annotation.concurrent.ThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A class that can determine the weight of a value. The total weight threshold
@@ -25,7 +25,7 @@ package org.apache.groovy.util.concurrentlinkedhashmap;
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */
-//@ThreadSafe
+@ThreadSafe
 public interface Weigher<V> {
 
   /**
