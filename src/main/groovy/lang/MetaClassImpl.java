@@ -1781,29 +1781,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return ((Map) object).get(name);
         }
 
-        MetaMethod method = null;
-        Object[] arguments = EMPTY_ARGUMENTS;
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
+        MetaMethod method = methodAndProperty.getFirst();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
-        if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                method = mbp.getGetter();
-                mp = mbp.getField();
-            }
-        }
-
-        // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
-            if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-                if (categoryMethod != null) method = categoryMethod;
-            }
-        }
+        MetaProperty mp = methodAndProperty.getSecond();
 
         //----------------------------------------------------------------------
         // field
@@ -1821,6 +1805,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic get method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
+        Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null) arguments = new Object[]{name};
@@ -1906,29 +1891,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             };
         }
 
-        MetaMethod method = null;
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
+        MetaMethod method = methodAndProperty.getFirst();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
-        if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                method = mbp.getGetter();
-                mp = mbp.getField();
-            }
-        }
-
-        // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
-            if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodGetter(theClass, getterName, false);
-                if (categoryMethod != null)
-                    method = categoryMethod;
-            }
-        }
+        MetaProperty mp = methodAndProperty.getSecond();
 
         //----------------------------------------------------------------------
         // field
@@ -2040,7 +2009,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             };
     }
 
+    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
+        MetaMethod method = null;
+        MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
+        if (mp != null) {
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                method = mbp.getGetter();
+                mp = mbp.getField();
+            }
+        }
 
+        // check for a category method named like a getter
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            if (getterName != null) {
+                MetaMethod categoryMethod = getCategoryMethodGetter(senderForCMG, getterName, false);
+                if (categoryMethod != null)
+                    method = categoryMethod;
+            }
+        }
+
+        return new Tuple2<MetaMethod, MetaProperty>(method, mp);
+    }
 
     private static MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
         List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
