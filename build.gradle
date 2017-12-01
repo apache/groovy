@@ -175,6 +175,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.10'
     spockVersion = '1.0-groovy-2.4'
+    jsr305Version = '3.0.2'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
@@ -200,6 +201,8 @@ dependencies {
         transitive = false
     }
     compile files("${buildDir}/generated-classes")
+
+    compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
 
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
