@@ -259,24 +259,12 @@ public class GroovyShell extends GroovyObjectSupport {
         if (Script.class.isAssignableFrom(scriptClass)) {
             // treat it just like a script if it is one
             try {
-                Constructor constructor = scriptClass.getConstructor(Binding.class);
-                Script script = (Script) constructor.newInstance(context);
+                Script script = InvokerHelper.newScript(scriptClass, context);
                 return script.run();
             } catch (InstantiationException e) {
                 // ignore instantiation errors,, try to do main
             } catch (IllegalAccessException e) {
                // ignore instantiation errors, try to do main
-            } catch (NoSuchMethodException e) {
-                try {
-                    // Fallback for non-standard "Scripts" that don't have contextual constructor.
-                    Script script = (Script) scriptClass.newInstance();
-                    script.setBinding(context);
-                    return script.run();
-                } catch (InstantiationException e1) {
-                    // ignore instantiation errors, try to do main
-                } catch (IllegalAccessException e1) {
-                    // ignore instantiation errors, try to do main
-                }
             } catch (InvocationTargetException e) {
                 // ignore instantiation errors, try to do main
             }
