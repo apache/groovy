@@ -435,14 +435,7 @@ public class InvokerHelper {
         } else {
             try {
                 if (Script.class.isAssignableFrom(scriptClass)) {
-                    try {
-                        Constructor constructor = scriptClass.getConstructor(Binding.class);
-                        script = (Script) constructor.newInstance(context);
-                    } catch (NoSuchMethodException e) {
-                        // Fallback for non-standard "Script" classes.
-                        script = (Script) scriptClass.newInstance();
-                        script.setBinding(context);
-                    }
+                    script = newScript(scriptClass, context);
                 } else {
                     final GroovyObject object = (GroovyObject) scriptClass.newInstance();
                     // it could just be a class, so let's wrap it in a Script
@@ -476,6 +469,19 @@ public class InvokerHelper {
                         "Failed to create Script instance for class: "
                                 + scriptClass + ". Reason: " + e, e);
             }
+        }
+        return script;
+    }
+
+    public static Script newScript(Class scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        Script script;
+        try {
+            Constructor constructor = scriptClass.getConstructor(Binding.class);
+            script = (Script) constructor.newInstance(context);
+        } catch (NoSuchMethodException e) {
+            // Fallback for non-standard "Script" classes.
+            script = (Script) scriptClass.newInstance();
+            script.setBinding(context);
         }
         return script;
     }
