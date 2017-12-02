@@ -37,7 +37,7 @@ public class ClosureComparator<T> implements Comparator<T> {
     }
 
     public int compare(T object1, T object2) {
-        Object value = closure.call(new Object[] {object1, object2});
+        Object value = closure.call(object1, object2);
         return DefaultTypeTransformation.intUnbox(value);
     }
 }
