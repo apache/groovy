@@ -2006,8 +2006,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // if it is not static and we do no static access
         if (genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
             method = genericGetMethod;
-            if (method != null)
-                return new GetMethodMetaProperty(name, method);
+            return new GetMethodMetaProperty(name, method);
         }
 
         //----------------------------------------------------------------------

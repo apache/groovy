@@ -196,7 +196,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         ClassNode builder = createBuilder(anno, buildee);
         createBuilderFactoryMethod(anno, buildee, builder);
-        List<FieldNode> fields = getFields(transform, anno, buildee);
+//        List<FieldNode> fields = getFields(transform, anno, buildee);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
         boolean allProperties = !transform.memberHasValue(anno, "allProperties", false);
         List<PropertyInfo> props = getPropertyInfos(transform, anno, buildee, excludes, includes, allNames, allProperties);
