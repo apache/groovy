@@ -84,6 +84,7 @@ public class InvokerHelper {
     private static final int ITEM_ALLOCATE_SIZE = 5;
 
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
+    public static final String MAIN_METHOD_NAME = "main";
 
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
@@ -451,7 +452,7 @@ public class InvokerHelper {
                             } catch (MissingPropertyException e) {
                                 // They'll get empty args since none exist in the context.
                             }
-                            object.invokeMethod("main", argsToPass);
+                            object.invokeMethod(MAIN_METHOD_NAME, argsToPass);
                             return null;
                         }
                     };
@@ -473,7 +474,7 @@ public class InvokerHelper {
         return script;
     }
 
-    public static Script newScript(Class scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+    public static Script newScript(Class<?> scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException {
         Script script;
         try {
             Constructor constructor = scriptClass.getConstructor(Binding.class);

@@ -39,6 +39,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
+
 /**
  * Represents a groovy shell capable of running arbitrary groovy scripts
  *
@@ -271,9 +273,9 @@ public class GroovyShell extends GroovyObjectSupport {
         }
         try {
             // let's find a main method
-            scriptClass.getMethod("main", String[].class);
+            scriptClass.getMethod(MAIN_METHOD_NAME, String[].class);
             // if that main method exist, invoke it
-            return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
+            return InvokerHelper.invokeMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
         } catch (NoSuchMethodException e) {
             // if it implements Runnable, try to instantiate it
             if (Runnable.class.isAssignableFrom(scriptClass)) {
@@ -285,20 +287,20 @@ public class GroovyShell extends GroovyObjectSupport {
                     return runner.run(scriptClass, this.loader);
                 }
             }
-            String message = "This script or class could not be run.\n" +
+            StringBuilder message = new StringBuilder("This script or class could not be run.\n" +
                     "It should either:\n" +
                     "- have a main method,\n" +
                     "- be a JUnit test or extend GroovyTestCase,\n" +
                     "- implement the Runnable interface,\n" +
-                    "- or be compatible with a registered script runner. Known runners:\n";
+                    "- or be compatible with a registered script runner. Known runners:\n");
             if (runnerRegistry.isEmpty()) {
-                message += "  * <none>";
+                message.append("  * <none>");
             } else {
                 for (String key : runnerRegistry.keySet()) {
-                    message += "  * " + key + "\n";
+                    message.append("  * ").append(key).append("\n");
                 }
             }
-            throw new GroovyRuntimeException(message);
+            throw new GroovyRuntimeException(message.toString());
         }
     }
 
