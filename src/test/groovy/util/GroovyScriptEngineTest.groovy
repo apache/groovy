@@ -18,6 +18,12 @@
  */
 package groovy.util
 
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -66,5 +72,28 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         assert clazz != null
 
         assert !new File(temporaryFolder.root, scriptFile.name + '.xml').exists()
+    }
+
+    @Test
+    void testCustomizersAppliedOncePerClassNode_GROOVY_8402() {
+        def scriptFile = temporaryFolder.newFile('Script1.groovy')
+        scriptFile << '''
+            class Foo {}
+            assert 1 + 1 == 2 
+        '''
+        def counts = [:].withDefault { 0 }
+
+        def config = new CompilerConfiguration().addCompilationCustomizers(new CompilationCustomizer(CompilePhase.SEMANTIC_ANALYSIS) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                counts[classNode.name]++
+            }
+        })
+
+        GroovyScriptEngine scriptEngine = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[])
+        scriptEngine.setConfig(config)
+        scriptEngine.loadScriptByName('Script1.groovy')
+        assert counts['Script1'] == 1
+        assert counts['Foo'] == 1
     }
 }
