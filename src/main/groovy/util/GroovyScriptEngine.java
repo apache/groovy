@@ -228,14 +228,6 @@ public class GroovyScriptEngine implements ResourceConnector {
                 }
             });
 
-            final List<CompilationCustomizer> customizers = config.getCompilationCustomizers();
-            if (customizers != null) {
-                // GROOVY-4813 : apply configuration customizers
-                for (CompilationCustomizer customizer : customizers) {
-                    cu.addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
-                }
-            }
-
             return cu;
         }
 
