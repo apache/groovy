@@ -109,6 +109,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     }
 
     public static class DgmMethodRecord implements Serializable {
+        private static final long serialVersionUID = -5639988016452884450L;
         public String className;
         public String methodName;
         public Class returnType;
