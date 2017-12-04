@@ -31,6 +31,7 @@ import java.util.Comparator;
  */
 public class ClosureComparator<T> implements Comparator<T>, Serializable {
 
+    private static final long serialVersionUID = -4593521535656429522L;
     Closure closure;
 
     public ClosureComparator(Closure closure) {

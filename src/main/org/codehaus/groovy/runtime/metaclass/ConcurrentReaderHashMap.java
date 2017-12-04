@@ -139,6 +139,7 @@ import java.util.Set;
 public class ConcurrentReaderHashMap 
   extends AbstractMap 
   implements Cloneable, Serializable {
+  private static final long serialVersionUID = -3225682440765612861L;
 
 
   /*
