@@ -165,7 +165,7 @@ public class CompileStack implements Opcodes {
         }
     }
 
-    private class ExceptionTableEntry {
+    private static class ExceptionTableEntry {
         Label start,end,goal;
         String sig;
     }
