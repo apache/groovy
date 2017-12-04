@@ -21,6 +21,8 @@ package org.codehaus.groovy.tools;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Helper class to initialize the Groovy runtime.
@@ -35,7 +37,7 @@ public class GroovyStarter {
     
     public static void rootLoader(String args[]) {
         String conf = System.getProperty("groovy.starter.conf",null);
-        LoaderConfiguration lc = new LoaderConfiguration();
+        final LoaderConfiguration lc = new LoaderConfiguration();
         
         // evaluate parameters
         boolean hadMain=false, hadConf=false, hadCP=false;
@@ -94,7 +96,11 @@ public class GroovyStarter {
             }
         }
         // create loader and execute main class
-        ClassLoader loader = new RootLoader(lc);
+        ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<RootLoader>() {
+            public RootLoader run() {
+                return new RootLoader(lc);
+            }
+        });
         Method m=null;
         try {
             Class c = loader.loadClass(lc.getMainClass());
