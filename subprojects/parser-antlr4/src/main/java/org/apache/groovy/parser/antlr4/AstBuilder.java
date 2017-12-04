@@ -4396,7 +4396,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
     */
 
-    private class DeclarationListStatement extends Statement {
+    private static class DeclarationListStatement extends Statement {
         private final List<ExpressionStatement> declarationStatements;
 
         public DeclarationListStatement(DeclarationExpression... declarations) {
