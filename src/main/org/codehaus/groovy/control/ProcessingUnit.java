@@ -101,7 +101,7 @@ public abstract class ProcessingUnit {
      * Sets the class loader for use by this ProcessingUnit.
      */
 
-    public void setClassLoader(GroovyClassLoader loader) {
+    public void setClassLoader(final GroovyClassLoader loader) {
         // Classloaders should only be created inside doPrivileged block
         // This code creates a classloader, which needs permission if a security manage is installed.
         // If this code might be invoked by code that does not have security permissions, then the classloader creation needs to occur inside a doPrivileged block.
