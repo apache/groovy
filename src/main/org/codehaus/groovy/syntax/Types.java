@@ -1370,13 +1370,8 @@ public class Types
 
 
     static {
-
-        Iterator<String> iterator = LOOKUP.keySet().iterator();
-        while( iterator.hasNext() )
-        {
-            String text = iterator.next();
-            int key = LOOKUP.get(text);
-            addDescription( key, text );
+        for (Map.Entry<String,Integer> entry : LOOKUP.entrySet()) {
+            addDescription(entry.getValue(), entry.getKey());
         }
 
         addDescription( NEWLINE                     , "<newline>"        );
