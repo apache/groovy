@@ -99,9 +99,11 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
             index++;
         }
-        for (Integer replacementIndex : replacements.keySet()) {
-            mergeCollectedAnnotations(modes.get(replacementIndex), existing, replacements.get(replacementIndex));
-            existing.put(replacementIndex, replacements.get(replacementIndex));
+        for (Map.Entry<Integer, List<AnnotationNode>> entry : replacements.entrySet()) {
+            Integer replacementIndex = entry.getKey();
+            List<AnnotationNode> annotationNodeList = entry.getValue();
+            mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
+            existing.put(replacementIndex, annotationNodeList);
         }
         List<AnnotationNode> mergedList = new ArrayList<AnnotationNode>();
         for (List<AnnotationNode> next : existing.values()) {
@@ -164,8 +166,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         while (nodeIterator.hasNext()) {
             boolean remove = false;
             AnnotationNode replacement = nodeIterator.next();
-            for (Integer key : existingMap.keySet()) {
-                for (AnnotationNode existing : existingMap.get(key)) {
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : existingMap.entrySet()) {
+                for (AnnotationNode existing : entry.getValue()) {
                     if (replacement.getClassNode().getName().equals(existing.getClassNode().getName())) {
                         if (mergeParams) {
                             mergeParameters(existing, replacement);
