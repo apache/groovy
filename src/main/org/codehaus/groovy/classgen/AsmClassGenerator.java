@@ -1294,8 +1294,10 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         addInnerClass(icl);
-        for (String staticFieldName : referencedClasses.keySet()) {            // generate a field node
-            icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type.getPlainNodeReference(), new ClassExpression(referencedClasses.get(staticFieldName)));
+        for (Map.Entry<String,ClassNode> entry : referencedClasses.entrySet()) {            // generate a field node
+            String staticFieldName = entry.getKey();
+            ClassNode cn = entry.getValue();
+            icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type.getPlainNodeReference(), new ClassExpression(cn));
         }
     }
 
