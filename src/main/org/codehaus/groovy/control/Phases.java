@@ -40,7 +40,7 @@ public class Phases
     public static final int FINALIZATION          = 9;   // Cleanup
     public static final int ALL                   = 9;   // Synonym for full compilation
     
-    public static String[] descriptions = {
+    public static final String[] descriptions = {
           "startup"
         , "initialization"
         , "parsing"
