@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -324,7 +325,9 @@ public class Inspector {
         return memberInfo;
     }
 
-    public static class MemberComparator implements Comparator<Object> {
+    public static class MemberComparator implements Comparator<Object>, Serializable {
+        private static final long serialVersionUID = -7691851726606749541L;
+
         public int compare(Object a, Object b) {
             String[] aStr = (String[]) a;
             String[] bStr = (String[]) b;
