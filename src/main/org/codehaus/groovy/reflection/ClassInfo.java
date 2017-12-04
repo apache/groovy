@@ -54,6 +54,8 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -460,7 +462,11 @@ public class ClassInfo implements Finalizable {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return new ClassLoaderForClassArtifacts(info.classRef.get());
+            return AccessController.doPrivileged(new PrivilegedAction<ClassLoaderForClassArtifacts>() {
+                public ClassLoaderForClassArtifacts run() {
+                    return new ClassLoaderForClassArtifacts(info.classRef.get());
+                }
+            });
         }
     }
 

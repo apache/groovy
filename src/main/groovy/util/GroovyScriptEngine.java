@@ -69,9 +69,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Mattias Reichel
  */
 public class GroovyScriptEngine implements ResourceConnector {
+    private static final ClassLoader CL_STUB = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        public ClassLoader run() {
+            return new ClassLoader() {};
+        }
+    });
 
-    private static final ClassLoader CL_STUB = new ClassLoader() {
-    };
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     private static class LocalData {
@@ -366,15 +369,15 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     private GroovyClassLoader initGroovyLoader() {
         GroovyClassLoader groovyClassLoader =
-            (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                if (parentLoader instanceof GroovyClassLoader) {
-                    return new ScriptClassLoader((GroovyClassLoader) parentLoader);
-                } else {
-                    return new ScriptClassLoader(parentLoader, config);
-                }
-            }
-        });
+                AccessController.doPrivileged(new PrivilegedAction<ScriptClassLoader>() {
+                    public ScriptClassLoader run() {
+                        if (parentLoader instanceof GroovyClassLoader) {
+                            return new ScriptClassLoader((GroovyClassLoader) parentLoader);
+                        } else {
+                            return new ScriptClassLoader(parentLoader, config);
+                        }
+                    }
+                });
         for (URL root : roots) groovyClassLoader.addURL(root);
         return groovyClassLoader;
     }
