@@ -1307,7 +1307,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         addInnerClass(icl);
-        for (Map.Entry<String,ClassNode> entry : referencedClasses.entrySet()) {            // generate a field node
+        for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {            // generate a field node
             String staticFieldName = entry.getKey();
             ClassNode cn = entry.getValue();
             icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type.getPlainNodeReference(), new ClassExpression(cn));
@@ -1319,7 +1319,9 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
         MethodVisitor mv;
-        for (String staticFieldName : referencedClasses.keySet()) {
+        for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {
+            String staticFieldName = entry.getKey();
+            ClassNode cn = entry.getValue();
             // generate a field node
             FieldNode fn = controller.getClassNode().getDeclaredField(staticFieldName);
             if (fn != null) {
@@ -1346,7 +1348,7 @@ public class AsmClassGenerator extends ClassGenerator {
             Label l0 = new Label();
             mv.visitJumpInsn(IFNONNULL,l0);
             mv.visitInsn(POP);
-            mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(referencedClasses.get(staticFieldName)));
+            mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(cn));
             mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), "class$", "(Ljava/lang/String;)Ljava/lang/Class;", false);
             mv.visitInsn(DUP);
             mv.visitFieldInsn(PUTSTATIC,controller.getInternalClassName(),staticFieldName,"Ljava/lang/Class;");
