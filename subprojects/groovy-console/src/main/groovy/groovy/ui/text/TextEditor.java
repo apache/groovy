@@ -390,13 +390,13 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         this.unwrapped = unwrapped;
     }
 
-    private class FindAction extends AbstractAction {
+    private static class FindAction extends AbstractAction {
         public void actionPerformed(ActionEvent ae) {
             FindReplaceUtility.showDialog();
         }
     }
 
-    private class ReplaceAction extends AbstractAction {
+    private static class ReplaceAction extends AbstractAction {
         public void actionPerformed(ActionEvent ae) {
             FindReplaceUtility.showDialog(true);
         }
@@ -458,7 +458,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     /**
      * Paint a horizontal line the width of a column and 1 pixel high
      */
-    private class OvertypeCaret extends DefaultCaret {
+    private static class OvertypeCaret extends DefaultCaret {
         //The overtype caret will simply be a horizontal line one pixel high
         // (once we determine where to paint it)
         public void paint(Graphics g) {

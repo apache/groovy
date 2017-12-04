@@ -435,7 +435,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         context.pushTemporaryTypeInfo();
     }
 
-    private class TypeCheckingScope extends LinkedHashMap<String, Object> {
+    private static class TypeCheckingScope extends LinkedHashMap<String, Object> {
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
         private TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
