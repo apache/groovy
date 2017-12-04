@@ -155,7 +155,7 @@ public final class CurriedClosure<V> extends Closure<V> {
         if (isVararg()) {
             int numNonVarargs = oldParams.length - 1;
             if (index < 0) {
-                int absIndex = index < 0 ? -index : index;
+                int absIndex = -index;
                 // do -ve indexes based on actual args, so can't accurately calculate type here
                 // so work out minimal type params and vararg on end will allow for other possibilities
                 if (absIndex > numNonVarargs) gobbledParams = numNonVarargs;
