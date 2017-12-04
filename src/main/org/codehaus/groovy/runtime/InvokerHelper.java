@@ -398,8 +398,9 @@ public class InvokerHelper {
         while (i < values.length - 1) {
             if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map)) {
                 Map smap = (Map) values[i + 1];
-                for (Object key : smap.keySet()) {
-                    answer.put(key, smap.get(key));
+                for (Object e : smap.entrySet()) {
+                    Map.Entry entry = (Map.Entry) e;
+                    answer.put(entry.getKey(), entry.getValue());
                 }
                 i += 2;
             } else {
