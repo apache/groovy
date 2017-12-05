@@ -50,6 +50,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Vector;
 
 /**
@@ -446,7 +448,14 @@ public class Groovy extends Java {
         }
 
         final String scriptName = computeScriptName();
-        final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
+        final GroovyClassLoader classLoader =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<GroovyClassLoader>() {
+                            @Override
+                            public GroovyClassLoader run() {
+                                return new GroovyClassLoader(baseClassLoader);
+                            }
+                        });
         addClassPathes(classLoader);
         configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
