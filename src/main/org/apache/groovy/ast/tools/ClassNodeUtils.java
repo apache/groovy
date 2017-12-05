@@ -90,10 +90,10 @@ public class ClassNodeUtils {
         // add in unimplemented abstract methods from the interfaces
         for (ClassNode iface : cNode.getInterfaces()) {
             Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (String methSig : ifaceMethodsMap.keySet()) {
+            for (Map.Entry<String, MethodNode> entry : ifaceMethodsMap.entrySet()) {
+                String methSig = entry.getKey();
                 if (!methodsMap.containsKey(methSig)) {
-                    MethodNode methNode = ifaceMethodsMap.get(methSig);
-                    methodsMap.put(methSig, methNode);
+                    methodsMap.put(methSig, entry.getValue());
                 }
             }
         }

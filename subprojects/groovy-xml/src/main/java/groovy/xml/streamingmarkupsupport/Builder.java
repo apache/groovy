@@ -30,14 +30,13 @@ public abstract class Builder extends GroovyObjectSupport {
     protected final Map namespaceMethodMap = new HashMap();
     
     public Builder(final Map namespaceMethodMap) {
-    final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
-        
-        while (keyIterator.hasNext()) {
-        final Object key = keyIterator.next();
-        final List value = (List)namespaceMethodMap.get(key);
-        final Closure dg = ((Closure)value.get(1)).asWritable();
-        
-            this.namespaceMethodMap.put(key, new Object[]{value.get(0), dg, fettleMethodMap(dg, (Map)value.get(2))});
+        for (Object e : namespaceMethodMap.entrySet()) {
+            Map.Entry entry = (Map.Entry) e;
+            final Object key = entry.getKey();
+            final List value = (List) entry.getValue();
+            final Closure dg = ((Closure) value.get(1)).asWritable();
+
+            this.namespaceMethodMap.put(key, new Object[] { value.get(0), dg, fettleMethodMap(dg, (Map) value.get(2)) });
         }
     }
     
