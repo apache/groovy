@@ -369,10 +369,17 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return this;
     }
 
-    /* (non-Javadoc)
-    * @see java.lang.Object#equals(java.lang.Object)
-    */
+    @Override
+    public int hashCode() {
+        return text().hashCode();
+    }
+
+    @Override
     public boolean equals(Object obj) {
+        if (null == obj) {
+            return false;
+        }
+
         return text().equals(obj.toString());
     }
 
