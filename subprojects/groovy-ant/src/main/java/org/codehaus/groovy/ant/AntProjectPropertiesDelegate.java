@@ -100,11 +100,9 @@ public class AntProjectPropertiesDelegate extends Hashtable {
     }
 
     public synchronized void putAll(Map t) {
-        Set keySet = t.keySet();
-        for (Iterator iterator = keySet.iterator(); iterator.hasNext();) {
-            Object key = iterator.next();
-            Object value = t.get(key);
-            put(key, value);
+        for (Object e : t.entrySet()) {
+            Map.Entry entry = (Map.Entry) e;
+            put(entry.getKey(), entry.getValue());
         }
     }
 

@@ -144,8 +144,9 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
 
     private static void deleteExisting(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
         for (AnnotationNode replacement : replacements) {
-            for (Integer key : existingMap.keySet()) {
-                List<AnnotationNode> annotationNodes = new ArrayList<AnnotationNode>(existingMap.get(key));
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : existingMap.entrySet()) {
+                Integer key = entry.getKey();
+                List<AnnotationNode> annotationNodes = new ArrayList<AnnotationNode>(entry.getValue());
                 Iterator<AnnotationNode> iterator = annotationNodes.iterator();
                 while (iterator.hasNext()) {
                     AnnotationNode existing = iterator.next();
