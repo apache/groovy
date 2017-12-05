@@ -73,21 +73,21 @@ public class GenericsType extends ASTNode {
 
     private String toString(Set<String> visited) {
         if (placeholder) visited.add(name);
-        String ret = wildcard?"?":((type == null || placeholder) ? name : genericsBounds(type, visited));
+        StringBuilder ret = new StringBuilder(wildcard ? "?" : ((type == null || placeholder) ? name : genericsBounds(type, visited)));
         if (upperBounds != null) {
             if (placeholder && upperBounds.length==1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object")) {
                 // T extends Object should just be printed as T
             } else {
-                ret += " extends ";
+                ret.append(" extends ");
                 for (int i = 0; i < upperBounds.length; i++) {
-                    ret += genericsBounds(upperBounds[i], visited);
-                    if (i + 1 < upperBounds.length) ret += " & ";
+                    ret.append(genericsBounds(upperBounds[i], visited));
+                    if (i + 1 < upperBounds.length) ret.append(" & ");
                 }
             }
         } else if (lowerBound != null) {
-            ret += " super " + genericsBounds(lowerBound, visited);
+            ret.append(" super ").append(genericsBounds(lowerBound, visited));
         }
-        return ret;
+        return ret.toString();
     }
 
     private String nameOf(ClassNode theType) {

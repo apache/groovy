@@ -513,26 +513,25 @@ public abstract class Selector {
             this.cache = !spread;
 
             if (LOG_ENABLED) {
-                String msg =
-                    "----------------------------------------------------"+
-                    "\n\t\tinvocation of method '"+methodName+"'"+
-                    "\n\t\tinvocation type: "+callType+
-                    "\n\t\tsender: "+sender+
-                    "\n\t\ttargetType: "+targetType+
-                    "\n\t\tsafe navigation: "+safeNavigation+
-                    "\n\t\tthisCall: "+thisCall+
-                    "\n\t\tspreadCall: "+spreadCall+
-                    "\n\t\twith "+arguments.length+" arguments";
+                StringBuilder msg =
+                        new StringBuilder("----------------------------------------------------" +
+                                "\n\t\tinvocation of method '" + methodName + "'" +
+                                "\n\t\tinvocation type: " + callType +
+                                "\n\t\tsender: " + sender +
+                                "\n\t\ttargetType: " + targetType +
+                                "\n\t\tsafe navigation: " + safeNavigation +
+                                "\n\t\tthisCall: " + thisCall +
+                                "\n\t\tspreadCall: " + spreadCall +
+                                "\n\t\twith " + arguments.length + " arguments");
                 for (int i=0; i<arguments.length; i++) {
-                    msg += "\n\t\t\targument["+i+"] = ";
+                    msg.append("\n\t\t\targument[").append(i).append("] = ");
                     if (arguments[i] == null) {
-                        msg += "null";
+                        msg.append("null");
                     } else {
-                        msg += arguments[i].getClass().getName()+
-                            "@"+Integer.toHexString(System.identityHashCode(arguments[i]));
+                        msg.append(arguments[i].getClass().getName()).append("@").append(Integer.toHexString(System.identityHashCode(arguments[i])));
                     }
                 }
-                LOG.info(msg);
+                LOG.info(msg.toString());
             }
         }
 

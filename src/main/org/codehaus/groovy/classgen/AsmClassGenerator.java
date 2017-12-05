@@ -868,11 +868,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private static String getStaticFieldName(ClassNode type) {
         ClassNode componentType = type;
-        String prefix = "";
+        StringBuilder prefix = new StringBuilder();
         for (; componentType.isArray(); componentType = componentType.getComponentType()) {
-            prefix += "$";
+            prefix.append("$");
         }
-        if (prefix.length() != 0) prefix = "array" + prefix;
+        if (prefix.length() != 0) prefix.insert(0, "array");
         String name = prefix + "$class$" + makeFieldClassName(componentType);
         return name;
     }
