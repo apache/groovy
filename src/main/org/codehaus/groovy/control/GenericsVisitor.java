@@ -155,34 +155,34 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     private static String getPrintName(GenericsType gt) {
-        String ret = gt.getName();
+        StringBuilder ret = new StringBuilder(gt.getName());
         ClassNode[] upperBounds = gt.getUpperBounds();
         ClassNode lowerBound = gt.getLowerBound();
         if (upperBounds != null) {
             if (upperBounds.length != 1 || !"java.lang.Object".equals(getPrintName(upperBounds[0]))) {
-                ret += " extends ";
+                ret.append(" extends ");
                 for (int i = 0; i < upperBounds.length; i++) {
-                    ret += getPrintName(upperBounds[i]);
-                    if (i + 1 < upperBounds.length) ret += " & ";
+                    ret.append(getPrintName(upperBounds[i]));
+                    if (i + 1 < upperBounds.length) ret.append(" & ");
                 }
             }
         } else if (lowerBound != null) {
-            ret += " super " + getPrintName(lowerBound);
+            ret.append(" super ").append(getPrintName(lowerBound));
         }
-        return ret;
+        return ret.toString();
     }
 
     private static String getPrintName(ClassNode cn) {
-        String ret = cn.getName();
+        StringBuilder ret = new StringBuilder(cn.getName());
         GenericsType[] gts = cn.getGenericsTypes();
         if (gts != null) {
-            ret += "<";
+            ret.append("<");
             for (int i = 0; i < gts.length; i++) {
-                if (i != 0) ret += ",";
-                ret += getPrintName(gts[i]);
+                if (i != 0) ret.append(",");
+                ret.append(getPrintName(gts[i]));
             }
-            ret += ">";
+            ret.append(">");
         }
-        return ret;
+        return ret.toString();
     }
 }
