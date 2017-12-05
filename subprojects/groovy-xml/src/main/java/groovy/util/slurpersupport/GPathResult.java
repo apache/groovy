@@ -43,7 +43,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -370,18 +369,11 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return this;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(text());
-    }
-
-    @Override
+    /* (non-Javadoc)
+    * @see java.lang.Object#equals(java.lang.Object)
+    */
     public boolean equals(Object obj) {
-        if (!(obj instanceof GPathResult)) {
-            return false;
-        }
-
-        return text().equals(((GPathResult) obj).text());
+        return text().equals(obj.toString());
     }
 
     /**
