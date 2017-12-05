@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -28,7 +29,9 @@ import java.util.Comparator;
  * handles nulls gracefully (nul being less than everything else) and
  * performs numeric type coercion if required.
  */
-public class NumberAwareComparator<T> implements Comparator<T> {
+public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
+    private static final long serialVersionUID = 9017657289076651660L;
+
     public int compare(T o1, T o2) {
         try {
             return DefaultTypeTransformation.compareTo(o1, o2);
