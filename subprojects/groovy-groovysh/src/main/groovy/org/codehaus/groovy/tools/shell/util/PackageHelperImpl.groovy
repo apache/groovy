@@ -430,29 +430,33 @@ Files.walkFileTree(fs.getPath('modules'),
 
                 JarFile jf = new JarFile(file)
 
-                for (Enumeration e = jf.entries(); e.hasMoreElements();) {
-                    JarEntry entry = (JarEntry) e.nextElement()
+                try {
+                    for (Enumeration e = jf.entries(); e.hasMoreElements();) {
+                        JarEntry entry = (JarEntry) e.nextElement()
 
-                    if (entry == null) {
-                        continue
-                    }
+                        if (entry == null) {
+                            continue
+                        }
 
-                    String name = entry.name
+                        String name = entry.name
 
-                    // only use class files
-                    if (!name.endsWith(CLASS_SUFFIX)) {
-                        continue
+                        // only use class files
+                        if (!name.endsWith(CLASS_SUFFIX)) {
+                            continue
+                        }
+                        // normal slash inside jars even on windows
+                        int lastslash = name.lastIndexOf('/')
+                        if (lastslash == -1 || name.substring(0, lastslash) != pathname) {
+                            continue
+                        }
+                        name = name.substring(lastslash + 1, name.length() - CLASS_SUFFIX.length())
+                        if (!name.matches(NAME_PATTERN)) {
+                            continue
+                        }
+                        classes.add(name)
                     }
-                    // normal slash inside jars even on windows
-                    int lastslash = name.lastIndexOf('/')
-                    if (lastslash == -1 || name.substring(0, lastslash) != pathname) {
-                        continue
-                    }
-                    name = name.substring(lastslash + 1, name.length() - CLASS_SUFFIX.length())
-                    if (!name.matches(NAME_PATTERN)) {
-                        continue
-                    }
-                    classes.add(name)
+                } finally {
+                    jf.close()
                 }
             }
         }
