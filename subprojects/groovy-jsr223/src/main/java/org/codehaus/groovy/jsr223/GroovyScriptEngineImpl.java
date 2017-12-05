@@ -79,6 +79,8 @@ import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * JSR-223 Engine implementation.
@@ -111,7 +113,12 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     public GroovyScriptEngineImpl() {
-        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT)));
+        this(AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+            @Override
+            public GroovyClassLoader run() {
+                return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));
+            }
+        }));
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {

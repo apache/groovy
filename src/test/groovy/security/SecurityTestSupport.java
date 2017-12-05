@@ -31,9 +31,13 @@ import junit.textui.ResultPrinter;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.io.IOException;
-import java.security.*;
+import java.io.PrintStream;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.Permission;
+import java.security.Policy;
+import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
 /**
@@ -88,11 +92,15 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
     }
 
-    protected GroovyClassLoader loader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-        public Object run() {
-            return new GroovyClassLoader(SecurityTestSupport.class.getClassLoader());
-        }
-    });
+    protected GroovyClassLoader loader =
+            AccessController.doPrivileged(
+                    new PrivilegedAction<GroovyClassLoader>() {
+                        @Override
+                        public GroovyClassLoader run() {
+                            return new GroovyClassLoader(SecurityTestSupport.class.getClassLoader());
+                        }
+                    }
+            );
 
     private SecurityManager securityManager;
     private ClassLoader currentClassLoader;
@@ -131,6 +139,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
         currentClassLoader = Thread.currentThread().getContextClassLoader();
         AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
             public Object run() {
                 Thread.currentThread().setContextClassLoader(loader);
                 return null;
@@ -140,6 +149,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
 
     protected void tearDown() {
         AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
             public Object run() {
                 System.setSecurityManager(securityManager);
                 Thread.currentThread().setContextClassLoader(currentClassLoader);
