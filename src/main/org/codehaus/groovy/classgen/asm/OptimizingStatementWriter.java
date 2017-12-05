@@ -111,11 +111,11 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
         public String toString() {
-            String ret = "optimize="+optimize+" target="+target+" type="+type+" involvedTypes=";
+            StringBuilder ret = new StringBuilder("optimize=" + optimize + " target=" + target + " type=" + type + " involvedTypes=");
             for (int i=0; i<typeMapKeyNames.length; i++) {
-                if (involvedTypes[i]) ret += " "+typeMapKeyNames[i];
+                if (involvedTypes[i]) ret.append(" ").append(typeMapKeyNames[i]);
             }
-            return ret;
+            return ret.toString();
         }
     }
 
@@ -498,19 +498,19 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
         public String toString() {
-            String ret = "";
+            StringBuilder ret;
             if (current.shouldOptimize) {
-                ret = "should optimize, can = "+current.canOptimize;
+                ret = new StringBuilder("should optimize, can = " + current.canOptimize);
             } else if (current.canOptimize) {
-                ret = "can optimize";
+                ret = new StringBuilder("can optimize");
             } else {
-                ret = "don't optimize";
+                ret = new StringBuilder("don't optimize");
             }
-            ret += " involvedTypes =";
+            ret.append(" involvedTypes =");
             for (int i=0; i<typeMapKeyNames.length; i++) {
-                if (current.involvedTypes[i]) ret += " "+typeMapKeyNames[i];
+                if (current.involvedTypes[i]) ret.append(" ").append(typeMapKeyNames[i]);
             }
-            return ret;
+            return ret.toString();
         }
         /**
          * @return true iff we should Optimize - this is almost seen as must

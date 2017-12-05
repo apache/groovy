@@ -127,7 +127,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
         
-        String sig = prepareIndyCall(receiver, implicitThis);
+        StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
         
         // load arguments
         int numberOfArguments = 1;
@@ -135,26 +135,26 @@ public class InvokeDynamicWriter extends InvocationWriter {
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
         if (containsSpreadExpression) {
             controller.getAcg().despreadList(ae.getExpressions(), true);
-            sig += getTypeDescription(Object[].class);
+            sig.append(getTypeDescription(Object[].class));
         } else {
             for (Expression arg : ae.getExpressions()) {
                 arg.visit(controller.getAcg());
                 if (arg instanceof CastExpression) {
                     operandStack.box();
                     controller.getAcg().loadWrapper(arg);
-                    sig += getTypeDescription(Wrapper.class);
+                    sig.append(getTypeDescription(Wrapper.class));
                 } else {
-                    sig += getTypeDescription(operandStack.getTopOperand());
+                    sig.append(getTypeDescription(operandStack.getTopOperand()));
                 }
                 numberOfArguments++;
             }
         }
 
-        sig += ")Ljava/lang/Object;";
+        sig.append(")Ljava/lang/Object;");
         String callSiteName = METHOD.getCallSiteName();
         if (adapter==null) callSiteName = INIT.getCallSiteName();
         int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
-        finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
+        finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
     }
     
     private static int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
