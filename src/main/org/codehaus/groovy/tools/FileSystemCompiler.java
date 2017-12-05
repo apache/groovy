@@ -240,15 +240,25 @@ public class FileSystemCompiler {
         boolean errors = false;
         for (String filename : filenames) {
             if (filename.startsWith("@")) {
+                String fn = filename.substring(1);
+                BufferedReader br = null;
                 try {
-                    BufferedReader br = new BufferedReader(new FileReader(filename.substring(1)));
-                    String file;
-                    while ((file = br.readLine()) != null) {
+                    br = new BufferedReader(new FileReader(fn));
+                    for (String file; (file = br.readLine()) != null; ) {
                         fileList.add(file);
                     }
                 } catch (IOException ioe) {
-                    System.err.println("error: file not readable: " + filename.substring(1));
+                    System.err.println("error: file not readable: " + fn);
                     errors = true;
+                } finally {
+                    if (null != br) {
+                        try {
+                            br.close();
+                        } catch (IOException e) {
+                            System.err.println("error: failed to close buffered reader: " + fn);
+                            errors = true;
+                        }
+                    }
                 }
             } else {
                 fileList.add(filename);
