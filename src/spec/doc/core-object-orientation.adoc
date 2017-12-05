@@ -86,7 +86,7 @@ Groovy classes are very similar to Java classes, being compatible to those ones 
 
 Here are key aspects of Groovy classes, that are different from their Java counterparts:
 
-* Public fields are turned into properties automatically, which results in less verbose code,
+* Private fields are turned into properties automatically, which results in less verbose code,
 without so many getter and setter methods. More on this aspect will be covered in the <<fields,fields and properties section>>.
 * Their declarations and any property or method without an access modifier are public.
 * Classes do not need to have the same name of the files where they are defined.
