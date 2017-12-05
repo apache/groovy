@@ -835,10 +835,11 @@ public class JavaStubGenerator {
         out.print("@" + annotation.getClassNode().getName().replace('$', '.') + "(");
         boolean first = true;
         Map<String, Expression> members = annotation.getMembers();
-        for (String key : members.keySet()) {
+        for (Map.Entry<String, Expression> entry : members.entrySet()) {
+            String key = entry.getKey();
             if (first) first = false;
             else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(members.get(key)).replace('$', '.'));
+            out.print(key + "=" + getAnnotationValue(entry.getValue()).replace('$', '.'));
         }
         out.print(") ");
     }
