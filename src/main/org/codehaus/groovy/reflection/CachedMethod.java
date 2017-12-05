@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -321,7 +322,9 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
-    private static class MyComparator implements Comparator {
+    private static class MyComparator implements Comparator, Serializable {
+        private static final long serialVersionUID = 8909277090690131302L;
+
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
                 return ((CachedMethod)o1).compareTo(o2);
