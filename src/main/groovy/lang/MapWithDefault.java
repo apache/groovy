@@ -29,67 +29,83 @@ import java.util.Set;
  * @since 1.7.1
  */
 public final class MapWithDefault<K, V> implements Map<K, V> {
-
     private final Map<K, V> delegate;
-    private final Closure initClosure;
+    private final Closure<V> initClosure;
 
-    private MapWithDefault(Map<K, V> m, Closure initClosure) {
+    private MapWithDefault(Map<K, V> m, Closure<V> initClosure) {
         delegate = m;
         this.initClosure = initClosure;
     }
 
-    public static <K, V> Map<K, V> newInstance(Map<K, V> m, Closure initClosure) {
+    public static <K, V> Map<K, V> newInstance(Map<K, V> m, Closure<V> initClosure) {
         return new MapWithDefault<K, V>(m, initClosure);
     }
 
+    @Override
     public int size() {
         return delegate.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return delegate.containsKey(key);
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return delegate.containsValue(value);
     }
 
+    @Override
     public V get(Object key) {
-        if (!delegate.containsKey(key)) {
-            delegate.put((K)key, (V)initClosure.call(new Object[]{key}));
+        if (!containsKey(key)) {
+            delegate.put((K) key, getDefaultValue(key));
         }
         return delegate.get(key);
     }
 
+    @Override
     public V put(K key, V value) {
-        return delegate.put(key, value);
+        return (value == getDefaultValue(key)) ? remove(key)
+                                               : delegate.put(key, value);
     }
 
+    private V getDefaultValue(Object key) {
+        return (V) initClosure.call(key);
+    }
+
+    @Override
     public V remove(Object key) {
         return delegate.remove(key);
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         delegate.putAll(m);
     }
 
+    @Override
     public void clear() {
         delegate.clear();
     }
 
+    @Override
     public Set<K> keySet() {
         return delegate.keySet();
     }
 
+    @Override
     public Collection<V> values() {
         return delegate.values();
     }
 
-    public Set<Map.Entry<K, V>> entrySet() {
+    @Override
+    public Set<Entry<K, V>> entrySet() {
         return delegate.entrySet();
     }
 
