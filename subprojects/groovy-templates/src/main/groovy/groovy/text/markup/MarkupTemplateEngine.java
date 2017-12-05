@@ -121,8 +121,16 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param templateDirectory directory where to find templates
      * @param tplConfig         template engine configuration
      */
-    public MarkupTemplateEngine(ClassLoader parentLoader, File templateDirectory, TemplateConfiguration tplConfig) {
-        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig, null);
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final File templateDirectory, TemplateConfiguration tplConfig) {
+        this(AccessController.doPrivileged(
+                new PrivilegedAction<URLClassLoader>() {
+                    @Override
+                    public URLClassLoader run() {
+                        return new URLClassLoader(buildURLs(templateDirectory), parentLoader);
+                    }
+                }),
+                tplConfig,
+                null);
     }
 
     private static URL[] buildURLs(final File templateDirectory) {

@@ -29,6 +29,8 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Support for compilation related tasks.
@@ -134,8 +136,14 @@ public abstract class CompileTaskSupport
     }
 
     protected GroovyClassLoader createClassLoader() {
-        ClassLoader parent = ClassLoader.getSystemClassLoader();
-        GroovyClassLoader gcl = new GroovyClassLoader(parent, config);
+        GroovyClassLoader gcl =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<GroovyClassLoader>() {
+                            @Override
+                            public GroovyClassLoader run() {
+                                return new GroovyClassLoader(ClassLoader.getSystemClassLoader(), config);
+                            }
+                        });
 
         Path path = getClasspath();
         if (path != null) {

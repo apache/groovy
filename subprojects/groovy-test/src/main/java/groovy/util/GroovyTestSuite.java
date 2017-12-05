@@ -26,6 +26,8 @@ import junit.textui.TestRunner;
 import org.codehaus.groovy.runtime.ScriptTestAdapter;
 
 import java.io.File;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 
 /**
@@ -50,7 +52,15 @@ public class GroovyTestSuite extends TestSuite {
 
     protected static String file = null;
 
-    protected final GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
+    protected final GroovyClassLoader loader =
+            AccessController.doPrivileged(
+                    new PrivilegedAction<GroovyClassLoader>() {
+                        @Override
+                        public GroovyClassLoader run() {
+                            return new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
+                        }
+                    }
+            );
 
     public static void main(String[] args) {
         if (args.length > 0) {
