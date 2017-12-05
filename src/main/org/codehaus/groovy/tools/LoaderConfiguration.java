@@ -151,7 +151,7 @@ public class LoaderConfiguration {
     private static String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
         boolean requireProperty;
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
         while (propertyIndexStart < str.length()) {
             {
@@ -167,7 +167,7 @@ public class LoaderConfiguration {
                 requireProperty = propertyIndexStart == i2;
             }
             if (propertyIndexStart == -1) break;
-            result += str.substring(propertyIndexEnd, propertyIndexStart);
+            result.append(str.substring(propertyIndexEnd, propertyIndexStart));
 
             propertyIndexEnd = str.indexOf("}", propertyIndexStart);
             if (propertyIndexEnd == -1) break;
@@ -184,19 +184,19 @@ public class LoaderConfiguration {
             }
             propertyValue = getSlashyPath(propertyValue);
             propertyValue = correctDoubleSlash(propertyValue, propertyIndexEnd, str);
-            result += propertyValue;
+            result.append(propertyValue);
 
             propertyIndexEnd++;
             propertyIndexStart = propertyIndexEnd;
         }
 
         if (propertyIndexStart == -1 || propertyIndexStart >= str.length()) {
-            result += str.substring(propertyIndexEnd);
+            result.append(str.substring(propertyIndexEnd));
         } else if (propertyIndexEnd == -1) {
-            result += str.substring(propertyIndexStart);
+            result.append(str.substring(propertyIndexStart));
         }
 
-        return result;
+        return result.toString();
     }
 
 
