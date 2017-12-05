@@ -78,7 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class VetoableASTTransformation extends BindableASTTransformation {
 
-    protected static ClassNode constrainedClassNode = ClassHelper.make(Vetoable.class);
+    protected static final ClassNode constrainedClassNode = ClassHelper.make(Vetoable.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Vetoable}.

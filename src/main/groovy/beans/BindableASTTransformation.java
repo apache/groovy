@@ -78,7 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
-    protected static ClassNode boundClassNode = ClassHelper.make(Bindable.class);
+    protected static final ClassNode boundClassNode = ClassHelper.make(Bindable.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Bindable}.

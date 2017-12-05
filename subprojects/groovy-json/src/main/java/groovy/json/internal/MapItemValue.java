@@ -37,11 +37,13 @@ public class MapItemValue implements Map.Entry<String, Value> {
 
     private static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.implementation.internKeys", "false"));
 
-    protected static ConcurrentHashMap<String, String> internedKeysCache;
+    protected static final ConcurrentHashMap<String, String> internedKeysCache;
 
     static {
         if (internKeys) {
             internedKeysCache = new ConcurrentHashMap<String, String>();
+        } else {
+            internedKeysCache = null;
         }
     }
 

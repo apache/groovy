@@ -52,7 +52,7 @@ public class ASTHelper {
     private String packageName;
 
     // TODO should this really be static???
-    protected static Map resolutions = new HashMap();  // cleared on build(), to be safe
+    protected static final Map resolutions = new HashMap();  // cleared on build(), to be safe
 
     public ASTHelper(SourceUnit controller, ClassLoader classLoader) {
         this();

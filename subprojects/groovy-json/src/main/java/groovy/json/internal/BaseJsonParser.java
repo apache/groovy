@@ -70,7 +70,7 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static final int ESCAPE = '\\';
 
     protected static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.internKeys", "false"));
-    protected static ConcurrentHashMap<String, String> internedKeysCache;
+    protected static final ConcurrentHashMap<String, String> internedKeysCache;
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -83,6 +83,8 @@ public abstract class BaseJsonParser implements JsonParser {
     static {
         if (internKeys) {
             internedKeysCache = new ConcurrentHashMap<String, String>();
+        } else {
+            internedKeysCache = null;
         }
     }
 
