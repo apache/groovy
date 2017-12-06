@@ -212,7 +212,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         if (includes != null) {
             Comparator<ToStringElement> includeComparator = new Comparator<ToStringElement>() {
                 public int compare(ToStringElement tse1, ToStringElement tse2) {
-                    return new Integer(includes.indexOf(tse1.name)).compareTo(includes.indexOf(tse2.name));
+                    return Integer.valueOf(includes.indexOf(tse1.name)).compareTo(includes.indexOf(tse2.name));
                 }
             };
             Collections.sort(elements, includeComparator);
