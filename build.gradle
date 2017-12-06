@@ -182,7 +182,7 @@ ext {
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.10'
-    spockVersion = '1.1-groovy-2.4'
+    spockVersion = '1.2-groovy-2.4-SNAPSHOT'
     antlr4Version = '4.7'
     jsr305Version = '3.0.2'
     isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
