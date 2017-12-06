@@ -885,7 +885,7 @@ public class DefaultTypeTransformation {
         if (value instanceof String) {
             String s = (String) value;
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
-            return new Character(s.charAt(0));
+            return Character.valueOf(s.charAt(0));
         } else {
             return ((Character) value);
         }

@@ -110,7 +110,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
             //in Groovy2.0 use valueOf
         } else if (reportElapsed) {
             ((ClosureSourceBinding)sourceBinding).setClosureArgument(
-                    new Long(elapsed));
+                    Long.valueOf(elapsed));
             //in Groovy2.0 use valueOf
         } 
 
