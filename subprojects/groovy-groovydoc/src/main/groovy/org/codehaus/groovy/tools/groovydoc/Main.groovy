@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
+import groovy.io.FileType
+import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.IO
-import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
-import groovy.io.FileType
 
 /**
  * Main CLI entry-point for <tt>groovydoc</tt>.

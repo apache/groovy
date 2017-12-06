@@ -24,7 +24,7 @@ import jline.console.completer.ArgumentCompleter.ArgumentDelimiter
 import jline.console.completer.ArgumentCompleter.ArgumentList
 import jline.console.completer.Completer
 
-import static jline.internal.Preconditions.checkNotNull;
+import static jline.internal.Preconditions.checkNotNull
 
 /**
  * Similar to a strict jline ArgumentCompleter, this completer

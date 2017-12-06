@@ -18,13 +18,17 @@
  */
 package groovy.json;
 
-import static groovy.json.JsonTokenType.*;
-
 import groovy.io.LineColumnReader;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
+
+import static groovy.json.JsonTokenType.FALSE;
+import static groovy.json.JsonTokenType.NUMBER;
+import static groovy.json.JsonTokenType.OPEN_CURLY;
+import static groovy.json.JsonTokenType.STRING;
+import static groovy.json.JsonTokenType.startingWith;
 
 /**
  * The lexer reads JSON tokens in a streaming fashion from the underlying reader.

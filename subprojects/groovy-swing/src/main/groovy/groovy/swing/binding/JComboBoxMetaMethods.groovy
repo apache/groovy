@@ -18,8 +18,7 @@
  */
 package groovy.swing.binding
 
-import javax.swing.ComboBoxModel
-import javax.swing.JComboBox
+import javax.swing.*
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>

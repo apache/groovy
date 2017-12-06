@@ -18,7 +18,12 @@
  */
 package groovy.json.internal;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static groovy.json.internal.Exceptions.die;
 

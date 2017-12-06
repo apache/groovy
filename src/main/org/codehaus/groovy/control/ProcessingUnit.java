@@ -20,6 +20,9 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A base class for data structures that can collect messages and errors
  * during processing.
@@ -98,10 +101,17 @@ public abstract class ProcessingUnit {
      * Sets the class loader for use by this ProcessingUnit.
      */
 
-    public void setClassLoader(GroovyClassLoader loader) {
-        ClassLoader parent = Thread.currentThread().getContextClassLoader();
-        if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-        this.classLoader = (loader == null ? new GroovyClassLoader(parent, configuration) : loader);
+    public void setClassLoader(final GroovyClassLoader loader) {
+        // Classloaders should only be created inside doPrivileged block
+        // This code creates a classloader, which needs permission if a security manage is installed.
+        // If this code might be invoked by code that does not have security permissions, then the classloader creation needs to occur inside a doPrivileged block.
+        this.classLoader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+            public GroovyClassLoader run() {
+                ClassLoader parent = Thread.currentThread().getContextClassLoader();
+                if (parent == null) parent = ProcessingUnit.class.getClassLoader();
+                return loader == null ? new GroovyClassLoader(parent, configuration) : loader;
+            }
+        });
     }
 
 

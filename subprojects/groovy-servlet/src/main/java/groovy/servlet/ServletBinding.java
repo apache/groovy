@@ -20,6 +20,8 @@ package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -27,11 +29,11 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.runtime.MethodClosure;
-
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;

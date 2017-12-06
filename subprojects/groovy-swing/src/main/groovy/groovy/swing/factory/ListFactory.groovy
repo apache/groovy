@@ -18,9 +18,10 @@
  */
 package groovy.swing.factory
 
-import javax.swing.JList
 import groovy.swing.binding.JListMetaMethods
 import groovy.swing.impl.ListWrapperListModel
+
+import javax.swing.*
 
 /**
  * Create a JList, and handle the optional items attribute.

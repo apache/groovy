@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Writable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,8 +35,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Iterator;
-
-import groovy.lang.Writable;
 
 /**
  * A Writable Path.

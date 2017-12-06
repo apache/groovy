@@ -18,9 +18,10 @@
  */
 package groovy.swing.factory
 
-import java.awt.Container
-import javax.swing.BoxLayout
 import org.codehaus.groovy.runtime.InvokerHelper
+
+import javax.swing.*
+import java.awt.*
 
 public class BoxLayoutFactory extends AbstractFactory {
 

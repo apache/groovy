@@ -29,6 +29,7 @@ import java.io.Serializable;
  */
 public class Reference<T> extends GroovyObjectSupport implements Serializable {
 
+    private static final long serialVersionUID = 4963704631487573488L;
     private T value;
 
     public Reference() {

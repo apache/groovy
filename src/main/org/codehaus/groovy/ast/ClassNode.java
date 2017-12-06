@@ -1166,21 +1166,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (isArray()) {
             return componentType.toString(showRedirect)+"[]";
         }
-        String ret = getName();
-        if (placeholder) ret = getUnresolvedName();
+        StringBuilder ret = new StringBuilder(getName());
+        if (placeholder) ret = new StringBuilder(getUnresolvedName());
         if (!placeholder && genericsTypes != null) {
-            ret += " <";
+            ret.append(" <");
             for (int i = 0; i < genericsTypes.length; i++) {
-                if (i != 0) ret += ", ";
+                if (i != 0) ret.append(", ");
                 GenericsType genericsType = genericsTypes[i];
-                ret += genericTypeAsString(genericsType);
+                ret.append(genericTypeAsString(genericsType));
             }
-            ret += ">";
+            ret.append(">");
         }
         if (redirect != null && showRedirect) {
-            ret += " -> " + redirect().toString();
+            ret.append(" -> ").append(redirect().toString());
         }
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -1190,27 +1190,27 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the string representing the generic type
      */
     private String genericTypeAsString(GenericsType genericsType) {
-        String ret = genericsType.getName();
+        StringBuilder ret = new StringBuilder(genericsType.getName());
         if (genericsType.getUpperBounds() != null) {
-            ret += " extends ";
+            ret.append(" extends ");
             for (int i = 0; i < genericsType.getUpperBounds().length; i++) {
                 ClassNode classNode = genericsType.getUpperBounds()[i];
                 if (classNode.equals(this)) {
-                    ret += classNode.getName();
+                    ret.append(classNode.getName());
                 } else {
-                    ret += classNode.toString(false);
+                    ret.append(classNode.toString(false));
                 }
-                if (i + 1 < genericsType.getUpperBounds().length) ret += " & ";
+                if (i + 1 < genericsType.getUpperBounds().length) ret.append(" & ");
             }
         } else if (genericsType.getLowerBound() !=null) {
             ClassNode classNode = genericsType.getLowerBound();
             if (classNode.equals(this)) {
-                ret += " super " + classNode.getName();
+                ret.append(" super ").append(classNode.getName());
             } else {
-                ret += " super " + classNode;
+                ret.append(" super ").append(classNode);
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     /**

@@ -50,7 +50,6 @@ import groovy.lang.GroovySystem;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -138,22 +137,22 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     public String getMethodCallSyntax(String obj, String method,
                                       String... args) {
 
-        String ret = obj + "." + method + "(";
+        StringBuilder ret = new StringBuilder(obj + "." + method + "(");
         int len = args.length;
         if (len == 0) {
-            ret += ")";
-            return ret;
+            ret.append(")");
+            return ret.toString();
         }
 
         for (int i = 0; i < len; i++) {
-            ret += args[i];
+            ret.append(args[i]);
             if (i != len - 1) {
-                ret += ",";
+                ret.append(",");
             } else {
-                ret += ")";
+                ret.append(")");
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     public String getOutputStatement(String toDisplay) {

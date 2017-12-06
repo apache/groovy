@@ -44,8 +44,15 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.CAST;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.GET;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.INIT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.GROOVY_OBJECT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.IMPLICIT_THIS;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SAFE_NAVIGATION;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SPREAD_CALL;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.THIS_CALL;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
 /**
@@ -120,7 +127,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
         
-        String sig = prepareIndyCall(receiver, implicitThis);
+        StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
         
         // load arguments
         int numberOfArguments = 1;
@@ -128,26 +135,26 @@ public class InvokeDynamicWriter extends InvocationWriter {
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
         if (containsSpreadExpression) {
             controller.getAcg().despreadList(ae.getExpressions(), true);
-            sig += getTypeDescription(Object[].class);
+            sig.append(getTypeDescription(Object[].class));
         } else {
             for (Expression arg : ae.getExpressions()) {
                 arg.visit(controller.getAcg());
                 if (arg instanceof CastExpression) {
                     operandStack.box();
                     controller.getAcg().loadWrapper(arg);
-                    sig += getTypeDescription(Wrapper.class);
+                    sig.append(getTypeDescription(Wrapper.class));
                 } else {
-                    sig += getTypeDescription(operandStack.getTopOperand());
+                    sig.append(getTypeDescription(operandStack.getTopOperand()));
                 }
                 numberOfArguments++;
             }
         }
 
-        sig += ")Ljava/lang/Object;";
+        sig.append(")Ljava/lang/Object;");
         String callSiteName = METHOD.getCallSiteName();
         if (adapter==null) callSiteName = INIT.getCallSiteName();
         int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
-        finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
+        finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
     }
     
     private static int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {

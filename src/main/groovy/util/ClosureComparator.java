@@ -21,6 +21,7 @@ package groovy.util;
 import groovy.lang.Closure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -28,8 +29,9 @@ import java.util.Comparator;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class ClosureComparator<T> implements Comparator<T> {
+public class ClosureComparator<T> implements Comparator<T>, Serializable {
 
+    private static final long serialVersionUID = -4593521535656429522L;
     Closure closure;
 
     public ClosureComparator(Closure closure) {
@@ -37,7 +39,7 @@ public class ClosureComparator<T> implements Comparator<T> {
     }
 
     public int compare(T object1, T object2) {
-        Object value = closure.call(new Object[] {object1, object2});
+        Object value = closure.call(object1, object2);
         return DefaultTypeTransformation.intUnbox(value);
     }
 }

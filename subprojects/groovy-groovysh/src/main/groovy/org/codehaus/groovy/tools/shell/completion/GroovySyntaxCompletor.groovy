@@ -28,7 +28,35 @@ import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.Logger
 
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.EOF
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.IDENT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_as
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_boolean
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_byte
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_catch
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_char
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_class
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_def
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_double
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_enum
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_false
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_finally
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_float
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_import
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_instanceof
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_int
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_interface
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_long
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_package
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_short
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_this
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_true
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_try
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_void
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.OPTIONAL_DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_CTOR_START
 
 /**
  * Implements the Completor interface to provide competions for

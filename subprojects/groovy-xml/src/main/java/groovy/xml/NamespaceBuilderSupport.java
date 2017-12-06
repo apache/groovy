@@ -20,7 +20,6 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 import groovy.util.NodeBuilder;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.Collections;

@@ -18,9 +18,9 @@
  */
 package groovy.swing.factory
 
-import javax.swing.JComboBox
-
 import groovy.swing.binding.JComboBoxMetaMethods
+
+import javax.swing.*
 
 public class ComboBoxFactory extends AbstractFactory {
     

@@ -33,7 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
 public class MopWriter {
     public interface Factory {
@@ -206,9 +212,9 @@ public class MopWriter {
         }
     }
 
-    private static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
-        if (p1.length!=p2.length) return false;
-        for (int i=0; i<p1.length; i++) {
+    public static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+        if (p1.length != p2.length) return false;
+        for (int i = 0; i < p1.length; i++) {
             if (!p1[i].getType().equals(p2[i].getType())) return false;
         }
         return true;

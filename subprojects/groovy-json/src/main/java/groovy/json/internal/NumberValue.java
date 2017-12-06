@@ -25,7 +25,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
 
-import static groovy.json.internal.CharScanner.*;
+import static groovy.json.internal.CharScanner.isInteger;
+import static groovy.json.internal.CharScanner.parseIntFromTo;
+import static groovy.json.internal.CharScanner.parseLongFromTo;
 import static groovy.json.internal.Exceptions.die;
 import static groovy.json.internal.Exceptions.sputs;
 

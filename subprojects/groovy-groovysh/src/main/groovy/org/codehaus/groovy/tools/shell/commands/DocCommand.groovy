@@ -22,7 +22,6 @@ import jline.console.completer.AggregateCompleter
 import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
 import jline.console.completer.StringsCompleter
-
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 

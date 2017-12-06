@@ -63,11 +63,27 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.*;
-import static org.codehaus.groovy.ast.tools.WideningCategories.*;
+import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.GROOVY_INTERCEPTABLE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isDoubleCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMap;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMapKeyNames;
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 
 /**
  * A class to write out the optimized statements
@@ -95,11 +111,11 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
         public String toString() {
-            String ret = "optimize="+optimize+" target="+target+" type="+type+" involvedTypes=";
+            StringBuilder ret = new StringBuilder("optimize=" + optimize + " target=" + target + " type=" + type + " involvedTypes=");
             for (int i=0; i<typeMapKeyNames.length; i++) {
-                if (involvedTypes[i]) ret += " "+typeMapKeyNames[i];
+                if (involvedTypes[i]) ret.append(" ").append(typeMapKeyNames[i]);
             }
-            return ret;
+            return ret.toString();
         }
     }
 
@@ -482,19 +498,19 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
         public String toString() {
-            String ret = "";
+            StringBuilder ret;
             if (current.shouldOptimize) {
-                ret = "should optimize, can = "+current.canOptimize;
+                ret = new StringBuilder("should optimize, can = " + current.canOptimize);
             } else if (current.canOptimize) {
-                ret = "can optimize";
+                ret = new StringBuilder("can optimize");
             } else {
-                ret = "don't optimize";
+                ret = new StringBuilder("don't optimize");
             }
-            ret += " involvedTypes =";
+            ret.append(" involvedTypes =");
             for (int i=0; i<typeMapKeyNames.length; i++) {
-                if (current.involvedTypes[i]) ret += " "+typeMapKeyNames[i];
+                if (current.involvedTypes[i]) ret.append(" ").append(typeMapKeyNames[i]);
             }
-            return ret;
+            return ret.toString();
         }
         /**
          * @return true iff we should Optimize - this is almost seen as must

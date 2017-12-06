@@ -1232,19 +1232,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = null;
         if (arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
-            method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
-            if (method != null) {
-                method = new TransformMetaMethod(method) {
-                    public Object invoke(Object object, Object[] arguments) {
-                        Object firstArgument = arguments[0];
-                        List list = (List) firstArgument;
-                        arguments = list.toArray();
-                        return super.invoke(object, arguments);
-                    }
-                };
-            }
+            method = createTransformMetaMethod(getMethodWithCaching(sender, methodName, newArguments, isCallToSuper));
         }
         return method;
+    }
+
+    protected MetaMethod createTransformMetaMethod(MetaMethod method) {
+        if (method == null) {
+            return null;
+        }
+
+        return new TransformMetaMethod(method) {
+            public Object invoke(Object object, Object[] arguments) {
+                Object firstArgument = arguments[0];
+                List list = (List) firstArgument;
+                arguments = list.toArray();
+                return super.invoke(object, arguments);
+            }
+        };
     }
 
     private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass, boolean isCallToSuper) {
@@ -1564,19 +1569,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     this.theClass.getName() + " do not match. Expected " + numberOfConstructors + " but got " + constructors.size());
         }
 
-        if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        }
-        if (constructor == null) {
-            throw new GroovyRuntimeException(
-                    "Could not find matching constructor for: "
-                            + theClass.getName()
-                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
-        }
+        CachedConstructor constructor = createCachedConstructor(arguments);
         List l = new ArrayList(constructors.toList());
         Comparator comp = new Comparator() {
             public int compare(Object arg0, Object arg1) {
@@ -1596,6 +1589,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         // NOTE: must be changed to "1 |" if constructor was vargs
         return 0 | (found << 8);
+    }
+
+    private CachedConstructor createCachedConstructor(Object[] arguments) {
+        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        MetaClassHelper.unwrap(arguments);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        if (constructor == null) {
+            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        }
+        if (constructor == null) {
+            throw new GroovyRuntimeException(
+                    "Could not find matching constructor for: "
+                            + theClass.getName()
+                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
+        }
+        return constructor;
     }
 
     /**
@@ -1619,19 +1629,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @since 2.1.9
      */
     private int selectConstructorAndTransformArguments1(Object[] arguments) {
-        if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
-        }
-        if (constructor == null) {
-            throw new GroovyRuntimeException(
-                    "Could not find matching constructor for: "
-                            + theClass.getName()
-                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
-        }
+        CachedConstructor constructor = createCachedConstructor(arguments);
         final String methodDescriptor = BytecodeHelper.getMethodDescriptor(Void.TYPE, constructor.getNativeParameterTypes());
         // keeping 3 bits for additional information such as vargs
         return BytecodeHelper.hashCode(methodDescriptor);
@@ -1783,29 +1781,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return ((Map) object).get(name);
         }
 
-        MetaMethod method = null;
-        Object[] arguments = EMPTY_ARGUMENTS;
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
+        MetaMethod method = methodAndProperty.getFirst();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
-        if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                method = mbp.getGetter();
-                mp = mbp.getField();
-            }
-        }
-
-        // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
-            if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-                if (categoryMethod != null) method = categoryMethod;
-            }
-        }
+        MetaProperty mp = methodAndProperty.getSecond();
 
         //----------------------------------------------------------------------
         // field
@@ -1823,6 +1805,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic get method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
+        Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null) arguments = new Object[]{name};
@@ -1908,29 +1891,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             };
         }
 
-        MetaMethod method = null;
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
+        MetaMethod method = methodAndProperty.getFirst();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
-        if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                method = mbp.getGetter();
-                mp = mbp.getField();
-            }
-        }
-
-        // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
-            if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodGetter(theClass, getterName, false);
-                if (categoryMethod != null)
-                    method = categoryMethod;
-            }
-        }
+        MetaProperty mp = methodAndProperty.getSecond();
 
         //----------------------------------------------------------------------
         // field
@@ -2042,7 +2009,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             };
     }
 
+    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
+        MetaMethod method = null;
+        MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
+        if (mp != null) {
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                method = mbp.getGetter();
+                mp = mbp.getField();
+            }
+        }
 
+        // check for a category method named like a getter
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            if (getterName != null) {
+                MetaMethod categoryMethod = getCategoryMethodGetter(senderForCMG, getterName, false);
+                if (categoryMethod != null)
+                    method = categoryMethod;
+            }
+        }
+
+        return new Tuple2<MetaMethod, MetaProperty>(method, mp);
+    }
 
     private static MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
         List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
@@ -3236,43 +3225,57 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
+        return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, false);
+    }
 
+    protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
         long matchesDistance = -1;
         LinkedList matches = new LinkedList();
         for (Object method : matchingMethods) {
-            ParameterTypes paramTypes = (ParameterTypes) method;
-            long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
+            final ParameterTypes parameterTypes = (ParameterTypes) method;
+            if (checkParametersCompatible && !MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes())) continue;
+            long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
             if (dist == 0) return method;
-            if (matches.isEmpty()) {
-                matches.add(method);
-                matchesDistance = dist;
-            } else if (dist < matchesDistance) {
-                matchesDistance = dist;
-                matches.clear();
-                matches.add(method);
-            } else if (dist == matchesDistance) {
-                matches.add(method);
-            }
-
+            matchesDistance = handleMatches(matchesDistance, matches, method, dist);
         }
-        if (matches.size() == 1) {
+
+        int size = matches.size();
+        if (1 == size) {
             return matches.getFirst();
         }
-        if (matches.isEmpty()) {
+        if (0 == size) {
             return null;
         }
 
         //more than one matching method found --> ambiguous!
+        throw new GroovyRuntimeException(createErrorMessageForAmbiguity(theClassName, name, arguments, matches));
+    }
+
+    protected static String createErrorMessageForAmbiguity(String theClassName, String name, Class[] arguments, LinkedList matches) {
         StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
-        msg.append(theClass.getName()).append("#").append(name)
+        msg.append(theClassName).append("#").append(name)
            .append(".\nCannot resolve which method to invoke for ")
            .append(InvokerHelper.toString(arguments))
            .append(" due to overlapping prototypes between:");
-        for (final Object matche : matches) {
-            Class[] types = ((ParameterTypes) matche).getNativeParameterTypes();
+        for (final Object match : matches) {
+            CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
             msg.append("\n\t").append(InvokerHelper.toString(types));
         }
-        throw new GroovyRuntimeException(msg.toString());
+        return msg.toString();
+    }
+
+    protected static long handleMatches(long matchesDistance, LinkedList matches, Object method, long dist) {
+        if (matches.isEmpty()) {
+            matches.add(method);
+            matchesDistance = dist;
+        } else if (dist < matchesDistance) {
+            matchesDistance = dist;
+            matches.clear();
+            matches.add(method);
+        } else if (dist == matchesDistance) {
+            matches.add(method);
+        }
+        return matchesDistance;
     }
 
     private static boolean isGenericGetMethod(MetaMethod method) {

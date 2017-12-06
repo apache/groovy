@@ -142,6 +142,7 @@ class SqlCompleteTest extends SqlHelperTestCase {
     }
 
     void testRowsWithEmptyMapParams() {
+        sql.enableMetaDataChecking = true
         def results = sql.rows("select * from PERSON where firstname like '%am%' and lastname like '%a%'", [:])
         assert results.collectEntries{ [it.firstname, it.lastname] } == ["James": "Strachan", "Sam": "Pullara"]
     }

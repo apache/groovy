@@ -53,6 +53,8 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -1263,9 +1265,16 @@ public class Groovyc extends MatchingTask {
         if (!fork && !getIncludeantruntime()) {
             throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
         }
-        ClassLoader parent = getIncludeantruntime()
-                ? getClass().getClassLoader()
-                : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
+        final ClassLoader parent =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<ClassLoader>() {
+                            @Override
+                            public ClassLoader run() {
+                                return getIncludeantruntime()
+                                        ? getClass().getClassLoader()
+                                        : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
+                            }
+                        });
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
@@ -1299,7 +1308,14 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader loader = new GroovyClassLoader(parent, configuration);
+        GroovyClassLoader loader =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<GroovyClassLoader>() {
+                            @Override
+                            public GroovyClassLoader run() {
+                                return new GroovyClassLoader(parent, configuration);
+                            }
+                        });
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
             loader.setResourceLoader(new GroovyResourceLoader() {

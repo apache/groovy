@@ -18,7 +18,14 @@
  */
 package groovy.text;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.Writable;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -26,8 +33,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * Processes template source files substituting variables and expressions into

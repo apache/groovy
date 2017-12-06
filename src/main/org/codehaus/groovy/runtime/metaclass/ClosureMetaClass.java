@@ -47,7 +47,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -147,10 +146,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 return MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
             } else {
                 List matchingMethods = new ArrayList();
-
-                final int len = methods.size();
                 final Object[] data = methods.getArray();
-                for (int i = 0; i != len; ++i) {
+                for (int i = 0, len = methods.size(); i != len; ++i) {
                     Object method = data[i];
 
                     // making this false helps find matches
@@ -158,58 +155,22 @@ public final class ClosureMetaClass extends MetaClassImpl {
                         matchingMethods.add(method);
                     }
                 }
-                if (matchingMethods.isEmpty()) {
+
+                int size = matchingMethods.size();
+                if (0 == size) {
                     return null;
-                } else if (matchingMethods.size() == 1) {
+                } else if (1 == size) {
                     return matchingMethods.get(0);
                 }
+
                 return chooseMostSpecificParams(CLOSURE_DO_CALL_METHOD, matchingMethods, arguments);
             }
         }
 
         private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
-            long matchesDistance = -1;
-            LinkedList matches = new LinkedList();
-            for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-                Object method = iter.next();
-                final ParameterTypes parameterTypes = (ParameterTypes) method;
-                Class[] paramTypes = parameterTypes.getNativeParameterTypes();
-                if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
-                long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
-                if (dist == 0) return method;
-                if (matches.isEmpty()) {
-                    matches.add(method);
-                    matchesDistance = dist;
-                } else if (dist < matchesDistance) {
-                    matchesDistance = dist;
-                    matches.clear();
-                    matches.add(method);
-                } else if (dist == matchesDistance) {
-                    matches.add(method);
-                }
-
-            }
-            if (matches.size() == 1) {
-                return matches.getFirst();
-            }
-            if (matches.isEmpty()) {
-                return null;
-            }
-
-            // more than one matching method found --> ambiguous!
-            String msg = "Ambiguous method overloading for method ";
-            msg += theClass.getName() + "#" + name;
-            msg += ".\nCannot resolve which method to invoke for ";
-            msg += InvokerHelper.toString(arguments);
-            msg += " due to overlapping prototypes between:";
-            for (Object match : matches) {
-                CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
-                msg += "\n\t" + InvokerHelper.toString(types);
-            }
-            throw new GroovyRuntimeException(msg);
+            return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, true);
         }
     }
-
 
     public ClosureMetaClass(MetaClassRegistry registry, Class theClass) {
         super(registry, theClass);
@@ -290,17 +251,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
                 Object[] newArguments = ((List) arguments[0]).toArray();
                 Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
-                method = pickClosureMethod(newArgClasses);
-                if (method != null) {
-                    method = new TransformMetaMethod(method) {
-                        public Object invoke(Object object, Object[] arguments) {
-                            Object firstArgument = arguments[0];
-                            List list = (List) firstArgument;
-                            arguments = list.toArray();
-                            return super.invoke(object, arguments);
-                        }
-                    };
-                }
+                method = createTransformMetaMethod(pickClosureMethod(newArgClasses));
             }
             if (method == null) throw new MissingMethodException(methodName, theClass, arguments, false);
         }
@@ -314,84 +265,82 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
         MissingMethodException last = null;
         Object callObject = object;
-        if (method == null) {
-            final Object owner = closure.getOwner();
-            final Object delegate = closure.getDelegate();
-            final Object thisObject = closure.getThisObject();
-            final int resolveStrategy = closure.getResolveStrategy();
-            boolean invokeOnDelegate = false;
-            boolean invokeOnOwner = false;
-            boolean ownerFirst = true;
+        final Object owner = closure.getOwner();
+        final Object delegate = closure.getDelegate();
+        final Object thisObject = closure.getThisObject();
+        final int resolveStrategy = closure.getResolveStrategy();
+        boolean invokeOnDelegate = false;
+        boolean invokeOnOwner = false;
+        boolean ownerFirst = true;
 
-            switch (resolveStrategy) {
-                case Closure.TO_SELF:
-                    break;
-                case Closure.DELEGATE_ONLY:
-                    method = getDelegateMethod(closure, delegate, methodName, argClasses);
-                    callObject = delegate;
-                    if (method == null) {
-                        invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
-                    }
-                    break;
-                case Closure.OWNER_ONLY:
+        switch (resolveStrategy) {
+            case Closure.TO_SELF:
+                break;
+            case Closure.DELEGATE_ONLY:
+                method = getDelegateMethod(closure, delegate, methodName, argClasses);
+                callObject = delegate;
+                if (method == null) {
+                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
+                }
+                break;
+            case Closure.OWNER_ONLY:
+                method = getDelegateMethod(closure, owner, methodName, argClasses);
+                callObject = owner;
+                if (method == null) {
+                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
+                }
+
+                break;
+            case Closure.DELEGATE_FIRST:
+                method = getDelegateMethod(closure, delegate, methodName, argClasses);
+                callObject = delegate;
+                if (method == null) {
                     method = getDelegateMethod(closure, owner, methodName, argClasses);
                     callObject = owner;
-                    if (method == null) {
-                        invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                    }
-
-                    break;
-                case Closure.DELEGATE_FIRST:
-                    method = getDelegateMethod(closure, delegate, methodName, argClasses);
-                    callObject = delegate;
-                    if (method == null) {
-                        method = getDelegateMethod(closure, owner, methodName, argClasses);
-                        callObject = owner;
-                    }
-                    if (method == null) {
-                        invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
-                        invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                        ownerFirst = false;
-                    }
-                    break;
-                default: // owner first
-                    // owner first means we start with the outer most owner that is not a generated closure
-                    // this owner is equal to the this object, so we check that one first.
-                    method = getDelegateMethod(closure, thisObject, methodName, argClasses);
-                    callObject = thisObject;
-                    if (method == null) {
-                        // try finding a delegate that has that method... we start from
-                        // outside building a stack and try each delegate
-                        LinkedList list = new LinkedList();
-                        for (Object current = closure; current != thisObject;) {
-                            if (!(current instanceof Closure)) break;
-                            Closure currentClosure = (Closure) current;
-                            if (currentClosure.getDelegate() != null) list.add(current);
-                            current = currentClosure.getOwner();
-                        }
-
-                        while (!list.isEmpty() && method == null) {
-                            Closure closureWithDelegate = (Closure) list.removeLast();
-                            Object currentDelegate = closureWithDelegate.getDelegate();
-                            method = getDelegateMethod(closureWithDelegate, currentDelegate, methodName, argClasses);
-                            callObject = currentDelegate;
-                        }
-                    }
-                    if (method == null) {
-                        invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
-                        invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                    }
-            }
-            if (method == null && (invokeOnOwner || invokeOnDelegate)) {
-                try {
-                    if (ownerFirst) {
-                        return invokeOnDelegationObjects(invokeOnOwner, owner, invokeOnDelegate, delegate, methodName, arguments);
-                    } else {
-                        return invokeOnDelegationObjects(invokeOnDelegate, delegate, invokeOnOwner, owner, methodName, arguments);
-                    }
-                } catch (MissingMethodException mme) {
-                    last = mme;
                 }
+                if (method == null) {
+                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
+                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
+                    ownerFirst = false;
+                }
+                break;
+            default: // owner first
+                // owner first means we start with the outer most owner that is not a generated closure
+                // this owner is equal to the this object, so we check that one first.
+                method = getDelegateMethod(closure, thisObject, methodName, argClasses);
+                callObject = thisObject;
+                if (method == null) {
+                    // try finding a delegate that has that method... we start from
+                    // outside building a stack and try each delegate
+                    LinkedList list = new LinkedList();
+                    for (Object current = closure; current != thisObject;) {
+                        if (!(current instanceof Closure)) break;
+                        Closure currentClosure = (Closure) current;
+                        if (currentClosure.getDelegate() != null) list.add(current);
+                        current = currentClosure.getOwner();
+                    }
+
+                    while (!list.isEmpty() && method == null) {
+                        Closure closureWithDelegate = (Closure) list.removeLast();
+                        Object currentDelegate = closureWithDelegate.getDelegate();
+                        method = getDelegateMethod(closureWithDelegate, currentDelegate, methodName, argClasses);
+                        callObject = currentDelegate;
+                    }
+                }
+                if (method == null) {
+                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
+                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
+                }
+        }
+        if (method == null && (invokeOnOwner || invokeOnDelegate)) {
+            try {
+                if (ownerFirst) {
+                    return invokeOnDelegationObjects(invokeOnOwner, owner, invokeOnDelegate, delegate, methodName, arguments);
+                } else {
+                    return invokeOnDelegationObjects(invokeOnDelegate, delegate, invokeOnOwner, owner, methodName, arguments);
+                }
+            } catch (MissingMethodException mme) {
+                last = mme;
             }
         }
 

@@ -18,7 +18,11 @@
  */
 package groovy.lang
 
-import java.util.logging.*
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
+import java.util.logging.StreamHandler
 
 /**
 Helper class to spoof log entries as produced by calling arbitrary code.

@@ -49,7 +49,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -64,8 +64,37 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
-import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.BOOLEAN_IDENTITY;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.CLASS_FOR_NAME;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.DTT_CAST_TO_TYPE;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.EQUALS;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.GROOVY_CAST_EXCEPTION;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.GROOVY_OBJECT_GET_PROPERTY;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.GROOVY_OBJECT_INVOKER;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.HASHSET_CONSTRUCTOR;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.HAS_CATEGORY_IN_CURRENT_THREAD_GUARD;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.INTERCEPTABLE_INVOKER;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.IS_NULL;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.META_CLASS_INVOKE_STATIC_METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.META_METHOD_INVOKER;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.META_PROPERTY_GETTER;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.MOP_GET;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.NULL_REF;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.SAME_CLASS;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.SAME_MC;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.unwrap;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG_ENABLED;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.makeFallBack;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.switchPoint;
 
 public abstract class Selector {
     public Object[] args, originalArguments;
@@ -484,26 +513,25 @@ public abstract class Selector {
             this.cache = !spread;
 
             if (LOG_ENABLED) {
-                String msg =
-                    "----------------------------------------------------"+
-                    "\n\t\tinvocation of method '"+methodName+"'"+
-                    "\n\t\tinvocation type: "+callType+
-                    "\n\t\tsender: "+sender+
-                    "\n\t\ttargetType: "+targetType+
-                    "\n\t\tsafe navigation: "+safeNavigation+
-                    "\n\t\tthisCall: "+thisCall+
-                    "\n\t\tspreadCall: "+spreadCall+
-                    "\n\t\twith "+arguments.length+" arguments";
+                StringBuilder msg =
+                        new StringBuilder("----------------------------------------------------" +
+                                "\n\t\tinvocation of method '" + methodName + "'" +
+                                "\n\t\tinvocation type: " + callType +
+                                "\n\t\tsender: " + sender +
+                                "\n\t\ttargetType: " + targetType +
+                                "\n\t\tsafe navigation: " + safeNavigation +
+                                "\n\t\tthisCall: " + thisCall +
+                                "\n\t\tspreadCall: " + spreadCall +
+                                "\n\t\twith " + arguments.length + " arguments");
                 for (int i=0; i<arguments.length; i++) {
-                    msg += "\n\t\t\targument["+i+"] = ";
+                    msg.append("\n\t\t\targument[").append(i).append("] = ");
                     if (arguments[i] == null) {
-                        msg += "null";
+                        msg.append("null");
                     } else {
-                        msg += arguments[i].getClass().getName()+
-                            "@"+Integer.toHexString(System.identityHashCode(arguments[i]));
+                        msg.append(arguments[i].getClass().getName()).append("@").append(Integer.toHexString(System.identityHashCode(arguments[i])));
                     }
                 }
-                LOG.info(msg);
+                LOG.info(msg.toString());
             }
         }
 

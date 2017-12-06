@@ -482,7 +482,7 @@ public abstract class BaseTemplate implements Writable {
         return configuration.isAutoIndent() && !(out instanceof DelegatingIndentWriter)?new DelegatingIndentWriter(out, configuration.getAutoIndentString()):out;
     }
 
-    private class TagData {
+    private static class TagData {
         private final Object[] array;
         private Map attributes;
         private Object body;

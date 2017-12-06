@@ -18,7 +18,7 @@
  */
 package groovy.swing.factory
 
-import javax.swing.BorderFactory
+import javax.swing.*
 
 /**
  * accepts values in lieu of attributes:

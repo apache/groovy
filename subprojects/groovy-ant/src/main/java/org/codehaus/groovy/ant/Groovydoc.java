@@ -34,7 +34,11 @@ import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInf
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.StringTokenizer;
 
 /**
  * Access to the GroovyDoc tool from Ant.
