@@ -405,6 +405,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 } finally {
                     closeWithWarning(out);
+                    closeWithWarning(in);
                 }
             }
         }).start();
