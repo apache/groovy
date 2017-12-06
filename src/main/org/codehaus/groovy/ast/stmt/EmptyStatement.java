@@ -36,8 +36,8 @@ public class EmptyStatement extends Statement {
     /**
      * use EmptyStatement.INSTANCE instead
      */
-    @Deprecated
-    public EmptyStatement() {
+//    @Deprecated
+    private EmptyStatement() {
         // org.spockframework.compiler.ConditionRewriter will create EmptyStatement via calling the constructor
         // so we keep the constructor for the time being, but it will be removed finally.
     }
