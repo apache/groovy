@@ -57,6 +57,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     };
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private Object[] values;
 
@@ -118,28 +119,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(String that) {
-        String[] currentStrings = getStrings();
-        String[] newStrings;
-        Object[] newValues;
-
-        boolean appendToLastString = currentStrings.length > getValues().length;
-
-        if (appendToLastString) {
-            newStrings = new String[currentStrings.length];
-        } else {
-            newStrings = new String[currentStrings.length + 1];
-        }
-        newValues = new Object[getValues().length];
-        int lastIndex = currentStrings.length;
-        System.arraycopy(currentStrings, 0, newStrings, 0, lastIndex);
-        System.arraycopy(getValues(), 0, newValues, 0, getValues().length);
-        if (appendToLastString) {
-            newStrings[lastIndex - 1] += that;
-        } else {
-            newStrings[lastIndex] = that;
-        }
-
-        return new GStringImpl(newValues, newStrings);
+        return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[] { that }));
     }
 
     public int getValueCount() {
