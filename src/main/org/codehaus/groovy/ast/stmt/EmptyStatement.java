@@ -29,22 +29,25 @@ import java.util.Map;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
+
 public class EmptyStatement extends Statement {
     public static final EmptyStatement INSTANCE = new EmptyStatement();
 
     /**
      * use EmptyStatement.INSTANCE instead
      */
-    @Deprecated
-    public EmptyStatement() {}
-
+//    @Deprecated
+    private EmptyStatement() {
+        // org.spockframework.compiler.ConditionRewriter will create EmptyStatement via calling the constructor
+        // so we keep the constructor for the time being, but it will be removed finally.
+    }
+    
     public void visit(GroovyCodeVisitor visitor) {
     }
 
     public boolean isEmpty() {
         return true;
     }
-
 
     @Override
     public void setStatementLabel(String label) {
