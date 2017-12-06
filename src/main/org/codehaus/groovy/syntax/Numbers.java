@@ -237,7 +237,7 @@ public class Numbers
                 if (radix==10 && reportNode != null && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0) ) {
                     throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of long, but long was enforced.");
                 } else {
-                    return new Long( value.longValue() );
+                    return Long.valueOf(value.longValue());
                 }
             case 'g':
                 return value ;
