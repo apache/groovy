@@ -27,8 +27,8 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -51,10 +51,12 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * A GString containing a single empty String and no values.
      */
     public static final GString EMPTY = new GString(new Object[0]) {
+        @Override
         public String[] getStrings() {
             return new String[]{""};
         }
     };
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private Object[] values;
 
@@ -75,6 +77,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * so that any method that can't be evaluated on this
      * object will be forwarded to the toString() object instead.
      */
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);
@@ -90,28 +93,26 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(GString that) {
-        List<String> stringList = new ArrayList<String>();
-        List<Object> valueList = new ArrayList<Object>();
-
-        stringList.addAll(Arrays.asList(getStrings()));
-        valueList.addAll(Arrays.asList(getValues()));
+        List<String> stringList = new LinkedList<String>(Arrays.asList(getStrings()));
+        List<Object> valueList = new LinkedList<Object>(Arrays.asList(getValues()));
 
         List<String> thatStrings = Arrays.asList(that.getStrings());
-        if (stringList.size() > valueList.size()) {
-            thatStrings = new ArrayList<String>(thatStrings);
+
+        int stringListSize = stringList.size();
+        if (stringListSize > valueList.size()) {
+            thatStrings = new LinkedList<String>(thatStrings);
             // merge onto end of previous GString to avoid an empty bridging value
-            String s = stringList.get(stringList.size() - 1);
-            s += thatStrings.get(0);
-            thatStrings.remove(0);
-            stringList.set(stringList.size() - 1, s);
+            int lastIndexOfStringList = stringListSize - 1;
+            String s = stringList.get(lastIndexOfStringList);
+            s += thatStrings.remove(0);
+            stringList.set(lastIndexOfStringList, s);
         }
 
         stringList.addAll(thatStrings);
         valueList.addAll(Arrays.asList(that.getValues()));
 
-        final String[] newStrings = new String[stringList.size()];
-        stringList.toArray(newStrings);
-        Object[] newValues = valueList.toArray();
+        final String[] newStrings = stringList.toArray(EMPTY_STRING_ARRAY);
+        final Object[] newValues = valueList.toArray();
 
         return new GStringImpl(newValues, newStrings);
     }
@@ -149,6 +150,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return values[idx];
     }
 
+    @Override
     public String toString() {
         StringWriter buffer = new StringWriter();
         try {
@@ -160,6 +162,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return buffer.toString();
     }
 
+    @Override
     public Writer writeTo(Writer out) throws IOException {
         String[] s = getStrings();
         int numberOfValues = values.length;
@@ -191,6 +194,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * @see groovy.lang.Buildable#build(groovy.lang.GroovyObject)
      */
 
+    @Override
     public void build(final GroovyObject builder) {
         final String[] s = getStrings();
         final int numberOfValues = values.length;
@@ -205,6 +209,12 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     }
 
+    @Override
+    public int hashCode() {
+        return 37 + toString().hashCode();
+    }
+
+    @Override
     public boolean equals(Object that) {
         if (that instanceof GString) {
             return equals((GString) that);
@@ -216,22 +226,22 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return toString().equals(that.toString());
     }
 
-    public int hashCode() {
-        return 37 + toString().hashCode();
-    }
-
+    @Override
     public int compareTo(Object that) {
         return toString().compareTo(that.toString());
     }
 
+    @Override
     public char charAt(int index) {
         return toString().charAt(index);
     }
 
+    @Override
     public int length() {
         return toString().length();
     }
 
+    @Override
     public CharSequence subSequence(int start, int end) {
         return toString().subSequence(start, end);
     }
