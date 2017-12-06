@@ -27,8 +27,8 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -93,14 +93,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(GString that) {
-        List<String> stringList = new LinkedList<String>(Arrays.asList(getStrings()));
-        List<Object> valueList = new LinkedList<Object>(Arrays.asList(getValues()));
+        List<String> stringList = new ArrayList<String>(Arrays.asList(getStrings()));
+        List<Object> valueList = new ArrayList<Object>(Arrays.asList(getValues()));
 
         List<String> thatStrings = Arrays.asList(that.getStrings());
 
         int stringListSize = stringList.size();
         if (stringListSize > valueList.size()) {
-            thatStrings = new LinkedList<String>(thatStrings);
+            thatStrings = new ArrayList<String>(thatStrings);
             // merge onto end of previous GString to avoid an empty bridging value
             int lastIndexOfStringList = stringListSize - 1;
             String s = stringList.get(lastIndexOfStringList);
