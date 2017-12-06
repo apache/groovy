@@ -106,7 +106,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
                     Integer.valueOf((int) (elapsed / stepSize)));
         } else if (reportFraction) {
             ((ClosureSourceBinding)sourceBinding).setClosureArgument(
-                    new Float((float) elapsed / (float) duration));
+                    Float.valueOf((float) elapsed / (float) duration));
             //in Groovy2.0 use valueOf
         } else if (reportElapsed) {
             ((ClosureSourceBinding)sourceBinding).setClosureArgument(
