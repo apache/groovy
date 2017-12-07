@@ -102,7 +102,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     {
         config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-        config.setSourceEncoding("UTF-8");
+        config.setSourceEncoding(CompilerConfiguration.DEFAULT_SOURCE_ENCODING);
     }
 
 

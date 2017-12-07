@@ -25,6 +25,7 @@
  */
 package groovy.lang;
 
+import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -49,6 +50,8 @@ import org.objectweb.asm.Opcodes;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -252,9 +255,24 @@ public class GroovyClassLoader extends URLClassLoader {
         scriptNameCounter++;
         return "script" + scriptNameCounter + ".groovy";
     }
+
+    public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
+                try {
+                    String scriptText = IOGroovyMethods.getText(reader);
+                    return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
+                } catch (IOException e) {
+                    throw new RuntimeException("Impossible to read the content of the reader for file named: " + fileName, e);
+                }
+            }
+        });
+        return parseClass(gcs);
+    }
     
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
+     * Use {@link #parseClass(Reader, String) parseClass} instead
      */
     @Deprecated
     public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
@@ -779,17 +797,23 @@ public class GroovyClassLoader extends URLClassLoader {
         if (source != null) {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
+                String sourceEncoding = config.getSourceEncoding();
+                if (null ==  sourceEncoding) {
+                    // Keep the same default source encoding with the one used by #parseClass(InputStream, String)
+                    // TODO should we use org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
+                    sourceEncoding = CharsetToolkit.getDefaultSystemCharset().name();
+                }
                 synchronized (sourceCache) {
                     String name = source.toExternalForm();
                     sourceCache.remove(name);
                     if (isFile(source)) {
                         try {
-                            return parseClass(new GroovyCodeSource(new File(source.toURI()), config.getSourceEncoding()));
+                            return parseClass(new GroovyCodeSource(new File(source.toURI()), sourceEncoding));
                         } catch (URISyntaxException e) {
                           // do nothing and fall back to the other version
                         }
                     } 
-                    return parseClass(source.openStream(), name);
+                    return parseClass(new InputStreamReader(source.openStream(), sourceEncoding), name);
                 }
             }
         }

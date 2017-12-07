@@ -86,6 +86,13 @@ public class CompilerConfiguration {
     // Just call getVMVersion() once.
     public static final String CURRENT_JVM_VERSION = getVMVersion();
 
+    private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
+
+    /**
+     * The default source encoding
+     */
+    public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
+
     // Static initializers are executed in text order,
     // therefore we must do this one last!
     /**
@@ -95,7 +102,7 @@ public class CompilerConfiguration {
      *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
-    
+
     /**
      * See {@link WarningMessage} for levels.
      */
@@ -105,11 +112,11 @@ public class CompilerConfiguration {
      * Encoding for source files
      */
     private String sourceEncoding;
-    
+
     /**
-      * The <code>PrintWriter</code> does nothing.
-      */
-     private PrintWriter output;
+     * The <code>PrintWriter</code> does nothing.
+     */
+    private PrintWriter output;
 
     /**
      * Directory into which to write classes
@@ -152,17 +159,17 @@ public class CompilerConfiguration {
      * extension used to find a groovy file
      */
     private String defaultScriptExtension;
-    
+
     /**
      * extensions used to find a groovy files
      */
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
-    
+
     /**
      * if set to true recompilation is enabled
      */
     private boolean recompileGroovySource;
-    
+
     /**
      * sets the minimum of time after a script can be recompiled.
      */
@@ -177,7 +184,7 @@ public class CompilerConfiguration {
      * options for joint compilation (null by default == no joint compilation)
      */
     private Map<String, Object> jointCompilationOptions;
-    
+
     /**
      * options for optimizations (empty map by default)
      */
@@ -254,9 +261,12 @@ public class CompilerConfiguration {
         setOptimizationOptions(options);
 
         try {
-            if ("true".equals(System.getProperty("groovy.antlr4"))) {
-                this.parserVersion = ParserVersion.V_4;
-            }
+            String groovyAntlr4Opt = System.getProperty(GROOVY_ANTLR4_OPT);
+
+            this.parserVersion =
+                    null == groovyAntlr4Opt || Boolean.valueOf(groovyAntlr4Opt)
+                            ? ParserVersion.V_4
+                            : ParserVersion.V_2;
         } catch (Exception e) {
             // IGNORE
         }
@@ -468,10 +478,10 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.target.directory");
         if (text != null) setTargetDirectory(text);
-        
+
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) setTargetBytecode(text);
-        
+
         //
         // Classpath
         //
@@ -512,7 +522,7 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.script.base");
         if (text!=null) setScriptBaseClass(text);
-        
+
         //
         // recompilation options
         //
@@ -520,7 +530,7 @@ public class CompilerConfiguration {
         if (text != null) {
             setRecompileGroovySource(text.equalsIgnoreCase("true"));
         }
-        
+
         numeric = 100;
         try {
             text = configuration.getProperty("groovy.recompile.minimumIntervall");
@@ -575,7 +585,7 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(String encoding) {
-        if (encoding == null) encoding = "US-ASCII";
+        if (encoding == null) encoding = DEFAULT_SOURCE_ENCODING;
         this.sourceEncoding = encoding;
     }
 
@@ -583,7 +593,7 @@ public class CompilerConfiguration {
      * Gets the currently configured output writer.
      * @deprecated not used anymore
      */
-    @Deprecated 
+    @Deprecated
     public PrintWriter getOutput() {
         return this.output;
     }
@@ -644,7 +654,7 @@ public class CompilerConfiguration {
             this.classpath.add(tokenizer.nextToken());
         }
     }
-    
+
     /**
      * sets the classpath using a list of Strings
      * @param parts list of strings containing the classpath parts
@@ -744,7 +754,7 @@ public class CompilerConfiguration {
         if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
         this.scriptExtensions = scriptExtensions;
     }
-    
+
     public Set<String> getScriptExtensions() {
         if(scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
@@ -758,7 +768,7 @@ public class CompilerConfiguration {
         }
         return scriptExtensions;
     }
-    
+
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
     }
@@ -767,19 +777,19 @@ public class CompilerConfiguration {
     public void setDefaultScriptExtension(String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
     }
-    
+
     public void setRecompileGroovySource(boolean recompile) {
         recompileGroovySource = recompile;
     }
-    
+
     public boolean getRecompileGroovySource(){
         return recompileGroovySource;
     }
-    
+
     public void setMinimumRecompilationInterval(int time) {
         minimumRecompilationInterval = Math.max(0,time);
     }
-    
+
     public int getMinimumRecompilationInterval() {
         return minimumRecompilationInterval;
     }
@@ -788,7 +798,7 @@ public class CompilerConfiguration {
      * Allow setting the bytecode compatibility. The parameter can take
      * one of the values <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
      * If wrong parameter then the value will default to VM determined version.
-     * 
+     *
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
@@ -801,17 +811,17 @@ public class CompilerConfiguration {
 
     /**
      * Retrieves the compiler bytecode compatibility mode.
-     * 
+     *
      * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
     }
-    
+
     private static String getVMVersion() {
         return POST_JDK5;
     }
-    
+
     /**
      * Gets the joint compilation options for this configuration.
      * @return the options
@@ -819,7 +829,7 @@ public class CompilerConfiguration {
     public Map<String, Object> getJointCompilationOptions() {
         return jointCompilationOptions;
     }
-    
+
     /**
      * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
@@ -836,7 +846,7 @@ public class CompilerConfiguration {
     public Map<String, Boolean> getOptimizationOptions() {
         return optimizationOptions;
     }
-    
+
     /**
      * Sets the optimization options for this configuration.
      * No entry or a true for that entry means to enable that optimization,
