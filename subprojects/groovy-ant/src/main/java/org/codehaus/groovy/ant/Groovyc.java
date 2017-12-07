@@ -1036,12 +1036,19 @@ public class Groovyc extends MatchingTask {
     }
 
     private String getClasspathRelative(Path classpath) {
-        String raw = classpath.toString();
         String baseDir = getProject().getBaseDir().getAbsolutePath();
-        if (!raw.startsWith(baseDir)) {
-            return raw;
+        StringBuilder sb = new StringBuilder();
+        for (String next : classpath.list()) {
+            if (sb.length() > 0) {
+                sb.append(File.pathSeparatorChar);
+            }
+            if (next.startsWith(baseDir)) {
+                sb.append(".").append(next.substring(baseDir.length()));
+            } else {
+                sb.append(next);
+            }
         }
-        return "." + raw.substring(baseDir.length());
+        return sb.toString();
     }
 
     /**
