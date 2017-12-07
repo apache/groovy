@@ -103,6 +103,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
     private final CompilerConfiguration config;
+    private String sourceEncoding;
     private Boolean recompile;
     // use 1000000 as offset to avoid conflicts with names form the GroovyShell
     private static int scriptNameCounter = 1000000;
@@ -163,6 +164,17 @@ public class GroovyClassLoader extends URLClassLoader {
             for (String path : config.getClasspath()) {
                 this.addClasspath(path);
             }
+        }
+
+        initSourceEncoding(config);
+    }
+
+    private void initSourceEncoding(CompilerConfiguration config) {
+        sourceEncoding = config.getSourceEncoding();
+        if (null ==  sourceEncoding) {
+            // Keep the same default source encoding with the one used by #parseClass(InputStream, String)
+            // TODO should we use org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
+            sourceEncoding = CharsetToolkit.getDefaultSystemCharset().name();
         }
     }
 
@@ -797,12 +809,6 @@ public class GroovyClassLoader extends URLClassLoader {
         if (source != null) {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
-                String sourceEncoding = config.getSourceEncoding();
-                if (null ==  sourceEncoding) {
-                    // Keep the same default source encoding with the one used by #parseClass(InputStream, String)
-                    // TODO should we use org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
-                    sourceEncoding = CharsetToolkit.getDefaultSystemCharset().name();
-                }
                 synchronized (sourceCache) {
                     String name = source.toExternalForm();
                     sourceCache.remove(name);
