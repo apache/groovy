@@ -436,7 +436,7 @@ task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
 
         ant {
             copy(file: archivePathTmp, tofile: archivePath)
-            jar(destfile: archivePath, update:true, manifest: manifestPath) {
+            jar(destfile: archivePath, update: true, index: true, manifest: manifestPath) {
                 zipfileset(src: jar.archivePath, excludes:'META-INF')
             }
             delete(file: archivePathTmp, quiet: true, deleteonexit: true)
