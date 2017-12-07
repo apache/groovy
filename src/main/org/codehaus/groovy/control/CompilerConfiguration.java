@@ -86,6 +86,13 @@ public class CompilerConfiguration {
     // Just call getVMVersion() once.
     public static final String CURRENT_JVM_VERSION = getVMVersion();
 
+    private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
+
+    /**
+     * The default source encoding
+     */
+    public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
+
     // Static initializers are executed in text order,
     // therefore we must do this one last!
     /**
@@ -95,8 +102,6 @@ public class CompilerConfiguration {
      *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
-
-    private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
 
     /**
      * See {@link WarningMessage} for levels.
@@ -583,7 +588,7 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(String encoding) {
-        if (encoding == null) encoding = "US-ASCII";
+        if (encoding == null) encoding = DEFAULT_SOURCE_ENCODING;
         this.sourceEncoding = encoding;
     }
 
