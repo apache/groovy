@@ -73,6 +73,11 @@ public class CompilerConfiguration {
     // Just call getVMVersion() once.
     public static final String CURRENT_JVM_VERSION = getVMVersion();
 
+    /**
+     * The default source encoding
+     */
+    public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
+
     // Static initializers are executed in text order,
     // therefore we must do this one last!
     /**
@@ -82,7 +87,8 @@ public class CompilerConfiguration {
      *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
-    
+
+
     /**
      * See {@link WarningMessage} for levels.
      */
@@ -203,7 +209,7 @@ public class CompilerConfiguration {
         setDefaultScriptExtension(safeGetSystemProperty("groovy.default.scriptExtension", ".groovy"));
 
         // Source file encoding
-        String encoding = safeGetSystemProperty("file.encoding", "UTF-8");
+        String encoding = safeGetSystemProperty("file.encoding", DEFAULT_SOURCE_ENCODING);
         encoding = safeGetSystemProperty("groovy.source.encoding", encoding);
         setSourceEncoding(encoding);
 
@@ -548,7 +554,7 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(String encoding) {
-        if (encoding == null) encoding = "US-ASCII";
+        if (encoding == null) encoding = DEFAULT_SOURCE_ENCODING;
         this.sourceEncoding = encoding;
     }
 
