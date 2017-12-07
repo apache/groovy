@@ -17,6 +17,9 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
+
+import java.util.*
+
 /**
  * Tests for DGM methods
  */
@@ -277,10 +280,8 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.or(true, false))
         assertTrue(DefaultGroovyMethods.or(false, true))
         assertFalse(DefaultGroovyMethods.or(false, false))
-        assertFalse(DefaultGroovyMethods.or(null, false))
         assertFalse(DefaultGroovyMethods.or(false, null))
         assertTrue(DefaultGroovyMethods.or(true, null))
-        assertTrue(DefaultGroovyMethods.or(null, true))
     }
 
     void testBooleanAnd() {
@@ -288,10 +289,8 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.and(true, false))
         assertFalse(DefaultGroovyMethods.and(false, true))
         assertFalse(DefaultGroovyMethods.and(false, false))
-        assertFalse(DefaultGroovyMethods.and(null, false))
         assertFalse(DefaultGroovyMethods.and(false, null))
         assertFalse(DefaultGroovyMethods.and(true, null))
-        assertFalse(DefaultGroovyMethods.and(null, true))
     }
 
     void testBooleanXor() {
@@ -299,10 +298,8 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.xor(true, false))
         assertTrue(DefaultGroovyMethods.xor(false, true))
         assertFalse(DefaultGroovyMethods.xor(false, false))
-        assertFalse(DefaultGroovyMethods.xor(null, false))
         assertFalse(DefaultGroovyMethods.xor(false, null))
         assertTrue(DefaultGroovyMethods.xor(true, null))
-        assertTrue(DefaultGroovyMethods.xor(null, true))
     }
 
     void testBooleanImplication() {
@@ -310,9 +307,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.implies(true, false))
         assertTrue(DefaultGroovyMethods.implies(false, true))
         assertTrue(DefaultGroovyMethods.implies(false, false))
-        assertTrue(DefaultGroovyMethods.implies(null, false))
         assertTrue(DefaultGroovyMethods.implies(false, null))
         assertFalse(DefaultGroovyMethods.implies(true, null))
-        assertTrue(DefaultGroovyMethods.implies(null, true))
     }
 }
