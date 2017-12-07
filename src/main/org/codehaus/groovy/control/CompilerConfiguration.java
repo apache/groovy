@@ -263,10 +263,9 @@ public class CompilerConfiguration {
         try {
             String groovyAntlr4Opt = System.getProperty(GROOVY_ANTLR4_OPT);
 
-            this.parserVersion =
-                    null == groovyAntlr4Opt || Boolean.valueOf(groovyAntlr4Opt)
-                            ? ParserVersion.V_4
-                            : ParserVersion.V_2;
+            this.parserVersion = !Boolean.valueOf(groovyAntlr4Opt)
+                            ? ParserVersion.V_2
+                            : ParserVersion.V_4;
         } catch (Exception e) {
             // IGNORE
         }
