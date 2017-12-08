@@ -97,7 +97,6 @@ public class GroovyClassLoader extends URLClassLoader {
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
     protected final Map<String, Class> classCache = new HashMap<String, Class>(); // TODO should we make classCache private?
-
     private final ReentrantReadWriteLock rwlForClassCache = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLockForClassCache = rwlForClassCache.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLockForClassCache = rwlForClassCache.writeLock();
@@ -107,6 +106,10 @@ public class GroovyClassLoader extends URLClassLoader {
      * to bypass compilation.
      */
     protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
+    private final ReentrantReadWriteLock rwlForSourceCache = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLockForSourceCache = rwlForSourceCache.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLockForSourceCache = rwlForSourceCache.writeLock();
+
     private final CompilerConfiguration config;
     private String sourceEncoding;
     private Boolean recompile;
@@ -323,13 +326,30 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        synchronized (sourceCache) {
-            Class answer = sourceCache.get(codeSource.getName());
+        Class answer;
+        String codeSourceName = codeSource.getName();
+
+        readLockForSourceCache.lock();
+        try {
+            answer = sourceCache.get(codeSourceName);
             if (answer != null) return answer;
+        } finally {
+            readLockForSourceCache.unlock();
+        }
+
+        writeLockForSourceCache.lock();
+        try {
+            // try to find the cached class again
+            answer = sourceCache.get(codeSourceName);
+            if (answer != null) return answer;
+
             answer = doParseClass(codeSource);
             if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
-            return answer;
+        } finally {
+            writeLockForSourceCache.unlock();
         }
+
+        return answer;
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
@@ -826,18 +846,23 @@ public class GroovyClassLoader extends URLClassLoader {
         if (source != null) {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
-                synchronized (sourceCache) {
-                    String name = source.toExternalForm();
+                String name = source.toExternalForm();
+
+                writeLockForSourceCache.lock();
+                try {
                     sourceCache.remove(name);
-                    if (isFile(source)) {
-                        try {
-                            return parseClass(new GroovyCodeSource(new File(source.toURI()), sourceEncoding));
-                        } catch (URISyntaxException e) {
-                          // do nothing and fall back to the other version
-                        }
-                    } 
-                    return parseClass(new InputStreamReader(source.openStream(), sourceEncoding), name);
+                } finally {
+                    writeLockForSourceCache.unlock();
                 }
+
+                if (isFile(source)) {
+                    try {
+                        return parseClass(new GroovyCodeSource(new File(source.toURI()), sourceEncoding));
+                    } catch (URISyntaxException e) {
+                        // do nothing and fall back to the other version
+                    }
+                }
+                return parseClass(new InputStreamReader(source.openStream(), sourceEncoding), name);
             }
         }
         return oldClass;
@@ -1061,9 +1086,13 @@ public class GroovyClassLoader extends URLClassLoader {
             writeLockForClassCache.unlock();
         }
 
-        synchronized (sourceCache) {
+        writeLockForSourceCache.lock();
+        try {
             sourceCache.clear();
+        } finally {
+            writeLockForSourceCache.unlock();
         }
+
         for (Class c : classesToClear) {
             // Another Thread may be using an instance of this class
             // (for the first time) requiring a ClassInfo lock and
