@@ -103,35 +103,40 @@ public class LoaderConfiguration {
      */
     public void configure(InputStream is) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        int lineNumber = 0;
+        try {
 
-        while (true) {
-            String line = reader.readLine();
-            if (line == null) break;
+            int lineNumber = 0;
 
-            line = line.trim();
-            lineNumber++;
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) break;
 
-            if (line.startsWith("#") || line.length() == 0) continue;
+                line = line.trim();
+                lineNumber++;
 
-            if (line.startsWith(LOAD_PREFIX)) {
-                String loadPath = line.substring(LOAD_PREFIX.length()).trim();
-                loadPath = assignProperties(loadPath);
-                loadFilteredPath(loadPath);
-            } else if (line.startsWith(GRAB_PREFIX)) {
-                String grabParams = line.substring(GRAB_PREFIX.length()).trim();
-                grabList.add(assignProperties(grabParams));
-            } else if (line.startsWith(MAIN_PREFIX)) {
-                if (main != null)
-                    throw new IOException("duplicate definition of main in line " + lineNumber + " : " + line);
-                main = line.substring(MAIN_PREFIX.length()).trim();
-            } else if (line.startsWith(PROP_PREFIX)) {
-                String params = line.substring(PROP_PREFIX.length()).trim();
-                String key = SystemUtil.setSystemPropertyFrom(params);
-                System.setProperty(key, assignProperties(System.getProperty(key)));
-            } else {
-                throw new IOException("unexpected line in " + lineNumber + " : " + line);
+                if (line.startsWith("#") || line.length() == 0) continue;
+
+                if (line.startsWith(LOAD_PREFIX)) {
+                    String loadPath = line.substring(LOAD_PREFIX.length()).trim();
+                    loadPath = assignProperties(loadPath);
+                    loadFilteredPath(loadPath);
+                } else if (line.startsWith(GRAB_PREFIX)) {
+                    String grabParams = line.substring(GRAB_PREFIX.length()).trim();
+                    grabList.add(assignProperties(grabParams));
+                } else if (line.startsWith(MAIN_PREFIX)) {
+                    if (main != null)
+                        throw new IOException("duplicate definition of main in line " + lineNumber + " : " + line);
+                    main = line.substring(MAIN_PREFIX.length()).trim();
+                } else if (line.startsWith(PROP_PREFIX)) {
+                    String params = line.substring(PROP_PREFIX.length()).trim();
+                    String key = SystemUtil.setSystemPropertyFrom(params);
+                    System.setProperty(key, assignProperties(System.getProperty(key)));
+                } else {
+                    throw new IOException("unexpected line in " + lineNumber + " : " + line);
+                }
             }
+        } finally {
+            reader.close();
         }
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");
