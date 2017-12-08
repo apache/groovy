@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-if (!rootProject.hasProperty('useAntlr4')) return
 
 apply plugin: 'antlr'
 sourceSets {
@@ -68,10 +67,12 @@ dependencies {
 sourceSets.main.java.srcDirs += file("$srcMain/java");
 sourceSets.main.groovy.srcDirs += file("$srcMain/groovy");
 sourceSets.main.resources.srcDirs += file("$srcMain/resources");
+
+if (!rootProject.hasProperty('useAntlr4')) return
+
 sourceSets.test.java.srcDirs += file("$srcTest/java");
 sourceSets.test.groovy.srcDirs += file("$srcTest/groovy");
 sourceSets.test.resources.srcDirs += file("$srcTest/resources");
-
 
 allprojects {
     tasks.withType(GroovyCompile) {
