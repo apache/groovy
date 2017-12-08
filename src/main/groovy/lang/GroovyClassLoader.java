@@ -72,6 +72,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -89,13 +90,17 @@ import java.util.Map;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class GroovyClassLoader extends URLClassLoader {
-
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final Map<String, Class> classCache = new HashMap<String, Class>();
+    protected final Map<String, Class> classCache = new HashMap<String, Class>(); // TODO should we make classCache private?
+
+    private final ReentrantReadWriteLock rwlForClassCache = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLockForClassCache = rwlForClassCache.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLockForClassCache = rwlForClassCache.writeLock();
 
     /**
      * This cache contains mappings of file name to class. It is used
@@ -614,8 +619,12 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     protected Class getClassCacheEntry(String name) {
         if (name == null) return null;
-        synchronized (classCache) {
+
+        readLockForClassCache.lock();
+        try {
             return classCache.get(name);
+        } finally {
+            readLockForClassCache.unlock();
         }
     }
 
@@ -628,8 +637,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(Class cls) {
-        synchronized (classCache) {
-            classCache.put(cls.getName(), cls);
+        String className = cls.getName();
+
+        writeLockForClassCache.lock();
+        try {
+            classCache.put(className, cls);
+        } finally {
+            writeLockForClassCache.unlock();
         }
     }
 
@@ -642,8 +656,11 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(String name) {
-        synchronized (classCache) {
+        writeLockForClassCache.lock();
+        try {
             classCache.remove(name);
+        } finally {
+            writeLockForClassCache.unlock();
         }
     }
 
@@ -1010,10 +1027,16 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return all classes loaded by this class loader
      */
     public Class[] getLoadedClasses() {
-        synchronized (classCache) {
-            final Collection<Class> values = classCache.values();
-            return values.toArray(new Class[values.size()]);
+        final Collection<Class> values;
+
+        readLockForClassCache.lock();
+        try {
+            values = classCache.values();
+        } finally {
+            readLockForClassCache.unlock();
         }
+
+        return values.toArray(EMPTY_CLASS_ARRAY);
     }
 
     /**
@@ -1028,15 +1051,20 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Class<?>[] clearedClasses;
-        synchronized (classCache) {
-            clearedClasses = getLoadedClasses();
+        Collection<Class> classesToClear;
+
+        writeLockForClassCache.lock();
+        try {
+            classesToClear = classCache.values();
             classCache.clear();
+        } finally {
+            writeLockForClassCache.unlock();
         }
+
         synchronized (sourceCache) {
             sourceCache.clear();
         }
-        for (Class<?> c : clearedClasses) {
+        for (Class c : classesToClear) {
             // Another Thread may be using an instance of this class
             // (for the first time) requiring a ClassInfo lock and
             // classloading which would require a lock on classCache.
