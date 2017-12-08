@@ -22,6 +22,7 @@ package groovy.lang;
  * Represents a list of 2 typed Objects.
  */
 public class Tuple2<T1, T2> extends Tuple {
+    private static final long serialVersionUID = 9006144674906325597L;
     private final T1 first;
     private final T2 second;
 

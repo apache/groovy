@@ -24,6 +24,7 @@ package groovy.lang;
  * @since 2.5.0
  */
 public class Tuple1<T1> extends Tuple {
+    private static final long serialVersionUID = -4647790147461409603L;
     private final T1 first;
 
     public Tuple1(T1 first) {
