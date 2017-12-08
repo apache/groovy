@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +30,8 @@ import java.util.Objects;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class Tuple<E> extends AbstractList<E> {
+public class Tuple<E> extends AbstractList<E> implements Serializable {
+    private static final long serialVersionUID = -6707770506387821031L;
     private final E[] contents;
 
     public Tuple(E... contents) {
