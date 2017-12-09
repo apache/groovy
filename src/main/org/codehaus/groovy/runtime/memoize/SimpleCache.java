@@ -42,7 +42,7 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
     public SimpleCache() {
-        this(new HashMap<>());
+        this(new HashMap<K, V>());
     }
 
     public SimpleCache(Map<K, V> map) {
