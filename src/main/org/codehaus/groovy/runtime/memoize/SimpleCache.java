@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  *
- * Represents a simple cache, which is thread safe and backed by {@link java.util.HashMap}
+ * Represents a simple cache, which is thread safe and backed by a {@link java.util.Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
@@ -42,7 +42,7 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
     public SimpleCache() {
-        this(new HashMap<>());
+        this(new HashMap<K, V>());
     }
 
     public SimpleCache(Map<K, V> map) {
