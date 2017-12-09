@@ -25,7 +25,7 @@ import java.util.Collection;
  * @param <K> type of the keys
  * @param <V> type of the values
  */
-public interface EvictableMemoizeCache<K, V> extends MemoizeCache<K, V> {
+public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
     /**
      * Remove the cached value by the key
      * @param key
