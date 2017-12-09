@@ -25,11 +25,11 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-public class SimpleCacheTest {
+public class CommonCacheTest {
     @Test
     public void get() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -45,7 +45,7 @@ public class SimpleCacheTest {
 
     @Test
     public void put() {
-        SimpleCache<String, String> sc = new SimpleCache<>();
+        CommonCache<String, String> sc = new CommonCache<>();
 
         Assert.assertNull(sc.put("name", "Daniel"));
         Assert.assertEquals("Daniel", sc.get("name"));
@@ -56,7 +56,7 @@ public class SimpleCacheTest {
 
     @Test
     public void getAndPut() {
-        SimpleCache<String, String> sc = new SimpleCache<>();
+        CommonCache<String, String> sc = new CommonCache<>();
 
         EvictableCache.ValueProvider vp =
                 new EvictableCache.ValueProvider<String, String>() {
@@ -75,8 +75,8 @@ public class SimpleCacheTest {
 
     @Test
     public void values() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -89,8 +89,8 @@ public class SimpleCacheTest {
 
     @Test
     public void keys() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -103,8 +103,8 @@ public class SimpleCacheTest {
 
     @Test
     public void size() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -117,8 +117,8 @@ public class SimpleCacheTest {
 
     @Test
     public void remove() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new HashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -132,8 +132,8 @@ public class SimpleCacheTest {
 
     @Test
     public void clear() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -146,8 +146,8 @@ public class SimpleCacheTest {
 
     @Test
     public void cleanUpNullReferences() {
-        SimpleCache<String, String> sc =
-                new SimpleCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",

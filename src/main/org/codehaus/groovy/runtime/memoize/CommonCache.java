@@ -35,17 +35,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @since 2.5.0
  */
-public class SimpleCache<K, V> implements EvictableCache<K, V> {
+public class CommonCache<K, V> implements EvictableCache<K, V> {
     private final Map<K, V> map;
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
-    public SimpleCache() {
+    public CommonCache() {
         this(new HashMap<K, V>());
     }
 
-    public SimpleCache(Map<K, V> map) {
+    public CommonCache(Map<K, V> map) {
         this.map = map;
     }
 
