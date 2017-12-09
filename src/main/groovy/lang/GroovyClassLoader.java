@@ -43,6 +43,8 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.memoize.EvictableMemoizeCache;
+import org.codehaus.groovy.runtime.memoize.SimpleCache;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -70,9 +72,6 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -96,19 +95,13 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final Map<String, Class> classCache = new HashMap<String, Class>(); // TODO should we make classCache private?
-    private final ReentrantReadWriteLock rwlForClassCache = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLockForClassCache = rwlForClassCache.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLockForClassCache = rwlForClassCache.writeLock();
+    protected final SimpleCache<String, Class> classCache = new SimpleCache<String, Class>();
 
     /**
      * This cache contains mappings of file name to class. It is used
      * to bypass compilation.
      */
-    protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
-    private final ReentrantReadWriteLock rwlForSourceCache = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLockForSourceCache = rwlForSourceCache.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLockForSourceCache = rwlForSourceCache.writeLock();
+    protected final SimpleCache<String, Class> sourceCache = new SimpleCache<String, Class>();
 
     private final CompilerConfiguration config;
     private String sourceEncoding;
@@ -325,31 +318,17 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param shouldCacheSource if true then the generated class will be stored in the source cache
      * @return the main class defined in the given script
      */
-    public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        Class answer;
-        String codeSourceName = codeSource.getName();
-
-        readLockForSourceCache.lock();
-        try {
-            answer = sourceCache.get(codeSourceName);
-            if (answer != null) return answer;
-        } finally {
-            readLockForSourceCache.unlock();
-        }
-
-        writeLockForSourceCache.lock();
-        try {
-            // try to find the cached class again
-            answer = sourceCache.get(codeSourceName);
-            if (answer != null) return answer;
-
-            answer = doParseClass(codeSource);
-            if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
-        } finally {
-            writeLockForSourceCache.unlock();
-        }
-
-        return answer;
+    public Class parseClass(final GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
+        return sourceCache.getAndPut(
+                codeSource.getName(),
+                new EvictableMemoizeCache.ValueProvider<String, Class>() {
+                    @Override
+                    public Class provide(String key) {
+                        return doParseClass(codeSource);
+                    }
+                },
+                shouldCacheSource
+        );
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
@@ -638,14 +617,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected Class getClassCacheEntry(String name) {
-        if (name == null) return null;
-
-        readLockForClassCache.lock();
-        try {
-            return classCache.get(name);
-        } finally {
-            readLockForClassCache.unlock();
-        }
+        return classCache.get(name);
     }
 
     /**
@@ -657,14 +629,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(Class cls) {
-        String className = cls.getName();
-
-        writeLockForClassCache.lock();
-        try {
-            classCache.put(className, cls);
-        } finally {
-            writeLockForClassCache.unlock();
-        }
+        classCache.put(cls.getName(), cls);
     }
 
     /**
@@ -676,12 +641,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(String name) {
-        writeLockForClassCache.lock();
-        try {
-            classCache.remove(name);
-        } finally {
-            writeLockForClassCache.unlock();
-        }
+        classCache.remove(name);
     }
 
     /**
@@ -848,12 +808,7 @@ public class GroovyClassLoader extends URLClassLoader {
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 String name = source.toExternalForm();
 
-                writeLockForSourceCache.lock();
-                try {
-                    sourceCache.remove(name);
-                } finally {
-                    writeLockForSourceCache.unlock();
-                }
+                sourceCache.remove(name);
 
                 if (isFile(source)) {
                     try {
@@ -1052,16 +1007,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return all classes loaded by this class loader
      */
     public Class[] getLoadedClasses() {
-        final Collection<Class> values;
-
-        readLockForClassCache.lock();
-        try {
-            values = classCache.values();
-        } finally {
-            readLockForClassCache.unlock();
-        }
-
-        return values.toArray(EMPTY_CLASS_ARRAY);
+        return classCache.values().toArray(EMPTY_CLASS_ARRAY);
     }
 
     /**
@@ -1076,22 +1022,9 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Collection<Class> classesToClear;
+        Collection<Class> classesToClear = classCache.clear();
 
-        writeLockForClassCache.lock();
-        try {
-            classesToClear = classCache.values();
-            classCache.clear();
-        } finally {
-            writeLockForClassCache.unlock();
-        }
-
-        writeLockForSourceCache.lock();
-        try {
-            sourceCache.clear();
-        } finally {
-            writeLockForSourceCache.unlock();
-        }
+        sourceCache.clear();
 
         for (Class c : classesToClear) {
             // Another Thread may be using an instance of this class
