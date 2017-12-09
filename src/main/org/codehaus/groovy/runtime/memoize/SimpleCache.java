@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -35,10 +36,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @since 2.5.0
  */
 public class SimpleCache<K, V> implements EvictableCache<K, V> {
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<K, V> map;
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
+
+    public SimpleCache() {
+        this(new HashMap<>());
+    }
+
+    public SimpleCache(Map<K, V> map) {
+        this.map = map;
+    }
 
     @Override
     public V get(K key) {
@@ -108,7 +117,32 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
 
     @Override
     public Collection<V> values() {
-        return map.values();
+        readLock.lock();
+        try {
+            return map.values();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public Set<K> keys() {
+        readLock.lock();
+        try {
+            return map.keySet();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public int size() {
+        readLock.lock();
+        try {
+            return map.size();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override

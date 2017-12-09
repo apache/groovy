@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Represents an evictable memoize cache with its essential methods
@@ -54,6 +55,18 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
      * @return all cached values
      */
     Collection<V> values();
+
+    /**
+     * Get all keys associated to cached values
+     * @return all keys
+     */
+    Set<K> keys();
+
+    /**
+     * Get the size of the cache
+     * @return the size of the cache
+     */
+    int size();
 
     /**
      * Represents a provider used to create value
