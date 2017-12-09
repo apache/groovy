@@ -2040,6 +2040,7 @@ public abstract class StaticTypeCheckingSupport {
      * collect the list of extension methods (see {@link ExtensionModule} if the list of
      * extension modules has changed. It avoids recomputing the whole list each time we perform
      * a method lookup.
+     * TODO reuse {@link org.codehaus.groovy.runtime.memoize.CommonCache}
      */
     private static class ExtensionMethodCache {
 
