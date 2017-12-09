@@ -71,12 +71,18 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
     }
 
     public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
+        if (null == key) {
+            return null;
+        }
+
         V value;
 
         readLock.lock();
         try {
             value = map.get(key);
-            if (null != value) return value;
+            if (null != value) {
+                return value;
+            }
         } finally {
             readLock.unlock();
         }
@@ -85,10 +91,18 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
         try {
             // try to find the cached value again
             value = map.get(key);
-            if (null != value) return value;
+            if (null != value) {
+                return value;
+            }
+
+            if (null == valueProvider) {
+                return null;
+            }
 
             value = valueProvider.provide(key);
-            if (shouldCache) map.put(key, value);
+            if (shouldCache) {
+                map.put(key, value);
+            }
         } finally {
             writeLock.unlock();
         }
