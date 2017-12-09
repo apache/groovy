@@ -95,12 +95,8 @@ public class SimpleCache<K, V> implements EvictableCache<K, V> {
                 return value;
             }
 
-            if (null == valueProvider) {
-                return null;
-            }
-
-            value = valueProvider.provide(key);
-            if (shouldCache) {
+            value = null == valueProvider ? null : valueProvider.provide(key);
+            if (shouldCache && null != value) {
                 map.put(key, value);
             }
         } finally {
