@@ -29,9 +29,9 @@ public interface EvictableMemoizeCache<K, V> extends MemoizeCache<K, V> {
     /**
      * Remove the cached value by the key
      * @param key
-     * @return returns false if there was no matching key
+     * @return returns the removed value
      */
-    boolean remove(K key);
+    V remove(K key);
 
     /**
      * Clear the cache
