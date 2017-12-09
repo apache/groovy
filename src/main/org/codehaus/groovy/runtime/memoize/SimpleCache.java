@@ -31,6 +31,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @param <K> type of the keys
  * @param <V> type of the values
+ *
+ * @since 2.5.0
  */
 public class SimpleCache<K, V> implements EvictableCache<K, V> {
     private final Map<K, V> map = new HashMap<>();
