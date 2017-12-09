@@ -24,6 +24,8 @@ import java.util.Collection;
  * Represents an evictable memoize cache with its essential methods
  * @param <K> type of the keys
  * @param <V> type of the values
+ *
+ * @since 2.5.0
  */
 public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
     /**
