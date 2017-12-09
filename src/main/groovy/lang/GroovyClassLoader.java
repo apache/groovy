@@ -43,7 +43,7 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.memoize.EvictableMemoizeCache;
+import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.memoize.SimpleCache;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -321,7 +321,7 @@ public class GroovyClassLoader extends URLClassLoader {
     public Class parseClass(final GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
         return sourceCache.getAndPut(
                 codeSource.getName(),
-                new EvictableMemoizeCache.ValueProvider<String, Class>() {
+                new EvictableCache.ValueProvider<String, Class>() {
                     @Override
                     public Class provide(String key) {
                         return doParseClass(codeSource);

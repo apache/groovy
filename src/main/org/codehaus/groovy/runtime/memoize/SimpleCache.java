@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <K> type of the keys
  * @param <V> type of the values
  */
-public class SimpleCache<K, V> implements EvictableMemoizeCache<K, V> {
+public class SimpleCache<K, V> implements EvictableCache<K, V> {
     private final Map<K, V> map = new HashMap<>();
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
