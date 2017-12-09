@@ -94,25 +94,19 @@ public class SimpleCache<K, V> implements EvictableMemoizeCache<K, V> {
         return value;
     }
 
-
-
     @Override
     public Collection<V> values() {
         return map.values();
     }
 
     @Override
-    public boolean remove(K key) {
-        V removedValue;
-
+    public V remove(K key) {
         writeLock.lock();
         try {
-            removedValue = map.remove(key);
+            return map.remove(key);
         } finally {
             writeLock.unlock();
         }
-
-        return null != removedValue;
     }
 
     @Override
