@@ -26,6 +26,8 @@ import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
+import org.codehaus.groovy.runtime.memoize.EvictableCache;
+import org.codehaus.groovy.runtime.memoize.SimpleCache;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 
 import java.util.ArrayList;
@@ -34,48 +36,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * TODO share some code with {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ExtensionMethodCache}
- * TODO reuse {@link org.codehaus.groovy.runtime.memoize.CommonCache}
  * @author Sergei Egorov <bsideup@gmail.com>
  * @since 2.5.0
  */
 class MacroMethodsCache {
-
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
+    private static final SimpleCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new SimpleCache<>(new WeakHashMap<>());
 
-    private static volatile Map<ClassLoader, Map<String, List<MethodNode>>> CACHE = new WeakHashMap<>();
-
-    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-
-    public static Map<String, List<MethodNode>> get(ClassLoader classLoader) {
-        try {
-            lock.readLock().lock();
-            if (!CACHE.containsKey(classLoader)) {
-                lock.readLock().unlock();
-                lock.writeLock().lock();
-
-                try {
-                    if (!CACHE.containsKey(classLoader)) {
-                        WeakHashMap<ClassLoader, Map<String, List<MethodNode>>> newCache = new WeakHashMap<>(CACHE);
-
-                        Map<String, List<MethodNode>> methods = getMacroMethodsFromClassLoader(classLoader);
-                        newCache.put(classLoader, methods);
-
-                        CACHE = Collections.unmodifiableMap(newCache);
-                    }
-                } finally {
-                    lock.readLock().lock();
-                    lock.writeLock().unlock();
-                }
+    public static Map<String, List<MethodNode>> get(final ClassLoader classLoader) {
+        return CACHE.getAndPut(classLoader, new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
+            @Override
+            public Map<String, List<MethodNode>> provide(ClassLoader key) {
+                return getMacroMethodsFromClassLoader(key);
             }
-
-            return CACHE.get(classLoader);
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
     }
 
     protected static Map<String, List<MethodNode>> getMacroMethodsFromClassLoader(ClassLoader classLoader) {
