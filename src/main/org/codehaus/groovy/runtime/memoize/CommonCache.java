@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize;
 
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -177,8 +179,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
             List<K> keys = new LinkedList<>();
 
             for (Map.Entry<K, V> entry : map.entrySet()) {
-                if (null == entry.getValue()) {
-                    keys.add(entry.getKey());
+                K key = entry.getKey();
+                V value = entry.getValue();
+                if (null == value
+                        || (value instanceof SoftReference && null == ((SoftReference) value).get())
+                        || (value instanceof WeakReference && null == ((WeakReference) value).get())) {
+                    keys.add(key);
                 }
             }
 
