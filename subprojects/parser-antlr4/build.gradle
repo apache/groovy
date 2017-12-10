@@ -32,6 +32,7 @@ def srcTest = "$srcBase/test"
 
 final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
 generateGrammarSource {
+    outputs.cacheIf { true }
     arguments += ["-visitor", "-no-listener", "-package", PARSER_PACKAGE_NAME]
 
     doLast {
