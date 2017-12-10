@@ -1192,7 +1192,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @return The MetaProperty or null if it doesn't exist
      */
     public MetaProperty getMetaProperty(String name) {
-        MetaProperty mp = (MetaProperty) this.expandoProperties.get(name);
+        MetaProperty mp = this.expandoProperties.get(name);
         if (mp != null) return mp;
         return super.getMetaProperty(name);
     }
