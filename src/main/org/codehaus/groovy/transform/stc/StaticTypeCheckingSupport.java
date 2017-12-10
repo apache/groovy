@@ -46,6 +46,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
+import org.codehaus.groovy.runtime.memoize.CacheKey;
 import org.codehaus.groovy.runtime.memoize.CommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
@@ -2162,14 +2163,14 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final CommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
+        private final CommonCache<CacheKey<ClassLoader>, Map<String, List<MethodNode>>> cache = new CommonCache<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>(new WeakHashMap<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(
-                    loader,
-                    new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
+                    new CacheKey<ClassLoader>(loader),
+                    new EvictableCache.ValueProvider<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>() {
                         @Override
-                        public Map<String, List<MethodNode>> provide(final ClassLoader key) {
+                        public Map<String, List<MethodNode>> provide(final CacheKey<ClassLoader> key) {
                             final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
                             ExtensionModuleScanner scanner =
                                     new ExtensionModuleScanner(
@@ -2185,7 +2186,7 @@ public abstract class StaticTypeCheckingSupport {
                                                     if (!skip) modules.add(module);
                                                 }
                                             },
-                                            key
+                                            key.getKey()
                                     );
                             scanner.scanClasspathModules();
 
