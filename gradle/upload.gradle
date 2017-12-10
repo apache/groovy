@@ -101,9 +101,7 @@ allprojects {
         }
 
         [uploadArchives, install]*.with {
-            // dependency on jarAllAll should in theory be replaced with jar, jarWithIndy but
-            // in practice, it is faster
-            dependsOn([jarAllAll, sourceJar, javadocJar, groovydocJar])
+            dependsOn([jar, jarWithIndy, sourceJar, javadocJar, groovydocJar])
             doFirst {
                 if (rootProject.useIndy()) {
                     new GradleException('You cannot use uploadArchives or install task with the flag [indy] turned'
@@ -145,24 +143,11 @@ allprojects {
 // we don't want them in the root project so add them as artifacts with a modified name
 // we'll exclude the original artifacts during publication with an exclude pattern
 [uploadArchives, install]*.with {
-    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
+    dependsOn([sourceJar, javadocJar, groovydocJar, distBin, distDoc, dist, distBin])
     doFirst {
-        project.artifacts.add('archives', jarAll) {
-            name = 'groovy-all'
-        }
-        project.artifacts.add('archives', sourceAllJar) {
-            name = 'groovy-all'
-        }
-        project.artifacts.add('archives', javadocAllJar) {
-            name = 'groovy-all'
-        }
-        project.artifacts.add('archives', groovydocAllJar) {
-            name = 'groovy-all'
-        }
         project.artifacts.add('archives', distBin) {
             name = 'groovy-binary'
         }
-        signArchiveTask(jarAll)
         signArchiveTask(sourceAllJar)
         signArchiveTask(javadocAllJar)
         signArchiveTask(groovydocAllJar)
@@ -202,17 +187,6 @@ allprojects {
                 }
             }
         }
-
-        def indyJar = deriveFile(jarAll.archivePath, 'indy')
-        if (indyJar.exists()) {
-            project.artifacts.add('archives', indyJar)
-            signWithClassifier('indy', indyJar)
-        }
-        def grooidJar = deriveFile(jarAll.archivePath, 'grooid')
-        if (grooidJar.exists()) {
-            project.artifacts.add('archives', grooidJar)
-            signWithClassifier('grooid', grooidJar)
-        }
     }
 }
 
@@ -237,10 +211,6 @@ ext.pomAll = {
     // regular pom
     def groovypom = pom('groovy', pomConfigureClosure)
 
-    // pom for 'all'
-    def allpom = pom('all', pomConfigureClosure)
-    allpom.artifactId = 'groovy-all'
-
     // pom for binary zip
     def binarypom = pom('binary', pomConfigureClosureWithoutTweaks)
     binarypom.artifactId = 'groovy-binary'
@@ -255,20 +225,7 @@ ext.pomAll = {
         }
     }
 
-    modules().each { sp ->
-        sp.install.repositories.mavenInstaller.pom.whenConfigured { subpom ->
-            // add dependencies of other modules
-            allpom.dependencies.addAll(subpom.dependencies)
-        }
-        sp.uploadArchives.repositories.mavenDeployer.pom.whenConfigured { subpom ->
-            // add dependencies of other modules
-            allpom.dependencies.addAll(subpom.dependencies)
-        }
-    }
-
-
     groovypom.whenConfigured(removeJarjaredDependencies)
-    allpom.whenConfigured(removeJarjaredDependencies)
 
     binarypom.whenConfigured { p ->
         p.dependencies.clear()

@@ -38,7 +38,7 @@ uploadArchives.dependsOn backportJars
 backports.each { pkg, classList ->
     def backportJar = task "backport${pkg}Jar"(type:Jar) {
         group = 'Backports'
-        dependsOn jarAll
+        dependsOn jar
 
         from zipTree(jar.archivePath)
         include classList
@@ -50,14 +50,14 @@ backports.each { pkg, classList ->
     // it's stupid in our case, because we don't have such, but we have no choice
     def javadocJar = task "backport${pkg}JavadocJar"(type:Jar) {
         group = 'Backports'
-        dependsOn jarAll
+        dependsOn jar
 
         baseName = "groovy-backports-$pkg"
         classifier = 'javadoc'
     }
     def sourcesJar = task "backport${pkg}SourcesJar"(type:Jar) {
         group = 'Backports'
-        dependsOn jarAll
+        dependsOn jar
 
         baseName = "groovy-backports-$pkg"
         classifier = 'sources'
