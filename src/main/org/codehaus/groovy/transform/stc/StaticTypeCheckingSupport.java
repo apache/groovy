@@ -45,13 +45,14 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
+import org.codehaus.groovy.runtime.memoize.CommonCache;
+import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,7 +68,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
@@ -2040,46 +2041,38 @@ public abstract class StaticTypeCheckingSupport {
      * collect the list of extension methods (see {@link ExtensionModule} if the list of
      * extension modules has changed. It avoids recomputing the whole list each time we perform
      * a method lookup.
-     * TODO reuse {@link org.codehaus.groovy.runtime.memoize.CommonCache}
      */
     private static class ExtensionMethodCache {
-
-        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-        private Map<String, List<MethodNode>> cachedMethods = null;
-        private WeakReference<ClassLoader> origin = new WeakReference<ClassLoader>(null);
+        private final CommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
-            lock.readLock().lock();
-            if (loader!=origin.get()) {
-                lock.readLock().unlock();
-                lock.writeLock().lock();
-                try {
-                    final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
-                    ExtensionModuleScanner scanner = new ExtensionModuleScanner(new ExtensionModuleScanner.ExtensionModuleListener() {
-                        public void onModule(final ExtensionModule module) {
-                            boolean skip = false;
-                            for (ExtensionModule extensionModule : modules) {
-                                if (extensionModule.getName().equals(module.getName())) {
-                                    skip = true;
-                                    break;
-                                }
-                            }
-                            if (!skip) modules.add(module);
+            return cache.getAndPut(
+                    loader,
+                    new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
+                        @Override
+                        public Map<String, List<MethodNode>> provide(final ClassLoader key) {
+                            final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
+                            ExtensionModuleScanner scanner =
+                                    new ExtensionModuleScanner(
+                                            new ExtensionModuleScanner.ExtensionModuleListener() {
+                                                public void onModule(final ExtensionModule module) {
+                                                    boolean skip = false;
+                                                    for (ExtensionModule extensionModule : modules) {
+                                                        if (extensionModule.getName().equals(module.getName())) {
+                                                            skip = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (!skip) modules.add(module);
+                                                }
+                                            },
+                                            key
+                                    );
+                            scanner.scanClasspathModules();
+
+                            return getDGMMethods(modules);
                         }
-                    }, loader);
-                    scanner.scanClasspathModules();
-                    cachedMethods = getDGMMethods(modules);
-                    origin = new WeakReference<ClassLoader>(loader);
-                    lock.readLock().lock();
-                } finally {
-                    lock.writeLock().unlock();
-                }
-            }
-            try {
-                return Collections.unmodifiableMap(cachedMethods);
-            } finally {
-                lock.readLock().unlock();
-            }
+                    });
         }
 
         /**
