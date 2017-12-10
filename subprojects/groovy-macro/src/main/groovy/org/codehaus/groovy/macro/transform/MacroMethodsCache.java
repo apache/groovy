@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
  */
 class MacroMethodsCache {
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
-    private static final CommonCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<>());
+    private static final CommonCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
     public static Map<String, List<MethodNode>> get(final ClassLoader classLoader) {
         return CACHE.getAndPut(classLoader, new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
