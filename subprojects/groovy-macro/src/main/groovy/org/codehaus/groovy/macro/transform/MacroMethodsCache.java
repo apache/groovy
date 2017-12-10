@@ -26,7 +26,6 @@ import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
-import org.codehaus.groovy.runtime.memoize.CacheKey;
 import org.codehaus.groovy.runtime.memoize.CommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
@@ -45,13 +44,13 @@ import java.util.WeakHashMap;
  */
 class MacroMethodsCache {
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
-    private static final CommonCache<CacheKey<ClassLoader>, Map<String, List<MethodNode>>> CACHE = new CommonCache<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>(new WeakHashMap<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>());
+    private static final CommonCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
     public static Map<String, List<MethodNode>> get(final ClassLoader classLoader) {
-        return CACHE.getAndPut(new CacheKey<ClassLoader>(classLoader), new EvictableCache.ValueProvider<CacheKey<ClassLoader>, Map<String, List<MethodNode>>>() {
+        return CACHE.getAndPut(classLoader, new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
             @Override
-            public Map<String, List<MethodNode>> provide(CacheKey<ClassLoader> key) {
-                return getMacroMethodsFromClassLoader(key.getKey());
+            public Map<String, List<MethodNode>> provide(ClassLoader key) {
+                return getMacroMethodsFromClassLoader(key);
             }
         });
     }
