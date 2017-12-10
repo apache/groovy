@@ -74,7 +74,6 @@ apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
-indyBanner()
 
 allprojects {
     apply plugin: 'java'
@@ -421,8 +420,6 @@ task bootstrapJar(type:Jar ) {
     from compileJava.destinationDir
     from dgmConverter.outputDir
 
-    inputs.property('indy', useIndy())
-
     destinationDir = file("$buildDir/bootstrap")
     classifier = 'bootstrap'
 }
@@ -435,6 +432,15 @@ allprojects {
         options.encoding = 'UTF-8'
     }
 
+    task compileGroovyWithIndy(type:GroovyCompile) {
+        source = sourceSets.main.groovy
+        classpath = compileGroovy.classpath
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        groovyOptions.optimizationOptions['indy'] = true
+        destinationDir = file("$buildDir/classes/indy")
+    }
+
     tasks.withType(GroovyCompile) {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyOptions.encoding = 'UTF-8'
@@ -444,25 +450,6 @@ allprojects {
         )
 
         classpath = classpath + groovyClasspath
-    }
-
-    if (useIndy()) {
-        tasks.withType(GroovyCompile) {
-            logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
-            groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
-        }
-        tasks.withType(JavaCompile) {
-            // exclude projects which set their own specific source/target levels
-            if (!(project.name in ['performance', 'tests-vm8'])) {
-                sourceCompatibility = 1.7
-                targetCompatibility = 1.7
-            }
-        }
-        jar {
-            classifier = 'indy'
-        }
     }
 }
 

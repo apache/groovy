@@ -147,7 +147,7 @@ allprojects {
         }
 
         task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
-            dependsOn replaceJarWithJarJar
+            dependsOn jarjar
             baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
             to = jar.archivePath
             accessModifier = 'protected'

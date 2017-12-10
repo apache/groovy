@@ -16,9 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.apache.tools.ant.taskdefs.condition.Os
-
 allprojects {
     test {
         if (JavaVersion.current().isJava8Compatible()) {
@@ -88,11 +85,6 @@ tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String ta
 
 def buildExcludeFilter() {
     def excludes = []
-
-    // if not compiled with indy support, disable indy tests
-    if (!rootProject.useIndy()) {
-        excludes += ['indy', 'Indy']
-    }
 
     // if no network available, disable Grapes
     if (!System.properties['junit.network']) {
