@@ -36,6 +36,7 @@ import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
+import java.util.Objects;
 
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class
@@ -248,5 +249,18 @@ public class GroovyCodeSource {
         catch (MalformedURLException e) {
             throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GroovyCodeSource that = (GroovyCodeSource) o;
+        return Objects.equals(codeSource, that.codeSource);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(codeSource);
     }
 }
