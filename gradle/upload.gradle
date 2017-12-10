@@ -143,7 +143,7 @@ allprojects {
 // we don't want them in the root project so add them as artifacts with a modified name
 // we'll exclude the original artifacts during publication with an exclude pattern
 [uploadArchives, install]*.with {
-    dependsOn([sourceJar, javadocJar, groovydocJar, distBin, distDoc, dist, distBin])
+    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
     doFirst {
         project.artifacts.add('archives', distBin) {
             name = 'groovy-binary'
@@ -197,7 +197,8 @@ ext.pomAll = {
                 !(artifact.name.contains('backport'))
     }
     addFilter('all') { artifact, file ->
-        artifact.name.contains('groovy-all')
+        // add an arbitrary artifact, so that the pom file is generated
+        artifact.name.contains('groovy-binary')
     }
     addFilter('binary') { artifact, file ->
         artifact.name.contains('groovy-binary')
@@ -229,6 +230,25 @@ ext.pomAll = {
 
     binarypom.whenConfigured { p ->
         p.dependencies.clear()
+    }
+
+    // pom for "all" dependencies
+    def allpom = pom('all', pomConfigureClosureWithoutTweaks)
+    allpom.artifactId = 'groovy-all'
+    allpom.packaging = 'pom'
+    allpom.whenConfigured { p ->
+        // this is the only way to get a handle on `maven.Dependency`
+        def dependencyClass = p.dependencies[0].getClass()
+        p.dependencies.clear()
+        allprojects {
+            if (it.name.startsWith('groovy')) {
+                def dep = dependencyClass.newInstance()
+                dep.groupId = 'org.codehaus.groovy'
+                dep.artifactId = it.name
+                dep.version = version
+                p.dependencies.add(dep)
+            }
+        }
     }
 
     beforeDeployment { MavenDeployment deployment -> if (isReleaseVersion) signing.signPom(deployment) }
