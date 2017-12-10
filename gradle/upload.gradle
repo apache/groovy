@@ -94,23 +94,20 @@ allprojects {
         }
 
         artifacts {
-            archives jar
+            archives jarjar
             archives sourceJar
             archives javadocJar
             archives groovydocJar
         }
 
+        configurations.archives.with {
+            artifacts.removeAll(artifacts.find { it.name =~ 'raw' } )
+        }
+
         [uploadArchives, install]*.with {
-            dependsOn([jar, jarWithIndy, sourceJar, javadocJar, groovydocJar])
+            dependsOn([jar, jarjarWithIndy, sourceJar, javadocJar, groovydocJar])
             doFirst {
-                if (rootProject.useIndy()) {
-                    new GradleException('You cannot use uploadArchives or install task with the flag [indy] turned'
-                            + ' on because the build handles indy artifacts by itself in that case.')
-                }
-                def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
-                if (indyJar.exists()) {
-                    project.artifacts.add('archives', indyJar)
-                }
+                project.artifacts.add('archives', jarjarWithIndy)
                 def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
                 if (grooidJar.exists()) {
                     project.artifacts.add('archives', grooidJar)
