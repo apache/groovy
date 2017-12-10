@@ -42,11 +42,12 @@ buildscript {
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
+
     }
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.8'
+    id 'com.gradle.build-scan' version '1.10.2'
     id 'me.champeau.buildscan-recipes' version '0.2.0'
 }
 
@@ -75,9 +76,6 @@ File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
 indyBanner()
 
-// TODO use antlr plugin
-//apply plugin: 'antlr'
-
 allprojects {
     apply plugin: 'java'
 
@@ -88,6 +86,10 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
+        if (isBuildInChina()) {
+            // Try to use Aliyun maven repository when building in China
+            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+        }
         jcenter()
         maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
@@ -96,6 +98,10 @@ allprojects {
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
     if (JavaVersion.current().java7Compatible) {
         apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
+    }
+
+    tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=50"]
     }
 }
 
@@ -114,12 +120,12 @@ task(copyResources, type: Copy) {
         include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
     }
 }
-compileJava.dependsOn(copyResources)
+jar.dependsOn(copyResources)
 task(copyTestResources, type: Copy)
         .from('src/test')
         .into("$buildDir/classes/test")
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-compileTestJava.dependsOn(copyTestResources)
+test.dependsOn(copyTestResources)
 
 task sourceJar(type: Jar) {
     classifier = 'sources'
@@ -207,6 +213,7 @@ dependencies {
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
+
     testCompile "jmock:jmock:$jmockVersion"
     testCompile "jmock:jmock-cglib:$jmockVersion"
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
@@ -215,6 +222,9 @@ dependencies {
     testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    if (JavaVersion.current().isJava9Compatible()) {
+        testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
+    }
 
     tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
@@ -332,8 +342,8 @@ processResources.doLast {
     }
 }
 
-tasks.withType(Jar) {
-    doFirst {
+compileJava {
+    doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
         }
@@ -375,24 +385,26 @@ apply from: 'gradle/utils.gradle'
 apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
+    outputs.cacheIf { true }
+
     description = 'Generates DGM info file required for faster startup.'
-    def classesDir = sourceSets.main.output.classesDir
-    def classpath = files(classesDir, configurations.compile)
+    def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
+    ext.outputDir = file("$buildDir/dgm")
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
     doFirst {
-        file("$classesDir/META-INF").mkdirs()
+        file("$outputDir/META-INF").mkdirs()
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
         ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
-            arg(value: classesDir.absolutePath)
+            arg(value: "$outputDir.absolutePath")
         }
     }
     inputs.files fileTree('src').include('**/*GroovyMethods.java')
-    outputs.file file("${classesDir}/META-INF/dgminfo")
+    outputs.dir outputDir
 }
 
 compileJava {
@@ -403,26 +415,16 @@ compileJava {
     // Gradle classloading magic with Groovy will only work if it finds a *jar*
     // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-task bootstrapJar {
+task bootstrapJar(type:Jar ) {
     dependsOn compileJava, dgmConverter
 
-    def destinationDir = file("$buildDir/bootstrap")
-    def archiveName = "groovy-${version}-bootstrap.jar"
-    ext.archivePath = file("$destinationDir/$archiveName")
+    from compileJava.destinationDir
+    from dgmConverter.outputDir
 
-    doLast {
-        // we use ant.jar because Gradle is a bit "too smart" with JavaExec
-        // as it will invalidate the task if classpath changes, which will
-        // happen once Groovy files are compiled
-        destinationDir.mkdirs()
-        ant.jar(
-                destfile: archivePath,
-                basedir: file(sourceSets.main.output.classesDir)
-        )
-    }
     inputs.property('indy', useIndy())
-    inputs.files sourceSets.main.allJava
-    outputs.file archivePath
+
+    destinationDir = file("$buildDir/bootstrap")
+    classifier = 'bootstrap'
 }
 
 compileGroovy.dependsOn bootstrapJar
