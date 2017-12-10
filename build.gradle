@@ -79,7 +79,6 @@ apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
-indyBanner()
 
 allprojects {
     apply plugin: 'java'
@@ -424,8 +423,6 @@ task bootstrapJar(type:Jar ) {
     from compileJava.destinationDir
     from dgmConverter.outputDir
 
-    inputs.property('indy', useIndy())
-
     destinationDir = file("$buildDir/bootstrap")
     classifier = 'bootstrap'
 }
@@ -438,6 +435,15 @@ allprojects {
         options.encoding = 'UTF-8'
     }
 
+    task compileGroovyWithIndy(type:GroovyCompile) {
+        source = sourceSets.main.groovy
+        classpath = compileGroovy.classpath
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        groovyOptions.optimizationOptions['indy'] = true
+        destinationDir = file("$buildDir/classes/indy")
+    }
+
     tasks.withType(GroovyCompile) {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyOptions.encoding = 'UTF-8'
@@ -448,27 +454,6 @@ allprojects {
 
         // TODO: this null check was required after adding JMH plugin to performance project
         classpath = (classpath != null) ? classpath + groovyClasspath : groovyClasspath
-    }
-
-    if (useIndy()) {
-        tasks.withType(GroovyCompile) {
-            logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
-            groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
-        }
-        tasks.withType(JavaCompile) {
-            if (project.name=='performance') {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
-            } else {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
-            }
-        }
-        jar {
-            classifier = 'indy'
-        }
     }
 }
 

@@ -40,7 +40,6 @@ jmh {
         include = ['.*' + project.benchInclude + '.*']
     }
     includeTests = true
-    resultsFile = project.file("target/results${useIndy() ? '_indy' : ''}.txt")
 }
 jmhClasses.dependsOn clean
 
