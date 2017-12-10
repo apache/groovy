@@ -134,6 +134,7 @@ ext.subprojectOsgiManifest = {
 
 jar {
     dependsOn('dgmConverter')
+    from files(dgmConverter.outputDir)
     metaInf {
         from("$projectDir/licenses/LICENSE-JARJAR")
         from("$projectDir/licenses") {
@@ -209,6 +210,8 @@ allprojects {
                 symbolicName = gradleProject.name
                 instruction 'Import-Package', '*;resolution:=optional'
                 classesDir = targetTmp
+                def moduleName = "org.codehaus.${it.name.replace('-', '.')}"
+                attributes('Automatic-Module-Name': moduleName)
             }
             manifest(manifestSpec)
 
@@ -289,67 +292,6 @@ subprojects { sp ->
     }
 }
 
-def moduleJars() {
-    modules()*.jar.archivePath
-}
-
-def mergeModuleDescriptors() {
-    new File("$buildDir/tmp/").mkdirs()
-
-    def extensionClasses = []
-    def staticExtensionClasses = []
-
-    modules().collect {
-        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
-    }.findAll { it.exists() }.each {
-        def props = new Properties()
-        props.load(it.newInputStream())
-        extensionClasses += props.get('extensionClasses').split(',').findAll { it }
-        staticExtensionClasses += props.get('staticExtensionClasses').split(',').findAll { it }
-    }
-
-    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.runtime.ExtensionModule")
-    descriptor.withWriter('UTF-8') {
-        it << '# This is a generated file, do not edit\n'
-        it << 'moduleName=groovy-all\n'
-        it << "moduleVersion=${project.version}\n"
-        it << "extensionClasses=${extensionClasses.join(',')}\n"
-        it << "staticExtensionClasses=${staticExtensionClasses.join(',')}\n"
-    }
-
-    descriptor
-}
-
-def mergeGlobalTransforms() {
-    new File("$buildDir/tmp/").mkdirs()
-
-    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.transform.ASTTransformation")
-    descriptor.withWriter('UTF-8') {
-        it << '# This is a generated file, do not edit\n'
-    }
-
-    def files = []
-    files << new File("${rootProject.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
-    modules().collect {
-        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
-    }.findAll { it.exists() }.each {
-        files << it
-    }
-    files.each {
-        def skipping = true
-        it.readLines().each { line ->
-            if (skipping) {
-                skipping = line.startsWith('#')
-            }
-            if (!skipping) {
-                descriptor << line + '\n'
-            }
-        }
-    }
-
-    descriptor
-}
-
 task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     description = "Overwrites normal JAR files with their JARJAR version"
     doLast {
@@ -370,80 +312,6 @@ allprojects {
     rootProject.replaceJarWithJarJar.mustRunAfter(test)
 }
 
-task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
-
-    inputs.files(allprojects.jar.archivePath)
-
-    ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
-    baseName = 'groovy-all'
-    includeEmptyDirs = false
-    if (rootProject.useIndy()) {
-        classifier = 'indy'
-    }
-    doLast {
-        def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
-        manifest.writeTo(manifestPath)
-        copy {
-            from "$projectDir/notices/NOTICE-ALLJARJAR"
-            into owner.ext.metaInfDir
-            rename('NOTICE-ALLJARJAR', 'NOTICE')
-        }
-        copy {
-            from "$projectDir/licenses"
-            into "$owner.ext.metaInfDir/licenses"
-            include 'normalize-stylesheet-license.txt'
-            include 'jsr223-license.txt'
-            include 'jline2-license.txt'
-        }
-        copy {
-            from "$projectDir/licenses/LICENSE-ALLJARJAR"
-            into owner.ext.metaInfDir
-            rename('LICENSE-ALLJARJAR', 'LICENSE')
-        }
-        copy {
-            from(mergeModuleDescriptors())
-            into "$owner.ext.metaInfDir/services"
-        }
-        copy {
-            from(mergeGlobalTransforms())
-            into "$owner.ext.metaInfDir/services"
-        }
-        copy {
-            into "$owner.ext.metaInfDir"
-        }
-        logger.info 'Packaging with jarjar'
-
-        def archivePathTmp = new File("${archivePath}.1.tmp")
-        ant {
-            taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: configurations.tools.asPath
-            jarjar(jarfile: archivePathTmp, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF')
-                zipfileset(src: jar.archivePath, excludes:'META-INF/NOTICE,META-INF/LICENSE')
-                moduleJars().each {
-                    zipfileset(src: it, excludes:'META-INF/NOTICE,META-INF/LICENSE')
-                }
-            }
-        }
-
-        manifest = osgiManifest {
-            symbolicName = 'groovy-all'
-            instruction 'Import-Package', '*;resolution:=optional'
-            classesDir = archivePathTmp
-        }
-        manifest groovyOsgiManifest
-        manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
-        manifest.writeTo(manifestPath)
-
-        ant {
-            copy(file: archivePathTmp, tofile: archivePath)
-            jar(destfile: archivePath, update: true, index: true, manifest: manifestPath) {
-                zipfileset(src: jar.archivePath, excludes:'META-INF')
-            }
-            delete(file: archivePathTmp, quiet: true, deleteonexit: true)
-        }
-    }
-}
-
 allprojects {
     task jarWithIndy(type: GradleBuild) {
         onlyIf rootProject.indyCapable
@@ -452,32 +320,6 @@ allprojects {
         startParameter.projectProperties['indy'] = true
         startParameter.projectCacheDir = file("$buildDir/indyCacheDir")
         tasks = ['jar']
-    }
-}
-
-task jarAllWithIndy(type: GradleBuild) {
-    onlyIf rootProject.indyCapable
-    description = 'Triggers an external build generating the indy jarAll'
-    buildFile = 'build.gradle'
-    startParameter.projectProperties['indy'] = true
-    startParameter.projectCacheDir = file("$buildDir/indyAllCacheDir")
-    tasks = ['jarAll']
-}
-
-task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
-    description = 'Generates groovy-all and groovy-all-indy jars'
-    doFirst {
-        if (useIndy()) {
-            logger.lifecycle('InvokeDynamic support was activated but needs to be off for this pass. Disabling.')
-            ext.useIndy = false
-        }
-    }
-}
-
-allprojects {
-    tasks.withType(Test) { task ->
-        jarAll.mustRunAfter(task)
-        jarAllWithIndy.mustRunAfter(task)
     }
 }
 
@@ -570,12 +412,14 @@ ext.distSpec = copySpec {
         include 'xstream-license.txt'
     }
     into('embeddable') {
-        from jarAll.archivePath
-        from { new File(jarAll.destinationDir, "${jarAll.baseName}-${jarAll.version}-indy.jar") }
+        subprojects.each {
+            from jar.archivePath
+            from { new File(jar.destinationDir, "${jar.baseName}-${jar.version}-indy.jar") }
+        }
     }
 }
 
-task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
+task distBin(type: Zip, dependsOn: [jar, replaceJarWithJarJar]) {
     baseName = 'apache-groovy'
     appendix = 'binary'
     into("groovy-$version") {
@@ -676,23 +520,18 @@ task updateLicenses {
     ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
     ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
     ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
-    ext.licenseAllJarJarFile = "${licensesDir}/LICENSE-ALLJARJAR"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
-    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
+    outputs.files(licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
             licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
         def docFiles = fileTree(licensesDir).include('*-DOC*.txt').sort { it.name }
         def jarjarFiles = fileTree(licensesDir).include('*-JARJAR*.txt').sort { it.name }
-        def allJarjarFiles = fileTree(licensesDir) {
-            include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
-        }.sort { it.name }
         def binzipFiles = fileTree(licensesDir) {
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
@@ -703,7 +542,6 @@ task updateLicenses {
         def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
-                (licenseAllJarJarFile)  : allJarjarFiles,
                 (licenseBinZipFile)     : binzipFiles,
                 (licenseDocFile)        : docFiles,
                 (licenseJarJarFile)     : jarjarFiles,
@@ -751,19 +589,14 @@ task updateNotices {
             include '*-JARJAR*.txt'
             include '*-GROOID*.txt'
         }.sort { it.name }
-        def allJarjarFiles = fileTree(noticesDir) {
-            include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
-        }.sort { it.name }
         def binzipFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
+        def groovyconsoleFiles = fileTree(noticesDir)
         [
-                (noticeAllJarJarFile): allJarjarFiles,
                 (noticeBinZipFile): binzipFiles,
                 (noticeGrooidFile): grooidFiles,
                 (noticeGrooidJarJarFile): grooidJarjarFiles,

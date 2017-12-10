@@ -125,12 +125,12 @@ task(copyResources, type: Copy) {
         include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
     }
 }
-compileJava.dependsOn(copyResources)
+jar.dependsOn(copyResources)
 task(copyTestResources, type: Copy)
         .from('src/test')
         .into("$buildDir/classes/test")
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-compileTestJava.dependsOn(copyTestResources)
+test.dependsOn(copyTestResources)
 
 task sourceJar(type: Jar) {
     classifier = 'sources'
@@ -345,8 +345,8 @@ processResources.doLast {
     }
 }
 
-tasks.withType(Jar) {
-    doFirst {
+compileJava {
+    doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
         }
@@ -388,24 +388,26 @@ apply from: 'gradle/utils.gradle'
 apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
+    outputs.cacheIf { true }
+
     description = 'Generates DGM info file required for faster startup.'
-    def classesDir = sourceSets.main.java.outputDir
     def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
+    ext.outputDir = file("$buildDir/dgm")
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
     doFirst {
-        file("$classesDir/META-INF").mkdirs()
+        file("$outputDir/META-INF").mkdirs()
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
         ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
-            arg(value: classesDir.absolutePath)
+            arg(value: "$outputDir.absolutePath")
         }
     }
     inputs.files fileTree('src').include('**/*GroovyMethods.java')
-    outputs.file file("${classesDir}/META-INF/dgminfo")
+    outputs.dir outputDir
 }
 
 compileJava {
@@ -416,26 +418,16 @@ compileJava {
     // Gradle classloading magic with Groovy will only work if it finds a *jar*
     // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-task bootstrapJar {
+task bootstrapJar(type:Jar ) {
     dependsOn compileJava, dgmConverter
 
-    def destinationDir = file("$buildDir/bootstrap")
-    def archiveName = "groovy-${version}-bootstrap.jar"
-    ext.archivePath = file("$destinationDir/$archiveName")
+    from compileJava.destinationDir
+    from dgmConverter.outputDir
 
-    doLast {
-        // we use ant.jar because Gradle is a bit "too smart" with JavaExec
-        // as it will invalidate the task if classpath changes, which will
-        // happen once Groovy files are compiled
-        destinationDir.mkdirs()
-        ant.jar(
-                destfile: archivePath,
-                basedir: file(sourceSets.main.java.outputDir)
-        )
-    }
     inputs.property('indy', useIndy())
-    inputs.files sourceSets.main.allJava
-    outputs.file archivePath
+
+    destinationDir = file("$buildDir/bootstrap")
+    classifier = 'bootstrap'
 }
 
 compileGroovy.dependsOn bootstrapJar

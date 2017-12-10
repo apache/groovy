@@ -51,7 +51,7 @@ task performanceTests {
     ext.outputDir = file("$buildDir/compilation")
     ext.dataFile = file("$buildDir/compilation-stats.csv")
 
-    dependsOn rootProject.jarAll
+    dependsOn rootProject.jar
     doLast {
         ext.outputDir.deleteDir()
         def versions = []
@@ -80,7 +80,7 @@ task performanceTests {
         dependsOn compileTestJava
         def groovyConf = configurations.detachedConfiguration(
                 dependencies.create(
-                        'current' == version ? files(rootProject.jarAll.archivePath) : "org.codehaus.groovy:groovy-all:$version")
+                        'current' == version ? files(rootProject.jar.archivePath) : "org.codehaus.groovy:groovy:$version")
         )
         groovyConf.transitive = false
         main = 'org.apache.groovy.perf.CompilerPerformanceTest'

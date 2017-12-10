@@ -29,6 +29,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -92,7 +93,9 @@ public class DgmConverter implements Opcodes {
             cw.visitEnd();
 
             final byte[] bytes = cw.toByteArray();
-            final FileOutputStream fileOutputStream = new FileOutputStream(targetDirectory + className + ".class");
+            File targetFile = new File(targetDirectory + className + ".class").getCanonicalFile();
+            targetFile.getParentFile().mkdirs();
+            final FileOutputStream fileOutputStream = new FileOutputStream(targetFile);
             fileOutputStream.write(bytes);
             fileOutputStream.flush();
             fileOutputStream.close();

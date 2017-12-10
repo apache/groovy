@@ -140,37 +140,6 @@ templateConfiguration.with {
 }
 def engine = new MarkupTemplateEngine(this.class.classLoader, configDir, templateConfiguration)
 
-task japicmpAll(type: me.champeau.gradle.ArtifactJapicmpTask) {
-    dependsOn jarAll
-    baseline = "org.codehaus.groovy:groovy-all:${referenceMinorVersion}@jar"
-    to = jarAll.archivePath
-    accessModifier = 'protected'
-    onlyModified = true
-    failOnModification = false
-    txtOutputFile = file("$buildDir/reports/japi.txt")
-
-    doFirst {
-        classpath = allprojects.configurations.japicmp.files.flatten()
-    }
-
-    def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
-    inputs.file file("$configDir/$templateFile")
-    inputs.file templateFile
-    outputs.file htmlReportFile
-
-    def model = [title   : "Binary compatibility report for ${project.name}",
-                 project : project,
-                 baseline: baseline,
-                 archive : to.name]
-    outputProcessor(reportGenerator.curry(model))
-
-    doLast {
-        htmlReportFile.withWriter('utf-8') { wrt ->
-            engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-        }
-    }
-}
-
 allprojects {
     if (!(project.name in excludeModules)) {
         dependencies {
