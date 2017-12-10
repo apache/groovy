@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import java.lang.ref.SoftReference;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,11 +44,11 @@ public final class UnlimitedConcurrentCache implements MemoizeCache<Object, Obje
      * SoftReferences to gc-evicted objects.
      */
     public void cleanUpNullReferences() {
-        final Iterator<Map.Entry<Object, Object>> iterator = cache.entrySet().iterator();
-        while (iterator.hasNext()) {
-            final Map.Entry<Object, Object> entry = iterator.next();
+        for (Map.Entry<Object, Object> entry : cache.entrySet()) {
             Object entryVal = entry.getValue();
-            if (entryVal != null && ((SoftReference) entryVal).get() == null) cache.remove(entry.getKey(), entryVal);
+            if (entryVal instanceof SoftReference && ((SoftReference) entryVal).get() == null) {
+                cache.remove(entry.getKey(), entryVal);
+            }
         }
     }
 }
