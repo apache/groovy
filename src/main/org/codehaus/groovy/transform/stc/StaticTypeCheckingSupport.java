@@ -2162,7 +2162,7 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final CommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<>());
+        private final CommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(
