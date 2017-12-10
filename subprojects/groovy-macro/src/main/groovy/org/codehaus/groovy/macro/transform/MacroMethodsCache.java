@@ -26,8 +26,8 @@ import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
+import org.codehaus.groovy.runtime.memoize.CommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.SimpleCache;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
  */
 class MacroMethodsCache {
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
-    private static final SimpleCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new SimpleCache<>(new WeakHashMap<>());
+    private static final CommonCache<ClassLoader, Map<String, List<MethodNode>>> CACHE = new CommonCache<>(new WeakHashMap<>());
 
     public static Map<String, List<MethodNode>> get(final ClassLoader classLoader) {
         return CACHE.getAndPut(classLoader, new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
