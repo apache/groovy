@@ -2443,19 +2443,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def greaterThanTwo = list.every { it > 2 }
      * </pre>
      *
-     * @param self    the object over which we iterate
-     * @param closure the closure predicate used for matching
+     * @param self      the object over which we iterate
+     * @param predicate the closure predicate used for matching
      * @return true if every iteration of the object matches the closure predicate
      * @since 1.0
      */
-    public static boolean every(Object self, Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (!bcw.call(iter.next())) {
-                return false;
-            }
-        }
-        return true;
+    public static boolean every(Object self, Closure predicate) {
+        return every(InvokerHelper.asIterator(self), predicate);
     }
 
     /**
@@ -2466,13 +2460,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def greaterThanTwo = list.iterator().every { it > 2 }
      * </pre>
      *
-     * @param self    the iterator over which we iterate
-     * @param closure the closure predicate used for matching
+     * @param self      the iterator over which we iterate
+     * @param predicate the closure predicate used for matching
      * @return true if every iteration of the object matches the closure predicate
      * @since 2.3.0
      */
-    public static <T> boolean every(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+    public static <T> boolean every(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         while (self.hasNext()) {
             if (!bcw.call(self.next())) {
                 return false;
@@ -2483,19 +2477,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Used to determine if the given predicate closure is valid (i.e. returns
+     * <code>true</code> for all items in this Array).
+     *
+     * @param self      an Array
+     * @param predicate the closure predicate used for matching
+     * @return true if every element of the Array matches the closure predicate
+     * @since 2.5.0
+     */
+    public static <T> boolean every(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        return every(new ArrayIterator<T>(self), predicate);
+    }
+
+    /**
+     * Used to determine if the given predicate closure is valid (i.e. returns
      * <code>true</code> for all items in this iterable).
      * A simple example for a list:
      * <pre>def list = [3,4,5]
      * def greaterThanTwo = list.every { it > 2 }
      * </pre>
      *
-     * @param self    the iterable over which we iterate
-     * @param closure the closure predicate used for matching
+     * @param self      the iterable over which we iterate
+     * @param predicate the closure predicate used for matching
      * @return true if every iteration of the object matches the closure predicate
      * @since 2.3.0
      */
-    public static <T> boolean every(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        return every(self.iterator(), closure);
+    public static <T> boolean every(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        return every(self.iterator(), predicate);
     }
 
     /**
@@ -2508,13 +2515,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert !map.every { key, value -> value instanceof Integer }
      * assert map.every { entry -> entry.value instanceof Number }</pre>
      *
-     * @param self    the map over which we iterate
-     * @param closure the 1 or 2 arg Closure predicate used for matching
+     * @param self      the map over which we iterate
+     * @param predicate the 1 or 2 arg Closure predicate used for matching
      * @return true if every entry of the map matches the closure predicate
      * @since 1.5.0
      */
-    public static <K, V> boolean every(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class) Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+    public static <K, V> boolean every(Map<K, V> self, @ClosureParams(value = MapEntryOrKeyValue.class) Closure predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (!bcw.callForMap(entry)) {
                 return false;
@@ -2534,13 +2541,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self the object over which we iterate
-     * @return true if every item in the collection matches the closure
-     *         predicate
+     * @return true if every item in the collection matches satisfies Groovy truth
      * @since 1.5.0
      */
     public static boolean every(Object self) {
         BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
             if (!bmi.convertToBoolean(iter.next())) {
                 return false;
             }
@@ -2556,17 +2562,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ![1, 2, 3].any { it > 3 }
      * </pre>
      *
-     * @param self    the object over which we iterate
-     * @param closure the closure predicate used for matching
-     * @return true   if any iteration for the object matches the closure predicate
+     * @param self      the object over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
      * @since 1.0
      */
-    public static boolean any(Object self, Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (bcw.call(iter.next())) return true;
-        }
-        return false;
+    public static boolean any(Object self, Closure predicate) {
+        return any(InvokerHelper.asIterator(self), predicate);
     }
 
     /**
@@ -2577,15 +2579,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ![1, 2, 3].iterator().any { it > 3 }
      * </pre>
      *
-     * @param self    the iterator over which we iterate
-     * @param closure the closure predicate used for matching
-     * @return true   if any iteration for the object matches the closure predicate
+     * @param self      the iterator over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
      * @since 1.0
      */
-    public static <T> boolean any(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = self; iter.hasNext();) {
-            if (bcw.call(iter.next())) return true;
+    public static <T> boolean any(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        while (self.hasNext()) {
+            if (bcw.call(self.next())) return true;
         }
         return false;
     }
@@ -2598,17 +2600,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ![1, 2, 3].any { it > 3 }
      * </pre>
      *
-     * @param self    the iterable over which we iterate
-     * @param closure the closure predicate used for matching
-     * @return true   if any iteration for the object matches the closure predicate
+     * @param self      the iterable over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
      * @since 1.0
      */
-    public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
-            if (bcw.call(iter.next())) return true;
-        }
-        return false;
+    public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        return any(self.iterator(), predicate);
+    }
+
+    /**
+     * Iterates over the contents of an Array, and checks whether a
+     * predicate is valid for at least one element.
+     *
+     * @param self      the array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
+     * @since 2.5.0
+     */
+    public static <T> boolean any(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        return any(new ArrayIterator<T>(self), predicate);
     }
 
     /**
@@ -2622,13 +2633,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ![2:3, 4:5, 5:10].any { entry -> entry.key == entry.value * 2 }
      * </pre>
      *
-     * @param self    the map over which we iterate
-     * @param closure the 1 or 2 arg closure predicate used for matching
+     * @param self      the map over which we iterate
+     * @param predicate the 1 or 2 arg closure predicate used for matching
      * @return true if any entry in the map matches the closure predicate
      * @since 1.5.0
      */
-    public static <K, V> boolean any(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+    public static <K, V> boolean any(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (bcw.callForMap(entry)) {
                 return true;
@@ -3352,6 +3363,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this aggregate Object transforming each item into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original object.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].iterator().collect()</pre>
+     *
+     * @param self an aggregate Object with an Iterator returning its items
+     * @return a Collection of the transformed values
+     * @see Closure#IDENTITY
+     * @since 1.8.5
+     */
+    public static Collection collect(Object self) {
+        return collect(self, Closure.IDENTITY);
+    }
+
+    /**
      * Iterates through this aggregate Object transforming each item into a new value using the
      * <code>transform</code> closure, returning a list of transformed values.
      * Example:
@@ -3369,20 +3394,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this aggregate Object transforming each item into a new value using Closure.IDENTITY
-     * as a transformer, basically returning a list of items copied from the original object.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].iterator().collect()</pre>
-     *
-     * @param self an aggregate Object with an Iterator returning its items
-     * @return a List of the transformed values
-     * @see Closure#IDENTITY
-     * @since 1.8.5
-     */
-    public static Collection collect(Object self) {
-        return collect(self, Closure.IDENTITY);
-    }
-
-    /**
      * Iterates through this aggregate Object transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
@@ -3393,24 +3404,70 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> Collection<T> collect(Object self, Collection<T> collector, Closure<? extends T> transform) {
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            collector.add(transform.call(iter.next()));
-        }
-        return collector;
+        return collect(InvokerHelper.asIterator(self), collector, transform);
     }
 
     /**
-     * Iterates through this collection transforming each entry into a new value using the <code>transform</code> closure
-     * returning a list of transformed values.
-     * <pre class="groovyTestCase">assert [2,4,6] == [1,2,3].collect { it * 2 }</pre>
+     * Iterates through this Array transforming each item into a new value using the
+     * <code>transform</code> closure, returning a list of transformed values.
      *
-     * @param self      a collection
-     * @param transform the closure used to transform each item of the collection
+     * @param self      an Array
+     * @param transform the closure used to transform each item of the Array
      * @return a List of the transformed values
-     * @since 1.0
+     * @since 2.5.0
      */
-    public static <S,T> List<T> collect(Collection<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
-        return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
+    public static <S,T> List<T> collect(S[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
+        return collect(new ArrayIterator<S>(self), transform);
+    }
+
+    /**
+     * Iterates through this Array transforming each item into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">
+     * Integer[] nums = [1,2,3]
+     * List<Integer> answer = []
+     * nums.collect(answer) { it * 2 }
+     * assert [2,4,6] == answer
+     * </pre>
+     *
+     * @param self      an Array
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item
+     * @return the collector with all transformed values added to it
+     * @since 2.5.0
+     */
+    public static <S,T> Collection<T> collect(S[] self, Collection<T> collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
+        return collect(new ArrayIterator<S>(self), collector, transform);
+    }
+
+    /**
+     * Iterates through this Iterator transforming each item into a new value using the
+     * <code>transform</code> closure, returning a list of transformed values.
+     *
+     * @param self      an Iterator
+     * @param transform the closure used to transform each item
+     * @return a List of the transformed values
+     * @since 2.5.0
+     */
+    public static <S,T> List<T> collect(Iterator<S> self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(), transform);
+    }
+
+    /**
+     * Iterates through this Iterator transforming each item into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     *
+     * @param self      an Iterator
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item
+     * @return the collector with all transformed values added to it
+     * @since 2.5.0
+     */
+    public static <S,T> Collection<T> collect(Iterator<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        while (self.hasNext()) {
+            collector.add(transform.call(self.next()));
+        }
+        return collector;
     }
 
     /**
@@ -3418,13 +3475,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * as a transformer, basically returning a list of items copied from the original collection.
      * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].collect()</pre>
      *
-     * @param self    a collection
+     * @param self a collection
      * @return a List of the transformed values
-     * @since 1.8.5
      * @see Closure#IDENTITY
+     * @since 1.8.5
+     * @deprecated use the Iterable version instead
      */
+    @Deprecated
     public static <T> List<T> collect(Collection<T> self) {
-        return (List<T>) collect(self, Closure.IDENTITY);
+        return collect((Iterable<T>) self);
+    }
+
+    /**
+     * Iterates through this collection transforming each entry into a new value using the <code>transform</code> closure
+     * returning a list of transformed values.
+     *
+     * @param self      a collection
+     * @param transform the closure used to transform each item of the collection
+     * @return a List of the transformed values
+     * @deprecated use the Iterable version instead
+     * @since 1.0
+     */
+    @Deprecated
+    public static <S,T> List<T> collect(Collection<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
     /**
@@ -3436,10 +3510,62 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Collection to which the transformed values are added
      * @param transform the closure used to transform each item of the collection
      * @return the collector with all transformed values added to it
+     * @deprecated use the Iterable version instead
      * @since 1.0
      */
-    public static <T,E> Collection<T> collect(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
-        for (E item : self) {
+    @Deprecated
+    public static <S,T> Collection<T> collect(Collection<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        for (S item : self) {
+            collector.add(transform.call(item));
+            if (transform.getDirective() == Closure.DONE) {
+                break;
+            }
+        }
+        return collector;
+    }
+
+    /**
+     * Iterates through this collection transforming each entry into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original collection.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].collect()</pre>
+     *
+     * @param self an Iterable
+     * @return a List of the transformed values
+     * @see Closure#IDENTITY
+     * @since 2.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> collect(Iterable<T> self) {
+        return collect(self, (Closure<T>) Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through this Iterable transforming each entry into a new value using the <code>transform</code> closure
+     * returning a list of transformed values.
+     * <pre class="groovyTestCase">assert [2,4,6] == [1,2,3].collect { it * 2 }</pre>
+     *
+     * @param self      an Iterable
+     * @param transform the closure used to transform each item of the collection
+     * @return a List of the transformed values
+     * @since 2.5.0
+     */
+    public static <S,T> List<T> collect(Iterable<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        return (List<T>) collect(self.iterator(), transform);
+    }
+
+    /**
+     * Iterates through this collection transforming each value into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">assert [1,2,3] as HashSet == [2,4,5,6].collect(new HashSet()) { (int)(it / 2) }</pre>
+     *
+     * @param self      an Iterable
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item
+     * @return the collector with all transformed values added to it
+     * @since 2.5.0
+     */
+    public static <S,T> Collection<T> collect(Iterable<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        for (S item : self) {
             collector.add(transform.call(item));
             if (transform.getDirective() == Closure.DONE) {
                 break;
@@ -4119,52 +4245,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
-     *
-     * <pre class="groovyTestCase">
-     * int[] numbers = [1, 2, 3]
-     * assert numbers.findResult(5) { if(it > 1) return it } == 2
-     * assert numbers.findResult(5) { if(it > 4) return it } == 5
-     * </pre>
-     *
-     * @param self    an Object with an iterator returning its values
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param closure a closure that returns a non-null value when processing should stop
-     * @return the first non-null result of the closure, otherwise the default value
-     * @since 1.7.5
-     */
-    public static Object findResult(Object self, Object defaultResult, Closure closure) {
-        Object result = findResult(self, closure);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
-     *
-     * <pre class="groovyTestCase">
-     * int[] numbers = [1, 2, 3]
-     * assert numbers.findResult { if(it > 1) return it } == 2
-     * assert numbers.findResult { if(it > 4) return it } == null
-     * </pre>
-     *
-     * @param self    an Object with an iterator returning its values
-     * @param closure a closure that returns a non-null value when processing should stop
-     * @return the first non-null result of the closure
-     * @since 1.7.5
-     */
-    public static Object findResult(Object self, Closure closure) {
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            Object value = iter.next();
-            Object result = closure.call(value);
-            if (result != null) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Finds the first value matching the closure condition.  Example:
      * <pre class="groovyTestCase">def list = [1,2,3]
      * assert 2 == list.find { it > 1 }
@@ -4228,7 +4308,127 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult { if(it > 1) return it } == 2
+     * assert numbers.findResult { if(it > 4) return it } == null
+     * </pre>
+     *
+     * @param self      an Object with an iterator returning its values
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result of the closure
+     * @since 1.7.5
+     */
+    public static Object findResult(Object self, Closure condition) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
+            Object value = iter.next();
+            Object result = condition.call(value);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult(5) { if(it > 1) return it } == 2
+     * assert numbers.findResult(5) { if(it > 4) return it } == 5
+     * </pre>
+     *
+     * @param self          an Object with an iterator returning its values
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result of the closure, otherwise the default value
+     * @since 1.7.5
+     */
+    public static Object findResult(Object self, Object defaultResult, Closure condition) {
+        Object result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
      * Iterates through the collection calling the given closure for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     *
+     * @param self          a Collection
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 1.7.5
+     * @deprecated use the Iterable version instead
+     */
+    @Deprecated
+    public static <S, T, U extends T, V extends T> T findResult(Collection<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
+        return findResult((Iterable<S>) self, defaultResult, condition);
+    }
+
+    /**
+     * Iterates through the collection calling the given closure for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      a Collection
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 1.7.5
+     * @deprecated use the Iterable version instead
+     */
+    @Deprecated
+    public static <S,T> T findResult(Collection<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+        return findResult((Iterable<S>) self, condition);
+    }
+
+    /**
+     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     * <p>
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def iter = [1,2,3].iterator()
+     * assert "Found 2" == iter.findResult("default") { it > 1 ? "Found $it" : null }
+     * assert "default" == iter.findResult("default") { it > 3 ? "Found $it" : null }
+     * </pre>
+     *
+     * @param self          an Iterator
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 2.5.0
+     */
+    public static <S, T, U extends T, V extends T> T findResult(Iterator<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
+        T result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Iterator
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 2.5.0
+     */
+    public static <T, U> T findResult(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+        while (self.hasNext()) {
+            U next = self.next();
+            T result = condition.call(next);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
      * result is found and returning that result. If all are null, the defaultResult is returned.
      * <p>
      * Examples:
@@ -4238,36 +4438,76 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert "default" == list.findResult("default") { it > 3 ? "Found $it" : null }
      * </pre>
      *
-     * @param self          a Collection
+     * @param self          an Iterable
      * @param defaultResult an Object that should be returned if all closure results are null
-     * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
      * @return the first non-null result from calling the closure, or the defaultValue
-     * @since 1.7.5
+     * @since 2.5.0
      */
-    public static <T, U extends T, V extends T,E> T findResult(Collection<E> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> closure) {
-        T result = findResult(self, closure);
+    public static <S, T, U extends T, V extends T> T findResult(Iterable<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
+        T result = findResult(self, condition);
         if (result == null) return defaultResult;
         return result;
     }
 
     /**
-     * Iterates through the collection calling the given closure for each item but stopping once the first non-null
+     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
      * result is found and returning that result. If all results are null, null is returned.
-     * <p>
-     * Example:
+     *
+     * @param self      an Iterable
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 2.5.0
+     */
+    public static <T, U> T findResult(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+        return findResult(self.iterator(), condition);
+    }
+
+    /**
+     * Iterates through the Array calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     *
+     * @param self          an Array
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 2.5.0
+     */
+    public static <S, T, U extends T, V extends T> T findResult(S[] self, U defaultResult, @ClosureParams(FirstParam.Component.class) Closure<V> condition) {
+        return findResult(new ArrayIterator<S>(self), defaultResult, condition);
+    }
+
+    /**
+     * Iterates through the Array calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Array
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 2.5.0
+     */
+    public static <S, T> T findResult(S[] self, @ClosureParams(FirstParam.Component.class) Closure<T> condition) {
+        return findResult(new ArrayIterator<S>(self), condition);
+    }
+
+    /**
+     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise null is returned.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
      * <pre class="groovyTestCase">
-     * def list = [1,2,3]
-     * assert "Found 2" == list.findResult { it > 1 ? "Found $it" : null }
+     * assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     * assert null == [a:1, b:3].findResult { if (it.value == 9) return "Found ${it.key}:${it.value}" }
+     * assert "Found a:1" == [a:1, b:3].findResult { k, v -> if (k.size() + v == 2) return "Found $k:$v" }
      * </pre>
      *
-     * @param self    a Collection
-     * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
-     * @return the first non-null result from calling the closure, or null
+     * @param self      a Map
+     * @param condition a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result collected by calling the closure, or null if no such result was found
      * @since 1.7.5
      */
-    public static <T,U> T findResult(Collection<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
-        for (Object value : self) {
-            T result = closure.call(value);
+    public static <T, K, V> T findResult(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> condition) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            T result = callClosureForMapEntry(condition, entry);
             if (result != null) {
                 return result;
             }
@@ -4276,13 +4516,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the Iterable version of findResults instead
+     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise the defaultResult is returned.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">
+     * assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     * assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
+     * assert "Found a:1" == [a:1, b:3].findResult("default") { k, v -> if (k.size() + v == 2) return "Found $k:$v" }
+     * </pre>
+     *
+     * @param self          a Map
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result collected by calling the closure, or the defaultResult if no such result was found
+     * @since 1.7.5
+     */
+    public static <T, U extends T, V extends T, A, B> T findResult(Map<A, B> self, U defaultResult, @ClosureParams(MapEntryOrKeyValue.class) Closure<V> condition) {
+        T result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
      * @see #findResults(Iterable, Closure)
      * @since 1.8.1
+     * @deprecated Use the Iterable version of findResults instead
      */
     @Deprecated
-    public static <T,U> Collection<T> findResults(Collection<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
-        return findResults((Iterable<?>)self, filteringTransform);
+    public static <T, U> Collection<T> findResults(Collection<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
+        return findResults((Iterable<?>) self, filteringTransform);
     }
 
     /**
@@ -4301,15 +4563,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the list of non-null transformed values
      * @since 2.2.0
      */
-    public static <T,U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
+    public static <T, U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
+        return findResults(self.iterator(), filteringTransform);
+    }
+
+    /**
+     * Iterates through the Iterator transforming items using the supplied closure
+     * and collecting any non-null results.
+     *
+     * @param self               an Iterator
+     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the list of non-null transformed values
+     * @since 2.5.0
+     */
+    public static <T, U> Collection<T> findResults(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
-        for (Object value : self) {
+        while (self.hasNext()) {
+            U value = self.next();
             T transformed = filteringTransform.call(value);
             if (transformed != null) {
                 result.add(transformed);
             }
         }
         return result;
+    }
+
+    /**
+     * Iterates through the Array transforming items using the supplied closure
+     * and collecting any non-null results.
+     *
+     * @param self               an Array
+     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the list of non-null transformed values
+     * @since 2.5.0
+     */
+    public static <T, U> Collection<T> findResults(U[] self, @ClosureParams(FirstParam.Component.class) Closure<T> filteringTransform) {
+        return findResults(new ArrayIterator<U>(self), filteringTransform);
     }
 
     /**
@@ -4330,7 +4619,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the list of non-null transformed values
      * @since 1.8.1
      */
-    public static <T,K,V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
+    public static <T, K, V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
         for (Map.Entry<K, V> entry : self.entrySet()) {
             T transformed = callClosureForMapEntry(filteringTransform, entry);
@@ -4357,53 +4646,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (bcw.callForMap(entry)) {
                 return entry;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise the defaultResult is returned.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
-     * assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
-     * assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
-     * assert "Found a:1" == [a:1, b:3].findResult("default") { k, v -> if (k.size() + v == 2) return "Found $k:$v" }
-     * </pre>
-     *
-     * @param self    a Map
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
-     * @return the first non-null result collected by calling the closure, or the defaultResult if no such result was found
-     * @since 1.7.5
-     */
-    public static <T, U extends T, V extends T,A,B> T findResult(Map<A, B> self, U defaultResult, @ClosureParams(MapEntryOrKeyValue.class) Closure<V> closure) {
-        T result = findResult(self, closure);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise null is returned.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
-     * assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
-     * assert null == [a:1, b:3].findResult { if (it.value == 9) return "Found ${it.key}:${it.value}" }
-     * assert "Found a:1" == [a:1, b:3].findResult { k, v -> if (k.size() + v == 2) return "Found $k:$v" }
-     * </pre>
-     *
-     * @param self    a Map
-     * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
-     * @return the first non-null result collected by calling the closure, or null if no such result was found
-     * @since 1.7.5
-     */
-    public static <T,K,V> T findResult(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> closure) {
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            T result = callClosureForMapEntry(closure, entry);
-            if (result != null) {
-                return result;
             }
         }
         return null;
@@ -4867,6 +5109,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Collection<T> accept = createSimilarCollection(self);
         Collection<T> reject = createSimilarCollection(self);
         Iterator<T> iter = self.iterator();
+        return split(closure, accept, reject, iter);
+    }
+
+    /**
+     * Splits all items into two collections based on the closure condition.
+     * The first list contains all items which match the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    an Array
+     * @param closure a closure condition
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 2.5.0
+     */
+    public static <T> Collection<Collection<T>> split(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        List<T> accept = new ArrayList<T>();
+        List<T> reject = new ArrayList<T>();
+        Iterator<T> iter = new ArrayIterator<T>(self);
         return split(closure, accept, reject, iter);
     }
 
@@ -6179,8 +6438,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item of the Iterable.
      * @since 2.2.0
      */
-    public static Object sum(Iterable self, Closure closure) {
-        return sum(self, null, closure, true);
+    public static <T> Object sum(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return sum(self.iterator(), null, closure, true);
     }
 
     /**
@@ -6194,8 +6453,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item of the array.
      * @since 1.7.1
      */
-    public static Object sum(Object[] self, Closure closure) {
-        return sum(toList(self), null, closure, true);
+    public static <T> Object sum(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return sum(new ArrayIterator<T>(self), null, closure, true);
     }
 
     /**
@@ -6210,8 +6469,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item from the Iterator.
      * @since 1.7.1
      */
-    public static Object sum(Iterator<Object> self, Closure closure) {
-        return sum(toList(self), null, closure, true);
+    public static <T> Object sum(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return sum(self, null, closure, true);
     }
 
     /**
@@ -6237,8 +6496,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item of the collection.
      * @since 1.5.0
      */
-    public static Object sum(Iterable self, Object initialValue, Closure closure) {
-        return sum(self, initialValue, closure, false);
+    public static <T> Object sum(Iterable<T> self, Object initialValue, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return sum(self.iterator(), initialValue, closure, false);
     }
 
     /**
@@ -6253,8 +6512,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item of the array.
      * @since 1.7.1
      */
-    public static Object sum(Object[] self, Object initialValue, Closure closure) {
-        return sum(toList(self), initialValue, closure, false);
+    public static <T> Object sum(T[] self, Object initialValue, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return sum(new ArrayIterator<T>(self), initialValue, closure, false);
     }
 
     /**
@@ -6270,16 +6529,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         item from the Iterator.
      * @since 1.7.1
      */
-    public static Object sum(Iterator<Object> self, Object initialValue, Closure closure) {
-        return sum(toList(self), initialValue, closure, false);
+    public static <T> Object sum(Iterator<T> self, Object initialValue, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return sum(self, initialValue, closure, false);
     }
 
-    private static Object sum(Iterable self, Object initialValue, Closure closure, boolean first) {
+    private static <T> Object sum(Iterator<T> self, Object initialValue, Closure closure, boolean first) {
         Object result = initialValue;
         Object[] closureParam = new Object[1];
         Object[] plusParam = new Object[1];
-        for (Object next : self) {
-            closureParam[0] = next;
+        while (self.hasNext()) {
+            closureParam[0] = self.next();
             plusParam[0] = closure.call(closureParam);
             if (first) {
                 result = plusParam[0];
@@ -16022,40 +16281,68 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items and returns
+     * Iterates over the elements of an aggregate of items and returns
      * the index of the first item that matches the condition specified in the closure.
      *
-     * @param self    the iteration object over which to iterate
-     * @param closure the filter to perform a match on the collection
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
      * @return an integer that is the index of the first matched object or -1 if no match was found
      * @since 1.0
      */
-    public static int findIndexOf(Object self, Closure closure) {
-        return findIndexOf(self, 0, closure);
+    public static int findIndexOf(Object self, Closure condition) {
+        return findIndexOf(self, 0, condition);
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items, starting from a
+     * Iterates over the elements of an aggregate of items, starting from a
      * specified startIndex, and returns the index of the first item that matches the
      * condition specified in the closure.
      *
      * @param self       the iteration object over which to iterate
      * @param startIndex start matching from this index
-     * @param closure    the filter to perform a match on the collection
+     * @param condition  the matching condition
      * @return an integer that is the index of the first matched object or -1 if no match was found
      * @since 1.5.0
      */
-    public static int findIndexOf(Object self, int startIndex, Closure closure) {
+    public static int findIndexOf(Object self, int startIndex, Closure condition) {
+        return findIndexOf(InvokerHelper.asIterator(self), condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting from a
+     * specified startIndex, and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         int result = -1;
         int i = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
-            Object value = iter.next();
-            if (i < startIndex) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (i++ < startIndex) {
                 continue;
             }
             if (bcw.call(value)) {
-                result = i;
+                result = i - 1;
                 break;
             }
         }
@@ -16063,84 +16350,309 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items and returns
-     * the index of the last item that matches the condition specified in the closure.
+     * Iterates over the elements of an Iterable and returns the index of the first item that satisfies the
+     * condition specified by the closure.
      *
-     * @param self    the iteration object over which to iterate
-     * @param closure the filter to perform a match on the collection
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 1.5.2
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
      */
-    public static int findLastIndexOf(Object self, Closure closure) {
-        return findLastIndexOf(self, 0, closure);
+    public static <T> int findIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items, starting
+     * Iterates over the elements of an Iterable, starting from a
+     * specified startIndex, and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self.iterator(), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self      an Array
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array, starting from a
+     * specified startIndex, and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self       an Array
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexOf(new ArrayIterator<T>(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 1.5.2
+     */
+    public static int findLastIndexOf(Object self, Closure condition) {
+        return findLastIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items, starting
      * from a specified startIndex, and returns the index of the last item that
      * matches the condition specified in the closure.
      *
      * @param self       the iteration object over which to iterate
      * @param startIndex start matching from this index
-     * @param closure    the filter to perform a match on the collection
+     * @param condition  the matching condition
      * @return an integer that is the index of the last matched object or -1 if no match was found
      * @since 1.5.2
      */
-    public static int findLastIndexOf(Object self, int startIndex, Closure closure) {
+    public static int findLastIndexOf(Object self, int startIndex, Closure condition) {
+        return findLastIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         int result = -1;
         int i = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
-            Object value = iter.next();
-            if (i < startIndex) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (i++ < startIndex) {
                 continue;
             }
             if (bcw.call(value)) {
-                result = i;
+                result = i - 1;
             }
         }
         return result;
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items and returns
-     * the index values of the items that match the condition specified in the closure.
+     * Iterates over the elements of an Iterable and returns
+     * the index of the last item that matches the condition specified in the closure.
      *
-     * @param self    the iteration object over which to iterate
-     * @param closure the filter to perform a match on the collection
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 1.5.2
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
      */
-    public static List<Number> findIndexValues(Object self, Closure closure) {
-        return findIndexValues(self, 0, closure);
+    public static <T> int findLastIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self.iterator(), 0, condition);
     }
 
     /**
-     * Iterates over the elements of an iterable collection of items, starting from
+     * Iterates over the elements of an Iterable, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self.iterator(), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self      an Array
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findLastIndexOf(new ArrayIterator<T>(self), 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       an Array
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        // TODO could be made more efficient by using a reverse index
+        return findLastIndexOf(new ArrayIterator<T>(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 1.5.2
+     */
+    public static List<Number> findIndexValues(Object self, Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items, starting from
      * a specified startIndex, and returns the index values of the items that match
      * the condition specified in the closure.
      *
      * @param self       the iteration object over which to iterate
      * @param startIndex start matching from this index
-     * @param closure    the filter to perform a match on the collection
+     * @param condition  the matching condition
      * @return a list of numbers corresponding to the index values of all matched objects
      * @since 1.5.2
      */
-    public static List<Number> findIndexValues(Object self, Number startIndex, Closure closure) {
+    public static List<Number> findIndexValues(Object self, Number startIndex, Closure condition) {
+        return findIndexValues(InvokerHelper.asIterator(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterator<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         List<Number> result = new ArrayList<Number>();
         long count = 0;
         long startCount = startIndex.longValue();
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); count++) {
-            Object value = iter.next();
-            if (count < startCount) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (count++ < startCount) {
                 continue;
             }
             if (bcw.call(value)) {
-                result.add(count);
+                result.add(count - 1);
             }
         }
         return result;
+    }
+
+    /**
+     * Iterates over the elements of an Iterable and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterable, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterable<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self.iterator(), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      an Array
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Array, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       an Array
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexValues(new ArrayIterator<T>(self), startIndex, condition);
     }
 
     /**
