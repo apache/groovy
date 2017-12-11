@@ -2189,7 +2189,7 @@ public abstract class StaticTypeCheckingSupport {
                                     );
                             scanner.scanClasspathModules();
 
-                            return getDGMMethods(modules);
+                            return Collections.unmodifiableMap(getDGMMethods(modules));
                         }
                     });
         }
