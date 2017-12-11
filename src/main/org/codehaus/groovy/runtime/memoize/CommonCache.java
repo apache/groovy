@@ -22,6 +22,7 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,25 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
+    /**
+     * A cache with unlimited size
+     */
     public CommonCache() {
         this(new HashMap<K, V>());
+    }
+
+    /**
+     * Another LRU cache, which is slower than {@link LRUCache} but will not put same value multi-times concurrently
+     * @param initialCapacity
+     * @param maxSize
+     */
+    public CommonCache(final int initialCapacity, final int maxSize) {
+        this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+                return size() > maxSize;
+            }
+        });
     }
 
     public CommonCache(Map<K, V> map) {
