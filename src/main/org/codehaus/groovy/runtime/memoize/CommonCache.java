@@ -200,4 +200,8 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    @Override
+    public String toString() {
+        return map.toString();
+    }
 }

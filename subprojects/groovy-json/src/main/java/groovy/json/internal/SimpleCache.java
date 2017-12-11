@@ -18,69 +18,54 @@
  */
 package groovy.json.internal;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import org.codehaus.groovy.runtime.memoize.CommonCache;
 
 /**
  * @author Richard Hightower
  */
 public class SimpleCache<K, V> implements Cache<K, V> {
-
-    Map<K, V> map = new LinkedHashMap();
-
-    private static class InternalCacheLinkedList<K, V> extends LinkedHashMap<K, V> {
-        final int limit;
-
-        InternalCacheLinkedList(final int limit, final boolean lru) {
-            super(16, 0.75f, lru);
-            this.limit = limit;
-        }
-
-        protected final boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-            return super.size() > limit;
-        }
-    }
+    private CommonCache<K, V> cache;
 
     public SimpleCache(final int limit, CacheType type) {
         if (type.equals(CacheType.LRU)) {
-            map = new InternalCacheLinkedList<K, V>(limit, true);
+            cache = new CommonCache<K, V>(limit);
         } else {
-            map = new InternalCacheLinkedList<K, V>(limit, false);
+            cache = new CommonCache<K, V>(16, limit, false);
         }
     }
 
     public SimpleCache(final int limit) {
-        map = new InternalCacheLinkedList<K, V>(limit, true);
+        this(limit, CacheType.LRU);
     }
 
     public void put(K key, V value) {
-        map.put(key, value);
+        cache.put(key, value);
     }
 
     public V get(K key) {
-        return map.get(key);
+        return cache.get(key);
     }
 
     //For testing only
 
     public V getSilent(K key) {
-        V value = map.get(key);
+        V value = cache.get(key);
         if (value != null) {
-            map.remove(key);
-            map.put(key, value);
+            cache.remove(key);
+            cache.put(key, value);
         }
         return value;
     }
 
     public void remove(K key) {
-        map.remove(key);
+        cache.remove(key);
     }
 
     public int size() {
-        return map.size();
+        return cache.size();
     }
 
     public String toString() {
-        return map.toString();
+        return cache.toString();
     }
 }
