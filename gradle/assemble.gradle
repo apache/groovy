@@ -165,7 +165,7 @@ allprojects {
         }
         arch.exclude '**/package-info.class'
 
-        task "jar${arch.name}"(type:Jar, dependsOn: arch) {
+        task "jar${arch.name}"(type: Jar, dependsOn: arch) {
             outputs.cacheIf {
                 // caching JarJar because it's quite expensive to create
                 true
@@ -258,7 +258,7 @@ allprojects {
             classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
             includeEmptyDirs = false
             def target = new File("${archivePath}.tmp")
-            boolean isRootProject = project==rootProject
+            boolean isRootProject = project == rootProject
 
             doFirst {
                 from zipTree(target)
@@ -268,7 +268,9 @@ allprojects {
                         zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
                         zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
                         if (isRootProject) {
-                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
+                            zipfileset(src: rootProject.configurations.runtime.files.find {
+                                it.name.startsWith('openbeans')
+                            }, excludes: 'META-INF/*')
                         }
                         rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
                         rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
@@ -349,6 +351,7 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
 }
 
 ext.distSpec = copySpec {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir/notices/NOTICE-BINZIP")
     rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename == 'NOTICE-BINZIP' ? 'NOTICE' : filename }
@@ -356,16 +359,27 @@ ext.distSpec = copySpec {
     into('lib') {
         from jarjar
         from modules()*.jarjar
-        from {
-            configurations.runtime.findAll {
-                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') } +
-                    modules()*.jar.archivePath +
-                    modules().configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) &&
-                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('openbeans-')
-                    }.flatten() as Set
+        from(configurations.runtime) {
+            exclude {   it.file.name.startsWith('openbeans-') ||
+                        it.file.name.startsWith('asm-') ||
+                        it.file.name.startsWith('antlr-')
+            }
         }
         from('src/bin/groovy.icns')
+    }
+    modules().configurations.runtime.each { conf ->
+        into('lib') {
+            from(conf) {
+                exclude {
+                    it.file.name.contains('livetribe-jsr223') ||
+                            it.file.name.matches(/groovy-\d.*/) ||
+                            it.file.name.startsWith('asm-') ||
+                            it.file.name.startsWith('antlr-') ||
+                            it.file.name.startsWith('antlr4-') ||
+                            it.file.name.startsWith('openbeans-')
+                }
+            }
+        }
     }
     into('indy') {
         from jarjarWithIndy
@@ -384,7 +398,7 @@ ext.distSpec = copySpec {
     }
     into('bin') {
         from('src/bin') {
-            filter(ReplaceTokens, tokens: [GROOVYJAR:jarjar.archiveName])
+            filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
             fileMode = 0755
             exclude 'groovy.icns'
         }
@@ -441,8 +455,8 @@ task distSrc(type: Zip) {
 }
 
 def installDir = {
-    project.hasProperty('groovy_installPath')?project.groovy_installPath:
-        System.properties.installDirectory ?: "$buildDir/install"
+    project.hasProperty('groovy_installPath') ? project.groovy_installPath :
+            System.properties.installDirectory ?: "$buildDir/install"
 }
 
 task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
@@ -490,7 +504,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
     }
 
     if ((version.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
-        || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
+            || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
         throw new GradleException("Incoherent versions. Found groovyVersion=$version and groovyBundleVersion=$groovyBundleVersion")
     }
 }
@@ -526,16 +540,18 @@ task updateLicenses {
         def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
-                (licenseBinZipFile)     : binzipFiles,
-                (licenseDocFile)        : docFiles,
-                (licenseJarJarFile)     : jarjarFiles,
-                (licenseSrcFile)        : srcFiles,
+                (licenseBinZipFile)      : binzipFiles,
+                (licenseDocFile)         : docFiles,
+                (licenseJarJarFile)      : jarjarFiles,
+                (licenseSrcFile)         : srcFiles,
                 (licenseDocGeneratorFile): docgeneratorFiles,
                 (licenseGroovyDocFile)   : groovydocFiles,
                 (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
-                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr) + '\n'
+                writer << ([file(licenseBaseFile)] + inFiles).collect {
+                    it.text.replaceAll(/[\n\r]*$/, '')
+                }.join(licenseHdr) + '\n'
             }
         }
         file(licenseSdkFile).withWriter { writer ->
@@ -581,11 +597,11 @@ task updateNotices {
         }.sort { it.name }
         def groovyconsoleFiles = fileTree(noticesDir)
         [
-                (noticeBinZipFile): binzipFiles,
-                (noticeGrooidFile): grooidFiles,
-                (noticeGrooidJarJarFile): grooidJarjarFiles,
-                (noticeJarJarFile): jarjarFiles,
-                (noticeSrcFile): srcFiles,
+                (noticeBinZipFile)       : binzipFiles,
+                (noticeGrooidFile)       : grooidFiles,
+                (noticeGrooidJarJarFile) : grooidJarjarFiles,
+                (noticeJarJarFile)       : jarjarFiles,
+                (noticeSrcFile)          : srcFiles,
                 (noticeGroovyConsoleFile): groovyconsoleFiles,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
