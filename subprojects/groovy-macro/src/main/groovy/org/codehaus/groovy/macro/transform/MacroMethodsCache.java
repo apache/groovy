@@ -50,7 +50,7 @@ class MacroMethodsCache {
         return CACHE.getAndPut(classLoader, new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
             @Override
             public Map<String, List<MethodNode>> provide(ClassLoader key) {
-                return getMacroMethodsFromClassLoader(key);
+                return Collections.unmodifiableMap(getMacroMethodsFromClassLoader(key));
             }
         });
     }
