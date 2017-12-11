@@ -17,7 +17,7 @@
  *  under the License.
  */
 allprojects {
-    test {
+    tasks.withType(Test) {
         if (JavaVersion.current().isJava8Compatible()) {
             jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"
         } else {
@@ -39,6 +39,27 @@ allprojects {
         }
     }
 
+    // create an Indy test suite
+    if (rootProject.indyCapable()) {
+        def dependencies = configurations.testRuntime.incoming.dependencies.findAll {
+            it.name.startsWith('groovy')
+        }.collect {
+            it.name
+        }
+        task testWithIndy(type: Test) {
+            systemProperties 'groovy.target.indy': true
+            dependsOn 'jarWithIndy'
+            dependencies.each { dependsOn "${it}:jarWithIndy" }
+            classpath = classpath - files(jar.archivePath, *dependencies.collect { project(it).jar }) +
+                    files({ [jarWithIndy.archivePath, *dependencies.collect { project(it).jarWithIndy }] })
+        }
+        task testAll {
+            description = "Runs both the normal and indy test suites"
+            dependsOn test, testWithIndy
+        }
+        check.dependsOn testWithIndy
+    }
+
     sourceSets {
         test {
             groovy {
@@ -51,7 +72,7 @@ allprojects {
     }
 }
 
-test {
+tasks.withType(Test) {
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperties 'groovy.testdb.props': testdb
@@ -60,7 +81,7 @@ test {
     systemProperties 'gradle.home': gradle.gradleHomeDir // this is needed by the security.policy
 
     classpath = files('src/test') + classpath
-    exclude buildExcludeFilter()
+    exclude buildExcludeFilter(it.name == 'test')
     ext.resultText = ''
     doLast {
         ant.delete {
@@ -83,12 +104,17 @@ tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String ta
     }
 }
 
-def buildExcludeFilter() {
+def buildExcludeFilter(boolean legacyTestSuite) {
     def excludes = []
 
     // if no network available, disable Grapes
     if (!System.properties['junit.network']) {
-        excludes  << 'groovy/grape/'
+        excludes << 'groovy/grape/'
+    }
+
+    if (legacyTestSuite) {
+        // indy tests will only be executed in indy test suite
+        excludes += ['indy', 'Indy']
     }
 
     return { f ->
@@ -104,7 +130,7 @@ ext.extModuleFixtureDir = file("$projectDir/src/test-fixtures/extmodule")
 ext.extModuleOutputDir = file("$buildDir/testFixtures/extmodule")
 ext.extModuleRepoDir = file("$extModuleOutputDir/repo")
 
-task compileTestExtensionModule(type:JavaCompile) {
+task compileTestExtensionModule(type: JavaCompile) {
     classpath = files(jar.archivePath)
     source fileTree("$extModuleFixtureDir/src/main/java")
     destinationDir = file("$extModuleOutputDir/classes")
@@ -112,7 +138,7 @@ task compileTestExtensionModule(type:JavaCompile) {
     targetCompatibility = 1.6
 }
 
-task testExtensionModuleJar(type:Jar) {
+task testExtensionModuleJar(type: Jar) {
     description = 'Builds a sample extension module used in tests'
     dependsOn compileTestExtensionModule
     baseName = 'module-test'
@@ -123,5 +149,7 @@ task testExtensionModuleJar(type:Jar) {
     destinationDir = file("$extModuleRepoDir/jars/module-test/module-test/${version}")
 }
 
-test.dependsOn(testExtensionModuleJar)
-test.classpath += files(extModuleRepoDir)
+tasks.withType(Test) {
+    dependsOn(testExtensionModuleJar)
+    classpath += files(extModuleRepoDir)
+}
