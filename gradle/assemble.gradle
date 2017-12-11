@@ -352,8 +352,10 @@ ext.distSpec = copySpec {
     from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir/notices/NOTICE-BINZIP")
     rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename == 'NOTICE-BINZIP' ? 'NOTICE' : filename }
+    exclude { it.file.name =~ /-raw/ }
     into('lib') {
-        from jar.archivePath
+        from jarjar
+        from modules()*.jarjar
         from {
             configurations.runtime.findAll {
                 it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('antlr4-') } +
@@ -366,12 +368,8 @@ ext.distSpec = copySpec {
         from('src/bin/groovy.icns')
     }
     into('indy') {
-        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
-        from {
-            modules()*.jar.collect { j ->
-                new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
-            }
-        }
+        from jarjarWithIndy
+        from modules()*.jarjarWithIndy
     }
     into('grooid') {
         from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
@@ -386,7 +384,7 @@ ext.distSpec = copySpec {
     }
     into('bin') {
         from('src/bin') {
-            filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
+            filter(ReplaceTokens, tokens: [GROOVYJAR:jarjar.archiveName])
             fileMode = 0755
             exclude 'groovy.icns'
         }
@@ -404,15 +402,9 @@ ext.distSpec = copySpec {
         include 'junit-license.txt'
         include 'xstream-license.txt'
     }
-    into('embeddable') {
-        subprojects.each {
-            from jar.archivePath
-            from { new File(jar.destinationDir, "${jar.baseName}-${jar.version}-indy.jar") }
-        }
-    }
 }
 
-task distBin(type: Zip, dependsOn: [jarjar]) {
+task distBin(type: Zip) {
     baseName = 'apache-groovy'
     appendix = 'binary'
     into("groovy-$version") {
