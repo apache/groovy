@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime.memoize;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,7 +47,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * A cache with unlimited size
      */
     public CommonCache() {
-        this(new HashMap<K, V>());
+        this(new LinkedHashMap<K, V>());
     }
 
     /**
