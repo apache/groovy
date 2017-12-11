@@ -104,6 +104,10 @@ allprojects {
         apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
     }
 
+    tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
+        outputs.cacheIf { true }
+    }
+
     tasks.withType(GroovyCompile) {
         groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
     }
