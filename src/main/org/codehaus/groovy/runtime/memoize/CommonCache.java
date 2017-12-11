@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  *
- * Represents a simple cache, which is thread safe and backed by a {@link java.util.Map} instance
+ * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
@@ -53,8 +53,8 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Another LRU cache, which is slower than {@link LRUCache} but will not put same value multi-times concurrently
-     * @param initialCapacity
-     * @param maxSize
+     * @param initialCapacity initial capacity of the LRU cache
+     * @param maxSize max size of the LRU cache
      */
     public CommonCache(final int initialCapacity, final int maxSize) {
         this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, true) {
@@ -65,14 +65,26 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         });
     }
 
+    /**
+     * Another LRU cache with the default initial capacity(16)
+     * @param maxSize max size of the LRU cache
+     * @see #CommonCache(int, int)
+     */
     public CommonCache(final int maxSize) {
         this(16, maxSize);
     }
 
+    /**
+     * Constructs a cache backed by the specified {@link java.util.Map} instance
+     * @param map the {@link java.util.Map} instance
+     */
     public CommonCache(Map<K, V> map) {
         this.map = map;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V get(K key) {
         if (null == key) {
@@ -87,6 +99,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V put(K key, V value) {
         writeLock.lock();
@@ -98,6 +113,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V getAndPut(K key, ValueProvider<K, V> valueProvider) {
         return getAndPut(key, valueProvider, true);
@@ -139,6 +157,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         return value;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<V> values() {
         readLock.lock();
@@ -149,6 +170,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<K> keys() {
         readLock.lock();
@@ -159,6 +183,22 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean containsKey(K key) {
+        readLock.lock();
+        try {
+            return map.containsKey(key);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         readLock.lock();
@@ -169,6 +209,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V remove(K key) {
         writeLock.lock();
@@ -179,6 +222,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<V> clear() {
         Collection<V> values;
@@ -194,6 +240,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         return values;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void cleanUpNullReferences() {
         writeLock.lock();
