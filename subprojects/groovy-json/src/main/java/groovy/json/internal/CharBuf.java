@@ -138,7 +138,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf addInt(Integer key) {
         if (icache == null) {
-            icache = new SimpleCache<Integer, char[]>(20, CacheType.LRU);
+            icache = new SimpleCache<Integer, char[]>(20);
         }
         char[] chars = icache.get(key);
 
@@ -204,7 +204,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf addDouble(Double key) {
         if (dcache == null) {
-            dcache = new SimpleCache<Double, char[]>(20, CacheType.LRU);
+            dcache = new SimpleCache<Double, char[]>(20);
         }
         char[] chars = dcache.get(key);
 
@@ -232,7 +232,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf addFloat(Float key) {
         if (fcache == null) {
-            fcache = new SimpleCache<Float, char[]>(20, CacheType.LRU);
+            fcache = new SimpleCache<Float, char[]>(20);
         }
         char[] chars = fcache.get(key);
 
@@ -701,7 +701,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public CharBuf addBigDecimal(BigDecimal key) {
         if (bigDCache == null) {
-            bigDCache = new SimpleCache<BigDecimal, char[]>(20, CacheType.LRU);
+            bigDCache = new SimpleCache<BigDecimal, char[]>(20);
         }
         char[] chars = bigDCache.get(key);
 
@@ -720,7 +720,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public CharBuf addBigInteger(BigInteger key) {
         if (bigICache == null) {
-            bigICache = new SimpleCache<BigInteger, char[]>(20, CacheType.LRU);
+            bigICache = new SimpleCache<BigInteger, char[]>(20);
         }
         char[] chars = bigICache.get(key);
 
@@ -744,7 +744,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf addLong(Long key) {
         if (lcache == null) {
-            lcache = new SimpleCache<Long, char[]>(20, CacheType.LRU);
+            lcache = new SimpleCache<Long, char[]>(20);
         }
         char[] chars = lcache.get(key);
 
