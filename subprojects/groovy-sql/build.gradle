@@ -25,12 +25,11 @@ dependencies {
     testCompile project(':groovy-test')
 }
 
-// required for DataSet tests
-sourceSets.test.runtimeClasspath += files('src/test/groovy')
-
 // TODO move to parent build.gradle subprojects
 tasks.withType(Test) {
     excludes = ['**/*TestCase.class', '**/*$*.class']
+// required for DataSet tests
+    classpath = classpath + files('src/test/groovy')
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
