@@ -16,36 +16,32 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.runtime.memoize;
 
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  *
- * Represents a simple key-value cache, which is NOT thread safe and backed by a {@link java.util.Map} instance
+ * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
  *
  * @since 2.5.0
  */
-public class CommonCache<K, V> implements EvictableCache<K, V> {
-    private final Map<K, V> map;
+public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
+    private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
     /**
      * Constructs a cache with unlimited size
      */
-    public CommonCache() {
-        this(new LinkedHashMap<K, V>());
-    }
+    public ConcurrentCommonCache() {}
 
     /**
      * Constructs a cache with limited size
@@ -53,13 +49,8 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * @param maxSize max size of the LRU cache
      * @param accessOrder the ordering mode - <tt>true</tt> for access-order, <tt>false</tt> for insertion-order, see the parameter accessOrder of {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
      */
-    public CommonCache(final int initialCapacity, final int maxSize, final boolean accessOrder) {
-        this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, accessOrder) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-                return size() > maxSize;
-            }
-        });
+    public ConcurrentCommonCache(int initialCapacity, int maxSize, boolean accessOrder) {
+        super(initialCapacity, maxSize, accessOrder);
     }
 
     /**
@@ -68,25 +59,25 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * @param initialCapacity initial capacity of the LRU cache
      * @param maxSize max size of the LRU cache
      */
-    public CommonCache(final int initialCapacity, final int maxSize) {
-        this(initialCapacity, maxSize, true);
+    public ConcurrentCommonCache(int initialCapacity, int maxSize) {
+        super(initialCapacity, maxSize);
     }
 
     /**
      * Constructs a LRU cache with the default initial capacity(16)
      * @param maxSize max size of the LRU cache
-     * @see #CommonCache(int, int)
+     * @see #ConcurrentCommonCache(int, int)
      */
-    public CommonCache(final int maxSize) {
-        this(16, maxSize);
+    public ConcurrentCommonCache(int maxSize) {
+        super(maxSize);
     }
 
     /**
      * Constructs a cache backed by the specified {@link java.util.Map} instance
      * @param map the {@link java.util.Map} instance
      */
-    public CommonCache(Map<K, V> map) {
-        this.map = map;
+    public ConcurrentCommonCache(Map<K, V> map) {
+        super(map);
     }
 
     /**
@@ -94,7 +85,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public V get(K key) {
-        return map.get(key);
+        readLock.lock();
+        try {
+            return super.get(key);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -102,7 +98,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public V put(K key, V value) {
-        return map.put(key, value);
+        writeLock.lock();
+        try {
+            return super.put(key, value);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -113,15 +114,34 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         return getAndPut(key, valueProvider, true);
     }
 
+    @Override
     public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
-        V value = map.get(key);
-        if (null != value) {
-            return value;
+        V value;
+
+        readLock.lock();
+        try {
+            value = super.get(key);
+            if (null != value) {
+                return value;
+            }
+        } finally {
+            readLock.unlock();
         }
 
-        value = null == valueProvider ? null : valueProvider.provide(key);
-        if (shouldCache && null != value) {
-            map.put(key, value);
+        writeLock.lock();
+        try {
+            // try to find the cached value again
+            value = super.get(key);
+            if (null != value) {
+                return value;
+            }
+
+            value = null == valueProvider ? null : valueProvider.provide(key);
+            if (shouldCache && null != value) {
+                super.put(key, value);
+            }
+        } finally {
+            writeLock.unlock();
         }
 
         return value;
@@ -132,7 +152,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public Collection<V> values() {
-        return map.values();
+        readLock.lock();
+        try {
+            return super.values();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -140,7 +165,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public Set<K> keys() {
-        return map.keySet();
+        readLock.lock();
+        try {
+            return super.keys();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -148,7 +178,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public boolean containsKey(K key) {
-        return map.containsKey(key);
+        readLock.lock();
+        try {
+            return super.containsKey(key);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -156,7 +191,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public int size() {
-        return map.size();
+        readLock.lock();
+        try {
+            return super.size();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -164,7 +204,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public V remove(K key) {
-        return map.remove(key);
+        writeLock.lock();
+        try {
+            return super.remove(key);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -172,10 +217,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public Collection<V> clear() {
-        Collection<V> values = map.values();
-        map.clear();
-
-        return values;
+        writeLock.lock();
+        try {
+            return super.clear();
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -183,21 +230,11 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public void cleanUpNullReferences() {
-        List<K> keys = new LinkedList<>();
-
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            K key = entry.getKey();
-            V value = entry.getValue();
-            if (null == value
-                    || (value instanceof SoftReference && null == ((SoftReference) value).get())
-                    || (value instanceof WeakReference && null == ((WeakReference) value).get())) {
-                keys.add(key);
-            }
-        }
-
-        for (K key : keys) {
-            map.remove(key);
+        writeLock.lock();
+        try {
+            super.cleanUpNullReferences();
+        } finally {
+            writeLock.unlock();
         }
     }
-
 }

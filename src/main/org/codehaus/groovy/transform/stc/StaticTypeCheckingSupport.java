@@ -45,7 +45,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
-import org.codehaus.groovy.runtime.memoize.CommonCache;
+import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -2043,7 +2043,7 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final CommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new CommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
+        private final ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(

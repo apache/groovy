@@ -25,11 +25,11 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-public class CommonCacheTest {
+public class ConcurrentCommonCacheTest {
     @Test
     public void get() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -45,7 +45,7 @@ public class CommonCacheTest {
 
     @Test
     public void put() {
-        CommonCache<String, String> sc = new CommonCache<>();
+        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>();
 
         Assert.assertNull(sc.put("name", "Daniel"));
         Assert.assertEquals("Daniel", sc.get("name"));
@@ -56,7 +56,7 @@ public class CommonCacheTest {
 
     @Test
     public void getAndPut() {
-        CommonCache<String, String> sc = new CommonCache<>();
+        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>();
 
         EvictableCache.ValueProvider vp =
                 new EvictableCache.ValueProvider<String, String>() {
@@ -75,8 +75,8 @@ public class CommonCacheTest {
 
     @Test
     public void values() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -89,8 +89,8 @@ public class CommonCacheTest {
 
     @Test
     public void keys() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -103,8 +103,8 @@ public class CommonCacheTest {
 
     @Test
     public void containsKey() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -117,8 +117,8 @@ public class CommonCacheTest {
 
     @Test
     public void size() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -131,8 +131,8 @@ public class CommonCacheTest {
 
     @Test
     public void remove() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new HashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -146,8 +146,8 @@ public class CommonCacheTest {
 
     @Test
     public void clear() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -160,8 +160,8 @@ public class CommonCacheTest {
 
     @Test
     public void cleanUpNullReferences() {
-        CommonCache<String, String> sc =
-                new CommonCache<>(
+        ConcurrentCommonCache<String, String> sc =
+                new ConcurrentCommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
