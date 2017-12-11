@@ -105,9 +105,14 @@ allprojects {
         }
 
         [uploadArchives, install]*.with {
-            dependsOn([jar, jarjarWithIndy, sourceJar, javadocJar, groovydocJar])
+            dependsOn([jar, sourceJar, javadocJar, groovydocJar])
+            if (rootProject.indyCapable()) {
+                dependsOn jarjarWithIndy
+            }
             doFirst {
-                project.artifacts.add('archives', jarjarWithIndy)
+                if (rootProject.indyCapable()) {
+                    project.artifacts.add('archives', jarjarWithIndy)
+                }
                 def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
                 if (grooidJar.exists()) {
                     project.artifacts.add('archives', grooidJar)
@@ -142,6 +147,10 @@ allprojects {
 [uploadArchives, install]*.with {
     dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
     doFirst {
+        if (!rootProject.indyCapable()) {
+            throw new GradleException("You must run with JDK 7+ to upload archives")
+        }
+
         project.artifacts.add('archives', distBin) {
             name = 'groovy-binary'
         }

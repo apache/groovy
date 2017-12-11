@@ -21,5 +21,5 @@
 // with regards to invoke dynamic support (indy)
 
 rootProject.ext.indyCapable = {
-    !rootProject.hasProperty('skipIndy')
+    !rootProject.hasProperty('skipIndy') && JavaVersion.current().java7Compatible
 }
