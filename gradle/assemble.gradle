@@ -144,6 +144,7 @@ allprojects {
             appendix = 'raw'
             from sourceSets.main.java.outputDir
             from compileGroovyWithIndy.destinationDir
+            from "${project.buildDir}/resources/main"
         }
         producedJars << jarWithIndy
     }
