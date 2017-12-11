@@ -435,13 +435,15 @@ allprojects {
         options.encoding = 'UTF-8'
     }
 
-    task compileGroovyWithIndy(type:GroovyCompile) {
-        source = sourceSets.main.groovy
-        classpath = compileGroovy.classpath
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
-        groovyOptions.optimizationOptions['indy'] = true
-        destinationDir = file("$buildDir/classes/indy")
+    if (rootProject.indyCapable()) {
+        task compileGroovyWithIndy(type: GroovyCompile) {
+            source = sourceSets.main.groovy
+            classpath = compileGroovy.classpath
+            sourceCompatibility = 1.8
+            targetCompatibility = 1.8
+            groovyOptions.optimizationOptions['indy'] = true
+            destinationDir = file("$buildDir/classes/indy")
+        }
     }
 
     tasks.withType(GroovyCompile) {
