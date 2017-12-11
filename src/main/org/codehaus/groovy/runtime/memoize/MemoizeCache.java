@@ -27,8 +27,19 @@ package org.codehaus.groovy.runtime.memoize;
  */
 public interface MemoizeCache<K, V> {
 
+    /**
+     * Associates the specified value with the specified key in the cache.
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     * @return null, or the old value if the key associated with the specified key.
+     */
     V put(K key, V value);
 
+    /**
+     * Gets a value from the cache
+     * @param key the key whose associated value is to be returned
+     * @return the value, or null, if it does not exist.
+     */
     V get(K key);
 
     /**

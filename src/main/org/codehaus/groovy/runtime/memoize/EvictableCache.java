@@ -63,6 +63,13 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
     Set<K> keys();
 
     /**
+     * Determines if the cache contains an entry for the specified key.
+     * @param key key whose presence in this cache is to be tested.
+     * @return true if the cache contains a mapping for the specified key
+     */
+    boolean containsKey(K key);
+
+    /**
      * Get the size of the cache
      * @return the size of the cache
      */
