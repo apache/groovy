@@ -81,6 +81,6 @@ allprojects {
     }
 }
 
-test {
+tasks.withType(Test) {
     jvmArgs "-Dgroovy.attach.groovydoc=true", "-Dgroovy.antlr4.cache.threshold=100"
 }
