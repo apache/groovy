@@ -2584,7 +2584,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // implicit it
                 blockParameterTypes = parameterTypesForSAM;
             } else {
-                blockParameterTypes = extractTypesFromParameters(p);
+                blockParameterTypes = new ClassNode[p.length];
+                for (int i = 0; i < p.length; i++) {
+                    if (p[i] != null && !p[i].isDynamicTyped()) {
+                        blockParameterTypes[i] = p[i].getType();
+                    } else {
+                        blockParameterTypes[i] = typeOrNull(parameterTypesForSAM, i);
+                    }
+                }
             }
         }
         for (int i=0; i<blockParameterTypes.length; i++) {
@@ -4271,12 +4278,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 // now check for closure override
                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                ClassNode[] closureParamTypes = (ClassNode[]) (enclosingClosure != null ? enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) : null);
-                if (type == null && enclosingClosure != null && "it".equals(variable.getName()) && closureParamTypes != null) {
-                    final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
-                    if (parameters.length == 0 && temporaryTypesForExpression == null && closureParamTypes.length != 0) {
-                        type = closureParamTypes[0];
-                    }
+                if (type == null && enclosingClosure != null && temporaryTypesForExpression == null) {
+                    type = getTypeFromClosureArguments(parameter, enclosingClosure);
                 }
                 if (type != null) {
                     storeType(vexp, type);
@@ -4354,6 +4357,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return ((Expression) exp).getType();
+    }
+
+    private ClassNode getTypeFromClosureArguments(Parameter parameter, TypeCheckingContext.EnclosingClosure enclosingClosure) {
+        ClosureExpression closureExpression = enclosingClosure.getClosureExpression();
+        ClassNode[] closureParamTypes = (ClassNode[]) closureExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+        if (closureParamTypes == null) return null;
+        final Parameter[] parameters = closureExpression.getParameters();
+        String name = parameter.getName();
+
+        if (parameters.length == 0) {
+            return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
+        }
+
+        for (int index = 0; index < parameters.length; index++) {
+            if (name.equals(parameters[index].getName())) {
+                return closureParamTypes.length > index ? closureParamTypes[index] : null;
+            }
+        }
+
+        return null;
     }
 
     /**
