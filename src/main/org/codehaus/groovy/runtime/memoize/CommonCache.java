@@ -65,6 +65,10 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
         });
     }
 
+    public CommonCache(final int maxSize) {
+        this(16, maxSize);
+    }
+
     public CommonCache(Map<K, V> map) {
         this.map = map;
     }
