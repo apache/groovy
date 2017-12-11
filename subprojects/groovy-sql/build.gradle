@@ -29,7 +29,7 @@ dependencies {
 sourceSets.test.runtimeClasspath += files('src/test/groovy')
 
 // TODO move to parent build.gradle subprojects
-test {
+tasks.withType(Test) {
     excludes = ['**/*TestCase.class', '**/*$*.class']
 }
 
