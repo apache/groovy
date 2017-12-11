@@ -507,7 +507,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         if (urls == null) return null;
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            if (urls[i].indexOf("://") != -1) {
+            if (urls[i].contains("://")) {
                 roots[i] = new URL(urls[i]);
             } else {
                 roots[i] = new File(urls[i]).toURI().toURL();
