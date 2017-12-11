@@ -44,19 +44,20 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
 
     /**
-     * A cache with unlimited size
+     * Constructs a cache with unlimited size
      */
     public CommonCache() {
         this(new LinkedHashMap<K, V>());
     }
 
     /**
-     * Another LRU cache, which is slower than {@link LRUCache} but will not put same value multi-times concurrently
+     * Constructs a cache with limited size
      * @param initialCapacity initial capacity of the LRU cache
      * @param maxSize max size of the LRU cache
+     * @param accessOrder the ordering mode - <tt>true</tt> for access-order, <tt>false</tt> for insertion-order, see the parameter accessOrder of {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
      */
-    public CommonCache(final int initialCapacity, final int maxSize) {
-        this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, true) {
+    public CommonCache(final int initialCapacity, final int maxSize, final boolean accessOrder) {
+        this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, accessOrder) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
                 return size() > maxSize;
@@ -65,7 +66,17 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
     }
 
     /**
-     * Another LRU cache with the default initial capacity(16)
+     * Constructs a LRU cache with the specified initial capacity and max size.
+     * The LRU cache is slower than {@link LRUCache} but will not put same value multi-times concurrently
+     * @param initialCapacity initial capacity of the LRU cache
+     * @param maxSize max size of the LRU cache
+     */
+    public CommonCache(final int initialCapacity, final int maxSize) {
+        this(initialCapacity, maxSize, true);
+    }
+
+    /**
+     * Constructs a LRU cache with the default initial capacity(16)
      * @param maxSize max size of the LRU cache
      * @see #CommonCache(int, int)
      */
