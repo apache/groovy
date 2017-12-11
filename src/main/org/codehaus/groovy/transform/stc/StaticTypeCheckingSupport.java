@@ -2043,7 +2043,7 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>> cache = new ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
+        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(
