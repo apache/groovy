@@ -114,14 +114,14 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
     }
 
     public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
-        V value = map.get(key);
+        V value = get(key);
         if (null != value) {
             return value;
         }
 
         value = null == valueProvider ? null : valueProvider.provide(key);
         if (shouldCache && null != value) {
-            map.put(key, value);
+            put(key, value);
         }
 
         return value;
