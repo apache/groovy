@@ -133,17 +133,21 @@ ext.subprojectOsgiManifest = {
 }
 
 allprojects {
+    def producedJars = [jar]
     jar {
         appendix = 'raw'
     }
-    task jarWithIndy(type: Jar) {
-        dependsOn compileGroovyWithIndy
-        classifier = 'indy'
-        appendix = 'raw'
-        from sourceSets.main.java.outputDir
-        from compileGroovyWithIndy.destinationDir
+    if (rootProject.indyCapable()) {
+        task jarWithIndy(type: Jar) {
+            dependsOn compileGroovyWithIndy
+            classifier = 'indy'
+            appendix = 'raw'
+            from sourceSets.main.java.outputDir
+            from compileGroovyWithIndy.destinationDir
+        }
+        producedJars << jarWithIndy
     }
-    [jar, jarWithIndy].each { arch ->
+    producedJars.each { arch ->
         arch.metaInf {
             from("$projectDir/licenses/LICENSE-JARJAR")
             from("$projectDir/licenses") {
@@ -280,7 +284,12 @@ allprojects {
     }
 }
 
-[jar, jarWithIndy].each {
+def producedJars = [jar]
+if (rootProject.indyCapable()) {
+    producedJars << jarWithIndy
+}
+
+producedJars.each {
     it.dependsOn('dgmConverter')
     it.from files(dgmConverter.outputDir)
 }
