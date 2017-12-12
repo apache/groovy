@@ -359,6 +359,7 @@ compileJava {
 }
 
 task ensureGrammars {
+    outputs.cacheIf { true }
     description = 'Ensure all the Antlr2 generated files are up to date.'
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
