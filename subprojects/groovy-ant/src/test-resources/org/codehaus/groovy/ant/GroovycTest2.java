@@ -24,7 +24,7 @@ import java.io.IOException;
 
 class GroovycTest2 {
     static void main(String[] args) throws IOException {
-        File f = new File("target/classes/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt");
+        File f = new File("target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt");
         FileOutputStream fout = new FileOutputStream(f);
         try {
             fout.write("OK.".getBytes());
