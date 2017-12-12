@@ -38,6 +38,14 @@ import java.util.Set;
  * @since 2.5.0
  */
 public class CommonCache<K, V> implements EvictableCache<K, V> {
+    /**
+     * The default load factor
+     */
+    public static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    /**
+     * The default initial capacity
+     */
+    public static final int DEFAULT_INITIAL_CAPACITY = 16;
     private final Map<K, V> map;
 
     /**
@@ -49,12 +57,14 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Constructs a cache with limited size
-     * @param initialCapacity initial capacity of the LRU cache
-     * @param maxSize max size of the LRU cache
-     * @param accessOrder the ordering mode - <tt>true</tt> for access-order, <tt>false</tt> for insertion-order, see the parameter accessOrder of {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
+     * @param initialCapacity initial capacity of the cache
+     * @param maxSize max size of the cache
+     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
-    public CommonCache(final int initialCapacity, final int maxSize, final boolean accessOrder) {
-        this(new LinkedHashMap<K, V>(initialCapacity, 0.75f, accessOrder) {
+    public CommonCache(final int initialCapacity, final int maxSize, final EvictionStrategy evictionStrategy) {
+        this(new LinkedHashMap<K, V>(initialCapacity, DEFAULT_LOAD_FACTOR, EvictionStrategy.LRU == evictionStrategy) {
+            private static final long serialVersionUID = -8012450791479726621L;
+
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
                 return size() > maxSize;
@@ -68,17 +78,17 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * @param initialCapacity initial capacity of the LRU cache
      * @param maxSize max size of the LRU cache
      */
-    public CommonCache(final int initialCapacity, final int maxSize) {
-        this(initialCapacity, maxSize, true);
+    public CommonCache(int initialCapacity, int maxSize) {
+        this(initialCapacity, maxSize, EvictionStrategy.LRU);
     }
 
     /**
-     * Constructs a LRU cache with the default initial capacity(16)
+     * Constructs a LRU cache with the default initial capacity
      * @param maxSize max size of the LRU cache
      * @see #CommonCache(int, int)
      */
     public CommonCache(final int maxSize) {
-        this(16, maxSize);
+        this(DEFAULT_INITIAL_CAPACITY, maxSize);
     }
 
     /**

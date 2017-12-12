@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -45,12 +44,12 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
 
     /**
      * Constructs a cache with limited size
-     * @param initialCapacity initial capacity of the LRU cache
-     * @param maxSize max size of the LRU cache
-     * @param accessOrder the ordering mode - <tt>true</tt> for access-order, <tt>false</tt> for insertion-order, see the parameter accessOrder of {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
+     * @param initialCapacity initial capacity of the cache
+     * @param maxSize max size of the cache
+     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
-    public ConcurrentCommonCache(int initialCapacity, int maxSize, boolean accessOrder) {
-        super(initialCapacity, maxSize, accessOrder);
+    public ConcurrentCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
+        super(initialCapacity, maxSize, evictionStrategy);
     }
 
     /**

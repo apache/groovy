@@ -87,4 +87,19 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
          */
         V provide(K key);
     }
+
+    /**
+     * Represents a eviction strategy for the cache with limited size
+     */
+    enum EvictionStrategy {
+        /**
+         * The oldest entry(i.e. the Less Recently Used entry) will be evicted
+         */
+        LRU,
+
+        /**
+         * Entries are evicted in the same order as they come in
+         */
+        FIFO
+    }
 }
