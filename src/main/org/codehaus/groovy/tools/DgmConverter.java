@@ -29,6 +29,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -93,12 +94,23 @@ public class DgmConverter implements Opcodes {
             cw.visitEnd();
 
             final byte[] bytes = cw.toByteArray();
+
             File targetFile = new File(targetDirectory + className + ".class").getCanonicalFile();
             targetFile.getParentFile().mkdirs();
-            final FileOutputStream fileOutputStream = new FileOutputStream(targetFile);
-            fileOutputStream.write(bytes);
-            fileOutputStream.flush();
-            fileOutputStream.close();
+
+            BufferedOutputStream bufferedOutputStream = null;
+            try {
+                bufferedOutputStream =
+                        new BufferedOutputStream(
+                                new FileOutputStream(targetFile));
+
+                bufferedOutputStream.write(bytes);
+                bufferedOutputStream.flush();
+            } finally {
+                if (null != bufferedOutputStream) {
+                    bufferedOutputStream.close();
+                }
+            }
         }
 
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
