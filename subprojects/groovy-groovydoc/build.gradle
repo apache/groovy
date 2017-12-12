@@ -25,8 +25,3 @@ dependencies {
     testCompile "org.apache.ant:ant-testutil:$antVersion"
 }
 
-compileJava {
-    doLast {
-        mkdir "$sourceSets.main.output.classesDir/META-INF"
-    }
-}
