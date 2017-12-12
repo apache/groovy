@@ -134,7 +134,7 @@ ext.extModuleOutputDir = file("$buildDir/testFixtures/extmodule")
 ext.extModuleRepoDir = file("$extModuleOutputDir/repo")
 
 task compileTestExtensionModule(type: JavaCompile) {
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+    classpath = files(jar)
     source fileTree("$extModuleFixtureDir/src/main/java")
     destinationDir = file("$extModuleOutputDir/classes")
     sourceCompatibility = 1.6
