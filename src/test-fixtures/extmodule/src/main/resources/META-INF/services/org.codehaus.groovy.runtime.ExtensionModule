@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-// This file is used to test the extension module framework
+# This file is used to test the extension module framework
 moduleName=Test module for Grab
 moduleVersion=1.3
 extensionClasses=org.codehaus.groovy.runtime.m12n.TestStringExtension2,org.codehaus.groovy.runtime.m12n.TestMapExtension,org.codehaus.groovy.runtime.m12n.Groovy7225Extension
