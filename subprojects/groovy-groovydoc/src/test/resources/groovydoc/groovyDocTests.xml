@@ -24,8 +24,8 @@
     <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}"/>
 
     <path id="classpath">
-        <fileset dir="target/classes/main" includes="**/*.*"/>
-        <fileset dir="target/classes/test" includes="**/*.*"/>
+        <fileset dir="target/classes/groovy/main" includes="**/*.*"/>
+        <fileset dir="target/classes/groovy/test" includes="**/*.*"/>
     </path>
 
     <taskdef name="groovydoc" classpathref="classpath"
