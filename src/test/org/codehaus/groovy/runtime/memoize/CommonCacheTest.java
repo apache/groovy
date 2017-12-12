@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.runtime.memoize;
 
 import org.apache.groovy.util.Maps;
@@ -25,11 +26,11 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-public class ConcurrentCommonCacheTest {
+public class CommonCacheTest {
     @Test
     public void get() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -45,7 +46,7 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void put() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>();
+        CommonCache<String, String> sc = new CommonCache<>();
 
         Assert.assertNull(sc.put("name", "Daniel"));
         Assert.assertEquals("Daniel", sc.get("name"));
@@ -56,15 +57,15 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void getAndPut() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>();
+        CommonCache<String, String> sc = new CommonCache<>();
 
         EvictableCache.ValueProvider vp =
                 new EvictableCache.ValueProvider<String, String>() {
-            @Override
-            public String provide(String key) {
-                return "Chinese";
-            }
-        };
+                    @Override
+                    public String provide(String key) {
+                        return "Chinese";
+                    }
+                };
 
         Assert.assertEquals("Chinese", sc.getAndPut("language", vp,false));
         Assert.assertNull(sc.get("language"));
@@ -75,8 +76,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void values() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -89,8 +90,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void keys() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -103,8 +104,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void containsKey() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -117,8 +118,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void size() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -131,8 +132,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void remove() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new HashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -146,8 +147,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void clear() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -160,8 +161,8 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void cleanUpNullReferences() {
-        ConcurrentCommonCache<String, String> sc =
-                new ConcurrentCommonCache<>(
+        CommonCache<String, String> sc =
+                new CommonCache<>(
                         new LinkedHashMap<>(
                                 Maps.of("name", "Daniel",
                                         "gender", "Male",
@@ -175,7 +176,7 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void testLruCache() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<String, String>(3);
+        CommonCache<String, String> sc = new CommonCache<String, String>(3);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");
@@ -189,7 +190,7 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void testFifoCache() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<String, String>(3, 3, EvictableCache.EvictionStrategy.FIFO);
+        CommonCache<String, String> sc = new CommonCache<String, String>(3, 3, EvictableCache.EvictionStrategy.FIFO);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");
