@@ -55,7 +55,7 @@ compileJava.dependsOn generateGrammarSource
 
 configurations {
     compile {
-        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr2 }
     }
 }
 
