@@ -50,10 +50,10 @@ import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -95,6 +95,7 @@ public class JavaStubGenerator {
         dir.mkdirs();
     }
 
+    private static final int DEFAULT_BUFFER_SIZE = 32 * 1024; // 32K
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
         // Only attempt to render our self if our super-class is resolved, else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
@@ -113,9 +114,17 @@ public class JavaStubGenerator {
         toCompile.add(fileName);
 
         File file = new File(outputPath, fileName + ".java");
-        FileOutputStream fos = new FileOutputStream(file);
         Charset charset = Charset.forName(encoding);
-        PrintWriter out = new PrintWriter(new OutputStreamWriter(fos, charset));
+        PrintWriter out =
+                new PrintWriter(
+                        new OutputStreamWriter(
+                                new BufferedOutputStream(
+                                        new FileOutputStream(file),
+                                        DEFAULT_BUFFER_SIZE
+                                ),
+                                charset
+                        )
+                );
 
         try {
             String packageName = classNode.getPackageName();
@@ -130,11 +139,6 @@ public class JavaStubGenerator {
             try {
                 out.close();
             } catch (Exception e) {
-                // ignore
-            }
-            try {
-                fos.close();
-            } catch (IOException e) {
                 // ignore
             }
         }
