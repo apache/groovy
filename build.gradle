@@ -51,14 +51,16 @@ buildscript {
 
 plugins {
     id 'com.gradle.build-scan' version '1.10.2'
-    id 'me.champeau.buildscan-recipes' version '0.1.7'
+    id 'me.champeau.buildscan-recipes' version '0.2.0'
 }
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'
     licenseAgree = 'yes'
     publishAlways()
+}
 
+buildScanRecipes {
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
@@ -87,7 +89,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        if (isBuildInChina()) {
+        if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
@@ -343,14 +345,14 @@ processResources.doLast {
             include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
                     'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
-        into sourceSets.main.output.classesDir
+        into sourceSets.main.java.outputDir
     }
 }
 
 compileJava {
     doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.output.classesDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
@@ -442,8 +444,8 @@ allprojects {
         task compileGroovyWithIndy(type: GroovyCompile) {
             source = sourceSets.main.groovy
             classpath = compileGroovy.classpath
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
             groovyOptions.optimizationOptions['indy'] = true
             destinationDir = file("$buildDir/classes/indy")
         }
@@ -457,7 +459,8 @@ allprojects {
                 rootProject.bootstrapJar.archivePath
         )
 
-        classpath = classpath + groovyClasspath
+        // TODO: this null check was required after adding JMH plugin to performance project
+        classpath = (classpath != null) ? classpath + groovyClasspath : groovyClasspath
     }
 }
 
@@ -467,11 +470,11 @@ compileTestGroovy {
 
 task checkCompatibility {
     doLast {
-        assert JavaVersion.current().isJava8Compatible()
+        assert JavaVersion.current().java8Compatible
     }
 }
 
-if (!JavaVersion.current().isJava8Compatible()) {
+if (!JavaVersion.current().java8Compatible) {
     logger.lifecycle '''
     **************************************** WARNING ********************************************
     ******   You are running the build with an older JDK. NEVER try to release with 1.7.   ******
@@ -502,14 +505,6 @@ licenseReport {
             'com.googlecode', // openbeans has no pom but is ASLv2
             'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
-}
-
-def isBuildInChina() {
-    try {
-        return !InetAddress.getByName('www.twitter.com').isReachable(3000)
-    } catch(e) {
-        return true
-    }
 }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
