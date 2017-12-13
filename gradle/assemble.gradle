@@ -226,7 +226,7 @@ allprojects {
                     symbolicName = gradleProject.name
                     instruction 'Import-Package', '*;resolution:=optional'
                     classesDir = targetTmp
-                    def moduleName = "org.codehaus.${it.name.replace('-', '.')}"
+                    def moduleName = "org.codehaus.${gradleProject.name.replace('-', '.')}"
                     attributes('Automatic-Module-Name': moduleName)
                 }
                 manifest(manifestSpec)
