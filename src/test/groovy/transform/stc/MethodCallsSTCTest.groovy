@@ -27,6 +27,18 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
  * @author Cedric Champeau
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
+    private static final boolean IS_PRE_8
+
+    static {
+        try {
+            Class.forName("java.util.function.Predicate")
+            IS_PRE_8 = false
+        } catch (ClassNotFoundException e) {
+            IS_PRE_8 = true
+        }
+
+    }
+
     @Override
     protected void configure() {
         final ImportCustomizer ic = new ImportCustomizer()
@@ -454,6 +466,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testGroovy8241() {
+        if (IS_PRE_8) return
+
         assertScript '''
             import java.util.function.Predicate
             
@@ -480,6 +494,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testGroovy7061ex2() {
+        if (IS_PRE_8) return
+
         assertScript '''
             def doIt(List<String> strings) {
                 return strings.
