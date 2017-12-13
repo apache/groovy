@@ -47,7 +47,7 @@ allprojects {
     }
 }
 
-def referenceMinorVersion = '2.4.7'
+def referenceMinorVersion = '2.4.13'
 
 def prettyPrint = { classOrMethod ->
     "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
