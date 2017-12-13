@@ -1083,8 +1083,10 @@ public class Groovyc extends MatchingTask {
      * @param classpath
      */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
-        commandLineList.add("--classpath");
-        commandLineList.add(getClasspathRelative(classpath));
+        if (!fork) {
+            commandLineList.add("--classpath");
+            commandLineList.add(classpath.toString());
+        }
         if (jointCompilation) {
             commandLineList.add("-j");
             commandLineList.addAll(jointOptions);
