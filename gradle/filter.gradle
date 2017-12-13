@@ -18,7 +18,8 @@
  */
 import java.text.SimpleDateFormat
 
-ext.buildTime = new Date()
+// do not use a timestamp during development, to avoid unnecessary rebuilds and cache misses
+ext.buildTime = rootProject.groovyVersion.endsWith('SNAPSHOT')?new Date(0):new Date()
 
 ext.propertiesFilter = [
         beginToken: '#',
