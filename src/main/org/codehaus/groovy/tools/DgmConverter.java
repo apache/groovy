@@ -93,12 +93,14 @@ public class DgmConverter implements Opcodes {
             cw.visitEnd();
 
             final byte[] bytes = cw.toByteArray();
+
             File targetFile = new File(targetDirectory + className + ".class").getCanonicalFile();
             targetFile.getParentFile().mkdirs();
-            final FileOutputStream fileOutputStream = new FileOutputStream(targetFile);
-            fileOutputStream.write(bytes);
-            fileOutputStream.flush();
-            fileOutputStream.close();
+
+            try (final FileOutputStream fileOutputStream = new FileOutputStream(targetFile)) {
+                fileOutputStream.write(bytes);
+                fileOutputStream.flush();
+            }
         }
 
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
