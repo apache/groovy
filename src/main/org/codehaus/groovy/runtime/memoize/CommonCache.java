@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.memoize;
 
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -182,7 +183,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      */
     @Override
     public Collection<V> clear() {
-        Collection<V> values = map.values();
+        Collection<V> values = new ArrayList<V>(map.values()); // we must create a new list, or the method will always return empty collection.
         map.clear();
 
         return values;
