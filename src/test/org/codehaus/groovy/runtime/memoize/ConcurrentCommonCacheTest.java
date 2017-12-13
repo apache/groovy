@@ -155,7 +155,7 @@ public class ConcurrentCommonCacheTest {
                         )
                 );
 
-        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.clear().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.clear().values().toArray(new String[0]));
     }
 
     @Test

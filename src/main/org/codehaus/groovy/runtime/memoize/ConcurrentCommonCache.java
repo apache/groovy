@@ -215,7 +215,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public Collection<V> clear() {
+    public Map<K, V> clear() {
         writeLock.lock();
         try {
             return super.clear();

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,9 +39,9 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
 
     /**
      * Clear the cache
-     * @return returns cleared values
+     * @return returns the content of the cleared map
      */
-    Collection<V> clear();
+    Map<K, V> clear();
 
     /**
      * Try to get the value from cache.
