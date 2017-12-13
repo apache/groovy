@@ -156,7 +156,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.values().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.clear().toArray(new String[0]));
     }
 
     @Test
