@@ -72,6 +72,7 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Map;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -1022,17 +1023,17 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Collection<Class> classesToClear = classCache.clear();
+        Map<String, Class> clearedClasses = classCache.clear();
 
         sourceCache.clear();
 
-        for (Class c : classesToClear) {
+        for (Map.Entry<String, Class> entry : clearedClasses.entrySet()) {
             // Another Thread may be using an instance of this class
             // (for the first time) requiring a ClassInfo lock and
             // classloading which would require a lock on classCache.
             // The following locks on ClassInfo and to avoid deadlock
             // should not be done with a classCache lock.
-            InvokerHelper.removeClass(c);
+            InvokerHelper.removeClass(entry.getValue());
         }
     }
 
