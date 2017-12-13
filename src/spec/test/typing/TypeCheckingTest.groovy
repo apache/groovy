@@ -300,7 +300,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             // tag::stc_argparam_array_fail[]
             format([1,2] as int[])              // fails
             // end::stc_argparam_array_fail[]
-        ''', '#format(int[]). Please check if the declared type is right and if the method exists.'
+        ''', '#format(int[]). Please check if the declared type is correct and if the method exists.'
 
 
         assertScript '''
@@ -319,7 +319,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             }
             format(new ArrayList())              // fails
             // end::stc_argparam_superclass_fail[]
-        ''', '#format(java.util.ArrayList). Please check if the declared type is right and if the method exists.'
+        ''', '#format(java.util.ArrayList). Please check if the declared type is correct and if the method exists.'
 
         assertScript '''
             // tag::stc_argparam_interface[]
@@ -337,7 +337,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             }
             format(new LinkedList())                 // fails
             // end::stc_argparam_interface_fail[]
-        ''', '#format(java.util.LinkedList). Please check if the declared type is right and if the method exists.'
+        ''', '#format(java.util.LinkedList). Please check if the declared type is correct and if the method exists.'
 
         assertScript '''
             // tag::stc_argparam_prim[]
