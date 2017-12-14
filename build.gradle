@@ -338,17 +338,6 @@ check {
     dependsOn examplesClasses
 }
 
-// remove this from config once GRADLE-854 is fixed.
-processResources.doLast {
-    copy {
-        from('src/main') {
-            include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
-                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
-        }
-        into sourceSets.main.java.outputDir
-    }
-}
-
 compileJava {
     doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
