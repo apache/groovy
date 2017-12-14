@@ -82,8 +82,15 @@ task copy(type: Copy) {
     into "$buildDir/meta"
 }
 
+// unnecessary entries which in addition may trigger unnecessary rebuilds
+def excludedFromManifest = [
+        'Originally-Created-By',
+        'Bnd-LastModified',
+        'Created-By'
+]
+
 ext.allManifest = manifest {
-    attributes('Built-By': System.properties['user.name'],
+    attributes(
             'Extension-Name': 'groovy',
             'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
             'Specification-Version': groovyBundleVersion,
@@ -106,7 +113,7 @@ ext.groovyOsgiManifest = {
     // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry { details ->
-            if (details.key == 'Bnd-LastModified') {
+            if (excludedFromManifest.any { it == details.key}) {
                 details.exclude()
             }
         }
@@ -121,7 +128,7 @@ ext.subprojectOsgiManifest = {
     // Exclude attributes not needed for subprojects.
     from(allManifest) {
         eachEntry { details ->
-            if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
+            if (details.key in [*excludedFromManifest, 'Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
                 details.exclude()
             }
         }
