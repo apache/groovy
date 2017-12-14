@@ -113,9 +113,7 @@ groovydocAll groovydocSpec
 task docProjectVersionInfo(type: Copy) {
     destinationDir = file("${project(':groovy-docgenerator').sourceSets.main.java.outputDir}")
     into('META-INF') {
-        from('src/resources/META-INF/groovy-release-info.properties') {
-            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-        }
+        from(generateReleaseInfo)
     }
     from('subprojects/groovy-docgenerator/src/main/resources')
 }
