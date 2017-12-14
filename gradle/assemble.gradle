@@ -142,7 +142,7 @@ allprojects {
             dependsOn compileGroovyWithIndy
             classifier = 'indy'
             appendix = 'raw'
-            from sourceSets.main.java.outputDir
+            from sourceSets.main.groovy.outputDir
             from compileGroovyWithIndy.destinationDir
             from "${project.buildDir}/resources/main"
         }
