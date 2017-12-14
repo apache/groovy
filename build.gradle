@@ -348,8 +348,7 @@ compileJava {
 task ensureGrammars {
     outputs.cacheIf { true }
     description = 'Ensure all the Antlr generated files are up to date.'
-    ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
-    ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
+    ext.antlrDirectory = "$projectDir/src/main/antlr2/org/codehaus/groovy/antlr"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
     ext.genPath = "$generatedDirectory/src/main/org/codehaus/groovy/antlr"
     ext.groovyOutDir = "$ext.genPath/parser"
@@ -365,7 +364,6 @@ task ensureGrammars {
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
                     classpath: configurations.antlr.asPath)
 
-            mkdir dir: ext.groovyParserDirectory
             antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
                 classpath path: configurations.compile.asPath
             }
