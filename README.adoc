@@ -108,7 +108,6 @@ Build is image:{build-icon}[build status, link={groovy-ci}].
 To build you will need:
 
 * {jdk}[JDK 8+]
-* Linux(e.g. CentOS 7)
 
 To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
