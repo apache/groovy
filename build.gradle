@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.codehaus.groovy.gradle.ReleaseInfoGenerator
 
 buildscript {
     repositories {
@@ -69,9 +70,9 @@ buildScanRecipes {
 ext.modules = {
     subprojects.findAll{ !['performance'].contains(it.name) }
 }
+ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
 apply from: 'gradle/bad-practices.gradle'
-apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
@@ -96,6 +97,15 @@ allprojects {
         }
         jcenter()
         maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+    }
+
+    ext.buildDate = isReleaseVersion?new Date():new Date(0)
+
+    task generateReleaseInfo(type: ReleaseInfoGenerator) {
+        version = rootProject.groovyVersion
+        bundleVersion = rootProject.groovyBundleVersion
+        buildDate = rootProject.buildDate
+        outputFile = file("$buildDir/release-info/groovy-release-info.properties")
     }
 
     apply plugin: 'groovy'
@@ -170,7 +180,6 @@ ext {
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
     antlr4Version = '4.7'
     jsr305Version = '3.0.2'
-    isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 }
 
 dependencies {
