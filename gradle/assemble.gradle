@@ -288,7 +288,6 @@ allprojects {
                 target.delete()
             }
         }
-        jarjar.finalizedBy(grooidjar)
     }
 }
 
