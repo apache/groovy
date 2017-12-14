@@ -112,22 +112,6 @@ allprojects {
     }
 }
 
-// todo: use the conventional "resources" directory for classpath resources
-task(copyResources, type: Copy) {
-    destinationDir = file("$buildDir/classes")
-    // text files requiring filtering
-    into('main') {
-        from('src/main')
-        include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
-        filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-    }
-    // other resources
-    into('main') {
-        from 'src/main'
-        include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
-    }
-}
-jar.dependsOn(copyResources)
 task(copyTestResources, type: Copy)
         .from('src/test')
         .into("$buildDir/classes/test")
