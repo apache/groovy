@@ -166,9 +166,7 @@ allprojects {
                 include('antlr4-license.txt')
             }
             from("$projectDir/notices/NOTICE-JARJAR")
-            from('src/resources/META-INF/groovy-release-info.properties') {
-                filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-            }
+            from(generateReleaseInfo)
             rename { String filename -> filename == 'LICENSE-JARJAR' ? 'LICENSE' : filename == 'NOTICE-JARJAR' ? 'NOTICE' : filename }
         }
         arch.exclude '**/package-info.class'
@@ -316,9 +314,6 @@ subprojects { sp ->
                 from "${projectDir}/NOTICE"
             } else {
                 from "${rootProject.projectDir}/notices/NOTICE-BASE"
-            }
-            from("${rootProject.projectDir}/src/resources/META-INF/groovy-release-info.properties") {
-                filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
             rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
         }
