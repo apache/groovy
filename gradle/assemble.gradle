@@ -320,10 +320,6 @@ subprojects { sp ->
     }
 }
 
-allprojects {
-    rootProject.jarjar.mustRunAfter(test)
-}
-
 task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sourceJar }) {
     with sourceJar.rootSpec
     modules()*.sourceJar.each {
