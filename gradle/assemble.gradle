@@ -113,7 +113,7 @@ ext.groovyOsgiManifest = {
     // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry { details ->
-            if (excludedFromManifest.any { it == details.key}) {
+            if (excludedFromManifest.any { it == details.key }) {
                 details.exclude()
             }
         }
@@ -143,6 +143,15 @@ allprojects {
     def producedJars = [jar]
     jar {
         appendix = 'raw'
+        manifest {
+            from(allManifest) {
+                eachEntry { details ->
+                    if (excludedFromManifest.any { it == details.key }) {
+                        details.exclude()
+                    }
+                }
+            }
+        }
     }
     if (rootProject.indyCapable()) {
         task jarWithIndy(type: Jar) {
