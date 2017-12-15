@@ -1013,7 +1013,7 @@ public class CompilationUnit extends ProcessingUnit {
         return count;
     }
 
-    private List getPrimaryClassNodes(boolean sort) {
+    private List<ClassNode> getPrimaryClassNodes(boolean sort) {
         List<ClassNode> unsorted = new ArrayList<ClassNode>();
         for (ModuleNode module : this.ast.getModules()) {
             for (ClassNode classNode : module.getClasses()) {
@@ -1023,8 +1023,9 @@ public class CompilationUnit extends ProcessingUnit {
 
         if (!sort) return unsorted;
 
-        int[] indexClass = new int[unsorted.size()];
-        int[] indexInterface = new int[unsorted.size()];
+        int unsortedSize = unsorted.size();
+        int[] indexClass = new int[unsortedSize];
+        int[] indexInterface = new int[unsortedSize];
         {
             int i = 0;
             for (Iterator<ClassNode> iter = unsorted.iterator(); iter.hasNext(); i++) {
@@ -1045,10 +1046,11 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private static List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
-        List<ClassNode> sorted = new ArrayList<ClassNode>(unsorted.size());
-        for (int i = 0; i < unsorted.size(); i++) {
+        int unsortedSize = unsorted.size();
+        List<ClassNode> sorted = new ArrayList<ClassNode>(unsortedSize);
+        for (int i = 0; i < unsortedSize; i++) {
             int min = -1;
-            for (int j = 0; j < unsorted.size(); j++) {
+            for (int j = 0; j < unsortedSize; j++) {
                 if (index[j] == -1) continue;
                 if (min == -1 || index[j] < index[min]) {
                     min = j;
@@ -1067,16 +1069,13 @@ public class CompilationUnit extends ProcessingUnit {
      * through the current phase.
      */
     public void applyToPrimaryClassNodes(PrimaryClassNodeOperation body) throws CompilationFailedException {
-        Iterator classNodes = getPrimaryClassNodes(body.needSortedInput()).iterator();
-        while (classNodes.hasNext()) {
+        for (ClassNode classNode : getPrimaryClassNodes(body.needSortedInput())) {
             SourceUnit context = null;
             try {
-                ClassNode classNode = (ClassNode) classNodes.next();
                 context = classNode.getModule().getContext();
                 if (context == null || context.phase < phase || (context.phase == phase && !context.phaseComplete)) {
                     int offset = 1;
-                    Iterator<InnerClassNode> iterator = classNode.getInnerClasses();
-                    while (iterator.hasNext()) {
+                    for (Iterator<InnerClassNode> iterator = classNode.getInnerClasses(); iterator.hasNext(); ) {
                         iterator.next();
                         offset++;
                     }
