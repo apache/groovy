@@ -167,7 +167,7 @@ allprojects {
             }
             from("$projectDir/notices/NOTICE-JARJAR")
             from(generateReleaseInfo)
-            rename { String filename -> filename == 'LICENSE-JARJAR' ? 'LICENSE' : filename == 'NOTICE-JARJAR' ? 'NOTICE' : filename }
+            rename '([A-Z]+)-(.*)', '$1'
         }
         arch.exclude '**/package-info.class'
 
@@ -314,7 +314,7 @@ subprojects { sp ->
             } else {
                 from "${rootProject.projectDir}/notices/NOTICE-BASE"
             }
-            rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
+            rename '([A-Z]+)-(.*)', '$1'
         }
         exclude '**/package-info.class'
     }
@@ -356,7 +356,7 @@ ext.distSpec = copySpec {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir/notices/NOTICE-BINZIP")
-    rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename == 'NOTICE-BINZIP' ? 'NOTICE' : filename }
+    rename '([A-Z]+)-(.*)', '$1'
     exclude { it.file.name =~ /-raw/ }
     into('lib') {
         from jarjar
@@ -496,7 +496,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
     into "groovy-$version"
     from("$projectDir/licenses/LICENSE-SDK")
     from("$projectDir/notices/NOTICE-SDK")
-    rename { String filename -> filename == 'LICENSE-SDK' ? 'LICENSE' : filename == 'NOTICE-SDK' ? 'NOTICE' : filename }
+    rename '([A-Z]+)-(.*)', '$1'
     with distSpec
     into('doc') {
         with docSpec
