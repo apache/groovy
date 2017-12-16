@@ -19,21 +19,20 @@
 
 task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
     if (JavaVersion.current().java7Compatible) {
-        dependsOn 'asciidocAll', 'assembleAsciidoc'
+        dependsOn 'asciidocAll'
     }
     ext.footer = 'Copyright &copy; 2003-2017 The Apache Software Foundation. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
 if (JavaVersion.current().java7Compatible) {
-    task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
-        subprojects {
-            from project.asciidoctor
+    task asciidocAll(type: Copy) {
+        allprojects {
+            dependsOn asciidoctor
+            from asciidoctor.outputDir
         }
-        into "$buildDir/asciidoc"
+        into "$buildDir/asciidocAll"
     }
-
-    task asciidocAll(dependsOn: {allprojects.asciidoctor})
 }
 
 def javadocSpec = {
