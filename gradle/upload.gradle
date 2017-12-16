@@ -94,7 +94,7 @@ allprojects {
         }
 
         artifacts {
-            archives jarjar
+            archives jarjar.outputFile
             archives sourceJar
             archives javadocJar
             archives groovydocJar
@@ -105,13 +105,13 @@ allprojects {
         }
 
         [uploadArchives, install]*.with {
-            dependsOn([jar, sourceJar, javadocJar, groovydocJar])
+            dependsOn([grooidjar, jarjar, sourceJar, javadocJar, groovydocJar])
             if (rootProject.indyCapable()) {
                 dependsOn jarjarWithIndy
             }
             doFirst {
                 if (rootProject.indyCapable()) {
-                    project.artifacts.add('archives', jarjarWithIndy)
+                    project.artifacts.add('archives', jarjarWithIndy.outputFile)
                 }
                 def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
                 if (grooidJar.exists()) {

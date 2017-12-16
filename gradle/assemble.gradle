@@ -17,6 +17,8 @@
  *  under the License.
  */
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.codehaus.groovy.gradle.JarJarTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 
 apply plugin: 'osgi'
 
@@ -84,6 +86,7 @@ task copy(type: Copy) {
 
 // unnecessary entries which in addition may trigger unnecessary rebuilds
 def excludedFromManifest = [
+        'Ant-Version',
         'Originally-Created-By',
         'Bnd-LastModified',
         'Created-By'
@@ -140,6 +143,8 @@ ext.subprojectOsgiManifest = {
 }
 
 allprojects {
+    boolean isRoot = project == rootProject
+
     def producedJars = [jar]
     jar {
         appendix = 'raw'
@@ -180,87 +185,60 @@ allprojects {
         }
         arch.exclude '**/package-info.class'
 
-        task "jar${arch.name}"(type: Jar, dependsOn: arch) {
-            outputs.cacheIf {
-                // caching JarJar because it's quite expensive to create
-                true
-            }
-            destinationDir = arch.destinationDir
-            baseName = arch.baseName
-            classifier = arch.classifier
-            includeEmptyDirs = false
-            def target = new File("${archivePath}.tmp")
-            def targetTmp = new File("${archivePath}.tmp.1.tmp")
-            inputs.file(arch.archivePath)
-
-            doFirst {
-                from zipTree(target)
-
-                def keepUntouched = [
-                        'org/codehaus/groovy/cli/GroovyPosixParser*.class',
-                        'groovy/util/CliBuilder*.class',
-                        'groovy/util/OptionAccessor*.class',
-                        'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
-                ].join(',')
-                boolean isRoot = project == rootProject
-                def gradleProject = project
-                ant {
-                    taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: rootProject.configurations.tools.asPath
-                    jarjar(jarfile: targetTmp) {
-                        zipfileset(
-                                src: arch.archivePath,
-                                excludes: keepUntouched)
-
-                        // only groovy core will include the dependencies repackaged
-                        if (isRoot) {
-                            configurations.runtime.files.findAll { file ->
-                                ['antlr', 'asm', 'commons-cli'].any {
-                                    file.name.startsWith(it)
-                                } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
-                            }.each { jarjarFile ->
-                                // explanation of excludes:
-                                // GROOVY-7386: stop copy of incorrect maven meta info
-                                // GROOVY-8332: stop copy of annotation processor which is for some reason included in antlr runtime artifact
-                                // GROOVY-8387: we don't want module-info.class from any dependencies
-                                zipfileset(src: jarjarFile,
-                                        excludes: 'META-INF/maven/**,META-INF/*,META-INF/services/javax.annotation.processing.Processor,module-info.class')
-                            }
-
-                            zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
-                                    includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/ASMifier.class,org/objectweb/asm/util/Trace*')
+        task "jar${arch.name}"(type: JarJarTask) {
+            dependsOn arch
+            from = file(arch.archivePath)
+            if (project == rootProject) {
+                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                    componentFilter { component ->
+                        if (component instanceof ModuleComponentIdentifier) {
+                            return component.module in [
+                                    'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
+                                    'asm', 'asm-commons', 'asm-tree', 'asm-util',
+                                    'commons-cli']
                         }
-                        rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1' // antlr2
-                        rule pattern: 'org.antlr.**', result: 'groovyjarjarantlr4.@1' // antlr4
-                        rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
-                        rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
+                        return false
+                    }
+                }.files)
+            } else {
+                repackagedLibraries = files()
+            }
+            jarjarToolClasspath = rootProject.configurations.tools
+            untouchedFiles = [
+                    'org/codehaus/groovy/cli/GroovyPosixParser*.class',
+                    'groovy/util/CliBuilder*.class',
+                    'groovy/util/OptionAccessor*.class',
+                    'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
+            ]
+            patterns = [
+                    'antlr.**': 'groovyjarjarantlr.@1', // antlr2
+                    'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
+                    'org.objectweb.**': 'groovyjarjarasm.@1',
+                    'org.apache.commons.cli.**': 'groovyjarjarcommonscli.@1'
+            ]
+            excludesPerLibrary = [
+                    '*': ['META-INF/maven/**','META-INF/*','META-INF/services/javax.annotation.processing.Processor','module-info.class']
+            ]
+            includesPerLibrary = [
+                    'asm-util': ['org/objectweb/asm/util/Printer.class',
+                                 'org/objectweb/asm/util/Textifier.class',
+                                 'org/objectweb/asm/util/ASMifier.class',
+                                 'org/objectweb/asm/util/Trace*']
+            ]
+            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier?'-'+arch.classifier:''}.jar")
+
+            withManifest {
+                def moduleName = "org.codehaus.${project.name.replace('-', '.')}"
+                attributes('Automatic-Module-Name': moduleName)
+                from(allManifest) {
+                    eachEntry { details ->
+                        if (excludedFromManifest.any { it == details.key }) {
+                            details.exclude()
+                        }
                     }
                 }
-
-                def manifestSpec = isRoot ? groovyOsgiManifest : subprojectOsgiManifest
-                manifest = osgiManifest {
-                    symbolicName = gradleProject.name
-                    instruction 'Import-Package', '*;resolution:=optional'
-                    classesDir = targetTmp
-                    def moduleName = "org.codehaus.${gradleProject.name.replace('-', '.')}"
-                    attributes('Automatic-Module-Name': moduleName)
-                }
-                manifest(manifestSpec)
-
-                def manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
-                manifest.writeTo(manifestPath)
-
-                ant.copy(file: targetTmp, tofile: target)
-                ant.jar(destfile: target, update: true, manifest: manifestPath) {
-                    zipfileset(
-                            src: arch.archivePath,
-                            includes: keepUntouched)
-                }
-
             }
-            doLast {
-                target.delete()
-                ant.delete(file: targetTmp, quiet: true, deleteonexit: true)
-            }
+            withManifest(isRoot ? groovyOsgiManifest : subprojectOsgiManifest)
         }
 
     }
@@ -280,7 +258,7 @@ allprojects {
                     taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: rootProject.configurations.tools.asPath
                     jarjar(jarfile: target) {
                         zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
-                        zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
+                        zipfileset(src: jarjar.outputFile, excludes: 'META-INF/NOTICE')
                         if (isRootProject) {
                             zipfileset(src: rootProject.configurations.runtime.files.find {
                                 it.name.startsWith('openbeans')
