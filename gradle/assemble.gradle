@@ -329,25 +329,30 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sou
         with it.rootSpec
     }
     baseName = 'groovy-all'
+    classifier = 'sources'
 }
 
 allprojects {
     task javadocJar(type: Jar, dependsOn: javadoc) {
         from javadoc.destinationDir
+        classifier = 'javadoc'
     }
     task groovydocJar(type: Jar, dependsOn: groovydoc) {
         from groovydoc.destinationDir
+        classifier = 'groovydoc'
     }
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocAll) {
     baseName = 'groovy-all'
     from javadocAll.destinationDir
+    classifier = 'javadoc'
 }
 
 task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
     baseName = 'groovy-all'
     from groovydocAll.destinationDir
+    classifier = 'groovydoc'
 }
 
 ext.distSpec = copySpec {
