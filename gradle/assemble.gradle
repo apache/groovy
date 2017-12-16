@@ -211,13 +211,13 @@ allprojects {
                     'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
             ]
             patterns = [
-                    'antlr.**': 'groovyjarjarantlr.@1', // antlr2
-                    'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
-                    'org.objectweb.**': 'groovyjarjarasm.@1',
+                    'antlr.**'                 : 'groovyjarjarantlr.@1', // antlr2
+                    'org.antlr.**'             : 'groovyjarjarantlr4.@1', // antlr4
+                    'org.objectweb.**'         : 'groovyjarjarasm.@1',
                     'org.apache.commons.cli.**': 'groovyjarjarcommonscli.@1'
             ]
             excludesPerLibrary = [
-                    '*': ['META-INF/maven/**','META-INF/*','META-INF/services/javax.annotation.processing.Processor','module-info.class']
+                    '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', 'module-info.class']
             ]
             includesPerLibrary = [
                     'asm-util': ['org/objectweb/asm/util/Printer.class',
@@ -225,7 +225,7 @@ allprojects {
                                  'org/objectweb/asm/util/ASMifier.class',
                                  'org/objectweb/asm/util/Trace*']
             ]
-            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier?'-'+arch.classifier:''}.jar")
+            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier ? '-' + arch.classifier : ''}.jar")
 
             withManifest {
                 def moduleName = "org.codehaus.${project.name.replace('-', '.')}"
@@ -244,36 +244,36 @@ allprojects {
     }
 
     if (project.name in ['groovy', 'groovy-test']) {
-        task grooidjar(type: Jar) {
-            destinationDir = jar.destinationDir
-            baseName = jar.baseName
-            classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
-            includeEmptyDirs = false
-            def target = new File("${archivePath}.tmp")
-            boolean isRootProject = project == rootProject
-
-            doFirst {
-                from zipTree(target)
-                ant {
-                    taskdef name: 'jarjar', classname: jarjarTaskClassName, classpath: rootProject.configurations.tools.asPath
-                    jarjar(jarfile: target) {
-                        zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
-                        zipfileset(src: jarjar.outputFile, excludes: 'META-INF/NOTICE')
-                        if (isRootProject) {
-                            zipfileset(src: rootProject.configurations.runtime.files.find {
-                                it.name.startsWith('openbeans')
-                            }, excludes: 'META-INF/*')
+        task grooidjar(type: JarJarTask) {
+            dependsOn jarjar
+            from = file(jarjar.outputFile)
+            if (isRoot) {
+                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                    componentFilter { component ->
+                        if (component instanceof ModuleComponentIdentifier) {
+                            return component.module in ['openbeans']
                         }
-                        rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
-                        rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
-                        rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
+                        return false
                     }
-                }
-
+                }.files)
+            } else {
+                repackagedLibraries = files()
             }
-            doLast {
-                target.delete()
-            }
+            jarjarToolClasspath = rootProject.configurations.tools
+            patterns = [
+                    'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
+                    'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
+                    'java.beans.**'              : 'groovyjarjaropenbeans.@1'
+            ]
+            excludesPerLibrary = [
+                    '*': ['META-INF/NOTICE']
+            ]
+            excludes = ['META-INF/NOTICE']
+            createManifest = false
+            includedResources = [
+                    ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
+            ]
+            outputFile = file("$buildDir/libs/${jar.baseName}-${jar.version}-grooid.jar")
         }
     }
 }
@@ -349,7 +349,8 @@ ext.distSpec = copySpec {
         from jarjar
         from modules()*.jarjar
         from(configurations.runtime) {
-            exclude {   it.file.name.startsWith('openbeans-') ||
+            exclude {
+                it.file.name.startsWith('openbeans-') ||
                         it.file.name.startsWith('asm-') ||
                         it.file.name.startsWith('antlr-')
             }
