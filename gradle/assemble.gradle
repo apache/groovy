@@ -254,7 +254,6 @@ allprojects {
         task grooidjar(type: Jar) {
             destinationDir = jar.destinationDir
             baseName = jar.baseName
-            appendix = jar.appendix
             classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
             includeEmptyDirs = false
             def target = new File("${archivePath}.tmp")
