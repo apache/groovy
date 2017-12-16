@@ -63,7 +63,7 @@ ext.docSpec = copySpec {
         from groovydocAll.destinationDir
     }
     into('html/documentation') {
-        from "$buildDir/asciidoc/html5"
+        from "$buildDir/asciidocAll/html5"
     }
     into('html/groovy-jdk') {
         from docGDK.destinationDir
