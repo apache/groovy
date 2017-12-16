@@ -19,14 +19,14 @@
 package org.codehaus.groovy.gradle
 
 import groovy.transform.CompileStatic
+import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.Action
-import org.gradle.api.java.archives.Manifest
 
 @CacheableTask
 class JarJarTask extends DefaultTask {
@@ -46,19 +46,34 @@ class JarJarTask extends DefaultTask {
     FileCollection jarjarToolClasspath
 
     @Input
-    List<String> untouchedFiles
+    @org.gradle.api.tasks.Optional
+    List<String> untouchedFiles = []
+
+    @Input
+    @org.gradle.api.tasks.Optional
+    List<String> excludes = []
 
     @Input
     Map<String, String> patterns
 
     @Input
-    Map<String, List<String>> excludesPerLibrary
+    @org.gradle.api.tasks.Optional
+    Map<String, List<String>> excludesPerLibrary = [:]
 
     @Input
-    Map<String, List<String>> includesPerLibrary
+    @org.gradle.api.tasks.Optional
+    Map<String, List<String>> includesPerLibrary = [:]
+
+    @Input
+    @org.gradle.api.tasks.Optional
+    Map<String, String> includedResources = [:]
 
     @OutputFile
     File outputFile
+
+    @Input
+    @org.gradle.api.tasks.Optional
+    boolean createManifest = true
 
     void withManifest(Action<? super Manifest> action) {
         manifestTweaks << action
@@ -82,8 +97,12 @@ class JarJarTask extends DefaultTask {
                 jarjar(jarfile: tmpJar, filesonly: true) {
                     zipfileset(
                             src: originalJar,
-                            excludes: untouchedFiles.join(','))
-
+                            excludes: (untouchedFiles+excludes).join(','))
+                    includedResources.each { String resource, String path ->
+                        String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
+                        String filename = resource.substring(resource.lastIndexOf('/') + 1)
+                        zipfileset(dir: dir, includes: filename, fullpath: path)
+                    }
                     repackagedLibraries.files.each { File library ->
                         def libraryName = JarJarTask.baseName(library)
                         def includes = includesPerLibrary[libraryName]
@@ -102,19 +121,24 @@ class JarJarTask extends DefaultTask {
                 }
             }
 
-            // next step is to generate an OSGI manifest using the newly repackaged classes
-            def mf = project.rootProject.convention.plugins.osgi.osgiManifest {
-                symbolicName = project.name
-                instruction 'Import-Package', '*;resolution:=optional'
-                classesDir = tmpJar
-            }
+            if (createManifest) {
+                // next step is to generate an OSGI manifest using the newly repackaged classes
+                def mf = project.rootProject.convention.plugins.osgi.osgiManifest {
+                    symbolicName = project.name
+                    instruction 'Import-Package', '*;resolution:=optional'
+                    classesDir = tmpJar
+                }
 
-            manifestTweaks.each {
-                it.execute(mf)
-            }
+                manifestTweaks.each {
+                    it.execute(mf)
+                }
 
-            // then we need to generate the manifest file
-            mf.writeTo(manifestFile)
+                // then we need to generate the manifest file
+                mf.writeTo(manifestFile)
+
+            } else {
+                manifestFile << ''
+            }
 
             // so that we can put it into the final jar
             project.ant.copy(file: tmpJar, tofile: outputFile)
@@ -124,9 +148,11 @@ class JarJarTask extends DefaultTask {
                     // introduce cache misses
                     attribute(name:'Created-By', value:'Gradle')
                 }
-                zipfileset(
-                        src: originalJar,
-                        includes: untouchedFiles.join(','))
+                if (untouchedFiles) {
+                    zipfileset(
+                            src: originalJar,
+                            includes: untouchedFiles.join(','))
+                }
             }
         } finally {
             manifestFile.delete()
