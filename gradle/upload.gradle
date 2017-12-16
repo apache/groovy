@@ -115,7 +115,7 @@ allprojects {
                 }
                 def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
                 if (grooidJar.exists()) {
-                    project.artifacts.add('archives', grooidJar)
+                    project.artifacts.add('archives', grooidJar.outputFile)
                 }
             }
         }
