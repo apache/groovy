@@ -72,7 +72,6 @@ ext.modules = {
 }
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
-apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
