@@ -462,6 +462,7 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
 apply from: 'gradle/jdk9.gradle'
+apply from: 'gradle/parallel-build-fixes.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
