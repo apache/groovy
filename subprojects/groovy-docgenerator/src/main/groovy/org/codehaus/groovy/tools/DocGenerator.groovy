@@ -541,7 +541,7 @@ class DocGenerator {
             if (pathOrClassName.contains("/")) {
                 return new File(pathOrClassName)
             }
-            new File("src/main/" + pathOrClassName.replace('.', '/') + ".java")
+            new File("src/main/groovy/" + pathOrClassName.replace('.', '/') + ".java")
         }
     }
 }

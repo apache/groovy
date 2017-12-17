@@ -44,7 +44,7 @@ def javadocSpec = {
         encoding = 'UTF-8'
         author = true
         version = true
-        overview = rootProject.file('src/main/overviewj.html')
+        overview = rootProject.file('src/main/java/overviewj.html')
         footer = doc.footer
         source = '1.7'
         links('http://docs.oracle.com/javase/8/docs/api/', 'http://docs.oracle.com/javaee/7/api/',
@@ -55,13 +55,13 @@ def javadocSpec = {
 
 def groovydocSpec = {
     use = true
-    if (project != rootProject) source = project.sourceSets.main.allSource
+    source = project.sourceSets.main.allSource
     classpath = javadoc.classpath
     ext.windowtitle = doc.title
     ext.doctitle = doc.title
     header = doc.title
     footer = doc.footer
-    overviewText = rootProject.resources.text.fromFile('src/main/overview.html')
+    overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
     includePrivate = false
     link 'http://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'

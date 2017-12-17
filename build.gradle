@@ -131,12 +131,7 @@ task(copyTestResources, type: Copy)
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
 test.dependsOn(copyTestResources)
 
-task sourceJar(type: Jar) {
-    classifier = 'sources'
-    from 'src/main'
-}
-
-subprojects {
+allprojects {
     task sourceJar(type: Jar) {
         classifier = 'sources'
         from sourceSets.main.allSource
@@ -277,20 +272,16 @@ ext.generatedDirectory = "${buildDir}/generated-sources"
 sourceSets {
     main {
         java {
-            srcDirs = [
-                    'src/main',
-                    "$generatedDirectory/src/main"
-            ]
+            // the only reason we add src/main/groovy here is for the bootstrap compiler
+            srcDir 'src/main/groovy'
+            srcDir "$generatedDirectory/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
         groovy {
-            srcDirs = [
-                    'src/main',
-                    "$generatedDirectory/src/main"
-            ]
+            srcDir "$generatedDirectory/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
@@ -396,7 +387,7 @@ task dgmConverter(dependsOn:compileJava) {
             arg(value: "$outputDir.absolutePath")
         }
     }
-    inputs.files fileTree('src').include('**/*GroovyMethods.java')
+    inputs.files fileTree('src/main').include('**/*GroovyMethods.java')
     outputs.dir outputDir
 }
 
@@ -442,7 +433,7 @@ allprojects {
         groovyOptions.encoding = 'UTF-8'
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
-                rootProject.bootstrapJar.archivePath
+                files(project==rootProject?rootProject.bootstrapJar:rootProject.jar)
         )
 
         // TODO: this null check was required after adding JMH plugin to performance project
