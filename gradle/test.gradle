@@ -77,7 +77,7 @@ tasks.withType(Test) {
     if (testdb) {
         systemProperties 'groovy.testdb.props': testdb
     }
-    systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
+    systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main/java'
     systemProperties 'gradle.home': gradle.gradleHomeDir // this is needed by the security.policy
 
     classpath = files('src/test') + classpath
