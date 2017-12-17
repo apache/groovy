@@ -30,7 +30,12 @@ allprojects {
         // because version ranges are evil
         // and because it causes bnd to be brought transitively
         // I am unsure why; says it is required by groovy-ant but its pom.xml does not declare so
-        exclude group:'org.codehaus.groovy'
+        resolutionStrategy.dependencySubstitution {
+            substitute module("org.codehaus.groovy:groovy") with project(":")
+            substitute module("org.codehaus.groovy:groovy-ant") with project(":groovy-ant")
+            substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
+            substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
+        }
     }
 
 //    license {
