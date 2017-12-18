@@ -183,4 +183,4 @@ rat {
 
 apply from: 'gradle/jacoco/jacoco.gradle'
 // Temporarily disabled because of conflict
-//apply from: 'gradle/binarycompatibility.gradle'
+apply from: 'gradle/binarycompatibility.gradle'
