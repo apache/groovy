@@ -11898,7 +11898,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
-        Collection<T> result = createSimilarCollection(left, left.size());
+        Collection<T> result = createSimilarCollection(left, right.size());
         //creates the collection to look for values.
         Collection<T> pickFrom = new TreeSet<T>(new NumberAwareComparator<T>());
         pickFrom.addAll(left);
