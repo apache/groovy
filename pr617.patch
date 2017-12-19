@@ -1,0 +1,293 @@
+From 2e36707b9446f8b48a85bee26f6ec746d56e8b95 Mon Sep 17 00:00:00 2001
+From: aalmiray <aalmiray@gmail.com>
+Date: Wed, 11 Oct 2017 16:34:27 +0200
+Subject: [PATCH 1/2] GROOVY-8352: add a @Generated annotation
+
+---
+ src/main/groovy/transform/Generated.java           | 36 ++++++++++
+ .../org/codehaus/groovy/classgen/Verifier.java     | 22 +++---
+ .../groovy/tools/javac/JavaStubGenerator.java      | 10 +--
+ .../groovy/transform/GeneratedTransformTest.groovy | 81 ++++++++++++++++++++++
+ 4 files changed, 136 insertions(+), 13 deletions(-)
+ create mode 100644 src/main/groovy/transform/Generated.java
+ create mode 100644 src/test/org/codehaus/groovy/transform/GeneratedTransformTest.groovy
+
+diff --git a/src/main/groovy/transform/Generated.java b/src/main/groovy/transform/Generated.java
+new file mode 100644
+index 0000000000..f7ea40af6d
+--- /dev/null
++++ b/src/main/groovy/transform/Generated.java
+@@ -0,0 +1,36 @@
++/*
++ *  Licensed to the Apache Software Foundation (ASF) under one
++ *  or more contributor license agreements.  See the NOTICE file
++ *  distributed with this work for additional information
++ *  regarding copyright ownership.  The ASF licenses this file
++ *  to you under the Apache License, Version 2.0 (the
++ *  "License"); you may not use this file except in compliance
++ *  with the License.  You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing,
++ *  software distributed under the License is distributed on an
++ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ *  KIND, either express or implied.  See the License for the
++ *  specific language governing permissions and limitations
++ *  under the License.
++ */
++package groovy.transform;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++/**
++ * The Generated annotation is used to mark members that have been generated.
++ *
++ * @author Andres Almiray
++ * @author Jochen Theodorou
++ * @author Mark Hoffmann
++ */
++@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
++@Retention(RetentionPolicy.RUNTIME)
++public @interface Generated {
++}
+diff --git a/src/main/org/codehaus/groovy/classgen/Verifier.java b/src/main/org/codehaus/groovy/classgen/Verifier.java
+index b98e784577..f1251d7e7a 100644
+--- a/src/main/org/codehaus/groovy/classgen/Verifier.java
++++ b/src/main/org/codehaus/groovy/classgen/Verifier.java
+@@ -21,6 +21,7 @@
+ import groovy.lang.GroovyClassLoader;
+ import groovy.lang.GroovyObject;
+ import groovy.lang.MetaClass;
++import groovy.transform.Generated;
+ import org.codehaus.groovy.GroovyBugError;
+ import org.codehaus.groovy.ast.*;
+ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+@@ -124,6 +125,8 @@
+             new Parameter(ClassHelper.METACLASS_TYPE, "mc")
+     };
+ 
++    private static final Class GENERATED_ANNOTATION = Generated.class;
++
+     private ClassNode classNode;
+     private MethodNode methodNode;
+ 
+@@ -384,6 +387,7 @@ public void visit(MethodVisitor mv) {
+     protected void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
+         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
+         FieldNode metaClassField = getMetaClassField(node);
++        AnnotationNode generatedAnnotation = new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION));
+ 
+         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
+             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
+@@ -425,7 +429,7 @@ public void visit(MethodVisitor mv) {
+                             mv.visitInsn(ARETURN);
+                         }
+                     })
+-            );
++            ).addAnnotation(generatedAnnotation);
+         }
+ 
+         Parameter[] parameters = new Parameter[]{new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
+@@ -459,7 +463,7 @@ public void visit(MethodVisitor mv) {
+                     ACC_PUBLIC, ClassHelper.VOID_TYPE,
+                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
+                     setMetaClassCode
+-            );
++            ).addAnnotation(generatedAnnotation);
+         }
+ 
+         if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
+@@ -485,7 +489,7 @@ public void visit(MethodVisitor mv) {
+                             mv.visitInsn(ARETURN);
+                         }
+                     })
+-            );
++            ).addAnnotation(generatedAnnotation);
+         }
+ 
+         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
+@@ -505,7 +509,7 @@ public void visit(MethodVisitor mv) {
+                             mv.visitInsn(ARETURN);
+                         }
+                     })
+-            );
++            ).addAnnotation(generatedAnnotation);
+         }
+ 
+         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
+@@ -526,7 +530,7 @@ public void visit(MethodVisitor mv) {
+                             mv.visitInsn(RETURN);
+                         }
+                     })
+-            );
++            ).addAnnotation(generatedAnnotation);
+         }
+     }
+ 
+@@ -535,12 +539,12 @@ public void visit(MethodVisitor mv) {
+      * call will either be made to ClassNode.addSyntheticMethod() or ClassNode.addMethod(). If a non-synthetic method
+      * is to be added the ACC_SYNTHETIC modifier is removed if it has been accidentally supplied.
+      */
+-    protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
+-                             ClassNode[] exceptions, Statement code) {
++    protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
++                                   ClassNode[] exceptions, Statement code) {
+         if (shouldBeSynthetic) {
+-            node.addSyntheticMethod(name, modifiers, returnType, parameters, exceptions, code);
++            return node.addSyntheticMethod(name, modifiers, returnType, parameters, exceptions, code);
+         } else {
+-            node.addMethod(name, modifiers & ~ACC_SYNTHETIC, returnType, parameters, exceptions, code);
++            return node.addMethod(name, modifiers & ~ACC_SYNTHETIC, returnType, parameters, exceptions, code);
+         }
+     }
+ 
+diff --git a/src/main/org/codehaus/groovy/tools/javac/JavaStubGenerator.java b/src/main/org/codehaus/groovy/tools/javac/JavaStubGenerator.java
+index b672793c18..89d45aeba2 100644
+--- a/src/main/org/codehaus/groovy/tools/javac/JavaStubGenerator.java
++++ b/src/main/org/codehaus/groovy/tools/javac/JavaStubGenerator.java
+@@ -155,8 +155,8 @@ protected void addPropertyMethod(MethodNode method) {
+                     doAddMethod(method);
+                 }
+                 protected void addReturnIfNeeded(MethodNode node) {}
+-                protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+-                    doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
++                protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
++                    return doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
+                 }
+ 
+                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
+@@ -184,13 +184,15 @@ protected void addDefaultParameters(DefaultArgsAction action, MethodNode method)
+                     }
+                 }
+ 
+-                private void doAddMethod(MethodNode method) {
++                private MethodNode doAddMethod(MethodNode method) {
+                     String sig = method.getTypeDescriptor();
+ 
+-                    if (propertyMethodsWithSigs.containsKey(sig)) return;
++                    if (propertyMethodsWithSigs.containsKey(sig)) return method;
+ 
+                     propertyMethods.add(method);
+                     propertyMethodsWithSigs.put(sig, method);
++
++                    return method;
+                 }
+ 
+                 @Override
+diff --git a/src/test/org/codehaus/groovy/transform/GeneratedTransformTest.groovy b/src/test/org/codehaus/groovy/transform/GeneratedTransformTest.groovy
+new file mode 100644
+index 0000000000..34e9f0ea0c
+--- /dev/null
++++ b/src/test/org/codehaus/groovy/transform/GeneratedTransformTest.groovy
+@@ -0,0 +1,81 @@
++/*
++ *  Licensed to the Apache Software Foundation (ASF) under one
++ *  or more contributor license agreements.  See the NOTICE file
++ *  distributed with this work for additional information
++ *  regarding copyright ownership.  The ASF licenses this file
++ *  to you under the Apache License, Version 2.0 (the
++ *  "License"); you may not use this file except in compliance
++ *  with the License.  You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing,
++ *  software distributed under the License is distributed on an
++ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ *  KIND, either express or implied.  See the License for the
++ *  specific language governing permissions and limitations
++ *  under the License.
++ */
++package org.codehaus.groovy.transform
++
++import org.junit.After
++import org.junit.Before
++import org.junit.Rule
++import org.junit.Test
++import org.junit.rules.TestName
++import org.junit.runner.RunWith
++import org.junit.runners.JUnit4
++
++import static org.junit.Assume.assumeTrue
++
++/**
++ * Tests for the @Generated annotation.
++ */
++@RunWith(JUnit4)
++class GeneratedTransformTest extends GroovyShellTestCase {
++    @Rule public TestName nameRule = new TestName()
++
++    @Before
++    void setUp() {
++        super.setUp()
++        // check java version requirements
++        def v = System.getProperty("java.specification.version")
++        assert v
++        assumeTrue('Test requires jre8+', nameRule.methodName.endsWith('_vm8').implies(new BigDecimal(v) >= 1.8))
++    }
++
++    @After
++    void tearDown() {
++        super.tearDown()
++    }
++
++    @Test
++    void testDefaultGroovyMethodsAreAnnotatedWithGenerated() {
++        def person = evaluate('''
++            class Person {
++                String name
++            }
++            new Person()
++        ''')
++
++        GroovyObject.declaredMethods.each { m ->
++            def method = person.class.declaredMethods.find { it.name == m.name }
++            assert method.annotations*.annotationType().name == ['groovy.transform.Generated']
++        }
++    }
++
++    @Test
++    void testOverridenDefaultGroovyMethodsAreNotAnnotatedWithGenerated() {
++        def person = evaluate('''
++            class Person {
++                String name
++                
++                def invokeMethod(String name, args) { }
++            }
++            new Person()
++        ''')
++
++        def method = person.class.declaredMethods.find { it.name == 'invokeMethod' }
++        assert !('groovy.transform.Generated' in method.annotations*.annotationType().name)
++    }
++}
+\ No newline at end of file
+
+From d2097c8cb1dc6080dc491d5fbae6b0732d697c23 Mon Sep 17 00:00:00 2001
+From: aalmiray <aalmiray@gmail.com>
+Date: Thu, 12 Oct 2017 10:07:07 +0200
+Subject: [PATCH 2/2] Remove author tags from javadoc
+
+---
+ src/main/groovy/transform/Generated.java | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/main/groovy/transform/Generated.java b/src/main/groovy/transform/Generated.java
+index f7ea40af6d..98eaf5b0df 100644
+--- a/src/main/groovy/transform/Generated.java
++++ b/src/main/groovy/transform/Generated.java
+@@ -25,10 +25,6 @@
+ 
+ /**
+  * The Generated annotation is used to mark members that have been generated.
+- *
+- * @author Andres Almiray
+- * @author Jochen Theodorou
+- * @author Mark Hoffmann
+  */
+ @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
+ @Retention(RetentionPolicy.RUNTIME)

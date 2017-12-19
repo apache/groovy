@@ -1,0 +1,57 @@
+From 2c11c1b72ff47e6c5ccb2134a7ea86da8cabc028 Mon Sep 17 00:00:00 2001
+From: John Wagenleitner <jwagenleitner@apache.org>
+Date: Sun, 13 Aug 2017 17:15:00 -0700
+Subject: [PATCH] GROOVY-8249: Newify local variable declaration fails to
+ resolve class expression
+
+---
+ .../groovy/classgen/VariableScopeVisitor.java      |  1 +
+ .../groovy/transform/NewifyTransformTest.groovy    | 24 ++++++++++++++++++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/src/main/org/codehaus/groovy/classgen/VariableScopeVisitor.java b/src/main/org/codehaus/groovy/classgen/VariableScopeVisitor.java
+index 7a99014fed..f920211e32 100644
+--- a/src/main/org/codehaus/groovy/classgen/VariableScopeVisitor.java
++++ b/src/main/org/codehaus/groovy/classgen/VariableScopeVisitor.java
+@@ -330,6 +330,7 @@ public void visitIfElse(IfStatement ifElse) {
+     }
+ 
+     public void visitDeclarationExpression(DeclarationExpression expression) {
++        visitAnnotations(expression);
+         // visit right side first to avoid the usage of a
+         // variable before its declaration
+         expression.getRightExpression().visit(this);
+diff --git a/src/test/org/codehaus/groovy/transform/NewifyTransformTest.groovy b/src/test/org/codehaus/groovy/transform/NewifyTransformTest.groovy
+index d585c8a32c..c2cce48ef0 100644
+--- a/src/test/org/codehaus/groovy/transform/NewifyTransformTest.groovy
++++ b/src/test/org/codehaus/groovy/transform/NewifyTransformTest.groovy
+@@ -211,4 +211,28 @@ class NewifyTransformTest extends GroovyShellTestCase {
+             assert Foo.answer == 42
+         '''
+     }
++
++    // GROOVY-8249
++    void testLocalVariableDeclResolvesClass() {
++        assertScript '''
++            class A {
++                final int id
++                A(int id) { this.id = id + 10 }
++            }
++            class Foo {
++                static String test() {
++                    @Newify(String)
++                    String answer = String('bar')
++                    answer
++                }
++                static int test2() {
++                    @Newify(A)
++                    int answer = A(32).id
++                    answer
++                } 
++            }
++            assert Foo.test() == 'bar'
++            assert Foo.test2() == 42
++        '''
++    }
+ }
+\ No newline at end of file

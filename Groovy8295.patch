@@ -1,0 +1,61 @@
+--- C:\Users\U0076777\Groovyc-2.4.12.txt	2017-08-29 17:54:18.050000000 -0500
++++ C:\Users\U0076777\Groovyc-edited.txt	2017-08-29 17:55:43.727000000 -0500
+@@ -1006,7 +1006,7 @@
+             commandLineList.add(javaHome + separator + "bin" + separator + "java");
+         }
+         commandLineList.add("-classpath");
+-        commandLineList.add(classpath.toString());
++        commandLineList.add(classpath.toString().replace(getProject().getBaseDir().getAbsolutePath(), "."));
+ 
+         final String fileEncodingProp = System.getProperty("file.encoding");
+         if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
+@@ -1036,7 +1036,7 @@
+ 
+     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
+         commandLineList.add("--classpath");
+-        commandLineList.add(classpath.toString());
++        commandLineList.add(classpath.toString().replace(getProject().getBaseDir().getAbsolutePath(), "."));
+         if (jointCompilation) {
+             commandLineList.add("-j");
+             commandLineList.addAll(jointOptions);
+@@ -1100,18 +1100,12 @@
+     }
+ 
+     private String[] makeCommandLine(List<String> commandLineList) {
+-        final String[] commandLine = new String[commandLineList.size()];
+-        for (int i = 0; i < commandLine.length; ++i) {
+-            commandLine[i] = commandLineList.get(i);
+-        }
+-        log.verbose("Compilation arguments:");
+-        log.verbose(DefaultGroovyMethods.join(commandLine, "\n"));
+-        return commandLine;
++        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join(commandLineList, "\n"));
++        return commandLineList.toArray(new String[commandLineList.size()]);
+     }
+ 
+     private void runForked(String[] commandLine) {
+-        // use the main method in FileSystemCompiler
+-        final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
++        final Execute executor = new Execute();
+         executor.setAntRun(getProject());
+         executor.setWorkingDirectory(getProject().getBaseDir());
+         executor.setCommandline(commandLine);
+@@ -1280,12 +1274,12 @@
+                  * may not exist in the classpath yet
+                  */
+                 if (!found && new File(cpEntry).exists()) {
+-                	try {
+-                		antLoader.addPathElement(cpEntry);
+-                	}
+-                	catch(BuildException e) {
+-                		log.warn("The classpath entry " + cpEntry + " is not a valid Java resource");
+-                	}
++                    try {
++                        antLoader.addPathElement(cpEntry);
++                    }
++                    catch(BuildException e) {
++                        log.warn("The classpath entry " + cpEntry + " is not a valid Java resource");
++                    }
+                 }
+             }
+         }

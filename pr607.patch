@@ -1,0 +1,60 @@
+From f30d2e5dd6ce8045eb6656d1993f0dd9b07edfc5 Mon Sep 17 00:00:00 2001
+From: "alexey.afanasiev" <Alexey.Afanasiev@jetbrains.com>
+Date: Tue, 26 Sep 2017 17:43:15 +0300
+Subject: [PATCH] GROOVY-8330: Wrong 'Inconvertible types' error on casting
+ interface
+
+---
+ .../transform/stc/StaticTypeCheckingVisitor.java   |  2 ++
+ .../groovy/transform/stc/STCAssignmentTest.groovy  | 26 ++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java b/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
+index cbb2798470..4c55eeafb8 100644
+--- a/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
++++ b/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
+@@ -3369,6 +3369,8 @@ protected boolean checkCast(final ClassNode targetType, final Expression source)
+             return false;
+         } else if ((expressionType.getModifiers()& Opcodes.ACC_FINAL)==0 && targetType.isInterface()) {
+             return true;
++        } else if ((targetType.getModifiers()& Opcodes.ACC_FINAL)==0 && expressionType.isInterface()) {
++            return true;
+         } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
+             return false;
+         }
+diff --git a/src/test/groovy/transform/stc/STCAssignmentTest.groovy b/src/test/groovy/transform/stc/STCAssignmentTest.groovy
+index 3c00185b90..acb1c7532b 100644
+--- a/src/test/groovy/transform/stc/STCAssignmentTest.groovy
++++ b/src/test/groovy/transform/stc/STCAssignmentTest.groovy
+@@ -872,5 +872,31 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
+         }            
+         '''
+     }
++
++    void testNarrowingConversion() {
++        assertScript '''
++        interface A1{}
++        interface A2 extends A1{}
++        
++        class C1 implements A1{}
++        
++        def m(A2 a2) {
++            C1 c1 = (C1) a2
++        }
++        '''
++    }
++
++    void testFinalNarrowingConversion() {
++        shouldFailWithMessages '''
++        interface A1{}
++        interface A2 extends A1{}
++        
++        final class C1 implements A1{}
++        
++        def m(A2 a2) {
++            C1 c1 = (C1) a2
++        }
++        ''', "Inconvertible types: cannot cast A2 to C1"
++    }
+ }
+ 

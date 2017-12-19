@@ -1,0 +1,102 @@
+From e8fd90ae974fa97817682c1c4f8936feef2d2a66 Mon Sep 17 00:00:00 2001
+From: paulk <paulk@asert.com.au>
+Date: Mon, 18 Sep 2017 13:37:59 +1000
+Subject: [PATCH] GROOVY-8260: Static compilation requires casting inside
+ instanceof check
+
+---
+ .../transform/stc/StaticTypeCheckingVisitor.java   | 14 ++++--
+ src/test/groovy/bugs/Groovy8260Bug.groovy          | 57 ++++++++++++++++++++++
+ 2 files changed, 67 insertions(+), 4 deletions(-)
+ create mode 100644 src/test/groovy/bugs/Groovy8260Bug.groovy
+
+diff --git a/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java b/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
+index 12ea2b50f2..8c66eb7b9d 100644
+--- a/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
++++ b/src/main/org/codehaus/groovy/transform/stc/StaticTypeCheckingVisitor.java
+@@ -4018,12 +4018,18 @@ protected ClassNode getType(ASTNode exp) {
+             }
+             if (variable instanceof Parameter) {
+                 Parameter parameter = (Parameter) variable;
+-                ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
++                ClassNode type = null;
++                // check if param part of control structure - but not if inside instanceof
++                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(vexp);
++                if (temporaryTypesForExpression == null || temporaryTypesForExpression.isEmpty()) {
++                    type = typeCheckingContext.controlStructureVariables.get(parameter);
++                }
++                // now check for closure override
+                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+-                ClassNode[] closureParamTypes = (ClassNode[])(enclosingClosure!=null?enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS):null);
+-                if (type==null && enclosingClosure !=null && "it".equals(variable.getName()) && closureParamTypes!=null) {
++                ClassNode[] closureParamTypes = (ClassNode[]) (enclosingClosure != null ? enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) : null);
++                if (type == null && enclosingClosure != null && "it".equals(variable.getName()) && closureParamTypes != null) {
+                     final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
+-                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null && closureParamTypes.length!=0) {
++                    if (parameters.length == 0 && temporaryTypesForExpression == null && closureParamTypes.length != 0) {
+                         type = closureParamTypes[0];
+                     }
+                 }
+diff --git a/src/test/groovy/bugs/Groovy8260Bug.groovy b/src/test/groovy/bugs/Groovy8260Bug.groovy
+new file mode 100644
+index 0000000000..e69d68bdd3
+--- /dev/null
++++ b/src/test/groovy/bugs/Groovy8260Bug.groovy
+@@ -0,0 +1,57 @@
++/*
++ *  Licensed to the Apache Software Foundation (ASF) under one
++ *  or more contributor license agreements.  See the NOTICE file
++ *  distributed with this work for additional information
++ *  regarding copyright ownership.  The ASF licenses this file
++ *  to you under the Apache License, Version 2.0 (the
++ *  "License"); you may not use this file except in compliance
++ *  with the License.  You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing,
++ *  software distributed under the License is distributed on an
++ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ *  KIND, either express or implied.  See the License for the
++ *  specific language governing permissions and limitations
++ *  under the License.
++ */
++package groovy.bugs
++
++class Groovy8260Bug extends GroovyTestCase {
++
++    void testNoCastForInstanceofInsideLoop() {
++        assertScript '''
++            import groovy.transform.CompileStatic
++
++            interface FooI {
++                def intfMethod()
++            }
++
++            class Foo implements FooI {
++                def intfMethod() { 'Foo Interface method' }
++                def implMethod() { 'Foo Implementation method' }
++            }
++
++            @CompileStatic
++            def method(FooI propIn, List result) {
++                if (propIn instanceof Foo) {
++                    result << propIn.implMethod()
++                } else {
++                    result << propIn?.intfMethod()
++                }
++                for (FooI propLoop : [null, new Foo()]) {
++                    result << propLoop?.intfMethod()
++                    if (propLoop instanceof Foo) {
++                        result << propLoop.implMethod()
++                    }
++                }
++            }
++
++            def result = []
++            method(null, result)
++            assert result == [null, null, 'Foo Interface method', 'Foo Implementation method']
++        '''
++    }
++
++}

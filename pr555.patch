@@ -1,0 +1,312 @@
+From 11a0b159d8d04f3c1e518613566a1b459ecda44d Mon Sep 17 00:00:00 2001
+From: noamt <noam@10ne.org>
+Date: Wed, 31 May 2017 20:57:04 +0200
+Subject: [PATCH 1/5] GROOVY-8200 - Shorthand |= results in NPE: Fixing the NPE
+ with an explicit test and assignment of the right-hand boolean operator.
+ Assigning a primitive boolean variable with null, like `boolean x = null`,
+ will end up as `false`. I think it only makes sense to apply the same
+ behavior to the right hand operator.
+
+---
+ .../groovy/runtime/DefaultGroovyMethods.java       | 12 ++++++++
+ .../groovy/runtime/DefaultGroovyMethodsTest.groovy | 36 ++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+diff --git a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+index 76b9fa6378..da50255833 100644
+--- a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
++++ b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+@@ -15760,6 +15760,9 @@ public static BigInteger toBigInteger(Number self) {
+      * @since 1.0
+      */
+     public static Boolean and(Boolean left, Boolean right) {
++        if (right == null) {
++            right = Boolean.FALSE;
++        }
+         return left && right;
+     }
+ 
+@@ -15772,6 +15775,9 @@ public static Boolean and(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean or(Boolean left, Boolean right) {
++        if (right == null) {
++            right = Boolean.FALSE;
++        }
+         return left || right;
+     }
+ 
+@@ -15784,6 +15790,9 @@ public static Boolean or(Boolean left, Boolean right) {
+      * @since 1.8.3
+      */
+     public static Boolean implies(Boolean left, Boolean right) {
++        if (right == null) {
++            right = Boolean.FALSE;
++        }
+         return !left || right;
+     }
+ 
+@@ -15796,6 +15805,9 @@ public static Boolean implies(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean xor(Boolean left, Boolean right) {
++        if (right == null) {
++            right = Boolean.FALSE;
++        }
+         return left ^ right;
+     }
+ 
+diff --git a/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy b/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
+index 087b301bc3..c0e4e1a990 100644
+--- a/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
++++ b/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
+@@ -239,4 +239,40 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
+     private static class MyList extends ArrayList {
+         public MyList() {}
+     }
++
++    public void testBooleanOr() {
++        assertTrue(DefaultGroovyMethods.or(true, true))
++        assertTrue(DefaultGroovyMethods.or(true, false))
++        assertTrue(DefaultGroovyMethods.or(false, true))
++        assertFalse(DefaultGroovyMethods.or(false, false))
++        assertFalse(DefaultGroovyMethods.or(false, null))
++        assertTrue(DefaultGroovyMethods.or(true, null))
++    }
++
++    public void testBooleanAnd() {
++        assertTrue(DefaultGroovyMethods.and(true, true))
++        assertFalse(DefaultGroovyMethods.and(true, false))
++        assertFalse(DefaultGroovyMethods.and(false, true))
++        assertFalse(DefaultGroovyMethods.and(false, false))
++        assertFalse(DefaultGroovyMethods.and(false, null))
++        assertFalse(DefaultGroovyMethods.and(true, null))
++    }
++
++    public void testBooleanXor() {
++        assertFalse(DefaultGroovyMethods.xor(true, true))
++        assertTrue(DefaultGroovyMethods.xor(true, false))
++        assertTrue(DefaultGroovyMethods.xor(false, true))
++        assertFalse(DefaultGroovyMethods.xor(false, false))
++        assertFalse(DefaultGroovyMethods.xor(false, null))
++        assertTrue(DefaultGroovyMethods.xor(true, null))
++    }
++
++    public void testBooleanImplication() {
++        assertTrue(DefaultGroovyMethods.implies(true, true))
++        assertTrue(DefaultGroovyMethods.xor(true, false))
++        assertTrue(DefaultGroovyMethods.xor(false, true))
++        assertFalse(DefaultGroovyMethods.xor(false, false))
++        assertFalse(DefaultGroovyMethods.xor(false, null))
++        assertTrue(DefaultGroovyMethods.xor(true, null))
++    }
+ }
+
+From 2d8fc8957a82658ec000e77cb1cab66565ef2a6a Mon Sep 17 00:00:00 2001
+From: noamt <noam@10ne.org>
+Date: Thu, 1 Jun 2017 15:02:40 +0200
+Subject: [PATCH 2/5] GROOVY-8200 - Shorthand |= results in NPE: Using a
+ cleaner, safe assignment of the right hand operator
+
+---
+ .../codehaus/groovy/runtime/DefaultGroovyMethods.java    | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+index da50255833..f359f44dfd 100644
+--- a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
++++ b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+@@ -15760,9 +15760,7 @@ public static BigInteger toBigInteger(Number self) {
+      * @since 1.0
+      */
+     public static Boolean and(Boolean left, Boolean right) {
+-        if (right == null) {
+-            right = Boolean.FALSE;
+-        }
++        right = Boolean.TRUE.equals(right);
+         return left && right;
+     }
+ 
+@@ -15775,9 +15773,7 @@ public static Boolean and(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean or(Boolean left, Boolean right) {
+-        if (right == null) {
+-            right = Boolean.FALSE;
+-        }
++        right = Boolean.TRUE.equals(right);
+         return left || right;
+     }
+ 
+@@ -15790,9 +15786,7 @@ public static Boolean or(Boolean left, Boolean right) {
+      * @since 1.8.3
+      */
+     public static Boolean implies(Boolean left, Boolean right) {
+-        if (right == null) {
+-            right = Boolean.FALSE;
+-        }
++        right = Boolean.TRUE.equals(right);
+         return !left || right;
+     }
+ 
+@@ -15805,9 +15799,7 @@ public static Boolean implies(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean xor(Boolean left, Boolean right) {
+-        if (right == null) {
+-            right = Boolean.FALSE;
+-        }
++        right = Boolean.TRUE.equals(right);
+         return left ^ right;
+     }
+ 
+
+From 9d9f2d49db0cd149349b74549f5556a650bc5c7f Mon Sep 17 00:00:00 2001
+From: noamt <noam@10ne.org>
+Date: Wed, 7 Jun 2017 12:33:13 +0300
+Subject: [PATCH 3/5] GROOVY-8200 - Shorthand |= results in NPE: Reducing the
+ expression to a one liner
+
+---
+ .../org/codehaus/groovy/runtime/DefaultGroovyMethods.java    | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+index f359f44dfd..193a7bf655 100644
+--- a/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
++++ b/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java
+@@ -15760,8 +15760,7 @@ public static BigInteger toBigInteger(Number self) {
+      * @since 1.0
+      */
+     public static Boolean and(Boolean left, Boolean right) {
+-        right = Boolean.TRUE.equals(right);
+-        return left && right;
++        return left && Boolean.TRUE.equals(right);
+     }
+ 
+     /**
+@@ -15773,8 +15772,7 @@ public static Boolean and(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean or(Boolean left, Boolean right) {
+-        right = Boolean.TRUE.equals(right);
+-        return left || right;
++        return left || Boolean.TRUE.equals(right);
+     }
+ 
+     /**
+@@ -15786,8 +15784,7 @@ public static Boolean or(Boolean left, Boolean right) {
+      * @since 1.8.3
+      */
+     public static Boolean implies(Boolean left, Boolean right) {
+-        right = Boolean.TRUE.equals(right);
+-        return !left || right;
++        return !left || Boolean.TRUE.equals(right);
+     }
+ 
+     /**
+@@ -15799,8 +15796,7 @@ public static Boolean implies(Boolean left, Boolean right) {
+      * @since 1.0
+      */
+     public static Boolean xor(Boolean left, Boolean right) {
+-        right = Boolean.TRUE.equals(right);
+-        return left ^ right;
++        return left ^ Boolean.TRUE.equals(right);
+     }
+ 
+ //    public static Boolean negate(Boolean left) {
+
+From aa715bcc38fa2cfb13de7cbccbda5c6aaba2cf14 Mon Sep 17 00:00:00 2001
+From: noamt <noam@10ne.org>
+Date: Thu, 8 Jun 2017 14:03:19 +0300
+Subject: [PATCH 4/5] GROOVY-8200 - Shorthand |= results in NPE: Fix copy-pasta
+ mistake in DefaultGroovyMethodsTest
+
+---
+ .../codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy    | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy b/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
+index c0e4e1a990..713e29b431 100644
+--- a/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
++++ b/src/test/org/codehaus/groovy/runtime/DefaultGroovyMethodsTest.groovy
+@@ -269,10 +269,10 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
+ 
+     public void testBooleanImplication() {
+         assertTrue(DefaultGroovyMethods.implies(true, true))
+-        assertTrue(DefaultGroovyMethods.xor(true, false))
+-        assertTrue(DefaultGroovyMethods.xor(false, true))
+-        assertFalse(DefaultGroovyMethods.xor(false, false))
+-        assertFalse(DefaultGroovyMethods.xor(false, null))
+-        assertTrue(DefaultGroovyMethods.xor(true, null))
++        assertFalse(DefaultGroovyMethods.implies(true, false))
++        assertTrue(DefaultGroovyMethods.implies(false, true))
++        assertTrue(DefaultGroovyMethods.implies(false, false))
++        assertTrue(DefaultGroovyMethods.implies(false, null))
++        assertFalse(DefaultGroovyMethods.implies(true, null))
+     }
+ }
+
+From 0e95399596b828c1ad14f571290e79ad03eef2b2 Mon Sep 17 00:00:00 2001
+From: noamt <noam@10ne.org>
+Date: Thu, 8 Jun 2017 14:04:06 +0300
+Subject: [PATCH 5/5] GROOVY-8200 - Shorthand |= results in NPE: Adding tests
+ for the shorthand logical operators
+
+---
+ src/spec/test/OperatorsTest.groovy | 44 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/src/spec/test/OperatorsTest.groovy b/src/spec/test/OperatorsTest.groovy
+index a0eddf38d8..46b87f7e7b 100644
+--- a/src/spec/test/OperatorsTest.groovy
++++ b/src/spec/test/OperatorsTest.groovy
+@@ -607,4 +607,46 @@ assert (b1 + 11).size == 15
+             assert str1 == str2
+             '''
+     }
+-}
++
++    void testBooleanOr() {
++        assertScript '''
++boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
++boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
++
++assert (trueValue1 |= true)
++assert (trueValue2 |= false)
++assert (trueValue3 |= null)
++assert (falseValue1 |= true)
++assert !(falseValue2 |= false)
++assert !(falseValue3 |= null)
++'''
++    }
++
++    void testBooleanAnd() {
++        assertScript '''
++boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
++boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
++
++assert (trueValue1 &= true)
++assert !(trueValue2 &= false)
++assert !(trueValue3 &= null)
++assert !(falseValue1 &= true)
++assert !(falseValue2 &= false)
++assert !(falseValue3 &= null)
++'''
++    }
++
++    void testBooleanXor() {
++        assertScript '''
++boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
++boolean falseValue1 = false, falseValue2 = false, falseValue3 = false
++
++assert !(trueValue1 ^= true)
++assert (trueValue2 ^= false)
++assert (trueValue3 ^= null)
++assert (falseValue1 ^= true)
++assert !(falseValue2 ^= false)
++assert !(falseValue3 ^= null)
++'''
++    }
++}
+\ No newline at end of file

@@ -1,0 +1,26 @@
+From 9740919cee991a573a45e288f8aa7d4490dfcc4f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Aur=C3=A9lien=20Pupier?= <apupier@redhat.com>
+Date: Wed, 30 Aug 2017 17:39:44 +0200
+Subject: [PATCH] GROOVY-8305: Fix default Ivy settings file for local m2 path
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Aurélien Pupier <apupier@redhat.com>
+---
+ src/resources/groovy/grape/defaultGrapeConfig.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/resources/groovy/grape/defaultGrapeConfig.xml b/src/resources/groovy/grape/defaultGrapeConfig.xml
+index 11161d37f4..a9f03062af 100644
+--- a/src/resources/groovy/grape/defaultGrapeConfig.xml
++++ b/src/resources/groovy/grape/defaultGrapeConfig.xml
+@@ -26,7 +26,7 @@
+         <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
+         <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision](-[classifier]).[ext]"/>
+       </filesystem>
+-      <ibiblio name="localm2" root="file:${user.home}/.m2/repository/" checkmodified="true" changingPattern=".*" changingMatcher="regexp" m2compatible="true"/>
++      <ibiblio name="localm2" root="file:/${user.home}/.m2/repository/" checkmodified="true" changingPattern=".*" changingMatcher="regexp" m2compatible="true"/>
+       <!-- todo add 'endorsed groovy extensions' resolver here -->
+       <ibiblio name="jcenter" root="https://jcenter.bintray.com/" m2compatible="true"/>
+       <ibiblio name="ibiblio" m2compatible="true"/>
