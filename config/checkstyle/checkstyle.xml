@@ -154,8 +154,7 @@
         <module name="UpperEll"/>
         <!-- off for now - to allow parentheses which add clarity -->
         <!--<module name="UnnecessaryParentheses"/>-->
-        <!-- removed in recent versions of checkstyle -->
-        <!--<module name="JUnitTestCase"/>-->
+        <module name="JUnitTestCase"/>
         <module name="FinalClass"/>
         <!-- good to have but pollutes coverage -->
         <!--<module name="HideUtilityClassConstructor"/>-->
