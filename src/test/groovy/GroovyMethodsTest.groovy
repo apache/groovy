@@ -809,10 +809,10 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void doIt(col) {
-        col.clear();
-        col.addAll(leftCol);
+        col.clear()
+        col.addAll(leftCol)
         // not really concerned about  correctness, rather that the method can be called, however..
-        assert col.intersect(rightCol) == ["2"]
+        assert col.intersect(rightCol) as List == ["2"]
     }
 
     void testFileWithReader() {
@@ -1563,6 +1563,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         a = 1
         b = 4
         assert [4, 5] == iterableA.intersect(iterableB)
+    }
+
+    void testIntersectForSets() {
+        assert [].toSet() == [].toSet().intersect([] as Iterable)
+        assert [].toSet() == [].toSet().intersect([1, 2, 3] as Iterable)
+        assert [].toSet() == [1, 2, 3].toSet().intersect([] as Iterable)
+        assert [2, 3].toSet() == [2, 3, 4].toSet().intersect([1, 2, 3] as Iterable)
+        assert [2, 3, 4].toSet() == [2, 3, 4].toSet().intersect([1, 2, 3, 4] as Iterable)
+        assert [2, 3].toSet() == [2, 3, 4, 5].toSet().intersect([1, 2, 3] as Iterable)
     }
 
     void testIntersectForMaps() {

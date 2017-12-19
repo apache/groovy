@@ -12223,18 +12223,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (left.isEmpty() || right.isEmpty())
             return createSimilarCollection(left, 0);
 
-        if (left.size() < right.size()) {
-            Collection<T> swaptemp = left;
-            left = right;
-            right = swaptemp;
-        }
-
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
-        Collection<T> result = createSimilarCollection(left, left.size());
+        Collection<T> result = createSimilarCollection(left, Math.min(left.size(), right.size()));
         //creates the collection to look for values.
-        Collection<T> pickFrom = new TreeSet<T>(new NumberAwareComparator<T>());
+        Collection<T> pickFrom = new TreeSet<>(new NumberAwareComparator<>());
         pickFrom.addAll(left);
 
         for (final T t : right) {
