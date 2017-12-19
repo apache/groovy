@@ -809,10 +809,10 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void doIt(col) {
-        col.clear();
-        col.addAll(leftCol);
+        col.clear()
+        col.addAll(leftCol)
         // not really concerned about  correctness, rather that the method can be called, however..
-        assert col.intersect(rightCol) == ["2"]
+        assert col.intersect(rightCol) as List == ["2"]
     }
 
     void testFileWithReader() {

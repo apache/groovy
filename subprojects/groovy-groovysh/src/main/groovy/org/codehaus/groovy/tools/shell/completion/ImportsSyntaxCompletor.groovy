@@ -105,12 +105,12 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
                 Class clazz = shell.interp.evaluate([className]) as Class
                 if (clazz != null) {
                     List<String> clazzSymbols = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')*.value
-                    List<String> importedSymbols;
+                    Collection<String> importedSymbols
                     if (symbolName == '*') {
-                        importedSymbols = clazzSymbols;
+                        importedSymbols = clazzSymbols
                     } else {
                         Set<String> acceptableMatches = [symbolName, symbolName + '(', symbolName + '()']
-                        importedSymbols = acceptableMatches.intersect(clazzSymbols)
+                        importedSymbols = (acceptableMatches as Collection).intersect(clazzSymbols)
                     }
                     matches.addAll(importedSymbols)
                 }
