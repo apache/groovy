@@ -74,9 +74,9 @@ import java.util.Map;
  * @author Jochen Theodorou
  */
 public class RootLoader extends URLClassLoader {
-
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
     private final Map<String, Class> customClasses = new HashMap<String, Class>();
+    private static final String ORG_W3C_DOM_NODE = "org.w3c.dom.Node";
 
     /**
      * constructs a new RootLoader without classpath
@@ -95,7 +95,7 @@ public class RootLoader extends URLClassLoader {
         super(urls, parent);
         // major hack here...!
         try {
-            customClasses.put("org.w3c.dom.Node", super.loadClass("org.w3c.dom.Node", false));
+            customClasses.put(ORG_W3C_DOM_NODE, super.loadClass(ORG_W3C_DOM_NODE, false));
         } catch (Exception e) { /* ignore */ }
     }
 
