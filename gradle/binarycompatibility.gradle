@@ -70,7 +70,7 @@ allprojects {
             onlyModified = true
             failOnModification = false
             ignoreMissingClasses = true
-            classExcludes = ['**_closure','org.codehaus.groovy.runtime.dgm$**']
+            classExcludes = ['**_closure**','org.codehaus.groovy.runtime.dgm$**']
             packageExcludes = ['**internal**','groovyjarjar**']
             htmlOutputFile = file("$buildDir/reports/japi.html")
         }
