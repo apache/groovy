@@ -69,6 +69,10 @@ public class MopWriter {
         }
 
         public boolean equals(Object obj) {
+            if (!(obj instanceof MopKey)) {
+                return false;
+            }
+
             MopKey other = (MopKey) obj;
             return other.name.equals(name) && equalParameterTypes(other.params,params);
         }
