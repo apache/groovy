@@ -475,16 +475,11 @@ public class GroovyMain {
         Script s = groovy.parse(getScriptSource(isScriptFile, script));
 
         if (args.isEmpty()) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            PrintWriter writer = new PrintWriter(System.out);
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                PrintWriter writer = new PrintWriter(System.out)) {
 
-            try {
                 processReader(s, reader, writer);
-            } finally {
-                reader.close();
-                writer.close();
             }
-
         } else {
             Iterator i = args.iterator();
             while (i.hasNext()) {
@@ -508,13 +503,11 @@ public class GroovyMain {
             throw new FileNotFoundException(file.getName());
 
         if (!editFiles) {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            try {
-                PrintWriter writer = new PrintWriter(System.out);
+
+            try(BufferedReader reader = new BufferedReader(new FileReader(file));
+                PrintWriter writer = new PrintWriter(System.out)) {
+
                 processReader(s, reader, writer);
-                writer.flush();
-            } finally {
-                reader.close();
             }
         } else {
             File backup;
@@ -528,16 +521,11 @@ public class GroovyMain {
             if (!file.renameTo(backup))
                 throw new IOException("unable to rename " + file + " to " + backup);
 
-            BufferedReader reader = new BufferedReader(new FileReader(backup));
-            try {
-                PrintWriter writer = new PrintWriter(new FileWriter(file));
-                try {
-                    processReader(s, reader, writer);
-                } finally {
-                    writer.close();
-                }
-            } finally {
-                reader.close();
+
+            try(BufferedReader reader = new BufferedReader(new FileReader(backup));
+                PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+
+                processReader(s, reader, writer);
             }
         }
     }
