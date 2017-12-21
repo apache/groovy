@@ -484,8 +484,8 @@ public class GroovyMain {
             try {
                 processReader(s, reader, writer);
             } finally {
-                reader.close();
                 writer.close();
+                reader.close();
             }
 
         } else {
@@ -512,11 +512,12 @@ public class GroovyMain {
 
         if (!editFiles) {
             BufferedReader reader = new BufferedReader(new FileReader(file));
+            PrintWriter writer = new PrintWriter(System.out);
+
             try {
-                PrintWriter writer = new PrintWriter(System.out);
                 processReader(s, reader, writer);
-                writer.flush();
             } finally {
+                writer.close();
                 reader.close();
             }
         } else {
@@ -532,14 +533,12 @@ public class GroovyMain {
                 throw new IOException("unable to rename " + file + " to " + backup);
 
             BufferedReader reader = new BufferedReader(new FileReader(backup));
+            PrintWriter writer = new PrintWriter(new FileWriter(file));
+
             try {
-                PrintWriter writer = new PrintWriter(new FileWriter(file));
-                try {
-                    processReader(s, reader, writer);
-                } finally {
-                    writer.close();
-                }
+                processReader(s, reader, writer);
             } finally {
+                writer.close();
                 reader.close();
             }
         }
