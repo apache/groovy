@@ -192,7 +192,7 @@ class NioGroovyMethodsTest extends Specification {
         inputStream.readObject() == str
 
         cleanup:
-        inputStream.close()
+        inputStream?.close()
     }
 
     def testNewObjectInputStream() {
