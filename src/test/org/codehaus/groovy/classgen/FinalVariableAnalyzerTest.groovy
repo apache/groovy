@@ -215,6 +215,30 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-8386
+    void testPotentiallyUninitializedFinalVarOkayIfNotUsed() {
+        assertFinals begin: false, '''
+            final begin
+            try {
+                begin = new Date()
+            } finally {
+                println 'done'
+            }
+        '''
+    }
+
+    // GROOVY-8094
+    void testFinalVarSetWithinIf() {
+        assertFinalCompilationErrors(['z'], '''
+            def method() {
+                final z = null
+                if (z != null) {
+                    z = 3
+                }
+            }
+        ''')
+    }
+
     void testPrePostfixShouldMakeVarNotFinal() {
         assertFinals x: false, y: false, z: false, o: false, '''
             def x = 0
@@ -228,17 +252,15 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testPrePostfixShouldMakeUninitializedVarNotFinal() {
-        assertFinals x: false, y: false, z: false, o: false, '''
+    void testPrePostfixShouldNotCompileWithUninitializedVar() {
+        assertFinalCompilationErrors(['x'], '''
             def x
-            def y
-            def z
-            def o
             x++
-            ++y
-            z--
-            --o
-        '''
+        ''', true)
+        assertFinalCompilationErrors(['y'], '''
+            def y
+            --y
+        ''', true)
     }
 
     void testAssignmentInIfBooleanExpressionShouldFailCompilation() {
@@ -308,7 +330,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
             final x
             def y = x
             x = 1
-        ''')
+        ''', true)
     }
 
     void testShouldConsiderThatXIsEffectivelyFinalWithIfElse() {
@@ -335,10 +357,10 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testShouldThrowCompileTimeErrorBecauseXIsNotInitialized() {
-        assertFinalCompilationErrors(['x'], '''
+    void testShouldConsiderFinalVarOkayIfNotAccessedButShouldNotBeDeemedFinal() {
+        assertFinals x: false, '''
             final x
-        ''', true)
+        '''
     }
 
     void testShouldThrowCompileTimeErrorBecauseXIsNotEffectivelyFinalWithSubsequentIfs() {
@@ -348,9 +370,10 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
               x=1
             }
             if (!foo) {
-              x=2
+              x=2 // follow Java here, don't try to interpret boolean's across different if statements
+                  // so consider this as might have been already initialized at this point
             }
-        ''', true)
+        ''')
     }
 
     void testShouldNotSayThatVarIsNotInitialized() {

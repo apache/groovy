@@ -52,7 +52,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private final SourceUnit sourceUnit;
     private final VariableNotFinalCallback callback;
 
-    private Set<VariableExpression> declaredFinalVariables = null;
+    private Set<Variable> declaredFinalVariables = null;
     private boolean inAssignment = false;
 
     private enum VariableState {
@@ -89,11 +89,12 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     public FinalVariableAnalyzer(final SourceUnit sourceUnit, final VariableNotFinalCallback callback) {
         this.callback = callback;
         this.sourceUnit = sourceUnit;
-        pushState();
+        assignmentTracker.add(new StateMap());
     }
 
     private Map<Variable, VariableState> pushState() {
         Map<Variable, VariableState> state = new StateMap();
+        state.putAll(getState());
         assignmentTracker.add(state);
         return state;
     }
@@ -128,18 +129,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     @Override
     public void visitBlockStatement(final BlockStatement block) {
-        Set<VariableExpression> old = declaredFinalVariables;
-        declaredFinalVariables = new HashSet<VariableExpression>();
+        Set<Variable> old = declaredFinalVariables;
+        declaredFinalVariables = new HashSet<Variable>();
         super.visitBlockStatement(block);
-        if (callback != null) {
-            Map<Variable, VariableState> state = getState();
-            for (VariableExpression declaredFinalVariable : declaredFinalVariables) {
-                VariableState variableState = state.get(declaredFinalVariable.getAccessedVariable());
-                if (variableState == null || variableState != VariableState.is_final) {
-                    callback.variableNotAlwaysInitialized(declaredFinalVariable);
-                }
-            }
-        }
         declaredFinalVariables = old;
     }
 
@@ -149,27 +141,45 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         boolean isDeclaration = expression instanceof DeclarationExpression;
         Expression leftExpression = expression.getLeftExpression();
         Expression rightExpression = expression.getRightExpression();
-        if (isDeclaration && leftExpression instanceof VariableExpression) {
+        if (isDeclaration) {
+            recordFinalVars(leftExpression);
+        }
+        // visit RHS first for expressions like a = b = 0
+        inAssignment = assignment;
+        rightExpression.visit(this);
+        inAssignment = false;
+        leftExpression.visit(this);
+        if (assignment) {
+            recordAssignments(expression, isDeclaration, leftExpression, rightExpression);
+        }
+    }
+
+    private void recordAssignments(BinaryExpression expression, boolean isDeclaration, Expression leftExpression, Expression rightExpression) {
+        if (leftExpression instanceof Variable) {
+            boolean uninitialized =
+                    isDeclaration && rightExpression == EmptyExpression.INSTANCE;
+            recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
+        } else if (leftExpression instanceof TupleExpression) {
+            TupleExpression te = (TupleExpression) leftExpression;
+            for (Expression next : te.getExpressions()) {
+                if (next instanceof Variable) {
+                    recordAssignment((Variable) next, isDeclaration, false, false, next);
+                }
+            }
+        }
+    }
+
+    private void recordFinalVars(Expression leftExpression) {
+        if (leftExpression instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) leftExpression;
             if (Modifier.isFinal(var.getModifiers())) {
                 declaredFinalVariables.add(var);
             }
-        }
-        leftExpression.visit(this);
-        inAssignment = assignment;
-        rightExpression.visit(this);
-        inAssignment = false;
-        if (assignment) {
-            if (leftExpression instanceof Variable) {
-                boolean uninitialized =
-                        isDeclaration && rightExpression == EmptyExpression.INSTANCE;
-                recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
-            } else if (leftExpression instanceof TupleExpression) {
-                TupleExpression te = (TupleExpression) leftExpression;
-                for (Expression next : te.getExpressions()) {
-                    if (next instanceof Variable) {
-                        recordAssignment((Variable) next, isDeclaration, false, false, next);
-                    }
+        } else if (leftExpression instanceof TupleExpression) {
+            TupleExpression te = (TupleExpression) leftExpression;
+            for (Expression next : te.getExpressions()) {
+                if (next instanceof Variable) {
+                    declaredFinalVariables.add((Variable) next);
                 }
             }
         }
@@ -214,13 +224,16 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         super.visitVariableExpression(expression);
-        if (inAssignment) {
-            Map<Variable, VariableState> state = getState();
-            Variable key = expression.getAccessedVariable();
+        Map<Variable, VariableState> state = getState();
+        Variable key = expression.getAccessedVariable();
+        if (key == null) {
+            fixVar(expression);
+            key = expression.getAccessedVariable();
+        }
+        if (key != null && !key.isClosureSharedVariable() && callback != null) {
             VariableState variableState = state.get(key);
-            if (variableState == VariableState.is_uninitialized) {
-                variableState = VariableState.is_var;
-                state.put(key, variableState);
+            if (inAssignment && variableState == VariableState.is_uninitialized) {
+                callback.variableNotAlwaysInitialized(expression);
             }
         }
     }
@@ -257,14 +270,8 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             VariableState mergedIfElse;
             mergedIfElse = ifValue != null && ifValue.isFinal
                     && elseValue != null && elseValue.isFinal ? VariableState.is_final : VariableState.is_var;
-            if (beforeValue == null) {
+            if (beforeValue != null) {
                 curState.put(var, mergedIfElse);
-            } else {
-                if (beforeValue == VariableState.is_uninitialized) {
-                    curState.put(var, mergedIfElse);
-                } else if (ifValue != null || elseValue != null) {
-                    curState.put(var, VariableState.is_var);
-                }
             }
         }
     }
@@ -310,6 +317,14 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (var == null) {
             return;
         }
+
+        // getTarget(var) can be null in buggy xform code, e.g. Spock
+        if (getTarget(var) == null) {
+            fixVar(var);
+            // we maybe can't fix a synthetic field
+            if (getTarget(var) == null) return;
+        }
+
         if (!isDeclaration && var.isClosureSharedVariable()) {
             getState().put(var, VariableState.is_var);
         }
@@ -328,6 +343,20 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         getState().put(var, variableState);
         if (variableState == VariableState.is_var && callback != null) {
             callback.variableNotFinal(var, expression);
+        }
+    }
+
+    // getTarget(var) can be null in buggy xform code, e.g. Spock <= 1.1
+    // TODO consider removing fixVar once Spock 1.2 is released - replace with informational exception?
+    // This fixes xform declaration expressions but not other synthetic fields which aren't set up correctly
+    private void fixVar(Variable var) {
+        if (getTarget(var) == null && var instanceof VariableExpression && getState() != null && var.getName() != null) {
+            for (Variable v: getState().keySet()) {
+                if (var.getName().equals(v.getName())) {
+                    ((VariableExpression)var).setAccessedVariable(v);
+                    break;
+                }
+            }
         }
     }
 
