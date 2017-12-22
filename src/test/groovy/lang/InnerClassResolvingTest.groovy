@@ -42,4 +42,21 @@ class InnerClassResolvingTest extends GroovyTestCase {
         new GroovyShell().evaluate(script)
     }
 
+    void 'test dont resolve class via inner class with package name'() {
+        shouldFail '''\
+package bugs
+
+class Current {
+
+  static class bugs {
+    static class Target {}
+  }
+
+  static usage() {
+    new Target()
+  }
+}
+assert Current.usage()
+'''
+    }
 }
