@@ -360,7 +360,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveNestedClass(ClassNode type) {
-        if (type instanceof ConstructedNestedClass) return false;
+        if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
         // we have for example a class name A, are in class X
         // and there is a nested class A$X. we want to be able 
         // to access that class directly, so A becomes a valid
