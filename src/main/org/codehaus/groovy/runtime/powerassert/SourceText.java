@@ -54,7 +54,7 @@ public class SourceText {
 
         firstLine = stat.getLineNumber();
         textOffsets.add(0);
-        normalizedText = "";
+        StringBuilder normalizedTextBuffer = new StringBuilder();
 
         for (int line = stat.getLineNumber(); line <= stat.getLastLineNumber(); line++) {
             String lineText = sourceUnit.getSample(line, 0, janitor);
@@ -72,9 +72,10 @@ public class SourceText {
             lineText = lineText.trim();
             if (line != stat.getLastLineNumber() && lineText.length() > 0)
                 lineText += ' ';
-            normalizedText += lineText;
-            textOffsets.add(normalizedText.length());
+            normalizedTextBuffer.append(lineText);
+            textOffsets.add(normalizedTextBuffer.length());
         }
+        normalizedText = normalizedTextBuffer.toString();
     }
 
     /**
