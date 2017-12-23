@@ -25,6 +25,7 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -90,7 +91,7 @@ public class CallSiteGenerator {
         }        
         
         // make call
-        mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor, invokeMethodCode == Opcodes.INVOKEINTERFACE);
+        mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor, useInterface);
 
         // produce result
         BytecodeHelper.box(mv, cachedMethod.getReturnType());
@@ -158,11 +159,19 @@ public class CallSiteGenerator {
         mv.visitEnd();
     }
 
+    private static void classHeader(ClassWriter cw, String internalName, String superName) {
+        if (VMPluginFactory.getPlugin().getVersion()>=8) {
+            cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
+        } else {
+            cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
+        }
+    }
+
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
+        classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite");
         cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
- 
+
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", internalName);
 
         genCallXxxWithArray(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/GroovyObject");
@@ -179,7 +188,7 @@ public class CallSiteGenerator {
 
     public static byte[] genPojoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
+        classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite");
         cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", internalName);
@@ -194,7 +203,7 @@ public class CallSiteGenerator {
 
     public static byte[] genStaticMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
+        classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
         cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
  
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", internalName);
@@ -209,8 +218,16 @@ public class CallSiteGenerator {
         return cw.toByteArray();
     }
 
+    private static ClassWriter makeClassWriter() {
+        if (VMPluginFactory.getPlugin().getVersion()>=8) {
+            return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        } else {
+            return new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        }
+    }
+
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
@@ -222,7 +239,7 @@ public class CallSiteGenerator {
     }
 
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
@@ -234,7 +251,7 @@ public class CallSiteGenerator {
     }
 
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
