@@ -694,7 +694,7 @@ public class InvocationWriter {
         if (arguments instanceof TupleExpression) {
             argumentList = ((TupleExpression) arguments).getExpressions();
         } else {
-            argumentList = new ArrayList();
+            argumentList = new ArrayList<>();
             argumentList.add(arguments);
         }
         for (Expression expression : argumentList) {
