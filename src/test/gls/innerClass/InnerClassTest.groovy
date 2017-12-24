@@ -727,6 +727,28 @@ import org.codehaus.groovy.classgen.Verifier
             null
         '''
     }
+
+    //GROOVY-8423
+    void testPrivateInnerClassHasPrivateModifier() {
+        assertScript '''
+            import java.lang.reflect.Modifier
+            class Foo {
+                private class Bar {}                
+            }
+            assert Modifier.isPrivate(Foo.Bar.modifiers)
+        '''
+    }
+
+    //GROOVY-8423
+    void testProtectedInnerClassHasProtectedModifier() {
+        assertScript '''
+            import java.lang.reflect.Modifier
+            class Foo {
+                protected class Bar {}                
+            }
+            assert Modifier.isProtected(Foo.Bar.modifiers)
+        '''
+    }
 }
 
 class MyOuterClass4028 {

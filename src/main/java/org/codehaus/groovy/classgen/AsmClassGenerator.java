@@ -305,11 +305,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         int mods = adjustedClassModifiersForInnerClassTable(cn);
 
-
-        if (Modifier.isPrivate(mods)) {
-            mods = mods ^ Modifier.PRIVATE;
-            innerClass.setModifiers(mods);
-        }
         cv.visitInnerClass(
                 innerClassInternalName,
                 outerClassName,
@@ -318,7 +313,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /*
-     * Classes but not interfaces should have ACC_SUPER set
      * See http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
      * for what flags are allowed depending on the fact we are writing the inner class table
      * or the class itself
@@ -331,7 +325,6 @@ public class AsmClassGenerator extends ClassGenerator {
             modifiers = modifiers & ~ACC_ENUM;
             modifiers = modifiers & ~ACC_FINAL;
         }
-        modifiers = fixInnerClassModifiers(classNode, modifiers);
         return modifiers;
     }
 
