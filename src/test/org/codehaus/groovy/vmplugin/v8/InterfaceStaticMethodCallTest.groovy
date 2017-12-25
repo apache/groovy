@@ -18,8 +18,14 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory
+
 class InterfaceStaticMethodCallTest extends GroovyTestCase {
     void testStreamOf() {
+        if (VMPluginFactory.getPlugin().getVersion() < 8) {
+            return
+        }
+
         // "of" is a static method declared on the interface, we only want to be sure we can call the method
         assertScript '''
             import java.util.stream.Stream
