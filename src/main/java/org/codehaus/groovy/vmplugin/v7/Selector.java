@@ -236,7 +236,7 @@ public abstract class Selector {
             Method m = CachedSAMClass.getSAMMethod(staticTargetType);
             if (m==null) return;
             //TODO: optimize: add guard based on type Closure
-            handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType, staticTargetType.isInterface());
+            handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType);
         }
 
         private void castToTypeFallBack() {
