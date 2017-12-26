@@ -360,7 +360,7 @@ public class DefaultTypeTransformation {
         if (object instanceof Closure) {
             Method m = CachedSAMClass.getSAMMethod(type);
             if (m != null) {
-                return CachedSAMClass.coerceToSAM((Closure) object, m, type, type.isInterface());
+                return CachedSAMClass.coerceToSAM((Closure) object, m, type);
             }
         }
 

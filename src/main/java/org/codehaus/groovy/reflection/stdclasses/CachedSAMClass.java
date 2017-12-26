@@ -61,6 +61,11 @@ public class CachedSAMClass extends CachedClass {
                 ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
+    public static Object coerceToSAM(Closure argument, Method method, Class clazz) {
+        return coerceToSAM(argument, method, clazz, clazz.isInterface());
+    }
+
+    /* Should we make the following method private? */
     @SuppressWarnings("unchecked")
     public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
         if (argument!=null && clazz.isAssignableFrom(argument.getClass())) {
@@ -90,7 +95,7 @@ public class CachedSAMClass extends CachedClass {
     public Object coerceArgument(Object argument) {
         if (argument instanceof Closure) {
             Class clazz = getTheClass();
-            return coerceToSAM((Closure) argument, method, clazz, clazz.isInterface()); 
+            return coerceToSAM((Closure) argument, method, clazz);
         } else {
             return argument;
         }
