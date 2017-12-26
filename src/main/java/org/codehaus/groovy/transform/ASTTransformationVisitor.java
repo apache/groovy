@@ -38,6 +38,7 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -230,23 +231,30 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         continue;
                     }
                     Set<String> disabledGlobalTransforms = compilationUnit.getConfiguration().getDisabledGlobalASTTransformations();
-                    if (disabledGlobalTransforms==null) disabledGlobalTransforms=Collections.emptySet();
+                    if (disabledGlobalTransforms == null) disabledGlobalTransforms = Collections.emptySet();
                     while (className != null) {
                         if (!className.startsWith("#") && className.length() > 0) {
                             if (!disabledGlobalTransforms.contains(className)) {
                                 if (transformNames.containsKey(className)) {
-                                    if (!service.equals(transformNames.get(className))) {
+                                    try {
+                                        if (!service.toURI().equals(transformNames.get(className).toURI())) {
+                                            compilationUnit.getErrorCollector().addWarning(
+                                                    WarningMessage.POSSIBLE_ERRORS,
+                                                    "The global transform for class " + className + " is defined in both "
+                                                            + transformNames.get(className).toExternalForm()
+                                                            + " and "
+                                                            + service.toExternalForm()
+                                                            + " - the former definition will be used and the latter ignored.",
+                                                    null,
+                                                    null);
+                                        }
+                                    } catch (URISyntaxException e) {
                                         compilationUnit.getErrorCollector().addWarning(
                                                 WarningMessage.POSSIBLE_ERRORS,
-                                                "The global transform for class " + className + " is defined in both "
-                                                        + transformNames.get(className).toExternalForm()
-                                                        + " and "
-                                                        + service.toExternalForm()
-                                                        + " - the former definition will be used and the latter ignored.",
+                                                "Failed to parse URL as URI because of exception " + e.toString(),
                                                 null,
                                                 null);
                                     }
-
                                 } else {
                                     transformNames.put(className, service);
                                 }
