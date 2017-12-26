@@ -250,7 +250,7 @@ public class Numbers
                 }
                 else if( value.compareTo(MAX_LONG) <= 0 && value.compareTo(MIN_LONG) >= 0 )
                 {
-                    return new Long(value.longValue());
+                    return Long.valueOf(value.longValue());
                 }
                 return value;
         }
