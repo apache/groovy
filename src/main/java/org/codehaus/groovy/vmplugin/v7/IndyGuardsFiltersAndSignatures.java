@@ -114,7 +114,7 @@ public class IndyGuardsFiltersAndSignatures {
 
             BOOLEAN_IDENTITY = MethodHandles.identity(Boolean.class);
             DTT_CAST_TO_TYPE = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class,Object.class,Class.class));
-            SAM_CONVERSION = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class, boolean.class));
+            SAM_CONVERSION = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class));
             HASHSET_CONSTRUCTOR = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
             ARRAYLIST_CONSTRUCTOR = LOOKUP.findConstructor(ArrayList.class, MethodType.methodType(void.class, Collection.class));
             GROOVY_CAST_EXCEPTION = LOOKUP.findConstructor(GroovyCastException.class, MethodType.methodType(void.class, Object.class, Class.class));
