@@ -68,6 +68,7 @@ public class SpreadMap extends HashMap {
                                    + t + ") cannot be put in this spreadMap.");
     }
 
+    @Override
     public boolean equals(Object that) {
         if (that instanceof SpreadMap) {
             return equals((SpreadMap) that);
@@ -79,8 +80,10 @@ public class SpreadMap extends HashMap {
         if (that == null) return false;        
 
         if (size() == that.size()) {
-            for (Object key : keySet()) {
-                if (!DefaultTypeTransformation.compareEqual(get(key), that.get(key))) {
+            for (Object e : entrySet()) {
+                Map.Entry entry = (Map.Entry) e;
+                Object key = entry.getKey();
+                if (!DefaultTypeTransformation.compareEqual(entry.getValue(), that.get(key))) {
                     return false;
                 }
             }
@@ -89,6 +92,7 @@ public class SpreadMap extends HashMap {
         return false;
     }
 
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
             for (Object key : keySet()) {
