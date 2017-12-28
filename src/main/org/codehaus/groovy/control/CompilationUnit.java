@@ -52,11 +52,14 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.TraitComposer;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -835,6 +838,8 @@ public class CompilationUnit extends ProcessingUnit {
             // also takes care of both \ and / depending on the host compiling environment
             if (sourceName != null)
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
+            //TraceClassVisitor tracer = new TraceClassVisitor(visitor, new PrintWriter(System.err,true));
+            //AsmClassGenerator generator = new AsmClassGenerator(source, context, tracer, sourceName);
             AsmClassGenerator generator = new AsmClassGenerator(source, context, visitor, sourceName);
 
             //

@@ -36,10 +36,12 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
+import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -79,6 +81,7 @@ import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.samePackages;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -630,13 +633,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return false;
     }
 
-    private static boolean samePackages(final String pkg1, final String pkg2) {
-        return (
-                (pkg1 ==null && pkg2 ==null)
-                || pkg1 !=null && pkg1.equals(pkg2)
-                );
-    }
-
     private static boolean isDirectAccessAllowed(FieldNode a, ClassNode receiver, boolean isSamePackage) {
         ClassNode declaringClass = a.getDeclaringClass().redirect();
         ClassNode receiverType = receiver.redirect();
@@ -854,5 +850,76 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
 
+    @Override
+    public void fallbackAttributeOrPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter) {
+        if (name!=null &&
+            (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField)
+        ) {
+            TypeChooser typeChooser = controller.getTypeChooser();
+            ClassNode classNode = controller.getClassNode();
+            ClassNode rType = typeChooser.resolveType(objectExpression, classNode);
+            if (controller.getCompileStack().isLHS()) {
+                if (setField(expression, objectExpression, rType, name)) return;
+            } else {
+                if (getField(expression, objectExpression, rType, name)) return;
+            }
+        }
+        super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
+    }
 
+    // this is just a simple set field handling static and non-static, but not Closure and inner classes
+    private boolean setField(PropertyExpression expression, Expression objectExpression, ClassNode rType, String name) {
+        if (expression.isSafe()) return false;
+        FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), rType, name, false);
+        if (fn==null) return false;
+        OperandStack stack = controller.getOperandStack();
+        stack.doGroovyCast(fn.getType());
+
+        MethodVisitor mv = controller.getMethodVisitor();
+        String ownerName = BytecodeHelper.getClassInternalName(fn.getOwner());
+        if (!fn.isStatic()) {
+            controller.getCompileStack().pushLHS(false);
+            objectExpression.visit(controller.getAcg());
+            controller.getCompileStack().popLHS();
+            if (!rType.equals(stack.getTopOperand())) {
+                BytecodeHelper.doCast(mv, rType);
+                stack.replace(rType);
+            }
+            stack.swap();
+            mv.visitFieldInsn(PUTFIELD, ownerName, name, BytecodeHelper.getTypeDescription(fn.getType()));
+            stack.remove(1);
+        } else {
+            mv.visitFieldInsn(PUTSTATIC, ownerName, name, BytecodeHelper.getTypeDescription(fn.getType()));
+        }
+
+        //mv.visitInsn(ACONST_NULL);
+        //stack.replace(OBJECT_TYPE);
+        return true;
+    }
+
+    private boolean getField(PropertyExpression expression, Expression receiver, ClassNode receiverType, String name) {
+        ClassNode classNode = controller.getClassNode();
+        boolean safe = expression.isSafe();
+        boolean implicitThis = expression.isImplicitThis();
+
+        if (makeGetField(receiver, receiverType, name, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return true;
+        if (receiver instanceof ClassExpression) {
+            if (makeGetField(receiver, receiver.getType(), name, safe, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return true;
+            if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), name, safe, implicitThis)) return true;
+        }
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, name, safe, implicitThis)) return true;
+
+        boolean isClassReceiver = false;
+        if (isClassClassNodeWrappingConcreteType(receiverType)) {
+            isClassReceiver = true;
+            receiverType = receiverType.getGenericsTypes()[0].getType();
+        }
+        if (isClassReceiver && makeGetField(receiver, CLASS_Type, name, safe, false, true)) return true;
+        if (receiverType.isEnum()) {
+            controller.getMethodVisitor().visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), name, BytecodeHelper.getTypeDescription(receiverType));
+            controller.getOperandStack().push(receiverType);
+            return true;
+        }
+        return false;
+    }
 }
