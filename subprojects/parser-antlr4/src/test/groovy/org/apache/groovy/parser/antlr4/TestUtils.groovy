@@ -24,6 +24,7 @@ import org.apache.groovy.parser.Antlr2Parser
 import org.apache.groovy.parser.Antlr4Parser
 import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 import org.apache.groovy.parser.antlr4.util.AstDumper
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -226,6 +227,10 @@ class TestUtils {
         assert executeScript(path);
     }
 
+    static doRunAndTestWithAntlr2(String path) {
+        assert executeScript(createAntlr2Shell(), "$RESOURCES_PATH/$path")
+    }
+
     static executeScript(String path) {
         executeScript(createAntlr4Shell(), "$RESOURCES_PATH/$path")
     }
@@ -247,6 +252,13 @@ class TestUtils {
     static createAntlr4Shell() {
         CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
         configuration.pluginFactory = new Antlr4PluginFactory()
+
+        return new GroovyShell(configuration);
+    }
+
+    static createAntlr2Shell() {
+        CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        configuration.pluginFactory = new AntlrParserPluginFactory()
 
         return new GroovyShell(configuration);
     }

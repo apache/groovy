@@ -29,6 +29,7 @@ import org.codehaus.groovy.syntax.Token
 
 import static org.apache.groovy.parser.antlr4.TestUtils.doTest
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
+import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestWithAntlr2
 
 /**
  * Some basic test cases for the new parser
@@ -388,5 +389,7 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTest('bugs/BUG-GROOVY-8311.groovy')
         if (!jdk8orGreater) return
         doRunAndTest('bugs/GROOVY-8228.groovy')
+
+        doRunAndTestWithAntlr2('bugs/BUG-GROOVY-8426.groovy')
     }
 }
