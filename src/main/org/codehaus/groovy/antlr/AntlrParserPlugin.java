@@ -1399,18 +1399,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement statementList(AST code) {
-        return statementListNoChild(code.getFirstChild(), code);
+        BlockStatement block = siblingsToBlockStatement(code.getFirstChild());
+        configureAST(block, code);
+        return block;
     }
 
     protected Statement statementListNoChild(AST node, AST alternativeConfigureNode) {
-        BlockStatement block = new BlockStatement();
+        BlockStatement block = siblingsToBlockStatement(node);
         // alternativeConfigureNode is used only to set the source position
         if (node != null) {
             configureAST(block, node);
         } else {
             configureAST(block, alternativeConfigureNode);
         }
-        for (; node != null; node = node.getNextSibling()) {
+        return block;
+    }
+
+    private BlockStatement siblingsToBlockStatement(AST firstSiblingNode) {
+        BlockStatement block = new BlockStatement();
+        for (AST node = firstSiblingNode; node != null; node = node.getNextSibling()) {
             block.addStatement(statement(node));
         }
         return block;
