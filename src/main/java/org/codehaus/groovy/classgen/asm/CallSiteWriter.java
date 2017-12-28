@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.callsite.CallSite;
@@ -383,5 +385,16 @@ public class CallSiteWriter {
 
     public boolean hasCallSiteUse() {
         return callSiteArrayVarIndex>=0;
+    }
+
+    public void fallbackAttributeOrPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter) {
+        if (controller.getCompileStack().isLHS()) controller.getOperandStack().box();
+        controller.getInvocationWriter().makeCall(
+                expression,
+                objectExpression, // receiver
+                new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
+                MethodCallExpression.NO_ARGUMENTS, adapter,
+                expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
+        );
     }
 }
