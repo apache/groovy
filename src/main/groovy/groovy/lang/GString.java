@@ -27,9 +27,6 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -94,28 +91,40 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(GString that) {
-        List<String> stringList = new ArrayList<String>(Arrays.asList(getStrings()));
-        List<Object> valueList = new ArrayList<Object>(Arrays.asList(getValues()));
+        Object[] values = getValues();
 
-        List<String> thatStrings = Arrays.asList(that.getStrings());
+        return new GStringImpl(appendValues(values, that.getValues()), appendStrings(getStrings(), that.getStrings(), values.length));
+    }
 
-        int stringListSize = stringList.size();
-        if (stringListSize > valueList.size()) {
-            thatStrings = new ArrayList<String>(thatStrings);
+    private String[] appendStrings(String[] strings, String[] thatStrings, int valuesLength) {
+        int stringsLength = strings.length;
+        boolean isStringsLonger = stringsLength > valuesLength;
+        int lastIndexOfStrings = stringsLength - 1;
+        int thatStringsLength = isStringsLonger ? thatStrings.length - 1 : thatStrings.length;
+
+        String[] newStrings = new String[stringsLength + thatStringsLength];
+        System.arraycopy(strings, 0, newStrings, 0, stringsLength);
+
+        if (isStringsLonger) {
             // merge onto end of previous GString to avoid an empty bridging value
-            int lastIndexOfStringList = stringListSize - 1;
-            String s = stringList.get(lastIndexOfStringList);
-            s += thatStrings.remove(0);
-            stringList.set(lastIndexOfStringList, s);
+            System.arraycopy(thatStrings, 1, newStrings, stringsLength, thatStringsLength);
+            newStrings[lastIndexOfStrings] = strings[lastIndexOfStrings] + thatStrings[0];
+        } else {
+            System.arraycopy(thatStrings, 0, newStrings, stringsLength, thatStringsLength);
         }
 
-        stringList.addAll(thatStrings);
-        valueList.addAll(Arrays.asList(that.getValues()));
+        return newStrings;
+    }
 
-        final String[] newStrings = stringList.toArray(EMPTY_STRING_ARRAY);
-        final Object[] newValues = valueList.toArray();
+    private Object[] appendValues(Object[] values, Object[] thatValues) {
+        int valuesLength = values.length;
+        int thatValuesLength = thatValues.length;
 
-        return new GStringImpl(newValues, newStrings);
+        Object[] newValues = new Object[valuesLength + thatValuesLength];
+        System.arraycopy(values, 0, newValues, 0, valuesLength);
+        System.arraycopy(thatValues, 0, newValues, valuesLength, thatValuesLength);
+
+        return newValues;
     }
 
     public GString plus(String that) {
