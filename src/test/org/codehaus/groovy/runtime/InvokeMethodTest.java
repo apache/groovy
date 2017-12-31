@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.util.GroovyTestCase;
 import junit.framework.AssertionFailedError;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
@@ -228,13 +229,13 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testCoerceGStringToStringOnGetBytes() throws Throwable {
-        GString param = new GString(new Object[]{"US-ASCII"}) {
+        GString param = new GString(new Object[]{CompilerConfiguration.DEFAULT_SOURCE_ENCODING}) {
             public String[] getStrings() {
                 return new String[]{""};
             }
         };
         Object value = invoke("test", "getBytes", new Object[]{param});
-        assertEquals("converted GString to string", "test".getBytes("US-ASCII").getClass(), value.getClass());
+        assertEquals("converted GString to string", "test".getBytes(CompilerConfiguration.DEFAULT_SOURCE_ENCODING).getClass(), value.getClass());
     }
 
     public void testBadBDToDoubleCoerce() throws Throwable {

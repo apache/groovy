@@ -70,7 +70,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
     }
 
     private String getSystemEncoding() {
-        return System.getProperty("file.encoding", "US-ASCII");
+        return System.getProperty("file.encoding", CompilerConfiguration.DEFAULT_SOURCE_ENCODING);
     }
 
     private static String getVMVersion() {

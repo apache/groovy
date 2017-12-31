@@ -438,7 +438,7 @@ public class CompilerConfiguration {
         // 
         text = configuration.getProperty("groovy.source.encoding");
         if (text == null) {
-            text = configuration.getProperty("file.encoding", "US-ASCII");
+            text = configuration.getProperty("file.encoding", DEFAULT_SOURCE_ENCODING);
         }
         setSourceEncoding(text);
 
