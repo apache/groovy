@@ -3804,7 +3804,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return  {@code true} if this string starts with any specified prefixes.
      * @since   2.4.14
      */
-    public static boolean startsWith(String self, String... prefixes) {
+    public static boolean startsWithAny(String self, String... prefixes) {
         for (String prefix : prefixes) {
             if (self.startsWith(prefix)) {
                 return true;
@@ -3821,7 +3821,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return  {@code true} if this string ends with any specified suffixes
      * @since   2.4.14
      */
-    public static boolean endsWith(String self, String... suffixes) {
+    public static boolean endsWithAny(String self, String... suffixes) {
         for (String suffix : suffixes) {
             if (self.endsWith(suffix)) {
                 return true;
