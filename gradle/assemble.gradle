@@ -24,7 +24,6 @@ apply plugin: 'osgi'
 
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
-final jarjarTaskClassName = 'org.pantsbuild.jarjar.JarJarTask'
 
 ext.srcSpec = copySpec {
     from(projectDir) {
