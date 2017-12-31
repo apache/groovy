@@ -92,13 +92,13 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertFalse(StringGroovyMethods.isNumber(nonNumberStr));
     }
 
-    public void testStartsWith() {
-        assertTrue(StringGroovyMethods.startsWith("abcd", "ab", "ef"));
-        assertFalse(StringGroovyMethods.startsWith("abcd", "ef", "gh"));
+    public void testStartsWithAny() {
+        assertTrue(StringGroovyMethods.startsWithAny("abcd", "ab", "ef"));
+        assertFalse(StringGroovyMethods.startsWithAny("abcd", "ef", "gh"));
     }
 
-    public void testEndsWith() {
-        assertTrue(StringGroovyMethods.endsWith("abcd", "cd", "ef"));
-        assertFalse(StringGroovyMethods.endsWith("abcd", "ef", "gh"));
+    public void testEndsWithAny() {
+        assertTrue(StringGroovyMethods.endsWithAny("abcd", "cd", "ef"));
+        assertFalse(StringGroovyMethods.endsWithAny("abcd", "ef", "gh"));
     }
 }
