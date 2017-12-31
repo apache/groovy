@@ -101,4 +101,5 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertTrue(StringGroovyMethods.endsWith("abcd", "cd", "ef"));
         assertFalse(StringGroovyMethods.endsWith("abcd", "ef", "gh"));
     }
+
 }
