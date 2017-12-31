@@ -1,9 +1,3 @@
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.builder.AstBuilder
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import static org.codehaus.groovy.control.CompilePhase.CONVERSION
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,6 +16,13 @@ import static org.codehaus.groovy.control.CompilePhase.CONVERSION
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import static org.codehaus.groovy.control.CompilePhase.CONVERSION
+
 
  class Groovy8426Test {
     void testMethodBlockStatement() {
