@@ -3797,4 +3797,37 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return unexpandLine((CharSequence) self, tabStop);
     }
 
+    /**
+     * Tests if this string starts with any specified prefixes.
+     *
+     * @param   prefixes   the prefixes.
+     * @return  {@code true} if this string starts with any specified prefixes.
+     * @since   2.4.14
+     */
+    public static boolean startsWith(String self, String... prefixes) {
+        for (String prefix : prefixes) {
+            if (self.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Tests if this string ends with any specified suffixes.
+     *
+     * @param   suffixes   the suffixes.
+     * @return  {@code true} if this string ends with any specified suffixes
+     * @since   2.4.14
+     */
+    public static boolean endsWith(String self, String... suffixes) {
+        for (String suffix : suffixes) {
+            if (self.endsWith(suffix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
