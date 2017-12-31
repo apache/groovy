@@ -18,16 +18,16 @@
  */
 package org.codehaus.groovy.antlr
 
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.InnerClassNode
+import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.ast.*
+
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION
 
 /**
  * Test for AntlrParserPlugin.
- *
- * @author Hamlet D'Arcy
  */
 class AntlrParserPluginTest extends GroovyTestCase {
 
@@ -76,24 +76,6 @@ class AntlrParserPluginTest extends GroovyTestCase {
         assert statement.columnNumber == 21
         assert statement.lastColumnNumber == 34
         assert statement.statementLabel == 'label'
-    }
-
-    void testMethodBlockStatement() {
-        def result = new AstBuilder().buildFromString CONVERSION, false, '''
-            def method() {
-                'return value'
-                
-            }
-        '''
-
-        ClassNode classNode = result[1]
-        MethodNode method = classNode.getMethods('method')[0]
-        BlockStatement statement = method.code
-
-        assert statement.lineNumber == 2
-        assert statement.lastLineNumber == 5
-        assert statement.columnNumber == 26
-        assert statement.lastColumnNumber == 14
     }
 
 }
