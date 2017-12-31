@@ -28,8 +28,8 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.syntax.Token
 
 import static org.apache.groovy.parser.antlr4.TestUtils.doTest
+import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestAntlr4
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
-import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestWithAntlr2
 
 /**
  * Some basic test cases for the new parser
@@ -110,7 +110,7 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Annotation_07.groovy')
         doTest('core/Annotation_08.groovy')
         doTest('core/Annotation_09.groovy')
-        doRunAndTest('core/Annotation_10x.groovy')
+        doRunAndTestAntlr4('core/Annotation_10x.groovy')
     }
 
     void "test groovy core - Literal"() {
@@ -142,19 +142,19 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - Lambda"() {
-        doRunAndTest('core/Lambda_01x.groovy')
+        doRunAndTestAntlr4('core/Lambda_01x.groovy')
     }
 
     void "test groovy core - MethodReference"() {
-        doRunAndTest('core/MethodReference_01x.groovy')
+        doRunAndTestAntlr4('core/MethodReference_01x.groovy')
     }
 
     void "test groovy core - MethodPointer"() {
-        doRunAndTest('core/MethodPointer_01x.groovy')
+        doRunAndTestAntlr4('core/MethodPointer_01x.groovy')
     }
 
     void "test groovy core - ElvisAssignment"() {
-        doRunAndTest('core/ElvisAssignment_01x.groovy')
+        doRunAndTestAntlr4('core/ElvisAssignment_01x.groovy')
     }
 
     void "test groovy core - List"() {
@@ -163,7 +163,7 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - Map"() {
         doTest('core/Map_01.groovy')
-        doRunAndTest('core/Map_02x.groovy')
+        doRunAndTestAntlr4('core/Map_02x.groovy')
     }
 
     void "test groovy core - Expression"() {
@@ -187,21 +187,21 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Expression_18.groovy')
         doTest('core/Expression_19.groovy')
         doTest('core/Expression_20.groovy')
-        doRunAndTest('core/Expression_21x.groovy')
+        doRunAndTestAntlr4('core/Expression_21x.groovy')
         doTest('core/Expression_22x.groovy')
-        doRunAndTest('core/Expression_22x.groovy')
-        doRunAndTest('core/Expression_23x.groovy')
+        doRunAndTestAntlr4('core/Expression_22x.groovy')
+        doRunAndTestAntlr4('core/Expression_23x.groovy')
     }
 
     void "test groovy core - IdenticalOp"() {
-        doRunAndTest('core/IdenticalOp_01x.groovy')
+        doRunAndTestAntlr4('core/IdenticalOp_01x.groovy')
     }
 
     void "test groovy core - Assert"() {
         doTest('core/Assert_01.groovy')
-        doRunAndTest('core/Assert_02x.groovy')
-        doRunAndTest('core/Assert_03x.groovy')
-        doRunAndTest('core/Assert_04x.groovy')
+        doRunAndTestAntlr4('core/Assert_02x.groovy')
+        doRunAndTestAntlr4('core/Assert_03x.groovy')
+        doRunAndTestAntlr4('core/Assert_04x.groovy')
     }
 
     void "test groovy core - IfElse"() {
@@ -212,24 +212,24 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/For_01.groovy', [AssertStatement])
         doTest('core/For_02.groovy')
         doTest('core/For_03.groovy')
-        doRunAndTest('core/For_04x.groovy')
-        doRunAndTest('core/For_05x.groovy')
+        doRunAndTestAntlr4('core/For_04x.groovy')
+        doRunAndTestAntlr4('core/For_05x.groovy')
     }
 
     void "test groovy core - While"() {
         doTest('core/While_01.groovy')
-        doRunAndTest('core/While_02x.groovy')
+        doRunAndTestAntlr4('core/While_02x.groovy')
     }
 
     void "test groovy core - CodeBlock"() {
-        doRunAndTest('core/CodeBlock_01x.groovy')
+        doRunAndTestAntlr4('core/CodeBlock_01x.groovy')
     }
 
     void "test groovy core - DoWhile"() {
-        doRunAndTest('core/DoWhile_01x.groovy')
-        doRunAndTest('core/DoWhile_02x.groovy')
-        doRunAndTest('core/DoWhile_03x.groovy')
-        doRunAndTest('core/DoWhile_04x.groovy')
+        doRunAndTestAntlr4('core/DoWhile_01x.groovy')
+        doRunAndTestAntlr4('core/DoWhile_02x.groovy')
+        doRunAndTestAntlr4('core/DoWhile_03x.groovy')
+        doRunAndTestAntlr4('core/DoWhile_04x.groovy')
     }
 
 
@@ -238,23 +238,23 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - TryWithResources"() {
-        doRunAndTest('core/TryWithResources_01x.groovy')
+        doRunAndTestAntlr4('core/TryWithResources_01x.groovy')
     }
 
     void "test groovy core - SafeIndex"() {
-        doRunAndTest('core/SafeIndex_01x.groovy')
-        doRunAndTest('core/SafeIndex_02x.groovy')
-        doRunAndTest('core/SafeIndex_03x.groovy')
+        doRunAndTestAntlr4('core/SafeIndex_01x.groovy')
+        doRunAndTestAntlr4('core/SafeIndex_02x.groovy')
+        doRunAndTestAntlr4('core/SafeIndex_03x.groovy')
     }
 
     void "test groovy core - NegativeRelationalOperators"() {
-        doRunAndTest('core/NegativeRelationalOperators_01x.groovy')
-        doRunAndTest('core/NegativeRelationalOperators_02x.groovy')
+        doRunAndTestAntlr4('core/NegativeRelationalOperators_01x.groovy')
+        doRunAndTestAntlr4('core/NegativeRelationalOperators_02x.groovy')
     }
 
     void "test groovy core - DefaultMethod"() {
-        doRunAndTest('core/DefaultMethod_01x.groovy')
-        doRunAndTest('core/DefaultMethod_02x.groovy')
+        doRunAndTestAntlr4('core/DefaultMethod_01x.groovy')
+        doRunAndTestAntlr4('core/DefaultMethod_02x.groovy')
     }
 
 
@@ -280,7 +280,7 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - LocalVariableDeclaration"() {
         doTest('core/LocalVariableDeclaration_01.groovy', [Token]) // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
-        doRunAndTest('core/LocalVariableDeclaration_02x.groovy')
+        doRunAndTestAntlr4('core/LocalVariableDeclaration_02x.groovy')
 
     }
 
@@ -341,48 +341,48 @@ class GroovyParserTest extends GroovyTestCase {
     */
 
     void "test groovy core - BreakingChanges"() {
-        doRunAndTest('core/BreakingChange_01x.groovy')
-        doRunAndTest('core/BreakingChange_02x.groovy')
-        doRunAndTest('core/BreakingChange_03x.groovy')
-        doRunAndTest('core/BreakingChange_04x.groovy')
+        doRunAndTestAntlr4('core/BreakingChange_01x.groovy')
+        doRunAndTestAntlr4('core/BreakingChange_02x.groovy')
+        doRunAndTestAntlr4('core/BreakingChange_03x.groovy')
+        doRunAndTestAntlr4('core/BreakingChange_04x.groovy')
     }
 
     void "test groovy core - Array"() {
-        doRunAndTest('core/Array_01x.groovy')
+        doRunAndTestAntlr4('core/Array_01x.groovy')
     }
 
     void "test groovy core - Groovydoc"() {
-        doRunAndTest('core/Groovydoc_01x.groovy')
+        doRunAndTestAntlr4('core/Groovydoc_01x.groovy')
     }
 
     void "test groovy core - Script"() {
-        doRunAndTest('core/Script_01x.groovy')
+        doRunAndTestAntlr4('core/Script_01x.groovy')
     }
 
     void "test groovy core - FieldDeclaration"() {
-        doRunAndTest('core/FieldDeclaration_01x.groovy')
+        doRunAndTestAntlr4('core/FieldDeclaration_01x.groovy')
     }
 
     void "test groovy core - Number"() {
-        doRunAndTest('core/Number_01x.groovy')
+        doRunAndTestAntlr4('core/Number_01x.groovy')
     }
 
     void "test groovy core - SafeChainOperator"() {
-        doRunAndTest('core/SafeChainOperator.groovy')
+        doRunAndTestAntlr4('core/SafeChainOperator.groovy')
     }
 
     void "test groovy core - BUG"() {
-        doRunAndTest('bugs/BUG-GROOVY-4757.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-5652.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-4762.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-4438.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-6038.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-2324.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-4757.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-5652.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-4762.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-4438.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-6038.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-2324.groovy')
         doTest('bugs/BUG-GROOVY-8161.groovy')
-        doRunAndTest('bugs/GROOVY-3898.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-8311.groovy')
-        doRunAndTest('bugs/GROOVY-8228.groovy')
+        doRunAndTestAntlr4('bugs/GROOVY-3898.groovy')
+        doRunAndTestAntlr4('bugs/BUG-GROOVY-8311.groovy')
+        doRunAndTestAntlr4('bugs/GROOVY-8228.groovy')
 
-        doRunAndTestWithAntlr2('bugs/BUG-GROOVY-8426.groovy')
+        doRunAndTest('bugs/BUG-GROOVY-8426.groovy')
     }
 }
