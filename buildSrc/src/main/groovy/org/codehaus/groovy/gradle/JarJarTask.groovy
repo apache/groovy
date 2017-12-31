@@ -142,7 +142,7 @@ class JarJarTask extends DefaultTask {
 
             // so that we can put it into the final jar
             project.ant.copy(file: tmpJar, tofile: outputFile)
-            project.ant.jar(destfile: outputFile, update: true, manifest: manifestFile) {
+            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile) {
                 manifest {
                     // because we don't want to use JDK 1.8.0_91, we don't care and it will
                     // introduce cache misses
