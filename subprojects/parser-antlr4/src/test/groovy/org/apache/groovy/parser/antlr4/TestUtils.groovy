@@ -224,10 +224,15 @@ class TestUtils {
     }
 
     static doRunAndTest(String path) {
-        assert executeScript(path);
+        doRunAndTestAntlr2(path)
+        doRunAndTestAntlr4(path)
     }
 
-    static doRunAndTestWithAntlr2(String path) {
+    static doRunAndTestAntlr4(String path) {
+        assert executeScript(path)
+    }
+
+    static doRunAndTestAntlr2(String path) {
         assert executeScript(createAntlr2Shell(), "$RESOURCES_PATH/$path")
     }
 
