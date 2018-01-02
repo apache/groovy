@@ -99,7 +99,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     private String[] appendStrings(String[] strings, String[] thatStrings, int valuesLength) {
         int stringsLength = strings.length;
         boolean isStringsLonger = stringsLength > valuesLength;
-        int lastIndexOfStrings = stringsLength - 1;
         int thatStringsLength = isStringsLonger ? thatStrings.length - 1 : thatStrings.length;
 
         String[] newStrings = new String[stringsLength + thatStringsLength];
@@ -108,6 +107,8 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         if (isStringsLonger) {
             // merge onto end of previous GString to avoid an empty bridging value
             System.arraycopy(thatStrings, 1, newStrings, stringsLength, thatStringsLength);
+
+            int lastIndexOfStrings = stringsLength - 1;
             newStrings[lastIndexOfStrings] = strings[lastIndexOfStrings] + thatStrings[0];
         } else {
             System.arraycopy(thatStrings, 0, newStrings, stringsLength, thatStringsLength);
