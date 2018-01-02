@@ -84,7 +84,6 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
     interface ValueProvider<K, V> {
         /**
          * Provide the created value
-         * @return
          */
         V provide(K key);
     }

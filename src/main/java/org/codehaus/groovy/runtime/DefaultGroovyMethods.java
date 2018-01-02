@@ -11399,7 +11399,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Coerce a Float instance to a boolean value.
      *
      * @param object the Float
-     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @return {@code true} for non-zero and non-NaN values, else {@code false}
      * @since 2.6.0
      */
     public static boolean asBoolean(Float object) {
@@ -11411,7 +11411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Coerce a Double instance to a boolean value.
      *
      * @param object the Double
-     * @return {@code true} for non-zero and non-NaN values, else {@false}
+     * @return {@code true} for non-zero and non-NaN values, else {@code false}
      * @since 2.6.0
      */
     public static boolean asBoolean(Double object) {
