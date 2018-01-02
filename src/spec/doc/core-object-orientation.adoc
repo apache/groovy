@@ -82,15 +82,19 @@ link:core-differences-java.html#_primitives_and_wrappers[differences] from Java'
 
 === Class
 
-Groovy classes are very similar to Java classes, being compatible to those ones at JVM level. They may have methods and fields/properties, which can have the same modifiers (public, protected, private, static, etc) as Java classes.
+Groovy classes are very similar to Java classes, and are compatible with Java ones at JVM level.
+They may have methods, fields and properties (think JavaBean properties but with less boilerplate).
+Classes and class members can have the same modifiers (public, protected, private, static, etc) as in Java
+with some minor differences at the source level which are explained shortly.
 
-Here are key aspects of Groovy classes, that are different from their Java counterparts:
+The key differences between Groovy classes and their Java counterparts are:
 
-* Public fields are turned into properties automatically, which results in less verbose code,
-without so many getter and setter methods. More on this aspect will be covered in the <<fields,fields and properties section>>.
-* Their declarations and any property or method without an access modifier are public.
-* Classes do not need to have the same name of the files where they are defined.
-* One file may contain one or more classes (but if a file contains no classes, it is considered a script).
+* Classes or methods with no visibility modifier are automatically public (a special annotation can be used to achieve package private visibility).
+* Fields with no visibility modifier are turned into properties automatically, which results in less verbose code,
+since explicit getter and setter methods aren't needed. More on this aspect will be covered in the <<fields,fields and properties section>>.
+* Classes do not need to have the same base name as their source file definitions but it is highly recommended in most scenarios (see also the next point about scripts).
+* One source file may contain one or more classes (but if a file contains any code not in a class, it is considered a script). Scripts are just classes with some
+special conventions and will have the same name as their source file (so don't include a class definition within a script having the same name as the script source file).
 
 The following code presents an example class.
 
@@ -457,7 +461,11 @@ to omit the type.
 [[properties]]
 ==== Properties
 
-A property is a combination of a private field and getters/setters. You can define a property with:
+A property is an externally visible feature of a class. Rather than just using a public field to represent
+such features (which provides a more limited abstraction and would restrict refactoring possibilities),
+the typical convention in Java is to follow JavaBean conventions, i.e. represent the property using a
+combination of a private backing field and getters/setters. Groovy follows these same convetions
+but provides a simpler approach to defining the property. You can define a property with:
 
 * an *absent* access modifier (no `public`, `protected` or `private`)
 * one or more optional _modifiers_ (`static`, `final`, `synchronized`)
