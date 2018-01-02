@@ -44,7 +44,6 @@ import java.lang.annotation.Target;
  * <code>awe</code> becomes a private List field in the script class and is
  * visible within the <code>awesum</code> method.
  *
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

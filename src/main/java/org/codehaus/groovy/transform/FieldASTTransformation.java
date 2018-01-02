@@ -110,10 +110,13 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
-            String setterName = "set" + MetaClassHelper.capitalize(variableName);
-            cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
-                    stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
-            ));
+            // allow friendly setting of field via a setter unless final
+            if (!fieldNode.isFinal()) {
+                String setterName = "set" + MetaClassHelper.capitalize(variableName);
+                cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
+                        stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
+                ));
+            }
 
             // GROOVY-4833 : annotations that are not Groovy transforms should be transferred to the generated field
             // GROOVY-6112 : also copy acceptable Groovy transforms
