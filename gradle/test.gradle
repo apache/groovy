@@ -30,7 +30,7 @@ allprojects {
             systemProperties 'java.awt.headless': 'true'
         }
 
-        forkEvery = 50
+        forkEvery = 40
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
         scanForTestClasses = true
         ignoreFailures = false
