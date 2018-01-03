@@ -20,9 +20,6 @@ package org.apache.groovy.parser.antlr4;
 
 import java.util.Objects;
 
-/**
- * Created by Daniel on 2017/4/22.
- */
 public class PositionInfo {
     private int line;
     private int column;
