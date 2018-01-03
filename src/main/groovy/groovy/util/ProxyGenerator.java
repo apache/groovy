@@ -55,8 +55,6 @@ public class ProxyGenerator {
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
     private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
-    public static final ProxyGenerator INSTANCE = new ProxyGenerator();
-
     static {
         // wrap the standard MetaClass with the delegate
         setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(ProxyGenerator.class));
@@ -66,13 +64,17 @@ public class ProxyGenerator {
     private boolean debug = false;
     private boolean emptyMethods = false;
 
+    private static final Integer GROOVY_ADAPTER_CACHE_DEFAULT_SIZE = Integer.getInteger("groovy.adapter.cache.default.size", 16);
+
+    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO should we make ProxyGenerator singleton?
+
     /**
      * The adapter cache is used to cache proxy classes. When, for example, a call like:
      * map as MyClass is found, then a lookup is made into the cache to find if a suitable
      * adapter already exists. If so, then the class is reused, instead of generating a
      * new class.
      */
-    private final LRUCache adapterCache = new LRUCache(16);
+    private final LRUCache adapterCache = new LRUCache(GROOVY_ADAPTER_CACHE_DEFAULT_SIZE);
 
     public boolean getDebug() {
         return debug;
