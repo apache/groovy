@@ -28,14 +28,14 @@ import java.util.List;
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class SourceBuffer {
-    private final List lines;
-    private StringBuffer current;
+    private final List<StringBuilder> lines;
+    private StringBuilder current;
 
     public SourceBuffer() {
-        lines = new ArrayList();
-        //lines.add(new StringBuffer()); // dummy row for position [0] in the List
+        lines = new ArrayList<StringBuilder>();
+        //lines.add(new StringBuilder()); // dummy row for position [0] in the List
 
-        current = new StringBuffer();
+        current = new StringBuilder();
         lines.add(current);
     }
 
@@ -66,9 +66,9 @@ public class SourceBuffer {
         if (endLine > lines.size()) { endLine = lines.size(); }
 
         // obtain the snippet from the buffer within specified bounds
-        StringBuffer snippet = new StringBuffer();
+        StringBuilder snippet = new StringBuilder();
         for (int i = startLine - 1; i < endLine;i++) {
-            String line = ((StringBuffer)lines.get(i)).toString();
+            String line = ((StringBuilder)lines.get(i)).toString();
             if (startLine == endLine) {
                 // reset any out of bounds requests (again)
                 if (startColumn > line.length()) { startColumn = line.length();}
@@ -104,7 +104,7 @@ public class SourceBuffer {
             current.append((char)c);
         }
         if (c == '\n') {
-            current = new StringBuffer();
+            current = new StringBuilder();
             lines.add(current);
         }
     }
