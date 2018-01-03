@@ -267,7 +267,7 @@ allprojects {
             excludesPerLibrary = [
                     '*': ['META-INF/NOTICE']
             ]
-            excludes = ['META-INF/NOTICE']
+            excludes = ['META-INF/NOTICE','META-INF/INDEX.LIST']
             createManifest = false
             includedResources = [
                     ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
@@ -411,6 +411,11 @@ task distBin(type: Zip) {
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
+    }
+    allprojects {
+        if (project.name in ['groovy', 'groovy-test']) {
+            distBin.dependsOn(grooidjar)
+        }
     }
 }
 
