@@ -508,7 +508,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                 def trace = cause.stackTrace
 
-                def buff = new StringBuffer()
+                def buff = new StringBuilder()
 
                 boolean doBreak = false
 
