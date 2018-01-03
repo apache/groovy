@@ -584,7 +584,7 @@ task updateNotices {
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def groovyconsoleFiles = fileTree(noticesDir)
+        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
         [
                 (noticeBinZipFile)       : binzipFiles,
                 (noticeGrooidFile)       : grooidFiles,
