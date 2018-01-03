@@ -1689,11 +1689,11 @@ public class AsmClassGenerator extends ClassGenerator {
         List<Expression> expressions = expression.getExpressions();
         final int size = expressions.size();
         // init declarations
-        LinkedList<DeclarationExpression> declarations = new LinkedList<DeclarationExpression>();
+//        LinkedList<DeclarationExpression> declarations = new LinkedList<DeclarationExpression>();
         for (int i = 0; i < size; i++) {
             Expression expr = expressions.get(i);
             if (expr instanceof DeclarationExpression) {
-                declarations.add((DeclarationExpression) expr);
+//                declarations.add((DeclarationExpression) expr);
                 DeclarationExpression de = (DeclarationExpression) expr;
                 BinaryExpression be = new BinaryExpression(
                         de.getLeftExpression(),
