@@ -204,7 +204,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
 
         private StyledDocument doc;
         private final Segment segment = new Segment();
-        private final StringBuffer buffer = new StringBuffer();
+        private final StringBuilder buffer = new StringBuilder();
 
         public void actionPerformed(ActionEvent ae) {
             JTextComponent tComp = (JTextComponent) ae.getSource();
