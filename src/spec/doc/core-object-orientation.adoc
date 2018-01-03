@@ -412,7 +412,7 @@ to omit the type.
 A property is an externally visible feature of a class. Rather than just using a public field to represent
 such features (which provides a more limited abstraction and would restrict refactoring possibilities),
 the typical convention in Java is to follow JavaBean conventions, i.e. represent the property using a
-combination of a private backing field and getters/setters. Groovy follows these same convetions
+combination of a private backing field and getters/setters. Groovy follows these same conventions
 but provides a simpler approach to defining the property. You can define a property with:
 
 * an *absent* access modifier (no `public`, `protected` or `private`)
