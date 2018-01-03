@@ -966,7 +966,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         classNode.setSyntheticPublic(syntheticPublic);
 
         if (asBoolean(ctx.TRAIT())) {
-            classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_TRAIT)));
+            attachTraitAnnotation(classNode);
         }
         classNode.addAnnotations(modifierManager.getAnnotations());
         classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
@@ -977,7 +977,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // declaring interface with default method
         if (isInterface && this.containsDefaultMethods(ctx)) {
             isInterfaceWithDefaultMethods = true;
-            classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_TRAIT)));
+            attachTraitAnnotation(classNode);
             classNode.putNodeMetaData(IS_INTERFACE_WITH_DEFAULT_METHODS, true);
         }
 
@@ -1033,6 +1033,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         groovydocManager.handle(classNode, ctx);
 
         return classNode;
+    }
+
+    private void attachTraitAnnotation(ClassNode classNode) {
+        classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_TRAIT)));
     }
 
     @SuppressWarnings({"unchecked"})
