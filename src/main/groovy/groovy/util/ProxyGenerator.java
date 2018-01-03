@@ -55,8 +55,6 @@ public class ProxyGenerator {
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
     private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
-    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO should we make ProxyGenerator singleton?
-
     static {
         // wrap the standard MetaClass with the delegate
         setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(ProxyGenerator.class));
@@ -66,8 +64,10 @@ public class ProxyGenerator {
     private boolean debug = false;
     private boolean emptyMethods = false;
 
-    private static final String GROOVY_ADAPTER_CACHE_DEFAULT_SIZE_OPT = "groovy.adapter.cache.default.size";
-    private static final Integer GROOVY_ADAPTER_CACHE_DEFAULT_SIZE = Integer.getInteger(GROOVY_ADAPTER_CACHE_DEFAULT_SIZE_OPT, 16);
+    private static final Integer GROOVY_ADAPTER_CACHE_DEFAULT_SIZE = Integer.getInteger("groovy.adapter.cache.default.size", 16);
+
+    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO should we make ProxyGenerator singleton?
+
     /**
      * The adapter cache is used to cache proxy classes. When, for example, a call like:
      * map as MyClass is found, then a lookup is made into the cache to find if a suitable
