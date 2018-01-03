@@ -110,9 +110,7 @@ allprojects {
 
     apply plugin: 'groovy'
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
-    if (JavaVersion.current().java7Compatible) {
-        apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
-    }
+    apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
 
     tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
         outputs.cacheIf { true }
