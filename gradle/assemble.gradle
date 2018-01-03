@@ -342,7 +342,7 @@ ext.distSpec = copySpec {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir/notices/NOTICE-BINZIP")
-    rename '([A-Z]+)-(.*)', '$1'
+    rename '([A-Z]+)-BINZIP', '$1'
     exclude { it.file.name =~ /-raw/ }
     into('lib') {
         from jarjar
