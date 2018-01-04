@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.cli.Option;
 import groovy.lang.Lazy;
 import groovy.transform.Field;
 import org.codehaus.groovy.GroovyBugError;
@@ -73,6 +74,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private static final ClassNode LAZY_TYPE = make(Lazy.class);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode ASTTRANSFORMCLASS_TYPE = make(GroovyASTTransformationClass.class);
+    private static final ClassNode OPTION_TYPE = make(Option.class);
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
     private boolean insideScriptBody;
@@ -110,8 +112,12 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
-            // allow friendly setting of field via a setter unless final
-            if (!fieldNode.isFinal()) {
+            // provide setter for CLI Builder purposes unless final
+            if (fieldNode.isFinal()) {
+                if (!de.getAnnotations(OPTION_TYPE).isEmpty()) {
+                    addError("Can't have a final field also annotated with @" + OPTION_TYPE.getNameWithoutPackage(), de);
+                }
+            } else {
                 String setterName = "set" + MetaClassHelper.capitalize(variableName);
                 cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
                         stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
