@@ -275,4 +275,12 @@ class FieldTransformTest extends CompilableTestSupport {
             assert setters.intersect(['setBar', 'setFoo', 'setBaz']) == ['setBaz']
         '''
     }
+
+    void testFieldTransformWithFinalFieldAndOption() {
+        // GROOVY-8430 in conjunction with @Option
+        shouldNotCompile '''
+            import groovy.cli.OptionField
+            @OptionField final String first
+        '''
+    }
 }
