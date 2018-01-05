@@ -42,21 +42,28 @@ import java.util.regex.Pattern;
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
-    static final long serialVersionUID = -2638020355892246323L;
+    private static final long serialVersionUID = -2638020355892246323L;
+    private static final String MKP = "mkp";
+    private static final String YIELD = "yield";
+
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     /**
      * A GString containing a single empty String and no values.
      */
-    public static final GString EMPTY = new GString(new Object[0]) {
+    public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY) {
+        private static final long serialVersionUID = -7676746462783374250L;
+
         @Override
         public String[] getStrings() {
-            return new String[]{""};
+            return new String[]{ "" };
         }
     };
-    public static final String[] EMPTY_STRING_ARRAY = new String[0];
-    public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
-    private Object[] values;
+
+
+    private final Object[] values;
 
     public GString(Object values) {
         this.values = (Object[]) values;
@@ -142,13 +149,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public String toString() {
-        StringBuilderWriter buffer = new StringBuilderWriter(calcInitialCapacity());
+        Writer buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
         }
         catch (IOException e) {
             throw new StringWriterIOException(e);
         }
+
         return buffer.toString();
     }
 
@@ -160,7 +168,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             initialCapacity += string.length();
         }
 
-        initialCapacity += values.length * Math.max(Math.ceil(initialCapacity / strings.length), 1);
+        initialCapacity += values.length * Math.max(initialCapacity / strings.length, 1);
 
         return Math.max((int) (initialCapacity  * 1.2), 16);
     }
@@ -176,14 +184,15 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
                 if (value instanceof Closure) {
                     final Closure c = (Closure) value;
+                    int maximumNumberOfParameters = c.getMaximumNumberOfParameters();
 
-                    if (c.getMaximumNumberOfParameters() == 0) {
+                    if (maximumNumberOfParameters == 0) {
                         InvokerHelper.write(out, c.call());
-                    } else if (c.getMaximumNumberOfParameters() == 1) {
+                    } else if (maximumNumberOfParameters == 1) {
                         c.call(out);
                     } else {
                         throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
-                                + c.getMaximumNumberOfParameters() + " parameters");
+                                + maximumNumberOfParameters + " parameters");
                     }
                 } else {
                     InvokerHelper.write(out, value);
@@ -203,11 +212,11 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         final int numberOfValues = values.length;
 
         for (int i = 0, size = s.length; i < size; i++) {
-            builder.getProperty("mkp");
-            builder.invokeMethod("yield", new Object[]{s[i]});
+            builder.getProperty(MKP);
+            builder.invokeMethod(YIELD, new Object[]{ s[i] });
             if (i < numberOfValues) {
-                builder.getProperty("mkp");
-                builder.invokeMethod("yield", new Object[]{values[i]});
+                builder.getProperty(MKP);
+                builder.invokeMethod(YIELD, new Object[]{ values[i] });
             }
         }
     }
