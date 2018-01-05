@@ -23,6 +23,7 @@ import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
 import groovy.transform.ThreadInterrupt
 import groovy.ui.text.FindReplaceUtility
+import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -843,9 +844,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     private reportException(Throwable t) {
         appendOutputNl('Exception thrown\n', commandStyle)
 
-        StringWriter sw = new StringWriter()
+        Writer sw = new StringBuilderWriter()
         new PrintWriter(sw).withWriter {pw -> StackTraceUtils.deepSanitize(t).printStackTrace(pw) }
-        appendStacktrace("\n${sw.buffer}\n")
+        appendStacktrace("\n${sw.builder}\n")
     }
 
     def finishNormal(Object result) {
