@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -32,7 +33,6 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * A class loader used for debugging the bytecode generation.
@@ -75,7 +75,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     }
 
     protected TraceClassVisitor dumpVisitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(new OutputStreamWriter(System.out)));
-    protected TraceClassVisitor invisibleDumpVisitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(new StringWriter()));
+    protected TraceClassVisitor invisibleDumpVisitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(new StringBuilderWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
             new AsmClassGenerator(null,new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), null);

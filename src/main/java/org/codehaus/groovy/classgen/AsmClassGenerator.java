@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -113,7 +114,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -425,10 +426,10 @@ public class AsmClassGenerator extends ClassGenerator {
             try {
                 mv.visitMaxs(0, 0);
             } catch (Exception e) {
-                StringWriter writer = null;
+                Writer writer = null;
                 if (mv instanceof TraceMethodVisitor) {
                     TraceMethodVisitor tracer = (TraceMethodVisitor) mv;
-                    writer = new StringWriter();
+                    writer = new StringBuilderWriter();
                     PrintWriter p = new PrintWriter(writer);
                     tracer.p.print(p);
                     p.flush();

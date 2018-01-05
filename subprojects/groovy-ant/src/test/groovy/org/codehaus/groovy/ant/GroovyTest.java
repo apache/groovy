@@ -22,11 +22,14 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 
-import java.io.*;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.regex.Pattern;
 
 /**
@@ -148,7 +151,7 @@ public class GroovyTest extends GroovyTestCase {
             final Throwable cause = e.getCause();
             assertTrue(cause instanceof GroovyRuntimeException);
 
-            final StringWriter sw = new StringWriter();
+            final Writer sw = new StringBuilderWriter();
             cause.printStackTrace(new PrintWriter(sw));
             
             final String stackTrace = sw.toString();

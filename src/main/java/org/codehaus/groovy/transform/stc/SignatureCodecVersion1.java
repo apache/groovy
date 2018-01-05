@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -31,7 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.Writer;
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
@@ -122,7 +123,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
     public String encode(final ClassNode node) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
         DataOutputStream dos = new DataOutputStream(baos);
-        StringWriter wrt = new StringWriter();
+        Writer wrt = new StringBuilderWriter();
         String encoded = null;
         try {
             doEncode(node, dos);

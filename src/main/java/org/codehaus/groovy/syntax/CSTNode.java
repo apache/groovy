@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.syntax;
 
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 
 
 /**
@@ -476,10 +477,9 @@ public abstract class CSTNode
 
     public String toString()
     {
-        StringWriter string = new StringWriter();
-        write( new PrintWriter(string) );
+        Writer string = new StringBuilderWriter();
+        write(new PrintWriter(string));
 
-        string.flush();
         return string.toString();
     }
 

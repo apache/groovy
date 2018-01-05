@@ -35,6 +35,7 @@ import groovy.lang.SpreadMap;
 import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
 import groovy.lang.Writable;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
@@ -49,7 +50,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -561,7 +561,7 @@ public class InvokerHelper {
             out.append(toListString((Collection) object));
         } else if (object instanceof Writable) {
             Writable writable = (Writable) object;
-            StringWriter stringWriter = new StringWriter();
+            Writer stringWriter = new StringBuilderWriter();
             writable.writeTo(stringWriter);
             out.append(stringWriter.toString());
         } else if (object instanceof InputStream || object instanceof Reader) {
