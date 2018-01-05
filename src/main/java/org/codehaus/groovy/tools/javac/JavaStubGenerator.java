@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.javac;
 
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -56,7 +57,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -878,7 +879,7 @@ public class JavaStubGenerator {
             ConstantExpression ce = (ConstantExpression) memberValue;
             Object constValue = ce.getValue();
             if (constValue instanceof AnnotationNode) {
-                StringWriter writer = new StringWriter();
+                Writer writer = new StringBuilderWriter();
                 PrintWriter out = new PrintWriter(writer);
                 printAnnotation(out, (AnnotationNode) constValue);
                 val = writer.toString();

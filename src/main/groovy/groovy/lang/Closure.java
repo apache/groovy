@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
@@ -32,7 +33,6 @@ import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.io.Writer;
 
 /**
@@ -976,7 +976,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * @see java.lang.Object#toString()
          */
         public String toString() {
-            final StringWriter writer = new StringWriter();
+            final Writer writer = new StringBuilderWriter();
 
             try {
                 writeTo(writer);

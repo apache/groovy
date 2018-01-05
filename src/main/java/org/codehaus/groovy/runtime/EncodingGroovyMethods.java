@@ -20,10 +20,10 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
@@ -130,7 +130,7 @@ public class EncodingGroovyMethods {
             }
 
             public String toString() {
-                StringWriter buffer = new StringWriter();
+                Writer buffer = new StringBuilderWriter();
 
                 try {
                     writeTo(buffer);
@@ -329,7 +329,7 @@ public class EncodingGroovyMethods {
             }
 
             public String toString() {
-                StringWriter buffer = new StringWriter();
+                Writer buffer = new StringBuilderWriter();
 
                 try {
                     writeTo(buffer);

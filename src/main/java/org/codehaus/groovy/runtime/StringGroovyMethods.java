@@ -27,13 +27,14 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.CharSequenceReader;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -416,7 +417,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         // Don't do this in static initializer because we may never be needed.
         // TODO: Put this lineSeparator property somewhere everyone can use it.
         if (lineSeparator == null) {
-            final StringWriter sw = new StringWriter(2);
+            final Writer sw = new StringBuilderWriter(2);
             try {
                 // We use BufferedWriter rather than System.getProperty because
                 // it has the security manager rigamarole to deal with the possible exception.
