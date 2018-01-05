@@ -18,13 +18,13 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.regex.Pattern;
@@ -142,7 +142,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public String toString() {
-        StringWriter buffer = new StringWriter();
+        StringBuilderWriter buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
         }
@@ -150,6 +150,19 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             throw new StringWriterIOException(e);
         }
         return buffer.toString();
+    }
+
+    private int calcInitialCapacity() {
+        String[] strings = getStrings();
+
+        int initialCapacity = 0;
+        for (String string : strings) {
+            initialCapacity += string.length();
+        }
+
+        initialCapacity += values.length * Math.max(Math.ceil(initialCapacity / strings.length), 1);
+
+        return Math.max((int) (initialCapacity  * 1.2), 16);
     }
 
     @Override
