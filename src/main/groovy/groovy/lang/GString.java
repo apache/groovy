@@ -61,7 +61,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
-    private String string;
     private final Object[] values;
 
     public GString(Object values) {
@@ -148,10 +147,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public String toString() {
-        if (null != string) {
-            return string;
-        }
-
         Writer buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
@@ -160,7 +155,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             throw new StringWriterIOException(e);
         }
 
-        return (string = buffer.toString());
+        return buffer.toString();
     }
 
     private int calcInitialCapacity() {
