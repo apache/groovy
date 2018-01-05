@@ -22,12 +22,12 @@ import groovy.lang.Closure;
 import groovy.lang.Writable;
 import groovy.text.Template;
 import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Collections;
@@ -107,7 +107,7 @@ public abstract class BaseTemplate implements Writable {
 
     public String stringOf(Closure cl) throws IOException {
         Writer old = out;
-        StringWriter stringWriter = new StringWriter(32);
+        Writer stringWriter = new StringBuilderWriter(32);
         out = stringWriter;
         Object result = cl.call();
         if (result!=null && result!=this) {
@@ -514,7 +514,7 @@ public abstract class BaseTemplate implements Writable {
     }
 
     public String toString() {
-        StringWriter wrt = new StringWriter(512);
+        Writer wrt = new StringBuilderWriter(512);
         try {
             writeTo(wrt);
         } catch (IOException e) {

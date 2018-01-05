@@ -27,6 +27,7 @@ import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 
 import java.io.BufferedReader;
@@ -45,7 +46,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -1505,7 +1505,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             }
 
             public String toString() {
-                StringWriter buffer = new StringWriter();
+                Writer buffer = new StringBuilderWriter();
                 try {
                     writeTo(buffer);
                 } catch (IOException e) {

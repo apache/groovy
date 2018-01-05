@@ -21,6 +21,7 @@ package groovy.util;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -28,7 +29,6 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Collection;
@@ -401,7 +401,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     }
 
     public String prettyPrint() {
-        StringWriter sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         try {
             writeTo(sw);
         } catch (IOException e) {
@@ -413,7 +413,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
     @Override
     public String toString() {
-        StringWriter sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         try {
             InvokerHelper.write(sw, this);
         } catch (IOException e) {

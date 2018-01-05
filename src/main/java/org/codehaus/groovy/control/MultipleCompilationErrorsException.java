@@ -18,8 +18,10 @@
  */
 package org.codehaus.groovy.control;
 
+import org.apache.groovy.io.StringBuilderWriter;
+
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * @author Jochen Theodorou
@@ -46,7 +48,7 @@ public class MultipleCompilationErrorsException extends
     }
     
     public String getMessage() {
-        StringWriter data = new StringWriter();
+        Writer data = new StringBuilderWriter();
         PrintWriter writer = new PrintWriter(data);
         Janitor janitor = new Janitor();
 

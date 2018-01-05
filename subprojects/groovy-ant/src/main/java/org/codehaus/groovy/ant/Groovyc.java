@@ -24,6 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -49,7 +50,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -1217,7 +1218,7 @@ public class Groovyc extends MatchingTask {
                 // unwrap to the real exception
                 t = re.getCause();
             }
-            StringWriter writer = new StringWriter();
+            Writer writer = new StringBuilderWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
             String message = writer.toString();
 

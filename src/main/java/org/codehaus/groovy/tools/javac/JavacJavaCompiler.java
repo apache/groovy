@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -28,7 +29,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -52,14 +52,14 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     public void compile(List<String> files, CompilationUnit cu) {
         String[] javacParameters = makeParameters(files, cu.getClassLoader());
-        StringWriter javacOutput = null;
+        StringBuilderWriter javacOutput = null;
         int javacReturnValue = 0;
         try {
             Class javac = findJavac(cu);
             Method method = null;
             try {
                 method = javac.getMethod("compile", new Class[]{String[].class, PrintWriter.class});
-                javacOutput = new StringWriter();
+                javacOutput = new StringBuilderWriter();
                 PrintWriter writer = new PrintWriter(javacOutput);
                 Object ret = method.invoke(null, javacParameters, writer);
                 javacReturnValue = (Integer) ret;
@@ -88,9 +88,9 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
     }
 
-    private static void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+    private static void addJavacError(String header, CompilationUnit cu, StringBuilderWriter msg) {
         if (msg != null) {
-            header = header + "\n" + msg.getBuffer().toString();
+            header = header + "\n" + msg.getBuilder().toString();
         } else {
             header = header +
                     "\nThis javac version does not support compile(String[],PrintWriter), " +

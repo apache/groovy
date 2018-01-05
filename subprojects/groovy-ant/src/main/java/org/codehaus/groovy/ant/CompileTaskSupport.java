@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
@@ -28,7 +29,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -160,7 +161,7 @@ public abstract class CompileTaskSupport
     protected void handleException(final Exception e) throws BuildException {
         assert e != null;
         
-        StringWriter writer = new StringWriter();
+        Writer writer = new StringBuilderWriter();
         new ErrorReporter(e, false).write(new PrintWriter(writer));
         String message = writer.toString();
 
