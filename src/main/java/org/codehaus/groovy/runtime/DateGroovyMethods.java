@@ -316,7 +316,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Calendar next(Calendar self) {
         Calendar result = (Calendar) self.clone();
-        result.add(Calendar.DAY_OF_YEAR, 1);
+        result.add(Calendar.DATE, 1);
         return result;
     }
 
@@ -329,7 +329,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Calendar previous(Calendar self) {
         Calendar result = (Calendar) self.clone();
-        result.add(Calendar.DAY_OF_YEAR, -1);
+        result.add(Calendar.DATE, -1);
         return result;
     }
 
@@ -375,9 +375,9 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Date plus(Date self, int days) {
-        Calendar calendar = (Calendar) Calendar.getInstance().clone();
+        Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);
-        calendar.add(Calendar.DAY_OF_YEAR, days);
+        calendar.add(Calendar.DATE, days);
         return calendar.getTime();
     }
 
@@ -401,9 +401,9 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the new Timestamp
      */
     public static Timestamp plus(Timestamp self, int days) {
-        Calendar calendar = (Calendar) Calendar.getInstance().clone();
+        Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);
-        calendar.add(Calendar.DAY_OF_YEAR, days);
+        calendar.add(Calendar.DATE, days);
         Timestamp ts = new Timestamp(calendar.getTime().getTime());
         ts.setNanos(self.getNanos());
         return ts;
