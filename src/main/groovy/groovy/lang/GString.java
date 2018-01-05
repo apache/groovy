@@ -46,10 +46,13 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     private static final String MKP = "mkp";
     private static final String YIELD = "yield";
 
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     /**
      * A GString containing a single empty String and no values.
      */
-    public static final GString EMPTY = new GString(new Object[0]) {
+    public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY) {
         private static final long serialVersionUID = -7676746462783374250L;
 
         @Override
@@ -58,8 +61,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     };
 
-    public static final String[] EMPTY_STRING_ARRAY = new String[0];
-    public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private final Object[] values;
 
