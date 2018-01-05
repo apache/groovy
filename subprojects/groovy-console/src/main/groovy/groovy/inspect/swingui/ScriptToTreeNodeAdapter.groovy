@@ -21,6 +21,7 @@ package groovy.inspect.swingui
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
 import groovy.transform.PackageScope
+import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -252,7 +253,7 @@ class ScriptToTreeNodeAdapter {
             GStringTemplateEngine engine = new GStringTemplateEngine()
             Template template = engine.createTemplate(templateTextForNode)
             Writable writable = template.make([expression: node])
-            StringWriter result = new StringWriter()
+            Writer result = new StringBuilderWriter()
             writable.writeTo(result)
             result.toString()
         } else {

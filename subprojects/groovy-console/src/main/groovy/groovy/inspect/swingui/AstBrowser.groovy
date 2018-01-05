@@ -20,6 +20,7 @@ package groovy.inspect.swingui
 
 import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
+import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -327,7 +328,7 @@ class AstBrowser {
     }
 
     private String generateSource(byte[] bytecode, getVisitor) {
-        def sw = new StringWriter()
+        def sw = new StringBuilderWriter()
         new ClassReader(bytecode).accept(getVisitor(sw), 0)
         return sw.toString()
     }
