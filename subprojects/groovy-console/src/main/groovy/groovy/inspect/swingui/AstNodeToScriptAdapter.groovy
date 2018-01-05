@@ -18,6 +18,7 @@
  */
 package groovy.inspect.swingui
 
+import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -149,7 +150,7 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
      */
     String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true, CompilerConfiguration config = null) {
 
-        def writer = new StringWriter()
+        def writer = new StringBuilderWriter()
 
         classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
 

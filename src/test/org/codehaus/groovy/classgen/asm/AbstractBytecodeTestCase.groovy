@@ -18,12 +18,17 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.control.CompilationUnit
-import org.objectweb.asm.util.TraceClassVisitor
-import org.objectweb.asm.tree.*
-import org.objectweb.asm.*
-import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.util.TraceClassVisitor
+
 import java.security.CodeSource
 
 /**
@@ -111,7 +116,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
         InstructionSequence sequence
-        def output = new StringWriter()
+        def output = new StringBuilderWriter()
         def tcf;
         tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {

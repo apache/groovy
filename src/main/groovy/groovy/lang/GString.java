@@ -142,7 +142,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public String toString() {
-        StringBuilderWriter buffer = new StringBuilderWriter(calcInitialCapacity());
+        Writer buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
         }

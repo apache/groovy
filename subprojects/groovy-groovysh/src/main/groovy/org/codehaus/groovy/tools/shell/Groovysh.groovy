@@ -476,7 +476,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
 
         if (cause instanceof MultipleCompilationErrorsException) {
-            StringWriter data = new StringWriter();
+            Writer data = new org.apache.groovy.io.StringBuilderWriter();
             PrintWriter writer = new PrintWriter(data);
             ErrorCollector collector = ((MultipleCompilationErrorsException) cause).getErrorCollector()
             Iterator<Message> msgIterator = collector.getErrors().iterator()
