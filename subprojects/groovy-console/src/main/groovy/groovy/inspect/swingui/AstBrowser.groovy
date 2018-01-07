@@ -328,7 +328,7 @@ class AstBrowser {
     }
 
     private String generateSource(byte[] bytecode, getVisitor) {
-        def sw = new StringBuilderWriter()
+        def sw = new StringBuilderWriter(2048) // the generated code of `println 123` occupies about 618 bytes, so we should increase the initial capacity to 2K
         new ClassReader(bytecode).accept(getVisitor(sw), 0)
         return sw.toString()
     }
