@@ -49,7 +49,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
      * @param key
      * @return the cached value
      */
-    V getAndPut(K key, ValueProvider<K, V> valueProvider);
+    V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider);
 
     /**
      * Get all cached values
@@ -75,19 +75,6 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
      * @return the size of the cache
      */
     int size();
-
-    /**
-     * Represents a provider used to create value
-     * @param <K> type of the key
-     * @param <V> type of the value
-     */
-    interface ValueProvider<K, V> {
-        /**
-         * Provide the created value
-         * @return
-         */
-        V provide(K key);
-    }
 
     /**
      * Represents a eviction strategy for the cache with limited size
