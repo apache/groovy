@@ -548,7 +548,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('public java.lang.String toString()')
         assert result.contains("_result.append('Event(')")
         assert result.contains("_result.append(')')")
-        assert result.contains('return _result.toString()')
+        assert result.contains('return $to$string')
     }
 
     void testToStringClassAndStaticMethodCallExpression() {

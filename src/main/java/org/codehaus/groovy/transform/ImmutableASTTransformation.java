@@ -210,7 +210,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 createEquals(cNode, false, false, false, null, null);
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
-                createToString(cNode, false, false, null, null, false, true);
+                createToString(cNode, false, false, null, null, false, true, true, true);
             }
             if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) &&
                     !pList.isEmpty() &&
