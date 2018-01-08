@@ -21,9 +21,10 @@ package org.apache.groovy.util.concurrentlinkedhashmap;
 
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class ConcurrentLinkedHashMapTest {
     @Test
@@ -46,4 +47,39 @@ public class ConcurrentLinkedHashMapTest {
         assertArrayEquals(new Integer[] {3, 4, 5}, m.values().toArray(new Integer[0]));
     }
 
+    @Test
+    public void computeIfAbsentConcurrently() throws InterruptedException {
+        final ConcurrentLinkedHashMap m = new ConcurrentLinkedHashMap.Builder<>()
+                .maximumWeightedCapacity(3)
+                .build();
+
+        final int threadNum = 20;
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final CountDownLatch countDownLatch2 = new CountDownLatch(threadNum);
+
+        for (int i = 0; i < threadNum; i++) {
+            final int num = i;
+            new Thread(() -> {
+                try {
+                    countDownLatch.await();
+
+                    if (num != 0 && num != 1 && num != 2) {
+                        Thread.sleep(500);
+                    }
+
+                    m.computeIfAbsent(num % 3, k -> num);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    countDownLatch2.countDown();
+                }
+            }).start();
+        }
+
+        countDownLatch.countDown();
+        countDownLatch2.await();
+
+        assertArrayEquals(new Integer[] {0, 1, 2}, m.keySet().toArray(new Integer[0]));
+        assertArrayEquals(new Integer[] {0, 1, 2}, m.values().toArray(new Integer[0]));
+    }
 }
