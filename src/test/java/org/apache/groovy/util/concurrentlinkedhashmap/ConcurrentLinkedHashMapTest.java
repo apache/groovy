@@ -64,7 +64,15 @@ public class ConcurrentLinkedHashMapTest {
                     countDownLatch.await();
 
                     if (num != 0 && num != 1 && num != 2) {
-                        Thread.sleep(500);
+                        Thread.sleep(100);
+                    }
+
+                    if (num == 1) {
+                        Thread.sleep(30);
+                    }
+
+                    if (num == 2) {
+                        Thread.sleep(60);
                     }
 
                     m.computeIfAbsent(num % 3, k -> num);
