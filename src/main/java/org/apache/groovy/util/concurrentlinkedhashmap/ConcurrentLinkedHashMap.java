@@ -779,8 +779,10 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
       Node<K, V> node = objectHolder.getObject();
       if (null == node) {
-        f.apply(key);
-        node = objectHolder.getObject();
+        V value = null;
+        final int weight = 1; // weigher.weightOf(key, value);
+        final WeightedValue<V> weightedValue = new WeightedValue<V>(value, weight);
+        node = new Node<K, V>(key, weightedValue);
       } else {
         // the return value of `computeIfAbsent` is different from the one of `putIfAbsent`.
         // if the key is absent in map, the return value of `computeIfAbsent` is the newly computed value, but `putIfAbsent` return null.
