@@ -109,12 +109,12 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
         return getAndPut(key, valueProvider, true);
     }
 
     @Override
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
         readLock.lock();

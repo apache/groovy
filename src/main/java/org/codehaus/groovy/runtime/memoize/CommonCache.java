@@ -119,11 +119,11 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
         return getAndPut(key, valueProvider, true);
     }
 
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value = get(key);
         if (null != value) {
             return value;

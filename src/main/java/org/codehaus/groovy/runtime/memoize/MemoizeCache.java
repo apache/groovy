@@ -48,4 +48,16 @@ public interface MemoizeCache<K, V> {
      * and thus should protect any shared resources.
      */
     void cleanUpNullReferences();
+
+    /**
+     * Represents a provider used to create value
+     * @param <K> type of the key
+     * @param <V> type of the value
+     */
+    interface ValueProvider<K, V> {
+        /**
+         * Provide the created value
+         */
+        V provide(K key);
+    }
 }
