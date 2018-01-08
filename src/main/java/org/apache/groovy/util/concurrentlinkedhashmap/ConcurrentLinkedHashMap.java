@@ -779,8 +779,8 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
       Node<K, V> node = objectHolder.getObject();
       if (null == node) {
-        V value = null;
-        final int weight = 1; // weigher.weightOf(key, value);
+        V value = prior.getValue();
+        final int weight = weigher.weightOf(key, value);
         final WeightedValue<V> weightedValue = new WeightedValue<V>(value, weight);
         node = new Node<K, V>(key, weightedValue);
       } else {
