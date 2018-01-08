@@ -54,7 +54,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
 
     /**
      * Constructs a LRU cache with the specified initial capacity and max size.
-     * The LRU cache is slower than {@link LRUCache} but will not put same value multi-times concurrently
+     * The LRU cache is slower than {@link LRUCache}
      * @param initialCapacity initial capacity of the LRU cache
      * @param maxSize max size of the LRU cache
      */
@@ -109,12 +109,12 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
         return getAndPut(key, valueProvider, true);
     }
 
     @Override
-    public V getAndPut(K key, ValueProvider<K, V> valueProvider, boolean shouldCache) {
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
         readLock.lock();

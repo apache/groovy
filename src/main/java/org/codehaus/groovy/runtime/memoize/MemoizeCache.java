@@ -43,9 +43,41 @@ public interface MemoizeCache<K, V> {
     V get(K key);
 
     /**
+     * Try to get the value from cache.
+     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value.
+     *
+     * @param key
+     * @param valueProvider provide the value if the associated value not found
+     * @return the cached value
+     */
+    default V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
+        V value = this.get(key);
+
+        if (null == value) {
+            value = valueProvider.provide(key);
+            this.put(key, value);
+        }
+
+        return value;
+    }
+
+    /**
      * Invoked when some of the held SoftReferences have been evicted by the garbage collector and so should be removed from the cache.
      * The implementation must ensure that concurrent invocations of all methods on the cache may occur from other threads
      * and thus should protect any shared resources.
      */
     void cleanUpNullReferences();
+
+    /**
+     * Represents a provider used to create value
+     * @param <K> type of the key
+     * @param <V> type of the value
+     */
+    @FunctionalInterface
+    interface ValueProvider<K, V> {
+        /**
+         * Provide the created value
+         */
+        V provide(K key);
+    }
 }

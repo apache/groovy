@@ -15,6 +15,8 @@
  */
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
+import org.apache.groovy.util.ObjectHolder;
+
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -757,7 +759,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   V compute(final K key, final Function<? super K, ? extends V> mappingFunction, boolean onlyIfAbsent) {
     checkNotNull(key);
 
-    final NodeHolder<K, V> nh = new NodeHolder<K, V>();
+    final ObjectHolder<Node<K, V>> objectHolder = new ObjectHolder<Node<K, V>>();
 
     for (;;) {
       Function<K, Node<K, V>> f = k -> {
@@ -769,16 +771,16 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
         final WeightedValue<V> weightedValue = new WeightedValue<V>(value, weight);
         final Node<K, V> node = new Node<K, V>(key, weightedValue);
 
-        nh.setNode(node);
+        objectHolder.setObject(node);
 
         return node;
       };
       Node<K, V> prior = data.computeIfAbsent(key, f);
 
-      Node<K, V> node = nh.getNode();
+      Node<K, V> node = objectHolder.getObject();
       if (null == node) {
         f.apply(key);
-        node = nh.getNode();
+        node = objectHolder.getObject();
       } else {
         // the return value of `computeIfAbsent` is different from the one of `putIfAbsent`.
         // if the key is absent in map, the return value of `computeIfAbsent` is the newly computed value, but `putIfAbsent` return null.
@@ -814,23 +816,6 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
-  private static class NodeHolder<K, V> {
-    private Node<K, V> node;
-
-    public NodeHolder() {}
-
-    public NodeHolder(Node<K, V> node) {
-      this.node = node;
-    }
-
-    public Node<K, V> getNode() {
-      return node;
-    }
-
-    public void setNode(Node<K, V> node) {
-      this.node = node;
-    }
-  }
 
   @Override
   public V remove(Object key) {

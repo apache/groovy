@@ -127,14 +127,15 @@ public abstract class Memoize {
             maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
         }
         
-        @Override public V call(final Object... args) {
+        @Override
+        public V call(final Object... args) {
             final Object key = generateKey(args);
-            Object result = cache.get(key);
-            if (result == null) {
-                result = closure.call(args);
+            Object result = cache.getAndPut(key, k -> {
+                Object r = closure.call(args);
                 //noinspection GroovyConditionalCanBeElvis
-                cache.put(key, result != null ? result : MEMOIZE_NULL);
-            }
+                return r != null ? r : MEMOIZE_NULL;
+            });
+
             return result == MEMOIZE_NULL ? null : (V) result;
         }
 
@@ -153,7 +154,7 @@ public abstract class Memoize {
             this.lruProtectionStorage = lruProtectionStorage;
             this.queue = queue;
         }
-        
+
         @Override public V call(final Object... args) {
             if (queue.poll() != null) cleanUpNullReferences(cache, queue);  // if something has been evicted, do a clean-up
             final Object key = generateKey(args);

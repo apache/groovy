@@ -228,13 +228,15 @@ public class ProxyGenerator {
         }
         boolean useDelegate = null != delegateClass;
         CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, keys, intfs, emptyMethods, useDelegate);
-        ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
-        if (adapter == null) {
-            adapter = new ProxyGeneratorAdapter(closureMap, base, intfs, useDelegate ? delegateClass.getClassLoader() : base.getClassLoader(), emptyMethods, useDelegate ? delegateClass : null);
-            adapterCache.put(key, adapter);
-        }
+        final Class b = base;
 
-        return adapter;
+        return (ProxyGeneratorAdapter) adapterCache.getAndPut(
+                key,
+                k -> new ProxyGeneratorAdapter(closureMap, b, intfs, useDelegate
+                        ? delegateClass.getClassLoader()
+                        : b.getClassLoader(), emptyMethods, useDelegate ? delegateClass : null
+                )
+        );
     }
 
     private static void setMetaClass(final MetaClass metaClass) {

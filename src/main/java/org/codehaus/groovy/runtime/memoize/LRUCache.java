@@ -23,6 +23,7 @@ import org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * A cache backed by a ConcurrentLinkedHashMap
@@ -30,22 +31,39 @@ import java.util.Map;
  * @author Vaclav Pech
  * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
  */
-public final class LRUCache implements MemoizeCache<Object, Object> {
-    private final Map<Object, Object> cache;
+public final class LRUCache<K, V> implements MemoizeCache<K, V> {
+    private final ConcurrentMap<K, V> cache;
 
     public LRUCache(final int maxCacheSize) {
 //        cache = Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize));
-        cache = new ConcurrentLinkedHashMap.Builder<>()
+        cache = new ConcurrentLinkedHashMap.Builder<K, V>()
                 .maximumWeightedCapacity(maxCacheSize)
                 .build();
     }
 
-    public Object put(final Object key, final Object value) {
+    @Override
+    public V put(final K key, final V value) {
         return cache.put(key, value);
     }
 
-    public Object get(final Object key) {
+    @Override
+    public V get(final K key) {
         return cache.get(key);
+    }
+
+    /**
+     * Try to get the value from cache.
+     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value.
+     *
+     * The operation is completed atomically.
+     *
+     * @param key
+     * @param valueProvider provide the value if the associated value not found
+     * @return
+     */
+    @Override
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
+        return cache.computeIfAbsent(key, k -> valueProvider.provide(k));
     }
 
     /**
@@ -53,9 +71,9 @@ public final class LRUCache implements MemoizeCache<Object, Object> {
      */
     public void cleanUpNullReferences() {
         synchronized (cache) {
-            final Iterator<Map.Entry<Object, Object>> iterator = cache.entrySet().iterator();
+            final Iterator<Map.Entry<K, V>> iterator = cache.entrySet().iterator();
             while (iterator.hasNext()) {
-                final Map.Entry<Object, Object> entry = iterator.next();
+                final Map.Entry<K, V> entry = iterator.next();
                 final Object value = entry.getValue();
 
                 if (!(value instanceof SoftReference)) continue;
