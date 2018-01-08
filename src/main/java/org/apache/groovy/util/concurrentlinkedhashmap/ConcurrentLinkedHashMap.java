@@ -751,6 +751,28 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /**
+   * If the specified key is not already associated with a value,
+   * attempts to compute its value using the given mapping function
+   * and enters it into this map unless {@code null}.  The entire
+   * method invocation is performed atomically, so the function is
+   * applied at most once per key.  Some attempted update operations
+   * on this map by other threads may be blocked while computation
+   * is in progress, so the computation should be short and simple,
+   * and must not attempt to update any other mappings of this map.
+   *
+   * @param key key with which the specified value is to be associated
+   * @param mappingFunction the function to compute a value
+   * @return the current (existing or computed) value associated with
+   *         the specified key, or null if the computed value is null
+   * @throws NullPointerException if the specified key or mappingFunction
+   *         is null
+   * @throws IllegalStateException if the computation detectably
+   *         attempts a recursive update to this map that would
+   *         otherwise never complete
+   * @throws RuntimeException or Error if the mappingFunction does so,
+   *         in which case the mapping is left unestablished
+   */
   @Override
   public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
     return compute(key, mappingFunction, true);
@@ -758,6 +780,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   V compute(final K key, final Function<? super K, ? extends V> mappingFunction, boolean onlyIfAbsent) {
     checkNotNull(key);
+    checkNotNull(mappingFunction);
 
     final ObjectHolder<Node<K, V>> objectHolder = new ObjectHolder<Node<K, V>>();
 
@@ -778,7 +801,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       Node<K, V> prior = data.computeIfAbsent(key, f);
 
       Node<K, V> node = objectHolder.getObject();
-      if (null == node) {
+      if (null == node) { // the entry is present
         V value = prior.getValue();
         final int weight = weigher.weightOf(key, value);
         final WeightedValue<V> weightedValue = new WeightedValue<V>(value, weight);
