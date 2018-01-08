@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
@@ -749,6 +750,89 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   }
 
   @Override
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    return compute(key, mappingFunction, true);
+  }
+
+  V compute(final K key, final Function<? super K, ? extends V> mappingFunction, boolean onlyIfAbsent) {
+    checkNotNull(key);
+
+    final NodeHolder<K, V> nh = new NodeHolder<K, V>();
+
+    for (;;) {
+      Function<K, Node<K, V>> f = k -> {
+        final V value = mappingFunction.apply(key);
+
+        checkNotNull(value);
+
+        final int weight = weigher.weightOf(key, value);
+        final WeightedValue<V> weightedValue = new WeightedValue<V>(value, weight);
+        final Node<K, V> node = new Node<K, V>(key, weightedValue);
+
+        nh.setNode(node);
+
+        return node;
+      };
+      Node<K, V> prior = data.computeIfAbsent(key, f);
+
+      Node<K, V> node = nh.getNode();
+      if (null == node) {
+        f.apply(key);
+        node = nh.getNode();
+      } else {
+        // the return value of `computeIfAbsent` is different from the one of `putIfAbsent`.
+        // if the key is absent in map, the return value of `computeIfAbsent` is the newly computed value, but `putIfAbsent` return null.
+        // prior should keep the value with the same meaning of the return value of `putIfAbsent`, so reset it as null here.
+        prior = null;
+      }
+      final WeightedValue<V> weightedValue = node.weightedValue;
+      final int weight = weightedValue.weight;
+
+      if (prior == null) {
+        afterWrite(new AddTask(node, weight));
+        return weightedValue.value;
+      } else if (onlyIfAbsent) {
+        afterRead(prior);
+        return prior.getValue();
+      }
+      for (;;) {
+        final WeightedValue<V> oldWeightedValue = prior.get();
+        if (!oldWeightedValue.isAlive()) {
+          break;
+        }
+
+        if (prior.compareAndSet(oldWeightedValue, weightedValue)) {
+          final int weightedDifference = weight - oldWeightedValue.weight;
+          if (weightedDifference == 0) {
+            afterRead(prior);
+          } else {
+            afterWrite(new UpdateTask(prior, weightedDifference));
+          }
+          return oldWeightedValue.value;
+        }
+      }
+    }
+  }
+
+  private static class NodeHolder<K, V> {
+    private Node<K, V> node;
+
+    public NodeHolder() {}
+
+    public NodeHolder(Node<K, V> node) {
+      this.node = node;
+    }
+
+    public Node<K, V> getNode() {
+      return node;
+    }
+
+    public void setNode(Node<K, V> node) {
+      this.node = node;
+    }
+  }
+
+  @Override
   public V remove(Object key) {
     final Node<K, V> node = data.remove(key);
     if (node == null) {
@@ -1142,11 +1226,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     Node<K, V> prev;
     @GuardedBy("evictionLock")
     Node<K, V> next;
+    WeightedValue<V> weightedValue;
 
     /** Creates a new, unlinked node. */
     Node(K key, WeightedValue<V> weightedValue) {
       super(weightedValue);
       this.key = key;
+      this.weightedValue = weightedValue;
     }
 
     @Override
@@ -1176,6 +1262,10 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     /** Retrieves the value held by the current <tt>WeightedValue</tt>. */
     V getValue() {
       return get().value;
+    }
+
+    WeightedValue<V> getWeightedValue() {
+      return this.weightedValue;
     }
   }
 
