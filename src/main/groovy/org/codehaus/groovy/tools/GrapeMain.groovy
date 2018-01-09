@@ -293,7 +293,7 @@ if (cmd.hasOption('v')) {
 }
 
 if (options.hasOption('D')) {
-    options.getOptionProperties('D')?.each { k, v ->
+    cmd.getOptionProperties('D')?.each { k, v ->
         System.setProperty(k, v)
     }
 }
