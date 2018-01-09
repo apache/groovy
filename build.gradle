@@ -409,6 +409,10 @@ allprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
         options.incremental = true
+
+        if (classpath) {
+            classpath = classpath + files(dgmConverter.outputDir)
+        }
     }
 
     if (rootProject.indyCapable()) {
