@@ -27,6 +27,8 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of map constructors in classes.
+ * If the class is also annotated with {@code @KnownImmutable}, then the generated
+ * constructor will contain additional code needed for immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
  * <pre class="groovyTestCase">
@@ -94,6 +96,11 @@ public @interface MapConstructor {
     boolean includeFields() default false;
 
     /**
+     * Whether immutable pre-cautions (defensive copying, cloning, etc.) should be applied to incoming/outgoing properties.
+     */
+    boolean makeImmutable() default false;
+
+    /**
      * Include properties in the constructor.
      */
     boolean includeProperties() default true;
@@ -102,6 +109,13 @@ public @interface MapConstructor {
      * Include properties from super classes in the constructor.
      */
     boolean includeSuperProperties() default false;
+
+    /**
+     * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
+     * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
+     * specification.
+     */
+    boolean allProperties() default false;
 
     /**
      * By default, properties are set directly using their respective field.

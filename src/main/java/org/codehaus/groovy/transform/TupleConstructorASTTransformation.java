@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.transform.KnownImmutable;
 import groovy.transform.TupleConstructor;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -61,8 +62,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuper
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
@@ -84,6 +83,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
+    private static final ClassNode IMMUTABLE_CLASS_TYPE = makeWithoutCaching(KnownImmutable.class, false);
     private static final Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -118,14 +118,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean defaults = !memberHasValue(anno, "defaults", false);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             boolean allProperties = memberHasValue(anno, "allProperties", true);
+            boolean makeImmutable = memberHasValue(anno, "makeImmutable", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, false, includeSuperFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, false, includeSuperFields)) return;
-            // if @Immutable is found, let it pick up options and do work so we'll skip
-            if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
             Expression pre = anno.getMember("pre");
             if (pre != null && !(pre instanceof ClosureExpression)) {
                 addError("Expected closure value for annotation parameter 'pre'. Found " + pre, cNode);
@@ -136,9 +135,20 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 addError("Expected closure value for annotation parameter 'post'. Found " + post, cNode);
                 return;
             }
-            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
-                    callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, sourceUnit,
-                    (ClosureExpression) pre, (ClosureExpression) post);
+
+            // TODO remove duplication between various paths below
+            List<PropertyNode> list = ImmutableASTTransformation.getProperties(cNode, includeSuperProperties, allProperties);
+            boolean specialHashMapCase = ImmutableASTTransformation.isSpecialHashMapCase(list);
+            if (makeImmutable) {
+                if (!specialHashMapCase) {
+                    ImmutableASTTransformation.createConstructorOrdered(cNode, list);
+                }
+            } else {
+                createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
+                        callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, sourceUnit,
+                        (ClosureExpression) pre, (ClosureExpression) post);
+            }
+
             if (pre != null) {
                 anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
             }

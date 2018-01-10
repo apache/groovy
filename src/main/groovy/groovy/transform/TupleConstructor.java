@@ -27,6 +27,9 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of tuple constructors in classes.
+ * If the class is also annotated with {@code @KnownImmutable}, then the generated
+ * constructor will contain additional code needed for immutable classes.
+ *
  * Should be used with care with other annotations which create constructors - see "Known
  * Limitations" for more details.
  * <p>
@@ -227,6 +230,13 @@ public @interface TupleConstructor {
      * whether existing constructors exist. It is up to you to avoid creating duplicate constructors.
      */
     boolean force() default false;
+
+    /**
+     * Whether immutable pre-cautions (defensive copying, cloning, etc.) should be applied to incoming/outgoing properties.
+     *
+     * @since 2.5.0
+     */
+    boolean makeImmutable() default false;
 
     /**
      * Used to set whether default value processing is enabled (the default) or disabled.
