@@ -3635,15 +3635,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Tests if this string starts with any specified prefixes.
+     * Tests if this CharSequence starts with any specified prefixes.
      *
      * @param   prefixes   the prefixes.
-     * @return  {@code true} if this string starts with any specified prefixes.
+     * @return  {@code true} if this CharSequence starts with any specified prefixes.
      * @since   2.4.14
      */
-    public static boolean startsWithAny(String self, String... prefixes) {
-        for (String prefix : prefixes) {
-            if (self.startsWith(prefix)) {
+    public static boolean startsWithAny(CharSequence self, CharSequence... prefixes) {
+        String str = self.toString();
+
+        for (CharSequence prefix : prefixes) {
+            if (str.startsWith(prefix.toString())) {
                 return true;
             }
         }
@@ -3652,15 +3654,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Tests if this string ends with any specified suffixes.
+     * Tests if this CharSequence ends with any specified suffixes.
      *
      * @param   suffixes   the suffixes.
-     * @return  {@code true} if this string ends with any specified suffixes
+     * @return  {@code true} if this CharSequence ends with any specified suffixes
      * @since   2.4.14
      */
-    public static boolean endsWithAny(String self, String... suffixes) {
-        for (String suffix : suffixes) {
-            if (self.endsWith(suffix)) {
+    public static boolean endsWithAny(CharSequence self, CharSequence... suffixes) {
+        String str = self.toString();
+
+        for (CharSequence suffix : suffixes) {
+            if (str.endsWith(suffix.toString())) {
                 return true;
             }
         }
