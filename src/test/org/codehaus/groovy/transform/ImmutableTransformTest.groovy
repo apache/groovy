@@ -607,8 +607,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 new Person(first: 'John', last: 'Doe', address: new Address(street: 'Street'))
             '''
         }
-        assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
-        assert msg.contains("@Immutable classes only support properties with effectively immutable types")
+        assert msg.contains("Unsupported type (Address) found for field 'address' while constructing immutable class Person")
+        assert msg.contains("Immutable classes only support properties with effectively immutable types")
     }
 
     // GROOVY-5828
@@ -655,7 +655,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
         }
-        assert msg.contains("@Immutable processor doesn't know how to handle field 'name' of type 'java.lang.Object or def'")
+        assert msg.contains("Unsupported type (java.lang.Object or def) found for field 'name' while ")
     }
 
     // GROOVY-6192
@@ -986,7 +986,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                new Person(surName: "Doe")
            """
         }
-        assert message.contains("Error during @Immutable processing: 'knownImmutables' property 'sirName' does not exist.")
+        assert message.contains("Error during immutable class processing: 'knownImmutables' property 'sirName' does not exist.")
     }
 
     // GROOVY-7162
