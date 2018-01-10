@@ -40,8 +40,6 @@ import java.lang.annotation.ElementType
  * Tests whether local and global transforms are successfully detected, loaded,
  * and run if separate class loaders are used for loading compile dependencies
  * and AST transforms.
- *
- * @author Peter Niederwieser
  */
 class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
     URL[] urls = collectUrls(getClass().classLoader) + addGroovyUrls()
@@ -68,8 +66,8 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
     }
 
     void testBuiltInLocalTransform() {
-        def clazz = compileAndLoadClass("@groovy.transform.Immutable class Foo { String bar }", dependencyLoader, transformLoader)
-        checkIsImmutable(clazz)
+        def clazz = compileAndLoadClass("@groovy.transform.TupleConstructor class Foo { String bar }", dependencyLoader, transformLoader)
+        checkHasTupleConstructor(clazz)
     }
 
     void testThirdPartyLocalTransform() {
@@ -102,12 +100,9 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
         return loader.defineClass(classInfo.name, classInfo.bytes)
     }
 
-    private checkIsImmutable(Class clazz) {
-        try {
-            def foo = clazz.newInstance(["setting property"] as Object[])
-            foo.bar = "updating property"
-            fail()
-        } catch (ReadOnlyPropertyException expected) {}
+    private checkHasTupleConstructor(Class clazz) {
+        def foo = clazz.newInstance(["some property"] as Object[])
+        assert foo.bar == 'some property'
     }
 
     private Set<URL> collectUrls(ClassLoader classLoader) {

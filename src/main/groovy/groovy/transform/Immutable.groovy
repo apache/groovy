@@ -16,17 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform;
-
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package groovy.transform
 
 /**
- * Class annotation used to assist in the creation of immutable classes.
+ * Meta annotation used when defining immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
  * <pre class="groovyTestCase">
@@ -41,10 +34,11 @@ import java.lang.annotation.Target;
  * def c2 = new Customer('Tom', 'Jones', 21, d, ['Books', 'Games'])
  * assert c1 == c2
  * </pre>
- * The {@code @Immutable} annotation instructs the compiler to execute an
- * AST transformation which adds the necessary getters, constructors,
- * equals, hashCode and other helper methods that are typically written
- * when creating immutable classes with the defined properties.
+ * The {@code @Immutable} meta-annotation corresponds to adding the following annotations:
+ * {@code @ToString}, {@code @EqualsAndHashCode}, {@code @ImmutableBase}, {@code @KnownImmutable}, {@code @MapConstructor} and {@code @TupleConstructor}.
+ * Together these annotations instruct the compiler to execute the necessary transformations to add
+ * the necessary getters, constructors, equals, hashCode and other helper methods that are typically
+ * written when creating immutable classes with the defined properties.
  * <p>
  * A class created in this way has the following characteristics:
  * <ul>
@@ -153,8 +147,8 @@ import java.lang.annotation.Target;
  * assert anotherOfficeSpace == officeSpace
  *
  * // equals() and hashCode() are added, so duplicate is not in Set.
- * def offices = [officeSpace, anotherOfficeSpace, theOffice] as Set  
- * assert offices.size() == 2 
+ * def offices = [officeSpace, anotherOfficeSpace, theOffice] as Set
+ * assert offices.size() == 2
  * assert offices.name.join(',') == 'Initech office,Wernham Hogg Paper Company'
  *
  * &#64;Canonical
@@ -168,82 +162,20 @@ import java.lang.annotation.Target;
  * assert mrhaki.toString() == 'Person(mrhaki)'
  * </pre>
  *
- * @author Paul King
- * @author Andre Steingress
- * @see groovy.transform.ToString
- * @see groovy.transform.Canonical
+ * @see ToString
+ * @see EqualsAndHashCode
+ * @see ImmutableBase
+ * @see KnownImmutable
+ * @see MapConstructor
+ * @see TupleConstructor
+ * @see Canonical
  * @since 1.7
  */
-@java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")
-public @interface Immutable {
-    /**
-     * Allows you to provide {@code @Immutable} with a list of classes which
-     * are deemed immutable. By supplying a class in this list, you are vouching
-     * for its immutability and {@code @Immutable} will do no further checks.
-     * Example:
-     * <pre>
-     * import groovy.transform.*
-     * {@code @Immutable}(knownImmutableClasses = [Address])
-     * class Person {
-     *     String first, last
-     *     Address address
-     * }
-     *
-     * {@code @TupleConstructor}
-     * class Address {
-     *     final String street
-     * }
-     * </pre>
-     *
-     * @since 1.8.7
-     */
-    Class[] knownImmutableClasses() default {};
-
-    /**
-     * Allows you to provide {@code @Immutable} with a list of property names which
-     * are deemed immutable. By supplying a property's name in this list, you are vouching
-     * for its immutability and {@code @Immutable} will do no further checks.
-     * Example:
-     * <pre>
-     * {@code @groovy.transform.Immutable}(knownImmutables = ['address'])
-     * class Person {
-     *     String first, last
-     *     Address address
-     * }
-     * ...
-     * </pre>
-     *
-     * @since 2.1.0
-     */
-    String[] knownImmutables() default {};
-
-    /**
-     * If {@code true}, this adds a method {@code copyWith} which takes a Map of
-     * new property values and returns a new instance of the Immutable class with
-     * these values set.
-     * Example:
-     * <pre class="groovyTestCase">
-     * {@code @groovy.transform.Immutable}(copyWith = true)
-     * class Person {
-     *     String first, last
-     * }
-     *
-     * def tim   = new Person( 'tim', 'yates' )
-     * def alice = tim.copyWith( first:'alice' )
-     *
-     * assert tim.first   == 'tim'
-     * assert alice.first == 'alice'
-     * </pre>
-     * Unknown keys in the map are ignored, and if the values would not change
-     * the object, then the original object is returned.
-     *
-     * If a method called {@code copyWith} that takes a single parameter already
-     * exists in the class, then this setting is ignored, and no method is generated.
-     *
-     * @since 2.2.0
-     */
-    boolean copyWith() default false;
-}
+@ToString(cache = true, includeSuperProperties = true)
+@EqualsAndHashCode(cache = true)
+@ImmutableBase
+@TupleConstructor(makeImmutable = true, defaults = false)
+@MapConstructor(makeImmutable = true, noArg = true, includeSuperProperties = true)
+@KnownImmutable
+@AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
+@interface Immutable { }
