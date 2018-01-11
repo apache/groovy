@@ -102,6 +102,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     new Parameter(ClassHelper.OBJECT_TYPE, "args")
             }
     );
+    public static final String PARAMETER_TYPE = "_parameter_type";
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
@@ -435,6 +436,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             // first parameters as usual
             for (int i = 0; i < para.length - 1; i++) {
                 Expression expression = argumentList.get(i);
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
@@ -460,6 +462,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         } else if (argumentListSize == para.length) {
             for (int i = 0; i < argumentListSize; i++) {
                 Expression expression = argumentList.get(i);
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
@@ -491,6 +494,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             for (int i = 0; i < arguments.length; i++) {
                 Expression expression = arguments[i];
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());

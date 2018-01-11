@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -715,6 +716,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitClosureExpression(ClosureExpression expression) {
         controller.getClosureWriter().writeClosure(expression);
+    }
+
+    @Override
+    public void visitLambdaExpression(LambdaExpression expression) {
+        controller.getLambdaWriter().writeLambda(expression);
     }
 
     /**
@@ -2173,5 +2179,9 @@ public class AsmClassGenerator extends ClassGenerator {
         innerClass.setModule(mn);
         mn.getUnit().addGeneratedInnerClass((InnerClassNode)innerClass);
         return innerClasses.add(innerClass);
+    }
+
+    public ClassVisitor getClassVisitor() {
+        return cv;
     }
 }

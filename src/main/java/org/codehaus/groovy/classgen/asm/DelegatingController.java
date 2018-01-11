@@ -112,7 +112,12 @@ public class DelegatingController extends WriterController {
     @Override
     public ClosureWriter getClosureWriter() {
         return delegationController.getClosureWriter();
-    } 
+    }
+
+    @Override
+    public LambdaWriter getLambdaWriter() {
+        return delegationController.getLambdaWriter();
+    }
     
     @Override
     public CompileStack getCompileStack() {
