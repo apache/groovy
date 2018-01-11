@@ -417,16 +417,17 @@ public class StaticInvocationWriter extends InvocationWriter {
         AsmClassGenerator acg = controller.getAcg();
         TypeChooser typeChooser = controller.getTypeChooser();
         OperandStack operandStack = controller.getOperandStack();
-        ClassNode lastArgType = !argumentList.isEmpty() ?
-                typeChooser.resolveType(argumentList.get(argumentList.size()-1), controller.getClassNode()):null;
+        int argumentListSize = argumentList.size();
+        ClassNode lastArgType = argumentListSize > 0 ?
+                typeChooser.resolveType(argumentList.get(argumentListSize -1), controller.getClassNode()):null;
         if (lastParaType.isArray()
-                && ((argumentList.size() > para.length)
-                || ((argumentList.size() == (para.length - 1)) && !lastParaType.equals(lastArgType))
-                || ((argumentList.size() == para.length && lastArgType!=null && !lastArgType.isArray())
+                && ((argumentListSize > para.length)
+                || ((argumentListSize == (para.length - 1)) && !lastParaType.equals(lastArgType))
+                || ((argumentListSize == para.length && lastArgType!=null && !lastArgType.isArray())
                     && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType,lastParaType.getComponentType())))
                         || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType()))
                 ) {
-            int stackLen = operandStack.getStackLength() + argumentList.size();
+            int stackLen = operandStack.getStackLength() + argumentListSize;
             MethodVisitor mv = controller.getMethodVisitor();
             //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
@@ -441,7 +442,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             // last parameters wrapped in an array
             List<Expression> lastParams = new LinkedList<Expression>();
-            for (int i = para.length - 1; i < argumentList.size(); i++) {
+            for (int i = para.length - 1; i < argumentListSize; i++) {
                 lastParams.add(argumentList.get(i));
             }
             ArrayExpression array = new ArrayExpression(
@@ -453,11 +454,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             while (operandStack.getStackLength() < stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
-            if (argumentList.size() == para.length - 1) {
+            if (argumentListSize == para.length - 1) {
                 operandStack.remove(1);
             }
-        } else if (argumentList.size() == para.length) {
-            for (int i = 0; i < argumentList.size(); i++) {
+        } else if (argumentListSize == para.length) {
+            for (int i = 0; i < argumentListSize; i++) {
                 Expression expression = argumentList.get(i);
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
@@ -471,7 +472,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             for (int i = 0, j = 0; i < para.length; i++) {
                 Parameter curParam = para[i];
                 ClassNode curParamType = curParam.getType();
-                Expression curArg = j < argumentList.size() ? argumentList.get(j) : null;
+                Expression curArg = j < argumentListSize ? argumentList.get(j) : null;
                 Expression initialExpression = curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
                 if (initialExpression == null && curParam.hasInitialExpression())
                     initialExpression = curParam.getInitialExpression();
