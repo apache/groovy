@@ -20,7 +20,7 @@
 package groovy.transform.stc
 
 class LambdaTest extends GroovyTestCase {
-    void testMethodCall() {
+    void testFunction() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -29,22 +29,35 @@ class LambdaTest extends GroovyTestCase {
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
-                p1();
+                p();
             }
         
-            public static void p1() {
+            public static void p() {
                 assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
             }
         }
         '''
-
     }
 
-    void testMethodCall2() {
+    void testBinaryOperator() {
         if (true) return;
 
         // the test can pass only in dynamic mode now, it can not pass static type checking...
 
+        /* TODO
+TestScript0.groovy: 13: [Static type checking] - Cannot find matching method java.util.stream.Stream#reduce(int, groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
+ @ line 13, column 30.
+                   assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
+                                ^
+
+TestScript0.groovy: 13: [Static type checking] - Cannot find matching method java.lang.Object#plus(java.lang.Object). Please check if the declared type is correct and if the method exists.
+ @ line 13, column 69.
+   (1, 2, 3).reduce(7, (r, e) -> r + e);
+                                 ^
+
+2 errors
+         */
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -53,18 +66,17 @@ class LambdaTest extends GroovyTestCase {
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
-                p2();
+                p();
             }
             
-            public static void p2() {
+            public static void p() {
                 assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
             }
         }
         '''
-
     }
 
-    void testMethodCall3() {
+    void testConsumer() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -73,15 +85,92 @@ class LambdaTest extends GroovyTestCase {
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
-                p3();
+                p();
             }
             
-            public static void p3() {
+            public static void p() {
                 Stream.of(1, 2, 3).forEach(e -> { System.out.println(e + 1); });
             }
             
         }
         '''
+    }
 
+    void testPredicate() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                def list = ['ab', 'bc', 'de']
+                list.removeIf(e -> e.startsWith("a"))
+                assert ['bc', 'de'] == list
+            }
+        }
+        '''
+    }
+
+    void testUnaryOperator() {
+        if (true) return;
+
+        /* TODO
+TestScript0.groovy: 14: [Static type checking] - Cannot find matching method java.util.List#replaceAll(groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
+ @ line 14, column 17.
+                   list.replaceAll(e -> e + 10)
+                   ^
+
+TestScript0.groovy: 14: [Static type checking] - Cannot find matching method java.lang.Object#plus(int). Please check if the declared type is correct and if the method exists.
+ @ line 14, column 38.
+                   list.replaceAll(e -> e + 10)
+                                        ^
+
+2 errors
+         */
+
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                def list = [1, 2, 3]
+                list.replaceAll(e -> e + 10)
+                assert [11, 12, 13] == list
+            }
+        }
+        '''
+    }
+
+    void testBiConsumer() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                def map = [a: 1, b: 2, c: 3]
+                map.forEach((k, v) -> System.out.println(k + ":" + v));
+            }
+        }
+        '''
     }
 }
