@@ -184,9 +184,8 @@ public class ClosureWriter {
     protected ClassNode createClosureClass(ClosureExpression expression, int mods) {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
-        MethodNode methodNode = controller.getMethodNode();
-        String name = classNode.getName() + "$"
-                + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode); // add a more informative name
+//        MethodNode methodNode = controller.getMethodNode();
+        String name = genInnerClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
         Parameter[] parameters = expression.getParameters();
@@ -304,6 +303,15 @@ public class ClosureWriter {
         correctAccessedVariable(answer,expression);
         
         return answer;
+    }
+
+    protected String genInnerClassName() {
+        ClassNode classNode = controller.getClassNode();
+        ClassNode outerClass = controller.getOutermostClass();
+        MethodNode methodNode = controller.getMethodNode();
+
+        return classNode.getName() + "$"
+                + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode);
     }
 
     private static void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {

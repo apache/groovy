@@ -21,24 +21,28 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.apache.groovy.parser.antlr4.AstBuilder.LAMBDA_ENCLOSING_CLASSNODE;
-import static org.apache.groovy.parser.antlr4.AstBuilder.SYNTHETIC_LAMBDA_METHOD_NODE;
 import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -49,13 +53,21 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  *
  */
 public class StaticTypesLambdaWriter extends LambdaWriter {
+    public static final String DO_CALL = "doCall";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
+    private WriterControllerFactory factory;
+    private final Map<Expression,ClassNode> lambdaClassMap = new HashMap<>();
 
     public StaticTypesLambdaWriter(WriterController wc) {
         super(wc);
         this.staticTypesClosureWriter = new StaticTypesClosureWriter(wc);
         this.controller = wc;
+        this.factory = new WriterControllerFactory() {
+            public WriterController makeController(final WriterController normalController) {
+                return controller;
+            }
+        };
     }
 
     @Override
@@ -86,9 +98,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 ACC_PUBLIC + ACC_FINAL + ACC_STATIC);
 
         MethodVisitor mv = controller.getMethodVisitor();
-        MethodNode syntheticLambdaMethodNode = expression.getNodeMetaData(SYNTHETIC_LAMBDA_METHOD_NODE);
-        ClassNode lambdaEnclosingClassNode = expression.getNodeMetaData(LAMBDA_ENCLOSING_CLASSNODE);
-
+        ClassNode lambdaEnclosingClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
+        MethodNode syntheticLambdaMethodNode = lambdaEnclosingClassNode.getMethods(DO_CALL).get(0);
         String syntheticLambdaMethodDesc = BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode);
 
         controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
@@ -112,7 +123,49 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                                 false),
                         Type.getType(syntheticLambdaMethodDesc)
                 });
+    }
 
+    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods) {
+        ClassNode lambdaClass = lambdaClassMap.get(expression);
+        if (lambdaClass == null) {
+            lambdaClass = createLambdaClass(expression, mods);
+            lambdaClassMap.put(expression, lambdaClass);
+            controller.getAcg().addInnerClass(lambdaClass);
+            lambdaClass.addInterface(ClassHelper.GENERATED_LAMBDA_TYPE);
+            lambdaClass.putNodeMetaData(WriterControllerFactory.class, factory);
+        }
+        return lambdaClass;
+    }
+
+    protected ClassNode createLambdaClass(LambdaExpression expression, int mods) {
+        ClassNode outerClass = controller.getOutermostClass();
+        ClassNode classNode = controller.getClassNode();
+        String name = genInnerClassName();
+        boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
+
+        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.LAMBDA_TYPE.getPlainNodeReference());
+        answer.setEnclosingMethod(controller.getMethodNode());
+        answer.setSynthetic(true);
+        answer.setUsingGenerics(outerClass.isUsingGenerics());
+        answer.setSourcePosition(expression);
+
+        if (staticMethodOrInStaticClass) {
+            answer.setStaticClass(true);
+        }
+        if (controller.isInScriptBody()) {
+            answer.setScriptBody(true);
+        }
+
+        Parameter[] parameters = expression.getParameters();
+        if (parameters == null) {
+            parameters = Parameter.EMPTY_ARRAY;
+        }
+
+        MethodNode methodNode =
+                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
+        methodNode.setSourcePosition(expression);
+
+        return answer;
     }
 
     @Override

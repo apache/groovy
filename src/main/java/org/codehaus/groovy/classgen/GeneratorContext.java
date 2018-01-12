@@ -34,6 +34,7 @@ public class GeneratorContext {
 
     private int innerClassIdx = 1;
     private int closureClassIdx = 1;
+    private int lambdaClassIdx = 1;
     private final CompileUnit compileUnit;
     
     public GeneratorContext(CompileUnit compileUnit) {
@@ -54,6 +55,14 @@ public class GeneratorContext {
     }
 
     public String getNextClosureInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod) {
+        return getNextInnerName(owner, enclosingClass, enclosingMethod, "closure");
+    }
+
+    public String getNextLambdaInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod) {
+        return getNextInnerName(owner, enclosingClass, enclosingMethod, "lambda");
+    }
+
+    private String getNextInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod, String classifier) {
         String methodName = "";
         if (enclosingMethod != null) {
             methodName = enclosingMethod.getName();
@@ -61,10 +70,11 @@ public class GeneratorContext {
             if (enclosingClass.isDerivedFrom(ClassHelper.CLOSURE_TYPE)) {
                 methodName = "";
             } else {
-                methodName = "_"+encodeAsValidClassName(methodName);
+                methodName = "_" + encodeAsValidClassName(methodName);
             }
         }
-        return methodName + "_closure" + closureClassIdx++;
+
+        return methodName + "_" + classifier + closureClassIdx++;
     }
 
 
