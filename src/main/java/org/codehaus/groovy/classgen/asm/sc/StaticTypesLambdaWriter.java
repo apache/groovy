@@ -80,7 +80,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         .filter(MethodNode::isAbstract)
                         .collect(Collectors.toList());
 
-        if (abstractMethodNodeList.size() != 1) {
+        if (!(isFunctionInterfaceAnnotationAttached(parameterType) && abstractMethodNodeList.size() == 1)) {
             super.writeClosure(expression);
             return;
         }
@@ -134,6 +134,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         Type.getType(syntheticLambdaMethodWithExactTypeDesc)
                 }
         );
+    }
+
+    private boolean isFunctionInterfaceAnnotationAttached(ClassNode parameterType) {
+        return !parameterType.redirect().getAnnotations(ClassHelper.makeCached(FunctionalInterface.class)).isEmpty();
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
