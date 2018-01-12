@@ -185,7 +185,7 @@ public class ClosureWriter {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
 //        MethodNode methodNode = controller.getMethodNode();
-        String name = genInnerClassName();
+        String name = genClosureClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
         Parameter[] parameters = expression.getParameters();
@@ -305,7 +305,7 @@ public class ClosureWriter {
         return answer;
     }
 
-    protected String genInnerClassName() {
+    private String genClosureClassName() {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
         MethodNode methodNode = controller.getMethodNode();

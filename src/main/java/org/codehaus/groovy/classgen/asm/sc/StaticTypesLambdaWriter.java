@@ -38,6 +38,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +99,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 ACC_PUBLIC + ACC_FINAL + ACC_STATIC);
 
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode lambdaEnclosingClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
+        ClassNode lambdaEnclosingClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC, abstractMethodNode);
         MethodNode syntheticLambdaMethodNode = lambdaEnclosingClassNode.getMethods(DO_CALL).get(0);
-        String syntheticLambdaMethodDesc = BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode);
+        String syntheticLambdaMethodWithExactTypeDesc = BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode);
+        String syntheticLambdaMethodDesc =
+                BytecodeHelper.getMethodDescriptor(
+                        abstractMethodNode.getReturnType().getTypeClass(),
+                        Arrays.stream(abstractMethodNode.getParameters())
+                                .map(e -> e.getType().getTypeClass())
+                                .toArray(Class[]::new)
+                );
 
         controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
 
@@ -112,23 +120,26 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         "java/lang/invoke/LambdaMetafactory",
                         "metafactory",
                         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-                        false),
-                new Object[] {
+                        false
+                ),
+                new Object[]{
                         Type.getType(syntheticLambdaMethodDesc),
                         new Handle(
                                 Opcodes.H_INVOKESTATIC,
                                 lambdaEnclosingClassNode.getName(),
                                 syntheticLambdaMethodNode.getName(),
-                                syntheticLambdaMethodDesc,
-                                false),
-                        Type.getType(syntheticLambdaMethodDesc)
-                });
+                                syntheticLambdaMethodWithExactTypeDesc,
+                                false
+                        ),
+                        Type.getType(syntheticLambdaMethodWithExactTypeDesc)
+                }
+        );
     }
 
-    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods) {
+    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
         ClassNode lambdaClass = lambdaClassMap.get(expression);
         if (lambdaClass == null) {
-            lambdaClass = createLambdaClass(expression, mods);
+            lambdaClass = createLambdaClass(expression, mods, abstractMethodNode);
             lambdaClassMap.put(expression, lambdaClass);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(ClassHelper.GENERATED_LAMBDA_TYPE);
@@ -137,10 +148,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return lambdaClass;
     }
 
-    protected ClassNode createLambdaClass(LambdaExpression expression, int mods) {
+    protected ClassNode createLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
         ClassNode outerClass = controller.getOutermostClass();
         ClassNode classNode = controller.getClassNode();
-        String name = genInnerClassName();
+        String name = genLambdaClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
         InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.LAMBDA_TYPE.getPlainNodeReference());
@@ -156,20 +167,42 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             answer.setScriptBody(true);
         }
 
-        Parameter[] parameters = expression.getParameters();
-        if (parameters == null) {
-            parameters = Parameter.EMPTY_ARRAY;
-        }
+        Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
 
         MethodNode methodNode =
-                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
+                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, abstractMethodNode.getReturnType(), parametersWithExactType, ClassNode.EMPTY_ARRAY, expression.getCode());
         methodNode.setSourcePosition(expression);
 
         return answer;
     }
 
+    private Parameter[] createParametersWithExactType(LambdaExpression expression) {
+        Parameter[] parameters = expression.getParameters();
+        if (parameters == null) {
+            parameters = Parameter.EMPTY_ARRAY;
+        }
+
+        ClassNode[] blockParameterTypes = expression.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS);
+//        Parameter[] parametersWithExactType = new Parameter[parameters.length];
+
+        for (int i = 0; i < parameters.length; i++) {
+            parameters[i].setType(blockParameterTypes[i]);
+            parameters[i].setOriginType(blockParameterTypes[i]);
+        }
+        return parameters;
+    }
+
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
         return staticTypesClosureWriter.createClosureClass(expression, mods);
+    }
+
+    private String genLambdaClassName() {
+        ClassNode classNode = controller.getClassNode();
+        ClassNode outerClass = controller.getOutermostClass();
+        MethodNode methodNode = controller.getMethodNode();
+
+        return classNode.getName() + "$"
+                + controller.getContext().getNextLambdaInnerName(outerClass, classNode, methodNode);
     }
 }

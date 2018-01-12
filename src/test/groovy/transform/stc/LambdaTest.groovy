@@ -30,25 +30,56 @@ class LambdaTest extends GroovyTestCase {
         public class Test1 {
             public static void main(String[] args) {
                 p1();
-//                p2();
-        //        p3();
             }
         
             public static void p1() {
-                assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e + 1).collect(Collectors.toList());
+                assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
             }
+        }
+        '''
+
+    }
+
+    void testMethodCall2() {
+        if (true) return;
+
+        // the test can pass only in dynamic mode now, it can not pass static type checking...
+
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
         
-            /*
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p2();
+            }
+            
             public static void p2() {
                 assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
             }
-            */
+        }
+        '''
+
+    }
+
+    void testMethodCall3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p3();
+            }
             
-            /*
             public static void p3() {
                 Stream.of(1, 2, 3).forEach(e -> { System.out.println(e + 1); });
             }
-            */
+            
         }
         '''
 

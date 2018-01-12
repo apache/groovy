@@ -123,4 +123,8 @@ public class Parameter extends AnnotatedNode implements Variable {
     public void setModifiers(int modifiers) {
         this.modifiers = modifiers;
     }
+
+    public Expression getDefaultValue() {
+        return defaultValue;
+    }
 }
