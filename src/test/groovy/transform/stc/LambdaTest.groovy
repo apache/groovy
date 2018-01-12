@@ -39,8 +39,7 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
-    /*
-    void testFunction2() {
+    void testFunctionScript() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -48,20 +47,22 @@ class LambdaTest extends GroovyTestCase {
         
         @CompileStatic
         void p() {
-            assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
+            assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e + 1).collect(Collectors.toList());
         }
         
         p()
         '''
     }
-    */
 
+    /**
+     * Depends on https://issues.apache.org/jira/browse/GROOVY-8445
+     */
     void testBinaryOperator() {
-        if (true) return;
+        if (true) return
 
         // the test can pass only in dynamic mode now, it can not pass static type checking...
 
-        /* TODO
+        /* FIXME
 TestScript0.groovy: 13: [Static type checking] - Cannot find matching method java.util.stream.Stream#reduce(int, groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
  @ line 13, column 30.
                    assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
@@ -134,10 +135,13 @@ TestScript0.groovy: 13: [Static type checking] - Cannot find matching method jav
         '''
     }
 
+    /**
+     * Depends on https://issues.apache.org/jira/browse/GROOVY-8445
+     */
     void testUnaryOperator() {
-        if (true) return;
+        if (true) return
 
-        /* TODO
+        /* FIXME
 TestScript0.groovy: 14: [Static type checking] - Cannot find matching method java.util.List#replaceAll(groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
  @ line 14, column 17.
                    list.replaceAll(e -> e + 10)
