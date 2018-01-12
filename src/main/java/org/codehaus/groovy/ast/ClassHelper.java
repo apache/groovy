@@ -102,6 +102,8 @@ public class ClassHelper {
             Annotation_TYPE = makeCached(Annotation.class),
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
 
+    FunctionalInterface_Type = ClassHelper.makeCached(FunctionalInterface.class),
+
     // uncached constants.
     CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
             GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),

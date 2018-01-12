@@ -80,8 +80,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         .filter(MethodNode::isAbstract)
                         .collect(Collectors.toList());
 
-        if (!(isFunctionInterfaceAnnotationAttached(parameterType) && abstractMethodNodeList.size() == 1)) {
-            super.writeClosure(expression);
+        if (!(isFunctionInterface(parameterType) && abstractMethodNodeList.size() == 1)) {
+            super.writeLambda(expression);
             return;
         }
 
@@ -89,14 +89,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         String abstractMethodName = abstractMethodNode.getName();
         String abstractMethodDesc = "()L" + parameterType.redirect().getPackageName().replace('.', '/') + "/" + parameterType.redirect().getNameWithoutPackage() + ";";
 
-
-        AsmClassGenerator acg = controller.getAcg();
-        ClassVisitor cw = acg.getClassVisitor();
-        cw.visitInnerClass(
-                "java/lang/invoke/MethodHandles$Lookup",
-                "java/lang/invoke/MethodHandles",
-                "Lookup",
-                ACC_PUBLIC + ACC_FINAL + ACC_STATIC);
 
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode lambdaEnclosingClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC, abstractMethodNode);
@@ -136,8 +128,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         );
     }
 
-    private boolean isFunctionInterfaceAnnotationAttached(ClassNode parameterType) {
-        return !parameterType.redirect().getAnnotations(ClassHelper.makeCached(FunctionalInterface.class)).isEmpty();
+    private boolean isFunctionInterface(ClassNode parameterType) {
+        return parameterType.redirect().isInterface() && !parameterType.redirect().getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty();
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
