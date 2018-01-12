@@ -31,8 +31,8 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
@@ -77,50 +77,61 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         .collect(Collectors.toList());
 
         if (!(isFunctionInterface(parameterType) && abstractMethodNodeList.size() == 1)) {
+            // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
 
         MethodNode abstractMethodNode = abstractMethodNodeList.get(0);
-        String abstractMethodName = abstractMethodNode.getName();
-        String abstractMethodDesc = "()L" + parameterType.redirect().getPackageName().replace('.', '/') + "/" + parameterType.redirect().getNameWithoutPackage() + ";";
+        String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
-
-        MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode lambdaEnclosingClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC, abstractMethodNode);
-        MethodNode syntheticLambdaMethodNode = lambdaEnclosingClassNode.getMethods(DO_CALL).get(0);
+        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
+        MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
         String syntheticLambdaMethodWithExactTypeDesc = BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode);
-        String syntheticLambdaMethodDesc =
-                BytecodeHelper.getMethodDescriptor(
-                        abstractMethodNode.getReturnType().getTypeClass(),
-                        Arrays.stream(abstractMethodNode.getParameters())
-                                .map(e -> e.getType().getTypeClass())
-                                .toArray(Class[]::new)
-                );
 
-        controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+        controller.getOperandStack().push(parameterType.redirect());
+        controller.getMethodVisitor().visitInvokeDynamicInsn(
+                abstractMethodNode.getName(),
+                createAbstractMethodDesc(parameterType),
+                createBootstrapMethod(),
+                createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode, syntheticLambdaMethodWithExactTypeDesc)
+        );
+    }
 
-        mv.visitInvokeDynamicInsn(
-                abstractMethodName,
-                abstractMethodDesc,
+    private String createAbstractMethodDesc(ClassNode parameterType) {
+        return "()L" + parameterType.redirect().getPackageName().replace('.', '/') + "/" + parameterType.redirect().getNameWithoutPackage() + ";";
+    }
+
+    private Handle createBootstrapMethod() {
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                "java/lang/invoke/LambdaMetafactory",
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                false
+        );
+    }
+
+    private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode, String syntheticLambdaMethodWithExactTypeDesc) {
+        return new Object[]{
+                Type.getType(abstractMethodDesc),
                 new Handle(
                         Opcodes.H_INVOKESTATIC,
-                        "java/lang/invoke/LambdaMetafactory",
-                        "metafactory",
-                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                        lambdaClassNode.getName(),
+                        syntheticLambdaMethodNode.getName(),
+                        syntheticLambdaMethodWithExactTypeDesc,
                         false
                 ),
-                new Object[]{
-                        Type.getType(syntheticLambdaMethodDesc),
-                        new Handle(
-                                Opcodes.H_INVOKESTATIC,
-                                lambdaEnclosingClassNode.getName(),
-                                syntheticLambdaMethodNode.getName(),
-                                syntheticLambdaMethodWithExactTypeDesc,
-                                false
-                        ),
-                        Type.getType(syntheticLambdaMethodWithExactTypeDesc)
-                }
+                Type.getType(syntheticLambdaMethodWithExactTypeDesc)
+        };
+    }
+
+    private String createMethodDescriptor(MethodNode abstractMethodNode) {
+        return BytecodeHelper.getMethodDescriptor(
+                abstractMethodNode.getReturnType().getTypeClass(),
+                Arrays.stream(abstractMethodNode.getParameters())
+                        .map(e -> e.getType().getTypeClass())
+                        .toArray(Class[]::new)
         );
     }
 
@@ -128,10 +139,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return parameterType.redirect().isInterface() && !parameterType.redirect().getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty();
     }
 
-    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
+    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods) {
         ClassNode lambdaClass = lambdaClassMap.get(expression);
         if (lambdaClass == null) {
-            lambdaClass = createLambdaClass(expression, mods, abstractMethodNode);
+            lambdaClass = createLambdaClass(expression, mods);
             lambdaClassMap.put(expression, lambdaClass);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(ClassHelper.GENERATED_LAMBDA_TYPE);
@@ -140,7 +151,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return lambdaClass;
     }
 
-    protected ClassNode createLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
+    protected ClassNode createLambdaClass(LambdaExpression expression, int mods) {
         ClassNode outerClass = controller.getOutermostClass();
         ClassNode classNode = controller.getClassNode();
         String name = genLambdaClassName();
@@ -159,34 +170,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             answer.setScriptBody(true);
         }
 
-        Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
-
-        MethodNode methodNode =
-                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, abstractMethodNode.getReturnType(), parametersWithExactType, ClassNode.EMPTY_ARRAY, expression.getCode());
-        methodNode.setSourcePosition(expression);
+        addSyntheticLambdaMethodNode(expression, answer);
 
         return answer;
-    }
-
-    private Parameter[] createParametersWithExactType(LambdaExpression expression) {
-        Parameter[] parameters = expression.getParameters();
-        if (parameters == null) {
-            parameters = Parameter.EMPTY_ARRAY;
-        }
-
-        ClassNode[] blockParameterTypes = expression.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS);
-//        Parameter[] parametersWithExactType = new Parameter[parameters.length];
-
-        for (int i = 0; i < parameters.length; i++) {
-            parameters[i].setType(blockParameterTypes[i]);
-            parameters[i].setOriginType(blockParameterTypes[i]);
-        }
-        return parameters;
-    }
-
-    @Override
-    protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
-        return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 
     private String genLambdaClassName() {
@@ -196,5 +182,34 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         return classNode.getName() + "$"
                 + controller.getContext().getNextLambdaInnerName(outerClass, classNode, methodNode);
+    }
+
+    private void addSyntheticLambdaMethodNode(LambdaExpression expression, InnerClassNode answer) {
+        Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
+        ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
+
+        MethodNode methodNode =
+                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, returnType, parametersWithExactType, ClassNode.EMPTY_ARRAY, expression.getCode());
+        methodNode.setSourcePosition(expression);
+    }
+
+    private Parameter[] createParametersWithExactType(LambdaExpression expression) {
+        Parameter[] parameters = expression.getParameters();
+        if (parameters == null) {
+            parameters = Parameter.EMPTY_ARRAY;
+        }
+
+        for (int i = 0; i < parameters.length; i++) {
+            ClassNode inferredType = parameters[i].getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            parameters[i].setType(inferredType);
+            parameters[i].setOriginType(inferredType);
+        }
+
+        return parameters;
+    }
+
+    @Override
+    protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
+        return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 }

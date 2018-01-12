@@ -39,6 +39,23 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    /*
+    void testFunction2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        void p() {
+            assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
+        }
+        
+        p()
+        '''
+    }
+    */
+
     void testBinaryOperator() {
         if (true) return;
 
