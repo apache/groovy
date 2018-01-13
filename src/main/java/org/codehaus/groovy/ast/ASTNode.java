@@ -23,6 +23,7 @@ import org.codehaus.groovy.util.ListHashMap;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Base class for any AST node. This class supports basic information used in all nodes of the AST:
@@ -196,5 +197,15 @@ public class ASTNode {
 
     public ListHashMap getMetaDataMap() {
         return metaDataMap;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lineNumber, columnNumber, lastLineNumber, lastColumnNumber);
     }
 }
