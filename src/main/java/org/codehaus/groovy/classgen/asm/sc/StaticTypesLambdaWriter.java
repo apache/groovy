@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -51,6 +52,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  */
 public class StaticTypesLambdaWriter extends LambdaWriter {
     public static final String DO_CALL = "doCall";
+    public static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
+    public static final String LAMBDA_SHARED_VARIABLES = "_LAMBDA_SHARED_VARIABLES";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -87,19 +90,22 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
-        String syntheticLambdaMethodWithExactTypeDesc = BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode);
+
 
         controller.getOperandStack().push(parameterType.redirect());
         controller.getMethodVisitor().visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                createAbstractMethodDesc(parameterType),
+                createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType),
                 createBootstrapMethod(),
-                createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode, syntheticLambdaMethodWithExactTypeDesc)
+                createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
     }
 
-    private String createAbstractMethodDesc(ClassNode parameterType) {
-        return "()L" + parameterType.redirect().getPackageName().replace('.', '/') + "/" + parameterType.redirect().getNameWithoutPackage() + ";";
+    private String createAbstractMethodDesc(MethodNode syntheticLambdaMethodNode, ClassNode parameterType) {
+        Parameter[] lambdaSharedVariables = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
+        String methodDescriptor = BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariables);
+
+        return methodDescriptor;
     }
 
     private Handle createBootstrapMethod() {
@@ -112,17 +118,17 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         );
     }
 
-    private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode, String syntheticLambdaMethodWithExactTypeDesc) {
+    private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode) {
         return new Object[]{
                 Type.getType(abstractMethodDesc),
                 new Handle(
                         Opcodes.H_INVOKESTATIC,
                         lambdaClassNode.getName(),
                         syntheticLambdaMethodNode.getName(),
-                        syntheticLambdaMethodWithExactTypeDesc,
+                        BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode),
                         false
                 ),
-                Type.getType(syntheticLambdaMethodWithExactTypeDesc)
+                Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
         };
     }
 
@@ -187,9 +193,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private void addSyntheticLambdaMethodNode(LambdaExpression expression, InnerClassNode answer) {
         Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
         ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
+        Parameter[] lambdaSharedVariables = getLambdaSharedVariables(expression);
+        Parameter[] methodParameter = Stream.concat(Arrays.stream(lambdaSharedVariables), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
 
         MethodNode methodNode =
-                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, returnType, parametersWithExactType, ClassNode.EMPTY_ARRAY, expression.getCode());
+                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, returnType, methodParameter, ClassNode.EMPTY_ARRAY, expression.getCode());
+        methodNode.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
+        methodNode.putNodeMetaData(LAMBDA_SHARED_VARIABLES, lambdaSharedVariables);
+
         methodNode.setSourcePosition(expression);
     }
 
