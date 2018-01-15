@@ -338,7 +338,7 @@ public class ClosureWriter {
      * same method, in this case the constructor. A closure should not
      * have more than one constructor!
      */
-    private static void removeInitialValues(Parameter[] params) {
+    protected static void removeInitialValues(Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
                 Parameter p = new Parameter(params[i].getType(), params[i].getName());

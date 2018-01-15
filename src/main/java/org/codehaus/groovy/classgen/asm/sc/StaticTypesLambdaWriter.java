@@ -19,6 +19,8 @@
 
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -27,12 +29,16 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
+import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
@@ -45,6 +51,7 @@ import java.util.stream.Stream;
 
 import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
 
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
@@ -53,7 +60,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 public class StaticTypesLambdaWriter extends LambdaWriter {
     public static final String DO_CALL = "doCall";
     public static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
-    public static final String LAMBDA_SHARED_VARIABLES = "_LAMBDA_SHARED_VARIABLES";
+    public static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -91,9 +98,18 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
 
-        controller.getOperandStack().push(parameterType.redirect());
-        controller.getMethodVisitor().visitInvokeDynamicInsn(
+        Parameter[] lambdaSharedVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
+        for (int i = 0; i < lambdaSharedVariableParameters.length; i++) {
+            mv.visitVarInsn(ALOAD, i);
+            operandStack.doGroovyCast(lambdaSharedVariableParameters[i].getType().redirect());
+//            operandStack.push(lambdaSharedVariableParameters[i].getType().redirect());
+        }
+
+        operandStack.push(parameterType.redirect());
+        mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType),
                 createBootstrapMethod(),
@@ -193,15 +209,40 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private void addSyntheticLambdaMethodNode(LambdaExpression expression, InnerClassNode answer) {
         Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
         ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
-        Parameter[] lambdaSharedVariables = getLambdaSharedVariables(expression);
-        Parameter[] methodParameter = Stream.concat(Arrays.stream(lambdaSharedVariables), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
+        Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
+        removeInitialValues(localVariableParameters);
+        Parameter[] methodParameter = Stream.concat(Arrays.stream(localVariableParameters), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
 
         MethodNode methodNode =
-                answer.addMethod(DO_CALL, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, returnType, methodParameter, ClassNode.EMPTY_ARRAY, expression.getCode());
+                answer.addMethod(
+                        DO_CALL,
+                        Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                        returnType,
+                        methodParameter,
+                        ClassNode.EMPTY_ARRAY,
+                        expression.getCode()
+                );
         methodNode.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
-        methodNode.putNodeMetaData(LAMBDA_SHARED_VARIABLES, lambdaSharedVariables);
+        methodNode.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
 
         methodNode.setSourcePosition(expression);
+
+
+        LocalVariableReplacementVisitor localVariableReplacementVisitor = new LocalVariableReplacementVisitor(methodNode);
+
+        localVariableReplacementVisitor.visitMethod(methodNode);
+
+//        System.out.println(methodNode);
+
+        /*
+        VariableScope varScope = expression.getVariableScope();
+        if (varScope == null) {
+            throw new RuntimeException(
+                    "Must have a VariableScope by now! for expression: " + expression + " class: " + answer.getName());
+        } else {
+            methodNode.setVariableScope(varScope.copy());
+        }
+        */
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {
@@ -222,5 +263,44 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
         return staticTypesClosureWriter.createClosureClass(expression, mods);
+    }
+
+    private static final class LocalVariableReplacementVisitor extends ClassCodeVisitorSupport {
+        private MethodNode methodNode;
+
+        public LocalVariableReplacementVisitor(MethodNode methodNode) {
+            this.methodNode = methodNode;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+
+        @Override
+        public void visitVariableExpression(VariableExpression expression) {
+            if (expression.isClosureSharedVariable()) {
+                final String variableName = expression.getName();
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>\n");
+//                System.out.println("1, " + variableName + ":" + expression.isClosureSharedVariable() + "::" + expression.getAccessedVariable());
+                Parameter[] parametersWithSameVariableName =
+                        Arrays.stream(methodNode.getParameters())
+                                .filter(e -> variableName.equals(e.getName()))
+                                .toArray(Parameter[]::new);
+
+                if (parametersWithSameVariableName.length != 1) {
+                    throw new GroovyBugError(parametersWithSameVariableName.length + " parameters with same name " + variableName + " found(Expect only one matched).");
+                }
+//                System.out.println("2, " + variableName + ":" + parametersWithSameVariableName[0]);
+
+                expression.setAccessedVariable(parametersWithSameVariableName[0]);
+                expression.setClosureSharedVariable(false);
+
+//                System.out.println("<<<<<<<<<<<<<<<<<<<<<<\n");
+
+            }
+
+            super.visitVariableExpression(expression);
+        }
     }
 }
