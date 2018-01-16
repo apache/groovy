@@ -55,7 +55,7 @@ class LambdaTest extends GroovyTestCase {
     }
 
     /**
-     * Depends on https://issues.apache.org/jira/browse/GROOVY-8445
+     * Depends on fixing https://issues.apache.org/jira/browse/GROOVY-8445
      */
     void testBinaryOperator() {
         if (true) return
@@ -136,7 +136,7 @@ TestScript0.groovy: 13: [Static type checking] - Cannot find matching method jav
     }
 
     /**
-     * Depends on https://issues.apache.org/jira/browse/GROOVY-8445
+     * Depends on fixing https://issues.apache.org/jira/browse/GROOVY-8445
      */
     void testUnaryOperator() {
         if (true) return
@@ -196,13 +196,6 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
     }
 
     void testFunctionWithLocalVariables() {
-        if (true) return
-
-        // FIXME
-        /* What we expect is '#1', '#2', '#3'
-[groovy.lang.Reference@46d63dbb1, groovy.lang.Reference@46d63dbb2, groovy.lang.Reference@46d63dbb3]
-         */
-
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -222,9 +215,8 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
-    /*
-    void testLabs() {
 
+    void testFunctionWithLocalVariables2() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -233,15 +225,15 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
-                p();
+                new Test1().p();
             }
         
-            public static void p() {
+            public void p() {
                 String x = "#"
-                System.out.println(Stream.of(1, 2, 3).map(e -> x + e).collect(Collectors.toList()));
+                Integer y = 23
+                assert ['23#1', '23#2', '23#3'] == Stream.of(1, 2, 3).map(e -> '' + y + x + e).collect(Collectors.toList())
             }
         }
         '''
     }
-    */
 }

@@ -31,6 +31,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
+import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
@@ -51,7 +53,7 @@ import java.util.stream.Stream;
 
 import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
@@ -95,26 +97,37 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         MethodNode abstractMethodNode = abstractMethodNodeList.get(0);
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
-        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC);
+        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (controller.getClassNode().isInterface() ? ACC_STATIC : 0));
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
         MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
+        Parameter[] lambdaSharedVariableParameters = loadSharedVariables(syntheticLambdaMethodNode);
 
-        Parameter[] lambdaSharedVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
-        for (int i = 0; i < lambdaSharedVariableParameters.length; i++) {
-            mv.visitVarInsn(ALOAD, i);
-            operandStack.doGroovyCast(lambdaSharedVariableParameters[i].getType().redirect());
-//            operandStack.push(lambdaSharedVariableParameters[i].getType().redirect());
-        }
-
-        operandStack.push(parameterType.redirect());
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType),
                 createBootstrapMethod(),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
+        controller.getOperandStack().replace(parameterType.redirect(), lambdaSharedVariableParameters.length);
+    }
+
+    private Parameter[] loadSharedVariables(MethodNode syntheticLambdaMethodNode) {
+        OperandStack operandStack = controller.getOperandStack();
+        CompileStack compileStack = controller.getCompileStack();
+
+        Parameter[] lambdaSharedVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
+        for (Parameter parameter : lambdaSharedVariableParameters) {
+            String parameterName = parameter.getName();
+//            loadReference(parameterName, controller);
+//            if (parameter.getNodeMetaData(LambdaWriter.UseExistingReference.class)==null) {
+//                parameter.setNodeMetaData(LambdaWriter.UseExistingReference.class,Boolean.TRUE);
+//            }
+
+            BytecodeVariable variable = compileStack.getVariable(parameterName, true);
+            operandStack.loadOrStoreVariable(variable, false);
+        }
+        return lambdaSharedVariableParameters;
     }
 
     private String createAbstractMethodDesc(MethodNode syntheticLambdaMethodNode, ClassNode parameterType) {
@@ -211,14 +224,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
-        Parameter[] methodParameter = Stream.concat(Arrays.stream(localVariableParameters), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
+        Parameter[] methodParameters = Stream.concat(Arrays.stream(localVariableParameters), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
 
         MethodNode methodNode =
                 answer.addMethod(
                         DO_CALL,
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
                         returnType,
-                        methodParameter,
+                        methodParameters,
                         ClassNode.EMPTY_ARRAY,
                         expression.getCode()
                 );
