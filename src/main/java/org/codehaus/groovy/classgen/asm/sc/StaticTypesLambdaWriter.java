@@ -97,7 +97,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         MethodNode abstractMethodNode = abstractMethodNodeList.get(0);
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
-        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (controller.getClassNode().isInterface() ? ACC_STATIC : 0));
+        boolean isInterface = controller.getClassNode().isInterface();
+        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0));
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -106,7 +107,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType),
-                createBootstrapMethod(),
+                createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
         controller.getOperandStack().replace(parameterType.redirect(), lambdaSharedVariableParameters.length);
@@ -137,13 +138,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return methodDescriptor;
     }
 
-    private Handle createBootstrapMethod() {
+    private Handle createBootstrapMethod(boolean isInterface) {
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
                 "java/lang/invoke/LambdaMetafactory",
                 "metafactory",
                 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-                false
+                isInterface
         );
     }
 
@@ -237,25 +238,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 );
         methodNode.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
         methodNode.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
-
         methodNode.setSourcePosition(expression);
 
-
-        LocalVariableReplacementVisitor localVariableReplacementVisitor = new LocalVariableReplacementVisitor(methodNode);
-
-        localVariableReplacementVisitor.visitMethod(methodNode);
-
-//        System.out.println(methodNode);
-
-        /*
-        VariableScope varScope = expression.getVariableScope();
-        if (varScope == null) {
-            throw new RuntimeException(
-                    "Must have a VariableScope by now! for expression: " + expression + " class: " + answer.getName());
-        } else {
-            methodNode.setVariableScope(varScope.copy());
-        }
-        */
+        new LocalVariableReplacementVisitor(methodNode).visitMethod(methodNode);
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {
@@ -294,8 +279,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         public void visitVariableExpression(VariableExpression expression) {
             if (expression.isClosureSharedVariable()) {
                 final String variableName = expression.getName();
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>\n");
-//                System.out.println("1, " + variableName + ":" + expression.isClosureSharedVariable() + "::" + expression.getAccessedVariable());
                 Parameter[] parametersWithSameVariableName =
                         Arrays.stream(methodNode.getParameters())
                                 .filter(e -> variableName.equals(e.getName()))
@@ -304,12 +287,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 if (parametersWithSameVariableName.length != 1) {
                     throw new GroovyBugError(parametersWithSameVariableName.length + " parameters with same name " + variableName + " found(Expect only one matched).");
                 }
-//                System.out.println("2, " + variableName + ":" + parametersWithSameVariableName[0]);
 
                 expression.setAccessedVariable(parametersWithSameVariableName[0]);
                 expression.setClosureSharedVariable(false);
-
-//                System.out.println("<<<<<<<<<<<<<<<<<<<<<<\n");
 
             }
 
