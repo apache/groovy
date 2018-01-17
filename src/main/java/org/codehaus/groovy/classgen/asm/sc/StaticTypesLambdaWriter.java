@@ -264,11 +264,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     }
 
     private Parameter prependThis(List<Parameter> methodParameterList) {
-        ClassNode classNode = controller.getClassNode();
-
-        // FIXME the following code `classNode.setUsingGenerics(false)` is used to avoid the error:
-        // ERROR MESSAGE: A transform used a generics containing ClassNode Test1 for the method public static int doCall(Test1 __this, java.lang.Integer e)  { ... } directly. You are not supposed to do this. Please create a new ClassNode referring to the old ClassNode and use the new ClassNode instead of the old one. Otherwise the compiler will create wrong descriptors and a potential NullPointerException in TypeResolver in the OpenJDK. If this is not your own doing, please report this bug to the writer of the transform.
-        classNode.setUsingGenerics(false);
+        ClassNode classNode = controller.getClassNode().getPlainNodeReference();
 
         Parameter thisParameter = new Parameter(classNode, THIS);
         thisParameter.setOriginType(classNode);
