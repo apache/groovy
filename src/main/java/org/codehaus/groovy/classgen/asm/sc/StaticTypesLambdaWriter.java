@@ -27,8 +27,10 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
@@ -46,6 +48,7 @@ import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,15 +57,16 @@ import java.util.stream.Stream;
 import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
 
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
- *
  */
 public class StaticTypesLambdaWriter extends LambdaWriter {
     public static final String DO_CALL = "doCall";
     public static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
     public static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
+    public static final String THIS = "__this";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -97,11 +101,22 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         MethodNode abstractMethodNode = abstractMethodNodeList.get(0);
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
-        boolean isInterface = controller.getClassNode().isInterface();
+        ClassNode classNode = controller.getClassNode();
+        boolean isInterface = classNode.isInterface();
         ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0));
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
         MethodVisitor mv = controller.getMethodVisitor();
+
+        OperandStack operandStack = controller.getOperandStack();
+
+        if (controller.getMethodNode().isStatic()) {
+            operandStack.pushConstant(ConstantExpression.NULL);
+        } else {
+            mv.visitVarInsn(ALOAD, 0);
+            operandStack.push(classNode);
+        }
+
         Parameter[] lambdaSharedVariableParameters = loadSharedVariables(syntheticLambdaMethodNode);
 
         mv.visitInvokeDynamicInsn(
@@ -110,7 +125,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
-        controller.getOperandStack().replace(parameterType.redirect(), lambdaSharedVariableParameters.length);
+        operandStack.replace(parameterType.redirect(), lambdaSharedVariableParameters.length + 1);
     }
 
     private Parameter[] loadSharedVariables(MethodNode syntheticLambdaMethodNode) {
@@ -132,10 +147,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     }
 
     private String createAbstractMethodDesc(MethodNode syntheticLambdaMethodNode, ClassNode parameterType) {
-        Parameter[] lambdaSharedVariables = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
-        String methodDescriptor = BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariables);
+        List<Parameter> lambdaSharedVariableList = new LinkedList<Parameter>(Arrays.asList(syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES)));
 
-        return methodDescriptor;
+        prependThis(lambdaSharedVariableList);
+
+        return BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
 
     private Handle createBootstrapMethod(boolean isInterface) {
@@ -227,12 +243,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         removeInitialValues(localVariableParameters);
         Parameter[] methodParameters = Stream.concat(Arrays.stream(localVariableParameters), Arrays.stream(parametersWithExactType)).toArray(Parameter[]::new);
 
+        List<Parameter> methodParameterList = new LinkedList<Parameter>(Arrays.asList(methodParameters));
+
+        Parameter thisParameter = prependThis(methodParameterList);
+
         MethodNode methodNode =
                 answer.addMethod(
                         DO_CALL,
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
                         returnType,
-                        methodParameters,
+                        methodParameterList.toArray(Parameter.EMPTY_ARRAY),
                         ClassNode.EMPTY_ARRAY,
                         expression.getCode()
                 );
@@ -240,7 +260,23 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         methodNode.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
         methodNode.setSourcePosition(expression);
 
-        new LocalVariableReplacementVisitor(methodNode).visitMethod(methodNode);
+        new TransformationVisitor(methodNode, thisParameter).visitMethod(methodNode);
+    }
+
+    private Parameter prependThis(List<Parameter> methodParameterList) {
+        ClassNode classNode = controller.getClassNode();
+
+        // FIXME the following code `classNode.setUsingGenerics(false)` is used to avoid the error:
+        // ERROR MESSAGE: A transform used a generics containing ClassNode Test1 for the method public static int doCall(Test1 __this, java.lang.Integer e)  { ... } directly. You are not supposed to do this. Please create a new ClassNode referring to the old ClassNode and use the new ClassNode instead of the old one. Otherwise the compiler will create wrong descriptors and a potential NullPointerException in TypeResolver in the OpenJDK. If this is not your own doing, please report this bug to the writer of the transform.
+        classNode.setUsingGenerics(false);
+
+        Parameter thisParameter = new Parameter(classNode, THIS);
+        thisParameter.setOriginType(classNode);
+        thisParameter.setClosureSharedVariable(false);
+
+        methodParameterList.add(0, thisParameter);
+
+        return thisParameter;
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {
@@ -263,11 +299,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 
-    private static final class LocalVariableReplacementVisitor extends ClassCodeVisitorSupport {
+    private static final class TransformationVisitor extends ClassCodeVisitorSupport {
         private MethodNode methodNode;
+        private Parameter thisParameter;
 
-        public LocalVariableReplacementVisitor(MethodNode methodNode) {
+        public TransformationVisitor(MethodNode methodNode, Parameter thisParameter) {
             this.methodNode = methodNode;
+            this.thisParameter = thisParameter;
         }
 
         @Override
@@ -294,6 +332,26 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             }
 
             super.visitVariableExpression(expression);
+        }
+
+        @Override
+        public void visitMethodCallExpression(MethodCallExpression call) {
+            if (!call.getMethodTarget().isStatic()) {
+                Expression objectExpression = call.getObjectExpression();
+
+                if (objectExpression instanceof VariableExpression) {
+                    VariableExpression originalObjectExpression = (VariableExpression) objectExpression;
+                    if (null == originalObjectExpression.getAccessedVariable()) {
+                        VariableExpression thisVariable = new VariableExpression(thisParameter);
+                        thisVariable.setSourcePosition(originalObjectExpression);
+
+                        call.setObjectExpression(thisVariable);
+                        call.setImplicitThis(false);
+                    }
+                }
+            }
+
+            super.visitMethodCallExpression(call);
         }
     }
 }

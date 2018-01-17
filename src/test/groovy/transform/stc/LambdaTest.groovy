@@ -282,4 +282,27 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         }
         '''
     }
+
+    void testFunctionWithLocalVariables5() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+        
+            public void p() {
+                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello() + e).collect(Collectors.toList());
+            }
+        
+            public String hello() {
+                return "Hello ";
+            }
+        }
+        '''
+    }
 }
