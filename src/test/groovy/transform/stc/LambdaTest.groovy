@@ -237,7 +237,28 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
-    void testFunctionWithLocalVariables3() {
+    void testFunctionWithLocalVariables4() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+        
+            public void p() {
+                String x = "x";
+                StringBuilder y = new StringBuilder("y");
+                assert ['yx1', 'yx2', 'yx3'] == Stream.of(1, 2, 3).map(e -> y + x + e).collect(Collectors.toList());
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithStaticMethodCall() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -262,7 +283,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
-    void testFunctionWithLocalVariables4() {
+    void testFunctionWithStaticMethodCall2() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -271,13 +292,17 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         @CompileStatic
         public class Test4 {
             public static void main(String[] args) {
-                new Test4().p();
+                p();
             }
         
-            public void p() {
+            public static void p() {
                 String x = "x";
                 StringBuilder y = new StringBuilder("y");
-                assert ['yx1', 'yx2', 'yx3'] == Stream.of(1, 2, 3).map(e -> y + x + e).collect(Collectors.toList());
+                assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == Stream.of(1, 2, 3).map(e -> Test4.hello() + y + x + e).collect(Collectors.toList());
+            }
+        
+            public static String hello() {
+                return "Hello ";
             }
         }
         '''
