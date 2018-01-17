@@ -283,7 +283,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
-    void testFunctionWithLocalVariables5() {
+    void testFunctionWithInstanceMethodCall() {
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -301,6 +301,52 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public String hello() {
                 return "Hello ";
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithInstanceMethodCall2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+        
+            public void p() {
+                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> this.hello() + e).collect(Collectors.toList());
+            }
+        
+            public String hello() {
+                return "Hello ";
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithInstanceMethodCall3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+        
+            public void p() {
+                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello(e)).collect(Collectors.toList());
+            }
+        
+            public String hello(String name) {
+                return "Hello $name";
             }
         }
         '''
