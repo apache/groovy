@@ -333,6 +333,29 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
+    void testFunctionInConstructor() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4();
+            }
+            
+            public Test4() {
+                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello() + e).collect(Collectors.toList());
+            }
+        
+            public String hello() {
+                return "Hello ";
+            }
+        }
+        '''
+    }
+
     void testFunctionWithInstanceMethodCall2() {
         assertScript '''
         import groovy.transform.CompileStatic

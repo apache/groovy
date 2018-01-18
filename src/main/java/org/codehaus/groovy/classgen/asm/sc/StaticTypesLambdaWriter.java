@@ -130,8 +130,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private void loadEnclosingClassInstance() {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
+        CompileStack compileStack = controller.getCompileStack();
 
-        if (controller.getMethodNode().isStatic()) {
+        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall()) {
             operandStack.pushConstant(ConstantExpression.NULL);
         } else {
             mv.visitVarInsn(ALOAD, 0);
