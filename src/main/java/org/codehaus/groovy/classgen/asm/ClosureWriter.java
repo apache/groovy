@@ -65,6 +65,9 @@ import static org.objectweb.asm.Opcodes.NEW;
 
 public class ClosureWriter {
 
+    public static final String OUTER_INSTANCE = "_outerInstance";
+    public static final String THIS_OBJECT = "_thisObject";
+
     protected interface UseExistingReference {}
 
     private final Map<Expression,ClassNode> closureClassMap;
@@ -279,8 +282,8 @@ public class ClosureWriter {
         }
 
         Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance");
-        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_thisObject");
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
         System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
 
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
@@ -295,10 +298,10 @@ public class ClosureWriter {
         BlockStatement block = new BlockStatement();
         // this block does not get a source position, because we don't
         // want this synthetic constructor to show up in corbertura reports
-        VariableExpression outer = new VariableExpression("_outerInstance");
+        VariableExpression outer = new VariableExpression(OUTER_INSTANCE);
         outer.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(outer);
-        VariableExpression thisObject = new VariableExpression("_thisObject");
+        VariableExpression thisObject = new VariableExpression(THIS_OBJECT);
         thisObject.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(thisObject);
         TupleExpression conArgs = new TupleExpression(outer, thisObject);

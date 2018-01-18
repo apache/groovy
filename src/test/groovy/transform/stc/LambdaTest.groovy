@@ -20,6 +20,8 @@
 package groovy.transform.stc
 
 class LambdaTest extends GroovyTestCase {
+    private static final boolean SKIP_ERRORS = true;
+
     void testFunction() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -58,7 +60,7 @@ class LambdaTest extends GroovyTestCase {
      * Depends on fixing https://issues.apache.org/jira/browse/GROOVY-8445
      */
     void testBinaryOperator() {
-        if (true) return
+        if (SKIP_ERRORS) return
 
         // the test can pass only in dynamic mode now, it can not pass static type checking...
 
@@ -139,7 +141,7 @@ TestScript0.groovy: 13: [Static type checking] - Cannot find matching method jav
      * Depends on fixing https://issues.apache.org/jira/browse/GROOVY-8445
      */
     void testUnaryOperator() {
-        if (true) return
+        if (SKIP_ERRORS) return
 
         /* FIXME
 TestScript0.groovy: 14: [Static type checking] - Cannot find matching method java.util.List#replaceAll(groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
@@ -372,6 +374,33 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public String hello(String name) {
                 return "Hello $name";
+            }
+        }
+        '''
+    }
+
+    void testFunctionCall() {
+        if (SKIP_ERRORS) return
+
+        /* FIXME
+        [Static type checking] - Cannot find matching method java.lang.Object#plus(int). Please check if the declared type is correct and if the method exists.
+ @ line 13, column 35.
+                   assert 2 == (e -> e + 1)(1)
+         */
+
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                assert 2 == (e -> e + 1)(1)
             }
         }
         '''

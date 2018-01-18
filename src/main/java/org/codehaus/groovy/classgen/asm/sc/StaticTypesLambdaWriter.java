@@ -71,6 +71,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
     private static final String ENCLOSING_THIS = "__enclosing_this";
     private static final String LAMBDA_THIS = "__lambda_this";
+    public static final String INIT = "<init>";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -148,7 +149,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         loadEnclosingClassInstance();
 
         Parameter[] lambdaClassConstructorParameters = createConstructorParameters();
-        mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaClassConstructorParameters), lambdaClassNode.isInterface());
+        mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, INIT, BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaClassConstructorParameters), lambdaClassNode.isInterface());
         controller.getOperandStack().replace(ClassHelper.LAMBDA_TYPE, lambdaClassConstructorParameters.length);
     }
 
@@ -258,8 +259,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     private Parameter[] createConstructorParameters() {
         Parameter[] params = new Parameter[2];
-        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance");
-        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_thisObject");
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
         return params;
     }
 
