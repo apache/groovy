@@ -144,7 +144,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
         mv.visitInsn(DUP);
 
-        Parameter[] lambdaClassConstructorParameters = Parameter.EMPTY_ARRAY;
+        loadEnclosingClassInstance();
+        loadEnclosingClassInstance();
+
+        Parameter[] lambdaClassConstructorParameters = createConstructorParameters();
         mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaClassConstructorParameters), lambdaClassNode.isInterface());
         controller.getOperandStack().replace(ClassHelper.LAMBDA_TYPE, lambdaClassConstructorParameters.length);
     }
@@ -245,9 +248,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             answer.setScriptBody(true);
         }
 
+        Parameter[] constructorParameters = createConstructorParameters();
+        answer.addConstructor(ACC_PUBLIC, constructorParameters, ClassNode.EMPTY_ARRAY, super.createBlockStatementForConstructor(expression));
+
         addSyntheticLambdaMethodNode(expression, answer);
 
         return answer;
+    }
+
+    private Parameter[] createConstructorParameters() {
+        Parameter[] params = new Parameter[2];
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance");
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_thisObject");
+        return params;
     }
 
     private String genLambdaClassName() {

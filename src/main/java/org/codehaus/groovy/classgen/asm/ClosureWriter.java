@@ -248,21 +248,7 @@ public class ClosureWriter {
         }
 
         // let's make the constructor
-        BlockStatement block = new BlockStatement();
-        // this block does not get a source position, because we don't
-        // want this synthetic constructor to show up in corbertura reports
-        VariableExpression outer = new VariableExpression("_outerInstance");
-        outer.setSourcePosition(expression);
-        block.getVariableScope().putReferencedLocalVariable(outer);
-        VariableExpression thisObject = new VariableExpression("_thisObject");
-        thisObject.setSourcePosition(expression);
-        block.getVariableScope().putReferencedLocalVariable(thisObject);
-        TupleExpression conArgs = new TupleExpression(outer, thisObject);
-        block.addStatement(
-                new ExpressionStatement(
-                        new ConstructorCallExpression(
-                                ClassNode.SUPER,
-                                conArgs)));
+        BlockStatement block = createBlockStatementForConstructor(expression);
 
         // let's assign all the parameter fields from the outer context
         for (Parameter param : localVariableParams) {
@@ -303,6 +289,25 @@ public class ClosureWriter {
         correctAccessedVariable(answer,expression);
         
         return answer;
+    }
+
+    protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression) {
+        BlockStatement block = new BlockStatement();
+        // this block does not get a source position, because we don't
+        // want this synthetic constructor to show up in corbertura reports
+        VariableExpression outer = new VariableExpression("_outerInstance");
+        outer.setSourcePosition(expression);
+        block.getVariableScope().putReferencedLocalVariable(outer);
+        VariableExpression thisObject = new VariableExpression("_thisObject");
+        thisObject.setSourcePosition(expression);
+        block.getVariableScope().putReferencedLocalVariable(thisObject);
+        TupleExpression conArgs = new TupleExpression(outer, thisObject);
+        block.addStatement(
+                new ExpressionStatement(
+                        new ConstructorCallExpression(
+                                ClassNode.SUPER,
+                                conArgs)));
+        return block;
     }
 
     private String genClosureClassName() {

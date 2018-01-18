@@ -19,38 +19,34 @@
 
 package groovy.lang;
 
-import java.io.Serializable;
-
 /**
  * Represents any lambda object in Groovy.
  *
  * @since 3.0.0
  */
-public abstract class Lambda<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
-    /**
-     * When an object implementing interface <code>Runnable</code> is used
-     * to create a thread, starting the thread causes the object's
-     * <code>run</code> method to be called in that separately executing
-     * thread.
-     * <p>
-     * The general contract of the method <code>run</code> is that it may
-     * take any action whatsoever.
-     *
-     * @see Thread#run()
-     */
-    @Override
-    public void run() {
+public abstract class Lambda<V> extends Closure<V> {
 
+    public Lambda(Object owner, Object thisObject) {
+        super(owner, thisObject);
     }
 
     /**
-     * Computes a result, or throws an exception if unable to do so.
+     * Constructor used when the "this" object for the Closure is null.
+     * This is rarely the case in normal Groovy usage.
      *
-     * @return computed result
-     * @throws Exception if unable to compute a result
+     * @param owner the Closure owner
+     */
+    public Lambda(Object owner) {
+        super(owner);
+    }
+
+    /**
+     * Invokes the closure without any parameters, returning any value if applicable.
+     *
+     * @return the value if applicable or null if there is no return statement in the closure
      */
     @Override
-    public V call() throws Exception {
+    public V call() {
         return null;
     }
 }
