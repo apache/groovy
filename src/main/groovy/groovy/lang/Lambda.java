@@ -31,22 +31,12 @@ public abstract class Lambda<V> extends Closure<V> {
     }
 
     /**
-     * Constructor used when the "this" object for the Closure is null.
+     * Constructor used when the "this" object for the Lambda is null.
      * This is rarely the case in normal Groovy usage.
      *
-     * @param owner the Closure owner
+     * @param owner the Lambda owner
      */
     public Lambda(Object owner) {
         super(owner);
-    }
-
-    /**
-     * Invokes the closure without any parameters, returning any value if applicable.
-     *
-     * @return the value if applicable or null if there is no return statement in the closure
-     */
-    @Override
-    public V call() {
-        return null;
     }
 }
