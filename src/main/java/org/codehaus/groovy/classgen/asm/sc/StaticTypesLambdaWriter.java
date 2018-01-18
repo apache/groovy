@@ -58,15 +58,19 @@ import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMET
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
 
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
  */
 public class StaticTypesLambdaWriter extends LambdaWriter {
-    public static final String DO_CALL = "doCall";
-    public static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
-    public static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
-    public static final String THIS = "__this";
+    private static final String DO_CALL = "doCall";
+    private static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
+    private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
+    private static final String ENCLOSING_THIS = "__enclosing_this";
+    private static final String LAMBDA_THIS = "__lambda_this";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -106,26 +110,43 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0));
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
-        MethodVisitor mv = controller.getMethodVisitor();
+        newAndLoadGroovyLambdaInstance(lambdaClassNode);
+        loadEnclosingClassInstance();
+        Parameter[] lambdaSharedVariableParameters = loadSharedVariables(syntheticLambdaMethodNode);
 
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
+        mv.visitInvokeDynamicInsn(
+                abstractMethodNode.getName(),
+                createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType, lambdaClassNode),
+                createBootstrapMethod(isInterface),
+                createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
+        );
+        operandStack.replace(parameterType.redirect(), lambdaSharedVariableParameters.length + 1);
+    }
+
+    private void loadEnclosingClassInstance() {
+        MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
         if (controller.getMethodNode().isStatic()) {
             operandStack.pushConstant(ConstantExpression.NULL);
         } else {
             mv.visitVarInsn(ALOAD, 0);
-            operandStack.push(classNode);
+            operandStack.push(controller.getClassNode());
         }
+    }
 
-        Parameter[] lambdaSharedVariableParameters = loadSharedVariables(syntheticLambdaMethodNode);
+    private void newAndLoadGroovyLambdaInstance(ClassNode lambdaClassNode) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        String lambdaClassInternalName = BytecodeHelper.getClassInternalName(lambdaClassNode);
+        mv.visitTypeInsn(NEW, lambdaClassInternalName);
+        mv.visitInsn(DUP);
 
-        mv.visitInvokeDynamicInsn(
-                abstractMethodNode.getName(),
-                createAbstractMethodDesc(syntheticLambdaMethodNode, parameterType),
-                createBootstrapMethod(isInterface),
-                createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
-        );
-        operandStack.replace(parameterType.redirect(), lambdaSharedVariableParameters.length + 1);
+        Parameter[] lambdaClassConstructorParameters = Parameter.EMPTY_ARRAY;
+        mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaClassConstructorParameters), lambdaClassNode.isInterface());
+        controller.getOperandStack().replace(ClassHelper.LAMBDA_TYPE, lambdaClassConstructorParameters.length);
     }
 
     private Parameter[] loadSharedVariables(MethodNode syntheticLambdaMethodNode) {
@@ -143,13 +164,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             BytecodeVariable variable = compileStack.getVariable(parameterName, true);
             operandStack.loadOrStoreVariable(variable, false);
         }
+
         return lambdaSharedVariableParameters;
     }
 
-    private String createAbstractMethodDesc(MethodNode syntheticLambdaMethodNode, ClassNode parameterType) {
+    private String createAbstractMethodDesc(MethodNode syntheticLambdaMethodNode, ClassNode parameterType, ClassNode lambdaClassNode) {
         List<Parameter> lambdaSharedVariableList = new LinkedList<Parameter>(Arrays.asList(syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES)));
 
-        prependThis(lambdaSharedVariableList);
+        prependEnclosingThis(lambdaSharedVariableList);
+        prependParameter(lambdaSharedVariableList, LAMBDA_THIS, lambdaClassNode);
 
         return BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
@@ -168,11 +191,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return new Object[]{
                 Type.getType(abstractMethodDesc),
                 new Handle(
-                        Opcodes.H_INVOKESTATIC,
+                        Opcodes.H_INVOKEVIRTUAL,
                         lambdaClassNode.getName(),
                         syntheticLambdaMethodNode.getName(),
                         BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode),
-                        false
+                        lambdaClassNode.isInterface()
                 ),
                 Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
         };
@@ -245,12 +268,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         List<Parameter> methodParameterList = new LinkedList<Parameter>(Arrays.asList(methodParameters));
 
-        Parameter thisParameter = prependThis(methodParameterList);
+        Parameter thisParameter = prependEnclosingThis(methodParameterList);
 
         MethodNode methodNode =
                 answer.addMethod(
                         DO_CALL,
-                        Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                        Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC,
                         returnType,
                         methodParameterList.toArray(Parameter.EMPTY_ARRAY),
                         ClassNode.EMPTY_ARRAY,
@@ -263,16 +286,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         new TransformationVisitor(methodNode, thisParameter).visitMethod(methodNode);
     }
 
-    private Parameter prependThis(List<Parameter> methodParameterList) {
-        ClassNode classNode = controller.getClassNode().getPlainNodeReference();
+    private Parameter prependEnclosingThis(List<Parameter> methodParameterList) {
+        return prependParameter(methodParameterList, ENCLOSING_THIS, controller.getClassNode().getPlainNodeReference());
+    }
 
-        Parameter thisParameter = new Parameter(classNode, THIS);
-        thisParameter.setOriginType(classNode);
-        thisParameter.setClosureSharedVariable(false);
+    private Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
+        Parameter parameter = new Parameter(parameterType, parameterName);
 
-        methodParameterList.add(0, thisParameter);
+        parameter.setOriginType(parameterType);
+        parameter.setClosureSharedVariable(false);
 
-        return thisParameter;
+        methodParameterList.add(0, parameter);
+
+        return parameter;
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {
