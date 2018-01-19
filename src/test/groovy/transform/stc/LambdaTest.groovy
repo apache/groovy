@@ -428,4 +428,46 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         }
         '''
     }
+
+    void testFunctionWithUpdatingLocalVariable() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                int i = 1
+                assert [2, 4, 7] == Stream.of(1, 2, 3).map(e -> i += e).collect(Collectors.toList())
+                assert 7 == i
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithUpdatingLocalVariable2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                new Test1().p();
+            }
+        
+            public void p() {
+                int i = 1
+                assert [2, 4, 7] == Stream.of(1, 2, 3).map(e -> i += e).collect(Collectors.toList())
+                assert 7 == i
+            }
+        }
+        '''
+    }
 }

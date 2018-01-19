@@ -19,10 +19,9 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -45,6 +44,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -254,6 +254,28 @@ public class ClosureWriter {
         BlockStatement block = createBlockStatementForConstructor(expression);
 
         // let's assign all the parameter fields from the outer context
+        addFieldsAndGettersForLocalVariables(answer, localVariableParams);
+
+        addConstructor(expression, localVariableParams, answer, block);
+        
+        correctAccessedVariable(answer,expression);
+        
+        return answer;
+    }
+
+    protected ConstructorNode addConstructor(ClosureExpression expression, Parameter[] localVariableParams, InnerClassNode answer, BlockStatement block) {
+        Parameter[] params = new Parameter[2 + localVariableParams.length];
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
+        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
+
+        ConstructorNode constructorNode = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
+        constructorNode.setSourcePosition(expression);
+
+        return constructorNode;
+    }
+
+    protected void addFieldsAndGettersForLocalVariables(InnerClassNode answer, Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
             String paramName = param.getName();
             ClassNode type = param.getType();
@@ -280,18 +302,6 @@ public class ClosureWriter {
                         new ReturnStatement(fieldExp));
             }
         }
-
-        Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
-        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
-        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
-
-        ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
-        sn.setSourcePosition(expression);
-        
-        correctAccessedVariable(answer,expression);
-        
-        return answer;
     }
 
     protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression) {
@@ -322,21 +332,33 @@ public class ClosureWriter {
                 + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode);
     }
 
+    protected static class CorrectAccessedVariableVisitor extends ClassCodeVisitorSupport {
+        private InnerClassNode icn;
+
+        public CorrectAccessedVariableVisitor(InnerClassNode icn) {
+            this.icn = icn;
+        }
+
+        @Override
+        public void visitVariableExpression(VariableExpression expression) {
+            Variable v = expression.getAccessedVariable();
+            if (v == null) return;
+            if (!(v instanceof FieldNode)) return;
+            String name = expression.getName();
+            FieldNode fn = icn.getDeclaredField(name);
+            if (fn != null) { // only overwrite if we find something more specific
+                expression.setAccessedVariable(fn);
+            }
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+    }
+
     private static void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
-        CodeVisitorSupport visitor = new CodeVisitorSupport() {
-            @Override
-            public void visitVariableExpression(VariableExpression expression) {
-                Variable v = expression.getAccessedVariable(); 
-                if (v==null) return;
-                if (!(v instanceof FieldNode)) return;
-                String name = expression.getName();
-                FieldNode fn = closureClass.getDeclaredField(name);
-                if (fn != null) { // only overwrite if we find something more specific
-                    expression.setAccessedVariable(fn);
-                }
-            }  
-        };
-        visitor.visitClosureExpression(ce);
+        new CorrectAccessedVariableVisitor(closureClass).visitClosureExpression(ce);
     }
 
     /*
