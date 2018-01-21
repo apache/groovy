@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.PARAMETER_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -89,7 +89,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     @Override
     public void writeLambda(LambdaExpression expression) {
-        ClassNode parameterType = expression.getNodeMetaData(PARAMETER_TYPE);
+        ClassNode parameterType = expression.getNodeMetaData(INFERRED_PARAMETER_TYPE);
 
         List<MethodNode> abstractMethodNodeList =
                 parameterType.redirect().getMethods().stream()
