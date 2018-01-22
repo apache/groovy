@@ -214,4 +214,38 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testSuperPropertyAndSuperFieldOrder_groovy8455() {
+        assertScript '''
+            import groovy.transform.*
+
+            class Foopubf{}
+            class Foop{}
+            class Foo {
+                Foop foop
+                public Foopubf foopubf
+                protected Short fooProtField
+            }
+
+            class Barpubf{}
+            class Barp{}
+            class Bar extends Foo {
+                Barp barp
+                public Barpubf barpubf
+                protected Integer barProtField
+            }
+
+            class Bazpubf{}
+            class Bazp{}
+            @TupleConstructor(includeSuperProperties=true, includeFields=true, includeSuperFields=true)
+            class Baz extends Bar {
+                Bazp bazp
+                public Bazpubf bazpubf
+                protected Long bazProtField
+            }
+
+            assert Baz.constructors.max{ it.parameters.size() }.toString() ==
+                'public Baz(Foop,Foopubf,java.lang.Short,Barp,Barpubf,java.lang.Integer,Bazp,Bazpubf,java.lang.Long)'
+        '''
+    }
+
 }
