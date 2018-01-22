@@ -58,11 +58,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -169,11 +168,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
         List<FieldNode> superList = new ArrayList<FieldNode>();
-        if (includeSuperProperties) {
-            superList.addAll(getSuperPropertyFields(cNode.getSuperClass()));
-        }
-        if (includeSuperFields) {
-            superList.addAll(getSuperNonPropertyFields(cNode.getSuperClass()));
+        if (includeSuperProperties || includeSuperFields) {
+            superList.addAll(getAllFields(cNode.getSuperClass(), includeSuperProperties, includeSuperFields));
         }
 
         List<FieldNode> list = new ArrayList<FieldNode>();
