@@ -466,6 +466,30 @@ public class GeneralUtils {
         return result;
     }
 
+    public static List<FieldNode> getAllFields(ClassNode cNode, boolean includeSuperProperties, boolean includeSuperFields) {
+        final List<FieldNode> result;
+        if (cNode == ClassHelper.OBJECT_TYPE) {
+            result = new ArrayList<FieldNode>();
+        } else {
+            result = getAllFields(cNode.getSuperClass(), includeSuperProperties, includeSuperFields);
+        }
+        if (includeSuperProperties) {
+            for (PropertyNode pNode : cNode.getProperties()) {
+                if (!pNode.isStatic()) {
+                    result.add(pNode.getField());
+                }
+            }
+        }
+        if (includeSuperFields) {
+            for (FieldNode fNode : cNode.getFields()) {
+                if (!fNode.isStatic() && cNode.getProperty(fNode.getName()) == null) {
+                    result.add(fNode);
+                }
+            }
+        }
+        return result;
+    }
+
     public static BinaryExpression hasClassX(Expression instance, ClassNode cNode) {
         return eqX(classX(cNode), callX(instance, "getClass"));
     }
