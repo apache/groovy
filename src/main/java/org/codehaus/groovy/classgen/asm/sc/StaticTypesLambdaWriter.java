@@ -38,7 +38,6 @@ import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
@@ -53,7 +52,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_PARAMETER_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -90,14 +89,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     @Override
     public void writeLambda(LambdaExpression expression) {
-        ClassNode inferedType = getInferredType(expression);
+        ClassNode lambdaType = getLambdaType(expression);
 
         List<MethodNode> abstractMethodNodeList =
-                inferedType.redirect().getMethods().stream()
+                lambdaType.redirect().getMethods().stream()
                         .filter(MethodNode::isAbstract)
                         .collect(Collectors.toList());
 
-        if (!(isFunctionInterface(inferedType) && abstractMethodNodeList.size() == 1)) {
+        if (!(isFunctionInterface(lambdaType) && abstractMethodNodeList.size() == 1)) {
             // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
@@ -121,11 +120,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                createAbstractMethodDesc(inferedType, lambdaClassNode),
+                createAbstractMethodDesc(lambdaType, lambdaClassNode),
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
-        operandStack.replace(inferedType.redirect(), 1);
+        operandStack.replace(lambdaType.redirect(), 1);
 
         if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
             // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
@@ -153,13 +152,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     }
 
-    private ClassNode getInferredType(LambdaExpression expression) {
-        ClassNode inferedType = expression.getNodeMetaData(INFERRED_PARAMETER_TYPE);
+    private ClassNode getLambdaType(LambdaExpression expression) {
+        ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
 
-        if (null == inferedType) {
-            inferedType = expression.getNodeMetaData(INFERRED_LAMBDA_TYPE);
+        if (null == type) {
+            type = expression.getNodeMetaData(INFERRED_LAMBDA_TYPE);
         }
-        return inferedType;
+        return type;
     }
 
     private void loadEnclosingClassInstance() {
@@ -379,16 +378,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     }
 
     private static final class TransformationVisitor extends CorrectAccessedVariableVisitor {
-        private Parameter thisParameter;
+        private Parameter enclosingThisParameter;
 
-        public TransformationVisitor(InnerClassNode icn, Parameter thisParameter) {
+        public TransformationVisitor(InnerClassNode icn, Parameter enclosingThisParameter) {
             super(icn);
-            this.thisParameter = thisParameter;
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return null;
+            this.enclosingThisParameter = enclosingThisParameter;
         }
 
         @Override
@@ -399,7 +393,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 if (objectExpression instanceof VariableExpression) {
                     VariableExpression originalObjectExpression = (VariableExpression) objectExpression;
                     if (null == originalObjectExpression.getAccessedVariable()) {
-                        VariableExpression thisVariable = new VariableExpression(thisParameter);
+                        VariableExpression thisVariable = new VariableExpression(enclosingThisParameter);
                         thisVariable.setSourcePosition(originalObjectExpression);
 
                         call.setObjectExpression(thisVariable);
