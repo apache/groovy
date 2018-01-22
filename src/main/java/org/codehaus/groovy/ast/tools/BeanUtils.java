@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import static java.beans.Introspector.decapitalize;
 
 public class BeanUtils {
     static final String GET_PREFIX = "get";
+    static final String SET_PREFIX = "set";
     static final String IS_PREFIX = "is";
 
     /**
@@ -44,17 +46,38 @@ public class BeanUtils {
      * @return the list of found property nodes
      */
     public static List<PropertyNode> getAllProperties(ClassNode type, boolean includeSuperProperties, boolean includeStatic, boolean includePseudoGetters) {
+        return getAllProperties(type, includeSuperProperties, includeStatic, includePseudoGetters, false, false);
+    }
+
+    /**
+     * Get all properties including JavaBean pseudo properties matching JavaBean getter or setter conventions.
+     *
+     * @param type the ClassNode
+     * @param includeSuperProperties whether to include super properties
+     * @param includeStatic whether to include static properties
+     * @param includePseudoGetters whether to include JavaBean pseudo (getXXX/isYYY) properties with no corresponding field
+     * @param includePseudoSetters whether to include JavaBean pseudo (setXXX) properties with no corresponding field
+     * @param superFirst are properties gathered first from parent classes
+     * @return the list of found property nodes
+     */
+    public static List<PropertyNode> getAllProperties(ClassNode type, boolean includeSuperProperties, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters, boolean superFirst) {
+        return getAllProperties(type, type, new HashSet<String>(), includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst);
+    }
+
+    private static List<PropertyNode> getAllProperties(ClassNode origType, ClassNode type, Set<String> names, boolean includeSuperProperties, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters, boolean superFirst) {
         // TODO add generics support so this can be used for @EAHC
-        // TODO add an includePseudoSetters so this can be used for @TupleConstructor
-        ClassNode node = type;
-        List<PropertyNode> result = new ArrayList<PropertyNode>();
-        Set<String> names = new HashSet<String>();
-        while (node != null) {
-            addExplicitProperties(node, result, names, includeStatic);
-            if (!includeSuperProperties) break;
-            node = node.getSuperClass();
+        if (type == null) {
+            return new ArrayList<PropertyNode>();
         }
-        addPseudoProperties(type, result, names, includeStatic, includePseudoGetters, includeSuperProperties);
+        List<PropertyNode> result = new ArrayList<PropertyNode>();
+        if (superFirst && includeSuperProperties) {
+            result.addAll(getAllProperties(origType, type.getSuperClass(), names, includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst));
+        }
+        addExplicitProperties(type, result, names, includeStatic);
+        addPseudoProperties(origType, type, result, names, includeStatic, includePseudoGetters, includePseudoSetters);
+        if (!superFirst && includeSuperProperties) {
+            result.addAll(getAllProperties(origType, type.getSuperClass(), names, includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst));
+        }
         return result;
     }
 
@@ -69,20 +92,10 @@ public class BeanUtils {
         }
     }
 
-    private static void addPseudoProperties(ClassNode cNode, List<PropertyNode> result, Set<String> names, boolean includeStatic, boolean includePseudoGetters, boolean includeSuperProperties) {
-        if (!includePseudoGetters) return;
+    public static void addPseudoProperties(ClassNode origType, ClassNode cNode, List<PropertyNode> result, Set<String> names, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters) {
+        if (!includePseudoGetters && !includePseudoSetters) return;
         List<MethodNode> methods = cNode.getAllDeclaredMethods();
         ClassNode node = cNode.getSuperClass();
-        if (includeSuperProperties) {
-            while (node != null) {
-                for (MethodNode next : node.getAllDeclaredMethods()) {
-                    if (!next.isPrivate()) {
-                        methods.add(next);
-                    }
-                }
-                node = node.getSuperClass();
-            }
-        }
         for (MethodNode mNode : methods) {
             if (!includeStatic && mNode.isStatic()) continue;
             String name = mNode.getName();
@@ -90,31 +103,54 @@ public class BeanUtils {
                 // Optimization: skip invalid propertyNames
                 continue;
             }
-            if (mNode.getDeclaringClass() != cNode && mNode.isPrivate()) {
+            if (mNode.getDeclaringClass() != origType && mNode.isPrivate()) {
                 // skip private super methods
                 continue;
             }
             int paramCount = mNode.getParameters().length;
-            ClassNode returnType = mNode.getReturnType();
+            ClassNode paramType = mNode.getReturnType();
+            String propName = null;
+            Statement getter = null;
+            Statement setter = null;
             if (paramCount == 0) {
-                if (name.startsWith(GET_PREFIX)) {
+                if (includePseudoGetters && name.startsWith(GET_PREFIX)) {
                     // Simple getter
-                    String propName = decapitalize(name.substring(3));
-                    if (!names.contains(propName)) {
-                        result.add(new PropertyNode(propName, mNode.getModifiers(), returnType, cNode, null, mNode.getCode(), null));
-                        names.add(propName);
-                    }
-                } else {
-                    if (name.startsWith(IS_PREFIX) && returnType.equals(ClassHelper.boolean_TYPE)) {
-                        // boolean getter
-                        String propName = decapitalize(name.substring(2));
-                        if (!names.contains(propName)) {
-                            names.add(propName);
-                            result.add(new PropertyNode(propName, mNode.getModifiers(), returnType, cNode, null, mNode.getCode(), null));
-                        }
-                    }
+                    propName = decapitalize(name.substring(3));
+                    getter = mNode.getCode();
+                } else if (includePseudoGetters && name.startsWith(IS_PREFIX) && paramType.equals(ClassHelper.boolean_TYPE)) {
+                    // boolean getter
+                    propName = decapitalize(name.substring(2));
+                    getter = mNode.getCode();
+                }
+            } else if (paramCount == 1) {
+                if (includePseudoSetters && name.startsWith(SET_PREFIX)) {
+                    // Simple setter
+                    propName = decapitalize(name.substring(3));
+                    setter = mNode.getCode();
+                    paramType = mNode.getParameters()[0].getType();
+
                 }
             }
+            if (propName != null) {
+                addIfMissing(cNode, result, names, mNode, paramType, propName, getter, setter);
+            }
+        }
+    }
+
+    private static void addIfMissing(ClassNode cNode, List<PropertyNode> result, Set<String> names, MethodNode mNode, ClassNode returnType, String propName, Statement getter, Statement setter) {
+        if (cNode.getProperty(propName) != null) return;
+        if (names.contains(propName)) {
+            for (PropertyNode pn : result) {
+                if (pn.getName().equals(propName) && getter != null && pn.getGetterBlock() == null) {
+                    pn.setGetterBlock(getter);
+                }
+                if (pn.getName().equals(propName) && setter != null && pn.getSetterBlock() == null) {
+                    pn.setSetterBlock(setter);
+                }
+            }
+        } else {
+            result.add(new PropertyNode(propName, mNode.getModifiers(), returnType, cNode, null, getter, setter));
+            names.add(propName);
         }
     }
 }
