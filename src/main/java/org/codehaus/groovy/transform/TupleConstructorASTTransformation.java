@@ -43,9 +43,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -115,6 +117,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean force = memberHasValue(anno, "force", true);
             boolean defaults = !memberHasValue(anno, "defaults", false);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
+            boolean allProperties = memberHasValue(anno, "allProperties", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
@@ -134,7 +137,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 return;
             }
             createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
-                    callSuper, force, excludes, includes, useSetters, defaults, allNames, sourceUnit,
+                    callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, sourceUnit,
                     (ClosureExpression) pre, (ClosureExpression) post);
             if (pre != null) {
                 anno.setMember("pre", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
@@ -164,21 +167,27 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                                          List<String> excludes, final List<String> includes, boolean useSetters, boolean
                                                  defaults, boolean allNames, SourceUnit sourceUnit, ClosureExpression
                                                  pre, ClosureExpression post) {
+        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames, false, sourceUnit, pre, post);
+    }
+
+    public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
+                                         boolean includeProperties, boolean includeSuperFields, boolean
+                                                 includeSuperProperties, boolean callSuper, boolean force,
+                                         List<String> excludes, final List<String> includes, boolean useSetters, boolean
+                                                 defaults, boolean allNames, boolean allProperties, SourceUnit sourceUnit, ClosureExpression
+                                                 pre, ClosureExpression post) {
         // no processing if existing constructors found
         if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
-        List<FieldNode> superList = new ArrayList<FieldNode>();
+        Set<String> names = new HashSet<String>();
+        List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
-            superList.addAll(getAllFields(cNode.getSuperClass(), includeSuperProperties, includeSuperFields));
+            superList = getAllFields(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true);
+        } else {
+            superList = new ArrayList<PropertyNode>();
         }
 
-        List<FieldNode> list = new ArrayList<FieldNode>();
-        if (includeProperties) {
-            list.addAll(getInstancePropertyFields(cNode));
-        }
-        if (includeFields) {
-            list.addAll(getInstanceNonPropertyFields(cNode));
-        }
+        List<PropertyNode> list = getAllFields(names, cNode, true, includeFields, allProperties, false);
 
         final List<Parameter> params = new ArrayList<Parameter>();
         final List<Expression> superParams = new ArrayList<Expression>();
@@ -192,8 +201,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
         }
         final BlockStatement body = new BlockStatement();
-        for (FieldNode fNode : superList) {
-            String name = fNode.getName();
+        for (PropertyNode pNode : superList) {
+            FieldNode fNode = pNode.getField();
+            String name = pNode.getName();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             params.add(createParam(fNode, name, defaults, xform));
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
@@ -213,8 +223,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (!preBody.isEmpty()) {
             body.addStatements(preBody.getStatements());
         }
-        for (FieldNode fNode : list) {
-            String name = fNode.getName();
+        for (PropertyNode pNode : list) {
+            String name = pNode.getName();
+            FieldNode fNode = pNode.getField();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             Parameter nextParam = createParam(fNode, name, defaults, xform);
             params.add(nextParam);

@@ -466,24 +466,33 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<FieldNode> getAllFields(ClassNode cNode, boolean includeSuperProperties, boolean includeSuperFields) {
-        final List<FieldNode> result;
-        if (cNode == ClassHelper.OBJECT_TYPE) {
-            result = new ArrayList<FieldNode>();
+    public static List<PropertyNode> getAllFields(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
+        return getAllFields(names, cNode, cNode, includeProperties, includeFields, allProperties, traverseSuperClasses);
+    }
+
+    private static List<PropertyNode> getAllFields(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
+        final List<PropertyNode> result;
+        if (cNode == ClassHelper.OBJECT_TYPE || !traverseSuperClasses) {
+            result = new ArrayList<PropertyNode>();
         } else {
-            result = getAllFields(cNode.getSuperClass(), includeSuperProperties, includeSuperFields);
+            result = getAllFields(names, origType, cNode.getSuperClass(), includeProperties, includeFields, allProperties, true);
         }
-        if (includeSuperProperties) {
+        if (includeProperties) {
             for (PropertyNode pNode : cNode.getProperties()) {
-                if (!pNode.isStatic()) {
-                    result.add(pNode.getField());
+                if (!pNode.isStatic() && !names.contains(pNode.getName())) {
+                    result.add(pNode);
+                    names.add(pNode.getName());
                 }
             }
+            if (allProperties) {
+                BeanUtils.addPseudoProperties(origType, cNode, result, names, false, false, true);
+            }
         }
-        if (includeSuperFields) {
+        if (includeFields) {
             for (FieldNode fNode : cNode.getFields()) {
-                if (!fNode.isStatic() && cNode.getProperty(fNode.getName()) == null) {
-                    result.add(fNode);
+                if (!fNode.isStatic() && cNode.getProperty(fNode.getName()) == null && !names.contains(fNode.getName())) {
+                    result.add(new PropertyNode(fNode, fNode.getModifiers(), null, null));
+                    names.add(fNode.getName());
                 }
             }
         }

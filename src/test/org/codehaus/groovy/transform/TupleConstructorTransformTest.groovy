@@ -214,37 +214,54 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testSuperPropertyAndSuperFieldOrder_groovy8455() {
+    // GROOVY-8455, GROOVY-8453
+    void testPropPsuedoPropAndFieldOrderIncludingInheritedMembers() {
         assertScript '''
-            import groovy.transform.*
+            import groovy.transform.TupleConstructor
+
+            class Basepubf{}
+            class Basep{}
+            class Basepp{}
+            class Base {
+                Basep basep
+                public Basepubf basepubf
+                protected Byte baseProtField
+                void setBasePseudoProp(Basepp bpp) {}
+            }
 
             class Foopubf{}
             class Foop{}
-            class Foo {
+            class Foopp{}
+            class Foo extends Base {
                 Foop foop
                 public Foopubf foopubf
                 protected Short fooProtField
+                Foopp getFooPseudoProp() { null }
             }
 
             class Barpubf{}
             class Barp{}
+            class Barpp{}
             class Bar extends Foo {
                 Barp barp
                 public Barpubf barpubf
                 protected Integer barProtField
+                void setBarPseudoProp(Barpp bpp) { }
             }
 
             class Bazpubf{}
             class Bazp{}
-            @TupleConstructor(includeSuperProperties=true, includeFields=true, includeSuperFields=true)
+            class Bazpp{}
+            @TupleConstructor(includeSuperProperties=true, includeFields=true, includeSuperFields=true, allProperties=true)
             class Baz extends Bar {
                 Bazp bazp
                 public Bazpubf bazpubf
                 protected Long bazProtField
+                void setBazPseudoProp(Bazpp bpp) { }
             }
 
             assert Baz.constructors.max{ it.parameterTypes.size() }.toString() ==
-                'public Baz(Foop,Foopubf,java.lang.Short,Barp,Barpubf,java.lang.Integer,Bazp,Bazpubf,java.lang.Long)'
+                'public Baz(Basep,Basepp,Basepubf,java.lang.Byte,Foop,Foopubf,java.lang.Short,Barp,Barpp,Barpubf,java.lang.Integer,Bazp,Bazpp,Bazpubf,java.lang.Long)'
         '''
     }
 

@@ -46,7 +46,9 @@ import java.lang.annotation.Target;
  * AST transformation which adds the necessary constructor method to your class.
  * <p>
  * A tuple constructor is created with a parameter for each property (and optionally field and
- * super properties).
+ * super properties). The default order is properties, pseudo/JavaBean properties and then fields
+ * for parent classes first (if includeSuperXxx annotation attributes are used).
+ *
  * A default value is provided (using Java's default values) for all parameters in the constructor.
  * Groovy's normal conventions then allows any number of parameters to be left off the end of the parameter list
  * including all of the parameters - giving a no-arg constructor which can be used with the map-style naming conventions.
@@ -260,6 +262,15 @@ public @interface TupleConstructor {
      * @since 2.5.0
      */
     boolean allNames() default false;
+
+    /**
+     * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
+     * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
+     * specification.
+     *
+     * @since 2.5.0
+     */
+    boolean allProperties() default false;
 
     /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement
