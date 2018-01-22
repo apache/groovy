@@ -470,4 +470,54 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         }
         '''
     }
+
+    void testFunctionWithVariableDeclaration() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                Function<Integer, String> f = (Integer e) -> 'a' + e
+                assert ['a1', 'a2', 'a3'] == Stream.of(1, 2, 3).map(f).collect(Collectors.toList())
+            }
+        }
+        
+        '''
+    }
+
+    void testFunctionWithMixingVariableDeclarationAndMethodInvocation() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                String x = "#"
+                Integer y = 23
+                assert ['23#1', '23#2', '23#3'] == Stream.of(1, 2, 3).map(e -> '' + y + x + e).collect(Collectors.toList())
+            
+                Function<Integer, String> f = (Integer e) -> 'a' + e
+                assert ['a1', 'a2', 'a3'] == Stream.of(1, 2, 3).map(f).collect(Collectors.toList())
+                
+                assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
+            }
+        }
+        
+        '''
+    }
 }

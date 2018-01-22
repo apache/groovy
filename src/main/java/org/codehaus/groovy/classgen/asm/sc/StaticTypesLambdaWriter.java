@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -89,14 +90,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     @Override
     public void writeLambda(LambdaExpression expression) {
-        ClassNode parameterType = expression.getNodeMetaData(INFERRED_PARAMETER_TYPE);
+        ClassNode inferedType = getInferredType(expression);
 
         List<MethodNode> abstractMethodNodeList =
-                parameterType.redirect().getMethods().stream()
+                inferedType.redirect().getMethods().stream()
                         .filter(MethodNode::isAbstract)
                         .collect(Collectors.toList());
 
-        if (!(isFunctionInterface(parameterType) && abstractMethodNodeList.size() == 1)) {
+        if (!(isFunctionInterface(inferedType) && abstractMethodNodeList.size() == 1)) {
             // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
@@ -120,11 +121,45 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                createAbstractMethodDesc(parameterType, lambdaClassNode),
+                createAbstractMethodDesc(inferedType, lambdaClassNode),
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaClassNode, syntheticLambdaMethodNode)
         );
-        operandStack.replace(parameterType.redirect(), 1);
+        operandStack.replace(inferedType.redirect(), 1);
+
+        if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
+            // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
+            //       Groovy will `POP` twice...(expecting `POP` only once), as a hack, `DUP` to duplicate the element of operand stack:
+            /*
+                INVOKEDYNAMIC apply(LTest1$_p_lambda1;LTest1;)Ljava/util/function/Function; [
+                  // handle kind 0x6 : INVOKESTATIC
+                  java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+                  // arguments:
+                  (Ljava/lang/Object;)Ljava/lang/Object;,
+                  // handle kind 0x5 : INVOKEVIRTUAL
+                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/String;,
+                  (Ljava/lang/Integer;)Ljava/lang/String;
+                ]
+                DUP           <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
+                ASTORE 0
+               L2
+                ALOAD 0
+                POP
+                POP
+            */
+
+            mv.visitInsn(DUP);
+        }
+
+    }
+
+    private ClassNode getInferredType(LambdaExpression expression) {
+        ClassNode inferedType = expression.getNodeMetaData(INFERRED_PARAMETER_TYPE);
+
+        if (null == inferedType) {
+            inferedType = expression.getNodeMetaData(INFERRED_LAMBDA_TYPE);
+        }
+        return inferedType;
     }
 
     private void loadEnclosingClassInstance() {
@@ -326,6 +361,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         for (int i = 0; i < parameters.length; i++) {
             ClassNode inferredType = parameters[i].getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+
+            if (null == inferredType) {
+                continue;
+            }
+
             parameters[i].setType(inferredType);
             parameters[i].setOriginType(inferredType);
         }
