@@ -35,7 +35,7 @@ class LambdaTest extends GroovyTestCase {
             }
         
             public static void p() {
-                assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
             }
         }
         '''
@@ -49,7 +49,7 @@ class LambdaTest extends GroovyTestCase {
         
         @CompileStatic
         void p() {
-            assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e + 1).collect(Collectors.toList());
+            assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList());
         }
         
         p()
@@ -67,7 +67,7 @@ class LambdaTest extends GroovyTestCase {
         /* FIXME
 TestScript0.groovy: 13: [Static type checking] - Cannot find matching method java.util.stream.Stream#reduce(int, groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
  @ line 13, column 30.
-                   assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
+                   assert 13 == [1, 2, 3].stream().reduce(7, (r, e) -> r + e);
                                 ^
 
 TestScript0.groovy: 13: [Static type checking] - Cannot find matching method java.lang.Object#plus(java.lang.Object). Please check if the declared type is correct and if the method exists.
@@ -90,7 +90,7 @@ TestScript0.groovy: 13: [Static type checking] - Cannot find matching method jav
             }
             
             public static void p() {
-                assert 13 == Stream.of(1, 2, 3).reduce(7, (r, e) -> r + e);
+                assert 13 == [1, 2, 3].stream().reduce(7, (r, e) -> r + e);
             }
         }
         '''
@@ -109,7 +109,7 @@ TestScript0.groovy: 13: [Static type checking] - Cannot find matching method jav
             }
             
             public static void p() {
-                Stream.of(1, 2, 3).forEach(e -> { System.out.println(e + 1); });
+                [1, 2, 3].stream().forEach(e -> { System.out.println(e + 1); });
             }
             
         }
@@ -211,7 +211,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public static void p() {
                 String x = "#"
-                assert ['#1', '#2', '#3'] == Stream.of(1, 2, 3).map(e -> x + e).collect(Collectors.toList());
+                assert ['#1', '#2', '#3'] == [1, 2, 3].stream().map(e -> x + e).collect(Collectors.toList());
             }
         }
         '''
@@ -233,7 +233,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             public void p() {
                 String x = "#"
                 Integer y = 23
-                assert ['23#1', '23#2', '23#3'] == Stream.of(1, 2, 3).map(e -> '' + y + x + e).collect(Collectors.toList())
+                assert ['23#1', '23#2', '23#3'] == [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList())
             }
         }
         '''
@@ -254,7 +254,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             public void p() {
                 String x = "x";
                 StringBuilder y = new StringBuilder("y");
-                assert ['yx1', 'yx2', 'yx3'] == Stream.of(1, 2, 3).map(e -> y + x + e).collect(Collectors.toList());
+                assert ['yx1', 'yx2', 'yx3'] == [1, 2, 3].stream().map(e -> y + x + e).collect(Collectors.toList());
             }
         }
         '''
@@ -275,7 +275,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             public static void p() {
                 String x = "x";
                 StringBuilder y = new StringBuilder("y");
-                assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == Stream.of(1, 2, 3).map(e -> hello() + y + x + e).collect(Collectors.toList());
+                assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> hello() + y + x + e).collect(Collectors.toList());
             }
         
             public static String hello() {
@@ -300,7 +300,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             public static void p() {
                 String x = "x";
                 StringBuilder y = new StringBuilder("y");
-                assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == Stream.of(1, 2, 3).map(e -> Test4.hello() + y + x + e).collect(Collectors.toList());
+                assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> Test4.hello() + y + x + e).collect(Collectors.toList());
             }
         
             public static String hello() {
@@ -323,7 +323,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         
             public void p() {
-                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello() + e).collect(Collectors.toList());
+                assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello() + e).collect(Collectors.toList());
             }
         
             public String hello() {
@@ -346,7 +346,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
             
             public Test4() {
-                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello() + e).collect(Collectors.toList());
+                assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello() + e).collect(Collectors.toList());
             }
         
             public String hello() {
@@ -369,7 +369,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         
             public void p() {
-                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> this.hello() + e).collect(Collectors.toList());
+                assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> this.hello() + e).collect(Collectors.toList());
             }
         
             public String hello() {
@@ -392,7 +392,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         
             public void p() {
-                assert ['Hello Jochen', 'Hello Daniel'] == Stream.of("Jochen", "Daniel").map(e -> hello(e)).collect(Collectors.toList());
+                assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello(e)).collect(Collectors.toList());
             }
         
             public String hello(String name) {
@@ -443,7 +443,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public static void p() {
                 int i = 1
-                assert [2, 4, 7] == Stream.of(1, 2, 3).map(e -> i += e).collect(Collectors.toList())
+                assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
                 assert 7 == i
             }
         }
@@ -464,7 +464,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public void p() {
                 int i = 1
-                assert [2, 4, 7] == Stream.of(1, 2, 3).map(e -> i += e).collect(Collectors.toList())
+                assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
                 assert 7 == i
             }
         }
@@ -486,7 +486,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         
             public static void p() {
                 Function<Integer, String> f = (Integer e) -> 'a' + e
-                assert ['a1', 'a2', 'a3'] == Stream.of(1, 2, 3).map(f).collect(Collectors.toList())
+                assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
             }
         }
         
@@ -509,12 +509,12 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             public static void p() {
                 String x = "#"
                 Integer y = 23
-                assert ['23#1', '23#2', '23#3'] == Stream.of(1, 2, 3).map(e -> '' + y + x + e).collect(Collectors.toList())
+                assert ['23#1', '23#2', '23#3'] == [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList())
             
                 Function<Integer, String> f = (Integer e) -> 'a' + e
-                assert ['a1', 'a2', 'a3'] == Stream.of(1, 2, 3).map(f).collect(Collectors.toList())
+                assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
                 
-                assert [2, 3, 4] == Stream.of(1, 2, 3).map(e -> e.plus 1).collect(Collectors.toList());
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
             }
         }
         
