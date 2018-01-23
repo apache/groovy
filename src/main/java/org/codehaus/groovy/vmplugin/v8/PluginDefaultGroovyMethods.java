@@ -18,7 +18,13 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Defines new Groovy methods which appear on normal JDK 8
@@ -40,6 +46,126 @@ public class PluginDefaultGroovyMethods {
      */
     public static boolean asBoolean(Optional<?> optional) {
         return optional.isPresent();
+    }
+
+    /**
+     * Accumulates the elements of stream into a new List.
+     * @param stream the Stream
+     * @param <T>
+     * @return a new {@code java.util.List} instance
+     */
+    public static <T> List<T> toList(Stream<T> stream) {
+        return stream.collect(Collectors.toList());
+    }
+
+    /**
+     * Accumulates the elements of stream into a new Set.
+     * @param stream the Stream
+     * @param <T>
+     * @return a new {@code java.util.Set} instance
+     */
+    public static <T> Set<T> toSet(Stream<T> stream) {
+        return stream.collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param <T> The type of the array elements
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static <T> Stream<T> stream(T[] self) {
+        return Arrays.stream(self);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Integer> stream(int[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Long> stream(long[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Double> stream(double[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Character> stream(char[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Byte> stream(byte[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Short> stream(short[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Boolean> stream(boolean[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     */
+    public static Stream<Float> stream(float[] self) {
+        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
 }
