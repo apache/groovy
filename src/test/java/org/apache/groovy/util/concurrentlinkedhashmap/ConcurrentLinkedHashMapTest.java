@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class ConcurrentLinkedHashMapTest {
     @Test
@@ -53,7 +54,7 @@ public class ConcurrentLinkedHashMapTest {
                 .maximumWeightedCapacity(3)
                 .build();
 
-        final int threadNum = 5;
+        final int threadNum = 20;
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final CountDownLatch countDownLatch2 = new CountDownLatch(threadNum);
 
@@ -62,18 +63,6 @@ public class ConcurrentLinkedHashMapTest {
             new Thread(() -> {
                 try {
                     countDownLatch.await();
-
-                    if (num != 0 && num != 1 && num != 2) {
-                        Thread.sleep(300);
-                    }
-
-                    if (num == 1) {
-                        Thread.sleep(50);
-                    }
-
-                    if (num == 2) {
-                        Thread.sleep(150);
-                    }
 
                     m.computeIfAbsent(num % 3, k -> num);
                 } catch (InterruptedException e) {
@@ -87,7 +76,13 @@ public class ConcurrentLinkedHashMapTest {
         countDownLatch.countDown();
         countDownLatch2.await();
 
+        m.computeIfAbsent(0, k -> 16);
+
         assertArrayEquals(new Integer[] {0, 1, 2}, m.keySet().toArray(new Integer[0]));
-        assertArrayEquals(new Integer[] {0, 1, 2}, m.values().toArray(new Integer[0]));
+
+        assertNotEquals(16, m.get(0));
+        assertEquals(0, (Integer) m.get(0) % 3);
+        assertEquals(1, (Integer) m.get(1) % 3);
+        assertEquals(2, (Integer) m.get(2) % 3);
     }
 }
