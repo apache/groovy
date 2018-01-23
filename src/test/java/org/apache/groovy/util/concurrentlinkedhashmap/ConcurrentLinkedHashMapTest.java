@@ -77,11 +77,11 @@ public class ConcurrentLinkedHashMapTest {
         countDownLatch.countDown();
         countDownLatch2.await();
 
-        m.computeIfAbsent(0, k -> 16);
+        m.computeIfAbsent(0, k -> 100);
 
         assertArrayEquals(new Integer[] {0, 1, 2}, new TreeSet(m.keySet()).toArray(new Integer[0]));
 
-        assertNotEquals(16, m.get(0));
+        assertNotEquals(100, m.get(0));
         assertEquals(0, (Integer) m.get(0) % 3);
         assertEquals(1, (Integer) m.get(1) % 3);
         assertEquals(2, (Integer) m.get(2) % 3);
