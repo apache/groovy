@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -88,7 +88,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Integer> stream(int[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Integer> list = new ArrayList<>(self.length);
+        for (int e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -99,7 +104,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Long> stream(long[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Long> list = new ArrayList<>(self.length);
+        for (long e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -110,7 +120,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Double> stream(double[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Double> list = new ArrayList<>(self.length);
+        for (double e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -121,7 +136,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Character> stream(char[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Character> list = new ArrayList<>(self.length);
+        for (char e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -132,7 +152,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Byte> stream(byte[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Byte> list = new ArrayList<>(self.length);
+        for (byte e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -143,7 +168,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Short> stream(short[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Short> list = new ArrayList<>(self.length);
+        for (short e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -154,7 +184,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Boolean> stream(boolean[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Boolean> list = new ArrayList<>(self.length);
+        for (boolean e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
     /**
@@ -165,7 +200,12 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Float> stream(float[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        List<Float> list = new ArrayList<>(self.length);
+        for (float e : self) {
+            list.add(e);
+        }
+
+        return list.stream();
     }
 
 }
