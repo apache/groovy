@@ -112,6 +112,16 @@ public @interface MapConstructor {
     boolean useSetters() default false;
 
     /**
+     * Whether to include all fields and/or properties within the constructor, including those with names that are considered internal.
+     */
+    boolean allNames() default false;
+
+    /**
+     * In addition to the map constructor, provide a no-arg constructor which calls the map constructor with an empty map.
+     */
+    boolean noArg() default false;
+
+    /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement within the Closure may be "super(someArgs)" in which case the no-arg super constructor won't be called.
      */
     Class pre() default Undefined.CLASS.class;
@@ -120,9 +130,4 @@ public @interface MapConstructor {
      * A Closure containing statements which will be appended to the end of the generated constructor. Useful for validation steps or tweaking the populated fields/properties.
      */
     Class post() default Undefined.CLASS.class;
-
-    /**
-     * Whether to include all fields and/or properties within the constructor, including those with names that are considered internal.
-     */
-    boolean allNames() default false;
 }

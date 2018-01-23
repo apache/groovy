@@ -20,6 +20,7 @@ package org.apache.groovy.ast.tools;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -270,4 +271,14 @@ public class ClassNodeUtils {
     }
 
     private ClassNodeUtils() { }
+
+    public static boolean hasNoArgConstructor(ClassNode cNode) {
+        List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
+        for (ConstructorNode next : constructors) {
+            if (next.getParameters().length == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
