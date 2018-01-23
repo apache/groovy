@@ -243,7 +243,7 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 protected Long bazProtField
             }
 
-            assert Baz.constructors.max{ it.parameters.size() }.toString() ==
+            assert Baz.constructors.max{ it.parameterTypes.size() }.toString() ==
                 'public Baz(Foop,Foopubf,java.lang.Short,Barp,Barpubf,java.lang.Integer,Bazp,Bazpubf,java.lang.Long)'
         '''
     }
