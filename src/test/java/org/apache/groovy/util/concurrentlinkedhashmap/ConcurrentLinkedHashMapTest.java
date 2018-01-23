@@ -53,7 +53,7 @@ public class ConcurrentLinkedHashMapTest {
                 .maximumWeightedCapacity(3)
                 .build();
 
-        final int threadNum = 20;
+        final int threadNum = 5;
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final CountDownLatch countDownLatch2 = new CountDownLatch(threadNum);
 
@@ -64,15 +64,15 @@ public class ConcurrentLinkedHashMapTest {
                     countDownLatch.await();
 
                     if (num != 0 && num != 1 && num != 2) {
-                        Thread.sleep(100);
+                        Thread.sleep(300);
                     }
 
                     if (num == 1) {
-                        Thread.sleep(30);
+                        Thread.sleep(50);
                     }
 
                     if (num == 2) {
-                        Thread.sleep(60);
+                        Thread.sleep(150);
                     }
 
                     m.computeIfAbsent(num % 3, k -> num);
