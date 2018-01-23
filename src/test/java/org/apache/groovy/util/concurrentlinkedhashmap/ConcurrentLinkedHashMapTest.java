@@ -21,6 +21,7 @@ package org.apache.groovy.util.concurrentlinkedhashmap;
 
 import org.junit.Test;
 
+import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -78,7 +79,7 @@ public class ConcurrentLinkedHashMapTest {
 
         m.computeIfAbsent(0, k -> 16);
 
-        assertArrayEquals(new Integer[] {0, 1, 2}, m.keySet().toArray(new Integer[0]));
+        assertArrayEquals(new Integer[] {0, 1, 2}, new TreeSet(m.keySet()).toArray(new Integer[0]));
 
         assertNotEquals(16, m.get(0));
         assertEquals(0, (Integer) m.get(0) % 3);
