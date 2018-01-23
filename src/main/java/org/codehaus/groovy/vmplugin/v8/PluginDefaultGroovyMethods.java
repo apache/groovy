@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +56,8 @@ public class PluginDefaultGroovyMethods {
      * @return a new {@code java.util.List} instance
      */
     public static <T> List<T> toList(Stream<T> stream) {
-        return stream.collect(Collectors.toList());
+        Collector<T, ?, List<T>> collector = Collectors.toList();
+        return stream.collect(collector);
     }
 
     /**
@@ -65,7 +67,8 @@ public class PluginDefaultGroovyMethods {
      * @return a new {@code java.util.Set} instance
      */
     public static <T> Set<T> toSet(Stream<T> stream) {
-        return stream.collect(Collectors.toSet());
+        Collector<T, ?, Set<T>> collector = Collectors.toSet();
+        return stream.collect(collector);
     }
 
     /**
