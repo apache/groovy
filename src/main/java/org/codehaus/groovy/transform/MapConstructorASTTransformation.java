@@ -31,9 +31,11 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -41,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -49,6 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
@@ -86,6 +90,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
             boolean includeProperties = !memberHasValue(anno, "includeProperties", false);
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
+            boolean noArg = memberHasValue(anno, "noArg", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
@@ -106,7 +111,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
                 return;
             }
 
-            createConstructor(cNode, includeFields, includeProperties, includeSuperProperties, useSetters, excludes, includes, (ClosureExpression) pre, (ClosureExpression) post, source, allNames);
+            createConstructors(cNode, includeFields, includeProperties, includeSuperProperties, useSetters, noArg, allNames, excludes, includes, (ClosureExpression) pre, (ClosureExpression) post, source);
             if (pre != null) {
                 anno.setMember("pre", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
             }
@@ -116,7 +121,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperProperties, boolean useSetters, List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source, boolean allNames) {
+    public static void createConstructors(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperProperties, boolean useSetters, boolean noArg, boolean allNames, List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         boolean foundEmpty = constructors.size() == 1 && constructors.get(0).getFirstStatement() == null;
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
@@ -159,6 +164,14 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
             body.addStatement(transformed.getCode());
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params(map), ClassNode.EMPTY_ARRAY, body));
+        if (noArg && !(list.isEmpty() && superList.isEmpty()) && !hasNoArgConstructor(cNode)) {
+            createNoArgConstructor(cNode);
+        }
+    }
+
+    private static void createNoArgConstructor(ClassNode cNode) {
+        Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
+        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private static void assignField(boolean useSetters, Parameter map, BlockStatement body, String name) {

@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -32,13 +31,14 @@ import java.io.Externalizable;
 import java.io.Serializable;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 
-@GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
-public class ExternalizeVerifierASTTransformation extends AbstractASTTransformation {
+@org.codehaus.groovy.transform.GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
+public class ExternalizeVerifierASTTransformation extends org.codehaus.groovy.transform.AbstractASTTransformation {
     static final Class MY_CLASS = ExternalizeVerifier.class;
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
@@ -53,7 +53,7 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            if (!hasNoargConstructor(cNode)) {
+            if (!hasNoArgConstructor(cNode)) {
                 addError(MY_TYPE_NAME + ": An Externalizable class requires a no-arg constructor but none found", cNode);
             }
             if (!implementsExternalizable(cNode)) {
@@ -92,16 +92,6 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
 
     private static boolean implementsSerializable(ClassNode cNode) {
         return cNode.implementsInterface(SERIALIZABLE_TYPE);
-    }
-
-    private static boolean hasNoargConstructor(ClassNode cNode) {
-        List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
-        for (ConstructorNode next : constructors) {
-            if (next.getParameters().length == 0) {
-                return true;
-            }
-        }
-        return false;
     }
 
 }
