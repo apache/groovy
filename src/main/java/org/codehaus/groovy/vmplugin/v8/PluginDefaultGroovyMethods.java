@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -89,12 +87,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Integer> stream(int[] self) {
-        List<Integer> list = new ArrayList<>(self.length);
-        for (int e : self) {
-            list.add(e);
+        Integer[] array = new Integer[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -105,12 +104,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Long> stream(long[] self) {
-        List<Long> list = new ArrayList<>(self.length);
-        for (long e : self) {
-            list.add(e);
+        Long[] array = new Long[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -121,12 +121,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Double> stream(double[] self) {
-        List<Double> list = new ArrayList<>(self.length);
-        for (double e : self) {
-            list.add(e);
+        Double[] array = new Double[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -137,12 +138,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Character> stream(char[] self) {
-        List<Character> list = new ArrayList<>(self.length);
-        for (char e : self) {
-            list.add(e);
+        Character[] array = new Character[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -153,12 +155,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Byte> stream(byte[] self) {
-        List<Byte> list = new ArrayList<>(self.length);
-        for (byte e : self) {
-            list.add(e);
+        Byte[] array = new Byte[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -169,12 +172,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Short> stream(short[] self) {
-        List<Short> list = new ArrayList<>(self.length);
-        for (short e : self) {
-            list.add(e);
+        Short[] array = new Short[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -185,12 +189,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Boolean> stream(boolean[] self) {
-        List<Boolean> list = new ArrayList<>(self.length);
-        for (boolean e : self) {
-            list.add(e);
+        Boolean[] array = new Boolean[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
     /**
@@ -201,12 +206,13 @@ public class PluginDefaultGroovyMethods {
      * @return a {@code Stream} for the array
      */
     public static Stream<Float> stream(float[] self) {
-        List<Float> list = new ArrayList<>(self.length);
-        for (float e : self) {
-            list.add(e);
+        Float[] array = new Float[self.length];
+
+        for (int i = 0, n = self.length; i < n; i++) {
+            array[i] = self[i];
         }
 
-        return list.stream();
+        return Arrays.stream(array);
     }
 
 }
