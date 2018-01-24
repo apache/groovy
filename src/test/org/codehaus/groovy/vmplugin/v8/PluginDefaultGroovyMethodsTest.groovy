@@ -56,6 +56,20 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testBaseStreamToList() {
+        assertScript '''
+            def list = [1, 2, 3]
+            assert list == Arrays.stream(list as int[]).toList()
+        '''
+    }
+
+    void testBaseStreamToSet() {
+        assertScript '''
+            def set = [1, 2, 3] as Set
+            assert set.sort() == Arrays.stream(set as int[]).toSet().sort()
+        '''
+    }
+
     void testObjectArrayToStream() {
         assertScript '''
             def array = ["Hello", "World"] as Object[]

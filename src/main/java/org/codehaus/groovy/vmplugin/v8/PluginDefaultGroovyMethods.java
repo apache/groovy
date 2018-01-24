@@ -22,8 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Defines new Groovy methods which appear on normal JDK 8
@@ -50,7 +55,7 @@ public class PluginDefaultGroovyMethods {
     /**
      * Accumulates the elements of stream into a new List.
      * @param stream the Stream
-     * @param <T>
+     * @param <T> the type of element
      * @return a new {@code java.util.List} instance
      */
     public static <T> List<T> toList(Stream<T> stream) {
@@ -60,11 +65,35 @@ public class PluginDefaultGroovyMethods {
     /**
      * Accumulates the elements of stream into a new Set.
      * @param stream the Stream
-     * @param <T>
+     * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
      */
     public static <T> Set<T> toSet(Stream<T> stream) {
         return stream.collect(Collectors.<T>toSet());
+    }
+
+    /**
+     * Accumulates the elements of stream into a new List.
+     * @param stream the {@code java.util.stream.BaseStream}
+     * @param <T> the type of element
+     * @return a new {@code java.util.List} instance
+     */
+    public static <T> List<T> toList(BaseStream<T, ? extends BaseStream> stream) {
+        return StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
+                false).collect(Collectors.<T>toList());
+    }
+
+    /**
+     * Accumulates the elements of stream into a new Set.
+     * @param stream the {@code java.util.stream.BaseStream}
+     * @param <T> the type of element
+     * @return a new {@code java.util.Set} instance
+     */
+    public static <T> Set<T> toSet(BaseStream<T, ? extends BaseStream> stream) {
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
+                false).collect(Collectors.<T>toSet());
     }
 
     /**
