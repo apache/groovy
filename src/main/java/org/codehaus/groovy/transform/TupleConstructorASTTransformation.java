@@ -61,7 +61,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
@@ -136,18 +136,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 return;
             }
 
-            // TODO remove duplication between various paths below
-            List<PropertyNode> list = ImmutableASTTransformation.getProperties(cNode, includeSuperProperties, allProperties);
-            boolean specialHashMapCase = ImmutableASTTransformation.isSpecialHashMapCase(list);
-            if (makeImmutable) {
-                if (!specialHashMapCase) {
-                    ImmutableASTTransformation.createConstructorOrdered(cNode, list);
-                }
-            } else {
-                createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
-                        callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, sourceUnit,
-                        (ClosureExpression) pre, (ClosureExpression) post);
-            }
+            createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
+                    callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, makeImmutable,
+                    sourceUnit, (ClosureExpression) pre, (ClosureExpression) post);
 
             if (pre != null) {
                 anno.setMember("pre", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
@@ -177,27 +168,36 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                                          List<String> excludes, final List<String> includes, boolean useSetters, boolean
                                                  defaults, boolean allNames, SourceUnit sourceUnit, ClosureExpression
                                                  pre, ClosureExpression post) {
-        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames, false, sourceUnit, pre, post);
+        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames, false, false, sourceUnit, pre, post);
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
-                                         boolean includeProperties, boolean includeSuperFields, boolean
-                                                 includeSuperProperties, boolean callSuper, boolean force,
-                                         List<String> excludes, final List<String> includes, boolean useSetters, boolean
-                                                 defaults, boolean allNames, boolean allProperties, SourceUnit sourceUnit, ClosureExpression
-                                                 pre, ClosureExpression post) {
-        // no processing if existing constructors found
-        if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
-
+                                         boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties,
+                                         boolean callSuper, boolean force, List<String> excludes, final List<String> includes,
+                                         boolean useSetters, boolean defaults, boolean allNames, boolean allProperties, boolean makeImmutable,
+                                         SourceUnit sourceUnit, ClosureExpression pre, ClosureExpression post) {
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
-            superList = getAllFields(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true);
+            superList = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true);
         } else {
             superList = new ArrayList<PropertyNode>();
         }
 
-        List<PropertyNode> list = getAllFields(names, cNode, true, includeFields, allProperties, false);
+        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false);
+
+        if (makeImmutable) {
+            boolean specialHashMapCase = (ImmutableASTTransformation.isSpecialHashMapCase(list) && superList.isEmpty()) ||
+                    (ImmutableASTTransformation.isSpecialHashMapCase(superList) && list.isEmpty());
+            if (!specialHashMapCase) {
+                superList.addAll(list);
+                ImmutableASTTransformation.createConstructorOrdered(cNode, superList);
+            }
+            return;
+        }
+
+        // no processing if existing constructors found
+        if (!cNode.getDeclaredConstructors().isEmpty() && !force) return;
 
         final List<Parameter> params = new ArrayList<Parameter>();
         final List<Expression> superParams = new ArrayList<Expression>();
