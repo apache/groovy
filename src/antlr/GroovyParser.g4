@@ -504,7 +504,6 @@ lambdaBody
 
 // CLOSURE
 closure
-locals[ String footprint = "" ]
     :   LBRACE nls (formalParameterList? nls ARROW nls)? blockStatementsOpt RBRACE
     ;
 
@@ -615,48 +614,22 @@ ifElseStatement
     ;
 
 switchStatement
-locals[ String footprint = "" ]
     :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementGroup* nls RBRACE
     ;
 
 loopStatement
-locals[ String footprint = "" ]
     :   FOR LPAREN forControl rparen nls statement                                                            #forStmtAlt
     |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
 
 continueStatement
-locals[ boolean isInsideLoop ]
-@init {
-    try {
-        $isInsideLoop = null != $loopStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideLoop = false;
-    }
-}
     :   CONTINUE
-        { require($isInsideLoop, "the continue statement is only allowed inside loops", -8); }
         identifier?
     ;
 
 breakStatement
-locals[ boolean isInsideLoop, boolean isInsideSwitch ]
-@init {
-    try {
-        $isInsideLoop = null != $loopStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideLoop = false;
-    }
-
-    try {
-        $isInsideSwitch = null != $switchStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideSwitch = false;
-    }
-}
     :   BREAK
-        { require($isInsideLoop || $isInsideSwitch, "the break statement is only allowed inside loops or switches", -5); }
         identifier?
     ;
 
@@ -667,7 +640,6 @@ tryCatchStatement
     ;
 
 assertStatement
-locals[ String footprint = "" ]
     :   ASSERT ce=expression (nls (COLON | COMMA) nls me=expression)?
     ;
 
@@ -805,14 +777,6 @@ statementExpression
     ;
 
 postfixExpression
-locals[ boolean isInsideAssert ]
-@init {
-    try {
-        $isInsideAssert = null != $assertStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideAssert = false;
-    }
-}
     :   pathExpression op=(INC | DEC)?
     ;
 
@@ -966,14 +930,6 @@ pathExpression returns [int t]
     ;
 
 pathElement returns [int t]
-locals[ boolean isInsideClosure ]
-@init {
-    try {
-        $isInsideClosure = null != $closure::footprint;
-    } catch(NullPointerException e) {
-        $isInsideClosure = false;
-    }
-}
     :   nls
 
         // AT: foo.@bar selects the field (or attribute), not property
