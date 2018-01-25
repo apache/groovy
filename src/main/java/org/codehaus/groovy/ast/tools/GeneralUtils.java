@@ -463,16 +463,16 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<PropertyNode> getAllFields(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
-        return getAllFields(names, cNode, cNode, includeProperties, includeFields, allProperties, traverseSuperClasses);
+    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
+        return getAllProperties(names, cNode, cNode, includeProperties, includeFields, allProperties, traverseSuperClasses);
     }
 
-    private static List<PropertyNode> getAllFields(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
+    private static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses) {
         final List<PropertyNode> result;
         if (cNode == ClassHelper.OBJECT_TYPE || !traverseSuperClasses) {
             result = new ArrayList<PropertyNode>();
         } else {
-            result = getAllFields(names, origType, cNode.getSuperClass(), includeProperties, includeFields, allProperties, true);
+            result = getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, allProperties, true);
         }
         if (includeProperties) {
             for (PropertyNode pNode : cNode.getProperties()) {
