@@ -168,7 +168,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             initialCapacity += string.length();
         }
 
-        initialCapacity += values.length * Math.max(initialCapacity / strings.length, 1);
+        initialCapacity += values.length * Math.max(initialCapacity / strings.length, 8);
 
         return Math.max((int) (initialCapacity  * 1.2), 16);
     }
