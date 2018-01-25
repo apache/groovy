@@ -51,10 +51,11 @@ public class ExtensionModuleRegistry {
     }
 
     public boolean hasModule(final String moduleName) {
-        for (ExtensionModule module : modules) {
-            if (module.getName().equals(moduleName)) return true;
+        if (null == getModule(moduleName)) {
+            return false;
         }
-        return false;
+
+        return true;
     }
 
     public ExtensionModule getModule(final String moduleName) {
