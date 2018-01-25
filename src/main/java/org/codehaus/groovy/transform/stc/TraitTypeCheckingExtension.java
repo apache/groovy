@@ -38,9 +38,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClas
 
 /**
  * A type checking extension that will take care of handling errors which are specific to traits. In particular, it will
- * hanldle the "super" method calls within a trait.
+ * handle the "super" method calls within a trait.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
@@ -78,7 +77,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                 } else if (isThisTraitReceiver(var)) {
                     type = receiver;
                 }
-                if (type != null && Traits.isTrait(type)) {
+                if (type != null && Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
                     ClassNode helper = Traits.findHelper(type);
                     Parameter[] params = new Parameter[argumentTypes.length + 1];
                     params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");

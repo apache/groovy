@@ -77,11 +77,27 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it - 2 } }
         ''', 'Cannot find matching method java.lang.Object#minus(int)'
     }
-    void testShouldNotAllowMinusBynUntypedVariable() {
+    void testShouldNotAllowMinusByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 - it } }
         ''', 'Cannot find matching method int#minus(java.lang.Object)'
+    }
+
+    // GROOVY-7929
+    void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
+        shouldFailWithMessages '''
+            class C1 {
+                def c1() { }
+            }
+            @groovy.transform.CompileStatic
+            @groovy.transform.SelfType(C1)
+            trait TT {
+                def foo() {
+                    c2()
+                }
+            }
+        ''', 'Cannot find matching method <UnionType:C1+TT>#c2'
     }
 
     void testGroovy5444() {
