@@ -485,7 +485,7 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         
             public static void p() {
-                Function<Integer, String> f = (Integer e) -> 'a' + e
+                Function<Integer, String> f = (Integer e) -> 'a' + e // STC can not infer the type of `e`, so we have to specify the type `Integer` by ourselves
                 assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
             }
         }
@@ -518,6 +518,85 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         }
         
+        '''
+    }
+
+    void testFunctionWithNestedLambda() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                [1, 2].stream().forEach(e -> {
+                    def list = ['a', 'b'].stream().map(f -> f + e).toList()
+                    if (1 == e) {
+                        assert ['a1', 'b1'] == list
+                    } else if (2 == e) {
+                        assert ['a2', 'b2'] == list
+                    }
+                })
+                
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithNestedLambda2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                def list = ['a', 'b'].stream()
+                .map(e -> {
+                    [1, 2].stream().map(f -> e + f).toList()
+                }).toList()
+                
+                assert ['a1', 'a2'] == list[0]
+                assert ['b1', 'b2'] == list[1]
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithNestedLambda3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                def list = ['a', 'b'].stream()
+                .map(e -> {
+                    Function<Integer, String> x = (Integer f) -> e + f
+                    [1, 2].stream().map(x).toList()
+                }).toList()
+                
+                assert ['a1', 'a2'] == list[0]
+                assert ['b1', 'b2'] == list[1]
+            }
+        }
         '''
     }
 }

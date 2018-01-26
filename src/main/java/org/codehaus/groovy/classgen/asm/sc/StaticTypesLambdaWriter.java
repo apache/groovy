@@ -107,7 +107,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         ClassNode classNode = controller.getClassNode();
         boolean isInterface = classNode.isInterface();
-        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0));
+        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0), abstractMethodNode);
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
         newGroovyLambdaInstanceAndLoad(lambdaClassNode, syntheticLambdaMethodNode);
@@ -259,10 +259,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return parameterType.redirect().isInterface() && !parameterType.redirect().getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty();
     }
 
-    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods) {
+    public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
         ClassNode lambdaClass = lambdaClassMap.get(expression);
         if (lambdaClass == null) {
-            lambdaClass = createLambdaClass(expression, mods);
+            lambdaClass = createLambdaClass(expression, mods, abstractMethodNode);
             lambdaClassMap.put(expression, lambdaClass);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(ClassHelper.GENERATED_LAMBDA_TYPE);
@@ -271,7 +271,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return lambdaClass;
     }
 
-    protected ClassNode createLambdaClass(LambdaExpression expression, int mods) {
+    protected ClassNode createLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
         ClassNode outerClass = controller.getOutermostClass();
         ClassNode classNode = controller.getClassNode();
         String name = genLambdaClassName();
@@ -290,7 +290,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             answer.setScriptBody(true);
         }
 
-        MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, answer);
+        MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, answer, abstractMethodNode);
         Parameter[] localVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
 
         addFieldsAndGettersForLocalVariables(answer, localVariableParameters);
@@ -312,9 +312,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 + controller.getContext().getNextLambdaInnerName(outerClass, classNode, methodNode);
     }
 
-    private MethodNode addSyntheticLambdaMethodNode(LambdaExpression expression, InnerClassNode answer) {
+    private MethodNode addSyntheticLambdaMethodNode(LambdaExpression expression, InnerClassNode answer, MethodNode abstractMethodNode) {
         Parameter[] parametersWithExactType = createParametersWithExactType(expression); // expression.getParameters();
-        ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
+//        ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //abstractMethodNode.getReturnType();
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
 
@@ -325,7 +325,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 answer.addMethod(
                         DO_CALL,
                         Opcodes.ACC_PUBLIC,
-                        returnType,
+                        abstractMethodNode.getReturnType() /*ClassHelper.OBJECT_TYPE*/ /*returnType*/,
                         methodParameterList.toArray(Parameter.EMPTY_ARRAY),
                         ClassNode.EMPTY_ARRAY,
                         expression.getCode()
