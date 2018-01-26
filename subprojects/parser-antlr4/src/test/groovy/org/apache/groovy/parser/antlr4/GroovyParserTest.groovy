@@ -266,6 +266,10 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Synchronized_01.groovy')
     }
 
+    void "test groovy core - Break"() {
+        doTest('core/Break_01.groovy')
+    }
+
     void "test groovy core - Return"() {
         doTest('core/Return_01.groovy')
     }
