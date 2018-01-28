@@ -179,12 +179,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
-            superList = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true);
+            superList = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true, true);
         } else {
             superList = new ArrayList<PropertyNode>();
         }
 
-        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false);
+        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false, true);
 
         if (makeImmutable) {
             boolean specialHashMapCase = (ImmutableASTTransformation.isSpecialHashMapCase(list) && superList.isEmpty()) ||
