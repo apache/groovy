@@ -111,6 +111,11 @@ public @interface MapConstructor {
     boolean includeSuperProperties() default false;
 
     /**
+     * Include fields from super classes in the constructor.
+     */
+    boolean includeSuperFields() default false;
+
+    /**
      * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
      * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
      * specification.
