@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.transform.KnownImmutable;
+import groovy.transform.ImmutableBase;
 import groovy.transform.TupleConstructor;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -40,6 +40,7 @@ import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -83,7 +84,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
-    private static final ClassNode IMMUTABLE_CLASS_TYPE = makeWithoutCaching(KnownImmutable.class, false);
+    private static final Class<? extends Annotation> IMMUTABLE_BASE_CLASS = ImmutableBase.class;
+    private static final ClassNode IMMUTABLE_BASE_TYPE = makeWithoutCaching(IMMUTABLE_BASE_CLASS, false);
     private static final Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -118,7 +120,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean defaults = !memberHasValue(anno, "defaults", false);
             boolean useSetters = memberHasValue(anno, "useSetters", true);
             boolean allProperties = memberHasValue(anno, "allProperties", true);
-            boolean makeImmutable = memberHasValue(anno, "makeImmutable", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
@@ -137,7 +138,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
 
             createConstructor(this, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties,
-                    callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties, makeImmutable,
+                    callSuper, force, excludes, includes, useSetters, defaults, allNames, allProperties,
                     sourceUnit, (ClosureExpression) pre, (ClosureExpression) post);
 
             if (pre != null) {
@@ -163,18 +164,17 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
-                                         boolean includeProperties, boolean includeSuperFields, boolean
-                                                 includeSuperProperties, boolean callSuper, boolean force,
-                                         List<String> excludes, final List<String> includes, boolean useSetters, boolean
-                                                 defaults, boolean allNames, SourceUnit sourceUnit, ClosureExpression
-                                                 pre, ClosureExpression post) {
-        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames, false, false, sourceUnit, pre, post);
+                                         boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties,
+                                         boolean callSuper, boolean force, List<String> excludes, final List<String> includes,
+                                         boolean useSetters, boolean defaults, boolean allNames,
+                                         SourceUnit sourceUnit, ClosureExpression pre, ClosureExpression post) {
+        createConstructor(xform, cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters, defaults, allNames,false, sourceUnit, pre, post);
     }
 
     public static void createConstructor(AbstractASTTransformation xform, ClassNode cNode, boolean includeFields,
                                          boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties,
                                          boolean callSuper, boolean force, List<String> excludes, final List<String> includes,
-                                         boolean useSetters, boolean defaults, boolean allNames, boolean allProperties, boolean makeImmutable,
+                                         boolean useSetters, boolean defaults, boolean allNames, boolean allProperties,
                                          SourceUnit sourceUnit, ClosureExpression pre, ClosureExpression post) {
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
@@ -186,6 +186,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false, true);
 
+        List<AnnotationNode> annotations = cNode.getAnnotations(IMMUTABLE_BASE_TYPE);
+        AnnotationNode annoImmutable = annotations.isEmpty() ? null : annotations.get(0);
+        boolean makeImmutable = annoImmutable != null;
         if (makeImmutable) {
             boolean specialHashMapCase = (ImmutableASTTransformation.isSpecialHashMapCase(list) && superList.isEmpty()) ||
                     (ImmutableASTTransformation.isSpecialHashMapCase(superList) && list.isEmpty());

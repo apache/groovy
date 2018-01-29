@@ -232,13 +232,6 @@ public @interface TupleConstructor {
     boolean force() default false;
 
     /**
-     * Whether immutable pre-cautions (defensive copying, cloning, etc.) should be applied to incoming/outgoing properties.
-     *
-     * @since 2.5.0
-     */
-    boolean makeImmutable() default false;
-
-    /**
      * Used to set whether default value processing is enabled (the default) or disabled.
      *
      * By default, every constructor parameter is given a default value. This value will

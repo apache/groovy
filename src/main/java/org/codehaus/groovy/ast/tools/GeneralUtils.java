@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -599,6 +600,22 @@ public class GeneralUtils {
 
     public static BooleanExpression isZeroX(Expression expr) {
         return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(0)));
+    }
+
+    public static ListExpression list2args(List args) {
+        ListExpression result = new ListExpression();
+        for (Object o : args) {
+            result.addExpression(new ConstantExpression(o));
+        }
+        return result;
+    }
+
+    public static ListExpression classList2args(List<String> args) {
+        ListExpression result = new ListExpression();
+        for (Object o : args) {
+            result.addExpression(new ClassExpression(ClassHelper.make(o.toString())));
+        }
+        return result;
     }
 
     public static BinaryExpression ltX(Expression lhv, Expression rhv) {
