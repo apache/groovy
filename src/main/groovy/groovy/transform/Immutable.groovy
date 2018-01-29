@@ -174,8 +174,8 @@ package groovy.transform
 @ToString(cache = true, includeSuperProperties = true)
 @EqualsAndHashCode(cache = true)
 @ImmutableBase
-@TupleConstructor(makeImmutable = true, defaults = false)
-@MapConstructor(makeImmutable = true, noArg = true, includeSuperProperties = true)
+@TupleConstructor(defaults = false)
+@MapConstructor(noArg = true, includeSuperProperties = true)
 @KnownImmutable
 @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @interface Immutable { }
