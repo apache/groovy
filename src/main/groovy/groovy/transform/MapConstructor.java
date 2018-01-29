@@ -96,11 +96,6 @@ public @interface MapConstructor {
     boolean includeFields() default false;
 
     /**
-     * Whether immutable pre-cautions (defensive copying, cloning, etc.) should be applied to incoming/outgoing properties.
-     */
-    boolean makeImmutable() default false;
-
-    /**
      * Include properties in the constructor.
      */
     boolean includeProperties() default true;
