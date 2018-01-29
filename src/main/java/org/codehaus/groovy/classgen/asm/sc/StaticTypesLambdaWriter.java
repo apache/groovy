@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -53,11 +54,14 @@ import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
 /**
@@ -71,6 +75,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private static final String LAMBDA_THIS = "__lambda_this";
     public static final String INIT = "<init>";
     public static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
+    public static final String LAMBDA_WRAPPER = "__lambda_wrapper";
+    public static final String SAM_NAME = "__SAM_NAME";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -107,10 +113,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         ClassNode classNode = controller.getClassNode();
         boolean isInterface = classNode.isInterface();
-        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0), abstractMethodNode);
+        ClassNode lambdaClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0) | ACC_SYNTHETIC, abstractMethodNode);
         MethodNode syntheticLambdaMethodNode = lambdaClassNode.getMethods(DO_CALL).get(0);
 
-        newGroovyLambdaInstanceAndLoad(lambdaClassNode, syntheticLambdaMethodNode);
+        BytecodeVariable lambdaWrapperVariable = newGroovyLambdaWrapperAndLoad(lambdaClassNode, syntheticLambdaMethodNode);
 
         loadEnclosingClassInstance();
 
@@ -128,28 +134,64 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
             // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
-            //       Groovy will `POP` twice...(expecting `POP` only once), as a hack, `DUP` to duplicate the element of operand stack:
+            //       Groovy will `POP` multiple times...(expecting `POP` only once), as a hack, `DUP` to duplicate the element of operand stack:
             /*
+               L2
+                ASTORE 0
+                ALOAD 0
+                ACONST_NULL
                 INVOKEDYNAMIC apply(LTest1$_p_lambda1;LTest1;)Ljava/util/function/Function; [
                   // handle kind 0x6 : INVOKESTATIC
                   java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
                   // arguments:
                   (Ljava/lang/Object;)Ljava/lang/Object;,
                   // handle kind 0x5 : INVOKEVIRTUAL
-                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/String;,
-                  (Ljava/lang/Integer;)Ljava/lang/String;
+                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/Object;,
+                  (Ljava/lang/Integer;)Ljava/lang/Object;
                 ]
-                DUP           <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
-                ASTORE 0
-               L2
+                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
+                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
+                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
+                DUP
                 ALOAD 0
+                SWAP
+                INVOKEVIRTUAL groovy/lang/Lambda.setLambdaObject (Ljava/lang/Object;)V
+                LDC Ljava/util/function/Function;.class
+                INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.castToType (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
+                CHECKCAST java/util/function/Function
+                ASTORE 1
+               L3
+                ALOAD 1
+                POP
+                POP
                 POP
                 POP
             */
 
             mv.visitInsn(DUP);
+
+            mv.visitInsn(DUP);
+            mv.visitInsn(DUP);
         }
 
+
+        saveLambdaObjectInWrapper(lambdaType, lambdaWrapperVariable);
+    }
+
+    private void saveLambdaObjectInWrapper(ClassNode lambdaType, BytecodeVariable lambdaWrapperVariable) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
+        mv.visitInsn(DUP);
+        operandStack.push(lambdaType.redirect());
+        operandStack.loadOrStoreVariable(lambdaWrapperVariable, false);
+        operandStack.push(ClassHelper.LAMBDA_TYPE);
+        operandStack.swap();
+
+        mv.visitMethodInsn(
+                INVOKEVIRTUAL, "groovy/lang/Lambda", "setLambdaObject", "(Ljava/lang/Object;)V", false);
+
+        operandStack.remove(1);
     }
 
     private ClassNode getLambdaType(LambdaExpression expression) {
@@ -174,7 +216,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         }
     }
 
-    private void newGroovyLambdaInstanceAndLoad(ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode) {
+    private BytecodeVariable newGroovyLambdaWrapperAndLoad(ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         String lambdaClassInternalName = BytecodeHelper.getClassInternalName(lambdaClassNode);
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
@@ -197,7 +239,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         ConstructorNode constructorNode = constructorNodeList.get(0);
         Parameter[] lambdaClassConstructorParameters = constructorNode.getParameters();
         mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, INIT, BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaClassConstructorParameters), lambdaClassNode.isInterface());
-        controller.getOperandStack().replace(ClassHelper.LAMBDA_TYPE, lambdaClassConstructorParameters.length);
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.replace(ClassHelper.LAMBDA_TYPE, lambdaClassConstructorParameters.length);
+
+        BytecodeVariable variable = controller.getCompileStack().defineVariable(new VariableExpression(LAMBDA_WRAPPER, ClassHelper.LAMBDA_TYPE), false);
+        operandStack.storeVar(variable);
+
+        operandStack.loadOrStoreVariable(variable, false);
+
+        return variable;
     }
 
     private Parameter[] loadSharedVariables(MethodNode syntheticLambdaMethodNode) {
@@ -289,6 +339,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         if (controller.isInScriptBody()) {
             answer.setScriptBody(true);
         }
+
+        answer.addField(SAM_NAME, ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.STRING_TYPE, new ConstantExpression(abstractMethodNode.getName()));
 
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, answer, abstractMethodNode);
         Parameter[] localVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
