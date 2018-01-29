@@ -133,6 +133,7 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.LAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
@@ -4098,6 +4099,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (receiver.isInterface()) {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
+
+                if (!receiver.getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty()) {
+                    methods.addAll(LAMBDA_TYPE.getDeclaredMethods("call"));
+                }
             }
             // TODO: investigate the trait exclusion a bit further, needed otherwise
             // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying

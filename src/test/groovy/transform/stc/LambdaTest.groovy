@@ -405,16 +405,11 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
     void testFunctionCall() {
         if (SKIP_ERRORS) return
 
-        /* FIXME
-        [Static type checking] - Cannot find matching method java.lang.Object#plus(int). Please check if the declared type is correct and if the method exists.
- @ line 13, column 35.
-                   assert 2 == (e -> e + 1)(1)
-         */
-
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
         import java.util.stream.Stream
+        import java.util.function.Function
         
         @CompileStatic
         public class Test1 {
@@ -423,7 +418,8 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
             }
         
             public static void p() {
-                assert 2 == (e -> e + 1)(1)
+                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1) // Casting is required...  [Static type checking] - Incompatible generic argument types. Cannot assign java.util.function.Function <java.lang.Integer, int> to: java.util.function.Function <Integer, Integer>
+                assert 2 == f(1)
             }
         }
         '''
