@@ -97,18 +97,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
 
-        List<MethodNode> abstractMethodNodeList =
-                lambdaType.redirect().getMethods().stream()
-                        .filter(MethodNode::isAbstract)
-                        .collect(Collectors.toList());
-
-        if (!(ClassHelper.isFunctionInterface(lambdaType.redirect()) && abstractMethodNodeList.size() == 1)) {
+        if (!ClassHelper.isFunctionInterface(lambdaType.redirect())) {
             // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
 
-        MethodNode abstractMethodNode = abstractMethodNodeList.get(0);
+        MethodNode abstractMethodNode = ClassHelper.findSAM(lambdaType.redirect());
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
         ClassNode classNode = controller.getClassNode();

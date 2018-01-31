@@ -480,6 +480,10 @@ public class InvocationWriter {
     }
 
     private boolean isFunctionInterfaceCall(MethodCallExpression call) {
+        if (!"call".equals(call.getMethodAsString())) {
+            return false;
+        }
+
         ClassNode type = call.getObjectExpression().getType();
 
         if (ClassHelper.isFunctionInterface(type)) {
