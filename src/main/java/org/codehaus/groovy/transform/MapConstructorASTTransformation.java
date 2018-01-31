@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.transform.ImmutableBase;
 import groovy.transform.MapConstructor;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -40,7 +39,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -57,10 +55,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -69,8 +67,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.createConstructorMapCommon;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.createConstructorStatement;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.createConstructorStatementMapSpecial;
-import static org.codehaus.groovy.transform.ImmutableASTTransformation.getKnownImmutableClasses;
-import static org.codehaus.groovy.transform.ImmutableASTTransformation.getKnownImmutables;
 
 /**
  * Handles generation of code for the @MapConstructor annotation.
@@ -82,8 +78,6 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
-    private static final Class<? extends Annotation> IMMUTABLE_BASE_CLASS = ImmutableBase.class;
-    private static final ClassNode IMMUTABLE_BASE_TYPE = makeWithoutCaching(IMMUTABLE_BASE_CLASS, false);
     private static final ClassNode IMMUTABLE_XFORM_TYPE = make(ImmutableASTTransformation.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -148,11 +142,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
         List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false, true);
 
-        List<AnnotationNode> annotations = cNode.getAnnotations(IMMUTABLE_BASE_TYPE);
-        AnnotationNode annoImmutable = annotations.isEmpty() ? null : annotations.get(0);
-        boolean makeImmutable = annoImmutable != null;
-        final List<String> knownImmutableClasses = getKnownImmutableClasses(xform, annoImmutable);
-        final List<String> knownImmutables = getKnownImmutables(xform, annoImmutable);
+        boolean makeImmutable = ImmutableASTTransformation.makeImmutable(cNode);
 
         Parameter map = param(MAP_TYPE, "args");
         final BlockStatement body = new BlockStatement();
@@ -165,9 +155,10 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         superList.addAll(list);
         boolean specialHashMapCase = ImmutableASTTransformation.isSpecialHashMapCase(superList);
         if (!specialHashMapCase) {
-            processProps(xform, cNode, makeImmutable && !specialHashMapCase, useSetters, allNames, excludes, includes, superList, map, inner, knownImmutables, knownImmutableClasses);
+            processProps(xform, cNode, makeImmutable && !specialHashMapCase, useSetters, allNames, excludes, includes, superList, map, inner);
+            body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         }
-        body.addStatement(ifS(notNullX(varX("args")), inner));
+        body.addStatement(inner);
         if (post != null) {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(post);
             body.addStatement(transformed.getCode());
@@ -186,12 +177,12 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static void processProps(AbstractASTTransformation xform, ClassNode cNode, boolean makeImmutable, boolean useSetters, boolean allNames, List<String> excludes, List<String> includes, List<PropertyNode> superList, Parameter map, BlockStatement inner, List<String> knownImmutables, List<String> knownImmutableClasses) {
+    private static void processProps(AbstractASTTransformation xform, ClassNode cNode, boolean makeImmutable, boolean useSetters, boolean allNames, List<String> excludes, List<String> includes, List<PropertyNode> superList, Parameter map, BlockStatement inner) {
         for (PropertyNode pNode : superList) {
             String name = pNode.getName();
-            if (shouldSkip(name, excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             if (makeImmutable) {
-                inner.addStatement(createConstructorStatement(xform, cNode, pNode, knownImmutables, knownImmutableClasses));
+                inner.addStatement(createConstructorStatement(xform, cNode, pNode, true));
             } else {
                 assignField(useSetters, map, inner, name);
             }
