@@ -82,7 +82,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
             ClassNode sn = enumClass.getSuperClass();
             List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
             if (sctors.isEmpty()) {
-                addMapConstructors(enumClass, false);
+                addMapConstructors(enumClass);
             } else {
                 for (ConstructorNode constructorNode : sctors) {
                     ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
@@ -90,7 +90,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } else {
-            addMapConstructors(enumClass, false);
+            addMapConstructors(enumClass);
         }
     }
 
@@ -143,8 +143,8 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    public static void addMapConstructors(ClassNode enumClass, boolean hasNoArg) {
-        TupleConstructorASTTransformation.addMapConstructors(enumClass, hasNoArg, "One of the enum constants for enum " + enumClass.getName() +
+    private static void addMapConstructors(ClassNode enumClass) {
+        TupleConstructorASTTransformation.addMapConstructors(enumClass, false, "One of the enum constants for enum " + enumClass.getName() +
                 " was initialized with null. Please use a non-null value or define your own constructor.");
     }
 
