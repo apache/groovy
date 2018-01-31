@@ -484,9 +484,17 @@ public class InvocationWriter {
             return false;
         }
 
-        ClassNode type = call.getObjectExpression().getType();
+        Expression objectExpression = call.getObjectExpression();
 
-        if (ClassHelper.isFunctionInterface(type)) {
+        if (null == objectExpression) {
+            return false;
+        }
+
+        if (AsmClassGenerator.isThisExpression(objectExpression)) {
+            return false;
+        }
+
+        if (ClassHelper.isFunctionInterface(objectExpression.getType())) {
             return true;
         }
 
