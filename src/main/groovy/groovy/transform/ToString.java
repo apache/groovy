@@ -283,20 +283,30 @@ public @interface ToString {
     boolean includeSuper() default false;
 
     /**
-     * Whether to include super properties in the generated toString.
-     * @since 2.4.0
-     */
-    boolean includeSuperProperties() default false;
-
-    /**
      * Whether to include names of properties/fields in the generated toString.
      */
     boolean includeNames() default false;
 
     /**
-     * Include fields as well as properties in the generated toString.
+     * Include fields as well as properties in the generated toString. Fields come after any properties.
      */
     boolean includeFields() default false;
+
+    /**
+     * Whether to include super properties in the generated toString.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come after
+     * the members from a subclass (unless 'includes' is used to determine the order).
+     *
+     * @since 2.4.0
+     */
+    boolean includeSuperProperties() default false;
+
+    /**
+     * Include super fields in the generated toString.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come after
+     * the members from a subclass (unless 'includes' is used to determine the order).
+     */
+    boolean includeSuperFields() default false;
 
     /**
      * Don't display any fields or properties with value <tt>null</tt>.
@@ -317,6 +327,8 @@ public @interface ToString {
      * appropriate getters and setters). Groovy also treats any explicitly created getXxx() or isYyy()
      * methods as property getters as per the JavaBean specification. Old versions of Groovy did not.
      * So set this flag to false for the old behavior or if you want to explicitly exclude such properties.
+     * JavaBean properties come after any Groovy properties but before any fields for a given class
+     * (unless 'includes' is used to determine the order).
      *
      * @since 2.5
      */

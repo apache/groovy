@@ -136,11 +136,11 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
-            superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, true, true);
+            superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, true);
         } else {
             superList = new ArrayList<PropertyNode>();
         }
-        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false, true);
+        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, false, allProperties, false, true);
 
         boolean makeImmutable = ImmutableASTTransformation.makeImmutable(cNode);
 

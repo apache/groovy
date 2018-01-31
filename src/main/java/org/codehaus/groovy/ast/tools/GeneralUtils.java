@@ -464,16 +464,18 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses, boolean skipReadonly) {
-        return getAllProperties(names, cNode, cNode, includeProperties, includeFields, allProperties, traverseSuperClasses, skipReadonly);
+    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly) {
+        return getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly);
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean allProperties, boolean traverseSuperClasses, boolean skipReadonly) {
-        final List<PropertyNode> result;
-        if (cNode == ClassHelper.OBJECT_TYPE || !traverseSuperClasses) {
-            result = new ArrayList<PropertyNode>();
-        } else {
-            result = getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, allProperties, true, skipReadonly);
+    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly) {
+        return getAllProperties(names, origType, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly, false);
+    }
+
+    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly, boolean reverse) {
+        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+        if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && !reverse) {
+            result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         if (includeProperties) {
             for (PropertyNode pNode : cNode.getProperties()) {
@@ -482,8 +484,8 @@ public class GeneralUtils {
                     names.add(pNode.getName());
                 }
             }
-            if (allProperties) {
-                BeanUtils.addPseudoProperties(origType, cNode, result, names, false, false, true);
+            if (includePseudoGetters || includePseudoSetters) {
+                BeanUtils.addPseudoProperties(origType, cNode, result, names, false, includePseudoGetters, includePseudoSetters);
             }
         }
         if (includeFields) {
@@ -500,6 +502,9 @@ public class GeneralUtils {
                 result.add(new PropertyNode(fNode, fNode.getModifiers(), null, null));
                 names.add(fNode.getName());
             }
+        }
+        if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && reverse) {
+            result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         return result;
     }
