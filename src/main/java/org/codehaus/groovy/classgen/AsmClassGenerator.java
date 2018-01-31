@@ -2181,7 +2181,4 @@ public class AsmClassGenerator extends ClassGenerator {
         return innerClasses.add(innerClass);
     }
 
-    public ClassVisitor getClassVisitor() {
-        return cv;
-    }
 }
