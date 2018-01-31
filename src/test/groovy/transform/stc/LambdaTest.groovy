@@ -444,6 +444,27 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
+    void testFunctionCall3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1) // Casting is required...  [Static type checking] - Incompatible generic argument types. Cannot assign java.util.function.Function <java.lang.Integer, int> to: java.util.function.Function <Integer, Integer>
+                assert 2 == f.apply(1)
+            }
+        }
+        '''
+    }
+
     void testConsumerCall() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -484,6 +505,29 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
                 int r = 1
                 Consumer<Integer> c = (Integer e) -> { r += e }
                 c(2)
+                assert 3 == r
+            }
+        }
+        '''
+    }
+
+    void testConsumerCall3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Consumer
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                int r = 1
+                Consumer<Integer> c = (Integer e) -> { r += e }
+                c.accept(2)
                 assert 3 == r
             }
         }

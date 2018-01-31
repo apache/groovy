@@ -20,6 +20,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -39,6 +40,7 @@ import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
@@ -410,12 +412,18 @@ java.lang.ArrayIndexOutOfBoundsException: size==0
         return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 
-    private static final class TransformationVisitor extends CorrectAccessedVariableVisitor {
+    private static final class TransformationVisitor extends ClassCodeVisitorSupport {
+        private CorrectAccessedVariableVisitor correctAccessedVariableVisitor;
         private Parameter enclosingThisParameter;
 
         public TransformationVisitor(InnerClassNode icn, Parameter enclosingThisParameter) {
-            super(icn);
+            correctAccessedVariableVisitor = new CorrectAccessedVariableVisitor(icn);
             this.enclosingThisParameter = enclosingThisParameter;
+        }
+
+        @Override
+        public void visitVariableExpression(VariableExpression expression) {
+            correctAccessedVariableVisitor.visitVariableExpression(expression);
         }
 
         @Override
@@ -436,6 +444,11 @@ java.lang.ArrayIndexOutOfBoundsException: size==0
             }
 
             super.visitMethodCallExpression(call);
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
         }
     }
 }

@@ -19,9 +19,9 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -44,7 +44,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -332,7 +331,7 @@ public class ClosureWriter {
                 + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode);
     }
 
-    protected static class CorrectAccessedVariableVisitor extends ClassCodeVisitorSupport {
+    protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
         private InnerClassNode icn;
 
         public CorrectAccessedVariableVisitor(InnerClassNode icn) {
@@ -349,11 +348,6 @@ public class ClosureWriter {
             if (fn != null) { // only overwrite if we find something more specific
                 expression.setAccessedVariable(fn);
             }
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return null;
         }
     }
 
