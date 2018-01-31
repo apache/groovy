@@ -531,7 +531,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             this(w, first, null);
         }
 
-        StreamingJsonDelegate(Writer w, boolean first, JsonGenerator generator) {
+        public StreamingJsonDelegate(Writer w, boolean first, JsonGenerator generator) {
             this.writer = w;
             this.first = first;
             this.generator = (generator != null) ? generator : JsonOutput.DEFAULT_GENERATOR;
