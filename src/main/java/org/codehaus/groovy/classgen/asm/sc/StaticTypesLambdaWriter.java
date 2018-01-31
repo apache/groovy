@@ -96,7 +96,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
 
-        if (!ClassHelper.isFunctionInterface(lambdaType.redirect())) {
+        if (!ClassHelper.isSAMType(lambdaType.redirect())) {
             // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;

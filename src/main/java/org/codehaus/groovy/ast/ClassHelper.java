@@ -395,10 +395,6 @@ public class ClassHelper {
         return findSAM(type) != null;
     }
 
-    public static boolean isFunctionInterface(ClassNode type) {
-        return type.isInterface() && !type.getAnnotations(FunctionalInterface_Type).isEmpty() && isSAMType(type);
-    }
-
     /**
      * Returns the single abstract method of a class node, if it is a SAM type, or null otherwise.
      *
