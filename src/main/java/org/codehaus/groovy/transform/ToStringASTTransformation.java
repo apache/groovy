@@ -44,7 +44,9 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
@@ -54,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getterThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
@@ -88,6 +91,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
+            boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", true);
             boolean cacheToString = memberHasValue(anno, "cache", true);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
@@ -107,7 +111,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes != null ? DefaultGroovyMethods.minus(includes, "super") : null, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames, includeSuperFields);
         }
     }
 
@@ -132,10 +136,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties) {
-        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, false);
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, false, false);
     }
 
-    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames) {
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -147,11 +151,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             final Expression savedToString = varX(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
-                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames))
+                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames))
             ));
             tempToString = savedToString;
         } else {
-            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames);
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames);
         }
         body.addStatement(returnS(tempToString));
 
@@ -171,7 +175,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         boolean canBeSelf;
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, boolean includeSuperFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
         // def _result = new StringBuilder()
         final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
@@ -185,21 +189,26 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
         body.addStatement(appendS(result, constX(className + "(")));
 
-        // append properties
-        List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, includeSuperProperties, false, allProperties);
-        for (PropertyNode pNode : pList) {
-            if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
-            Expression getter = getterThisX(cNode, pNode);
-            elements.add(new ToStringElement(getter, pNode.getName(), canBeSelf(cNode, pNode.getOriginType())));
+        Set<String> names = new HashSet<String>();
+        List<PropertyNode> superList;
+        if (includeSuperProperties || includeSuperFields) {
+            superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, false, true, true, true);
+        } else {
+            superList = new ArrayList<PropertyNode>();
         }
+        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, allProperties, false, false, true);
+        list.addAll(superList);
 
-        // append fields if needed
-        if (includeFields) {
-            List<FieldNode> fList = new ArrayList<FieldNode>();
-            fList.addAll(getInstanceNonPropertyFields(cNode));
-            for (FieldNode fNode : fList) {
-                if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
-                elements.add(new ToStringElement(varX(fNode), fNode.getName(), canBeSelf(cNode, fNode.getType())));
+        for (PropertyNode pNode : list) {
+            String name = pNode.getName();
+            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
+            FieldNode fNode = pNode.getField();
+            if (!cNode.hasProperty(name) && fNode.getDeclaringClass() != null) {
+                // it's really just a field
+                elements.add(new ToStringElement(varX(fNode), name, canBeSelf(cNode, fNode.getType())));
+            } else {
+                Expression getter = getterThisX(cNode, pNode);
+                elements.add(new ToStringElement(getter, name, canBeSelf(cNode, pNode.getType())));
             }
         }
 
