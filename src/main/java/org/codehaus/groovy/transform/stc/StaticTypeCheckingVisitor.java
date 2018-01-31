@@ -281,13 +281,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
     public static final MethodNode CLOSURE_CALL_VARGS;
 
+    public static final String CALL = "call";
+
     static {
         // Cache closure call methods
-        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
-        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod(CALL, Parameter.EMPTY_ARRAY);
+        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod(CALL, new Parameter[]{
                 new Parameter(OBJECT_TYPE, "arg")
         });
-        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod(CALL, new Parameter[]{
                 new Parameter(OBJECT_TYPE.makeArray(), "args")
         });
     }
@@ -3404,7 +3406,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        if (objectExpression instanceof ClosureExpression && ("call".equals(name)||"doCall".equals(name))) return true;
+        if (objectExpression instanceof ClosureExpression && (CALL.equals(name)||"doCall".equals(name))) return true;
         if (objectExpression == VariableExpression.THIS_EXPRESSION) {
             FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
             if (fieldNode != null) {
@@ -3414,7 +3416,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } else {
-            if (!"call".equals(name) && !"doCall".equals(name)) return false;
+            if (!CALL.equals(name) && !"doCall".equals(name)) return false;
         }
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
@@ -4119,9 +4121,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
 
-                if (ClassHelper.isSAMType(receiver)) {
+                if (CALL.equals(name) && ClassHelper.isSAMType(receiver)) {
                     MethodNode sam = ClassHelper.findSAM(receiver);
-                    MethodNode callMethodNode = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
+                    MethodNode callMethodNode = new MethodNode(CALL, sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
                     callMethodNode.setDeclaringClass(sam.getDeclaringClass());
                     callMethodNode.setSourcePosition(sam);
 
