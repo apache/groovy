@@ -133,7 +133,6 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.LAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
@@ -4100,8 +4099,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
 
-                if (!receiver.getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty()) {
-                    methods.addAll(LAMBDA_TYPE.getDeclaredMethods("call"));
+                if (ClassHelper.isFunctionInterface(receiver)) {
+                    MethodNode sam = ClassHelper.findSAM(receiver);
+                    MethodNode callMethodNode = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
+                    callMethodNode.setDeclaringClass(sam.getDeclaringClass());
+                    callMethodNode.setSourcePosition(sam);
+
+                    methods.addAll(Collections.singletonList(callMethodNode));
                 }
             }
             // TODO: investigate the trait exclusion a bit further, needed otherwise

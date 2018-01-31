@@ -479,11 +479,25 @@ public class InvocationWriter {
         return methodName;
     }
 
+    private boolean isFunctionInterfaceCall(MethodCallExpression call) {
+        ClassNode type = call.getObjectExpression().getType();
+
+        if (ClassHelper.isFunctionInterface(type)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public void writeInvokeMethod(MethodCallExpression call) {
         if (isClosureCall(call)) {
             // let's invoke the closure method
             invokeClosure(call.getArguments(), call.getMethodAsString());
         } else {
+            if (isFunctionInterfaceCall(call)) {
+                call = transformToRealMethodCall(call);
+            }
+
             boolean isSuperMethodCall = usesSuper(call);
             MethodCallerMultiAdapter adapter = invokeMethod;
             if (isSuperMethodCall && call.isSafe()) {
@@ -496,6 +510,21 @@ public class InvocationWriter {
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
         }
+    }
+
+    private MethodCallExpression transformToRealMethodCall(MethodCallExpression call) {
+        ClassNode type = call.getObjectExpression().getType();
+        final MethodNode methodNode = ClassHelper.findSAM(type);
+
+        call = (MethodCallExpression) call.transformExpression(expression -> {
+            if (!(expression instanceof ConstantExpression)) {
+                return expression;
+            }
+
+            return new ConstantExpression(methodNode.getName());
+        });
+        call.setMethodTarget(methodNode);
+        return call;
     }
 
     private boolean isClosureCall(MethodCallExpression call) {

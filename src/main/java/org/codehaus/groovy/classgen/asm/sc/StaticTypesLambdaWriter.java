@@ -102,7 +102,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         .filter(MethodNode::isAbstract)
                         .collect(Collectors.toList());
 
-        if (!(isFunctionInterface(lambdaType) && abstractMethodNodeList.size() == 1)) {
+        if (!(ClassHelper.isFunctionInterface(lambdaType.redirect()) && abstractMethodNodeList.size() == 1)) {
             // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
@@ -300,10 +300,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         .map(e -> e.getType().getTypeClass())
                         .toArray(Class[]::new)
         );
-    }
-
-    private boolean isFunctionInterface(ClassNode parameterType) {
-        return parameterType.redirect().isInterface() && !parameterType.redirect().getAnnotations(ClassHelper.FunctionalInterface_Type).isEmpty();
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
