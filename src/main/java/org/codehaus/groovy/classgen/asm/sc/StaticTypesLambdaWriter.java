@@ -61,7 +61,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
 /**
@@ -111,7 +110,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         ClassNode lambdaWrapperClassNode = getOrAddLambdaClass(expression, ACC_PUBLIC | (isInterface ? ACC_STATIC : 0) | ACC_SYNTHETIC, abstractMethodNode);
         MethodNode syntheticLambdaMethodNode = lambdaWrapperClassNode.getMethods(DO_CALL).get(0);
 
-        BytecodeVariable lambdaWrapperVariable = newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, syntheticLambdaMethodNode);
+        newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, syntheticLambdaMethodNode);
 
         loadEnclosingClassInstance();
 
@@ -145,8 +144,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                   (Ljava/lang/Integer;)Ljava/lang/Object;
                 ]
                 DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
-                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
-                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
                 DUP
                 ALOAD 0
                 SWAP
@@ -159,31 +156,27 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 ALOAD 1
                 POP
                 POP
-                POP
-                POP
             */
 
             mv.visitInsn(DUP);
 
-            mv.visitInsn(DUP);
-            mv.visitInsn(DUP);
+            /*
+org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+General error during class generation: size==0
+
+java.lang.ArrayIndexOutOfBoundsException: size==0
+	at org.codehaus.groovy.classgen.asm.OperandStack.getTopOperand(OperandStack.java:693)
+	at org.codehaus.groovy.classgen.asm.BinaryExpressionHelper.evaluateEqual(BinaryExpressionHelper.java:397)
+	at org.codehaus.groovy.classgen.asm.sc.StaticTypesBinaryExpressionMultiTypeDispatcher.evaluateEqual(StaticTypesBinaryExpressionMultiTypeDispatcher.java:179)
+	at org.codehaus.groovy.classgen.AsmClassGenerator.visitDeclarationExpression(AsmClassGenerator.java:694)
+	at org.codehaus.groovy.ast.expr.DeclarationExpression.visit(DeclarationExpression.java:89)
+	at org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement(StatementWriter.java:633)
+	at org.codehaus.groovy.classgen.AsmClassGenerator.visitExpressionStatement(AsmClassGenerator.java:681)
+	at org.codehaus.groovy.ast.stmt.ExpressionStatement.visit(ExpressionStatement.java:42)
+             */
+//            operandStack.pop();
         }
 
-
-        saveLambdaObjectInWrapper(lambdaWrapperVariable);
-        operandStack.replace(lambdaType.redirect(), 2);
-    }
-
-    private void saveLambdaObjectInWrapper(BytecodeVariable lambdaWrapperVariable) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-
-        mv.visitInsn(DUP);
-        operandStack.loadOrStoreVariable(lambdaWrapperVariable, false);
-        operandStack.swap();
-
-        mv.visitMethodInsn(
-                INVOKEVIRTUAL, "groovy/lang/Lambda", "setLambdaObject", "(Ljava/lang/Object;)V", false);
     }
 
     private ClassNode getLambdaType(LambdaExpression expression) {
@@ -232,9 +225,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         Parameter[] lambdaWrapperClassConstructorParameters = constructorNode.getParameters();
         mv.visitMethodInsn(INVOKESPECIAL, lambdaWrapperClassInternalName, INIT, BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaWrapperClassConstructorParameters), lambdaWrapperClassNode.isInterface());
         OperandStack operandStack = controller.getOperandStack();
-        operandStack.replace(ClassHelper.LAMBDA_TYPE, lambdaWrapperClassConstructorParameters.length);
+        operandStack.replace(ClassHelper.CLOSURE_TYPE, lambdaWrapperClassConstructorParameters.length);
 
-        BytecodeVariable variable = controller.getCompileStack().defineVariable(new VariableExpression(LAMBDA_WRAPPER, ClassHelper.LAMBDA_TYPE), false);
+        BytecodeVariable variable = controller.getCompileStack().defineVariable(new VariableExpression(LAMBDA_WRAPPER, ClassHelper.CLOSURE_TYPE), false);
         operandStack.storeVar(variable);
 
         operandStack.loadOrStoreVariable(variable, false);
@@ -315,7 +308,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         String name = genLambdaClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.LAMBDA_TYPE.getPlainNodeReference());
+        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
         answer.setEnclosingMethod(controller.getMethodNode());
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());

@@ -24,7 +24,6 @@ import groovy.lang.GString;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
-import groovy.lang.Lambda;
 import groovy.lang.MetaClass;
 import groovy.lang.Range;
 import groovy.lang.Reference;
@@ -60,7 +59,7 @@ public class ClassHelper {
     private static final Class[] classes = new Class[]{
             Object.class, Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
             Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
-            Closure.class, Lambda.class, GString.class, List.class, Map.class, Range.class,
+            Closure.class, GString.class, List.class, Map.class, Range.class,
             Pattern.class, Script.class, String.class, Boolean.class,
             Character.class, Byte.class, Short.class, Integer.class, Long.class,
             Double.class, Float.class, BigDecimal.class, BigInteger.class,
@@ -76,7 +75,7 @@ public class ClassHelper {
     public static final ClassNode
             DYNAMIC_TYPE = makeCached(Object.class), OBJECT_TYPE = DYNAMIC_TYPE,
             VOID_TYPE = makeCached(Void.TYPE),
-            CLOSURE_TYPE = makeCached(Closure.class), LAMBDA_TYPE = makeCached(Lambda.class),
+            CLOSURE_TYPE = makeCached(Closure.class),
             GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
             MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
             PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
@@ -116,7 +115,7 @@ public class ClassHelper {
             OBJECT_TYPE,
             boolean_TYPE, char_TYPE, byte_TYPE, short_TYPE,
             int_TYPE, long_TYPE, double_TYPE, float_TYPE,
-            VOID_TYPE, CLOSURE_TYPE, LAMBDA_TYPE, GSTRING_TYPE,
+            VOID_TYPE, CLOSURE_TYPE, GSTRING_TYPE,
             LIST_TYPE, MAP_TYPE, RANGE_TYPE, PATTERN_TYPE,
             SCRIPT_TYPE, STRING_TYPE, Boolean_TYPE, Character_TYPE,
             Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
