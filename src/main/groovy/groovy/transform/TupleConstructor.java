@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of tuple constructors in classes.
- * If the class is also annotated with {@code @KnownImmutable}, then the generated
+ * If the class is also annotated with {@code @ImmutableBase}, then the generated
  * constructor will contain additional code needed for immutable classes.
  *
  * Should be used with care with other annotations which create constructors - see "Known
@@ -198,24 +198,28 @@ public @interface TupleConstructor {
     String[] includes() default {Undefined.STRING};
 
     /**
-     * Include fields in the constructor.
-     */
-    boolean includeFields() default false;
-
-    /**
      * Include properties in the constructor.
      */
     boolean includeProperties() default true;
 
     /**
-     * Include fields from super classes in the constructor.
+     * Include fields in the constructor. Fields come after any properties.
      */
-    boolean includeSuperFields() default false;
+    boolean includeFields() default false;
 
     /**
      * Include properties from super classes in the constructor.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come before
+     * the members from a subclass (unless 'includes' is used to determine the order).
      */
     boolean includeSuperProperties() default false;
+
+    /**
+     * Include fields from super classes in the constructor.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come before
+     * the members from a subclass (unless 'includes' is used to determine the order).
+     */
+    boolean includeSuperFields() default false;
 
     /**
      * Should super properties be called within a call to the parent constructor
@@ -270,6 +274,8 @@ public @interface TupleConstructor {
      * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
      * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
      * specification.
+     * JavaBean properties come after any Groovy properties but before any fields for a given class
+     * (unless 'includes' is used to determine the order).
      *
      * @since 2.5.0
      */

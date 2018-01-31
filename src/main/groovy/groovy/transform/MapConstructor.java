@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of map constructors in classes.
- * If the class is also annotated with {@code @KnownImmutable}, then the generated
+ * If the class is also annotated with {@code @ImmutableBase}, then the generated
  * constructor will contain additional code needed for immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
@@ -91,22 +91,26 @@ public @interface MapConstructor {
     String[] includes() default {Undefined.STRING};
 
     /**
-     * Include fields in the constructor.
-     */
-    boolean includeFields() default false;
-
-    /**
      * Include properties in the constructor.
      */
     boolean includeProperties() default true;
 
     /**
+     * Include fields in the constructor. Fields come after any properties.
+     */
+    boolean includeFields() default false;
+
+    /**
      * Include properties from super classes in the constructor.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come before
+     * the members from a subclass (unless 'includes' is used to determine the order).
      */
     boolean includeSuperProperties() default false;
 
     /**
      * Include fields from super classes in the constructor.
+     * Groovy properties, JavaBean properties and fields (in that order) from superclasses come before
+     * the members from a subclass (unless 'includes' is used to determine the order).
      */
     boolean includeSuperFields() default false;
 
@@ -114,11 +118,13 @@ public @interface MapConstructor {
      * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
      * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
      * specification.
+     * JavaBean properties come after any Groovy properties but before any fields for a given class
+     * (unless 'includes' is used to determine the order).
      */
     boolean allProperties() default false;
 
     /**
-     * By default, properties are set directly using their respective field.
+     * By default, Groovy properties are set directly using their respective field.
      * By setting {@code useSetters=true} then a writable property will be set using its setter.
      * If turning on this flag we recommend that setters that might be called are
      * made null-safe wrt the parameter.

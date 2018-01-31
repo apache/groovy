@@ -267,7 +267,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
             }
             new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
         ''')
-        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true, full:John Smith, senior:false, born:1975)"
+        assert toString == "SportsPerson(title:Mr, cyclist:true, full:John Smith, golfer:false, senior:false, born:1975, adult:true)"
         // same again but with allProperties=false and with @CompileStatic for test coverage purposes
         toString = evaluate('''
             import groovy.transform.*
@@ -294,7 +294,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
             }
             new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
         ''')
-        assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true)"
+        assert toString == "SportsPerson(title:Mr, adult:true, cyclist:true, golfer:false)"
     }
 
     void testSelfReference() {
