@@ -267,6 +267,17 @@ public @interface EqualsAndHashCode {
     boolean useCanEqual() default true;
 
     /**
+     * Whether to include all properties (as per the JavaBean spec) in the generated constructor.
+     * When true, Groovy treats any explicitly created setXxx() methods as property setters as per the JavaBean
+     * specification.
+     * JavaBean properties come after any Groovy properties but before any fields for a given class
+     * (unless 'includes' is used to determine the order).
+     *
+     * @since 2.5.0
+     */
+    boolean allProperties() default false;
+
+    /**
      * Whether to include all fields and/or properties in equals and hashCode calculations, including those
      * with names that are considered internal.
      *
