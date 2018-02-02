@@ -410,7 +410,14 @@ public class ClassHelper {
     public static MethodNode findSAM(ClassNode type) {
         if (!Modifier.isAbstract(type.getModifiers())) return null;
         if (type.isInterface()) {
-            List<MethodNode> methods = type.getMethods();
+            List<MethodNode> methods;
+            if (type.isInterface()) {
+                // e.g. BinaryOperator extends BiFunction, BinaryOperator contains no abstract method, but it is really a SAM
+                methods = type.redirect().getAllDeclaredMethods();
+            } else {
+                methods = type.getMethods();
+            }
+
             MethodNode found = null;
             for (MethodNode mi : methods) {
                 // ignore methods, that are not abstract and from Object
