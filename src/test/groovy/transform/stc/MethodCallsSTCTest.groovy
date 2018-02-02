@@ -1270,7 +1270,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
             
             public static void p() {
-                assert 13 == Stream.of(1, 2, 3).reduce(7, {Integer r, Integer e -> r + e});
+                assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
             }
         }
         '''
