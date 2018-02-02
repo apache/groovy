@@ -534,6 +534,56 @@ TestScript0.groovy: 14: [Static type checking] - Cannot find matching method jav
         '''
     }
 
+    void testSamCall() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                SamCallable c = (int e) -> e
+                assert 1 == c(1)
+            }
+        }
+        
+        @CompileStatic
+        interface SamCallable {
+            int call(int p);
+        }
+        '''
+    }
+
+    void testSamCall2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                SamCallable c = (int e) -> e // This is actually a closure(not a native lambda), because "Functional interface SamCallable is not an interface"
+                assert 1 == c(1)
+            }
+        }
+        
+        @CompileStatic
+        abstract class SamCallable {
+            abstract int call(int p);
+        }
+        '''
+    }
+
     void testFunctionWithUpdatingLocalVariable() {
         assertScript '''
         import groovy.transform.CompileStatic

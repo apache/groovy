@@ -4121,7 +4121,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
 
-                if (CALL.equals(name) && ClassHelper.isSAMType(receiver)) {
+                if (CALL.equals(name) && ClassHelper.isFunctionalInterface(receiver)) {
                     MethodNode sam = ClassHelper.findSAM(receiver);
                     MethodNode callMethodNode = new MethodNode(CALL, sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
                     callMethodNode.setDeclaringClass(sam.getDeclaringClass());

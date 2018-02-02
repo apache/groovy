@@ -395,6 +395,12 @@ public class ClassHelper {
         return findSAM(type) != null;
     }
 
+    public static boolean isFunctionalInterface(ClassNode type) {
+        // Functional interface must be an interface at first, or the following exception will occur:
+        // java.lang.invoke.LambdaConversionException: Functional interface SamCallable is not an interface
+        return type.isInterface() && isSAMType(type);
+    }
+
     /**
      * Returns the single abstract method of a class node, if it is a SAM type, or null otherwise.
      *

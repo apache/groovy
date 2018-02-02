@@ -494,7 +494,7 @@ public class InvocationWriter {
             return false;
         }
 
-        if (ClassHelper.isSAMType(objectExpression.getType())) {
+        if (ClassHelper.isFunctionalInterface(objectExpression.getType())) {
             return true;
         }
 
