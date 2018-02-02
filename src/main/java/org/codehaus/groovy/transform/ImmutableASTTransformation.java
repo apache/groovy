@@ -59,6 +59,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,7 +119,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
       This list can by extended by providing "known immutable" classes
       via Immutable.knownImmutableClasses
      */
-    private static List<String> immutableList = Arrays.asList(
+    private static Set<String> builtinImmutables = new HashSet(Arrays.asList(
             "java.lang.Class",
             "java.lang.Boolean",
             "java.lang.Byte",
@@ -133,8 +134,39 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.math.BigDecimal",
             "java.awt.Color",
             "java.net.URI",
-            "java.util.UUID"
-    );
+            "java.util.UUID",
+            "java.time.DayOfWeek",
+            "java.time.Duration",
+            "java.time.Instant",
+            "java.time.LocalDate",
+            "java.time.LocalDateTime",
+            "java.time.LocalTime",
+            "java.time.Month",
+            "java.time.MonthDay",
+            "java.time.OffsetDateTime",
+            "java.time.OffsetTime",
+            "java.time.Period",
+            "java.time.Year",
+            "java.time.YearMonth",
+            "java.time.ZonedDateTime",
+            "java.time.ZoneOffset",
+            "java.time.ZoneRegion",
+            "java.time.chrono.ChronoLocalDate",
+            "java.time.chrono.ChronoLocalDateTime",
+            "java.time.chrono.Chronology",
+            "java.time.chrono.ChronoPeriod",
+            "java.time.chrono.ChronoZonedDateTime",
+            "java.time.chrono.Era",
+            "java.time.format.DecimalStyle",
+            "java.time.format.FormatStyle",
+            "java.time.format.ResolverStyle",
+            "java.time.format.SignStyle",
+            "java.time.format.TextStyle",
+            "java.time.temporal.IsoFields",
+            "java.time.temporal.JulianFields",
+            "java.time.temporal.ValueRange",
+            "java.time.temporal.WeekFields"
+    ));
     private static final Class MY_CLASS = ImmutableBase.class;
     private static final Class<? extends Annotation> KNOWN_IMMUTABLE_CLASS = KnownImmutable.class;
     private static final Class<? extends Annotation> IMMUTABLE_BASE_CLASS = ImmutableBase.class;
@@ -578,7 +610,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private static boolean inImmutableList(String typeName) {
-        return immutableList.contains(typeName);
+        return builtinImmutables.contains(typeName);
     }
 
     private static Statement createConstructorStatementArrayOrCloneable(FieldNode fNode, boolean namedArgs) {
@@ -650,7 +682,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 "Immutable classes only support properties with effectively immutable types including:\n" +
                 "- Strings, primitive types, wrapper types, Class, BigInteger and BigDecimal, enums\n" +
                 "- classes annotated with @KnownImmutable and known immutables (java.awt.Color, java.net.URI)\n" +
-                "- Cloneable classes, collections, maps and arrays, and other classes with special handling (java.util.Date)\n" +
+                "- Cloneable classes, collections, maps and arrays, and other classes with special handling\n" +
+                "  (java.util.Date and various java.time.* classes and interfaces)\n" +
                 "Other restrictions apply, please see the groovydoc for " + MY_TYPE_NAME + " for further details";
     }
 

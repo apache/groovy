@@ -1037,4 +1037,22 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             '''
         }
     }
+
+    // GROOVY-7599
+    @Test
+    void testImmutableWithJSR310_vm8() {
+        assertScript '''
+            import groovy.transform.Immutable
+            import java.time.*
+
+            @Immutable
+            class Person {
+              String first, last
+              LocalDate born
+            }
+
+            def mmm = new Person('Fred', 'Brooks', LocalDate.of(1931, Month.APRIL, 19))
+            assert mmm.toString() == 'Person(Fred, Brooks, 1931-04-19)'
+        '''
+    }
 }
