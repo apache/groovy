@@ -444,6 +444,13 @@ public class GenericsUtils {
             // have first to find matching super class or interface
             Map <String,ClassNode> genSpec = createGenericsSpec(type);
             ClassNode superClass = ClassHelper.getNextSuperClass(type,target);
+
+            if (superClass == null) {
+                if (ClassHelper.isPrimitiveType(type)) {
+                    superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
+                }
+            }
+
             if (superClass!=null){
                 ClassNode corrected = GenericsUtils.correctToGenericsSpecRecurse(genSpec, superClass);
                 extractSuperClassGenerics(corrected, target, spec);

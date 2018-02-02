@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -1757,6 +1758,13 @@ public abstract class StaticTypeCheckingSupport {
             // have first to find matching super class or interface
             Map <String,ClassNode> genSpec = GenericsUtils.createGenericsSpec(type);
             ClassNode superClass = getNextSuperClass(type,target);
+
+            if (superClass == null) {
+                if (ClassHelper.isPrimitiveType(type)) {
+                    superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
+                }
+            }
+
             if (superClass!=null){
                 ClassNode corrected;
                 if (missesGenericsTypes(type)) {
