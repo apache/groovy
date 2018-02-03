@@ -268,7 +268,8 @@ public @interface ToString {
     String[] excludes() default {};
 
     /**
-     * List of field and/or property names to include within the generated toString.
+     * List of field and/or property names to include within the generated toString. The order of inclusion
+     * is determined by the order in which the names are specified.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      * The default value is a special marker value indicating that no includes are defined; all fields and/or properties
@@ -305,6 +306,8 @@ public @interface ToString {
      * Include super fields in the generated toString.
      * Groovy properties, JavaBean properties and fields (in that order) from superclasses come after
      * the members from a subclass (unless 'includes' is used to determine the order).
+     *
+     * @since 2.5.0
      */
     boolean includeSuperFields() default false;
 
@@ -316,6 +319,7 @@ public @interface ToString {
     /**
      * Whether to include the fully-qualified class name (i.e. including
      * the package) or just the simple class name in the generated toString.
+     *
      * @since 2.0.6
      */
     boolean includePackage() default true;
@@ -337,6 +341,7 @@ public @interface ToString {
     /**
      * Whether to cache toString() calculations. You should only set this to true if
      * you know the object is immutable (or technically mutable but never changed).
+     *
      * @since 2.1.0
      */
     boolean cache() default false;

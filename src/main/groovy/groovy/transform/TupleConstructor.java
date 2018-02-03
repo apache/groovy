@@ -216,7 +216,7 @@ public @interface TupleConstructor {
     boolean includeSuperProperties() default false;
 
     /**
-     * Include fields from super classes in the constructor.
+     * Include visible fields from super classes in the constructor.
      * Groovy properties, JavaBean properties and fields (in that order) from superclasses come before
      * the members from a subclass (unless 'includes' is used to determine the order).
      */
