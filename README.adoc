@@ -31,9 +31,19 @@ The Groovy development team
 :bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
 :bintray-watch-image: https://www.bintray.com/docs/images/bintray_badge_color.png
 :bintray-watch-link: https://bintray.com/groovy/maven/groovy/view?source=watch
+:apache-license-icon: https://img.shields.io/badge/license-APL2-blue.svg
+:apache-license-link: http://www.apache.org/licenses/LICENSE-2.0.txt
+:apache-groovy-twitter-icon: https://img.shields.io/twitter/follow/ApacheGroovy.svg?style=social
+:apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
+:jdk-icon: https://img.shields.io/badge/java-6+-4c7e9f.svg
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
+image:{jdk-icon}[build status, link={jdk}]
+image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
+image:{build-icon}[build status, link={groovy-ci}]
+image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
+
 {groovy-www}[Groovy] is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers’ productivity thanks to a concise, familiar and easy to learn syntax.
 
 It integrates smoothly with any Java program, and immediately delivers to your application powerful features, including scripting capabilities, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming.
