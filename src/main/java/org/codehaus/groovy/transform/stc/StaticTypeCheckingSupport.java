@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -95,7 +94,6 @@ import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -107,6 +105,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.getSuperClass;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -1748,41 +1747,39 @@ public abstract class StaticTypeCheckingSupport {
      * Should the target not have any generics this method does nothing.
      */
     static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode type, ClassNode target) {
-        if (target==null || type==target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
-        if (type == null || type==UNKNOWN_PARAMETER_TYPE) return;
+        if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
+        if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
         if (type.isArray() && target.isArray()) {
             extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
         } else if (target.isGenericsPlaceHolder() || type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
             // structural match route
             if (target.isGenericsPlaceHolder()) {
-                connections.put(target.getGenericsTypes()[0].getName(),new GenericsType(type));
+                connections.put(target.getGenericsTypes()[0].getName(), new GenericsType(type));
             } else {
                 extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
             }
         } else {
             // have first to find matching super class or interface
-            Map <String,ClassNode> genSpec = GenericsUtils.createGenericsSpec(type);
-            ClassNode superClass = getNextSuperClass(type,target);
+            ClassNode superClass = getSuperClass(type, target);
 
-            if (superClass == null) {
-                if (ClassHelper.isPrimitiveType(type)) {
-                    superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
-                }
-            }
-
-            if (superClass!=null){
-                ClassNode corrected;
-                if (missesGenericsTypes(type)) {
-                    corrected = superClass.getPlainNodeReference();
-                } else {
-                    corrected = GenericsUtils.correctToGenericsSpecRecurse(genSpec, superClass);
-                }
+            if (superClass != null) {
+                ClassNode corrected = getCorrectedClassNode(type, superClass, true);
                 extractGenericsConnections(connections, corrected, target);
             } else {
                 // if we reach here, we have an unhandled case 
-                throw new GroovyBugError("The type "+type+" seems not to normally extend "+target+". Sorry, I cannot handle this.");
+                throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
             }
         }
+    }
+
+    public static ClassNode getCorrectedClassNode(ClassNode type, ClassNode superClass, boolean handlingGenerics) {
+        ClassNode corrected;
+        if (handlingGenerics && missesGenericsTypes(type)) {
+            corrected = superClass.getPlainNodeReference();
+        } else {
+            corrected = GenericsUtils.correctToGenericsSpecRecurse(GenericsUtils.createGenericsSpec(type), superClass);
+        }
+        return corrected;
     }
 
     private static void extractGenericsConnections(Map<String, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
