@@ -188,7 +188,8 @@ public @interface TupleConstructor {
     String[] excludes() default {};
 
     /**
-     * List of field and/or property names to include within the constructor.
+     * List of field and/or property names to include within the constructor. The order of inclusion
+     * is determined by the order in which the names are specified.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      * The default value is a special marker value indicating that no includes are defined;

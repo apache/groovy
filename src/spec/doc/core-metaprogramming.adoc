@@ -893,11 +893,19 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ===== `@groovy.transform.TupleConstructor`
 
 The `@TupleConstructor` annotation aims at eliminating boilerplate code by generating constructors for you. A tuple
-constructor is created having a parameter for each property (and possibly fields). Each parameter has a default value
+constructor is created having a parameter for each property (and possibly each field). Each parameter has a default value
 (using the initial value of the property if present or otherwise Java's default value according to the properties type).
-In later compilation phases, the Groovy compiler's standard default value processing behavior is then applied.
-The end result is that multiple constructors are placed within the bytecode of your class. This provides a
-well understood semantics and is also useful for Java integration purposes. As an example, the
+
+===== Implementation Details
+
+Normally you don't need to understand the imp[ementation details of the generated constructor(s); you just use them in the normal way.
+However, if you want to add multiple constructors, understand Java integration options or meet requirements of some
+dependency injection frameworks, then some details are useful.
+
+As previously mentioned, the generated constructor has default values applied. In later compilation phases,
+the Groovy compiler's standard default value processing behavior is then applied.
+The end result is that multiple constructors are placed within the bytecode of your class.
+This provides a well understood semantics and is also useful for Java integration purposes. As an example, the
 following code will generate 3 constructors:
 
 [source,groovy]
@@ -920,9 +928,17 @@ Setting the `defaults` attribute (see the available configuration options table)
 * Map-style named arguments won't be available
 
 This attribute is normally only used in situations where another Java framework is
-expecting exactly one constructor, e.g. injection frameworks, JUnit parameterized runners.
+expecting exactly one constructor, e.g. injection frameworks or JUnit parameterized runners.
 
-The `@TupleConstructor` AST transformation accepts several configuration options:
+===== Immutability support
+
+If the `@ImmutableBase` annotation (normally added by the `@Immutable` meta-annotation) is also found on the class with the `@TupleConstructor` annotation,
+then the generated constructor will have all the necessary logic required for immutable classes (defensive copy in, cloning, etc.). Some of the
+annotation attributes won't be supported in this case.
+
+===== Customization options
+
+The `@TupleConstructor` AST transformation accepts several annotation attributes:
 
 [cols="1,1,2,3a",options="header"]
 |=======================================================================
@@ -937,25 +953,25 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
 ----
-|includeFields|False|Should fields be included in tuple constructor generation, in addition to properties|
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeFields,indent=0]
-----
 |includeProperties|True|Should properties be included in tuple constructor generation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeProperties,indent=0]
 ----
-|includeSuperFields|False|Should fields from super classes be included in tuple constructor generation|
+|includeFields|False|Should fields be included in tuple constructor generation, in addition to properties|
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperFields,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeFields,indent=0]
 ----
 |includeSuperProperties|True|Should properties from super classes be included in tuple constructor generation|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperProperties,indent=0]
+----
+|includeSuperFields|False|Should fields from super classes be included in tuple constructor generation|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperFields,indent=0]
 ----
 |callSuper|False|Should super properties be called within a call to the parent constructor rather than set as properties|
 [source,groovy]
@@ -968,6 +984,12 @@ true, the constructor will be generated and it's your responsibility to ensure t
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_force,indent=0]
 ----
+|defaults|True|Indicates that default value processing is enabled for constructor parameters.
+Set to false to obtain exactly one constructor but with initial value support and named-arguments disabled. |
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_false,indent=0]
+----
 |useSetters|False|By default, the transformation will directly set the backing field of each property
 from its corresponding constructor parameter. Setting this attribute to true, the constructor will instead call setters if
 they exist. It's usually deemed bad style from within a constructor to call setters that can be overridden. It's your
@@ -976,16 +998,15 @@ responsibility to avoid such bad style.|
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_useSetters,indent=0]
 ----
-|defaults|True|Indicates that default value processing is enabled for constructor parameters.
-Set to false to obtain exactly one constructor but with initial value support and named-arguments disabled. |
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_defaults_false,indent=0]
-----
 |allNames|False|Should fields and/or properties with internal names be included within the constructor|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_allNames,indent=0]
+----
+|allProperties|False|Should JavaBean properties be included within the constructor|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_allProperties,indent=0]
 ----
 |pre|empty|A closure containing statements to be inserted at the start of the generated constructor(s)|
 [source,groovy]
