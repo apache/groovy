@@ -36,12 +36,15 @@ The Groovy development team
 :apache-groovy-twitter-icon: https://img.shields.io/twitter/follow/ApacheGroovy.svg?style=social
 :apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
 :jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
+:bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
+
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
-image:{jdk-icon}[build status, link={jdk}]
+image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
 image:{build-icon}[build status, link={groovy-ci}]
+image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
 image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
 
 {groovy-www}[Groovy] is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers’ productivity thanks to a concise, familiar and easy to learn syntax.
