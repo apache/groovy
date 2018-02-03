@@ -871,6 +871,11 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_includes,indent=0]
 ----
+|cache|False|Cache the hashCode computation. Should only be set to true if the class is immutable.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_cache,indent=0]
+----
 |callSuper|False|Whether to include super in equals and hashCode calculations|
 [source,groovy]
 ----
@@ -881,13 +886,13 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_includeFields,indent=0]
 ----
-|cache|False|Cache the hashCode computation. Should only be set to true if the class is immutable.|
+|useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
+|allProperties|False|Should JavaBean properties be included in equals and hashCode calculations|
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_cache,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_allProperties,indent=0]
 ----
-|useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
-|allNames|False|Should fileds and/or properties with internal names be included in equals and hashCode calculations|
+|allNames|False|Should fields and/or properties with internal names be included in equals and hashCode calculations|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=equalshashcode_example_allNames,indent=0]
