@@ -334,6 +334,27 @@ assert p1.hashCode() != p2.hashCode()
 '''
 
         assertScript '''
+import groovy.transform.EqualsAndHashCode
+
+// tag::equalshashcode_example_allProperties[]
+@EqualsAndHashCode(allProperties=true, excludes='first, last')
+class Person {
+    String first, last
+    String getInitials() { first[0] + last[0] }
+}
+
+def p1 = new Person(first: 'Jack', last: 'Smith')
+def p2 = new Person(first: 'Jack', last: 'Spratt')
+def p3 = new Person(first: 'Bob', last: 'Smith')
+
+assert p1 == p2
+assert p1.hashCode() == p2.hashCode()
+assert p1 != p3
+assert p1.hashCode() != p3.hashCode()
+// end::equalshashcode_example_allProperties[]
+'''
+
+        assertScript '''
 // tag::equalshashcode_example_allNames[]
 import groovy.transform.EqualsAndHashCode
 
