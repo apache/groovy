@@ -149,6 +149,26 @@ assert bono.toString() == 'BandMember(bandName:U2, name:Bono)'
 '''
 
         assertScript '''
+import groovy.transform.*
+
+// tag::tostring_example_includeSuperFields[]
+class Person {
+    protected String name
+}
+
+@ToString(includeSuperFields = true, includeNames = true)
+@MapConstructor(includeSuperFields = true)
+class BandMember extends Person {
+    String bandName
+}
+
+def bono = new BandMember(name:'Bono', bandName: 'U2').toString()
+
+assert bono.toString() == 'BandMember(bandName:U2, name:Bono)'
+// end::tostring_example_includeSuperFields[]
+'''
+
+        assertScript '''
 import groovy.transform.ToString
 
 // tag::tostring_example_ignoreNulls[]

@@ -783,11 +783,6 @@ The `@ToString` annotation accepts several parameters which are summarized in th
 [cols="1,1,2,3a",options="header"]
 |=======================================================================
 |Attribute|Default value|Description|Example
-|includeNames|false|Whether to include names of properties in generated toString.|
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeNames,indent=0]
-----
 |excludes|Empty list|List of properties to exclude from toString|
 [source,groovy]
 ----
@@ -803,15 +798,25 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
 ----
-|includeSuperProperties|False|Should super properties be included in toString|
+|includeNames|false|Whether to include names of properties in generated toString.|
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuperProperties,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeNames,indent=0]
 ----
 |includeFields|False|Should fields be included in toString, in addition to properties|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+----
+|includeSuperProperties|False|Should super properties be included in toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuperProperties,indent=0]
+----
+|includeSuperFields|False|Should visible super fields be included in toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuperFields,indent=0]
 ----
 |ignoreNulls|False|Should properties/fields with null value be displayed|
 [source,groovy]
@@ -823,7 +828,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
 ----
-|allPropeties|True|Include all JavaBean properties in toString|
+|allProperties|True|Include all JavaBean properties in toString|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_allProperties,indent=0]
