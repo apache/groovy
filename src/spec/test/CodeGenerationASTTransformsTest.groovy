@@ -399,7 +399,6 @@ def p1 = new Person(firstName: 'Jack', lastName: 'Nicholson')
 def p2 = new Person('Jack', 'Nicholson')
 // generated tuple constructor with default value for second property
 def p3 = new Person('Jack')
-
 // end::tupleconstructor_simple[]
 
 assert p1.firstName == p2.firstName
@@ -614,6 +613,24 @@ final class Person {
 assert new Person('john smith').toString() == 'Person(john smith)'
 assert new Person('john', 'smith').toString() == 'Person(john smith)'
 // end::tupleconstructor_example_force[]
+'''
+
+        assertScript '''
+import groovy.transform.TupleConstructor
+
+// tag::tupleconstructor_example_allProperties[]
+@TupleConstructor(allProperties=true)
+class Person {
+    String first
+    private String last
+    void setLast(String last) {
+        this.last = last
+    }
+    String getName() { "$first $last" }
+}
+
+assert new Person('john', 'smith').name == 'john smith'
+// end::tupleconstructor_example_allProperties[]
 '''
 
         assertScript '''
