@@ -38,7 +38,6 @@ import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -48,6 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
+
 /**
  * Utility methods to deal with generic types.
  *
@@ -56,6 +58,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = new GenericsType[0];
+    public static final String JAVA_LANG_OBJECT = "java.lang.Object";
 
     /**
      * Given a parameterized type and a generic type information, aligns actual type parameters. For example, if a
@@ -213,7 +216,7 @@ public class GenericsUtils {
             }
             return target;
         }
-        if (!target.equals(hint) && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(target, hint)) {
+        if (!target.equals(hint) && implementsInterfaceOrIsSubclassOf(target, hint)) {
             ClassNode nextSuperClass = ClassHelper.getNextSuperClass(target, hint);
             if (!hint.equals(nextSuperClass)) {
                 Map<String, ClassNode> genericsSpec = createGenericsSpec(hint);
@@ -425,40 +428,45 @@ public class GenericsUtils {
         return ret;
     }
 
-    public static void extractSuperClassGenerics(ClassNode type, ClassNode target, Map<String,ClassNode> spec) {
+    public static void extractSuperClassGenerics(ClassNode type, ClassNode target, Map<String, ClassNode> spec) {
         // TODO: this method is very similar to StaticTypesCheckingSupport#extractGenericsConnections,
         // but operates on ClassNodes instead of GenericsType
-        if (target==null || type==target) return;
+        if (target == null || type == target) return;
         if (type.isArray() && target.isArray()) {
             extractSuperClassGenerics(type.getComponentType(), target.getComponentType(), spec);
-        } else if (type.isArray() && target.getName().equals("java.lang.Object")) {
+        } else if (type.isArray() && JAVA_LANG_OBJECT.equals(target.getName())) {
             // Object is superclass of arrays but no generics involved
-        } else if (target.isGenericsPlaceHolder() || type.equals(target) || !StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(type, target)) {
+        } else if (target.isGenericsPlaceHolder() || type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
             // structural match route
             if (target.isGenericsPlaceHolder()) {
-                spec.put(target.getGenericsTypes()[0].getName(),type);
+                spec.put(target.getGenericsTypes()[0].getName(), type);
             } else {
                 extractSuperClassGenerics(type.getGenericsTypes(), target.getGenericsTypes(), spec);
             }
         } else {
             // have first to find matching super class or interface
-            Map <String,ClassNode> genSpec = createGenericsSpec(type);
-            ClassNode superClass = ClassHelper.getNextSuperClass(type,target);
+            ClassNode superClass = getSuperClass(type, target);
 
-            if (superClass == null) {
-                if (ClassHelper.isPrimitiveType(type)) {
-                    superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
-                }
-            }
-
-            if (superClass!=null){
-                ClassNode corrected = GenericsUtils.correctToGenericsSpecRecurse(genSpec, superClass);
+            if (superClass != null) {
+                ClassNode corrected = getCorrectedClassNode(type, superClass, false);
                 extractSuperClassGenerics(corrected, target, spec);
             } else {
                 // if we reach here, we have an unhandled case 
-                throw new GroovyBugError("The type "+type+" seems not to normally extend "+target+". Sorry, I cannot handle this.");
+                throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
             }
         }
+    }
+
+    public static ClassNode getSuperClass(ClassNode type, ClassNode target) {
+        ClassNode superClass = ClassHelper.getNextSuperClass(type, target);
+
+        if (superClass == null) {
+            if (ClassHelper.isPrimitiveType(type)) {
+                superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
+            }
+        }
+
+        return superClass;
     }
 
     private static void extractSuperClassGenerics(GenericsType[] usage, GenericsType[] declaration, Map<String, ClassNode> spec) {
