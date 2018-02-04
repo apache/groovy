@@ -1077,7 +1077,7 @@ annotations:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=canonical_simple,indent=0]
 ----
 
-A similar immutable class can be generated using the <<xform-Immutable,@Immutable>> AST transformation instead.
+A similar immutable class can be generated using the <<xform-Immutable,@Immutable>> meta-annotation instead.
 The `@Canonical` meta-annotation supports the configuration options found in the annotations
 it aggregates. See those annotations for more details.
 
@@ -1698,24 +1698,57 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 [[xform-Immutable]]
 ===== `@groovy.transform.Immutable`
 
-The `@Immutable` AST transformation simplifies the creation of immutable classes, that is to say classes for which
-members are deemed immutable. For that, all you have to do is annotating the class like in the following example:
+The `@Immutable` meta-annotation combines the following annotations:
+
+* <<xform-ToString,@ToString>>
+* <<xform-EqualsAndHashCode,@EqualsAndHashCode>>
+* <<xform-ImmutableBase,@ImmutableBase>>
+* <<xform-TupleConstructor,@TupleConstructor>>
+* <<xform-MapConstructor,@MapConstructor>>
+* <<xform-KnownImmutable,@KnownImmutable>>
+
+The `@Immutable` meta-annotation simplifies the creation of immutable classes. Immutable classes are useful
+since they are often easier to reason about and are inherently thread-safe.
+See http://www.informit.com/store/effective-java-9780134685991[Effective Java, Minimize Mutability] for all the details
+about how to achieve immutable classes in Java. The `@Immutable` meta-annotation does most of the things described
+in _Effective Java_ for you automatically.
+To use the meta-annotation, all you have to do is annotate the class like in the following example:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_simple,indent=0]
 ----
 
-Immutable classes generated with `@Immutable` are automatically made final. For a class to be immutable, you have to
-make sure that properties are of an immutable type (primitive or boxed types), of a known-immutable type or another
-class annotated with `@Immutable`. The effect of applying `@Immutable` to a class are pretty similar to those of
-applying the <<xform-Canonical,@Canonical>> AST transformation, but with an immutable class: automatic generation of
-`toString`, `equals` and `hashCode` methods for example, but trying to modify a property would throw a `ReadOnlyPropertyException`
-in that case.
+One of the requirements for immutable classes is that there is no way to modify any state information within the class.
+One requirement to achieve this is to use immutable classes for each property or alternatively perform special coding
+such as defensive copy in and defensive copy out for any mutable properties within the constructors
+and property getters. Between `@ImmutableBase`, `@MapConstructor` and `@TupleConstructor` properties
+are either identified as immutable or the special coding for numerous known cases is handled automatically.
+Various mechanisms are provided for you to extend the handled property types which are allowed. See
+`@ImmutableBase` and `@KnownImmutable` for details.
 
-Since `@Immutable` relies on a predefined list of known immutable classes (like `java.net.URI` or `java.lang.String`
+The results of applying `@Immutable` to a class are pretty similar to those of
+applying the <<xform-Canonical,@Canonical>> meta-annotation but the generated class will have extra
+logic to handle immutability. You will observe this by, for instance, trying to modify a property
+which will result in a `ReadOnlyPropertyException` being thrown since the backing field for the property
+will have been automatically made final.
+
+The `@Immutable` meta-annotation supports the configuration options found in the annotations
+it aggregates. See those annotations for more details.
+
+[[xform-ImmutableBase]]
+===== `@groovy.transform.ImmutableBase`
+
+Immutable classes generated with `@ImmutableBase` are automatically made final. Also, the type of each property is checked
+and various checks are made on the class, for example, public instance fields currently aren't allowed.
+
+For a class to be immutable, you have to
+make sure that properties are of an immutable type (primitive or boxed types), of a known-immutable type or another
+class annotated with `@KnownImmutable` (which includes those annotated with the `@Immutable` meta-annotation).
+
+Since `@ImmutableBase` relies on a predefined list of known immutable classes (like `java.net.URI` or `java.lang.String`
 and fails if you use a type which is not in that list, you are allowed to instruct the transformation that some types
-are deemed immutable thanks to the following parameters:
+are deemed immutable thanks to the following annotation attributes:
 
 [cols="1,1,2,3a",options="header"]
 |=======================================================================
@@ -1737,6 +1770,17 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=imm
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_copyWith,indent=0]
 ----
 |=======================================================================
+
+If you deem a type as immutable and it isn't one of the ones automatically handled, then it is up to you
+to correctly code that class to ensure immutability.
+
+[[xform-KnownImmutable]]
+===== `@groovy.transform.KnownImmutable`
+
+The `@KnownImmutable` annotation isn't actually one that triggers any AST transformations. It is simply
+a marker annotation. You can annotate your classes with the annotation (including Java classes) and they
+will be recognized as acceptable types for members within an immutable class. This saves you having to
+explicitly use the `knownImmutables` or `knownImmutableClasses` annotation attributes from `@ImmutableBase`.
 
 [[xform-Memoized]]
 ===== `@groovy.transform.Memoized`
