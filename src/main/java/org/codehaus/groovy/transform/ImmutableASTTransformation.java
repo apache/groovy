@@ -233,6 +233,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
+            if (unsupportedTupleAttribute(tupleCons, "useSetters")) return;
             if (unsupportedTupleAttribute(tupleCons, "force")) return;
         }
         if (!validateConstructors(cNode)) return;
@@ -341,9 +342,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
     }
 
+    @Deprecated
     static List<PropertyNode> getProperties(ClassNode cNode, boolean includeSuperProperties, boolean allProperties) {
         List<PropertyNode> list = getInstanceProperties(cNode);
-        //addPseudoProperties
         if (includeSuperProperties) {
             ClassNode next = cNode.getSuperClass();
             while (next != null) {
@@ -356,6 +357,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return list;
     }
 
+    @Deprecated
     static void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
