@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.runtime.memoize;
 
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
@@ -29,15 +30,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
  * Represents a simple key-value cache, which is NOT thread safe and backed by a {@link java.util.Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
- *
  * @since 2.5.0
  */
-public class CommonCache<K, V> implements EvictableCache<K, V> {
+public class CommonCache<K, V> implements EvictableCache<K, V>, Serializable {
+    private static final long serialVersionUID = 934699400232698324L;
     /**
      * The default load factor
      */
@@ -46,6 +46,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
      * The default initial capacity
      */
     public static final int DEFAULT_INITIAL_CAPACITY = 16;
+
     private final Map<K, V> map;
 
     /**
@@ -57,8 +58,9 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Constructs a cache with limited size
-     * @param initialCapacity initial capacity of the cache
-     * @param maxSize max size of the cache
+     *
+     * @param initialCapacity  initial capacity of the cache
+     * @param maxSize          max size of the cache
      * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
     public CommonCache(final int initialCapacity, final int maxSize, final EvictionStrategy evictionStrategy) {
@@ -74,9 +76,10 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Constructs a LRU cache with the specified initial capacity and max size.
-     * The LRU cache is slower than {@link LRUCache} but will not put same value multi-times concurrently
+     * The LRU cache is slower than {@link LRUCache}
+     *
      * @param initialCapacity initial capacity of the LRU cache
-     * @param maxSize max size of the LRU cache
+     * @param maxSize         max size of the LRU cache
      */
     public CommonCache(int initialCapacity, int maxSize) {
         this(initialCapacity, maxSize, EvictionStrategy.LRU);
@@ -84,6 +87,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Constructs a LRU cache with the default initial capacity
+     *
      * @param maxSize max size of the LRU cache
      * @see #CommonCache(int, int)
      */
@@ -93,6 +97,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V> {
 
     /**
      * Constructs a cache backed by the specified {@link java.util.Map} instance
+     *
      * @param map the {@link java.util.Map} instance
      */
     public CommonCache(Map<K, V> map) {
