@@ -141,18 +141,12 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             return null;
         }
         if (expr instanceof ListExpression) {
-            List<String> list = new ArrayList<String>();
             final ListExpression listExpression = (ListExpression) expr;
             if (isUndefinedMarkerList(listExpression)) {
                 return null;
             }
-            for (Expression itemExpr : listExpression.getExpressions()) {
-                if (itemExpr != null && itemExpr instanceof ConstantExpression) {
-                    Object value = ((ConstantExpression) itemExpr).getValue();
-                    if (value != null) list.add(value.toString());
-                }
-            }
-            return list;
+
+            return getValueStringList(listExpression);
         }
         return tokenize(getMemberStringValue(anno, name));
     }
@@ -175,16 +169,21 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         List<String> list;
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
-            list = new ArrayList<String>();
             final ListExpression listExpression = (ListExpression) expr;
-            for (Expression itemExpr : listExpression.getExpressions()) {
-                if (itemExpr != null && itemExpr instanceof ConstantExpression) {
-                    Object value = ((ConstantExpression) itemExpr).getValue();
-                    if (value != null) list.add(value.toString());
-                }
-            }
+            list = getValueStringList(listExpression);
         } else {
             list = tokenize(getMemberStringValue(anno, name));
+        }
+        return list;
+    }
+
+    private static List<String> getValueStringList(ListExpression listExpression) {
+        List<String> list = new ArrayList<String>();
+        for (Expression itemExpr : listExpression.getExpressions()) {
+            if (itemExpr != null && itemExpr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression) itemExpr).getValue();
+                if (value != null) list.add(value.toString());
+            }
         }
         return list;
     }
@@ -195,12 +194,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
             final ListExpression listExpression = (ListExpression) expr;
-            for (Expression itemExpr : listExpression.getExpressions()) {
-                if (itemExpr != null && itemExpr instanceof ClassExpression) {
-                    ClassNode cn = itemExpr.getType();
-                    if (cn != null) list.add(cn);
-                }
-            }
+            list = getTypeList(listExpression);
         } else if (expr != null && expr instanceof ClassExpression) {
             ClassNode cn = expr.getType();
             if (cn != null) list.add(cn);
@@ -219,16 +213,22 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             if (isUndefinedMarkerList(listExpression)) {
                 return null;
             }
-            for (Expression itemExpr : listExpression.getExpressions()) {
-                if (itemExpr != null && itemExpr instanceof ClassExpression) {
-                    ClassNode cn = itemExpr.getType();
-                    if (cn != null) list.add(cn);
-                }
-            }
+            list = getTypeList(listExpression);
         } else if (expr instanceof ClassExpression) {
             ClassNode cn = expr.getType();
             if (isUndefined(cn)) return null;
             if (cn != null) list.add(cn);
+        }
+        return list;
+    }
+
+    private static List<ClassNode> getTypeList(ListExpression listExpression) {
+        List<ClassNode> list = new ArrayList<ClassNode>();
+        for (Expression itemExpr : listExpression.getExpressions()) {
+            if (itemExpr != null && itemExpr instanceof ClassExpression) {
+                ClassNode cn = itemExpr.getType();
+                if (cn != null) list.add(cn);
+            }
         }
         return list;
     }
