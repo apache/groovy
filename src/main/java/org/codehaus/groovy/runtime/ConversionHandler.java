@@ -101,14 +101,11 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see #invokeCustom(Object, Method, Object[])
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(final Object proxy, Method method, Object[] args) throws Throwable {
         if (handleCache != null && isDefaultMethod(method)) {
-            VMPlugin plugin = VMPluginFactory.getPlugin();
-            Object handle = handleCache.get(method);
-            if (handle == null) {
-                handle = plugin.getInvokeSpecialHandle(method, proxy);
-                handleCache.put(method, handle);
-            }
+            final VMPlugin plugin = VMPluginFactory.getPlugin();
+            Object handle = handleCache.computeIfAbsent(method, m -> plugin.getInvokeSpecialHandle(m, proxy));
+
             return plugin.invokeHandle(handle, args);
         }
 
