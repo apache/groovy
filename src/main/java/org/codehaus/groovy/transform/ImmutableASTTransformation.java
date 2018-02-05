@@ -167,10 +167,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.time.temporal.ValueRange",
             "java.time.temporal.WeekFields"
     ));
-    private static final Class MY_CLASS = ImmutableBase.class;
-    private static final Class<? extends Annotation> KNOWN_IMMUTABLE_CLASS = KnownImmutable.class;
-    private static final Class<? extends Annotation> IMMUTABLE_BASE_CLASS = ImmutableBase.class;
-    private static final ClassNode IMMUTABLE_BASE_TYPE = makeWithoutCaching(IMMUTABLE_BASE_CLASS, false);
+    private static final String KNOWN_IMMUTABLE_NAME = KnownImmutable.class.getName();
+    private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
+    private static final ClassNode IMMUTABLE_BASE_TYPE = makeWithoutCaching(MY_CLASS, false);
     public static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
@@ -507,10 +506,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         Statement statement;
-        if (fieldType.isArray() || isOrImplements(fieldType, CLONEABLE_TYPE)) {
-            statement = createConstructorStatementArrayOrCloneable(fNode, namedArgs);
-        } else if (isKnownImmutableClass(fieldType, knownImmutableClasses) || isKnownImmutable(pNode.getName(), knownImmutables)) {
+        if (isKnownImmutableType(fieldType, knownImmutableClasses) || isKnownImmutable(pNode.getName(), knownImmutables)) {
             statement = createConstructorStatementDefault(fNode, namedArgs);
+        } else if (fieldType.isArray() || isOrImplements(fieldType, CLONEABLE_TYPE)) {
+            statement = createConstructorStatementArrayOrCloneable(fNode, namedArgs);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode, namedArgs);
         } else if (isOrImplements(fieldType, COLLECTION_TYPE) || fieldType.isDerivedFrom(COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
@@ -586,33 +585,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(param, fieldType), fieldType)),
                 assignS(fieldExpr, cloneCollectionExpr(param, fieldType)));
         return assignWithDefault(namedArgs, assignInit, param, assignStmt);
-    }
-
-    private static boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
-        if (inImmutableList(fieldType.getName()) || knownImmutableClasses.contains(fieldType.getName()))
-            return true;
-        if (!fieldType.isResolved())
-            return false;
-        if ("java.util.Optional".equals(fieldType.getName()) && fieldType.getGenericsTypes() != null && fieldType.getGenericsTypes().length == 1) {
-            GenericsType optionalType = fieldType.getGenericsTypes()[0];
-            if (optionalType.isResolved() && !optionalType.isPlaceholder() && !optionalType.isWildcard()) {
-                String name = optionalType.getType().getName();
-                if (inImmutableList(name) || knownImmutableClasses.contains(name)) return true;
-                if (optionalType.getType().isEnum() || !optionalType.getType().getAnnotations(MY_TYPE).isEmpty())
-                    return true;
-            }
-        }
-        return fieldType.isEnum() ||
-                ClassHelper.isPrimitiveType(fieldType) ||
-                !fieldType.getAnnotations(MY_TYPE).isEmpty();
-    }
-
-    private static boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
-        return knownImmutables.contains(fieldName);
-    }
-
-    private static boolean inImmutableList(String typeName) {
-        return builtinImmutables.contains(typeName);
     }
 
     private static Statement createConstructorStatementArrayOrCloneable(FieldNode fNode, boolean namedArgs) {
@@ -805,7 +777,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
      */
     @SuppressWarnings("Unchecked")
     public static Object checkImmutable(String className, String fieldName, Object field) {
-        if (field == null || field instanceof Enum || inImmutableList(field.getClass().getName())) return field;
+        if (field == null || field instanceof Enum || isBuiltinImmutable(field.getClass().getName())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (getAnnotationByName(field, "groovy.transform.Immutable") != null) return field;
 
@@ -823,47 +795,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return null;
     }
 
-    @SuppressWarnings("Unchecked")
-    public static Object checkImmutable(Class<?> clazz, String fieldName, Object field, List<String> knownImmutableFieldNames, List<Class> knownImmutableClasses) {
-        if (field == null || field instanceof Enum || knownImmutable(field.getClass()) || knownImmutableFieldNames.contains(fieldName) || knownImmutableClasses.contains(field.getClass())) {
-            return field;
-        }
-
-        boolean isImmutable = false;
-        for (Annotation an : field.getClass().getAnnotations()) {
-            if (an.getClass().getName().startsWith("groovy.transform.Immutable")) {
-                isImmutable = true;
-                break;
-            }
-        }
-        if (isImmutable) return field;
-
-        if (field instanceof Collection) {
-            Field declaredField;
-            try {
-                declaredField = clazz.getDeclaredField(fieldName);
-                Class<?> fieldType = declaredField.getType();
-                if (Collection.class.isAssignableFrom(fieldType)) {
-                    return DefaultGroovyMethods.asImmutable((Collection) field);
-                }
-                // potentially allow Collection coercion for a constructor
-                if (knownImmutable(fieldType)) {
-                    return field;
-                }
-            } catch (NoSuchFieldException ignore) {
-                // ignore
-            }
-        }
-        final String typeName = field.getClass().getName();
-        throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
-    }
-
-    /*
+    /**
      * For compatibility with pre 2.5 compiled classes
      */
     @SuppressWarnings("Unchecked")
     public static Object checkImmutable(Class<?> clazz, String fieldName, Object field) {
-        if (field == null || field instanceof Enum || knownImmutable(field.getClass())) {
+        if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass())) {
             return field;
         }
 
@@ -885,7 +822,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                     return DefaultGroovyMethods.asImmutable((Collection) field);
                 }
                 // potentially allow Collection coercion for a constructor
-                if (knownImmutable(fieldType)) {
+                if (builtinOrMarkedImmutableClass(fieldType)) {
                     return field;
                 }
             } catch (NoSuchFieldException ignore) {
@@ -896,8 +833,95 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
 
-    private static boolean knownImmutable(Class<?> clazz) {
-        return inImmutableList(clazz.getName()) || clazz.getAnnotation(KNOWN_IMMUTABLE_CLASS) != null;
+    @SuppressWarnings("Unchecked")
+    public static Object checkImmutable(Class<?> clazz, String fieldName, Object field, List<String> knownImmutableFieldNames, List<Class> knownImmutableClasses) {
+        if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass()) || knownImmutableFieldNames.contains(fieldName) || knownImmutableClasses.contains(field.getClass())) {
+            return field;
+        }
+
+        boolean isImmutable = false;
+        for (Annotation an : field.getClass().getAnnotations()) {
+            if (an.getClass().getName().startsWith("groovy.transform.Immutable")) {
+                isImmutable = true;
+                break;
+            }
+        }
+        if (isImmutable) return field;
+
+        if (field instanceof Collection) {
+            Field declaredField;
+            try {
+                declaredField = clazz.getDeclaredField(fieldName);
+                Class<?> fieldType = declaredField.getType();
+                if (Collection.class.isAssignableFrom(fieldType)) {
+                    return DefaultGroovyMethods.asImmutable((Collection) field);
+                }
+                // potentially allow Collection coercion for a constructor
+                if (builtinOrMarkedImmutableClass(fieldType) || knownImmutableClasses.contains(fieldType)) {
+                    return field;
+                }
+            } catch (NoSuchFieldException ignore) {
+                // ignore
+            }
+        }
+        final String typeName = field.getClass().getName();
+        throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
+    }
+
+    private static boolean isKnownImmutableType(ClassNode fieldType, List<String> knownImmutableClasses) {
+        if (builtinOrDeemedType(fieldType, knownImmutableClasses))
+            return true;
+        if (!fieldType.isResolved())
+            return false;
+        if ("java.util.Optional".equals(fieldType.getName()) && fieldType.getGenericsTypes() != null && fieldType.getGenericsTypes().length == 1) {
+            GenericsType optionalType = fieldType.getGenericsTypes()[0];
+            if (optionalType.isResolved() && !optionalType.isPlaceholder() && !optionalType.isWildcard()) {
+                ClassNode valueType = optionalType.getType();
+                if (builtinOrDeemedType(valueType, knownImmutableClasses)) return true;
+                if (valueType.isEnum()) return true;
+            }
+        }
+        return fieldType.isEnum() ||
+                ClassHelper.isPrimitiveType(fieldType) ||
+                hasImmutableAnnotation(fieldType);
+    }
+
+    private static boolean builtinOrDeemedType(ClassNode fieldType, List<String> knownImmutableClasses) {
+        return isBuiltinImmutable(fieldType.getName()) || knownImmutableClasses.contains(fieldType.getName()) || hasImmutableAnnotation(fieldType);
+    }
+
+    private static boolean hasImmutableAnnotation(ClassNode type) {
+        List<AnnotationNode> annotations = type.getAnnotations();
+        for (AnnotationNode next : annotations) {
+            String name = next.getClassNode().getName();
+            if (matchingMarkerName(name)) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasImmutableAnnotation(Class clazz) {
+        Annotation[] annotations = clazz.getAnnotations();
+        for (Annotation next : annotations) {
+            String name = next.annotationType().getName();
+            if (matchingMarkerName(name)) return true;
+        }
+        return false;
+    }
+
+    private static boolean matchingMarkerName(String name) {
+        return name.equals("groovy.transform.Immutable") || name.equals(KNOWN_IMMUTABLE_NAME);
+    }
+
+    private static boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
+        return knownImmutables.contains(fieldName);
+    }
+
+    private static boolean isBuiltinImmutable(String typeName) {
+        return builtinImmutables.contains(typeName);
+    }
+
+    private static boolean builtinOrMarkedImmutableClass(Class<?> clazz) {
+        return isBuiltinImmutable(clazz.getName()) || hasImmutableAnnotation(clazz);
     }
 
     public static void checkPropNames(Object instance, Map<String, Object> args) {
