@@ -18,65 +18,73 @@
  */
 package org.codehaus.groovy.runtime.memoize;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- *
  * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
- *
  * @since 2.5.0
  */
-public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
+public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serializable {
+    private static final long serialVersionUID = -7352338549333024936L;
+
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
+    private final CommonCache<K, V> commonCache;
 
     /**
      * Constructs a cache with unlimited size
      */
-    public ConcurrentCommonCache() {}
+    public ConcurrentCommonCache() {
+        commonCache = new CommonCache<K, V>();
+    }
 
     /**
      * Constructs a cache with limited size
-     * @param initialCapacity initial capacity of the cache
-     * @param maxSize max size of the cache
+     *
+     * @param initialCapacity  initial capacity of the cache
+     * @param maxSize          max size of the cache
      * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
     public ConcurrentCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
-        super(initialCapacity, maxSize, evictionStrategy);
+        commonCache = new CommonCache<K, V>(initialCapacity, maxSize, evictionStrategy);
     }
 
     /**
      * Constructs a LRU cache with the specified initial capacity and max size.
      * The LRU cache is slower than {@link LRUCache}
+     *
      * @param initialCapacity initial capacity of the LRU cache
-     * @param maxSize max size of the LRU cache
+     * @param maxSize         max size of the LRU cache
      */
     public ConcurrentCommonCache(int initialCapacity, int maxSize) {
-        super(initialCapacity, maxSize);
+        commonCache = new CommonCache<K, V>(initialCapacity, maxSize);
     }
 
     /**
      * Constructs a LRU cache with the default initial capacity(16)
+     *
      * @param maxSize max size of the LRU cache
      * @see #ConcurrentCommonCache(int, int)
      */
     public ConcurrentCommonCache(int maxSize) {
-        super(maxSize);
+        commonCache = new CommonCache<K, V>(maxSize);
     }
 
     /**
      * Constructs a cache backed by the specified {@link java.util.Map} instance
+     *
      * @param map the {@link java.util.Map} instance
      */
     public ConcurrentCommonCache(Map<K, V> map) {
-        super(map);
+        commonCache = new CommonCache<K, V>(map);
     }
 
     /**
@@ -86,7 +94,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public V get(K key) {
         readLock.lock();
         try {
-            return super.get(key);
+            return commonCache.get(key);
         } finally {
             readLock.unlock();
         }
@@ -99,7 +107,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public V put(K key, V value) {
         writeLock.lock();
         try {
-            return super.put(key, value);
+            return commonCache.put(key, value);
         } finally {
             writeLock.unlock();
         }
@@ -113,13 +121,12 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
         return getAndPut(key, valueProvider, true);
     }
 
-    @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
         readLock.lock();
         try {
-            value = super.get(key);
+            value = commonCache.get(key);
             if (null != value) {
                 return value;
             }
@@ -130,14 +137,14 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
         writeLock.lock();
         try {
             // try to find the cached value again
-            value = super.get(key);
+            value = commonCache.get(key);
             if (null != value) {
                 return value;
             }
 
             value = null == valueProvider ? null : valueProvider.provide(key);
             if (shouldCache && null != value) {
-                super.put(key, value);
+                commonCache.put(key, value);
             }
         } finally {
             writeLock.unlock();
@@ -153,7 +160,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public Collection<V> values() {
         readLock.lock();
         try {
-            return super.values();
+            return commonCache.values();
         } finally {
             readLock.unlock();
         }
@@ -166,7 +173,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public Set<K> keys() {
         readLock.lock();
         try {
-            return super.keys();
+            return commonCache.keys();
         } finally {
             readLock.unlock();
         }
@@ -179,7 +186,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public boolean containsKey(K key) {
         readLock.lock();
         try {
-            return super.containsKey(key);
+            return commonCache.containsKey(key);
         } finally {
             readLock.unlock();
         }
@@ -192,7 +199,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public int size() {
         readLock.lock();
         try {
-            return super.size();
+            return commonCache.size();
         } finally {
             readLock.unlock();
         }
@@ -205,7 +212,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public V remove(K key) {
         writeLock.lock();
         try {
-            return super.remove(key);
+            return commonCache.remove(key);
         } finally {
             writeLock.unlock();
         }
@@ -218,7 +225,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public Map<K, V> clear() {
         writeLock.lock();
         try {
-            return super.clear();
+            return commonCache.clear();
         } finally {
             writeLock.unlock();
         }
@@ -231,7 +238,7 @@ public class ConcurrentCommonCache<K, V> extends CommonCache<K, V> {
     public void cleanUpNullReferences() {
         writeLock.lock();
         try {
-            super.cleanUpNullReferences();
+            commonCache.cleanUpNullReferences();
         } finally {
             writeLock.unlock();
         }
