@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.classgen.asm.util;
 
+import groovy.lang.Tuple2;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassNode;
 
@@ -34,6 +35,9 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 
+/**
+ * A utility for extracting type description
+ */
 public class TypeDescriptionUtil {
     private static final String REF_DESCRIPTION = "L";
     private static final Map<ClassNode, String> TYPE_TO_DESCRIPTION_MAP = Maps.of(
@@ -69,21 +73,48 @@ public class TypeDescriptionUtil {
     }
 
     public static String getDescriptionByType(ClassNode type) {
-        if (null == type) {
-            return REF_DESCRIPTION;
-        }
-
         String desc = TYPE_TO_DESCRIPTION_MAP.get(type);
 
-        return null == desc ? REF_DESCRIPTION : desc;
+        if (null == desc) { // reference type
+            if (!type.isArray()) {
+                return makeRefDescription(type.getName());
+            }
+
+            StringBuilder arrayDescription = new StringBuilder(32);
+            Tuple2<ClassNode, Integer> arrayInfo = extractArrayInfo(type);
+
+            for (int i = 0, dimension = arrayInfo.getSecond(); i < dimension; i++) {
+                arrayDescription.append("[");
+            }
+
+            ClassNode componentType = arrayInfo.getFirst();
+            return arrayDescription.append(getDescriptionByType(componentType)).toString();
+        }
+
+        return desc;
     }
 
     public static String getDescriptionByName(String name) {
-        if (null == name) {
-            return REF_DESCRIPTION;
+        ClassNode type = NAME_TO_TYPE_MAP.get(name);
+
+        if (null == type) {
+            return makeRefDescription(name);
         }
 
-        return getDescriptionByType(NAME_TO_TYPE_MAP.get(name));
+        return getDescriptionByType(type);
     }
 
+    private static String makeRefDescription(String name) {
+        return REF_DESCRIPTION + name.replace('.', '/') + ";";
+    }
+
+    private static Tuple2<ClassNode, Integer> extractArrayInfo(ClassNode type) {
+        int dimension = 0;
+
+        do {
+            dimension++;
+        } while ((type = type.getComponentType()).isArray());
+
+        return new Tuple2<ClassNode, Integer>(type, dimension);
+    }
 }

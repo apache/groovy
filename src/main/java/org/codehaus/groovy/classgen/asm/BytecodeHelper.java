@@ -163,29 +163,22 @@ public class BytecodeHelper implements Opcodes {
      * @return the ASM type description
      */
     private static String getTypeDescription(ClassNode c, boolean end) {
-        StringBuilder buf = new StringBuilder();
         ClassNode d = c;
-        while (true) {
-            if (ClassHelper.isPrimitiveType(d.redirect())) {
-                d = d.redirect();
-                buf.append(TypeDescriptionUtil.getDescriptionByType(d));
-                return buf.toString();
-            } else if (d.isArray()) {
-                buf.append('[');
-                d = d.getComponentType();
-            } else {
-                buf.append('L');
-                String name = d.getName();
-                int len = name.length();
-                for (int i = 0; i < len; ++i) {
-                    char car = name.charAt(i);
-                    buf.append(car == '.' ? '/' : car);
-                }
-                if (end) buf.append(';');
-                return buf.toString();
+        if (ClassHelper.isPrimitiveType(d.redirect())) {
+            d = d.redirect();
+        }
+
+        String desc = TypeDescriptionUtil.getDescriptionByType(d);
+
+        if (!end) {
+            if (desc.endsWith(";")) {
+                desc = desc.substring(0, desc.length() - 1);
             }
         }
+
+        return desc;
     }
+
 
     /**
      * @return an array of ASM internal names of the type
@@ -267,16 +260,7 @@ public class BytecodeHelper implements Opcodes {
             return "java.lang.Object;";
         }
 
-        if (name.equals("int")
-                || name.equals("long")
-                || name.equals("short")
-                || name.equals("float")
-                || name.equals("double")
-                || name.equals("byte")
-                || name.equals("char")
-                || name.equals("boolean")
-                || name.equals("void")
-                ) {
+        if (TypeDescriptionUtil.isPrimitiveType(name)) {
             return name;
         }
 
@@ -297,7 +281,7 @@ public class BytecodeHelper implements Opcodes {
             prefix = "[";
             name = name.substring(0, name.length() - 2);
 
-            return prefix + TypeDescriptionUtil.getDescriptionByName(name) + (TypeDescriptionUtil.isPrimitiveType(name) ? "" : name.replace('/', '.') + ";");
+            return prefix + TypeDescriptionUtil.getDescriptionByName(name);
         }
 
         return name.replace('/', '.');
