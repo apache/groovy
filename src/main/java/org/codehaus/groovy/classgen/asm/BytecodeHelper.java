@@ -124,24 +124,15 @@ public class BytecodeHelper implements Opcodes {
      * @return the ASM type description for class loading
      */
     public static String getClassLoadingTypeDescription(ClassNode c) {
-        StringBuilder buf = new StringBuilder();
-        boolean array = false;
-        while (true) {
-            if (c.isArray()) {
-                buf.append('[');
-                c = c.getComponentType();
-                array = true;
-            } else {
-                if (ClassHelper.isPrimitiveType(c)) {
-                    buf.append(getTypeDescription(c));
-                } else {
-                    if (array) buf.append('L');
-                    buf.append(c.getName());
-                    if (array) buf.append(';');
-                }
-                return buf.toString();
+        String desc = TypeDescriptionUtil.getDescriptionByType(c);
+
+        if (!c.isArray()) {
+            if (desc.startsWith("L") && desc.endsWith(";")) {
+                desc = desc.substring(1, desc.length() - 1); // remove "L" and ";"
             }
         }
+
+        return desc.replace('/', '.');
     }
 
     /**
@@ -170,10 +161,8 @@ public class BytecodeHelper implements Opcodes {
 
         String desc = TypeDescriptionUtil.getDescriptionByType(d);
 
-        if (!end) {
-            if (desc.endsWith(";")) {
-                desc = desc.substring(0, desc.length() - 1);
-            }
+        if (!end && desc.endsWith(";")) {
+            desc = desc.substring(0, desc.length() - 1);
         }
 
         return desc;
