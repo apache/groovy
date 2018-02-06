@@ -333,29 +333,6 @@ public class BytecodeHelper implements Opcodes {
         mv.visitInsn(DUP);
     }*/
 
-    public static void doReturn(MethodVisitor mv, ClassNode returnType) {
-        if (returnType == ClassHelper.double_TYPE) {
-            mv.visitInsn(DRETURN);
-        } else if (returnType == ClassHelper.float_TYPE) {
-            mv.visitInsn(FRETURN);
-        } else if (returnType == ClassHelper.long_TYPE) {
-            mv.visitInsn(LRETURN);
-        } else if (
-                returnType == ClassHelper.boolean_TYPE
-                        || returnType == ClassHelper.char_TYPE
-                        || returnType == ClassHelper.byte_TYPE
-                        || returnType == ClassHelper.int_TYPE
-                        || returnType == ClassHelper.short_TYPE) {
-            //byte,short,boolean,int are all IRETURN
-            mv.visitInsn(IRETURN);
-        } else if (returnType == ClassHelper.VOID_TYPE) {
-            mv.visitInsn(RETURN);
-        } else {
-            mv.visitInsn(ARETURN);
-        }
-
-    }
-
     private static boolean hasGenerics(Parameter[] param) {
         if (param.length == 0) return false;
         for (int i = 0; i < param.length; i++) {
@@ -668,10 +645,10 @@ public class BytecodeHelper implements Opcodes {
         // Special handling is done for floating point types in order to
         // handle checking for 0 or NaN values.
         if (type == ClassHelper.double_TYPE) {
-            convertDoubleToBoolean(mv, type);
+            convertDoubleToBoolean(mv);
             return;
         } else if (type == ClassHelper.float_TYPE) {
-            convertFloatToBoolean(mv, type);
+            convertFloatToBoolean(mv);
             return;
         }
         Label trueLabel = new Label();
@@ -690,7 +667,7 @@ public class BytecodeHelper implements Opcodes {
         mv.visitLabel(trueLabel);
     }
 
-    private static void convertDoubleToBoolean(MethodVisitor mv, ClassNode type) {
+    private static void convertDoubleToBoolean(MethodVisitor mv) {
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         Label falseLabelWithPop = new Label();
@@ -709,7 +686,7 @@ public class BytecodeHelper implements Opcodes {
         mv.visitLabel(trueLabel);
     }
 
-    private static void convertFloatToBoolean(MethodVisitor mv, ClassNode type) {
+    private static void convertFloatToBoolean(MethodVisitor mv) {
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         Label falseLabelWithPop = new Label();
@@ -728,30 +705,177 @@ public class BytecodeHelper implements Opcodes {
         mv.visitLabel(trueLabel);
     }
 
+    public static void doReturn(MethodVisitor mv, ClassNode type) {
+        new ReturnVarHandler(mv, type).handle();
+    }
+
     public static void load(MethodVisitor mv, ClassNode type, int idx) {
-        storeOrLoadVar(mv, idx, type, DLOAD, FLOAD, LLOAD, ILOAD, ALOAD);
+        new LoadVarHandler(mv, type, idx).handle();
     }
 
-    static void store(MethodVisitor mv, ClassNode type, int idx) {
-        storeOrLoadVar(mv, idx, type, DSTORE, FSTORE, LSTORE, ISTORE, ASTORE);
+    public static void store(MethodVisitor mv, ClassNode type, int idx) {
+        new StoreVarHandler(mv, type, idx).handle();
     }
 
-    private static void storeOrLoadVar(MethodVisitor mv, int idx, ClassNode type, int dVarInsn, int fVarInsn, int lVarInsn, int iVarInsn, int aVarInsn) {
-        if (type == ClassHelper.double_TYPE) {
-            mv.visitVarInsn(dVarInsn, idx);
-        } else if (type == ClassHelper.float_TYPE) {
-            mv.visitVarInsn(fVarInsn, idx);
-        } else if (type == ClassHelper.long_TYPE) {
-            mv.visitVarInsn(lVarInsn, idx);
-        } else if (
-                type == ClassHelper.boolean_TYPE
-                        || type == ClassHelper.char_TYPE
-                        || type == ClassHelper.byte_TYPE
-                        || type == ClassHelper.int_TYPE
-                        || type == ClassHelper.short_TYPE) {
-            mv.visitVarInsn(iVarInsn, idx);
-        } else {
-            mv.visitVarInsn(aVarInsn, idx);
+    private static class ReturnVarHandler extends PrimitiveTypeHandler {
+        private MethodVisitor mv;
+
+        public ReturnVarHandler(MethodVisitor mv, ClassNode type) {
+            super(type);
+            this.mv = mv;
         }
+
+        @Override
+        protected void handleDoubleType() {
+            mv.visitInsn(DRETURN);
+        }
+
+        @Override
+        protected void handleFloatType() {
+            mv.visitInsn(FRETURN);
+        }
+
+        @Override
+        protected void handleLongType() {
+            mv.visitInsn(LRETURN);
+        }
+
+        @Override
+        protected void handleIntType() {
+            mv.visitInsn(IRETURN);
+        }
+
+        @Override
+        protected void handleVoidType() {
+            mv.visitInsn(RETURN);
+        }
+
+        @Override
+        protected void handleRefType() {
+            mv.visitInsn(ARETURN);
+        }
+    }
+
+    private static class LoadVarHandler extends PrimitiveTypeHandler {
+        private MethodVisitor mv;
+        private int idx;
+
+        public LoadVarHandler(MethodVisitor mv, ClassNode type, int idx) {
+            super(type);
+            this.mv = mv;
+            this.idx = idx;
+        }
+
+        @Override
+        protected void handleDoubleType() {
+            mv.visitVarInsn(DLOAD, idx);
+        }
+
+        @Override
+        protected void handleFloatType() {
+            mv.visitVarInsn(FLOAD, idx);
+        }
+
+        @Override
+        protected void handleLongType() {
+            mv.visitVarInsn(LLOAD, idx);
+        }
+
+        @Override
+        protected void handleIntType() {
+            mv.visitVarInsn(ILOAD, idx);
+        }
+
+        @Override
+        protected void handleVoidType() {
+            // do nothing
+        }
+
+        @Override
+        protected void handleRefType() {
+            mv.visitVarInsn(ALOAD, idx);
+        }
+    }
+
+    private static class StoreVarHandler extends PrimitiveTypeHandler {
+        private MethodVisitor mv;
+        private int idx;
+
+        public StoreVarHandler(MethodVisitor mv, ClassNode type, int idx) {
+            super(type);
+            this.mv = mv;
+            this.idx = idx;
+        }
+
+        @Override
+        protected void handleDoubleType() {
+            mv.visitVarInsn(DSTORE, idx);
+        }
+
+        @Override
+        protected void handleFloatType() {
+            mv.visitVarInsn(FSTORE, idx);
+        }
+
+        @Override
+        protected void handleLongType() {
+            mv.visitVarInsn(LSTORE, idx);
+        }
+
+        @Override
+        protected void handleIntType() {
+            mv.visitVarInsn(ISTORE, idx);
+        }
+
+        @Override
+        protected void handleVoidType() {
+            // do nothing
+        }
+
+        @Override
+        protected void handleRefType() {
+            mv.visitVarInsn(ASTORE, idx);
+        }
+    }
+
+    private static abstract class PrimitiveTypeHandler {
+        private ClassNode type;
+
+        public PrimitiveTypeHandler(ClassNode type) {
+            this.type = type;
+        }
+
+        public void handle() {
+            if (type == ClassHelper.double_TYPE) {
+                handleDoubleType();
+            } else if (type == ClassHelper.float_TYPE) {
+                handleFloatType();
+            } else if (type == ClassHelper.long_TYPE) {
+                handleLongType();
+            } else if (
+                    type == ClassHelper.boolean_TYPE
+                            || type == ClassHelper.char_TYPE
+                            || type == ClassHelper.byte_TYPE
+                            || type == ClassHelper.int_TYPE
+                            || type == ClassHelper.short_TYPE) {
+                handleIntType();
+            } else if (type == ClassHelper.VOID_TYPE) {
+                handleVoidType();
+            } else {
+                handleRefType();
+            }
+        }
+
+        protected abstract void handleDoubleType();
+        protected abstract void handleFloatType();
+        protected abstract void handleLongType();
+
+        /**
+         * boolean, char, byte, int, short types are handle in the same way
+         */
+        protected abstract void handleIntType();
+
+        protected abstract void handleVoidType();
+        protected abstract void handleRefType();
     }
 }
