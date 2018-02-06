@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -189,8 +190,23 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     public void visitClosureExpression(final ClosureExpression expression) {
         boolean old = inAssignment;
         inAssignment = false;
+        Map<Variable, VariableState> origState = new StateMap();
+        origState.putAll(getState());
         super.visitClosureExpression(expression);
+        cleanLocalVars(origState, getState());
         inAssignment = old;
+    }
+
+    private void cleanLocalVars(Map<Variable, VariableState> origState, Map<Variable, VariableState> state) {
+        // clean local vars added during visit of closure
+        for (Iterator<Map.Entry<Variable, VariableState>> iter = state.entrySet().iterator(); iter.hasNext(); ) {
+            Map.Entry<Variable, VariableState> next = iter.next();
+            Variable key = next.getKey();
+            if (key instanceof VariableExpression && ((VariableExpression)key).getAccessedVariable() == key && !origState.containsKey(key)) {
+                // remove local variable
+                iter.remove();
+            }
+        }
     }
 
     @Override
