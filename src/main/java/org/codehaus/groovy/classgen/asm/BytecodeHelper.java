@@ -508,26 +508,6 @@ public class BytecodeHelper implements Opcodes {
         ret.append(end);
     }
 
-    public static void load(MethodVisitor mv, ClassNode type, int idx) {
-        if (type == ClassHelper.double_TYPE) {
-            mv.visitVarInsn(DLOAD, idx);
-        } else if (type == ClassHelper.float_TYPE) {
-            mv.visitVarInsn(FLOAD, idx);
-        } else if (type == ClassHelper.long_TYPE) {
-            mv.visitVarInsn(LLOAD, idx);
-        } else if (
-                type == ClassHelper.boolean_TYPE
-                        || type == ClassHelper.char_TYPE
-                        || type == ClassHelper.byte_TYPE
-                        || type == ClassHelper.int_TYPE
-                        || type == ClassHelper.short_TYPE) {
-            mv.visitVarInsn(ILOAD, idx);
-        } else {
-            mv.visitVarInsn(ALOAD, idx);
-        }
-    }
-    
-
     public static void doCast(MethodVisitor mv, ClassNode type) {
         if (type == ClassHelper.OBJECT_TYPE) return;
         if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
@@ -748,4 +728,30 @@ public class BytecodeHelper implements Opcodes {
         mv.visitLabel(trueLabel);
     }
 
+    public static void load(MethodVisitor mv, ClassNode type, int idx) {
+        storeOrLoadVar(mv, idx, type, DLOAD, FLOAD, LLOAD, ILOAD, ALOAD);
+    }
+
+    static void store(MethodVisitor mv, ClassNode type, int idx) {
+        storeOrLoadVar(mv, idx, type, DSTORE, FSTORE, LSTORE, ISTORE, ASTORE);
+    }
+
+    private static void storeOrLoadVar(MethodVisitor mv, int idx, ClassNode type, int dVarInsn, int fVarInsn, int lVarInsn, int iVarInsn, int aVarInsn) {
+        if (type == ClassHelper.double_TYPE) {
+            mv.visitVarInsn(dVarInsn, idx);
+        } else if (type == ClassHelper.float_TYPE) {
+            mv.visitVarInsn(fVarInsn, idx);
+        } else if (type == ClassHelper.long_TYPE) {
+            mv.visitVarInsn(lVarInsn, idx);
+        } else if (
+                type == ClassHelper.boolean_TYPE
+                        || type == ClassHelper.char_TYPE
+                        || type == ClassHelper.byte_TYPE
+                        || type == ClassHelper.int_TYPE
+                        || type == ClassHelper.short_TYPE) {
+            mv.visitVarInsn(iVarInsn, idx);
+        } else {
+            mv.visitVarInsn(aVarInsn, idx);
+        }
+    }
 }
