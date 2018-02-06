@@ -130,53 +130,42 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
             // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
-            //       Groovy will `POP` multiple times...(expecting `POP` only once), as a hack, `DUP` to duplicate the element of operand stack:
+            //       Groovy will `POP` automatically, use `DUP` to duplicate the element of operand stack:
             /*
-               L2
-                ASTORE 0
-                ALOAD 0
-                ACONST_NULL
                 INVOKEDYNAMIC apply(LTest1$_p_lambda1;LTest1;)Ljava/util/function/Function; [
                   // handle kind 0x6 : INVOKESTATIC
                   java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
                   // arguments:
                   (Ljava/lang/Object;)Ljava/lang/Object;,
                   // handle kind 0x5 : INVOKEVIRTUAL
-                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/Object;,
-                  (Ljava/lang/Integer;)Ljava/lang/Object;
+                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/String;,
+                  (Ljava/lang/Integer;)Ljava/lang/String;
                 ]
-                DUP   <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
-                DUP
+                DUP           <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
+                ASTORE 0
+               L2
                 ALOAD 0
-                SWAP
-                INVOKEVIRTUAL groovy/lang/Lambda.setLambdaObject (Ljava/lang/Object;)V
-                LDC Ljava/util/function/Function;.class
-                INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.castToType (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
-                CHECKCAST java/util/function/Function
-                ASTORE 1
-               L3
-                ALOAD 1
-                POP
+                POP           <-------------- Since operand stack is not empty, the `POP`s are issued by `controller.getOperandStack().popDownTo(mark);` in the method `org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement`, but when we try to `operandStack.pop();` instead of `mv.visitInsn(DUP);`, we will get AIOOBE...
                 POP
             */
 
             mv.visitInsn(DUP);
 
             /*
-org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
-General error during class generation: size==0
+                org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+                General error during class generation: size==0
 
-java.lang.ArrayIndexOutOfBoundsException: size==0
-	at org.codehaus.groovy.classgen.asm.OperandStack.getTopOperand(OperandStack.java:693)
-	at org.codehaus.groovy.classgen.asm.BinaryExpressionHelper.evaluateEqual(BinaryExpressionHelper.java:397)
-	at org.codehaus.groovy.classgen.asm.sc.StaticTypesBinaryExpressionMultiTypeDispatcher.evaluateEqual(StaticTypesBinaryExpressionMultiTypeDispatcher.java:179)
-	at org.codehaus.groovy.classgen.AsmClassGenerator.visitDeclarationExpression(AsmClassGenerator.java:694)
-	at org.codehaus.groovy.ast.expr.DeclarationExpression.visit(DeclarationExpression.java:89)
-	at org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement(StatementWriter.java:633)
-	at org.codehaus.groovy.classgen.AsmClassGenerator.visitExpressionStatement(AsmClassGenerator.java:681)
-	at org.codehaus.groovy.ast.stmt.ExpressionStatement.visit(ExpressionStatement.java:42)
-             */
-//            operandStack.pop();
+                java.lang.ArrayIndexOutOfBoundsException: size==0
+                    at org.codehaus.groovy.classgen.asm.OperandStack.getTopOperand(OperandStack.java:693)
+                    at org.codehaus.groovy.classgen.asm.BinaryExpressionHelper.evaluateEqual(BinaryExpressionHelper.java:397)
+                    at org.codehaus.groovy.classgen.asm.sc.StaticTypesBinaryExpressionMultiTypeDispatcher.evaluateEqual(StaticTypesBinaryExpressionMultiTypeDispatcher.java:179)
+                    at org.codehaus.groovy.classgen.AsmClassGenerator.visitDeclarationExpression(AsmClassGenerator.java:694)
+                    at org.codehaus.groovy.ast.expr.DeclarationExpression.visit(DeclarationExpression.java:89)
+                    at org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement(StatementWriter.java:633)
+                    at org.codehaus.groovy.classgen.AsmClassGenerator.visitExpressionStatement(AsmClassGenerator.java:681)
+                    at org.codehaus.groovy.ast.stmt.ExpressionStatement.visit(ExpressionStatement.java:42)
+                             */
+                //            operandStack.pop();
         }
 
     }
