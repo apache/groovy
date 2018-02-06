@@ -111,12 +111,6 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testVariableDeclaredInsideClosureShouldBeFinal() {
-        assertFinals x: true, '''
-            def cl = { def x = 1 }
-        '''
-    }
-
     void testParameterShouldBeConsideredFinal() {
         assertFinals x: true, '''
             def foo(int x) { x+1 }
@@ -450,6 +444,20 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
                 x = 2
             }
         ''')
+    }
+
+    // GROOVY-8093
+    void testLocalVarsInClosureOnlyCheckedWithinClosure() {
+        assertScript '''
+            class Foo {
+                public Closure bar = {
+                    final RANKINGS = ["year": 0, "month": 10]
+                    RANKINGS.size()
+                }
+            }
+
+            assert new Foo().bar() == 2
+        '''
     }
 
     @CompileStatic
