@@ -39,7 +39,6 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.D2F;
@@ -47,7 +46,6 @@ import static org.objectweb.asm.Opcodes.D2I;
 import static org.objectweb.asm.Opcodes.D2L;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DCONST_1;
-import static org.objectweb.asm.Opcodes.DSTORE;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.DUP2_X1;
@@ -59,7 +57,6 @@ import static org.objectweb.asm.Opcodes.F2L;
 import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.FCONST_1;
 import static org.objectweb.asm.Opcodes.FCONST_2;
-import static org.objectweb.asm.Opcodes.FSTORE;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.I2B;
 import static org.objectweb.asm.Opcodes.I2C;
@@ -75,13 +72,11 @@ import static org.objectweb.asm.Opcodes.ICONST_4;
 import static org.objectweb.asm.Opcodes.ICONST_5;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.L2D;
 import static org.objectweb.asm.Opcodes.L2F;
 import static org.objectweb.asm.Opcodes.L2I;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.LCONST_1;
-import static org.objectweb.asm.Opcodes.LSTORE;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.POP2;
@@ -278,16 +273,23 @@ public class OperandStack {
      * replace top level element with new element of given type
      */
     public void replace(ClassNode type) {
+        int size = ensureStackNotEmpty(stack);
+        stack.set(size - 1, type);
+    }
+
+    private int ensureStackNotEmpty(List<ClassNode> stack) {
         int size = stack.size();
+
         try {
-            if (size==0) throw new ArrayIndexOutOfBoundsException("size==0");
+            if (size == 0) throw new ArrayIndexOutOfBoundsException("size==0");
         } catch (ArrayIndexOutOfBoundsException ai) {
-            System.err.println("index problem in "+controller.getSourceUnit().getName());
+            System.err.println("index problem in " + controller.getSourceUnit().getName());
             throw ai;
         }
-        stack.set(size-1, type);
+
+        return size;
     }
-    
+
     /**
      * replace n top level elements with new element of given type
      */
@@ -650,22 +652,7 @@ public class OperandStack {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
             doGroovyCast(type);
-            if (type == ClassHelper.double_TYPE) {
-                mv.visitVarInsn(DSTORE, idx);
-            } else if (type == ClassHelper.float_TYPE) {
-                mv.visitVarInsn(FSTORE, idx);
-            } else if (type == ClassHelper.long_TYPE) {
-                mv.visitVarInsn(LSTORE, idx);
-            } else if (
-                    type == ClassHelper.boolean_TYPE
-                            || type == ClassHelper.char_TYPE
-                            || type == ClassHelper.byte_TYPE
-                            || type == ClassHelper.int_TYPE
-                            || type == ClassHelper.short_TYPE) {
-                mv.visitVarInsn(ISTORE, idx);
-            } else {
-                mv.visitVarInsn(ASTORE, idx);
-            }
+            BytecodeHelper.store(mv, type, idx);
         }
         // remove RHS value from operand stack
         remove(1);
@@ -688,13 +675,7 @@ public class OperandStack {
     }
 
     public ClassNode getTopOperand() {
-        int size = stack.size();
-        try {
-            if (size==0) throw new ArrayIndexOutOfBoundsException("size==0");
-        } catch (ArrayIndexOutOfBoundsException ai) {
-            System.err.println("index problem in "+controller.getSourceUnit().getName());
-            throw ai;
-        }
-        return stack.get(size-1);
+        int size = ensureStackNotEmpty(stack);
+        return stack.get(size - 1);
     }
 }
