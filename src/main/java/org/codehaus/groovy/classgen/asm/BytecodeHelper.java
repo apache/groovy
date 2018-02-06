@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
+import org.codehaus.groovy.classgen.asm.util.TypeDescriptionUtil;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.Label;
@@ -32,6 +33,16 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 
 /**
  * A helper class for bytecode generation with AsmClassGenerator.
@@ -157,27 +168,7 @@ public class BytecodeHelper implements Opcodes {
         while (true) {
             if (ClassHelper.isPrimitiveType(d.redirect())) {
                 d = d.redirect();
-                char car;
-                if (d == ClassHelper.int_TYPE) {
-                    car = 'I';
-                } else if (d == ClassHelper.VOID_TYPE) {
-                    car = 'V';
-                } else if (d == ClassHelper.boolean_TYPE) {
-                    car = 'Z';
-                } else if (d == ClassHelper.byte_TYPE) {
-                    car = 'B';
-                } else if (d == ClassHelper.char_TYPE) {
-                    car = 'C';
-                } else if (d == ClassHelper.short_TYPE) {
-                    car = 'S';
-                } else if (d == ClassHelper.double_TYPE) {
-                    car = 'D';
-                } else if (d == ClassHelper.float_TYPE) {
-                    car = 'F';
-                } else /* long */ {
-                    car = 'J';
-                }
-                buf.append(car);
+                buf.append(TypeDescriptionUtil.getDescriptionByType(d));
                 return buf.toString();
             } else if (d.isArray()) {
                 buf.append('[');
@@ -305,28 +296,11 @@ public class BytecodeHelper implements Opcodes {
         if (name.endsWith("[]")) { // todo need process multi
             prefix = "[";
             name = name.substring(0, name.length() - 2);
-            if (name.equals("int")) {
-                return prefix + "I";
-            } else if (name.equals("long")) {
-                return prefix + "J";
-            } else if (name.equals("short")) {
-                return prefix + "S";
-            } else if (name.equals("float")) {
-                return prefix + "F";
-            } else if (name.equals("double")) {
-                return prefix + "D";
-            } else if (name.equals("byte")) {
-                return prefix + "B";
-            } else if (name.equals("char")) {
-                return prefix + "C";
-            } else if (name.equals("boolean")) {
-                return prefix + "Z";
-            } else {
-                return prefix + "L" + name.replace('/', '.') + ";";
-            }
-        }
-        return name.replace('/', '.');
 
+            return prefix + TypeDescriptionUtil.getDescriptionByName(name) + (TypeDescriptionUtil.isPrimitiveType(name) ? "" : name.replace('/', '.') + ";");
+        }
+
+        return name.replace('/', '.');
     }
 
     /*public void dup() {
@@ -487,7 +461,7 @@ public class BytecodeHelper implements Opcodes {
 
     public static void doCast(MethodVisitor mv, ClassNode type) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
+        if (ClassHelper.isPrimitiveType(type) && type != VOID_TYPE) {
             unbox(mv, type);
         } else {
             mv.visitTypeInsn(
@@ -639,22 +613,22 @@ public class BytecodeHelper implements Opcodes {
      * @param type primitive type to convert
      */
     public static void convertPrimitiveToBoolean(MethodVisitor mv, ClassNode type) {
-        if (type == ClassHelper.boolean_TYPE) {
+        if (type == boolean_TYPE) {
             return;
         }
         // Special handling is done for floating point types in order to
         // handle checking for 0 or NaN values.
-        if (type == ClassHelper.double_TYPE) {
+        if (type == double_TYPE) {
             convertDoubleToBoolean(mv);
             return;
-        } else if (type == ClassHelper.float_TYPE) {
+        } else if (type == float_TYPE) {
             convertFloatToBoolean(mv);
             return;
         }
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         // Convert long to int for IFEQ comparison using LCMP
-        if (type==ClassHelper.long_TYPE) {
+        if (type== long_TYPE) {
             mv.visitInsn(LCONST_0);
             mv.visitInsn(LCMP);
         }
@@ -846,20 +820,20 @@ public class BytecodeHelper implements Opcodes {
         }
 
         public void handle() {
-            if (type == ClassHelper.double_TYPE) {
+            if (type == double_TYPE) {
                 handleDoubleType();
-            } else if (type == ClassHelper.float_TYPE) {
+            } else if (type == float_TYPE) {
                 handleFloatType();
-            } else if (type == ClassHelper.long_TYPE) {
+            } else if (type == long_TYPE) {
                 handleLongType();
             } else if (
-                    type == ClassHelper.boolean_TYPE
-                            || type == ClassHelper.char_TYPE
-                            || type == ClassHelper.byte_TYPE
-                            || type == ClassHelper.int_TYPE
-                            || type == ClassHelper.short_TYPE) {
+                    type == boolean_TYPE
+                            || type == char_TYPE
+                            || type == byte_TYPE
+                            || type == int_TYPE
+                            || type == short_TYPE) {
                 handleIntType();
-            } else if (type == ClassHelper.VOID_TYPE) {
+            } else if (type == VOID_TYPE) {
                 handleVoidType();
             } else {
                 handleRefType();
