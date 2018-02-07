@@ -50,3 +50,4 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * https://github.com/stavytskyi[Maksym Stavytskyi]
 * https://twitter.com/asteingr[André Steingreß]
 * https://github.com/keeganwitt[Keegan Witt]
+* https://twitter.com/daniel_sun[Daniel Sun]
