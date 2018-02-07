@@ -44,7 +44,6 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.D2F;
 import static org.objectweb.asm.Opcodes.D2I;
 import static org.objectweb.asm.Opcodes.D2L;
-import static org.objectweb.asm.Opcodes.DCMPL;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DCONST_1;
 import static org.objectweb.asm.Opcodes.DUP;
@@ -55,12 +54,10 @@ import static org.objectweb.asm.Opcodes.DUP_X2;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.F2I;
 import static org.objectweb.asm.Opcodes.F2L;
-import static org.objectweb.asm.Opcodes.FCMPL;
 import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.FCONST_1;
 import static org.objectweb.asm.Opcodes.FCONST_2;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
-import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.I2B;
 import static org.objectweb.asm.Opcodes.I2C;
 import static org.objectweb.asm.Opcodes.I2D;
@@ -69,23 +66,16 @@ import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.I2S;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
-import static org.objectweb.asm.Opcodes.ICONST_2;
-import static org.objectweb.asm.Opcodes.ICONST_3;
-import static org.objectweb.asm.Opcodes.ICONST_4;
-import static org.objectweb.asm.Opcodes.ICONST_5;
-import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.L2D;
 import static org.objectweb.asm.Opcodes.L2F;
 import static org.objectweb.asm.Opcodes.L2I;
-import static org.objectweb.asm.Opcodes.LCMP;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.POP2;
-import static org.objectweb.asm.Opcodes.SIPUSH;
 import static org.objectweb.asm.Opcodes.SWAP;
 
 public class OperandStack {
@@ -161,7 +151,7 @@ public class OperandStack {
             if (!ClassHelper.isPrimitiveType(last)) {
                 controller.getInvocationWriter().castNonPrimitiveToBool(last);
             } else {
-                primitive2b(mv,last);
+                BytecodeHelper.convertPrimitiveToBoolean(mv, last);
             }            
         } else { 
             throw new GroovyBugError(
@@ -171,40 +161,7 @@ public class OperandStack {
         }
         stack.set(mark,ClassHelper.boolean_TYPE);
     }
-    
-    /**
-     * convert primitive (not boolean) to boolean or byte.
-     * type needs to be a primitive type (not checked) 
-     */
-    private static void primitive2b(MethodVisitor mv, ClassNode type) {
-        Label trueLabel = new Label();
-        Label falseLabel = new Label();
-        // for the various types we make first a 
-        // kind of conversion to int using a compare
-        // operation and then handle the result common
-        // for all cases. In case of long that is LCMP,
-        // for int nothing is to be done
-        if (type==ClassHelper.double_TYPE) {
-            mv.visitInsn(DCONST_0);
-            mv.visitInsn(DCMPL);
-        } else if (type==ClassHelper.long_TYPE) {
-            mv.visitInsn(LCONST_0);
-            mv.visitInsn(LCMP);
-        } else if (type==ClassHelper.float_TYPE) {
-            mv.visitInsn(FCONST_0);
-            mv.visitInsn(FCMPL);
-        } else if (type==ClassHelper.int_TYPE) {
-            // nothing, see comment above
-        }
-        mv.visitJumpInsn(IFEQ, falseLabel);
-        mv.visitInsn(ICONST_1);
-        mv.visitJumpInsn(GOTO, trueLabel);
-        mv.visitLabel(falseLabel);
-        mv.visitInsn(ICONST_0);
-        mv.visitLabel(trueLabel);
-        // other cases can be used directly
-    }
-    
+
     /**
      * remove operand stack top element using bytecode pop
      */
@@ -573,34 +530,7 @@ public class OperandStack {
         boolean isChar = ClassHelper.char_TYPE.equals(type);
         if (isInt || isShort || isByte || isChar) {
             int val = isInt?(Integer)value:isShort?(Short)value:isChar?(Character)value:(Byte)value;
-            switch (val) {
-                case 0:
-                    mv.visitInsn(ICONST_0);
-                    break;
-                case 1:
-                    mv.visitInsn(ICONST_1);
-                    break;
-                case 2:
-                    mv.visitInsn(ICONST_2);
-                    break;
-                case 3:
-                    mv.visitInsn(ICONST_3);
-                    break;
-                case 4:
-                    mv.visitInsn(ICONST_4);
-                    break;
-                case 5:
-                    mv.visitInsn(ICONST_5);
-                    break;
-                default:
-                    if (val>=Byte.MIN_VALUE && val<=Byte.MAX_VALUE) {
-                        mv.visitIntInsn(BIPUSH, val);
-                    } else if (val>=Short.MIN_VALUE && val<=Short.MAX_VALUE) {
-                        mv.visitIntInsn(SIPUSH, val);
-                    } else {
-                        mv.visitLdcInsn(value);
-                    }
-            }
+            BytecodeHelper.pushConstant(mv, val);
         } else if (ClassHelper.long_TYPE.equals(type)) {
             if ((Long)value==0L) {
                 mv.visitInsn(LCONST_0);
