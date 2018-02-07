@@ -135,7 +135,7 @@ public class OperandStack {
     public void castToBool(int mark, boolean emptyDefault) {
         int size = stack.size();
         MethodVisitor mv = controller.getMethodVisitor();
-        if (mark==size) {
+        if (mark == size) {
             // no element, so use emptyDefault
             if (emptyDefault) {
                 mv.visitIntInsn(BIPUSH, 1);
@@ -143,8 +143,8 @@ public class OperandStack {
                 mv.visitIntInsn(BIPUSH, 0);
             }
             stack.add(null);
-        } else if (mark==stack.size()-1) {
-            ClassNode last =  stack.get(size-1);
+        } else if (mark == size - 1) {
+            ClassNode last = stack.get(size - 1);
             // nothing to do in that case
             if (last == ClassHelper.boolean_TYPE) return;
             // not a primitive type, so call booleanUnbox
@@ -152,14 +152,14 @@ public class OperandStack {
                 controller.getInvocationWriter().castNonPrimitiveToBool(last);
             } else {
                 BytecodeHelper.convertPrimitiveToBoolean(mv, last);
-            }            
-        } else { 
+            }
+        } else {
             throw new GroovyBugError(
-                    "operand stack contains "+stack.size()+
-                    " elements, but we expected only "+mark
-                );
+                    "operand stack contains " + size +
+                            " elements, but we expected only " + mark
+            );
         }
-        stack.set(mark,ClassHelper.boolean_TYPE);
+        stack.set(mark, ClassHelper.boolean_TYPE);
     }
 
     /**
