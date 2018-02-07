@@ -71,7 +71,7 @@ public class ManagedLinkedList<T> {
             if (currentHandled) {
                 return current.next != null;
             } else {
-                return current != null;
+                return true;
             }
         }
 
