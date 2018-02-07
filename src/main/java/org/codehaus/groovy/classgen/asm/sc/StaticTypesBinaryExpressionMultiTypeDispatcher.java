@@ -109,39 +109,27 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode top = operandStack.getTopOperand();
         if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top)||char_TYPE.equals(top))) {
             MethodVisitor mv = controller.getMethodVisitor();
-            if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
-                mv.visitInsn(ICONST_1);
-            } else if (long_TYPE.equals(top)) {
-                mv.visitInsn(LCONST_1);
-            } else if (float_TYPE.equals(top)) {
-                mv.visitInsn(FCONST_1);
-            } else if (double_TYPE.equals(top)) {
-                mv.visitInsn(DCONST_1);
-            }
+            visitInsnByType(top, mv, ICONST_1, LCONST_1, FCONST_1, DCONST_1);
             if ("next".equals(method)) {
-                if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
-                    mv.visitInsn(IADD);
-                } else if (long_TYPE.equals(top)) {
-                    mv.visitInsn(LADD);
-                } else if (float_TYPE.equals(top)) {
-                    mv.visitInsn(FADD);
-                } else if (double_TYPE.equals(top)) {
-                    mv.visitInsn(DADD);
-                }
+                visitInsnByType(top, mv, IADD, LADD, FADD, DADD);
             } else {
-                if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
-                    mv.visitInsn(ISUB);
-                } else if (long_TYPE.equals(top)) {
-                    mv.visitInsn(LSUB);
-                } else if (float_TYPE.equals(top)) {
-                    mv.visitInsn(FSUB);
-                } else if (double_TYPE.equals(top)) {
-                    mv.visitInsn(DSUB);
-                }
+                visitInsnByType(top, mv, ISUB, LSUB, FSUB, DSUB);
             }
             return;
         }
         super.writePostOrPrefixMethod(op, method, expression, orig);
+    }
+
+    private static void visitInsnByType(ClassNode top, MethodVisitor mv, int iInsn, int lInsn, int fInsn, int dInsn) {
+        if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
+            mv.visitInsn(iInsn);
+        } else if (long_TYPE.equals(top)) {
+            mv.visitInsn(lInsn);
+        } else if (float_TYPE.equals(top)) {
+            mv.visitInsn(fInsn);
+        } else if (double_TYPE.equals(top)) {
+            mv.visitInsn(dInsn);
+        }
     }
 
     @Override
