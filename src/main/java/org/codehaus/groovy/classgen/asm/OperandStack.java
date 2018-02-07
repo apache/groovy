@@ -501,17 +501,9 @@ public class OperandStack {
         } else if (asPrimitive) {
             pushPrimitiveConstant(mv, value, type);
         } else if (value instanceof BigDecimal) {
-            String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
-            mv.visitTypeInsn(NEW, className);
-            mv.visitInsn(DUP);
-            mv.visitLdcInsn(value.toString());
-            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V", false);
+            newInstance(mv, value);
         } else if (value instanceof BigInteger) {
-            String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
-            mv.visitTypeInsn(NEW, className);
-            mv.visitInsn(DUP);
-            mv.visitLdcInsn(value.toString());
-            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V", false);
+            newInstance(mv, value);
         } else if (value instanceof String) {
             mv.visitLdcInsn(value);
         } else {
@@ -521,6 +513,14 @@ public class OperandStack {
         
         push(type);
         if (boxing) box(); 
+    }
+
+    private static void newInstance(MethodVisitor mv, Object value) {
+        String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
+        mv.visitTypeInsn(NEW, className);
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn(value.toString());
+        mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V", false);
     }
 
     private static void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
