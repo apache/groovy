@@ -66,10 +66,6 @@ import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.I2S;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
-import static org.objectweb.asm.Opcodes.ICONST_2;
-import static org.objectweb.asm.Opcodes.ICONST_3;
-import static org.objectweb.asm.Opcodes.ICONST_4;
-import static org.objectweb.asm.Opcodes.ICONST_5;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.L2D;
@@ -80,7 +76,6 @@ import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.POP2;
-import static org.objectweb.asm.Opcodes.SIPUSH;
 import static org.objectweb.asm.Opcodes.SWAP;
 
 public class OperandStack {
@@ -535,34 +530,7 @@ public class OperandStack {
         boolean isChar = ClassHelper.char_TYPE.equals(type);
         if (isInt || isShort || isByte || isChar) {
             int val = isInt?(Integer)value:isShort?(Short)value:isChar?(Character)value:(Byte)value;
-            switch (val) {
-                case 0:
-                    mv.visitInsn(ICONST_0);
-                    break;
-                case 1:
-                    mv.visitInsn(ICONST_1);
-                    break;
-                case 2:
-                    mv.visitInsn(ICONST_2);
-                    break;
-                case 3:
-                    mv.visitInsn(ICONST_3);
-                    break;
-                case 4:
-                    mv.visitInsn(ICONST_4);
-                    break;
-                case 5:
-                    mv.visitInsn(ICONST_5);
-                    break;
-                default:
-                    if (val>=Byte.MIN_VALUE && val<=Byte.MAX_VALUE) {
-                        mv.visitIntInsn(BIPUSH, val);
-                    } else if (val>=Short.MIN_VALUE && val<=Short.MAX_VALUE) {
-                        mv.visitIntInsn(SIPUSH, val);
-                    } else {
-                        mv.visitLdcInsn(value);
-                    }
-            }
+            BytecodeHelper.pushConstant(mv, val);
         } else if (ClassHelper.long_TYPE.equals(type)) {
             if ((Long)value==0L) {
                 mv.visitInsn(LCONST_0);
