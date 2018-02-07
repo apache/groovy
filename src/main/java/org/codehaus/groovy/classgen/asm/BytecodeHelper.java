@@ -75,9 +75,10 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public static String getMethodDescriptor(ClassNode returnType, Parameter[] parameters) {
-        StringBuilder buffer = new StringBuilder("(");
-        for (int i = 0; i < parameters.length; i++) {
-            buffer.append(getTypeDescription(parameters[i].getType()));
+        StringBuilder buffer = new StringBuilder(100);
+        buffer.append("(");
+        for (Parameter parameter : parameters) {
+            buffer.append(getTypeDescription(parameter.getType()));
         }
         buffer.append(")");
         buffer.append(getTypeDescription(returnType));
@@ -99,9 +100,10 @@ public class BytecodeHelper implements Opcodes {
      */
     public static String getMethodDescriptor(Class returnType, Class[] paramTypes) {
         // lets avoid class loading
-        StringBuilder buffer = new StringBuilder("(");
-        for (int i = 0; i < paramTypes.length; i++) {
-            buffer.append(getTypeDescription(paramTypes[i]));
+        StringBuilder buffer = new StringBuilder(100);
+        buffer.append("(");
+        for (Class paramType : paramTypes) {
+            buffer.append(getTypeDescription(paramType));
         }
         buffer.append(")");
         buffer.append(getTypeDescription(returnType));
