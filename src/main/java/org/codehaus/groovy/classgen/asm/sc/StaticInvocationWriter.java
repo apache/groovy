@@ -390,16 +390,19 @@ public class StaticInvocationWriter extends InvocationWriter {
                 && !declaringClass.equals(classNode)) {
             if (tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                 return true;
-            } else if (declaringClass != classNode) {
-                controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
-                        declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+            } else {
+                checkAndAddCannotCallPrivateMethodError(target, receiver, classNode, declaringClass);
             }
         }
+        checkAndAddCannotCallPrivateMethodError(target, receiver, classNode, declaringClass);
+        return false;
+    }
+
+    private void checkAndAddCannotCallPrivateMethodError(MethodNode target, Expression receiver, ClassNode classNode, ClassNode declaringClass) {
         if (declaringClass != classNode) {
             controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
-                                                declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+                    declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
         }
-        return false;
     }
 
     protected static boolean isPrivateBridgeMethodsCallAllowed(ClassNode receiver, ClassNode caller) {
