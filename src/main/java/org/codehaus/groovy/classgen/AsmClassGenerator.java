@@ -325,12 +325,18 @@ public class AsmClassGenerator extends ClassGenerator {
     private static int adjustedClassModifiersForInnerClassTable(ClassNode classNode) {
         int modifiers = classNode.getModifiers();
         modifiers = modifiers & ~ACC_SUPER;
+        modifiers = fixInterfaceModifiers(classNode, modifiers);
+
+        modifiers = fixInnerClassModifiers(classNode, modifiers);
+        return modifiers;
+    }
+
+    private static int fixInterfaceModifiers(ClassNode classNode, int modifiers) {
         // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
         if (classNode.isInterface()) {
             modifiers = modifiers & ~ACC_ENUM;
             modifiers = modifiers & ~ACC_FINAL;
         }
-        modifiers = fixInnerClassModifiers(classNode, modifiers);
         return modifiers;
     }
 
@@ -362,15 +368,9 @@ public class AsmClassGenerator extends ClassGenerator {
         // eliminate static
         modifiers = modifiers & ~ACC_STATIC;
         modifiers = fixInnerClassModifiers(classNode, modifiers);
-
-        // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
-        if (classNode.isInterface()) {
-            modifiers = modifiers & ~ACC_ENUM;
-            modifiers = modifiers & ~ACC_FINAL;
-        }
+        modifiers = fixInterfaceModifiers(classNode, modifiers);
         return modifiers;
     }
-
 
     public void visitGenericType(GenericsType genericsType) {
         ClassNode type = genericsType.getType();
