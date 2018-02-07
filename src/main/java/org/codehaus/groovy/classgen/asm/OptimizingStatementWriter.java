@@ -327,7 +327,6 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.writeIfElse(statement);
             fastPathBlocked = oldFastPathBlock;
 
-            if (fastPathData == null) return;
             writeFastPathPrelude(fastPathData);
             super.writeIfElse(statement);
             writeFastPathEpilogue(fastPathData);

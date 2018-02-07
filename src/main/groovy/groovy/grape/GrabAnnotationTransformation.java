@@ -321,7 +321,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         if (member == null) {
                             addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabExcludeAnnotationLoop;
-                        } else if (member != null && !(member instanceof ConstantExpression)) {
+                        } else if (!(member instanceof ConstantExpression)) {
                             addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabExcludeAnnotationLoop;
                         }
