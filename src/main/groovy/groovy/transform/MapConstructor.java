@@ -66,6 +66,17 @@ import java.lang.annotation.Target;
  *     first = first?.toUpperCase()
  * }
  * </pre>
+ * <p>
+ * Known limitations/special cases:
+ * <ul>
+ * <li>
+ * The generated map constructor will have an argument of type {@code Map} unless a single property (or field)
+ * is included and the type of that property (or field) is Object, AbstractMap, Map or HashMap.
+ * In this case, the generated constructor will be of type {@code LinkedHashMap}.
+ * This allows the possibility of also adding a tuple constructor without conflict, although
+ * no such constructor is added automatically.
+ * </li>
+ * </ul>
  *
  * @since 2.5.0
  */

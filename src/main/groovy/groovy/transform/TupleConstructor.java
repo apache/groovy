@@ -158,7 +158,24 @@ import java.lang.annotation.Target;
  * assert student.courses == ['IT']
  * </pre>
  * <p>
- * Known Limitations:
+ * Named-argument support:
+ * <ul>
+ * <li>Groovy supports named-arguments for classes with a no-arg constructor or a constructor
+ * with a Map as the first argument. This is compatible with the default kind of constructor(s)
+ * that {@code @TupleConstructor} produces.</li>
+ * <li>If the {@code defaults} annotation attribute is set to {@code false},
+ * and no other map-based constructor are added then named-argument processing will not be available.</li>
+ * <li>If there is more than one included property (and/or field) and the first property (or field) has type
+ * Object, AbstractMap, Map or HashMap, then a special {@code LinkedHashMap} constructor will be created
+ * in addition to the tuple constructor to support named parameters in the normal way. This won't be created
+ * if the class is already annotated with {@code @MapConstructor} or if the {@code defaults}
+ * annotation attribute is set to {@code false}.</li>
+ * <li>If the first property (or field) has type {@code LinkedHashMap} or if there is
+ * a single Object, AbstractMap, Map or HashMap property (or field), then no additional constructor
+ * will be added and Groovy's normal map-style naming conventions will not be available.</li>
+ * </ul>
+ * <p>
+ * Known limitations/special cases:
  * <ul>
  * <li>This AST transform might become a no-op if you are defining your own constructors or
  * combining with other AST transforms which create constructors (e.g. {@code @InheritConstructors});
@@ -169,8 +186,6 @@ import java.lang.annotation.Target;
  * combining with other AST transforms which create constructors (e.g. {@code @InheritConstructors});
  * the order in which the particular transforms are processed becomes important in that case.
  * See the {@code defaults} attribute for further details about customizing this behavior.</li>
- * <li>Groovy's normal map-style naming conventions will not be available if the first property (or field)
- * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property (or field)</li>
  * </ul>
  *
  * @since 1.8.0
