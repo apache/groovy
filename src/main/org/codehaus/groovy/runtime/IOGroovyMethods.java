@@ -660,11 +660,19 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Read a single, whole line from the given Reader.
+     * Read a single, whole line from the given Reader. This method is designed for use with
+     * Readers that support the {@code mark()} operation like BufferReader. It has a fallback
+     * behavior for Readers that don't support mark() but the behavior doesn't correctly
+     * detect multi-character line termination (e.g. carriage return followed by linefeed).
+     * We recommend for Readers that don't support mark() you consider using one of the
+     * following methods instead: eachLine, readLines, or iterator.
      *
      * @param self a Reader
      * @return a line
      * @throws IOException if an IOException occurs.
+     * @see #readLines(java.io.Reader)
+     * @see #iterator(java.io.Reader)
+     * @see #eachLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.0
      */
     public static String readLine(Reader self) throws IOException {
