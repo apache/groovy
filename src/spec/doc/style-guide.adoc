@@ -494,9 +494,9 @@ def map = [CA: 'California', MI: 'Michigan']
 
 // ranges can be inclusive and exclusive
 def range = 10..20 // inclusive
-assert range.size() == 21
+assert range.size() == 11
 // use brackets if you need to call a method on a range definition
-assert (10..<20).size() == 20 // exclusive
+assert (10..<20).size() == 10 // exclusive
 
 def pattern = ~/fo*/
 
