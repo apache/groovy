@@ -1080,13 +1080,13 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (fieldNode.isFinal()) {
-            throw new RuntimeParserException("Can not modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+            throw new RuntimeParserException("Cannot modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
         MethodNode setter = findSetter(classNode, fieldNode);
 
-        if (fieldNode.isPrivate() && null == setter) {
-            throw new RuntimeParserException("Can not access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+        if (Modifier.isPrivate(fieldNode.getModifiers()) && null == setter) {
+            throw new RuntimeParserException("Cannot access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
         mv.visitVarInsn(ALOAD, 0);
