@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.function.Consumer;
 
 public class NumberMathModificationInfo {
 
@@ -56,340 +57,52 @@ public class NumberMathModificationInfo {
 
     private void checkNumberOps(String name, Class klazz) {
         if ("plus".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_plus = true;
-            }
-            if (klazz == Short.class) {
-                short_plus = true;
-            }
-            if (klazz == Integer.class) {
-                int_plus = true;
-            }
-            if (klazz == Long.class) {
-                long_plus = true;
-            }
-            if (klazz == Float.class) {
-                float_plus = true;
-            }
-            if (klazz == Double.class) {
-                double_plus = true;
-            }
-            if (klazz == Object.class) {
-                byte_plus = true;
-                short_plus = true;
-                int_plus = true;
-                long_plus = true;
-                float_plus = true;
-                double_plus = true;
-            }
+            doCheckNumberOps(klazz, e -> byte_plus = true, e -> short_plus = true, e -> int_plus = true, e -> long_plus = true, e -> float_plus = true, e -> double_plus = true);
+        } else if ("minus".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_minus = true, e -> short_minus = true, e -> int_minus = true, e -> long_minus = true, e -> float_minus = true, e -> double_minus = true);
+        } else if ("multiply".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_multiply = true, e -> short_multiply = true, e -> int_multiply = true, e -> long_multiply = true, e -> float_multiply = true, e -> double_multiply = true);
+        } else if ("div".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_div = true, e -> short_div = true, e -> int_div = true, e -> long_div = true, e -> float_div = true, e -> double_div = true);
+        } else if ("or".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_or = true, e -> short_or = true, e -> int_or = true, e -> long_or = true, e -> float_or = true, e -> double_or = true);
+        } else if ("and".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_and = true, e -> short_and = true, e -> int_and = true, e -> long_and = true, e -> float_and = true, e -> double_and = true);
+        } else if ("xor".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_xor = true, e -> short_xor = true, e -> int_xor = true, e -> long_xor = true, e -> float_xor = true, e -> double_xor = true);
+        } else if ("intdiv".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_intdiv = true, e -> short_intdiv = true, e -> int_intdiv = true, e -> long_intdiv = true, e -> float_intdiv = true, e -> double_intdiv = true);
+        } else if ("mod".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_mod = true, e -> short_mod = true, e -> int_mod = true, e -> long_mod = true, e -> float_mod = true, e -> double_mod = true);
+        } else if ("leftShift".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_leftShift = true, e -> short_leftShift = true, e -> int_leftShift = true, e -> long_leftShift = true, e -> float_leftShift = true, e -> double_leftShift = true);
+        } else if ("rightShift".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_rightShift = true, e -> short_rightShift = true, e -> int_rightShift = true, e -> long_rightShift = true, e -> float_rightShift = true, e -> double_rightShift = true);
+        } else if ("rightShiftUnsigned".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_rightShiftUnsigned = true, e -> short_rightShiftUnsigned = true, e -> int_rightShiftUnsigned = true, e -> long_rightShiftUnsigned = true, e -> float_rightShiftUnsigned = true, e -> double_rightShiftUnsigned = true);
         }
-        if ("minus".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_minus = true;
-            }
-            if (klazz == Short.class) {
-                short_minus = true;
-            }
-            if (klazz == Integer.class) {
-                int_minus = true;
-            }
-            if (klazz == Long.class) {
-                long_minus = true;
-            }
-            if (klazz == Float.class) {
-                float_minus = true;
-            }
-            if (klazz == Double.class) {
-                double_minus = true;
-            }
-            if (klazz == Object.class) {
-                byte_minus = true;
-                short_minus = true;
-                int_minus = true;
-                long_minus = true;
-                float_minus = true;
-                double_minus = true;
-            }
-        }
-        if ("multiply".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_multiply = true;
-            }
-            if (klazz == Short.class) {
-                short_multiply = true;
-            }
-            if (klazz == Integer.class) {
-                int_multiply = true;
-            }
-            if (klazz == Long.class) {
-                long_multiply = true;
-            }
-            if (klazz == Float.class) {
-                float_multiply = true;
-            }
-            if (klazz == Double.class) {
-                double_multiply = true;
-            }
-            if (klazz == Object.class) {
-                byte_multiply = true;
-                short_multiply = true;
-                int_multiply = true;
-                long_multiply = true;
-                float_multiply = true;
-                double_multiply = true;
-            }
-        }
-        if ("div".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_div = true;
-            }
-            if (klazz == Short.class) {
-                short_div = true;
-            }
-            if (klazz == Integer.class) {
-                int_div = true;
-            }
-            if (klazz == Long.class) {
-                long_div = true;
-            }
-            if (klazz == Float.class) {
-                float_div = true;
-            }
-            if (klazz == Double.class) {
-                double_div = true;
-            }
-            if (klazz == Object.class) {
-                byte_div = true;
-                short_div = true;
-                int_div = true;
-                long_div = true;
-                float_div = true;
-                double_div = true;
-            }
-        }
-        if ("or".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_or = true;
-            }
-            if (klazz == Short.class) {
-                short_or = true;
-            }
-            if (klazz == Integer.class) {
-                int_or = true;
-            }
-            if (klazz == Long.class) {
-                long_or = true;
-            }
-            if (klazz == Float.class) {
-                float_or = true;
-            }
-            if (klazz == Double.class) {
-                double_or = true;
-            }
-            if (klazz == Object.class) {
-                byte_or = true;
-                short_or = true;
-                int_or = true;
-                long_or = true;
-                float_or = true;
-                double_or = true;
-            }
-        }
-        if ("and".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_and = true;
-            }
-            if (klazz == Short.class) {
-                short_and = true;
-            }
-            if (klazz == Integer.class) {
-                int_and = true;
-            }
-            if (klazz == Long.class) {
-                long_and = true;
-            }
-            if (klazz == Float.class) {
-                float_and = true;
-            }
-            if (klazz == Double.class) {
-                double_and = true;
-            }
-            if (klazz == Object.class) {
-                byte_and = true;
-                short_and = true;
-                int_and = true;
-                long_and = true;
-                float_and = true;
-                double_and = true;
-            }
-        }
-        if ("xor".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_xor = true;
-            }
-            if (klazz == Short.class) {
-                short_xor = true;
-            }
-            if (klazz == Integer.class) {
-                int_xor = true;
-            }
-            if (klazz == Long.class) {
-                long_xor = true;
-            }
-            if (klazz == Float.class) {
-                float_xor = true;
-            }
-            if (klazz == Double.class) {
-                double_xor = true;
-            }
-            if (klazz == Object.class) {
-                byte_xor = true;
-                short_xor = true;
-                int_xor = true;
-                long_xor = true;
-                float_xor = true;
-                double_xor = true;
-            }
-        }
-        if ("intdiv".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_intdiv = true;
-            }
-            if (klazz == Short.class) {
-                short_intdiv = true;
-            }
-            if (klazz == Integer.class) {
-                int_intdiv = true;
-            }
-            if (klazz == Long.class) {
-                long_intdiv = true;
-            }
-            if (klazz == Float.class) {
-                float_intdiv = true;
-            }
-            if (klazz == Double.class) {
-                double_intdiv = true;
-            }
-            if (klazz == Object.class) {
-                byte_intdiv = true;
-                short_intdiv = true;
-                int_intdiv = true;
-                long_intdiv = true;
-                float_intdiv = true;
-                double_intdiv = true;
-            }
-        }
-        if ("mod".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_mod = true;
-            }
-            if (klazz == Short.class) {
-                short_mod = true;
-            }
-            if (klazz == Integer.class) {
-                int_mod = true;
-            }
-            if (klazz == Long.class) {
-                long_mod = true;
-            }
-            if (klazz == Float.class) {
-                float_mod = true;
-            }
-            if (klazz == Double.class) {
-                double_mod = true;
-            }
-            if (klazz == Object.class) {
-                byte_mod = true;
-                short_mod = true;
-                int_mod = true;
-                long_mod = true;
-                float_mod = true;
-                double_mod = true;
-            }
-        }
-        if ("leftShift".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_leftShift = true;
-            }
-            if (klazz == Short.class) {
-                short_leftShift = true;
-            }
-            if (klazz == Integer.class) {
-                int_leftShift = true;
-            }
-            if (klazz == Long.class) {
-                long_leftShift = true;
-            }
-            if (klazz == Float.class) {
-                float_leftShift = true;
-            }
-            if (klazz == Double.class) {
-                double_leftShift = true;
-            }
-            if (klazz == Object.class) {
-                byte_leftShift = true;
-                short_leftShift = true;
-                int_leftShift = true;
-                long_leftShift = true;
-                float_leftShift = true;
-                double_leftShift = true;
-            }
-        }
-        if ("rightShift".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_rightShift = true;
-            }
-            if (klazz == Short.class) {
-                short_rightShift = true;
-            }
-            if (klazz == Integer.class) {
-                int_rightShift = true;
-            }
-            if (klazz == Long.class) {
-                long_rightShift = true;
-            }
-            if (klazz == Float.class) {
-                float_rightShift = true;
-            }
-            if (klazz == Double.class) {
-                double_rightShift = true;
-            }
-            if (klazz == Object.class) {
-                byte_rightShift = true;
-                short_rightShift = true;
-                int_rightShift = true;
-                long_rightShift = true;
-                float_rightShift = true;
-                double_rightShift = true;
-            }
-        }
-        if ("rightShiftUnsigned".equals(name)) {
-            if (klazz == Byte.class) {
-                byte_rightShiftUnsigned = true;
-            }
-            if (klazz == Short.class) {
-                short_rightShiftUnsigned = true;
-            }
-            if (klazz == Integer.class) {
-                int_rightShiftUnsigned = true;
-            }
-            if (klazz == Long.class) {
-                long_rightShiftUnsigned = true;
-            }
-            if (klazz == Float.class) {
-                float_rightShiftUnsigned = true;
-            }
-            if (klazz == Double.class) {
-                double_rightShiftUnsigned = true;
-            }
-            if (klazz == Object.class) {
-                byte_rightShiftUnsigned = true;
-                short_rightShiftUnsigned = true;
-                int_rightShiftUnsigned = true;
-                long_rightShiftUnsigned = true;
-                float_rightShiftUnsigned = true;
-                double_rightShiftUnsigned = true;
-            }
+    }
+
+    private void doCheckNumberOps(Class klazz, Consumer<Class> byteConsumer, Consumer<Class> shortConsumer, Consumer<Class> intConsumer, Consumer<Class> longConsumer, Consumer<Class> floatConsumer, Consumer<Class> doubleConsumer) {
+        if (klazz == Byte.class) {
+            byteConsumer.accept(klazz);
+        } else if (klazz == Short.class) {
+            shortConsumer.accept(klazz);
+        } else if (klazz == Integer.class) {
+            intConsumer.accept(klazz);
+        } else if (klazz == Long.class) {
+            longConsumer.accept(klazz);
+        } else if (klazz == Float.class) {
+            floatConsumer.accept(klazz);
+        } else if (klazz == Double.class) {
+            doubleConsumer.accept(klazz);
+        } else if (klazz == Object.class) {
+            byteConsumer.accept(klazz);
+            shortConsumer.accept(klazz);
+            intConsumer.accept(klazz);
+            longConsumer.accept(klazz);
+            floatConsumer.accept(klazz);
+            doubleConsumer.accept(klazz);
         }
     }
 
