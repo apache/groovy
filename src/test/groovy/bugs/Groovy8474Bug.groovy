@@ -201,7 +201,7 @@ class Groovy8474Bug extends GroovyTestCase {
               }
             }
         '''
-        assert errMsg.contains('Can not access private field')
+        assert errMsg.contains('Cannot access private field')
     }
 
     void testSettingSuperFinalProperty() {
