@@ -923,7 +923,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (Modifier.isProtected(fn.getModifiers()) && (samePackages || accessingNode.isDerivedFrom(declaringClass))) {
             return true;
         }
-        if (!Modifier.isPrivate(fn.getModifiers())) {
+        if (!fn.isPrivate()) {
             // package private is the only modifier left. It means  same package is allowed, subclass not, same class is
             return samePackages;
         }
@@ -973,7 +973,7 @@ public class AsmClassGenerator extends ClassGenerator {
                             while (outer!=null) {
                                 outerClassField = outer.getDeclaredField(name);
                                 if (outerClassField!=null && outerClassField.isStatic() && outerClassField.isFinal()) {
-                                    if (outer!=classNode.getOuterClass() && Modifier.isPrivate(outerClassField.getModifiers())) {
+                                    if (outer!=classNode.getOuterClass() && outerClassField.isPrivate()) {
                                         throw new GroovyBugError("Trying to access private constant field ["+outerClassField.getDeclaringClass()+"#"+outerClassField.getName()+"] from inner class");
                                     }
                                     PropertyExpression pexp = new PropertyExpression(
@@ -1094,13 +1094,13 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (fieldNode.isFinal()) {
-            throw new RuntimeParserException("Can not modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+            throw new RuntimeParserException("Cannot modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
         MethodNode setter = findSetter(classNode, fieldNode);
 
         if (fieldNode.isPrivate() && null == setter) {
-            throw new RuntimeParserException("Can not access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+            throw new RuntimeParserException("Cannot access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
         mv.visitVarInsn(ALOAD, 0);
