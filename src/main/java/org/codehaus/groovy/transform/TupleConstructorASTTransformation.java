@@ -188,8 +188,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, false, allProperties, false, true);
 
         boolean makeImmutable = makeImmutable(cNode);
-        boolean specialHashMapCase = (ImmutableASTTransformation.isSpecialHashMapCase(list) && superList.isEmpty()) ||
-                (ImmutableASTTransformation.isSpecialHashMapCase(superList) && list.isEmpty());
+        boolean specialNamedArgCase = (ImmutableASTTransformation.isSpecialNamedArgCase(list, !defaults) && superList.isEmpty()) ||
+                (ImmutableASTTransformation.isSpecialNamedArgCase(superList, !defaults) && list.isEmpty());
 
         // no processing if existing constructors found unless forced or ImmutableBase in play
         if (!cNode.getDeclaredConstructors().isEmpty() && !force && !makeImmutable) return;
@@ -214,7 +214,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
                 superParams.add(varX(name));
-            } else if (!superInPre && !specialHashMapCase) {
+            } else if (!superInPre && !specialNamedArgCase) {
                 if (makeImmutable) {
                     body.addStatement(createConstructorStatement(xform, cNode, pNode, false));
                 } else {
@@ -265,7 +265,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         boolean hasMapCons = hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
-        if (!specialHashMapCase || !hasMapCons) {
+        if (!specialNamedArgCase || !hasMapCons) {
             cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         }
 
@@ -278,22 +278,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // we don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
         // or if there is already a @MapConstructor annotation
-        if (!params.isEmpty() && defaults && !hasMapCons) {
-            ClassNode firstParam = params.get(0).getType();
-            if (params.size() > 1 || firstParam.equals(ClassHelper.OBJECT_TYPE)) {
+        if (!params.isEmpty() && defaults && !hasMapCons && specialNamedArgCase) {
+            ClassNode firstParamType = params.get(0).getType();
+            if (params.size() > 1 || firstParamType.equals(ClassHelper.OBJECT_TYPE)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
-                if (firstParam.equals(ClassHelper.MAP_TYPE)) {
-                    addMapConstructors(cNode, true, message);
-                } else {
-                    ClassNode candidate = HMAP_TYPE;
-                    while (candidate != null) {
-                        if (candidate.equals(firstParam)) {
-                            addMapConstructors(cNode, true, message);
-                            break;
-                        }
-                        candidate = candidate.getSuperClass();
-                    }
-                }
+                addSpecialMapConstructors(cNode, false, message);
             }
         }
     }
@@ -320,7 +309,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return initialExp;
     }
 
-    public static void addMapConstructors(ClassNode cNode, boolean hasNoArg, String message) {
+    public static void addSpecialMapConstructors(ClassNode cNode, boolean addNoArg, String message) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, "__namedArgs"));
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = varX("__namedArgs");
@@ -330,8 +319,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 processArgsBlock(cNode, namedArgs)));
         ConstructorNode init = new ConstructorNode(ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
         cNode.addConstructor(init);
-        // add a no-arg constructor too
-        if (!hasNoArg) {
+        // potentially add a no-arg constructor too
+        if (addNoArg) {
             code = new BlockStatement();
             code.addStatement(stmt(ctorX(ClassNode.THIS, ctorX(LHMAP_TYPE))));
             init = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);

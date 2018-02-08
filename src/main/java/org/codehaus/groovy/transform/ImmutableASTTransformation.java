@@ -183,7 +183,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode READONLYEXCEPTION_TYPE = make(ReadOnlyPropertyException.class);
     private static final ClassNode DGM_TYPE = make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = make(ImmutableASTTransformation.class);
-    private static final ClassNode HASHMAP_TYPE = makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
     private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
     private static final ClassNode SORTEDSET_CLASSNODE = make(SortedSet.class);
@@ -225,6 +225,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             ensureNotPublic(this, cName, fNode);
         }
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
+            // TODO make this a method to be called from TupleConstructor xform, add check for 'defaults'?
             AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
             if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
             if (unsupportedTupleAttribute(tupleCons, "includes")) return;
@@ -337,8 +338,21 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    static boolean isSpecialHashMapCase(List<PropertyNode> list) {
-        return list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
+    static boolean isSpecialNamedArgCase(List<PropertyNode> list, boolean checkSize) {
+        if (checkSize && list.size() != 1) return false;
+        if (list.size() == 0) return false;
+        ClassNode firstParamType = list.get(0).getField().getType();
+        if (firstParamType.equals(ClassHelper.MAP_TYPE)) {
+            return true;
+        }
+        ClassNode candidate = HMAP_TYPE;
+        while (candidate != null) {
+            if (candidate.equals(firstParamType)) {
+                return true;
+            }
+            candidate = candidate.getSuperClass();
+        }
+        return false;
     }
 
     @Deprecated
@@ -367,7 +381,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             argMap.addMapEntryExpression(constX(pNode.getName()), varX(pNode.getName()));
         }
         final BlockStatement orderedBody = new BlockStatement();
-        orderedBody.addStatement(stmt(ctorX(ClassNode.THIS, args(castX(HASHMAP_TYPE, argMap)))));
+        orderedBody.addStatement(stmt(ctorX(ClassNode.THIS, args(castX(HMAP_TYPE, argMap)))));
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
@@ -410,7 +424,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return castX(type, smce);
     }
 
-    static void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
+    static void createConstructorMapCommon(ClassNode cNode, BlockStatement body, Parameter[] params) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
@@ -421,7 +435,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
             body.addStatement(createConstructorStatementDefault(fNode, true));
         }
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params(new Parameter(HASHMAP_TYPE, "args")), ClassNode.EMPTY_ARRAY, body));
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, body));
     }
 
     private static Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
@@ -682,7 +696,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 new VariableScope(),
                 ifElseS(
                         callX(
-                                varX("map", HASHMAP_TYPE),
+                                varX("map", HMAP_TYPE),
                                 "containsKey",
                                 args(constX(pNode.getName()))
                         ),
@@ -691,7 +705,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                                 declS(
                                         varX("newValue", ClassHelper.OBJECT_TYPE),
                                         callX(
-                                                varX("map", HASHMAP_TYPE),
+                                                varX("map", HMAP_TYPE),
                                                 "get",
                                                 args(constX(pNode.getName()))
                                         )
@@ -716,7 +730,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                                         )
                                 ),
                                 stmt(callX(
-                                        varX("construct", HASHMAP_TYPE),
+                                        varX("construct", HMAP_TYPE),
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
@@ -727,7 +741,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                         block(
                                 new VariableScope(),
                                 stmt(callX(
-                                        varX("construct", HASHMAP_TYPE),
+                                        varX("construct", HMAP_TYPE),
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
@@ -744,12 +758,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         body.addStatement(ifS(
                 orX(
                         equalsNullX(varX("map", ClassHelper.MAP_TYPE)),
-                        eqX(callX(varX("map", HASHMAP_TYPE), "size"), constX(0))
+                        eqX(callX(varX("map", HMAP_TYPE), "size"), constX(0))
                 ),
                 returnS(varX("this", cNode))
         ));
         body.addStatement(declS(varX("dirty", ClassHelper.boolean_TYPE), ConstantExpression.PRIM_FALSE));
-        body.addStatement(declS(varX("construct", HASHMAP_TYPE), ctorX(HASHMAP_TYPE)));
+        body.addStatement(declS(varX("construct", HMAP_TYPE), ctorX(HMAP_TYPE)));
 
         // Check for each property
         for (final PropertyNode pNode : pList) {
@@ -758,7 +772,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
         body.addStatement(returnS(ternaryX(
                 isTrueX(varX("dirty", ClassHelper.boolean_TYPE)),
-                ctorX(cNode, args(varX("construct", HASHMAP_TYPE))),
+                ctorX(cNode, args(varX("construct", HMAP_TYPE))),
                 varX("this", cNode)
         )));
 
