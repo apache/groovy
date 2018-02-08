@@ -996,7 +996,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isSuperExpression(objectExpression)) {
                     String prefix;
                     if (controller.getCompileStack().isLHS()) {
-                        throw new GroovyBugError("Unexpected super property set for:" + expression.getText());
+                        //throw new GroovyBugError("Unexpected super property set for:" + expression.getText());
+                        setSuperProperty(classNode, expression, mv);
+
+                        return;
                     } else {
                         prefix = "get";
                     }
@@ -1066,6 +1069,51 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, null, adapter);
         }
+    }
+
+    private void setSuperProperty(ClassNode classNode, PropertyExpression expression, MethodVisitor mv) {
+        String fieldName = expression.getPropertyAsString();
+        FieldNode fieldNode = classNode.getSuperClass().getField(fieldName);
+
+        if (null == fieldNode) {
+            throw new RuntimeParserException("Failed to find field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+        }
+
+        if (fieldNode.isFinal()) {
+            throw new RuntimeParserException("Can not modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+        }
+
+        MethodNode setter = findSetter(classNode, fieldNode);
+
+        if (fieldNode.isPrivate() && null == setter) {
+            throw new RuntimeParserException("Can not access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
+        }
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(SWAP);
+
+        String owner = BytecodeHelper.getClassInternalName(classNode.getSuperClass().getName());
+        String desc = BytecodeHelper.getTypeDescription(fieldNode.getType());
+        if (fieldNode.isPublic() || fieldNode.isProtected()) {
+            mv.visitFieldInsn(PUTFIELD, owner, fieldName, desc);
+        } else {
+            mv.visitMethodInsn(INVOKESPECIAL, owner, setter.getName(), BytecodeHelper.getMethodDescriptor(setter), false);
+        }
+    }
+
+    private MethodNode findSetter(ClassNode classNode, FieldNode fieldNode) {
+        String setMethodName = "set" + MetaClassHelper.capitalize(fieldNode.getName());
+        MethodNode mn = classNode.getSuperClass().getMethod(setMethodName, new Parameter[] { new Parameter(fieldNode.getType(), "") });
+
+        if (null == mn) {
+            return null;
+        }
+
+        if (!ClassHelper.VOID_TYPE.equals(mn.getReturnType())) {
+            return null;
+        }
+
+        return mn;
     }
 
     private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
