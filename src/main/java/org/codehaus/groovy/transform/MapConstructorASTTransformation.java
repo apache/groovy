@@ -41,6 +41,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,6 +80,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
     private static final ClassNode IMMUTABLE_XFORM_TYPE = make(ImmutableASTTransformation.class);
+    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -153,9 +155,9 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
         }
         final BlockStatement inner = new BlockStatement();
         superList.addAll(list);
-        boolean specialHashMapCase = ImmutableASTTransformation.isSpecialHashMapCase(superList);
-        if (!specialHashMapCase) {
-            processProps(xform, cNode, makeImmutable && !specialHashMapCase, useSetters, allNames, excludes, includes, superList, map, inner);
+        boolean specialNamedArgCase = ImmutableASTTransformation.isSpecialNamedArgCase(superList, true);
+        if (!specialNamedArgCase) {
+            processProps(xform, cNode, makeImmutable, useSetters, allNames, excludes, includes, superList, map, inner);
             body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         }
         body.addStatement(inner);
@@ -163,16 +165,16 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(post);
             body.addStatement(transformed.getCode());
         }
-        if (makeImmutable && !specialHashMapCase) {
+        if (makeImmutable && !specialNamedArgCase) {
             body.addStatement(stmt(callX(IMMUTABLE_XFORM_TYPE, "checkPropNames", args("this", "args"))));
-            createConstructorMapCommon(cNode, body);
-        } else if (specialHashMapCase) {
+            createConstructorMapCommon(cNode, body, params(map));
+        } else if (specialNamedArgCase) {
             inner.addStatement(createConstructorStatementMapSpecial(superList.get(0).getField()));
-            createConstructorMapCommon(cNode, body);
+            createConstructorMapCommon(cNode, body, params(new Parameter(LHMAP_TYPE, "args")));
         } else {
             cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params(map), ClassNode.EMPTY_ARRAY, body));
         }
-        if (noArg && !superList.isEmpty() && !hasNoArgConstructor(cNode) && !specialHashMapCase) {
+        if (noArg && !superList.isEmpty() && !hasNoArgConstructor(cNode) && !specialNamedArgCase) {
             createNoArgConstructor(cNode);
         }
     }

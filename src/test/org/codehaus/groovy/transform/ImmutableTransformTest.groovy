@@ -1055,4 +1055,24 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert mmm.toString() == 'Person(Fred, Brooks, 1931-04-19)'
         '''
     }
+
+    // GROOVY-8416
+    @Test
+    void testMapFriendlyNamedArgs() {
+        assertScript '''
+            import groovy.transform.Immutable
+            @Immutable
+            class Point {
+                int x, y
+            }
+            def coordinates = [x: 1, y: 2]
+            assert coordinates instanceof LinkedHashMap
+            def p1 = new Point(coordinates)
+            assert p1.x == 1
+            def p2 = new Point(new HashMap(coordinates))
+            assert p2.x == 1
+            def p3 = new Point(new TreeMap(coordinates))
+            assert p3.x == 1
+        '''
+    }
 }
