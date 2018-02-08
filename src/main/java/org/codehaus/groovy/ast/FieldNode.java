@@ -136,15 +136,16 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable, Groov
         return (modifiers & ACC_PUBLIC) != 0;
     }
 
-   /**
+    /**
      * @return true if the field is protected
      */
     public boolean isProtected() {
         return (modifiers & ACC_PROTECTED) != 0;
     }
 
-   /**
+    /**
      * @return true if the field is private
+     * @since 2.5.0
      */
     public boolean isPrivate() {
         return (modifiers & ACC_PRIVATE) != 0;
