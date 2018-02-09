@@ -104,6 +104,134 @@ class Groovy8474Bug extends GroovyTestCase {
         '''
     }
 
+    void testSettingSuperProperty5() {
+        assertScript '''
+            class T {
+              Integer group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty6() {
+        assertScript '''
+            class T {
+              Long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty7() {
+        assertScript '''
+            class T {
+              Long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Long.MAX_VALUE
+              }
+            }
+            
+            assert Long.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty8() {
+        assertScript '''
+            class T {
+              int group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Integer.MAX_VALUE
+              }
+            }
+            
+            assert Integer.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty9() {
+        assertScript '''
+            class T {
+              long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Long.MAX_VALUE
+              }
+            }
+            
+            assert Long.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty10() {
+        assertScript '''
+            class T {
+              int group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty11() {
+        assertScript '''
+            class T {
+              long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 123456789123456789
+              }
+            }
+            
+            assert 123456789123456789 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty12() {
+        assertScript '''
+            class T {
+              boolean group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = true
+              }
+            }
+            
+            assert true == new S().group
+        '''
+    }
+
     void testSettingSuperProtectedField() {
         assertScript '''
             class T {
