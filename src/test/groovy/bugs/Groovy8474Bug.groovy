@@ -75,6 +75,35 @@ class Groovy8474Bug extends GroovyTestCase {
         '''
     }
 
+    void testSettingSuperProperty4() {
+        assertScript '''
+            class K {
+              private String name
+              public String getName() {
+                name
+              }
+              public void setName(String name) {
+                this.name = name
+              }
+            }
+            class T extends K {
+              String group
+            }
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+                super.name = 'World'
+              }
+              
+              public String helloWorld() {
+                "$group, $name"
+              }
+            }
+            
+            assert 'Hello, World' == new S().helloWorld()
+        '''
+    }
+
     void testSettingSuperProtectedField() {
         assertScript '''
             class T {
@@ -201,6 +230,71 @@ class Groovy8474Bug extends GroovyTestCase {
               }
             }
         '''
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty2() {
+        def errMsg = shouldFail '''
+            class T {
+              private String group
+              
+              public String getGroup() {
+                return group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty3() {
+        def errMsg = shouldFail '''
+            class T {
+              private String group
+              
+              public void setGroup(String group) {
+                this.group = group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty4() {
+        def errMsg = shouldFail '''
+            class K {
+              private String group
+              
+              public void setGroup(String group) {
+                this.group = group
+              }
+            }
+            class T extends K {
+              public String getGroup() {
+                return group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
         assert errMsg.contains('Cannot access private field')
     }
 
