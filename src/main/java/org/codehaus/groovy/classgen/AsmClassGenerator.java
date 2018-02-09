@@ -1010,8 +1010,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isSuperExpression(objectExpression)) {
                     String prefix;
                     if (controller.getCompileStack().isLHS()) {
-                        //throw new GroovyBugError("Unexpected super property set for:" + expression.getText());
-                        setSuperProperty(classNode, expression, mv);
+                        setPropertyOfSuperClass(classNode, expression, mv);
 
                         return;
                     } else {
@@ -1085,7 +1084,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void setSuperProperty(ClassNode classNode, PropertyExpression expression, MethodVisitor mv) {
+    private void setPropertyOfSuperClass(ClassNode classNode, PropertyExpression expression, MethodVisitor mv) {
         String fieldName = expression.getPropertyAsString();
         FieldNode fieldNode = classNode.getSuperClass().getField(fieldName);
 
@@ -1097,9 +1096,10 @@ public class AsmClassGenerator extends ClassGenerator {
             throw new RuntimeParserException("Cannot modify final field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
-        MethodNode setter = findSetter(classNode, fieldNode);
+        MethodNode setter = findSetterOfSuperClass(classNode, fieldNode);
+        MethodNode getter = findGetterOfSuperClass(classNode, fieldNode);
 
-        if (fieldNode.isPrivate() && null == setter) {
+        if (fieldNode.isPrivate() && !getterAndSetterExists(setter, getter)) {
             throw new RuntimeParserException("Cannot access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
@@ -1115,19 +1115,20 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private MethodNode findSetter(ClassNode classNode, FieldNode fieldNode) {
-        String setMethodName = "set" + MetaClassHelper.capitalize(fieldNode.getName());
-        MethodNode mn = classNode.getSuperClass().getMethod(setMethodName, new Parameter[] { new Parameter(fieldNode.getType(), "") });
+    private boolean getterAndSetterExists(MethodNode setter, MethodNode getter) {
+        return null != setter && null != getter && setter.getDeclaringClass().equals(getter.getDeclaringClass());
+    }
 
-        if (null == mn) {
-            return null;
-        }
+    private MethodNode findSetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
+        String setterMethodName = "set" + MetaClassHelper.capitalize(fieldNode.getName());
 
-        if (!ClassHelper.VOID_TYPE.equals(mn.getReturnType())) {
-            return null;
-        }
+        return classNode.getSuperClass().getSetterMethod(setterMethodName);
+    }
 
-        return mn;
+    private MethodNode findGetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
+        String getterMethodName = "get" + MetaClassHelper.capitalize(fieldNode.getName());
+
+        return classNode.getSuperClass().getGetterMethod(getterMethodName);
     }
 
     private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
