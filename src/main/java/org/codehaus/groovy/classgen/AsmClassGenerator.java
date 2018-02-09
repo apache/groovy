@@ -1103,8 +1103,13 @@ public class AsmClassGenerator extends ClassGenerator {
             throw new RuntimeParserException("Cannot access private field[" + fieldName + "] of " + classNode.getName() + "'s super class", expression);
         }
 
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.doAsType(fieldNode.getType());
+
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(SWAP);
+        operandStack.push(classNode);
+
+        operandStack.swap();
 
         String owner = BytecodeHelper.getClassInternalName(classNode.getSuperClass().getName());
         String desc = BytecodeHelper.getTypeDescription(fieldNode.getType());
