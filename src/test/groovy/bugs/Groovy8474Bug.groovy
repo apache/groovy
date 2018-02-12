@@ -75,6 +75,163 @@ class Groovy8474Bug extends GroovyTestCase {
         '''
     }
 
+    void testSettingSuperProperty4() {
+        assertScript '''
+            class K {
+              private String name
+              public String getName() {
+                name
+              }
+              public void setName(String name) {
+                this.name = name
+              }
+            }
+            class T extends K {
+              String group
+            }
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+                super.name = 'World'
+              }
+              
+              public String helloWorld() {
+                "$group, $name"
+              }
+            }
+            
+            assert 'Hello, World' == new S().helloWorld()
+        '''
+    }
+
+    void testSettingSuperProperty5() {
+        assertScript '''
+            class T {
+              Integer group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty6() {
+        assertScript '''
+            class T {
+              Long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty7() {
+        assertScript '''
+            class T {
+              Long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Long.MAX_VALUE
+              }
+            }
+            
+            assert Long.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty8() {
+        assertScript '''
+            class T {
+              int group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Integer.MAX_VALUE
+              }
+            }
+            
+            assert Integer.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty9() {
+        assertScript '''
+            class T {
+              long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = Long.MAX_VALUE
+              }
+            }
+            
+            assert Long.MAX_VALUE == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty10() {
+        assertScript '''
+            class T {
+              int group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 1
+              }
+            }
+            
+            assert 1 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty11() {
+        assertScript '''
+            class T {
+              long group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 123456789123456789
+              }
+            }
+            
+            assert 123456789123456789 == new S().group
+        '''
+    }
+
+    void testSettingSuperProperty12() {
+        assertScript '''
+            class T {
+              boolean group
+            }
+            
+            class S extends T {
+              S() {
+                super.group = true
+              }
+            }
+            
+            assert true == new S().group
+        '''
+    }
+
     void testSettingSuperProtectedField() {
         assertScript '''
             class T {
@@ -201,6 +358,71 @@ class Groovy8474Bug extends GroovyTestCase {
               }
             }
         '''
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty2() {
+        def errMsg = shouldFail '''
+            class T {
+              private String group
+              
+              public String getGroup() {
+                return group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty3() {
+        def errMsg = shouldFail '''
+            class T {
+              private String group
+              
+              public void setGroup(String group) {
+                this.group = group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
+        assert errMsg.contains('Cannot access private field')
+    }
+
+    void testSettingSuperPrivateProperty4() {
+        def errMsg = shouldFail '''
+            class K {
+              private String group
+              
+              public void setGroup(String group) {
+                this.group = group
+              }
+            }
+            class T extends K {
+              public String getGroup() {
+                return group
+              }
+            }
+            
+            class S extends T {
+              S() {
+                super.group = 'Hello'
+              }
+            }
+        '''
+
         assert errMsg.contains('Cannot access private field')
     }
 
