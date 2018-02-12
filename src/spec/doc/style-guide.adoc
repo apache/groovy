@@ -486,40 +486,7 @@ Here are some examples of those native constructs:
 
 [source,groovy]
 ----
-def list = [1, 4, 6, 9]
-
-// by default, keys are Strings, no need to quote them
-// you can wrap keys with () like [(variableStateAcronym): stateName] to insert a variable or object as a key.
-def map = [CA: 'California', MI: 'Michigan']
-
-// ranges can be inclusive and exclusive
-def range = 10..20 // inclusive
-assert range.size() == 11
-// use brackets if you need to call a method on a range definition
-assert (10..<20).size() == 10 // exclusive
-
-def pattern = ~/fo*/
-
-// equivalent to add()
-list << 5
-
-// call contains()
-assert 4 in list
-assert 5 in list
-assert 15 in range
-
-// subscript notation
-assert list[1] == 4
-
-// add a new key value pair
-map << [WA: 'Washington']
-// subscript notation
-assert map['CA'] == 'California'
-// property notation
-assert map.WA == 'Washington'
-
-// matches() strings against patterns
-assert 'foo' ==~ pattern
+include::{projectdir}/src/spec/test/StyleGuideTest.groovy[tags=data_structures,indent=0]
 ----
 
 == The Groovy Development Kit
