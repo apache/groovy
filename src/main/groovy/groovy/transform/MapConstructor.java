@@ -18,6 +18,8 @@
  */
 package groovy.transform;
 
+import groovy.transform.construction.DefaultPropertyHandler;
+import groovy.transform.construction.PropertyHandler;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -74,7 +76,12 @@ import java.lang.annotation.Target;
  * is included and the type of that property (or field) is Object, AbstractMap, Map or HashMap.
  * In this case, the generated constructor will be of type {@code LinkedHashMap}.
  * This allows the possibility of also adding a tuple constructor without conflict, although
- * no such constructor is added automatically.
+ * no such constructor is added automatically. You can disable this behavior by setting
+ * the specialNamedArgHandling annotation attribute to false. This means that for the special
+ * case mentioned above, you will not be able to also add a tuple constructor with a single Map
+ * argument but you can supply any kind of map as your argument. We'd also recommend not
+ * having both a map constructor and a tuple constructor with a single Object, AbstractMap or
+ * HashMap since it can cause confusion as to which will be called.
  * </li>
  * </ul>
  *
@@ -143,6 +150,11 @@ public @interface MapConstructor {
     boolean useSetters() default false;
 
     /**
+     * Whether to include static properties in the constructor.
+     */
+    boolean includeStatic() default false;
+
+    /**
      * Whether to include all fields and/or properties within the constructor, including those with names that are considered internal.
      */
     boolean allNames() default false;
@@ -151,6 +163,18 @@ public @interface MapConstructor {
      * In addition to the map constructor, provide a no-arg constructor which calls the map constructor with an empty map.
      */
     boolean noArg() default false;
+
+    /**
+     * A class defining the property handler
+     */
+    Class<? extends PropertyHandler> propertyHandler() default DefaultPropertyHandler.class;
+
+    /**
+     * If true, change the type of the map constructor argument from Map to LinkedHashMap only for the case where
+     * the class has a single property (or field) with a Map-like type. This allows both a map and a tuple constructor
+     * to be used side-by-side so long as care is taken about the types used when calling.
+     */
+    boolean specialNamedArgHandling() default true;
 
     /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement within the Closure may be "super(someArgs)" in which case the no-arg super constructor won't be called.

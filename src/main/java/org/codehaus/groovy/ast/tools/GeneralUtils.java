@@ -472,30 +472,38 @@ public class GeneralUtils {
     }
 
     public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly) {
-        return getAllProperties(names, origType, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly, false);
+        return getAllProperties(names, origType, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly, false, false, false);
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly, boolean reverse) {
+    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties,
+                                                      boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters,
+                                                      boolean traverseSuperClasses, boolean skipReadonly, boolean reverse, boolean allNames, boolean includeStatic) {
         final List<PropertyNode> result = new ArrayList<PropertyNode>();
         if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && !reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         if (includeProperties) {
             for (PropertyNode pNode : cNode.getProperties()) {
-                if (!pNode.isStatic() && !names.contains(pNode.getName())) {
+                if ((!pNode.isStatic() || includeStatic) && !names.contains(pNode.getName())) {
                     result.add(pNode);
                     names.add(pNode.getName());
                 }
             }
             if (includePseudoGetters || includePseudoSetters) {
-                BeanUtils.addPseudoProperties(origType, cNode, result, names, false, includePseudoGetters, includePseudoSetters);
+                BeanUtils.addPseudoProperties(origType, cNode, result, names, includeStatic, includePseudoGetters, includePseudoSetters);
             }
         }
         if (includeFields) {
             for (FieldNode fNode : cNode.getFields()) {
-                if (fNode.isStatic() || cNode.getProperty(fNode.getName()) != null || names.contains(fNode.getName())) {
+                if ((fNode.isStatic() && !includeStatic) || fNode.isSynthetic() || cNode.getProperty(fNode.getName()) != null || names.contains(fNode.getName())) {
                     continue;
                 }
+
+                // internal field
+                if (fNode.getName().contains("$") && !allNames) {
+                    continue;
+                }
+
                 if (fNode.isPrivate() && !cNode.equals(origType)) {
                     continue;
                 }
