@@ -75,6 +75,15 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return copiedAnnotations;
     }
 
+    /**
+     * If the transform is associated with a single annotation, returns a name suitable for displaying in error messages.
+     *
+     * @return The simple name of the annotation including the "@" or null if no such name is defined
+     */
+    public String getAnnotationName() {
+        return null;
+    }
+
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
         if (nodes == null || nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + (nodes == null ? null : Arrays.asList(nodes)));
@@ -434,15 +443,15 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields, boolean includeSuperProperties, boolean allProperties) {
-        return checkPropertyList(cNode, propertyNameList, listName, anno, typeName, includeFields, includeSuperProperties, allProperties, false);
+        return checkPropertyList(cNode, propertyNameList, listName, anno, typeName, includeFields, includeSuperProperties, allProperties, false, false);
     }
 
-    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields, boolean includeSuperProperties, boolean allProperties, boolean includeSuperFields) {
+    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields, boolean includeSuperProperties, boolean allProperties, boolean includeSuperFields, boolean includeStatic) {
         if (propertyNameList == null || propertyNameList.isEmpty()) {
             return true;
         }
         final List<String> pNames = new ArrayList<String>();
-        for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, includeSuperProperties, false, allProperties)) {
+        for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, includeSuperProperties, includeStatic, allProperties)) {
             pNames.add(pNode.getField().getName());
         }
         boolean result = true;

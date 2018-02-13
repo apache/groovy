@@ -18,6 +18,8 @@
  */
 package groovy.transform
 
+import groovy.transform.construction.ImmutablePropertyHandler
+
 /**
  * Meta annotation used when defining immutable classes.
  * <p>
@@ -174,8 +176,8 @@ package groovy.transform
 @ToString(cache = true, includeSuperProperties = true)
 @EqualsAndHashCode(cache = true)
 @ImmutableBase
-@TupleConstructor(defaults = false)
-@MapConstructor(noArg = true, includeSuperProperties = true)
+@TupleConstructor(defaults = false, propertyHandler = ImmutablePropertyHandler)
+@MapConstructor(noArg = true, includeSuperProperties = true, includeFields = true, propertyHandler = ImmutablePropertyHandler)
 @KnownImmutable
 @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @interface Immutable { }
