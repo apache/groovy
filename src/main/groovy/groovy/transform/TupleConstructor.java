@@ -18,6 +18,8 @@
  */
 package groovy.transform;
 
+import groovy.transform.construction.DefaultPropertyHandler;
+import groovy.transform.construction.PropertyHandler;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -296,6 +298,13 @@ public @interface TupleConstructor {
      * @since 2.5.0
      */
     boolean allProperties() default false;
+
+    /**
+     * A class defining the property handler
+     *
+     * @since 2.5.0
+     */
+    Class<? extends PropertyHandler> propertyHandler() default DefaultPropertyHandler.class;
 
     /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement

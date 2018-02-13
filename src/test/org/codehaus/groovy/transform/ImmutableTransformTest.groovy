@@ -230,7 +230,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testImmutableWithHashMap() {
         assertScript """
             import groovy.transform.Immutable
-            @Immutable final class HasHashMap {
+            @Immutable(propertyHandler = groovy.transform.construction.LegacyHashMapPropertyHandler, noArg = false)
+            final class HasHashMap {
                 HashMap map = [d:4]
             }
             assert new HasHashMap([a:1]).map == [a:1]
@@ -413,7 +414,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testPrivateFieldAssignedViaConstructor() {
         assertScript '''
             import groovy.transform.Immutable
-            @Immutable class Numbers {
+            @Immutable(includeStatic = true)
+            class Numbers {
                 private int a1 = 1
                 private int b1 = -1
                 private int c1
