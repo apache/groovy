@@ -274,7 +274,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             @Override
             public void variableNotAlwaysInitialized(final VariableExpression var) {
-                throw new RuntimeParserException("The variable [" + var.getName() + "] may be uninitialized", var);
+                if (Modifier.isFinal(var.getAccessedVariable().getModifiers()))
+                    throw new RuntimeParserException("The variable [" + var.getName() + "] may be uninitialized", var);
             }
         };
     }
