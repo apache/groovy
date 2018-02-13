@@ -246,13 +246,13 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testPrePostfixShouldNotCompileWithUninitializedVar() {
+    void testPrePostfixShouldNotCompileWithUninitializedFinalVar() {
         assertFinalCompilationErrors(['x'], '''
-            def x
+            final x
             x++
         ''', true)
         assertFinalCompilationErrors(['y'], '''
-            def y
+            final y
             --y
         ''', true)
     }
