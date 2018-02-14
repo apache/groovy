@@ -37,7 +37,10 @@ public class SourceExtensionHandler {
         Set<String> extensions = new LinkedHashSet<String>();
         extensions.add("groovy");
         try {
-            Enumeration<URL> globalServices = loader.getResources("META-INF/services/org.codehaus.groovy.source.Extensions");
+            Enumeration<URL> globalServices = loader.getResources("META-INF/groovy/org.codehaus.groovy.source.Extensions");
+            if (!globalServices.hasMoreElements()) {
+                globalServices = loader.getResources("META-INF/services/org.codehaus.groovy.source.Extensions");
+            }
             while (globalServices.hasMoreElements()) {
                 BufferedReader svcIn = null;
                 URL service = globalServices.nextElement();
