@@ -53,13 +53,12 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
 
     /**
      * Try to get the value from cache.
-     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value.
+     * If not found, create the value by {@link MemoizeCache.ValueProvider} and put it into the cache, at last return the value.
      *
      * The operation is completed atomically.
      *
      * @param key
      * @param valueProvider provide the value if the associated value not found
-     * @return
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
