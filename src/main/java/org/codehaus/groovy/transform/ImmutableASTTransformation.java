@@ -18,14 +18,16 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
+import groovy.transform.CompilationUnitAware;
 import groovy.transform.ImmutableBase;
+import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -34,11 +36,9 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -53,19 +53,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.builtinOrMarkedImmutableClass;
-import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneArrayOrCloneableExpr;
-import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneDateExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.createErrorMessage;
-import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.derivesFromDate;
-import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.getKnownImmutables;
-import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.implementsCloneable;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -81,7 +75,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.safeExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -90,7 +83,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * Handles generation of code for the @Immutable annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class ImmutableASTTransformation extends AbstractASTTransformation {
+public class ImmutableASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
+    private CompilationUnit compilationUnit;
+
     private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
@@ -101,29 +96,36 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     public static final String IMMUTABLE_SAFE_FLAG = "Immutable.Safe";
 
+    @Override
+    public String getAnnotationName() {
+        return MY_TYPE_NAME;
+    }
+
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
+        AnnotationNode anno = (AnnotationNode) nodes[0];
+        if (!MY_TYPE.equals(anno.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
-            doMakeImmutable((ClassNode) parent, node);
+            final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
+            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
+            if (handler == null) return;
+            if (!handler.validateAttributes(this, anno)) return;
+            doMakeImmutable((ClassNode) parent, anno, handler);
         }
     }
 
-    private void doMakeImmutable(ClassNode cNode, AnnotationNode node) {
+    private void doMakeImmutable(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
         List<PropertyNode> newProperties = new ArrayList<PropertyNode>();
-        final List<String> knownImmutables = getKnownImmutables(this, node);
 
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-        if (!checkPropertyList(cNode, knownImmutables, "knownImmutables", node, "immutable class", false)) return;
         makeClassFinal(this, cNode);
 
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            adjustPropertyForImmutability(pNode, newProperties);
+            adjustPropertyForImmutability(pNode, newProperties, handler);
         }
         for (PropertyNode pNode : newProperties) {
             cNode.getProperties().remove(pNode);
@@ -162,36 +164,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
-    static void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
-        cNode.addConstructor(constructorNode);
-        // GROOVY-5814: Immutable is not compatible with @CompileStatic
-        Parameter argsParam = null;
-        for (Parameter p : constructorNode.getParameters()) {
-            if ("args".equals(p.getName())) {
-                argsParam = p;
-                break;
-            }
-        }
-        if (argsParam != null) {
-            final Parameter arg = argsParam;
-            ClassCodeVisitorSupport variableExpressionFix = new ClassCodeVisitorSupport() {
-                @Override
-                protected SourceUnit getSourceUnit() {
-                    return cNode.getModule().getContext();
-                }
-
-                @Override
-                public void visitVariableExpression(final VariableExpression expression) {
-                    super.visitVariableExpression(expression);
-                    if ("args".equals(expression.getName())) {
-                        expression.setAccessedVariable(arg);
-                    }
-                }
-            };
-            variableExpressionFix.visitConstructor(constructorNode);
-        }
-    }
-
     private static void makeClassFinal(AbstractASTTransformation xform, ClassNode cNode) {
         int modifiers = cNode.getModifiers();
         if ((modifiers & ACC_FINAL) == 0) {
@@ -218,41 +190,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             candidate = candidate.getSuperClass();
         }
         return false;
-    }
-
-    @Deprecated
-    static List<PropertyNode> getProperties(ClassNode cNode, boolean includeSuperProperties, boolean allProperties) {
-        List<PropertyNode> list = getInstanceProperties(cNode);
-        if (includeSuperProperties) {
-            ClassNode next = cNode.getSuperClass();
-            while (next != null) {
-                List<PropertyNode> tail = list;
-                list = getInstanceProperties(next);
-                list.addAll(tail);
-                next = next.getSuperClass();
-            }
-        }
-        return list;
-    }
-
-    @Deprecated
-    static void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
-        final MapExpression argMap = new MapExpression();
-        final Parameter[] orderedParams = new Parameter[list.size()];
-        int index = 0;
-        for (PropertyNode pNode : list) {
-            Parameter param = new Parameter(pNode.getField().getType(), pNode.getField().getName());
-            orderedParams[index++] = param;
-            argMap.addMapEntryExpression(constX(pNode.getName()), varX(pNode.getName()));
-        }
-        final BlockStatement orderedBody = new BlockStatement();
-        orderedBody.addStatement(stmt(ctorX(ClassNode.THIS, args(castX(HMAP_TYPE, argMap)))));
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
-    }
-
-    private static Statement createGetterBodyDefault(FieldNode fNode) {
-        final Expression fieldExpr = varX(fNode);
-        return stmt(fieldExpr);
     }
 
     private static void ensureNotPublic(AbstractASTTransformation xform, String cNode, FieldNode fNode) {
@@ -288,48 +225,20 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     static boolean makeImmutable(ClassNode cNode) {
-        List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_BASE_TYPE);
+        List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode annoImmutable = annotations.isEmpty() ? null : annotations.get(0);
         return annoImmutable != null;
     }
 
-    private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes) {
+    private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
-        adjustPropertyNode(pNode, createGetterBody(fNode));
-        newNodes.add(pNode);
-    }
-
-    private static void adjustPropertyNode(PropertyNode pNode, Statement getterBody) {
         pNode.setSetterBlock(null);
-        pNode.setGetterBlock(getterBody);
-    }
-
-    private static Statement createGetterBody(FieldNode fNode) {
-        BlockStatement body = new BlockStatement();
-        final ClassNode fieldType = fNode.getType();
-        final Statement statement;
-        if (fieldType.isArray() || implementsCloneable(fieldType)) {
-            statement = createGetterBodyArrayOrCloneable(fNode);
-        } else if (derivesFromDate(fieldType)) {
-            statement = createGetterBodyDate(fNode);
-        } else {
-            statement = createGetterBodyDefault(fNode);
+        Statement getter = handler.createPropGetter(pNode);
+        if (getter != null) {
+            pNode.setGetterBlock(getter);
         }
-        body.addStatement(statement);
-        return body;
-    }
-
-    private static Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = varX(fNode);
-        final Expression expression = cloneArrayOrCloneableExpr(fieldExpr, fNode.getType());
-        return safeExpression(fieldExpr, expression);
-    }
-
-    private static Statement createGetterBodyDate(FieldNode fNode) {
-        final Expression fieldExpr = varX(fNode);
-        final Expression expression = cloneDateExpr(fieldExpr);
-        return safeExpression(fieldExpr, expression);
+        newNodes.add(pNode);
     }
 
     private static Statement createCheckForProperty(final PropertyNode pNode) {
@@ -529,5 +438,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             if (metaClass.hasProperty(instance, k) == null)
                 throw new MissingPropertyException(k, instance.getClass());
         }
+    }
+
+    @Override
+    public void setCompilationUnit(CompilationUnit unit) {
+        this.compilationUnit = unit;
     }
 }

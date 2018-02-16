@@ -942,9 +942,13 @@ expecting exactly one constructor, e.g. injection frameworks or JUnit parameteri
 
 ===== Immutability support
 
-If the `@ImmutableBase` annotation (normally added by the `@Immutable` meta-annotation) is also found on the class with the `@TupleConstructor` annotation,
-then the generated constructor will have all the necessary logic required for immutable classes (defensive copy in, cloning, etc.). Some of the
-annotation attributes won't be supported in this case.
+If the `@PropertyOptions` annotation is also found on the class with the `@TupleConstructor` annotation,
+then the generated constructor may contain custom property handling logic.
+The `propertyHandler` attribute on the `@PropertyOptions` annotation could for instance be set to
+`ImmutablePropertyHandler` which will result in the addition of the necessary logic for immutable classes
+(defensive copy in, cloning, etc.). This normally would happen automatically behind the scenes when you use
+the `@Immutable` meta-annotation.
+Some of the annotation attributes might not be supported by all property handlers.
 
 ===== Customization options
 
@@ -1702,9 +1706,11 @@ The `@Immutable` meta-annotation combines the following annotations:
 
 * <<xform-ToString,@ToString>>
 * <<xform-EqualsAndHashCode,@EqualsAndHashCode>>
-* <<xform-ImmutableBase,@ImmutableBase>>
 * <<xform-TupleConstructor,@TupleConstructor>>
 * <<xform-MapConstructor,@MapConstructor>>
+* <<xform-ImmutableBase,@ImmutableBase>>
+* <<xform-ImmutableOptions,@ImmutableOptions>>
+* <<xform-PropertyOptions,@PropertyOptions>>
 * <<xform-KnownImmutable,@KnownImmutable>>
 
 The `@Immutable` meta-annotation simplifies the creation of immutable classes. Immutable classes are useful
@@ -1725,7 +1731,7 @@ such as defensive copy in and defensive copy out for any mutable properties with
 and property getters. Between `@ImmutableBase`, `@MapConstructor` and `@TupleConstructor` properties
 are either identified as immutable or the special coding for numerous known cases is handled automatically.
 Various mechanisms are provided for you to extend the handled property types which are allowed. See
-`@ImmutableBase` and `@KnownImmutable` for details.
+`@ImmutableOptions` and `@KnownImmutable` for details.
 
 The results of applying `@Immutable` to a class are pretty similar to those of
 applying the <<xform-Canonical,@Canonical>> meta-annotation but the generated class will have extra
@@ -1740,15 +1746,35 @@ it aggregates. See those annotations for more details.
 ===== `@groovy.transform.ImmutableBase`
 
 Immutable classes generated with `@ImmutableBase` are automatically made final. Also, the type of each property is checked
-and various checks are made on the class, for example, public instance fields currently aren't allowed.
+and various checks are made on the class, for example, public instance fields currently aren't allowed. It also generates
+a `copyWith` constructor if desired.
 
-For a class to be immutable, you have to
-make sure that properties are of an immutable type (primitive or boxed types), of a known-immutable type or another
-class annotated with `@KnownImmutable` (which includes those annotated with the `@Immutable` meta-annotation).
+The following annotation attribute is supported:
 
-Since `@ImmutableBase` relies on a predefined list of known immutable classes (like `java.net.URI` or `java.lang.String`
-and fails if you use a type which is not in that list, you are allowed to instruct the transformation that some types
-are deemed immutable thanks to the following annotation attributes:
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|copyWith|false|A boolean whether to generate a `copyWith( Map )` method.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_copyWith,indent=0]
+----
+|=======================================================================
+
+[[xform-PropertyOptions]]
+===== `@groovy.transform.PropertyOptions`
+
+This annotation allows you to specify a custom property handler to be used by transformations
+during class construction. It is ignored by the main Groovy compiler but is referenced by other transformations
+like `@TupleConstructor`, `@MapConstructor`, and `@ImmutableBase`. It is frequently used behind the
+scenes by the `@Immutable` meta-annotation.
+
+[[xform-ImumtableOptions]]
+===== `@groovy.transform.ImmutableOptions`
+
+Groovy's immutability support relies on a predefined list of known immutable classes (like `java.net.URI` or `java.lang.String`
+and fails if you use a type which is not in that list, you are allowed to add to the list of known immutable types
+thanks to the following annotation attributes of the `@ImmutableOptions` annotation:
 
 [cols="1,1,2,3a",options="header"]
 |=======================================================================
@@ -1763,12 +1789,6 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=imm
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_knownimmutables,indent=0]
 ----
-----
-|copyWith|false|A boolean whether to generate a `copyWith( Map )` method.|
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_copyWith,indent=0]
-----
 |=======================================================================
 
 If you deem a type as immutable and it isn't one of the ones automatically handled, then it is up to you
@@ -1780,7 +1800,7 @@ to correctly code that class to ensure immutability.
 The `@KnownImmutable` annotation isn't actually one that triggers any AST transformations. It is simply
 a marker annotation. You can annotate your classes with the annotation (including Java classes) and they
 will be recognized as acceptable types for members within an immutable class. This saves you having to
-explicitly use the `knownImmutables` or `knownImmutableClasses` annotation attributes from `@ImmutableBase`.
+explicitly use the `knownImmutables` or `knownImmutableClasses` annotation attributes from `@ImmutableOptions`.
 
 [[xform-Memoized]]
 ===== `@groovy.transform.Memoized`

@@ -18,13 +18,14 @@
  */
 package org.apache.groovy.ast.tools;
 
-import groovy.transform.ImmutableBase;
+import groovy.transform.ImmutableOptions;
 import groovy.transform.KnownImmutable;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -54,8 +55,9 @@ public class ImmutablePropertyUtils {
     private static final ClassNode DATE_TYPE = make(Date.class);
     private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
     private static final String KNOWN_IMMUTABLE_NAME = KnownImmutable.class.getName();
-    private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
-    public static final ClassNode IMMUTABLE_BASE_TYPE = makeWithoutCaching(MY_CLASS, false);
+    private static final Class<? extends Annotation> IMMUTABLE_OPTIONS_CLASS = ImmutableOptions.class;
+    public static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(IMMUTABLE_OPTIONS_CLASS, false);
+    private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
     /*
               Currently leaving BigInteger and BigDecimal in list but see:
@@ -150,7 +152,7 @@ public class ImmutablePropertyUtils {
                 "- classes annotated with @KnownImmutable and known immutables (java.awt.Color, java.net.URI)\n" +
                 "- Cloneable classes, collections, maps and arrays, and other classes with special handling\n" +
                 "  (java.util.Date and various java.time.* classes and interfaces)\n" +
-                "Other restrictions apply, please see the groovydoc for " + IMMUTABLE_BASE_TYPE.getNameWithoutPackage() + " for further details";
+                "Other restrictions apply, please see the groovydoc for " + IMMUTABLE_OPTIONS_TYPE.getNameWithoutPackage() + " for further details";
     }
 
     private static String prettyTypeName(String name) {
@@ -209,15 +211,17 @@ public class ImmutablePropertyUtils {
         return isBuiltinImmutable(clazz.getName()) || hasImmutableAnnotation(clazz);
     }
 
-    public static List<String> getKnownImmutables(AbstractASTTransformation xform, AnnotationNode node) {
+    public static List<String> getKnownImmutables(AbstractASTTransformation xform, ClassNode cNode) {
+        List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
+        AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
         final List<String> immutables = new ArrayList<String>();
+        if (anno == null) return immutables;
 
-        if (node == null) return immutables;
-        final Expression expression = node.getMember(MEMBER_KNOWN_IMMUTABLES);
+        final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLES);
         if (expression == null) return immutables;
 
         if (!(expression instanceof ListExpression)) {
-            xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable property names via \"" + MEMBER_KNOWN_IMMUTABLES + "\"", node);
+            xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable property names via \"" + MEMBER_KNOWN_IMMUTABLES + "\"", anno);
             return immutables;
         }
 
@@ -227,7 +231,32 @@ public class ImmutablePropertyUtils {
                 immutables.add((String) ((ConstantExpression) listItemExpression).getValue());
             }
         }
+        if (!xform.checkPropertyList(cNode, immutables, "knownImmutables", anno, "immutable class", false)) return immutables;
 
         return immutables;
+    }
+
+    public static List<String> getKnownImmutableClasses(AbstractASTTransformation xform, ClassNode cNode) {
+        List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
+        AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
+        final List<String> immutableClasses = new ArrayList<String>();
+
+        if (anno == null) return immutableClasses;
+        final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLE_CLASSES);
+        if (expression == null) return immutableClasses;
+
+        if (!(expression instanceof ListExpression)) {
+            xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable classes via \"" + MEMBER_KNOWN_IMMUTABLE_CLASSES + "\"", anno);
+            return immutableClasses;
+        }
+
+        final ListExpression listExpression = (ListExpression) expression;
+        for (Expression listItemExpression : listExpression.getExpressions()) {
+            if (listItemExpression instanceof ClassExpression) {
+                immutableClasses.add(listItemExpression.getType().getName());
+            }
+        }
+
+        return immutableClasses;
     }
 }

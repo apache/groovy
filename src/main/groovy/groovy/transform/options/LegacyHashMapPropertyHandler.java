@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform.construction;
+package groovy.transform.options;
 
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -88,12 +88,12 @@ public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
     }
 
     @Override
-    public void createStatement(AbstractASTTransformation xform, AnnotationNode anno, BlockStatement body, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
+    public Statement createPropInit(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
         FieldNode fNode = pNode.getField();
-        if (fNode.isFinal() && fNode.isStatic()) return;
+        if (fNode.isFinal() && fNode.isStatic()) return null;
         if (fNode.isFinal() && fNode.getInitialExpression() != null) {
-            body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
+            return checkFinalArgNotOverridden(cNode, fNode);
         }
-        body.addStatement(createLegacyConstructorStatementMapSpecial(fNode));
+        return createLegacyConstructorStatementMapSpecial(fNode);
     }
 }

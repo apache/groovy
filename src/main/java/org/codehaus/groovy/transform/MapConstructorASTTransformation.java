@@ -21,11 +21,12 @@ package org.codehaus.groovy.transform;
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.MapConstructor;
-import groovy.transform.construction.PropertyHandler;
+import groovy.transform.options.PropertyHandler;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -59,7 +60,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.transform.ImmutableASTTransformation.doAddConstructor;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @MapConstructor annotation.
@@ -93,7 +94,6 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             boolean includeProperties = !memberHasValue(anno, "includeProperties", false);
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", true);
-//            boolean useSetters = memberHasValue(anno, "useSetters", true);
             boolean includeStatic = memberHasValue(anno, "includeStatic", true);
             boolean allProperties = memberHasValue(anno, "allProperties", true);
             boolean noArg = memberHasValue(anno, "noArg", true);
@@ -102,12 +102,12 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
-            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, false))
+            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties))
                 return;
-            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, false))
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties))
                 return;
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
-            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, anno, classLoader);
+            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, cNode);
             if (handler == null) return;
             if (!handler.validateAttributes(this, anno)) return;
 
@@ -179,11 +179,44 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         }
     }
 
+    private static void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
+        cNode.addConstructor(constructorNode);
+        // GROOVY-5814: Immutable is not compatible with @CompileStatic
+        Parameter argsParam = null;
+        for (Parameter p : constructorNode.getParameters()) {
+            if ("args".equals(p.getName())) {
+                argsParam = p;
+                break;
+            }
+        }
+        if (argsParam != null) {
+            final Parameter arg = argsParam;
+            ClassCodeVisitorSupport variableExpressionFix = new ClassCodeVisitorSupport() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return cNode.getModule().getContext();
+                }
+
+                @Override
+                public void visitVariableExpression(final VariableExpression expression) {
+                    super.visitVariableExpression(expression);
+                    if ("args".equals(expression.getName())) {
+                        expression.setAccessedVariable(arg);
+                    }
+                }
+            };
+            variableExpressionFix.visitConstructor(constructorNode);
+        }
+    }
+
     private static void processProps(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyHandler handler, boolean allNames, List<String> excludes, List<String> includes, List<PropertyNode> superList, Parameter map, BlockStatement inner) {
         for (PropertyNode pNode : superList) {
             String name = pNode.getName();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
-            handler.createStatement(xform, anno, inner, cNode, pNode, map);
+            Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, map);
+            if (propInit != null) {
+                inner.addStatement(propInit);
+            }
         }
     }
 
@@ -201,8 +234,8 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                     ce.getCode().visit(this);
                 } else if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;
-                    if (ve.getName().equals("args") && ve.getAccessedVariable() instanceof DynamicVariable) {
-                        VariableExpression newVe = new VariableExpression(new Parameter(MAP_TYPE, "args"));
+                    if ("args".equals(ve.getName()) && ve.getAccessedVariable() instanceof DynamicVariable) {
+                        VariableExpression newVe = varX(param(MAP_TYPE, "args"));
                         newVe.setSourcePosition(ve);
                         return newVe;
                     }
