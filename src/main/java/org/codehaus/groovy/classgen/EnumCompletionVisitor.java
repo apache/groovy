@@ -144,8 +144,8 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addMapConstructors(ClassNode enumClass) {
-        TupleConstructorASTTransformation.addSpecialMapConstructors(enumClass, true, "One of the enum constants for enum " + enumClass.getName() +
-                " was initialized with null. Please use a non-null value or define your own constructor.");
+        TupleConstructorASTTransformation.addSpecialMapConstructors(enumClass, "One of the enum constants for enum " + enumClass.getName() +
+                " was initialized with null. Please use a non-null value or define your own constructor.", true);
     }
 
     private String getUniqueVariableName(final String name, Statement code) {
