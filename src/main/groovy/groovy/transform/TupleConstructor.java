@@ -18,8 +18,6 @@
  */
 package groovy.transform;
 
-import groovy.transform.construction.DefaultPropertyHandler;
-import groovy.transform.construction.PropertyHandler;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -58,8 +56,8 @@ import java.lang.annotation.Target;
  * Groovy's normal conventions then allows any number of parameters to be left off the end of the parameter list
  * including all of the parameters - giving a no-arg constructor which can be used with the map-style naming conventions.
  * <p>
- * The order of parameters is given by the properties of any super classes with most super first
- * (if {@code includeSuperProperties} is set) followed by the properties of the class followed
+ * The order of parameters is given by the properties of any super classes (if {@code includeSuperProperties} is set)
+ * with the most super first followed by the properties of the class followed
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>More examples:</p>
@@ -160,6 +158,14 @@ import java.lang.annotation.Target;
  * assert student.courses == ['IT']
  * </pre>
  * <p>
+ * Custom property handling:
+ * <ul>
+ * <li>The {@code @TupleConstructor} annotation supports customization using {@code @PropertyOptions}
+ * which allows a custom property handler to be defined. This is most typically used behind the scenes
+ * by the {@code @Immutable} meta-annotation but you can also define your own handler. If a custom
+ * handler is present, it will determine the code generated when initializing any property (or field).</li>
+ * </ul>
+ * <p>
  * Named-argument support:
  * <ul>
  * <li>Groovy supports named-arguments for classes with a no-arg constructor or a constructor
@@ -190,6 +196,7 @@ import java.lang.annotation.Target;
  * See the {@code defaults} attribute for further details about customizing this behavior.</li>
  * </ul>
  *
+ * @see PropertyOptions
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -298,13 +305,6 @@ public @interface TupleConstructor {
      * @since 2.5.0
      */
     boolean allProperties() default false;
-
-    /**
-     * A class defining the property handler
-     *
-     * @since 2.5.0
-     */
-    Class<? extends PropertyHandler> propertyHandler() default DefaultPropertyHandler.class;
 
     /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement

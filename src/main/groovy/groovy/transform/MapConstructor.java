@@ -18,8 +18,6 @@
  */
 package groovy.transform;
 
-import groovy.transform.construction.DefaultPropertyHandler;
-import groovy.transform.construction.PropertyHandler;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -69,6 +67,14 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * <p>
+ * Custom property handling:
+ * <ul>
+ * <li>The {@code @MapConstructor} annotation supports customization using {@code @PropertyOptions}
+ * which allows a custom property handler to be defined. This is most typically used behind the scenes
+ * by the {@code @Immutable} meta-annotation but you can also define your own handler. If a custom
+ * handler is present, it will determine the code generated when initializing any property (or field).</li>
+ * </ul>
+ * <p>
  * Known limitations/special cases:
  * <ul>
  * <li>
@@ -85,6 +91,7 @@ import java.lang.annotation.Target;
  * </li>
  * </ul>
  *
+ * @see PropertyOptions
  * @since 2.5.0
  */
 @java.lang.annotation.Documented
@@ -163,11 +170,6 @@ public @interface MapConstructor {
      * In addition to the map constructor, provide a no-arg constructor which calls the map constructor with an empty map.
      */
     boolean noArg() default false;
-
-    /**
-     * A class defining the property handler
-     */
-    Class<? extends PropertyHandler> propertyHandler() default DefaultPropertyHandler.class;
 
     /**
      * If true, change the type of the map constructor argument from Map to LinkedHashMap only for the case where

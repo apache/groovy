@@ -16,27 +16,63 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform.construction;
+package groovy.transform.options;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.PropertyOptions;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+
+@Incubating
 public abstract class PropertyHandler {
+    private static final Class<? extends Annotation> PROPERTY_OPTIONS_CLASS = PropertyOptions.class;
+    public static final ClassNode PROPERTY_OPTIONS_TYPE = makeWithoutCaching(PROPERTY_OPTIONS_CLASS, false);
     public abstract boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno);
 
     public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
         return true;
     }
 
-    public abstract void createStatement(AbstractASTTransformation xform, AnnotationNode anno, BlockStatement body, ClassNode cNode, PropertyNode pNode, Parameter namedArgMap);
+    /**
+     * Create a statement that will initialize the property including any defensive copying. Null if no statement should be added.
+     *
+     * @param xform the transform being processed
+     * @param anno the '@ImmutableBase' annotation node
+     * @param cNode the classnode containing the property
+     * @param pNode the property node to initialize
+     * @param namedArgMap an "args" Map if the property value should come from a named arg map or null if not
+     */
+    public abstract Statement createPropInit(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyNode pNode, Parameter namedArgMap);
+
+    /**
+     * Create the getter block used when reading the property including any defensive copying.
+     *
+     *  @param pNode the property node
+     */
+    public Statement createPropGetter(PropertyNode pNode) {
+        return pNode.getGetterBlock();
+    }
+
+    /**
+     * Create the setter block used when setting the property. Can be null for read-only properties.
+     *
+     *  @param pNode the property node
+     */
+    public Statement createPropSetter(PropertyNode pNode) {
+        return pNode.getSetterBlock();
+    }
 
     protected boolean isValidAttribute(AbstractASTTransformation xform, AnnotationNode anno, String memberName) {
         if (xform.getMemberValue(anno, memberName) != null) {
@@ -47,8 +83,12 @@ public abstract class PropertyHandler {
         return true;
     }
 
-    public static PropertyHandler createPropertyHandler(AbstractASTTransformation xform, AnnotationNode anno, GroovyClassLoader loader) {
-        ClassNode handlerClass = xform.getMemberClassValue(anno, "propertyHandler", ClassHelper.make(DefaultPropertyHandler.class));
+    public static PropertyHandler createPropertyHandler(AbstractASTTransformation xform, GroovyClassLoader loader, ClassNode cNode) {
+        List<AnnotationNode> annotations = cNode.getAnnotations(PROPERTY_OPTIONS_TYPE);
+        AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
+        if (anno == null) return new groovy.transform.options.DefaultPropertyHandler();
+
+        ClassNode handlerClass = xform.getMemberClassValue(anno, "propertyHandler", ClassHelper.make(groovy.transform.options.DefaultPropertyHandler.class));
 
         if (handlerClass == null) {
             xform.addError("Couldn't determine propertyHandler class", anno);

@@ -230,7 +230,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testImmutableWithHashMap() {
         assertScript """
             import groovy.transform.Immutable
-            @Immutable(propertyHandler = groovy.transform.construction.LegacyHashMapPropertyHandler, noArg = false)
+            import groovy.transform.options.LegacyHashMapPropertyHandler
+            @Immutable(propertyHandler = LegacyHashMapPropertyHandler, noArg = false)
             final class HasHashMap {
                 HashMap map = [d:4]
             }

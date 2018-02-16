@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform.construction;
+package groovy.transform.options;
 
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -53,7 +53,7 @@ public class DefaultPropertyHandler extends PropertyHandler {
     @Override
     public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
         boolean success = true;
-        success |= isValidAttribute(xform, anno, "");
+        //success |= isValidAttribute(xform, anno, "");
         return success;
     }
 
@@ -67,37 +67,36 @@ public class DefaultPropertyHandler extends PropertyHandler {
     }
 
     @Override
-    public void createStatement(AbstractASTTransformation xform, AnnotationNode anno, BlockStatement body, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
+    public Statement createPropInit(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
         String name = pNode.getName();
         FieldNode fNode = pNode.getField();
         boolean useSetters = xform.memberHasValue(anno, "useSetters", true);
         boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
         if (namedArgsMap != null) {
-            assignField(useSetters, namedArgsMap, body, name);
+            return assignFieldS(useSetters, namedArgsMap, name);
         } else {
             Expression var = varX(name);
             if (useSetters && hasSetter) {
-                body.addStatement(setViaSetter(name, var));
+                return setViaSetterS(name, var);
             } else {
-                body.addStatement(assignToField(name, var));
+                return assignToFieldS(name, var);
             }
         }
-
     }
 
-    private static Statement assignToField(String name, Expression var) {
+    private static Statement assignToFieldS(String name, Expression var) {
         return assignS(propX(varX("this"), name), var);
     }
 
-    private static Statement setViaSetter(String name, Expression var) {
+    private static Statement setViaSetterS(String name, Expression var) {
         return stmt(callThisX(getSetterName(name), var));
     }
 
-    private static void assignField(boolean useSetters, Parameter map, BlockStatement body, String name) {
+    private static Statement assignFieldS(boolean useSetters, Parameter map, String name) {
         ArgumentListExpression nameArg = args(constX(name));
         Expression var = callX(varX(map), "get", nameArg);
-        body.addStatement(ifS(callX(varX(map), "containsKey", nameArg), useSetters ?
-                setViaSetter(name, var) :
-                assignToField(name, var)));
+        return ifS(callX(varX(map), "containsKey", nameArg), useSetters ?
+                setViaSetterS(name, var) :
+                assignToFieldS(name, var));
     }
 }

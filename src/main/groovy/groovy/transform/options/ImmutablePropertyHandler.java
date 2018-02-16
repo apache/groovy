@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform.construction;
+package groovy.transform.options;
 
 import groovy.lang.ReadOnlyPropertyException;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
@@ -26,10 +26,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -39,7 +37,6 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.ImmutableASTTransformation;
 import org.codehaus.groovy.transform.MapConstructorASTTransformation;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -70,13 +67,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.safeExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class ImmutablePropertyHandler extends PropertyHandler {
-    private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = makeWithoutCaching(Collection.class, false);
     private static final ClassNode DGM_TYPE = make(DefaultGroovyMethods.class);
@@ -87,28 +84,69 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode SET_CLASSNODE = make(Set.class);
     private static final ClassNode MAP_CLASSNODE = make(Map.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = make(ReadOnlyPropertyException.class);
-    private static final ClassNode IMMUTABLE_XFORM_TYPE = make(ImmutableASTTransformation.class);
 
-    private static List<String> getKnownImmutableClasses(AbstractASTTransformation xform, AnnotationNode node) {
-        final List<String> immutableClasses = new ArrayList<String>();
-
-        if (node == null) return immutableClasses;
-        final Expression expression = node.getMember(MEMBER_KNOWN_IMMUTABLE_CLASSES);
-        if (expression == null) return immutableClasses;
-
-        if (!(expression instanceof ListExpression)) {
-            xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable classes via \"" + MEMBER_KNOWN_IMMUTABLE_CLASSES + "\"", node);
-            return immutableClasses;
+    @Override
+    public Statement createPropGetter(PropertyNode pNode) {
+        FieldNode fNode = pNode.getField();
+        BlockStatement body = new BlockStatement();
+        final ClassNode fieldType = fNode.getType();
+        final Statement statement;
+        if (fieldType.isArray() || implementsCloneable(fieldType)) {
+            statement = createGetterBodyArrayOrCloneable(fNode);
+        } else if (derivesFromDate(fieldType)) {
+            statement = createGetterBodyDate(fNode);
+        } else {
+            statement = createGetterBodyDefault(fNode);
         }
+        body.addStatement(statement);
+        return body;
+    }
 
-        final ListExpression listExpression = (ListExpression) expression;
-        for (Expression listItemExpression : listExpression.getExpressions()) {
-            if (listItemExpression instanceof ClassExpression) {
-                immutableClasses.add(listItemExpression.getType().getName());
-            }
+    @Override
+    public Statement createPropSetter(PropertyNode pNode) {
+        return null;
+    }
+
+    @Override
+    public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
+        boolean success = isValidAttribute(xform, anno, "useSuper");
+        return success;
+    }
+
+    @Override
+    public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
+        if (xform instanceof MapConstructorASTTransformation) {
+            body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
+            body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
         }
+        return super.validateProperties(xform, body, cNode, props);
+    }
 
-        return immutableClasses;
+    @Override
+    public Statement createPropInit(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
+        FieldNode fNode = pNode.getField();
+        if (fNode.isFinal() && fNode.isStatic()) return null;
+        if (fNode.isFinal() && fNode.getInitialExpression() != null) {
+            return checkFinalArgNotOverridden(cNode, fNode);
+        }
+        return createConstructorStatement(xform, cNode, pNode, namedArgsMap != null);
+    }
+
+    private static Statement createGetterBodyDefault(FieldNode fNode) {
+        final Expression fieldExpr = varX(fNode);
+        return stmt(fieldExpr);
+    }
+
+    private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
+        final Expression fieldExpr = varX(fNode);
+        final Expression expression = cloneArrayOrCloneableExpr(fieldExpr, fNode.getType());
+        return safeExpression(fieldExpr, expression);
+    }
+
+    private Statement createGetterBodyDate(FieldNode fNode) {
+        final Expression fieldExpr = varX(fNode);
+        final Expression expression = cloneDateExpr(fieldExpr);
+        return safeExpression(fieldExpr, expression);
     }
 
     protected Expression cloneCollectionExpr(Expression fieldExpr, ClassNode type) {
@@ -133,10 +171,8 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     }
 
     protected Statement createConstructorStatement(AbstractASTTransformation xform, ClassNode cNode, PropertyNode pNode, boolean namedArgs) {
-        List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_BASE_TYPE);
-        AnnotationNode annoImmutable = annotations.isEmpty() ? null : annotations.get(0);
-        final List<String> knownImmutableClasses = getKnownImmutableClasses(xform, annoImmutable);
-        final List<String> knownImmutables = ImmutablePropertyUtils.getKnownImmutables(xform, annoImmutable);
+        final List<String> knownImmutableClasses = ImmutablePropertyUtils.getKnownImmutableClasses(xform, cNode);
+        final List<String> knownImmutables = ImmutablePropertyUtils.getKnownImmutables(xform, cNode);
         FieldNode fNode = pNode.getField();
         final ClassNode fType = fNode.getType();
         Statement statement;
@@ -266,30 +302,5 @@ public class ImmutablePropertyHandler extends PropertyHandler {
                 throwS(ctorX(READONLYEXCEPTION_TYPE,
                         args(constX(name), constX(cNode.getName()))
                 )));
-    }
-
-    @Override
-    public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
-        boolean success = isValidAttribute(xform, anno, "useSuper");
-        return success;
-    }
-
-    @Override
-    public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
-        if (xform instanceof MapConstructorASTTransformation) {
-            body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
-            body.addStatement(stmt(callX(IMMUTABLE_XFORM_TYPE, "checkPropNames", args("this", "args"))));
-        }
-        return super.validateProperties(xform, body, cNode, props);
-    }
-
-    @Override
-    public void createStatement(AbstractASTTransformation xform, AnnotationNode anno, BlockStatement body, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
-        FieldNode fNode = pNode.getField();
-        if (fNode.isFinal() && fNode.isStatic()) return;
-        if (fNode.isFinal() && fNode.getInitialExpression() != null) {
-            body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
-        }
-        body.addStatement(createConstructorStatement(xform, cNode, pNode, namedArgsMap != null));
     }
 }

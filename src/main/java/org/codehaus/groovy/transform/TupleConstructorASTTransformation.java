@@ -22,7 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.MapConstructor;
 import groovy.transform.TupleConstructor;
-import groovy.transform.construction.PropertyHandler;
+import groovy.transform.options.PropertyHandler;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -60,14 +60,12 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -133,7 +131,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false)) return;
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
-            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, anno, classLoader);
+            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, cNode);
             if (handler == null) return;
             if (!handler.validateAttributes(this, anno)) return;
 
@@ -211,11 +209,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             FieldNode fNode = pNode.getField();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             params.add(createParam(fNode, name, defaults, xform, makeImmutable));
-            boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
                 superParams.add(varX(name));
             } else if (!superInPre && !specialNamedArgCase) {
-                handler.createStatement(xform, anno, body, cNode, pNode, null);
+                Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
+                if (propInit != null) {
+                    body.addStatement(propInit);
+                }
             }
         }
         if (callSuper) {
@@ -231,7 +231,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
             Parameter nextParam = createParam(fNode, name, defaults, xform, makeImmutable);
             params.add(nextParam);
-            handler.createStatement(xform, anno, body, cNode, pNode, null);
+            Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
+            if (propInit != null) {
+                body.addStatement(propInit);
+            }
         }
 
         if (post != null) {
@@ -263,7 +266,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             ClassNode firstParamType = params.get(0).getType();
             if (params.size() > 1 || firstParamType.equals(ClassHelper.OBJECT_TYPE)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
-                addSpecialMapConstructors(cNode, false, message);
+                addSpecialMapConstructors(cNode, message, false);
             }
         }
     }
@@ -290,7 +293,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return initialExp;
     }
 
-    public static void addSpecialMapConstructors(ClassNode cNode, boolean addNoArg, String message) {
+    public static void addSpecialMapConstructors(ClassNode cNode, String message, boolean addNoArg) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, "__namedArgs"));
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = varX("__namedArgs");
