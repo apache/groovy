@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.util;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -38,7 +39,7 @@ public class LoggableTextifier extends Textifier {
     private int loggedLineCnt = 0;
 
     public LoggableTextifier() {
-        super(Opcodes.ASM6);
+        super(CompilerConfiguration.ASM_API_VERSION);
     }
 
     @Override

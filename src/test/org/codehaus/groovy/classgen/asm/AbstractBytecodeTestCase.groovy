@@ -118,7 +118,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         InstructionSequence sequence
         def output = new StringBuilderWriter()
         def tcf;
-        tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM6) {
+        tcf = new TraceClassVisitor(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {
                 if (options.method == name) {
                     tcf.p.text << '--BEGIN--'

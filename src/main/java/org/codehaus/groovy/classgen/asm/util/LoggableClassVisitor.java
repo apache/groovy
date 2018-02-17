@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.util;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -29,6 +30,6 @@ import org.objectweb.asm.util.TraceClassVisitor;
  */
 public class LoggableClassVisitor extends ClassVisitor {
     public LoggableClassVisitor(final ClassVisitor cv) {
-        super(Opcodes.ASM6, new TraceClassVisitor(cv, new LoggableTextifier(), null));
+        super(CompilerConfiguration.ASM_API_VERSION, new TraceClassVisitor(cv, new LoggableTextifier(), null));
     }
 }

@@ -210,6 +210,8 @@ public class CompilerConfiguration {
      */
     private ParserVersion parserVersion = ParserVersion.V_4;
 
+    public static final int ASM_API_VERSION = Opcodes.ASM6;
+
     /**
      * Sets the Flags to defaults.
      */
