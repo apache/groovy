@@ -36,7 +36,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     private final AsmReferenceResolver resolver;
 
     public TypeSignatureParser(AsmReferenceResolver resolver) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.resolver = resolver;
     }
 

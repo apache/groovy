@@ -57,7 +57,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
     }
     private class GenericsTester extends ClassVisitor {
         public GenericsTester(ClassVisitor cv) {
-            super(Opcodes.ASM4,cv);
+            super(Opcodes.ASM6,cv);
         }
         public void visit(int version, int access, String name,
                 String signature, String superName, String[] interfaces) {
