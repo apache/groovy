@@ -94,7 +94,7 @@ public abstract class AsmDecompiler {
         private ClassStub result;
 
         public DecompilingVisitor() {
-            super(Opcodes.ASM5);
+            super(Opcodes.ASM6);
         }
 
         @Override
@@ -179,7 +179,7 @@ public abstract class AsmDecompiler {
 
     private abstract static class AnnotationReader extends AnnotationVisitor {
         public AnnotationReader() {
-            super(Opcodes.ASM5);
+            super(Opcodes.ASM6);
         }
 
         abstract void visitAttribute(String name, Object value);
