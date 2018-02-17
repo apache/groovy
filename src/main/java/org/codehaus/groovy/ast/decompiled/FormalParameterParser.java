@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -37,7 +38,7 @@ abstract class FormalParameterParser extends SignatureVisitor {
     private final List<GenericsType> typeParameters = new ArrayList<GenericsType>();
 
     public FormalParameterParser(AsmReferenceResolver resolver) {
-        super(Opcodes.ASM6);
+        super(CompilerConfiguration.ASM_API_VERSION);
         this.resolver = resolver;
     }
 
