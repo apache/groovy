@@ -21,6 +21,14 @@ def mr = String::toUpperCase
 assert 'ABC' == mr('abc')
 assert 'ABC' == String::toUpperCase('abc')
 
+def m = ['apple', 'banana', 'orange'].stream().collect(Collectors.toMap(e -> e.charAt(0), e -> e, (e1, e2) -> e1, LinkedHashMap<String, String>::new))
+assert m instanceof LinkedHashMap
+assert ['a', 'b', 'o'] as TreeSet == m.keySet() as TreeSet
+assert ['apple', 'banana', 'orange'] as TreeSet == m.values() as TreeSet
+
+assert new HashMap<String, Integer>() == HashMap<String, Integer>::new()
+assert new HashSet<Integer>() == HashSet<Integer>::new()
+
 assert new HashSet() == HashSet::new()
 assert new String() == String::new()
 assert 1 == Integer::new(1)
