@@ -2348,7 +2348,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 return configureAST(methodCallExpression, ctx);
             }
 
-            if (baseExpr instanceof ClassExpression) { // void and primitive type AST node must be an instance of ClassExpression
+            if (baseExpr instanceof VariableExpression) { // void and primitive type AST node must be an instance of VariableExpression
                 String baseExprText = baseExpr.getText();
                 if (VOID_STR.equals(baseExprText)) { // e.g. void()
                     return configureAST(createCallMethodCallExpression(this.createConstantExpression(baseExpr), argumentsExpr), ctx);
@@ -3122,7 +3122,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public ClassExpression visitBuiltInTypePrmrAlt(BuiltInTypePrmrAltContext ctx) {
+    public VariableExpression visitBuiltInTypePrmrAlt(BuiltInTypePrmrAltContext ctx) {
         return configureAST(this.visitBuiltInType(ctx.builtInType()), ctx);
     }
 
@@ -3366,7 +3366,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     */
 
     @Override
-    public ClassExpression visitBuiltInType(BuiltInTypeContext ctx) {
+    public VariableExpression visitBuiltInType(BuiltInTypeContext ctx) {
         String text;
         if (asBoolean(ctx.VOID())) {
             text = ctx.VOID().getText();
@@ -3376,7 +3376,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             throw createParsingFailedException("Unsupported built-in type: " + ctx, ctx);
         }
 
-        return configureAST(new ClassExpression(ClassHelper.make(text)), ctx);
+        return configureAST(new VariableExpression(text), ctx);
     }
 
 
