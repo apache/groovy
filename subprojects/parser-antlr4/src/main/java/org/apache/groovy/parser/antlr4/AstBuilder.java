@@ -3871,10 +3871,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             classNode = this.visitClassOrInterfaceType(ctx.classOrInterfaceType());
         } else if (asBoolean(ctx.primitiveType())) {
             classNode = this.visitPrimitiveType(ctx.primitiveType());
-        } else if (asBoolean(ctx.VOID())) {
-            if (ctx.allowVoid) {
-                classNode = configureAST(ClassHelper.make(ctx.getText()), ctx.VOID());
-            }
         }
 
         if (!asBoolean(classNode)) {

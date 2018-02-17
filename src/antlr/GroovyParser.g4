@@ -192,11 +192,11 @@ typeParameter
     ;
 
 typeBound
-    :   type[false] (BITAND nls type[false])*
+    :   type (BITAND nls type)*
     ;
 
 typeList
-    :   type[false] (COMMA nls type[false])*
+    :   type (COMMA nls type)*
     ;
 
 
@@ -223,7 +223,7 @@ locals[ int t ]
                         // Only interface can extend more than one super class
                         {1 == $t}? scs=typeList
                     |
-                        sc=type[false]
+                        sc=type
                     )
                 nls)?
             |
@@ -347,12 +347,13 @@ options { baseContext = type; }
         dimsOpt
     ;
 
-type[boolean allowVoid]
+type
     :   annotationsOpt
         (
             (
                 primitiveType
             |
+                // !!! Error Alternative !!!
                  VOID
             )
         |
@@ -386,8 +387,8 @@ typeArguments
     ;
 
 typeArgument
-    :   type[false]
-    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type[false])?
+    :   type
+    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type)?
     ;
 
 annotatedQualifiedClassName
@@ -407,11 +408,11 @@ formalParameterList
     ;
 
 thisFormalParameter
-    :   type[false] THIS
+    :   type THIS
     ;
 
 formalParameter
-    :   variableModifiersOpt type[false]? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
+    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 methodBody
@@ -583,12 +584,12 @@ classifiedModifiers[int t]
 variableDeclaration[int t]
 @leftfactor { classifiedModifiers }
     :   classifiedModifiers[$t]
-        (   type[false]? variableDeclarators
+        (   type? variableDeclarators
         |   typeNamePairs nls ASSIGN nls variableInitializer
         )
     |
         classifiedModifiers[$t]?
-        type[false] variableDeclarators
+        type variableDeclarators
     ;
 
 typeNamePairs
@@ -596,7 +597,7 @@ typeNamePairs
     ;
 
 typeNamePair
-    :   type[false]? variableDeclaratorId
+    :   type? variableDeclaratorId
     ;
 
 variableNames
@@ -719,7 +720,7 @@ forControl
     ;
 
 enhancedForControl
-    :   variableModifiersOpt type[false]? variableDeclaratorId (COLON | IN) expression
+    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
     ;
 
 classicalForControl
@@ -739,7 +740,7 @@ forUpdate
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type[false] rparen
+    :   LPAREN type rparen
     ;
 
 parExpression
@@ -813,7 +814,7 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type[false]           #relationalExprAlt
+    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type           #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
