@@ -30,6 +30,7 @@ import groovy.lang.Reference;
 import groovy.lang.Script;
 import org.codehaus.groovy.classgen.asm.util.TypeDescriptionUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.GeneratedLambda;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
@@ -64,7 +65,7 @@ public class ClassHelper {
             Character.class, Byte.class, Short.class, Integer.class, Long.class,
             Double.class, Float.class, BigDecimal.class, BigInteger.class,
             Number.class, Void.class, Reference.class, Class.class, MetaClass.class,
-            Iterator.class, GeneratedClosure.class, GroovyObjectSupport.class
+            Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
     private static final String[] primitiveClassNames = new String[]{
@@ -74,7 +75,8 @@ public class ClassHelper {
 
     public static final ClassNode
             DYNAMIC_TYPE = makeCached(Object.class), OBJECT_TYPE = DYNAMIC_TYPE,
-            VOID_TYPE = makeCached(Void.TYPE), CLOSURE_TYPE = makeCached(Closure.class),
+            VOID_TYPE = makeCached(Void.TYPE),
+            CLOSURE_TYPE = makeCached(Closure.class),
             GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
             MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
             PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
@@ -100,9 +102,12 @@ public class ClassHelper {
             Annotation_TYPE = makeCached(Annotation.class),
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
 
+    FunctionalInterface_Type = ClassHelper.makeCached(FunctionalInterface.class),
+
     // uncached constants.
     CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
             GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
+            GENERATED_LAMBDA_TYPE = makeWithoutCaching(GeneratedLambda.class),
             GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
             GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
             GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class);
@@ -118,7 +123,7 @@ public class ClassHelper {
             Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE,
             Number_TYPE,
             void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
-            Iterator_TYPE, GENERATED_CLOSURE_Type, GROOVY_OBJECT_SUPPORT_TYPE,
+            Iterator_TYPE, GENERATED_CLOSURE_Type, GENERATED_LAMBDA_TYPE, GROOVY_OBJECT_SUPPORT_TYPE,
             GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
@@ -381,6 +386,12 @@ public class ClassHelper {
 
     public static boolean isSAMType(ClassNode type) {
         return findSAM(type) != null;
+    }
+
+    public static boolean isFunctionalInterface(ClassNode type) {
+        // Functional interface must be an interface at first, or the following exception will occur:
+        // java.lang.invoke.LambdaConversionException: Functional interface SamCallable is not an interface
+        return type.isInterface() && isSAMType(type);
     }
 
     /**

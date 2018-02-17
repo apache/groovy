@@ -20,6 +20,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.AstToTextHelper;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.Statement;
 
@@ -33,6 +34,10 @@ import org.codehaus.groovy.ast.stmt.Statement;
 public class LambdaExpression extends ClosureExpression {
     public LambdaExpression(Parameter[] parameters, Statement code) {
         super(parameters, code);
+    }
+
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitLambdaExpression(this);
     }
 
     @Override
