@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -64,6 +63,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
 public class ClosureWriter {
+
+    public static final String OUTER_INSTANCE = "_outerInstance";
+    public static final String THIS_OBJECT = "_thisObject";
 
     protected interface UseExistingReference {}
 
@@ -184,9 +186,8 @@ public class ClosureWriter {
     protected ClassNode createClosureClass(ClosureExpression expression, int mods) {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
-        MethodNode methodNode = controller.getMethodNode();
-        String name = classNode.getName() + "$"
-                + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode); // add a more informative name
+//        MethodNode methodNode = controller.getMethodNode();
+        String name = genClosureClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
         Parameter[] parameters = expression.getParameters();
@@ -249,23 +250,31 @@ public class ClosureWriter {
         }
 
         // let's make the constructor
-        BlockStatement block = new BlockStatement();
-        // this block does not get a source position, because we don't
-        // want this synthetic constructor to show up in corbertura reports
-        VariableExpression outer = new VariableExpression("_outerInstance");
-        outer.setSourcePosition(expression);
-        block.getVariableScope().putReferencedLocalVariable(outer);
-        VariableExpression thisObject = new VariableExpression("_thisObject");
-        thisObject.setSourcePosition(expression);
-        block.getVariableScope().putReferencedLocalVariable(thisObject);
-        TupleExpression conArgs = new TupleExpression(outer, thisObject);
-        block.addStatement(
-                new ExpressionStatement(
-                        new ConstructorCallExpression(
-                                ClassNode.SUPER,
-                                conArgs)));
+        BlockStatement block = createBlockStatementForConstructor(expression);
 
         // let's assign all the parameter fields from the outer context
+        addFieldsAndGettersForLocalVariables(answer, localVariableParams);
+
+        addConstructor(expression, localVariableParams, answer, block);
+        
+        correctAccessedVariable(answer,expression);
+        
+        return answer;
+    }
+
+    protected ConstructorNode addConstructor(ClosureExpression expression, Parameter[] localVariableParams, InnerClassNode answer, BlockStatement block) {
+        Parameter[] params = new Parameter[2 + localVariableParams.length];
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
+        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
+
+        ConstructorNode constructorNode = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
+        constructorNode.setSourcePosition(expression);
+
+        return constructorNode;
+    }
+
+    protected void addFieldsAndGettersForLocalVariables(InnerClassNode answer, Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
             String paramName = param.getName();
             ClassNode type = param.getType();
@@ -292,35 +301,58 @@ public class ClosureWriter {
                         new ReturnStatement(fieldExp));
             }
         }
+    }
 
-        Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance");
-        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_thisObject");
-        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
+    protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression) {
+        BlockStatement block = new BlockStatement();
+        // this block does not get a source position, because we don't
+        // want this synthetic constructor to show up in corbertura reports
+        VariableExpression outer = new VariableExpression(OUTER_INSTANCE);
+        outer.setSourcePosition(expression);
+        block.getVariableScope().putReferencedLocalVariable(outer);
+        VariableExpression thisObject = new VariableExpression(THIS_OBJECT);
+        thisObject.setSourcePosition(expression);
+        block.getVariableScope().putReferencedLocalVariable(thisObject);
+        TupleExpression conArgs = new TupleExpression(outer, thisObject);
+        block.addStatement(
+                new ExpressionStatement(
+                        new ConstructorCallExpression(
+                                ClassNode.SUPER,
+                                conArgs)));
+        return block;
+    }
 
-        ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
-        sn.setSourcePosition(expression);
-        
-        correctAccessedVariable(answer,expression);
-        
-        return answer;
+    private String genClosureClassName() {
+        ClassNode classNode = controller.getClassNode();
+        ClassNode outerClass = controller.getOutermostClass();
+        MethodNode methodNode = controller.getMethodNode();
+
+        return classNode.getName() + "$"
+                + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode);
+    }
+
+    protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
+        private InnerClassNode icn;
+
+        public CorrectAccessedVariableVisitor(InnerClassNode icn) {
+            this.icn = icn;
+        }
+
+        @Override
+        public void visitVariableExpression(VariableExpression expression) {
+            Variable v = expression.getAccessedVariable();
+            if (v == null) return;
+            if (!(v instanceof FieldNode)) return;
+            String name = expression.getName();
+            FieldNode fn = icn.getDeclaredField(name);
+            if (fn != null) { // only overwrite if we find something more specific
+                expression.setAccessedVariable(fn);
+            }
+        }
     }
 
     private static void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
-        CodeVisitorSupport visitor = new CodeVisitorSupport() {
-            @Override
-            public void visitVariableExpression(VariableExpression expression) {
-                Variable v = expression.getAccessedVariable(); 
-                if (v==null) return;
-                if (!(v instanceof FieldNode)) return;
-                String name = expression.getName();
-                FieldNode fn = closureClass.getDeclaredField(name);
-                if (fn != null) { // only overwrite if we find something more specific
-                    expression.setAccessedVariable(fn);
-                }
-            }  
-        };
-        visitor.visitClosureExpression(ce);
+        new CorrectAccessedVariableVisitor(closureClass).visitClosureExpression(ce);
     }
 
     /*
@@ -330,7 +362,7 @@ public class ClosureWriter {
      * same method, in this case the constructor. A closure should not
      * have more than one constructor!
      */
-    private static void removeInitialValues(Parameter[] params) {
+    protected static void removeInitialValues(Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
                 Parameter p = new Parameter(params[i].getType(), params[i].getName());

@@ -75,6 +75,7 @@ import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -438,6 +439,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             // first parameters as usual
             for (int i = 0; i < para.length - 1; i++) {
                 Expression expression = argumentList.get(i);
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
@@ -463,6 +465,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         } else if (argumentListSize == para.length) {
             for (int i = 0; i < argumentListSize; i++) {
                 Expression expression = argumentList.get(i);
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
@@ -494,6 +497,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             for (int i = 0; i < arguments.length; i++) {
                 Expression expression = arguments[i];
+                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());

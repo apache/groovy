@@ -31,6 +31,7 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.DelegatingController;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.StatementWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
@@ -60,6 +61,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private BinaryExpressionMultiTypeDispatcher binaryExprHelper;
     private UnaryExpressionHelper unaryExpressionHelper;
     private ClosureWriter closureWriter;
+    private LambdaWriter lambdaWriter;
 
     public StaticTypesWriterController(WriterController normalController) {
         super(normalController);
@@ -74,6 +76,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
+        this.lambdaWriter = new StaticTypesLambdaWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
 
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
@@ -182,5 +185,13 @@ public class StaticTypesWriterController extends DelegatingController {
             return closureWriter;
         }
         return super.getClosureWriter();
+    }
+
+    @Override
+    public LambdaWriter getLambdaWriter() {
+        if (isInStaticallyCheckedMethod) {
+            return lambdaWriter;
+        }
+        return super.getLambdaWriter();
     }
 }
