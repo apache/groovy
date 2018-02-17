@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -71,6 +72,8 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
  * A specialized version of the multi type binary expression dispatcher which is aware of static compilation.
@@ -134,8 +137,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     @Override
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
+        Expression leftExpression = expression.getLeftExpression();
         if (!defineVariable) {
-            Expression leftExpression = expression.getLeftExpression();
             if (leftExpression instanceof PropertyExpression) {
                 PropertyExpression pexp = (PropertyExpression) leftExpression;
                 if (makeSetProperty(
@@ -147,10 +150,15 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                         pexp.isImplicitThis(),
                         pexp instanceof AttributeExpression)) return;
             }
+        } else {
+            Expression rightExpression = expression.getRightExpression();
+            if (rightExpression instanceof LambdaExpression) {
+                rightExpression.putNodeMetaData(INFERRED_LAMBDA_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
+            }
         }
         // GROOVY-5620: Spread safe/Null safe operator on LHS is not supported
-        if (expression.getLeftExpression() instanceof PropertyExpression
-                && ((PropertyExpression) expression.getLeftExpression()).isSpreadSafe()
+        if (leftExpression instanceof PropertyExpression
+                && ((PropertyExpression) leftExpression).isSpreadSafe()
                 && StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType())) {
             // rewrite it so that it can be statically compiled
             transformSpreadOnLHS(expression);

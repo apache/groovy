@@ -281,13 +281,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
     public static final MethodNode CLOSURE_CALL_VARGS;
 
+    public static final String CALL = "call";
+
     static {
         // Cache closure call methods
-        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
-        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod(CALL, Parameter.EMPTY_ARRAY);
+        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod(CALL, new Parameter[]{
                 new Parameter(OBJECT_TYPE, "arg")
         });
-        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod(CALL, new Parameter[]{
                 new Parameter(OBJECT_TYPE.makeArray(), "args")
         });
     }
@@ -3164,6 +3166,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         addCategoryMethodCallError(call);
                     }
                     mn = disambiguateMethods(mn, chosenReceiver!=null?chosenReceiver.getType():null, args, call);
+
+
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null &&
@@ -3402,7 +3406,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        if (objectExpression instanceof ClosureExpression && ("call".equals(name)||"doCall".equals(name))) return true;
+        if (objectExpression instanceof ClosureExpression && (CALL.equals(name)||"doCall".equals(name))) return true;
         if (objectExpression == VariableExpression.THIS_EXPRESSION) {
             FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
             if (fieldNode != null) {
@@ -3412,7 +3416,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } else {
-            if (!"call".equals(name) && !"doCall".equals(name)) return false;
+            if (!CALL.equals(name) && !"doCall".equals(name)) return false;
         }
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
@@ -3958,7 +3962,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, ClassNode receiver, ClassNode[] argTypes, final Expression expr) {
+    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, ClassNode receiver, ClassNode[] argTypes, final Expression call) {
         if (methods.size()>1 && receiver!=null && argTypes!=null) {
             List<MethodNode> filteredWithGenerics = new LinkedList<MethodNode>();
             for (MethodNode methodNode : methods) {
@@ -3969,8 +3973,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (filteredWithGenerics.size()==1) {
                 return filteredWithGenerics;
             }
-            methods = extension.handleAmbiguousMethods(methods, expr);
+            methods = extension.handleAmbiguousMethods(methods, call);
         }
+
+        if (methods.size() > 1) {
+            if (call instanceof MethodCall) {
+                List<MethodNode> methodNodeList = new LinkedList<>();
+
+                String methodName = ((MethodCall) call).getMethodAsString();
+
+                for (MethodNode methodNode : methods) {
+                    if (!methodNode.getName().equals(methodName)) {
+                        continue;
+                    }
+                    methodNodeList.add(methodNode);
+                }
+
+                methods = methodNodeList;
+            }
+        }
+
         return methods;
     }
 
@@ -4098,6 +4120,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (receiver.isInterface()) {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
+
+                if (CALL.equals(name) && ClassHelper.isFunctionalInterface(receiver)) {
+                    MethodNode sam = ClassHelper.findSAM(receiver);
+                    MethodNode callMethodNode = new MethodNode(CALL, sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
+                    callMethodNode.setDeclaringClass(sam.getDeclaringClass());
+                    callMethodNode.setSourcePosition(sam);
+
+                    methods.addAll(Collections.singletonList(callMethodNode));
+                }
             }
             // TODO: investigate the trait exclusion a bit further, needed otherwise
             // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying

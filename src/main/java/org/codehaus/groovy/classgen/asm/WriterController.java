@@ -55,6 +55,7 @@ public class WriterController {
     private CallSiteWriter callSiteWriter;
     private ClassVisitor cv;
     private ClosureWriter closureWriter;
+    private LambdaWriter lambdaWriter;
     private String internalClassName;
     private InvocationWriter invocationWriter;
     private BinaryExpressionHelper binaryExpHelper, fastPathBinaryExpHelper;
@@ -120,6 +121,7 @@ public class WriterController {
         this.operandStack = new OperandStack(this);
         this.assertionWriter = new AssertionWriter(this);
         this.closureWriter = new ClosureWriter(this);
+        this.lambdaWriter = new LambdaWriter(this);
         this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
         this.acg = asmClassGenerator;
         this.sourceUnit = acg.getSourceUnit();
@@ -195,6 +197,10 @@ public class WriterController {
 
     public ClosureWriter getClosureWriter() {
         return closureWriter;
+    }
+
+    public LambdaWriter getLambdaWriter() {
+        return lambdaWriter;
     }
 
     public ClassVisitor getCv() {

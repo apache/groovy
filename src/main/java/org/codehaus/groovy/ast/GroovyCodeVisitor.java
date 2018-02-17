@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -137,6 +138,10 @@ public interface GroovyCodeVisitor {
     void visitBooleanExpression(BooleanExpression expression);
 
     void visitClosureExpression(ClosureExpression expression);
+
+    default void visitLambdaExpression(LambdaExpression expression) {
+        visitClosureExpression(expression);
+    }
 
     void visitTupleExpression(TupleExpression expression);
 
