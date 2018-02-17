@@ -74,5 +74,11 @@ assert ['Jochen', 'Paul', 'Daniel'] == [new Person('Jochen'), new Person('Paul')
 // class::instanceMethod
 assert 6 == Stream.of(1, 2, 3).reduce(0, BigDecimal::add)
 
+def m = ['apple', 'banana', 'orange'].stream().collect(Collectors.toMap(e -> e.charAt(0), e -> e, (e1, e2) -> e1, LinkedHashMap<String, String>::new))
+assert m instanceof LinkedHashMap
+assert ['a', 'b', 'o'] as TreeSet == m.keySet() as TreeSet
+assert ['apple', 'banana', 'orange'] as TreeSet == m.values() as TreeSet
+
+
 assert [new String[1], new String[2], new String[3]] == [1, 2, 3].stream().map(String[]::new).collect(Collectors.toList())
 assert [1, 2, 3] as String[] == [1, 2, 3].stream().map(String::valueOf).toArray(String[]::new)
