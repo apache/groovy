@@ -192,11 +192,11 @@ typeParameter
     ;
 
 typeBound
-    :   type (BITAND nls type)*
+    :   type[false] (BITAND nls type[false])*
     ;
 
 typeList
-    :   type (COMMA nls type)*
+    :   type[false] (COMMA nls type[false])*
     ;
 
 
@@ -223,7 +223,7 @@ locals[ int t ]
                         // Only interface can extend more than one super class
                         {1 == $t}? scs=typeList
                     |
-                        sc=type
+                        sc=type[false]
                     )
                 nls)?
             |
@@ -347,14 +347,13 @@ options { baseContext = type; }
         dimsOpt
     ;
 
-type
+type[boolean allowVoid]
     :   annotationsOpt
         (
             (
                 primitiveType
             |
-                 // !!! ERROR ALTERNATIVE !!!
-                 VOID { require(false, "void is not allowed here", -4); }
+                 VOID
             )
         |
                 generalClassOrInterfaceType
@@ -387,8 +386,8 @@ typeArguments
     ;
 
 typeArgument
-    :   type
-    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type)?
+    :   type[false]
+    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type[false])?
     ;
 
 annotatedQualifiedClassName
@@ -408,11 +407,11 @@ formalParameterList
     ;
 
 thisFormalParameter
-    :   type THIS
+    :   type[false] THIS
     ;
 
 formalParameter
-    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
+    :   variableModifiersOpt type[false]? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 methodBody
@@ -584,12 +583,12 @@ classifiedModifiers[int t]
 variableDeclaration[int t]
 @leftfactor { classifiedModifiers }
     :   classifiedModifiers[$t]
-        (   type? variableDeclarators
+        (   type[false]? variableDeclarators
         |   typeNamePairs nls ASSIGN nls variableInitializer
         )
     |
         classifiedModifiers[$t]?
-        type variableDeclarators
+        type[false] variableDeclarators
     ;
 
 typeNamePairs
@@ -597,7 +596,7 @@ typeNamePairs
     ;
 
 typeNamePair
-    :   type? variableDeclaratorId
+    :   type[false]? variableDeclaratorId
     ;
 
 variableNames
@@ -720,7 +719,7 @@ forControl
     ;
 
 enhancedForControl
-    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
+    :   variableModifiersOpt type[false]? variableDeclaratorId (COLON | IN) expression
     ;
 
 classicalForControl
@@ -740,7 +739,7 @@ forUpdate
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type rparen
+    :   LPAREN type[false] rparen
     ;
 
 parExpression
@@ -814,7 +813,7 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                  #relationalExprAlt
+    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type[false]           #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
@@ -1011,7 +1010,10 @@ namedPropertyArgs
     ;
 
 primary
-    :   identifier                                                                          #identifierPrmrAlt
+    :
+        // Append `typeArguments?` to `identifier` to support constructor reference with generics, e.g. HashMap<String, Integer>::new
+        // Though this is not a graceful solution, it is much faster than replacing `builtInType` with `type`
+        identifier typeArguments?                                                           #identifierPrmrAlt
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
     |   NEW nls creator                                                                     #newPrmrAlt
@@ -1022,7 +1024,7 @@ primary
     |   lambdaExpression                                                                    #lambdaPrmrAlt
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
-    |   builtInType                                                                         #typePrmrAlt
+    |   builtInType                                                                         #builtInTypePrmrAlt
     ;
 
 list
@@ -1210,5 +1212,3 @@ nls
 sep :   SEMI NL*
     |   NL+ (SEMI NL*)*
     ;
-
-
