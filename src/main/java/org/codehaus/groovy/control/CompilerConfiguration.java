@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -186,6 +187,8 @@ public class CompilerConfiguration {
     private Set<String> disabledGlobalASTTransformations;
 
     private BytecodeProcessor bytecodePostprocessor;
+
+    public static final int ASM_API_VERSION = Opcodes.ASM6;
 
     /**
      * Sets the Flags to defaults.

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -94,7 +95,7 @@ public abstract class AsmDecompiler {
         private ClassStub result;
 
         public DecompilingVisitor() {
-            super(Opcodes.ASM6);
+            super(CompilerConfiguration.ASM_API_VERSION);
         }
 
         @Override
@@ -179,7 +180,7 @@ public abstract class AsmDecompiler {
 
     private abstract static class AnnotationReader extends AnnotationVisitor {
         public AnnotationReader() {
-            super(Opcodes.ASM6);
+            super(CompilerConfiguration.ASM_API_VERSION);
         }
 
         abstract void visitAttribute(String name, Object value);
