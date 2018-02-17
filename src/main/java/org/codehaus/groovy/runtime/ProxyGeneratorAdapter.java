@@ -142,7 +142,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             final ClassLoader proxyLoader,
             final boolean emptyBody,
             final Class delegateClass) {
-        super(Opcodes.ASM5, new ClassWriter(0));
+        super(Opcodes.ASM6, new ClassWriter(0));
         this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
         this.visitedMethods = new LinkedHashSet<Object>();
         this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<String, Boolean>();

@@ -37,7 +37,7 @@ abstract class FormalParameterParser extends SignatureVisitor {
     private final List<GenericsType> typeParameters = new ArrayList<GenericsType>();
 
     public FormalParameterParser(AsmReferenceResolver resolver) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.resolver = resolver;
     }
 
