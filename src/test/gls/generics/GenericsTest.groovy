@@ -402,7 +402,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
             shouldFailCompilationWithMessage """
                 List<Integer list2 = new ArrayList<Integer>()
-            """, "Unexpected input: 'list2'"
+            """, "Unexpected input: 'List<Integer list2'"
 
             shouldFailCompilationWithMessage """
                 def c = []
