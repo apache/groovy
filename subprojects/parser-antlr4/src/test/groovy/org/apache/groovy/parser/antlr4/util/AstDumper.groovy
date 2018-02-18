@@ -663,6 +663,11 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     }
 
     @Override
+    void visitLambdaExpression(LambdaExpression expression) {
+        visitClosureExpression(expression)
+    }
+
+    @Override
     void visitTupleExpression(TupleExpression expression) {
         print '('
         visitExpressionsAndCommaSeparate(expression?.expressions)

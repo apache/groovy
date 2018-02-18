@@ -50,6 +50,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
@@ -765,6 +766,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             expression?.code?.visit this
         }
         print '}'
+    }
+
+    @Override
+    void visitLambdaExpression(LambdaExpression expression) {
+        visitClosureExpression(expression)
     }
 
     @Override
