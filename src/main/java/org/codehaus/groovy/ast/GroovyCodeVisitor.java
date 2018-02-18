@@ -139,9 +139,7 @@ public interface GroovyCodeVisitor {
 
     void visitClosureExpression(ClosureExpression expression);
 
-    default void visitLambdaExpression(LambdaExpression expression) {
-        visitClosureExpression(expression);
-    }
+    void visitLambdaExpression(LambdaExpression expression);
 
     void visitTupleExpression(TupleExpression expression);
 

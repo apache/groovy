@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -225,6 +226,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitClosureExpression(ClosureExpression expression) {
         expression.getCode().visit(this);
+    }
+
+    public void visitLambdaExpression(LambdaExpression expression) {
+        visitClosureExpression(expression);
     }
 
     public void visitTupleExpression(TupleExpression expression) {

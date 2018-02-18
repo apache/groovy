@@ -42,6 +42,7 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -52,7 +53,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
@@ -78,6 +78,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
     public static final String LAMBDA_WRAPPER = "__lambda_wrapper";
     public static final String SAM_NAME = "__SAM_NAME";
+    private static final boolean PRE_JAVA8 = VMPluginFactory.getPlugin().getVersion() < 8;
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -98,8 +99,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
 
-        if (!ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
-            // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
+        if (PRE_JAVA8 || !ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
+            // if running on pre8 JVM or the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
@@ -203,10 +204,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         loadSharedVariables(syntheticLambdaMethodNode);
 
-        List<ConstructorNode> constructorNodeList =
-                lambdaWrapperClassNode.getDeclaredConstructors().stream()
-                        .filter(e -> Boolean.TRUE.equals(e.getNodeMetaData(IS_GENERATED_CONSTRUCTOR)))
-                        .collect(Collectors.toList());
+        List<ConstructorNode> constructorNodeList = new LinkedList<>();
+        for (ConstructorNode e : lambdaWrapperClassNode.getDeclaredConstructors()) {
+            if (!Boolean.TRUE.equals(e.getNodeMetaData(IS_GENERATED_CONSTRUCTOR))) {
+                continue;
+            }
+
+            constructorNodeList.add(e);
+        }
 
         if (constructorNodeList.size() == 0) {
             throw new GroovyBugError("Failed to find the generated constructor");
@@ -268,16 +273,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                         BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode),
                         lambdaClassNode.isInterface()
                 ),
-                Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
+                Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), (Parameter[]) syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
         };
     }
 
     private String createMethodDescriptor(MethodNode abstractMethodNode) {
+        List<Class> typeClassList = new LinkedList<>();
+        for (Parameter e : abstractMethodNode.getParameters()) {
+            typeClassList.add(e.getType().getTypeClass());
+        }
+
         return BytecodeHelper.getMethodDescriptor(
                 abstractMethodNode.getReturnType().getTypeClass(),
-                Arrays.stream(abstractMethodNode.getParameters())
-                        .map(e -> e.getType().getTypeClass())
-                        .toArray(Class[]::new)
+                typeClassList.toArray(new Class[0])
         );
     }
 

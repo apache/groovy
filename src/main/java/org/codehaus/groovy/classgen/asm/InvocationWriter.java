@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -528,13 +529,18 @@ public class InvocationWriter {
         ClassNode type = call.getObjectExpression().getType();
         final MethodNode methodNode = ClassHelper.findSAM(type);
 
-        call = (MethodCallExpression) call.transformExpression(expression -> {
-            if (!(expression instanceof ConstantExpression)) {
-                return expression;
-            }
+        call = (MethodCallExpression) call.transformExpression(new ExpressionTransformer() {
+            @Override
+            public Expression transform(Expression expression) {
+                if (!(expression instanceof ConstantExpression)) {
+                    return expression;
+                }
 
-            return new ConstantExpression(methodNode.getName());
+                return new ConstantExpression(methodNode.getName());
+            }
         });
+
+
         call.setMethodTarget(methodNode);
         return call;
     }

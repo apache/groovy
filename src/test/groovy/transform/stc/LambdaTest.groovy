@@ -19,10 +19,15 @@
 
 package groovy.transform.stc
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory
+
 class LambdaTest extends GroovyTestCase {
     private static final boolean SKIP_ERRORS = true;
+    private static final boolean PRE_JAVA8 = VMPluginFactory.getPlugin().getVersion() < 8;
 
     void testFunction() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -42,6 +47,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionScript() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -57,6 +64,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testBinaryOperator() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -76,6 +85,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testConsumer() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -96,6 +107,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testPredicate() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -117,6 +130,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testUnaryOperator() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -138,6 +153,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testBiConsumer() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -158,6 +175,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithLocalVariables() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -179,6 +198,8 @@ class LambdaTest extends GroovyTestCase {
 
 
     void testFunctionWithLocalVariables2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -200,6 +221,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithLocalVariables4() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -221,6 +244,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithStaticMethodCall() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -246,6 +271,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithStaticMethodCall2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -271,6 +298,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithInstanceMethodCall() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -294,6 +323,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionInConstructor() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -317,6 +348,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithInstanceMethodCall2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -340,6 +373,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithInstanceMethodCall3() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -363,6 +398,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionCall() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -384,6 +421,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionCall2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -405,6 +444,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionCall3() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -426,6 +467,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testConsumerCall() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -449,6 +492,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testConsumerCall2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -472,6 +517,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testConsumerCall3() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -495,6 +542,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testSamCall() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -520,6 +569,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testSamCall2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -545,6 +596,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithUpdatingLocalVariable() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -566,6 +619,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithUpdatingLocalVariable2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -587,6 +642,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithVariableDeclaration() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -609,6 +666,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithMixingVariableDeclarationAndMethodInvocation() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -637,6 +696,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithNestedLambda() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -664,6 +725,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithNestedLambda2() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
@@ -689,6 +752,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunctionWithNestedLambda3() {
+        if (PRE_JAVA8) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors

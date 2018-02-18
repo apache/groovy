@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -987,6 +988,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertExpressionAuthorized(expression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
             expression.getCode().visit(this);
+        }
+
+        @Override
+        public void visitLambdaExpression(LambdaExpression expression) {
+            visitClosureExpression(expression);
         }
 
         public void visitTupleExpression(final TupleExpression expression) {
