@@ -45,9 +45,11 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -69,10 +71,12 @@ public class ClassHelper {
             Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
-    private static final String[] primitiveClassNames = new String[]{
-            "", "boolean", "char", "byte", "short",
-            "int", "long", "double", "float", "void"
-    };
+    private static final String[] PRIMITIVE_CLASS_NAMES;
+    static {
+        Set<String> primitiveClassNameSet = new HashSet<>(TypeDescriptionUtil.NAME_TO_PRIMITIVE_TYPE_MAP.keySet());
+        primitiveClassNameSet.add(""); // TODO confirm why should we need the empty string?
+        PRIMITIVE_CLASS_NAMES = primitiveClassNameSet.toArray(new String[0]);
+    }
 
     public static final ClassNode
             DYNAMIC_TYPE = makeCached(Object.class), OBJECT_TYPE = DYNAMIC_TYPE,
@@ -238,8 +242,8 @@ public class ClassHelper {
     public static ClassNode make(String name) {
         if (name == null || name.length() == 0) return DYNAMIC_TYPE;
 
-        for (int i = 0; i < primitiveClassNames.length; i++) {
-            if (primitiveClassNames[i].equals(name)) return types[i];
+        for (int i = 0; i < PRIMITIVE_CLASS_NAMES.length; i++) {
+            if (PRIMITIVE_CLASS_NAMES[i].equals(name)) return types[i];
         }
 
         for (int i = 0; i < classes.length; i++) {
@@ -249,7 +253,7 @@ public class ClassHelper {
         return makeWithoutCaching(name);
     }
 
-    private static final Map<ClassNode, ClassNode> PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP = Maps.of(
+    private static final Map<ClassNode, ClassNode> PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP = Maps.of(
             boolean_TYPE, Boolean_TYPE,
             byte_TYPE, Byte_TYPE,
             char_TYPE, Character_TYPE,
@@ -282,7 +286,7 @@ public class ClassHelper {
         cn = cn.redirect();
         if (!isPrimitiveType(cn)) return cn;
 
-        ClassNode result = PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP.get(cn);
+        ClassNode result = PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP.get(cn);
 
         if (null != result) {
             return result;
@@ -291,13 +295,13 @@ public class ClassHelper {
         return cn;
     }
 
-    private static final Map<ClassNode, ClassNode> WRAPPER_TYPE_TO_PRIMARY_TYPE_MAP = Maps.inverse(PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP);
+    private static final Map<ClassNode, ClassNode> WRAPPER_TYPE_TO_PRIMITIVE_TYPE_MAP = Maps.inverse(PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP);
 
     public static ClassNode getUnwrapper(ClassNode cn) {
         cn = cn.redirect();
         if (isPrimitiveType(cn)) return cn;
 
-        ClassNode result = WRAPPER_TYPE_TO_PRIMARY_TYPE_MAP.get(cn);
+        ClassNode result = WRAPPER_TYPE_TO_PRIMITIVE_TYPE_MAP.get(cn);
 
         if (null != result) {
             return result;
