@@ -5778,4 +5778,43 @@ public abstract class Maps {
         return Collections.unmodifiableMap(map);
     }
 
+    /**
+     * Returns the inverse view of this map, and duplicated key is not allowed
+     *
+     * @param map the map to inverse
+     * @param <K> key type
+     * @param <V> value type
+     * @return the inverse view of this map
+     */
+    public static <K, V> Map<V, K> inverse(Map<K, V> map) {
+        return inverse(map, false);
+    }
+
+    /**
+     * Returns the inverse view of this map
+     *
+     * @param map the map to inverse
+     * @param force whether to put anyway even if duplicated key exists
+     * @param <K> key type
+     * @param <V> value type
+     * @return the inverse view of this map
+     */
+    public static <K, V> Map<V, K> inverse(Map<K, V> map, boolean force) {
+        // Because we can not rely on 3rd party library(excluding antlr, asm), we have to implement our own utils such as the `inverse` method...
+        // Actually `BiMap` of Guava and `BidiMap` of commons-collections are both suitable for this scenario.
+
+        Map<V, K> resultMap = new LinkedHashMap<>();
+
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            V value = entry.getValue();
+
+            if (!force && resultMap.containsKey(value)) {
+                throw new IllegalArgumentException("duplicated key found: " + value);
+            }
+
+            resultMap.put(value, entry.getKey());
+        }
+
+        return Collections.<V, K>unmodifiableMap(resultMap);
+    }
 }
