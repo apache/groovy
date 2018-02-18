@@ -24,11 +24,8 @@ import groovy.lang.GroovyRuntimeException;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.time.*;
+import java.util.*;
 
 /**
  * This class defines new groovy methods which appear on normal JDK
@@ -712,7 +709,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be earlier than the value (" + self + ") it's called on.");
     }
 
@@ -731,7 +728,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to upto() cannot be earlier than the value (" + self + ") it's called on.");
     }
 
@@ -750,7 +747,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be later than the value (" + self + ") it's called on.");
     }
 
@@ -769,7 +766,350 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("The argument (" + to + 
+            throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be later than the value (" + self + ") it's called on.");
+    }
+
+    /**
+     * Returns the Time Zone offset of the Calendar as a {@link java.time.ZoneOffset}.
+     *
+     * @param self a Calendar
+     * @return a ZoneOffset
+     * @since 3.0
+     */
+    public static ZoneOffset getZoneOffset(final Calendar self) {
+        int offsetMillis = self.get(Calendar.ZONE_OFFSET) + self.get(Calendar.DST_OFFSET);
+        return ZoneOffset.ofTotalSeconds(offsetMillis / 1000);
+    }
+
+    /**
+     * Returns the Time Zone offset of the Date as a {@link java.time.ZoneOffset},
+     * which will typically be system's default offset.
+     *
+     * @param self a Date
+     * @return a ZoneOffset
+     * @since 3.0
+     */
+    public static ZoneOffset getZoneOffset(final Date self) {
+        return getZoneOffset(toCalendar(self));
+    }
+
+    /**
+     * Returns the Time Zone of the Calendar as a java.time.ZoneId.
+     *
+     * @param self a Calendar
+     * @return a ZoneId
+     * @since 3.0
+     */
+    public static ZoneId getZoneId(final Calendar self) {
+        return self.getTimeZone().toZoneId();
+    }
+
+    /**
+     * Returns the Time Zone of the Date as a {@link java.time.ZoneId}. This will
+     * typically be the system's default ZoneId.
+     *
+     * @param self a Date
+     * @return a ZoneId
+     * @since 3.0
+     */
+    public static ZoneId getZoneId(final Date self) {
+        return getZoneId(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.Year}.  If the Calendar has a different
+     * time zone than the system default, the Year will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a Year
+     * @since 3.0
+     */
+    public static Year toYear(final Calendar self) {
+        return Year.of(self.get(Calendar.YEAR));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.Year}.
+     *
+     * @param self a Date
+     * @return a Year
+     * @since 3.0
+     */
+    public static Year toYear(final Date self) {
+        return toYear(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.Month}. If the Calendar has a different
+     * time zone than the system default, the Month will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a Month
+     * @since 3.0
+     */
+    public static Month toMonth(final Calendar self) {
+        return Month.of(self.get(Calendar.MONTH) + 1);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.Month}.
+     *
+     * @param self a Date
+     * @return a Month
+     * @since 3.0
+     */
+    public static Month toMonth(final Date self) {
+        return toMonth(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.MonthDay}. If the Calendar has a different
+     * time zone than the system default, the MonthDay will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a MonthDay
+     * @since 3.0
+     */
+    public static MonthDay toMonthDay(final Calendar self) {
+        return MonthDay.of(toMonth(self), self.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.MonthDay}.
+     *
+     * @param self a Date
+     * @return a MonthDay
+     * @since 3.0
+     */
+    public static MonthDay toMonthDay(final Date self) {
+        return toMonthDay(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.YearMonth}. If the Calendar has a different
+     * time zone than the system default, the YearMonth will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a YearMonth
+     * @since 3.0
+     */
+    public static YearMonth toYearMonth(final Calendar self) {
+        return toYear(self).atMonth(toMonth(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.YearMonth}.
+     *
+     * @param self a Date
+     * @return a YearMonth
+     * @since 3.0
+     */
+    public static YearMonth toYearMonth(final Date self) {
+        return toYearMonth(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.DayOfWeek}. If the Calendar has a different
+     * time zone than the system default, the DayOfWeek will be adjusted into the default time zone.
+     *
+     *
+     * @param self a Calendar
+     * @return a DayOfWeek
+     * @since 3.0
+     */
+    public static DayOfWeek toDayOfWeek(final Calendar self) {
+        return DayOfWeek.of(self.get(Calendar.DAY_OF_WEEK)).minus(1);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.DayOfWeek}.
+     *
+     * @param self a Date
+     * @return a DayOfWeek
+     * @since 3.0
+     */
+    public static DayOfWeek toDayOfWeek(final Date self) {
+        return toDayOfWeek(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalDate}. If the Calendar has a different
+     * time zone than the system default, the LocalDate will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalDate
+     * @since 3.0
+     */
+    static LocalDate toLocalDate(final Calendar self) {
+        return LocalDate.of(self.get(Calendar.YEAR), toMonth(self), self.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalDate}.
+     *
+     * @param self a Date
+     * @return a LocalDate
+     * @since 3.0
+     */
+    public static LocalDate toLocalDate(final Date self) {
+        return toLocalDate(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalTime}. If the Calendar has a different
+     * time zone than the system default, the LocalTime will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalTime
+     * @since 3.0
+     */
+    public static LocalTime toLocalTime(final Calendar self) {
+        int hour = self.get(Calendar.HOUR_OF_DAY);
+        int minute = self.get(Calendar.MINUTE);
+        int second = self.get(Calendar.SECOND);
+        int ns = self.get(Calendar.MILLISECOND) * 1_000_000;
+        return LocalTime.of(hour, minute, second, ns);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalTime}.
+     *
+     * @param self a Date
+     * @return a LocalTime
+     * @since 3.0
+     */
+    public static LocalTime toLocalTime(final Date self) {
+        return toLocalTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalDateTime}. If the Calendar has a different
+     * time zone than the system default, the LocalDateTime will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalDateTime
+     * @since 3.0
+     */
+    public static LocalDateTime toLocalDateTime(final Calendar self) {
+        return LocalDateTime.of(toLocalDate(self), toLocalTime(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalDateTime}.
+     *
+     * @param self a Date
+     * @return a LocalDateTime
+     * @since 3.0
+     */
+    public static LocalDateTime toLocalDateTime(final Date self) {
+        return toLocalDateTime(toCalendar(self));
+    }
+
+    /**
+     * <p>Converts the Calendar to a corresponding {@link java.time.ZonedDateTime}.</p><p>Note that
+     * {@link java.util.GregorianCalendar} has a {@link java.util.GregorianCalendar#toZonedDateTime} method,
+     * which is commonly the specific type of Calendar in use.</p>
+     *
+     * @param self a Calendar
+     * @return a ZonedDateTime
+     * @since 3.0
+     */
+    public static ZonedDateTime toZonedDateTime(final Calendar self) {
+        if (self instanceof GregorianCalendar) { // would this branch ever be true?
+            return ((GregorianCalendar) self).toZonedDateTime();
+        } else {
+            return ZonedDateTime.of(toLocalDateTime(self), getZoneId(self));
+        }
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.ZonedDateTime}.
+     *
+     * @param self a Date
+     * @return a ZonedDateTime
+     * @since 3.0
+     */
+    public static ZonedDateTime toZonedDateTime(final Date self) {
+        return toZonedDateTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.OffsetDateTime}.
+     *
+     * @param self a Calendar
+     * @return an OffsetDateTime
+     * @since 3.0
+     */
+    public static OffsetDateTime toOffsetDateTime(final Calendar self) {
+        return OffsetDateTime.of(toLocalDateTime(self), getZoneOffset(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.OffsetDateTime}.
+     *
+     * @param self a Date
+     * @return an OffsetDateTime
+     * @since 3.0
+     */
+    public static OffsetDateTime toOffsetDateTime(final Date self) {
+        return toOffsetDateTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.OffsetTime}.
+     *
+     * @param self a Calendar
+     * @return an OffsetTime
+     * @since 3.0
+     */
+    public static OffsetTime toOffsetTime(final Calendar self) {
+        return OffsetTime.of(toLocalTime(self), getZoneOffset(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.OffsetTime}.
+     *
+     * @param self a Date
+     * @return an OffsetTime
+     * @since 3.0
+     */
+    public static OffsetTime toOffsetTime(final Date self) {
+        return toOffsetTime(toCalendar(self));
+    }
+
+    /**
+     * Convenience method for converting a Calendar to a corresponding {@link java.time.Instant}.
+     *
+     * @param self a Calendar
+     * @return an Instant
+     * @since 3.0
+     */
+    public static Instant toInstant(final Calendar self) {
+        return self.getTime().toInstant();
+    }
+
+    /**
+     * Converts the TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * using the current date/time.
+     *
+     * @param self a TimeZone
+     * @return a ZoneOffset
+     * @since 3.0
+     */
+    public static ZoneOffset toZoneOffset(final TimeZone self) {
+        return toZoneOffset(self, Instant.now());
+    }
+
+    /**
+     * Converts this TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * using the date/time of specified Instant.
+     *
+     * @param self a TimeZone
+     * @return a ZoneOffset
+     * @since 3.0
+     */
+    public static ZoneOffset toZoneOffset(final TimeZone self, Instant instant) {
+        return self.toZoneId().getRules().getOffset(instant);
     }
 }

@@ -26,11 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * This class defines all the new static groovy methods which appear on normal
@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
  * @author Joachim Baumann
  * @author Paul King
  * @author Kent Inge Fagerland Simonsen
+ * @author Joe Wolf
  */
 public class DefaultGroovyStaticMethods {
 
@@ -310,5 +311,170 @@ public class DefaultGroovyStaticMethods {
   public static long currentTimeSeconds(System self){
     return System.currentTimeMillis() / 1000;
   }
+
+    /**
+     * Parse text into a {@link java.time.LocalDate} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a LocalDate representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.LocalDate#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static LocalDate parse(final LocalDate type, CharSequence text, String pattern) {
+        return LocalDate.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.LocalDateTime} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a LocalDateTime representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.LocalDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static LocalDateTime parse(final LocalDateTime type, CharSequence text, String pattern) {
+        return LocalDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.LocalTime} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a LocalTime representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.LocalTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static LocalTime parse(final LocalTime type, CharSequence text, String pattern) {
+        return LocalTime.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.MonthDay} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a MonthDay representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.MonthDay#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static MonthDay parse(final MonthDay type, CharSequence text, String pattern) {
+        return MonthDay.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into an {@link java.time.OffsetDateTime} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return an OffsetDateTime representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.OffsetDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static OffsetDateTime parse(final OffsetDateTime type, CharSequence text, String pattern) {
+        return OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into an {@link java.time.OffsetTime} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return an OffsetTime representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.OffsetTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static OffsetTime parse(final OffsetTime type, CharSequence text, String pattern) {
+        return OffsetTime.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.Year} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a Year representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.Year#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static Year parse(final Year type, CharSequence text, String pattern) {
+        return Year.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.YearMonth} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a YearMonth representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.YearMonth#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static YearMonth parse(final YearMonth type, CharSequence text, String pattern) {
+        return YearMonth.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Parse text into a {@link java.time.ZonedDateTime} using the provided pattern.
+     *
+     * @param type    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param text    String to be parsed to create the date instance
+     * @param pattern pattern used to parse the text
+     * @return a ZonedDateTime representing the parsed text
+     * @throws java.lang.IllegalArgumentException if the pattern is invalid
+     * @throws java.time.format.DateTimeParseException if the text cannot be parsed
+     * @see java.time.format.DateTimeFormatter
+     * @see java.time.ZonedDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @since 3.0
+     */
+    public static ZonedDateTime parse(final ZonedDateTime type, CharSequence text, String pattern) {
+        return ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Returns the {@link java.time.ZoneOffset} currently associated with the system default {@link java.time.ZoneId}.
+     *
+     * @param type placeholder variable used by Groovy categories; ignored for default static methods
+     * @return a ZoneOffset
+     * @see java.time.ZoneId#systemDefault()
+     * @since 3.0
+     */
+    public static ZoneOffset systemDefault(final ZoneOffset type) {
+        return DateTimeGroovyMethods.getOffset(ZoneId.systemDefault());
+    }
 
 }
