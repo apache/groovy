@@ -40,7 +40,7 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
  */
 public class TypeDescriptionUtil {
     private static final String REF_DESCRIPTION = "L";
-    private static final Map<ClassNode, String> PRIMITIVE_TYPE_TO_DESCRIPTION_MAP = Maps.of(
+    private static final Map<ClassNode, String> TYPE_TO_DESCRIPTION_MAP = Maps.of(
             int_TYPE, "I",
             VOID_TYPE,"V",
             boolean_TYPE, "Z",
@@ -52,7 +52,7 @@ public class TypeDescriptionUtil {
             long_TYPE, "J"
     );
 
-    public static final Map<String, ClassNode> NAME_TO_PRIMITIVE_TYPE_MAP = Maps.of(
+    private static final Map<String, ClassNode> NAME_TO_TYPE_MAP = Maps.of(
             "int", int_TYPE,
             "void", VOID_TYPE,
             "boolean", boolean_TYPE,
@@ -65,15 +65,15 @@ public class TypeDescriptionUtil {
     );
 
     public static boolean isPrimitiveType(String name) {
-        return NAME_TO_PRIMITIVE_TYPE_MAP.containsKey(name);
+        return NAME_TO_TYPE_MAP.containsKey(name);
     }
 
     public static boolean isPrimitiveType(ClassNode type) {
-        return PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.containsKey(type);
+        return TYPE_TO_DESCRIPTION_MAP.containsKey(type);
     }
 
     public static String getDescriptionByType(ClassNode type) {
-        String desc = PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.get(type);
+        String desc = TYPE_TO_DESCRIPTION_MAP.get(type);
 
         if (null == desc) { // reference type
             if (!type.isArray()) {
@@ -95,7 +95,7 @@ public class TypeDescriptionUtil {
     }
 
     public static String getDescriptionByName(String name) {
-        ClassNode type = NAME_TO_PRIMITIVE_TYPE_MAP.get(name);
+        ClassNode type = NAME_TO_TYPE_MAP.get(name);
 
         if (null == type) {
             return makeRefDescription(name);
