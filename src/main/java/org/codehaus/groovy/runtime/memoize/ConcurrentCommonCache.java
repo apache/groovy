@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.memoize;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <V> type of the values
  * @since 2.5.0
  */
+@ThreadSafe
 public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serializable {
     private static final long serialVersionUID = -7352338549333024936L;
 
