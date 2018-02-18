@@ -244,7 +244,7 @@ public class ClassHelper {
         return makeWithoutCaching(name);
     }
 
-    private static final Map<ClassNode, ClassNode> PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP = Maps.of(
+    private static final Map<ClassNode, ClassNode> PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP = Maps.of(
             boolean_TYPE, Boolean_TYPE,
             byte_TYPE, Byte_TYPE,
             char_TYPE, Character_TYPE,
@@ -277,7 +277,7 @@ public class ClassHelper {
         cn = cn.redirect();
         if (!isPrimitiveType(cn)) return cn;
 
-        ClassNode result = PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP.get(cn);
+        ClassNode result = PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP.get(cn);
 
         if (null != result) {
             return result;
@@ -286,13 +286,13 @@ public class ClassHelper {
         return cn;
     }
 
-    private static final Map<ClassNode, ClassNode> WRAPPER_TYPE_TO_PRIMARY_TYPE_MAP = Maps.inverse(PRIMARY_TYPE_TO_WRAPPER_TYPE_MAP);
+    private static final Map<ClassNode, ClassNode> WRAPPER_TYPE_TO_PRIMITIVE_TYPE_MAP = Maps.inverse(PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP);
 
     public static ClassNode getUnwrapper(ClassNode cn) {
         cn = cn.redirect();
         if (isPrimitiveType(cn)) return cn;
 
-        ClassNode result = WRAPPER_TYPE_TO_PRIMARY_TYPE_MAP.get(cn);
+        ClassNode result = WRAPPER_TYPE_TO_PRIMITIVE_TYPE_MAP.get(cn);
 
         if (null != result) {
             return result;
