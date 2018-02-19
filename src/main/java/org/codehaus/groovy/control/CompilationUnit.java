@@ -1026,9 +1026,7 @@ public class CompilationUnit extends ProcessingUnit {
     private List<ClassNode> getPrimaryClassNodes(boolean sort) {
         List<ClassNode> unsorted = new ArrayList<ClassNode>();
         for (ModuleNode module : this.ast.getModules()) {
-            for (ClassNode classNode : module.getClasses()) {
-                unsorted.add(classNode);
-            }
+            unsorted.addAll(module.getClasses());
         }
 
         if (!sort) return unsorted;
