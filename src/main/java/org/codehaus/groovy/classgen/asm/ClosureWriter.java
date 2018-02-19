@@ -278,28 +278,26 @@ public class ClosureWriter {
         for (Parameter param : localVariableParams) {
             String paramName = param.getName();
             ClassNode type = param.getType();
-            if (true) {
-                VariableExpression initialValue = new VariableExpression(paramName);
-                initialValue.setAccessedVariable(param);
-                initialValue.setUseReferenceDirectly(true);
-                ClassNode realType = type;
-                type = ClassHelper.makeReference();
-                param.setType(ClassHelper.makeReference());
-                FieldNode paramField = answer.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, type, initialValue);
-                paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
-                paramField.setHolder(true);
-                String methodName = Verifier.capitalize(paramName);
+            VariableExpression initialValue = new VariableExpression(paramName);
+            initialValue.setAccessedVariable(param);
+            initialValue.setUseReferenceDirectly(true);
+            ClassNode realType = type;
+            type = ClassHelper.makeReference();
+            param.setType(ClassHelper.makeReference());
+            FieldNode paramField = answer.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, type, initialValue);
+            paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
+            paramField.setHolder(true);
+            String methodName = Verifier.capitalize(paramName);
 
-                // let's add a getter & setter
-                Expression fieldExp = new FieldExpression(paramField);
-                answer.addMethod(
-                        "get" + methodName,
-                        ACC_PUBLIC,
-                        realType.getPlainNodeReference(),
-                        Parameter.EMPTY_ARRAY,
-                        ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(fieldExp));
-            }
+            // let's add a getter & setter
+            Expression fieldExp = new FieldExpression(paramField);
+            answer.addMethod(
+                    "get" + methodName,
+                    ACC_PUBLIC,
+                    realType.getPlainNodeReference(),
+                    Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
+                    new ReturnStatement(fieldExp));
         }
     }
 
