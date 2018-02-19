@@ -615,7 +615,7 @@ public class Node implements Serializable, Cloneable {
 
     private static <T> T callClosureForNode(Closure<T> closure, Object node, int level) {
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{node, level});
+            return closure.call(node, level);
         }
         return closure.call(node);
     }
