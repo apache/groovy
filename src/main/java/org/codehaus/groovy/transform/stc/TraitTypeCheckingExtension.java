@@ -123,7 +123,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         System.arraycopy(argumentTypes, 0, newArgs, 0, newArgs.length);
         ClassNode inferredReturnType = inferTraitMethodReturnType(nextTrait, name, newArgs);
 
-        return Arrays.asList(makeDynamic(call, inferredReturnType));
+        return Collections.singletonList(makeDynamic(call, inferredReturnType));
     }
 
     private ClassNode inferTraitMethodReturnType(ClassNode nextTrait, String methodName, ClassNode[] paramTypes) {

@@ -115,7 +115,7 @@ public class GeneratorContext {
                 }
             }
         }
-        if(b == null) return name.toString();
+        if(b == null) return name;
         if (lastEscape == -1) throw new GroovyBugError("unexpected escape char control flow in "+name);
         b.append(name, lastEscape + 1, l);
         return b.toString();

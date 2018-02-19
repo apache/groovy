@@ -165,9 +165,8 @@ public class JavacJavaCompiler implements JavaCompiler {
                 // ignore it
             }
 
-            StringBuilder resultPath = new StringBuilder(DefaultGroovyMethods.join((Iterable) paths, File.pathSeparator));
             paras.add("-classpath");
-            paras.add(resultPath.toString());
+            paras.add(DefaultGroovyMethods.join((Iterable) paths, File.pathSeparator));
         }
 
         // files to compile
