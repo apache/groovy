@@ -791,7 +791,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                 return dispatchNodeCall(name, args);
             } catch(MissingMethodException mme) {
                 if(mme.getMethod().equals(methodName) && methodMissingDelegate != null) {
-                    return methodMissingDelegate.call(new Object[]{methodName, args});
+                    return methodMissingDelegate.call(methodName, args);
                 }
                 throw mme;
             }
@@ -982,7 +982,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                 builder = (FactoryBuilderSupport) attrDelegate.getDelegate();
             }
 
-            attrDelegate.call(new Object[]{builder, node, attributes});
+            attrDelegate.call(builder, node, attributes);
         }
 
         if (getProxyBuilder().getCurrentFactory().onHandleNodeAttributes(getProxyBuilder().getChildBuilder(), node, attributes)) {
@@ -1031,7 +1031,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void postInstantiate(Object name, Map attributes, Object node) {
         for (Closure postInstantiateDelegate : getProxyBuilder().getPostInstantiateDelegates()) {
-            (postInstantiateDelegate).call(new Object[]{this, attributes, node});
+            (postInstantiateDelegate).call(this, attributes, node);
         }
     }
 
@@ -1048,7 +1048,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected Object postNodeCompletion(Object parent, Object node) {
         for (Closure postNodeCompletionDelegate : getProxyBuilder().getPostNodeCompletionDelegates()) {
-            (postNodeCompletionDelegate).call(new Object[]{this, parent, node});
+            (postNodeCompletionDelegate).call(this, parent, node);
         }
 
         return node;
@@ -1065,7 +1065,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void preInstantiate(Object name, Map attributes, Object value) {
         for (Closure preInstantiateDelegate : getProxyBuilder().getPreInstantiateDelegates()) {
-            (preInstantiateDelegate).call(new Object[]{this, attributes, value});
+            (preInstantiateDelegate).call(this, attributes, value);
         }
     }
 
