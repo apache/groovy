@@ -187,7 +187,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
-               final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
+               final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor();
                  this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance();
            } catch (final ClassNotFoundException e) {
                this.metaClassCreationHandle = new MetaClassCreationHandle();
