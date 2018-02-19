@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
@@ -70,6 +71,8 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
+
+import java.util.List;
 
 /**
  * An implementation of the visitor pattern for working with ASTNodes
@@ -192,5 +195,17 @@ public interface GroovyCodeVisitor {
     void visitClosureListExpression(ClosureListExpression closureListExpression);
 
     void visitBytecodeExpression(BytecodeExpression expression);
+
+    default void visitListOfExpressions(List<? extends Expression> list) {
+        if (list == null) return;
+        for (Expression expression : list) {
+            if (expression instanceof SpreadExpression) {
+                Expression spread = ((SpreadExpression) expression).getExpression();
+                spread.visit(this);
+            } else {
+                expression.visit(this);
+            }
+        }
+    }
 }
 

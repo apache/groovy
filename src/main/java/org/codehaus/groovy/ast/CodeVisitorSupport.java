@@ -32,7 +32,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -72,8 +71,6 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
-
-import java.util.List;
 
 /**
  * Abstract base class for any GroovyCodeVisitor which by default
@@ -314,18 +311,6 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitGStringExpression(GStringExpression expression) {
         visitListOfExpressions(expression.getStrings());
         visitListOfExpressions(expression.getValues());
-    }
-
-    protected void visitListOfExpressions(List<? extends Expression> list) {
-        if (list == null) return;
-        for (Expression expression : list) {
-            if (expression instanceof SpreadExpression) {
-                Expression spread = ((SpreadExpression) expression).getExpression();
-                spread.visit(this);
-            } else {
-                expression.visit(this);
-            }
-        }
     }
 
     public void visitCatchStatement(CatchStatement statement) {
