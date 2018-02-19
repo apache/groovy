@@ -1361,7 +1361,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     checkCyclicInheritance(originalNode, null, intf.getInterfaces());
                 }
             } else {
-                return;
             }
         }
     }

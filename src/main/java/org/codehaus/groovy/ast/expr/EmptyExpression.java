@@ -50,7 +50,6 @@ public class EmptyExpression extends Expression {
     }
 
     public void visit(GroovyCodeVisitor visitor) {
-        return;
     }
 
 

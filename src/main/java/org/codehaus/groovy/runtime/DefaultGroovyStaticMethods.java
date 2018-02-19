@@ -293,7 +293,6 @@ public class DefaultGroovyStaticMethods {
                         throw ioe;
                     }
                 }
-                continue;
             }
         }
         return tempFile;

@@ -270,7 +270,6 @@ public abstract class Selector {
                 //call asBoolean
                 name = "asBoolean";
                 super.setCallSiteTarget();
-                return;
             }
         }
     }
@@ -851,7 +850,7 @@ public abstract class Selector {
         public void addExceptionHandler() {
             //TODO: if we would know exactly which paths require the exceptions
             //      and which paths not, we can sometimes save this guard 
-            if (handle==null || catchException==false) return;
+            if (handle==null || !catchException) return;
             Class returnType = handle.type().returnType();
             if (returnType!=Object.class) {
                 MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class); 
