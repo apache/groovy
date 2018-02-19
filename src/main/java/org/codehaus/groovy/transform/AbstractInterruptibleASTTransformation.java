@@ -91,7 +91,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
     protected void setupTransform(AnnotationNode node) {
         checkOnMethodStart = getBooleanAnnotationParameter(node, CHECK_METHOD_START_MEMBER, true);
         applyToAllMembers = getBooleanAnnotationParameter(node, APPLY_TO_ALL_MEMBERS, true);
-        applyToAllClasses = applyToAllMembers ? getBooleanAnnotationParameter(node, APPLY_TO_ALL_CLASSES, true) : false;
+        applyToAllClasses = applyToAllMembers && getBooleanAnnotationParameter(node, APPLY_TO_ALL_CLASSES, true);
         thrownExceptionType = getClassAnnotationParameter(node, THROWN_EXCEPTION_TYPE, ClassHelper.make(InterruptedException.class));
     }
 

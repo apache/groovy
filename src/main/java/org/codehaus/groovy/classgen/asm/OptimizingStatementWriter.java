@@ -335,7 +335,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     private boolean isNewPathFork(StatementMeta meta) {
         // meta.optimize -> can do fast path
-        if (meta==null || meta.optimize==false) return false;
+        if (meta==null || !meta.optimize) return false;
         // fastPathBlocked -> slow path
         if (fastPathBlocked) return false;
         // controller.isFastPath() -> fastPath
@@ -931,7 +931,6 @@ public class OptimizingStatementWriter extends StatementWriter {
 
         @Override
         public void visitClosureExpression(ClosureExpression expression) {
-            return;
         }
 
         @Override
