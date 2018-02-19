@@ -102,7 +102,7 @@ public class GroovyStarter {
         Method m=null;
         try {
             Class c = loader.loadClass(lc.getMainClass());
-            m = c.getMethod("main", new Class[]{String[].class});
+            m = c.getMethod("main", String[].class);
         } catch (ClassNotFoundException e1) {
             exit(e1);
         } catch (SecurityException e2) {

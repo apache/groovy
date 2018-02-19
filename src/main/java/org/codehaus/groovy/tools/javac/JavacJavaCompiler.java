@@ -58,14 +58,14 @@ public class JavacJavaCompiler implements JavaCompiler {
             Class javac = findJavac(cu);
             Method method = null;
             try {
-                method = javac.getMethod("compile", new Class[]{String[].class, PrintWriter.class});
+                method = javac.getMethod("compile", String[].class, PrintWriter.class);
                 javacOutput = new StringBuilderWriter();
                 PrintWriter writer = new PrintWriter(javacOutput);
                 Object ret = method.invoke(null, javacParameters, writer);
                 javacReturnValue = (Integer) ret;
             } catch (NoSuchMethodException e) { }
             if (method == null) {
-                method = javac.getMethod("compile", new Class[]{String[].class});
+                method = javac.getMethod("compile", String[].class);
                 Object ret = method.invoke(null, new Object[]{javacParameters});
                 javacReturnValue = (Integer) ret;
             }
