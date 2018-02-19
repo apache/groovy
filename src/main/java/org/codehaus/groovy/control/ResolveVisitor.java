@@ -762,7 +762,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private static String lookupClassName(PropertyExpression pe) {
         boolean doInitialClassTest=true;
-        String name = "";
+        StringBuilder name = new StringBuilder(32);
         // this loop builds a name from right to left each name part
         // separated by "."
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
@@ -782,9 +782,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // field bar.
                     if (!testVanillaNameForClass(varName)) return null;
                     doInitialClassTest = false;
-                    name = varName;
+                    name = new StringBuilder(varName);
                 } else {
-                    name = varName + "." + name;
+                    name.insert(0, varName + ".");
                 }
                 break;
             }
@@ -808,14 +808,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // field bar.
                     if (!testVanillaNameForClass(propertyPart)) return null;
                     doInitialClassTest= false;
-                    name = propertyPart;
+                    name = new StringBuilder(propertyPart);
                 } else {
-                    name = propertyPart + "." + name;
+                    name.insert(0, propertyPart + ".");
                 }
             }
         }
         if (name.length() == 0) return null;
-        return name;
+        return name.toString();
     }
 
     // iterate from the inner most to the outer and check for classes
