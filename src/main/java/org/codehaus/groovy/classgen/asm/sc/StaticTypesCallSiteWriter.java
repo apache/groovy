@@ -498,7 +498,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         call.setSafe(safe);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.visit(controller.getAcg());
-        return;
     }
 
     @Override
