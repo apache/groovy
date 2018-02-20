@@ -193,6 +193,10 @@ public class GeneralUtils {
         return new CastExpression(type, expression);
     }
 
+    public static BooleanExpression boolX(Expression boolExpr) {
+        return new BooleanExpression(boolExpr);
+    }
+
     public static CastExpression castX(ClassNode type, Expression expression, boolean ignoreAutoboxing) {
         return new CastExpression(type, expression, ignoreAutoboxing);
     }
