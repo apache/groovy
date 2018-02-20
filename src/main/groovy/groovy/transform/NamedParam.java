@@ -19,14 +19,12 @@
 package groovy.transform;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@Repeatable(NamedParams.class)
 public @interface NamedParam {
     String value();
     Class type() default Object.class;
