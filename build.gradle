@@ -281,6 +281,7 @@ sourceSets {
         resources {
             srcDirs = ['src/main', 'src/resources']
             include 'META-INF/services/*',
+                    'META-INF/groovy/*',
                     'META-INF/groovy-release-info.properties',
                     'groovy/grape/*.xml'
         }
