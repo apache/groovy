@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
+import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -162,11 +163,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
 
         final BlockStatement body = new BlockStatement();
+        int modifiers = getVisibility(anno, mNode, mNode.getModifiers());
         if (mNode instanceof ConstructorNode) {
             body.addStatement(stmt(ctorX(ClassNode.THIS, args)));
             body.addStatement(inner);
             cNode.addConstructor(
-                    mNode.getModifiers(),
+                    modifiers,
                     genParamsArray,
                     mNode.getExceptions(),
                     body
@@ -176,7 +178,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             body.addStatement(stmt(callThisX(mNode.getName(), args)));
             cNode.addMethod(
                     mNode.getName(),
-                    mNode.getModifiers(),
+                    modifiers,
                     mNode.getReturnType(),
                     genParamsArray,
                     mNode.getExceptions(),
