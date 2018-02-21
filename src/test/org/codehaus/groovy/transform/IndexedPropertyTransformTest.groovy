@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform
 
 /**
- * @author Paul King
+ * Tests for the {@code @IndexedProperty} AST transformation.
  */
 class IndexedPropertyTransformTest extends GroovyShellTestCase {
 
