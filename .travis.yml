@@ -40,14 +40,16 @@ matrix:
       env: JDK_RELEASE='Oracle JDK 8' EXTRA_GRADLE_ARGS=''
       install: echo "Don't let Travis CI execute './gradlew assemble' by default"
 # Java 8 "OpenJDK"
-    - env: JDK_RELEASE='OpenJDK 8' EXTRA_GRADLE_ARGS=''
-      install: . ./src/install/install-jdk.sh -F 8 -L GPL
+#    - env: JDK_RELEASE='OpenJDK 8' EXTRA_GRADLE_ARGS=''
+#      install: . ./src/install/install-jdk.sh -F 8 -L GPL
 
 before_script:
   - |
     unset _JAVA_OPTIONS
 
-script: travis_wait 60 ./gradlew test
+script:
+  - ./gradlew -version
+  - travis_wait 60 ./gradlew test
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
