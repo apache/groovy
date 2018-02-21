@@ -49,25 +49,6 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testNamedDelegate() {
-        assertScript """
-            import groovy.transform.*
-
-            @ToString(includeNames=true, includeFields=true)
-            class Color {
-                Integer r, g, b
-            }
-
-            @NamedVariant
-            String foo(Color shade) {
-              shade
-            }
-
-            def result = foo(g: 12, b: 42, r: 12)
-            assert result == 'Color(r:12, g:12, b:42)'
-        """
-    }
-
     void testNamedParamConstructor() {
         assertScript """
             import groovy.transform.*
@@ -84,6 +65,29 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
             }
 
             assert new Color(r: 10, g: 20, b: 30).toString() == 'Color(r:10, g:20, b:30)'
+        """
+    }
+
+    void testNamedParamConstructorVisibility() {
+        assertScript """
+            import groovy.transform.*
+            import static groovy.transform.options.Visibility.*
+
+            class Color {
+                private int r, g, b
+
+                @VisibilityOptions(PUBLIC)
+                @NamedVariant
+                private Color(@NamedParam int r, @NamedParam int g, @NamedParam int b) {
+                  this.r = r
+                  this.g = g
+                  this.b = b
+                }
+            }
+
+            def pubCons = Color.constructors
+            assert pubCons.size() == 1
+            assert pubCons[0].parameterTypes[0] == Map
         """
     }
 
