@@ -18,23 +18,34 @@ language: groovy
 # set sudo required for non-container vm with more mem even though we don't need sudo
 # https://docs.travis-ci.com/user/reference/overview/
 sudo: required
+dist: trusty
 
 matrix:
   include:
+# Java 10 "Oracle JDK"
+    - env: JDK_RELEASE='Oracle JDK 10' EXTRA_GRADLE_ARGS=''
+      install: . ./src/install/install-jdk.sh -F 10 -L BCL
+# Java 10 "OpenJDK"
+    - env: JDK_RELEASE='OpenJDK 10' EXTRA_GRADLE_ARGS=''
+      install: . ./src/install/install-jdk.sh -F 10 -L GPL
+# Java 9 "Oracle JDK" (provided by Travis CI)
     - jdk: oraclejdk9
+      env: JDK_RELEASE='Oracle JDK 9' EXTRA_GRADLE_ARGS=''
+      install: echo "Don't let Travis CI execute './gradlew assemble' by default"
+# Java 9 "OpenJDK"
+    - env: JDK_RELEASE='OpenJDK 9' EXTRA_GRADLE_ARGS=''
+      install: . ./src/install/install-jdk.sh -F 9 -L GPL
+# Java 8 "Oracle JDK" (provided by Travis CI)
     - jdk: oraclejdk8
+      env: JDK_RELEASE='Oracle JDK 8' EXTRA_GRADLE_ARGS=''
+      install: echo "Don't let Travis CI execute './gradlew assemble' by default"
+# Java 8 "OpenJDK"
+    - env: JDK_RELEASE='OpenJDK 8' EXTRA_GRADLE_ARGS=''
+      install: . ./src/install/install-jdk.sh -F 8 -L GPL
 
-dist: trusty
-
-install: true
-
-# adjust gradle.properties if needed
 before_script:
   - |
     unset _JAVA_OPTIONS
-    if [ $TRAVIS_JDK_VERSION == "oraclejdk9" ]; then
-      sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-ea -Xms500m -Xmx1500m/' gradle.properties
-    fi
 
 script: travis_wait 60 ./gradlew test
 
