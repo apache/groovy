@@ -16,13 +16,13 @@
 language: groovy
 
 sudo: required
+dist: trusty
 
 matrix:
   include:
     - jdk: openjdk7
     - jdk: oraclejdk8
 
-dist: trusty
 
 before_install:
   - |
@@ -38,7 +38,9 @@ install: true
 
 before_script: unset _JAVA_OPTIONS
 
-script: travis_wait 60 ./gradlew --no-daemon test
+script:
+  - ./gradlew -version
+  - travis_wait 60 ./gradlew --no-daemon test
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
