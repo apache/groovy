@@ -31,7 +31,7 @@ matrix:
       env: JDK_RELEASE='Oracle JDK 9' EXTRA_GRADLE_ARGS=''
       install: echo "Don't let Travis CI execute './gradlew assemble' by default"
 # Java 9 "OpenJDK"
-    - env: JDK_RELEASE='OpenJDK 9' EXTRA_GRADLE_ARGS=''
+    - env: TRAVIS_JDK_VERSION='openjdk9' JDK_RELEASE='OpenJDK 9' EXTRA_GRADLE_ARGS=''
       install: . ./src/install/install-jdk.sh -F 9 -L GPL
 # Java 8 "Oracle JDK" (provided by Travis CI)
     - jdk: oraclejdk8
