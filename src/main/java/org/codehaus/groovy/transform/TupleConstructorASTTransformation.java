@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -86,7 +87,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
-    private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
     private static final Class<? extends Annotation> MAP_CONSTRUCTOR_CLASS = MapConstructor.class;
     private static final Map<Class<?>, Expression> primitivesInitialValues;
@@ -128,8 +128,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             List<String> includes = getMemberStringList(anno, "includes");
             boolean allNames = memberHasValue(anno, "allNames", true);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
-            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false)) return;
-            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false)) return;
+            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false))
+                return;
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false))
+                return;
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, cNode);
             if (handler == null) return;
@@ -251,7 +253,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         boolean hasMapCons = hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
-        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
+        int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
+        cNode.addConstructor(new ConstructorNode(modifiers, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
 
         if (sourceUnit != null && !body.isEmpty()) {
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -266,7 +269,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             ClassNode firstParamType = params.get(0).getType();
             if (params.size() > 1 || firstParamType.equals(ClassHelper.OBJECT_TYPE)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
-                addSpecialMapConstructors(cNode, message, false);
+                addSpecialMapConstructors(modifiers, cNode, message, false);
             }
         }
     }
@@ -293,7 +296,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return initialExp;
     }
 
-    public static void addSpecialMapConstructors(ClassNode cNode, String message, boolean addNoArg) {
+    public static void addSpecialMapConstructors(int modifiers, ClassNode cNode, String message, boolean addNoArg) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, "__namedArgs"));
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = varX("__namedArgs");
@@ -301,13 +304,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         code.addStatement(ifElseS(equalsNullX(namedArgs),
                 illegalArgumentBlock(message),
                 processArgsBlock(cNode, namedArgs)));
-        ConstructorNode init = new ConstructorNode(ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
+        ConstructorNode init = new ConstructorNode(modifiers, parameters, ClassNode.EMPTY_ARRAY, code);
         cNode.addConstructor(init);
         // potentially add a no-arg constructor too
         if (addNoArg) {
             code = new BlockStatement();
             code.addStatement(stmt(ctorX(ClassNode.THIS, ctorX(LHMAP_TYPE))));
-            init = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+            init = new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
             cNode.addConstructor(init);
         }
     }

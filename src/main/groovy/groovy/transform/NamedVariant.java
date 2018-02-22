@@ -52,6 +52,8 @@ import java.lang.annotation.Target;
  *     <li>If no arguments with {@code @NamedParam} or {@code @NamedDelegate} annotations are found the
  *     first argument is assumed to be an implicit named delegate</li>
  * </ol>
+ * You can also mix and match the {@code @NamedParam} and {@code @NamedDelegate} annotations.
+ *
  * Named arguments will be supplied via the map with their property name (configurable via
  * annotation attributes within {@code @NamedParam}) being the key and value being the argument value.
  * For named delegates, any properties of the delegate can become map keys. Duplicate keys across
@@ -75,15 +77,22 @@ import java.lang.annotation.Target;
  * def result = foo(g: 12, b: 42, r: 12)
  * assert result.toString() == 'Color(r:12, g:12, b:42)'
  * </pre>
+ * You could also explicitly annotate the {@code shade} argument with the {@code @NamedDelegate} annotation if you wanted.
+ *
  * The generated method will be something like this:
  * <pre>
  * String foo(Map args) {
  *     return foo(args as Color)
  * }
  * </pre>
- * The generated method/constructor retains the visibility and return type of the original
- * but the {@code @VisibilityOptions} annotation can be added to the visibility. You could have the
+ * The generated method/constructor retains the visibility and return type of the original method/constructor
+ * but the {@link @VisibilityOptions} annotation can be added to customize the visibility. You could have the
  * annotated method/constructor private for instance but have the generated one be public.
+ *
+ * @see VisibilityOptions
+ * @see NamedParam
+ * @see NamedDelegate
+ * @since 2.5.0
  */
 @Incubating
 @Retention(RetentionPolicy.SOURCE)
@@ -91,7 +100,7 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NamedVariantASTTransformation")
 public @interface NamedVariant {
     /**
-     * If specified, must match the "id" attribute in the VisibilityOptions annotation.
+     * If specified, must match the optional "id" attribute in an applicable {@code VisibilityOptions} annotation.
      */
     String visibilityId() default Undefined.STRING;
 }

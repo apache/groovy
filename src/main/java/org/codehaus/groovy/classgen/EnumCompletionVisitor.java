@@ -37,10 +37,11 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.TupleConstructorASTTransformation;
-import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * Enums have a parent constructor with two arguments from java.lang.Enum.
@@ -85,7 +86,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
                 addMapConstructors(enumClass);
             } else {
                 for (ConstructorNode constructorNode : sctors) {
-                    ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
+                    ConstructorNode init = new ConstructorNode(ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
                     enumClass.addConstructor(init);
                 }
             }
@@ -144,7 +145,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addMapConstructors(ClassNode enumClass) {
-        TupleConstructorASTTransformation.addSpecialMapConstructors(enumClass, "One of the enum constants for enum " + enumClass.getName() +
+        TupleConstructorASTTransformation.addSpecialMapConstructors(ACC_PUBLIC, enumClass, "One of the enum constants for enum " + enumClass.getName() +
                 " was initialized with null. Please use a non-null value or define your own constructor.", true);
     }
 
