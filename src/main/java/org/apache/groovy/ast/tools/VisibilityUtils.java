@@ -44,52 +44,48 @@ public class VisibilityUtils {
     private VisibilityUtils() {
     }
 
-    public static int getVisibility(AnnotationNode anno, AnnotatedNode node, int originalModifiers) {
-
+    /**
+     * Determine the correct modifiers by looking for a potential @VisibilityOptions annotation.
+     *
+     * @param anno The annotation being processed (if any) which may support a 'visibilityId' attribute
+     * @param node The node being processed which may also be annotated with @VisibilityOptions
+     * @param clazz The type of node being constructed
+     * @param originalModifiers The modifier value to adjust or return if no applicable @VisibilityOptions is found
+     * @return the updated modifiers
+     */
+    public static int getVisibility(AnnotationNode anno, AnnotatedNode node, Class<? extends AnnotatedNode> clazz, int originalModifiers) {
         List<AnnotationNode> annotations = node.getAnnotations(VISIBILITY_OPTIONS_TYPE);
-        if (annotations.isEmpty()) return originalModifiers;
+        if (annotations.isEmpty() || anno == null) return originalModifiers;
 
         String visId = getMemberStringValue(anno, "visibilityId", null);
 
         Visibility vis = null;
         if (visId == null) {
-            vis = getVisForAnnotation(node, annotations.get(0), null);
+            vis = getVisForAnnotation(clazz, annotations.get(0), null);
         } else {
             for (AnnotationNode visAnno : annotations) {
-                vis = getVisForAnnotation(node, visAnno, visId);
+                vis = getVisForAnnotation(clazz, visAnno, visId);
                 if (vis != Visibility.UNDEFINED) break;
             }
         }
         if (vis == null || vis == Visibility.UNDEFINED) return originalModifiers;
 
         int result = originalModifiers & ~(ACC_PUBLIC | ACC_PROTECTED | ACC_PRIVATE);
-        switch (vis) {
-            case PUBLIC:
-                result |= ACC_PUBLIC;
-                break;
-            case PROTECTED:
-                result |= ACC_PROTECTED;
-                break;
-            case PRIVATE:
-                result |= ACC_PRIVATE;
-                break;
-
-        }
-        return result;
+        return result | vis.getModifier();
     }
 
-    private static Visibility getVisForAnnotation(AnnotatedNode node, AnnotationNode visAnno, String visId) {
+    private static Visibility getVisForAnnotation(Class<? extends AnnotatedNode> clazz, AnnotationNode visAnno, String visId) {
         Map<String, Expression> visMembers = visAnno.getMembers();
         if (visMembers == null) return Visibility.UNDEFINED;
         String id = getMemberStringValue(visAnno, "id", null);
         if ((id == null && visId != null) || (id != null && !id.equals(visId))) return Visibility.UNDEFINED;
 
         Visibility vis = null;
-        if (node instanceof ConstructorNode) {
+        if (clazz.equals(ConstructorNode.class)) {
             vis = getVisibility(visMembers.get("constructor"));
-        } else if (node instanceof MethodNode) {
+        } else if (clazz.equals(MethodNode.class)) {
             vis = getVisibility(visMembers.get("method"));
-        } else if (node instanceof ClassNode) {
+        } else if (clazz.equals(ClassNode.class)) {
             vis = getVisibility(visMembers.get("type"));
         }
         if (vis == null || vis == Visibility.UNDEFINED) {

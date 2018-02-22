@@ -18,10 +18,25 @@
  */
 package groovy.transform.options;
 
+import java.lang.reflect.Modifier;
+
 public enum Visibility {
-    PUBLIC,
-    PROTECTED,
-    PACKAGE_PRIVATE,
-    PRIVATE,
-    UNDEFINED
+    PUBLIC(Modifier.PUBLIC),
+    PROTECTED(Modifier.PROTECTED),
+    PACKAGE_PRIVATE(0),
+    PRIVATE(Modifier.PRIVATE),
+    UNDEFINED(-1);
+
+    private final int modifier;
+
+    Visibility(int modifier) {
+        this.modifier = modifier;
+    }
+
+    public int getModifier() {
+        if (modifier == -1) {
+            throw new UnsupportedOperationException("getModifier() not supported for UNDEFINED");
+        }
+        return modifier;
+    }
 }
