@@ -75,7 +75,6 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
     private static final ClassNode NAMED_DELEGATE_TYPE = makeWithoutCaching(NamedDelegate.class, false);
-    private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -121,7 +120,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     if (getMemberValue(namedParam, "type") == null) {
                         namedParam.addMember("type", classX(fromParam.getType()));
                     }
-                    if (!checkDuplicates(mNode, propNames, name)) return;
+                    if (hasDuplicates(mNode, propNames, name)) return;
                     // TODO check specified type is assignable from declared param type?
                     // ClassNode type = getMemberClassValue(namedParam, "type");
                     if (required) {
@@ -139,7 +138,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam)) return;
                 } else {
                     args.addExpression(varX(fromParam));
-                    if (!checkDuplicates(mNode, propNames, fromParam.getName())) return;
+                    if (hasDuplicates(mNode, propNames, fromParam.getName())) return;
                     genParams.add(fromParam);
                 }
             }
@@ -163,7 +162,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
 
         final BlockStatement body = new BlockStatement();
-        int modifiers = getVisibility(anno, mNode, mNode.getModifiers());
+        int modifiers = getVisibility(anno, mNode, mNode.getClass(), mNode.getModifiers());
         if (mNode instanceof ConstructorNode) {
             body.addStatement(stmt(ctorX(ClassNode.THIS, args)));
             body.addStatement(inner);
@@ -198,7 +197,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         Set<String> names = new HashSet<String>();
         List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
         for (String next : names) {
-            if (!checkDuplicates(mNode, propNames, next)) return false;
+            if (hasDuplicates(mNode, propNames, next)) return false;
         }
         List<MapEntryExpression> entries = new ArrayList<MapEntryExpression>();
         for (PropertyNode pNode : props) {
@@ -214,12 +213,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
-    private boolean checkDuplicates(MethodNode mNode, List<String> propNames, String next) {
+    private boolean hasDuplicates(MethodNode mNode, List<String> propNames, String next) {
         if (propNames.contains(next)) {
             addError("Error during " + MY_TYPE_NAME + " processing. Duplicate property '" + next + "' found.", mNode);
-            return false;
+            return true;
         }
         propNames.add(next);
-        return true;
+        return false;
     }
 }

@@ -158,6 +158,19 @@ import java.lang.annotation.Target;
  * assert student.courses == ['IT']
  * </pre>
  * <p>
+ * Custom visibility:
+ * <ul>
+ * <li>The {@code @TupleConstructor} annotation generates a public constructor unless an applicable
+ * {@link VisibilityOptions} annotation is also present. It can be useful to change the visibility
+ * if you want to also create a builder or provide your own static factory method for object creation.
+ * You can make the constructor private and access it from the builder or your factory method. (Note:
+ * you'll probably want to use {@code @CompileStatic} in conjunction with such an approach since
+ * dynamic Groovy currently gives the ability to access even private constructors.)</li>
+ * <li>An optional {@code visibilityId} attribute can be specified. If present, it must match the optional
+ * {@code id} attribute of an applicable {@code VisibilityOptions} annotation. This can be useful
+ * if multiple {@code VisibilityOptions} annotations are needed.</li>
+ * </ul>
+ * <p>
  * Custom property handling:
  * <ul>
  * <li>The {@code @TupleConstructor} annotation supports customization using {@code @PropertyOptions}
@@ -197,6 +210,7 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @see PropertyOptions
+ * @see VisibilityOptions
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -305,6 +319,13 @@ public @interface TupleConstructor {
      * @since 2.5.0
      */
     boolean allProperties() default false;
+
+    /**
+     * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
+     *
+     * @since 2.5.0
+     */
+    String visibilityId() default Undefined.STRING;
 
     /**
      * A Closure containing statements which will be prepended to the generated constructor. The first statement
