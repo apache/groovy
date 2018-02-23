@@ -28,12 +28,17 @@ archivesBaseName = 'groovy'
 ext.srcSpec = copySpec {
     from(projectDir) {
         exclude 'target',
+                'build',
                 'benchmark',
                 'subprojects/*/target',
                 'buildSrc/target',
                 buildDir.path,
                 'classes/**',
                 'cruise/**',
+                'src/install/**', // CI file
+                '.travis.yml', // CI file
+                'appveyor.yml', // CI file
+                'jitpack.yml', // CI file
                 'security/groovykeys',
                 '.clover/*',
                 'local.build.properties',
