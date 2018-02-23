@@ -52,7 +52,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver + """
-        @Grab('module-test:module-test:1.3')
+        @Grab('module-test:module-test:1.4')
         import org.codehaus.groovy.runtime.m12n.*
 
         // the following methods are added by the Grab test module
