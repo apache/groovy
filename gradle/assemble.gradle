@@ -370,15 +370,19 @@ ext.distSpec = copySpec {
             }
         }
     }
-    into('indy') {
-        from jarjarWithIndy
-        from modules()*.jarjarWithIndy
+    if (!rootProject.hasProperty('skipIndy')) {
+        into('indy') {
+            from jarjarWithIndy
+            from modules()*.jarjarWithIndy
+        }
     }
-    into('grooid') {
-        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
-        from {
-            modules()*.jar.collect { j ->
-                new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
+    if (!rootProject.hasProperty('skipGrooid')) {
+        into('grooid') {
+            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
+            from {
+                modules()*.jar.collect { j ->
+                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
+                }
             }
         }
     }
