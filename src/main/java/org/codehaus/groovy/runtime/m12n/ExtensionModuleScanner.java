@@ -35,11 +35,11 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuiet
  *
  * This class was introduced as a fix for GROOVY-6008
  *
- * @author Cedric Champeau
  * @since 2.1.2
  */
 public class ExtensionModuleScanner {
-    public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+    private static final String LEGACY_MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+    public static final String MODULE_META_INF_FILE = "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule";
 
     private final ExtensionModuleListener listener;
     private final ClassLoader classLoader;
@@ -52,6 +52,9 @@ public class ExtensionModuleScanner {
     public void scanClasspathModules() {
         try {
             Enumeration<URL> resources = classLoader.getResources(MODULE_META_INF_FILE);
+            if (!resources.hasMoreElements()) {
+                resources = classLoader.getResources(LEGACY_MODULE_META_INF_FILE);
+            }
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 scanExtensionModuleFromMetaInf(url);

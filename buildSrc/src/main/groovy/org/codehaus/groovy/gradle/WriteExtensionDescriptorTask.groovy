@@ -25,8 +25,6 @@ import org.gradle.api.tasks.OutputFile
 
 /**
  * A Gradle task to generate module descriptor files for Groovy extension modules.
- *
- * @author Cedric Champeau
  */
 class WriteExtensionDescriptorTask extends DefaultTask {
     String description = 'Generates the org.codehaus.groovy.runtime.ExtensionModule descriptor file of a module'
@@ -36,7 +34,7 @@ class WriteExtensionDescriptorTask extends DefaultTask {
 
 
     private File computeDescriptorFile() {
-        def metaInfDir = new File("${project.buildDir}/resources/main/META-INF/services")
+        def metaInfDir = new File("${project.buildDir}/resources/main/META-INF/groovy")
         return new File(metaInfDir, "org.codehaus.groovy.runtime.ExtensionModule")
     }
 

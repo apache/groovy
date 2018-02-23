@@ -677,11 +677,11 @@ include::{projectdir}/src/spec/test/ExtensionModuleSpecTest.groovy[tags=static_e
 For Groovy to be able to load your extension methods, you must declare
 your extension helper classes. You must create a file named
 `org.codehaus.groovy.runtime.ExtensionModule` into the
-`META-INF/services` directory:
+`META-INF/groovy` directory:
 
 .org.codehaus.groovy.runtime.ExtensionModule
 --------------------------------------------------------
-include::{projectdir}/src/spec/test-resources/META-INF/services/org.codehaus.groovy.runtime.ExtensionModuleSpec[tags=extension_descriptor,indent=0]
+include::{projectdir}/src/spec/test-resources/META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModuleSpec[tags=extension_descriptor,indent=0]
 --------------------------------------------------------
 
 The module descriptor requires 4 keys:
