@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-moduleName=macro-module
-moduleVersion=1.0
-extensionClasses=org.codehaus.groovy.macro.ExampleMacroMethods
+# This file is used to test the extension module framework
+moduleName=Test module for Grab
+moduleVersion=1.4
+extensionClasses=org.codehaus.groovy.runtime.m12n.TestStringExtension2,org.codehaus.groovy.runtime.m12n.TestMapExtension,org.codehaus.groovy.runtime.m12n.Groovy7225Extension
+staticExtensionClasses=org.codehaus.groovy.runtime.m12n.TestStaticStringExtension2
+
