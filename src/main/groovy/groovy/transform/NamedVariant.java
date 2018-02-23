@@ -86,7 +86,7 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * The generated method/constructor retains the visibility and return type of the original method/constructor
- * but the {@link @VisibilityOptions} annotation can be added to customize the visibility. You could have the
+ * but the {@link VisibilityOptions} annotation can be added to customize the visibility. You could have the
  * annotated method/constructor private for instance but have the generated one be public.
  *
  * @see VisibilityOptions
