@@ -435,6 +435,8 @@ public abstract class BaseTemplate implements Writable {
      */
     public Closure contents(final Closure cl) {
         return new Closure(cl.getOwner(), cl.getThisObject()) {
+            private static final long serialVersionUID = -5733727697043906478L;
+
             @Override
             public Object call() {
                 cl.call();

@@ -262,6 +262,12 @@ public class GStringTemplateEngine extends TemplateEngine {
             }
             templateExpressions.append((char) pendingC);
 
+            readAndAppend(reader, templateExpressions);
+
+            templateExpressions.append(";\n ");
+        }
+
+        private static void readAndAppend(Reader reader, StringBuilder templateExpressions) throws IOException {
             while (true) {
                 int c = reader.read();
                 if (c == -1) break;
@@ -272,8 +278,6 @@ public class GStringTemplateEngine extends TemplateEngine {
                 }
                 templateExpressions.append((char) c);
             }
-
-            templateExpressions.append(";\n ");
         }
 
         /**
@@ -294,16 +298,7 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             templateExpressions.append("${");
 
-            while (true) {
-                int c = reader.read();
-                if (c == -1) break;
-                if (c == '%') {
-                    c = reader.read();
-                    if (c == '>') break;
-                    templateExpressions.append('%');
-                }
-                templateExpressions.append((char) c);
-            }
+            readAndAppend(reader, templateExpressions);
 
             templateExpressions.append('}');
         }
