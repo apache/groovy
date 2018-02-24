@@ -261,7 +261,9 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         String scriptSource;
 
-        private static class FinishedReadingException extends Exception {}
+        private static class FinishedReadingException extends Exception {
+            private static final long serialVersionUID = -3786157136157691230L;
+        }
 
         //WE USE THIS AS REUSABLE        
         //CHECKSTYLE.OFF: ConstantNameCheck - special case with a reusable exception
@@ -744,6 +746,12 @@ public class StreamingTemplateEngine extends TemplateEngine {
             append(target, targetPosition, "          ");
             append(target, targetPosition, (char) pendingC);
 
+            readAndAppend(reader, target, sourcePosition, targetPosition);
+
+            append(target, targetPosition, ';');
+        }
+
+        private void readAndAppend(Reader reader, StringBuilder target, Position sourcePosition, Position targetPosition) throws IOException, FinishedReadingException {
             while (true) {
                 int c = read(reader, sourcePosition);
                 if (c == '%') {
@@ -753,8 +761,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 }
                 append(target, targetPosition, (char) c);
             }
-
-            append(target, targetPosition, ';');
         }
 
         /**
@@ -766,15 +772,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 final Position targetPosition) throws IOException, FinishedReadingException {
             append(target, targetPosition, "out<<\"\"\"${");
 
-            while (true) {
-                int c = read(reader, sourcePosition);
-                if (c == '%') {
-                    c = read(reader, sourcePosition);
-                    if (c == '>') break;
-                    append(target, targetPosition, '%');
-                }
-                append(target, targetPosition, (char) c);
-            }
+            readAndAppend(reader, target, sourcePosition, targetPosition);
 
             append(target, targetPosition, "}\"\"\";");
         }
