@@ -18,10 +18,10 @@
  */
 package groovy.json;
 
-import groovy.json.internal.JsonFastParser;
-import groovy.json.internal.JsonParserCharArray;
-import groovy.json.internal.JsonParserLax;
-import groovy.json.internal.JsonParserUsingCharacterSource;
+import org.apache.groovy.json.internal.JsonFastParser;
+import org.apache.groovy.json.internal.JsonParserCharArray;
+import org.apache.groovy.json.internal.JsonParserLax;
+import org.apache.groovy.json.internal.JsonParserUsingCharacterSource;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
