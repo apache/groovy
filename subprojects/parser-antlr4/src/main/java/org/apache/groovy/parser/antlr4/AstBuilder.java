@@ -2152,6 +2152,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), arguments);
         }
 
+        methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
+
         if (!asBoolean(ctx.commandArgument())) {
             return configureAST(methodCallExpression, ctx);
         }
@@ -3458,11 +3460,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     public Expression visitExpressionListElement(ExpressionListElementContext ctx) {
         Expression expression = (Expression) this.visit(ctx.expression());
 
+        validateExpressionListElement(ctx, expression);
+
         if (asBoolean(ctx.MUL())) {
             return configureAST(new SpreadExpression(expression), ctx);
         }
 
         return configureAST(expression, ctx);
+    }
+
+    private void validateExpressionListElement(ExpressionListElementContext ctx, Expression expression) {
+        if (!(expression instanceof MethodCallExpression && isTrue(expression, IS_COMMAND_EXPRESSION))) {
+            return;
+        }
+
+        // statements like `foo(String a)` is invalid
+        MethodCallExpression methodCallExpression = (MethodCallExpression) expression;
+        String methodName = methodCallExpression.getMethodAsString();
+        if (Character.isUpperCase(methodName.codePointAt(0)) || PRIMITIVE_TYPE_SET.contains(methodName)) {
+            throw createParsingFailedException("Invalid method declaration", ctx);
+        }
     }
 
 
@@ -4840,6 +4857,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
     private static final String IS_INSIDE_CONDITIONAL_EXPRESSION = "_IS_INSIDE_CONDITIONAL_EXPRESSION";
+    private static final String IS_COMMAND_EXPRESSION = "_IS_COMMAND_EXPRESSION";
 
     private static final String PATH_EXPRESSION_BASE_EXPR = "_PATH_EXPRESSION_BASE_EXPR";
     private static final String PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES = "_PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES";
