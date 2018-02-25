@@ -199,7 +199,6 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuePairs
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuesContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedArgumentListContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedArgumentListElementContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedForControlContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedStatementExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnumConstantContext;
@@ -2097,6 +2096,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return configureAST(new ExpressionStatement((Expression) this.visit(ctx.expression())), ctx);
     }
 
+/*
     @Override
     public Expression visitEnhancedExpression(EnhancedExpressionContext ctx) {
         Expression expression;
@@ -2111,7 +2111,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return configureAST(expression, ctx);
     }
-
+*/
 
     @Override
     public ExpressionStatement visitCommandExprAlt(CommandExprAltContext ctx) {
@@ -2237,7 +2237,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Expression visitExpressionInPar(ExpressionInParContext ctx) {
-        return this.visitEnhancedExpression(ctx.enhancedExpression());
+        //return this.visitEnhancedExpression(ctx.enhancedExpression());
+        return this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
     }
 
     @Override
@@ -3418,7 +3419,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         return configureAST(new VariableExpression(text), ctx);
     }
-
 
     @Override
     public ListExpression visitList(ListContext ctx) {

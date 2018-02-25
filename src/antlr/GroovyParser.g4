@@ -781,7 +781,7 @@ parExpression
     ;
 
 expressionInPar
-    :   LPAREN enhancedExpression rparen
+    :   LPAREN enhancedStatementExpression rparen
     ;
 
 expressionList[boolean canSpread]
@@ -909,10 +909,12 @@ expression
                      enhancedStatementExpression                                            #assignmentExprAlt
     ;
 
+/*
 enhancedExpression
     :   expression
     |   standardLambdaExpression
     ;
+*/
 
 commandExpression
     :   pathExpression
