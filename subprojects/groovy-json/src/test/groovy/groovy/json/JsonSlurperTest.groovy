@@ -18,7 +18,7 @@
  */
 package groovy.json
 
-import groovy.json.internal.Value
+import org.apache.groovy.json.internal.Value
 
 /**
  * @author Guillaume Laforge
