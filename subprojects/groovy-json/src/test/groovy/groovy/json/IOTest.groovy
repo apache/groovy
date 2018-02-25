@@ -18,8 +18,8 @@
  */
 package groovy.json
 
-import groovy.json.internal.CharBuf
-import groovy.json.internal.IO
+import org.apache.groovy.json.internal.CharBuf
+import org.apache.groovy.json.internal.IO
 
 /**
  * Test the internal IO class
