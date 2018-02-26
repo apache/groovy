@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * @see ImmutableBase
  * @see MapConstructor
  * @see TupleConstructor
- * @since 2.5
+ * @since 2.5.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

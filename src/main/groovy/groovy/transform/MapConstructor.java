@@ -194,8 +194,6 @@ public @interface MapConstructor {
 
     /**
      * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
-     *
-     * @since 2.5.0
      */
     String visibilityId() default Undefined.STRING;
 
