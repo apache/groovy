@@ -84,8 +84,10 @@ artifactoryPublish {
                 }
             }
         }
+        deployDetails.add(makeTransformedPomDetails(name: 'groovy-all'))
 
         if (isReleaseVersion) {
+            deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-all'))
             allprojects {
                 if (project == rootProject || rootProject.ext.modules().contains(project)) {
                     configurations.archives.artifacts.findAll {

@@ -113,9 +113,9 @@ allprojects {
                 if (rootProject.indyCapable()) {
                     project.artifacts.add('archives', jarjarWithIndy.outputFile)
                 }
-                def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
-                if (grooidJar.exists()) {
-                    project.artifacts.add('archives', grooidJar.outputFile)
+                def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')
+                if (grooidJarFile.exists()) {
+                    project.artifacts.add('archives', grooidJarFile)
                 }
             }
         }
@@ -124,17 +124,17 @@ allprojects {
             doFirst {
                 // gradle doesn't expect us to mutate configurations like we do here
                 // so signing the configuration won't work and we do it manually here
-                signArchiveTask(jar)
+                signArchiveTask(jarjar.outputFile)
                 signArchiveTask(sourceJar)
                 signArchiveTask(javadocJar)
                 signArchiveTask(groovydocJar)
-                def indyJar = rootProject.ext.deriveFile(jar.archivePath, 'indy')
+                def indyJar = rootProject.ext.deriveFile(jarjar.outputFile, 'indy')
                 if (indyJar.exists()) {
                     signWithClassifier('indy', indyJar)
                 }
-                def grooidJar = rootProject.ext.deriveFile(jar.archivePath, 'grooid')
-                if (grooidJar.exists()) {
-                    signWithClassifier('grooid', grooidJar)
+                def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')
+                if (grooidJarFile.exists()) {
+                    signWithClassifier('grooid', grooidJarFile)
                 }
             }
         }
