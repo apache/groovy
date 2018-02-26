@@ -23,6 +23,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Marker interface used to indicate that the property names of the annotated parameter
+ * represent valid key names when using named arguments and that the property types
+ * are applicable for type checking purposes.
+ *
+ * @since 2.5.0
+ */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
 public @interface NamedDelegate {

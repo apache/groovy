@@ -290,6 +290,8 @@ public @interface TupleConstructor {
      * Only the constructor containing all arguments will be provided.
      * In particular, a no-arg constructor won't be provided and since this is currently
      * used by Groovy when using named-arguments, the named-argument style won't be available.
+     *
+     * @since 2.5.0
      */
     boolean defaults() default true;
 
@@ -298,6 +300,8 @@ public @interface TupleConstructor {
      * By setting {@code useSetters=true} then a writable property will be set using its setter.
      * If turning on this flag we recommend that setters that might be called are
      * made null-safe wrt the parameter.
+     *
+     * @since 2.5.0
      */
     boolean useSetters() default false;
 

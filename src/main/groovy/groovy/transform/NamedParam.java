@@ -24,6 +24,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Marker interface used to indicate that the name of the annotated parameter
+ * (or specified optional name) is a valid key name when using named arguments
+ * and that the parameter type is applicable for type checking purposes.
+ *
+ * @since 2.5.0
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @Repeatable(NamedParams.class)

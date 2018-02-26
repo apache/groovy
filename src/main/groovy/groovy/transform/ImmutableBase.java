@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * @see MapConstructor
  * @see TupleConstructor
  * @see PropertyOptions
- * @since 2.5
+ * @since 2.5.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
@@ -72,8 +72,6 @@ public @interface ImmutableBase {
      *
      * If a method called {@code copyWith} that takes a single parameter already
      * exists in the class, then this setting is ignored, and no method is generated.
-     *
-     * @since 2.2.0
      */
     boolean copyWith() default false;
 }

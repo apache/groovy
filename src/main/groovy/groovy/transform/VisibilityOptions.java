@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Marker annotation used in the context of AST transformations to provide a custom visibility.
  *
- * @since 2.5
+ * @since 2.5.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  *
  * @see Immutable
  * @see ImmutablePropertyHandler
- * @since 2.5
+ * @since 2.5.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
@@ -55,8 +55,6 @@ public @interface ImmutableOptions {
      *     final String street
      * }
      * </pre>
-     *
-     * @since 1.8.7
      */
     Class[] knownImmutableClasses() default {};
 
@@ -73,8 +71,6 @@ public @interface ImmutableOptions {
      * }
      * ...
      * </pre>
-     *
-     * @since 2.1.0
      */
     String[] knownImmutables() default {};
 }

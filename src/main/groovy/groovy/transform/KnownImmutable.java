@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * to list your class as one of the known immutable classes.
  *
  * @see Immutable
- * @since 2.5
+ * @since 2.5.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)

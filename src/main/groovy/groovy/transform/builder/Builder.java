@@ -131,11 +131,15 @@ public @interface Builder {
      * By setting {@code useSetters=true} then a writable property will be set using its setter.
      * If turning on this flag we recommend that setters that might be called are
      * made null-safe wrt the parameter.
+     *
+     * @since 2.5.0
      */
     boolean useSetters() default false;
 
     /**
      * Generate builder methods for properties from super classes.
+     *
+     * @since 2.5.0
      */
     boolean includeSuperProperties() default false;
 
