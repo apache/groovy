@@ -20,6 +20,11 @@ package groovy.transform.options;
 
 import java.lang.reflect.Modifier;
 
+/**
+ * Indicates the visibility of a node.
+ *
+ * @since 2.5.0
+ */
 public enum Visibility {
     PUBLIC(Modifier.PUBLIC),
     PROTECTED(Modifier.PROTECTED),

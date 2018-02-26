@@ -98,7 +98,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      *
      * @param writer A writer to which Json will be written
      * @param generator used to generate the output
-     * @since 2.5
+     * @since 2.5.0
      */
     public StreamingJsonBuilder(Writer writer, JsonGenerator generator) {
         this.writer = writer;
@@ -124,7 +124,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param content a pre-existing data structure, default to null
      * @param generator used to generate the output
      * @throws IOException
-     * @since 2.5
+     * @since 2.5.0
      */
     public StreamingJsonBuilder(Writer writer, Object content, JsonGenerator generator) throws IOException {
         this.writer = writer;

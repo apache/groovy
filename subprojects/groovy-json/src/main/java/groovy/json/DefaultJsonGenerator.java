@@ -59,7 +59,7 @@ import static groovy.json.JsonOutput.OPEN_BRACKET;
  * methods.
  *
  * @see JsonGenerator.Options#build()
- * @since 2.5
+ * @since 2.5.0
  */
 public class DefaultJsonGenerator implements JsonGenerator {
 
@@ -444,7 +444,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
     /**
      * A converter that handles converting a given type using a closure.
      *
-     * @since 2.5
+     * @since 2.5.0
      */
     protected static class ClosureConverter implements Converter {
 

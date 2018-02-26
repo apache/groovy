@@ -149,9 +149,6 @@ import java.lang.annotation.Target;
  * assert leaderBoard.points == [80, 50, 30]
  *
  * </pre>
- *
- * @author Andres Almiray
- * @author Paul King
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -173,6 +170,7 @@ public @interface Sortable {
 
     /**
      * Set to true so that comparator uses reversed natural order.
+     *
      * @since 2.5.0
      */
     boolean reversed() default false;

@@ -334,7 +334,7 @@ public @interface ToString {
      * JavaBean properties come after any Groovy properties but before any fields for a given class
      * (unless 'includes' is used to determine the order).
      *
-     * @since 2.5
+     * @since 2.5.0
      */
     boolean allProperties() default true;
 

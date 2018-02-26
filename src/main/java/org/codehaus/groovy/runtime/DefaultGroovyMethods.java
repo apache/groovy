@@ -4955,7 +4955,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Map to be modified
      * @param condition a 1 or 2 arg Closure condition applying on the entries
      * @return <tt>true</tt> if this map changed as a result of the call
-     * @since 2.5
+     * @since 2.5.0
      */
     public static <K, V> boolean retainAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure condition) {
         Iterator<Map.Entry<K, V>> iter = self.entrySet().iterator();
@@ -5018,7 +5018,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Map to be modified
      * @param condition a 1 or 2 arg Closure condition applying on the entries
      * @return <tt>true</tt> if this map changed as a result of the call
-     * @since 2.5
+     * @since 2.5.0
      */
     public static <K, V> boolean removeAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure condition) {
         Iterator<Map.Entry<K, V>> iter = self.entrySet().iterator();
