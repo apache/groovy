@@ -555,9 +555,7 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     public List<TreeContext> getTreePath() {
         List<TreeContext> path = new LinkedList<TreeContext>();
         path.add(lastContext);
-        for (TreeContext treeContext : treeContextStack) {
-            path.add(treeContext);
-        }
+        path.addAll(treeContextStack);
         return path;
     }
 
