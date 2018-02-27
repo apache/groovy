@@ -246,11 +246,12 @@ ext.pomAll = {
     // pom for "all" dependencies
     def allpom = pom('all', pomConfigureClosureWithoutTweaks)
     allpom.artifactId = 'groovy-all'
-    allpom.packaging = 'pom'
     allpom.whenConfigured { p ->
         // this is the only way to get a handle on `maven.Dependency`
         def dependencyClass = p.dependencies[0].getClass()
         p.dependencies.clear()
+        // defer setting packaging until here otherwise gets overwritten
+        p.packaging - 'pom'
         allprojects {
             if (it.name.startsWith('groovy')) {
                 def dep = dependencyClass.newInstance()
