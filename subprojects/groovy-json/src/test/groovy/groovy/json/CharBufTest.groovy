@@ -18,7 +18,7 @@
  */
 package groovy.json
 
-import groovy.json.internal.CharBuf
+import org.apache.groovy.json.internal.CharBuf
 
 /**
  * Test the internal CharBuf class
