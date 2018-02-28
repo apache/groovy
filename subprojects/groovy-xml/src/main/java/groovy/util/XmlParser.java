@@ -82,7 +82,7 @@ public class XmlParser implements ContentHandler {
     private boolean namespaceAware;
 
     /**
-     * Creates a non-validating and non-namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
+     * Creates a non-validating and namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
      *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
