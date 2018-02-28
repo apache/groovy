@@ -27,6 +27,7 @@ import groovy.transform.Trait;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -725,13 +726,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             mv.visitInsn(DUP);
             BytecodeHelper.pushConstant(mv, i);
             // primitive types must be boxed
-            if (isPrimitive(arg)) {
-                mv.visitIntInsn(getLoadInsn(arg), idx);
-                String wrappedType = getWrappedClassDescriptor(arg);
-                mv.visitMethodInsn(INVOKESTATIC, wrappedType, "valueOf", "(" + arg.getDescriptor() + ")L" + wrappedType + ";", false);
-            } else {
-                mv.visitVarInsn(ALOAD, idx); // load argument i
-            }
+            boxPrimitiveType(mv, idx, arg);
             size = Math.max(size, 5 + registerLen(arg));
             idx += registerLen(arg);
             mv.visitInsn(AASTORE); // store value into array
@@ -761,15 +756,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             Type arg = args[i];
             mv.visitInsn(DUP); // stack size = 2
             BytecodeHelper.pushConstant(mv, i); // array index, stack size = 3
-            stackSize = 3;
             // primitive types must be boxed
-            if (isPrimitive(arg)) {
-                mv.visitIntInsn(getLoadInsn(arg), idx);
-                String wrappedType = getWrappedClassDescriptor(arg);
-                mv.visitMethodInsn(INVOKESTATIC, wrappedType, "valueOf", "(" + arg.getDescriptor() + ")L" + wrappedType + ";", false);
-            } else {
-                mv.visitVarInsn(ALOAD, idx); // load argument i
-            }
+            boxPrimitiveType(mv, idx, arg);
             idx += registerLen(arg);
             stackSize = Math.max(4, 3 + registerLen(arg));
             mv.visitInsn(AASTORE); // store value into array
@@ -802,6 +790,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         mv.visitEnd();
 //        System.out.println("tmv.getText() = " + tmv.getText());
         return null;
+    }
+
+    private void boxPrimitiveType(MethodVisitor mv, int idx, Type arg) {
+        if (isPrimitive(arg)) {
+            mv.visitIntInsn(getLoadInsn(arg), idx);
+            String wrappedType = getWrappedClassDescriptor(arg);
+            mv.visitMethodInsn(INVOKESTATIC, wrappedType, "valueOf", "(" + arg.getDescriptor() + ")L" + wrappedType + ";", false);
+        } else {
+            mv.visitVarInsn(ALOAD, idx); // load argument i
+        }
     }
 
     private static void unwrapResult(final MethodVisitor mv, final String desc) {
@@ -874,51 +872,20 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return new ReturnValueWrappingClosure(o);
     }
 
-    private static int getLoadInsn(final Type type) {
-        if (type == Type.BOOLEAN_TYPE) return ILOAD;
-        if (type == Type.BYTE_TYPE) return ILOAD;
-        if (type == Type.CHAR_TYPE) return ILOAD;
-        if (type == Type.DOUBLE_TYPE) return DLOAD;
-        if (type == Type.FLOAT_TYPE) return FLOAD;
-        if (type == Type.INT_TYPE) return ILOAD;
-        if (type == Type.LONG_TYPE) return LLOAD;
-        if (type == Type.SHORT_TYPE) return ILOAD;
-        return ALOAD;
+    private static int getLoadInsn(Type type) {
+        return TypeUtil.getLoadInsnByType(type);
     }
 
-    private static int getReturnInsn(final Type type) {
-        if (type == Type.BOOLEAN_TYPE) return IRETURN;
-        if (type == Type.BYTE_TYPE) return IRETURN;
-        if (type == Type.CHAR_TYPE) return IRETURN;
-        if (type == Type.DOUBLE_TYPE) return DRETURN;
-        if (type == Type.FLOAT_TYPE) return FRETURN;
-        if (type == Type.INT_TYPE) return IRETURN;
-        if (type == Type.LONG_TYPE) return LRETURN;
-        if (type == Type.SHORT_TYPE) return IRETURN;
-        return ARETURN;
+    private static int getReturnInsn(Type type) {
+        return TypeUtil.getReturnInsnByType(type);
     }
 
-    private static boolean isPrimitive(final Type arg) {
-        return arg == Type.BOOLEAN_TYPE
-                || arg == Type.BYTE_TYPE
-                || arg == Type.CHAR_TYPE
-                || arg == Type.DOUBLE_TYPE
-                || arg == Type.FLOAT_TYPE
-                || arg == Type.INT_TYPE
-                || arg == Type.LONG_TYPE
-                || arg == Type.SHORT_TYPE;
+    private static boolean isPrimitive(Type type) {
+        return TypeUtil.isPrimitiveType(type);
     }
 
     private static String getWrappedClassDescriptor(Type type) {
-        if (type == Type.BOOLEAN_TYPE) return "java/lang/Boolean";
-        if (type == Type.BYTE_TYPE) return "java/lang/Byte";
-        if (type == Type.CHAR_TYPE) return "java/lang/Character";
-        if (type == Type.DOUBLE_TYPE) return "java/lang/Double";
-        if (type == Type.FLOAT_TYPE) return "java/lang/Float";
-        if (type == Type.INT_TYPE) return "java/lang/Integer";
-        if (type == Type.LONG_TYPE) return "java/lang/Long";
-        if (type == Type.SHORT_TYPE) return "java/lang/Short";
-        throw new IllegalArgumentException("Unexpected type class [" + type + "]");
+        return TypeUtil.getWrappedClassDescriptor(type);
     }
 
     private static class InnerLoader extends GroovyClassLoader {
@@ -987,6 +954,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private static class ReturnValueWrappingClosure<V> extends Closure<V> {
+        private static final long serialVersionUID = 1313135457715304501L;
         private final V value;
 
         public ReturnValueWrappingClosure(V returnValue) {
