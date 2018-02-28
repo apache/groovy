@@ -130,6 +130,7 @@ test.dependsOn(copyTestResources)
 allprojects {
     task sourceJar(type: Jar) {
         classifier = 'sources'
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from sourceSets.main.allSource
     }
 }
