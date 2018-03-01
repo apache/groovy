@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -73,9 +72,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
     private static final String ENCLOSING_THIS = "__enclosing_this";
     private static final String LAMBDA_THIS = "__lambda_this";
-    public static final String INIT = "<init>";
-    public static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
-    public static final String LAMBDA_WRAPPER = "__lambda_wrapper";
+    private static final String INIT = "<init>";
+    private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -190,7 +188,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         }
     }
 
-    private BytecodeVariable newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, MethodNode syntheticLambdaMethodNode) {
+    private void newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, MethodNode syntheticLambdaMethodNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         String lambdaWrapperClassInternalName = BytecodeHelper.getClassInternalName(lambdaWrapperClassNode);
         mv.visitTypeInsn(NEW, lambdaWrapperClassInternalName);
@@ -215,13 +213,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         mv.visitMethodInsn(INVOKESPECIAL, lambdaWrapperClassInternalName, INIT, BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, lambdaWrapperClassConstructorParameters), lambdaWrapperClassNode.isInterface());
         OperandStack operandStack = controller.getOperandStack();
         operandStack.replace(ClassHelper.CLOSURE_TYPE, lambdaWrapperClassConstructorParameters.length);
-
-        BytecodeVariable variable = controller.getCompileStack().defineVariable(new VariableExpression(LAMBDA_WRAPPER, ClassHelper.CLOSURE_TYPE), false);
-        operandStack.storeVar(variable);
-
-        operandStack.loadOrStoreVariable(variable, false);
-
-        return variable;
     }
 
     private Parameter[] loadSharedVariables(MethodNode syntheticLambdaMethodNode) {
