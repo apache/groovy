@@ -37,7 +37,6 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
     private final ConcurrentMap<K, V> map;
 
     public LRUCache(final int maxCacheSize) {
-//        cache = Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize));
         map = new ConcurrentLinkedHashMap.Builder<K, V>()
                 .maximumWeightedCapacity(maxCacheSize)
                 .build();
