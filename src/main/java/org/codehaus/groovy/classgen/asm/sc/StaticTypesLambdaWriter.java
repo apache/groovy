@@ -56,7 +56,6 @@ import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -77,7 +76,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public static final String INIT = "<init>";
     public static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
     public static final String LAMBDA_WRAPPER = "__lambda_wrapper";
-    public static final String SAM_NAME = "__SAM_NAME";
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -98,8 +96,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
 
-        if (!ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
-            // if the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
+        if (null == lambdaType || !ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
+            // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
@@ -311,8 +309,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         if (controller.isInScriptBody()) {
             answer.setScriptBody(true);
         }
-
-        answer.addField(SAM_NAME, ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.STRING_TYPE, new ConstantExpression(abstractMethodNode.getName()));
 
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, answer, abstractMethodNode);
         Parameter[] localVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
