@@ -56,7 +56,6 @@ import java.util.Map;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -99,8 +98,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
 
-        if (PRE_JAVA8 || !ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
-            // if running on pre8 JVM or the parameter type is not real FunctionInterface, generate the default bytecode, which is actually a closure
+        if (PRE_JAVA8 || null == lambdaType || !ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
+            // if running on pre8 JVM or the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
@@ -319,8 +318,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         if (controller.isInScriptBody()) {
             answer.setScriptBody(true);
         }
-
-        answer.addField(SAM_NAME, ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.STRING_TYPE, new ConstantExpression(abstractMethodNode.getName()));
 
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, answer, abstractMethodNode);
         Parameter[] localVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
