@@ -74,8 +74,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private static final String LAMBDA_THIS = "__lambda_this";
     private static final String INIT = "<init>";
     private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
-    public static final String LAMBDA_WRAPPER = "__lambda_wrapper";
     private static final boolean PRE_JAVA8 = VMPluginFactory.getPlugin().getVersion() < 8;
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private StaticTypesClosureWriter staticTypesClosureWriter;
     private WriterController controller;
     private WriterControllerFactory factory;
@@ -275,7 +275,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         return BytecodeHelper.getMethodDescriptor(
                 abstractMethodNode.getReturnType().getTypeClass(),
-                typeClassList.toArray(new Class[0])
+                typeClassList.toArray(EMPTY_CLASS_ARRAY)
         );
     }
 
