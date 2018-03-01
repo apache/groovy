@@ -65,9 +65,6 @@ import java.util.Map;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
  */
 public class XmlParser implements ContentHandler {
 
