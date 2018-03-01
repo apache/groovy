@@ -116,6 +116,7 @@ public abstract class Memoize {
     }
 
     private static class MemoizeFunction<V> extends Closure<V> {
+        private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
         final Closure<V> closure;
         
@@ -145,6 +146,7 @@ public abstract class Memoize {
     }
     
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
+        private static final long serialVersionUID = -1338206227167457991L;
         final ProtectionStorage lruProtectionStorage;
         final ReferenceQueue queue;
         
