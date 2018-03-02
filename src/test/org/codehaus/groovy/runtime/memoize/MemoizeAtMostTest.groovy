@@ -81,6 +81,7 @@ public class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         Closure mem = cl.memoizeAtMost(3)
         [4, 5, 6, 4, 5, 6, 4, 5, 6, 4, 5, 6].collect { num -> Thread.start { mem(num) } }*.join()
 
-        assert 3 == cnt.get()
+        int c = cnt.get()
+        assert 3 <= c && c <= 6  // cached result may be GCed due to SoftReference, so `c` may be greater than 3(in most cases, its value is 3)
     }
 }
