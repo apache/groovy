@@ -74,7 +74,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
     }
 
     private static String getVMVersion() {
-        return CompilerConfiguration.POST_JDK5;
+        return CompilerConfiguration.JDK7;
     }
 
     public void testSetViaSystemProperties() {
