@@ -43,6 +43,15 @@ public interface MemoizeCache<K, V> {
     V get(K key);
 
     /**
+     * Try to get the value from cache.
+     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value
+     * @param key
+     * @return the cached value
+     */
+    V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider);
+
+
+    /**
      * Invoked when some of the held SoftReferences have been evicted by the garbage collector and so should be removed from the cache.
      * The implementation must ensure that concurrent invocations of all methods on the cache may occur from other threads
      * and thus should protect any shared resources.

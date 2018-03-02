@@ -27,16 +27,31 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Vaclav Pech
  */
-public final class UnlimitedConcurrentCache implements MemoizeCache<Object, Object> {
+public final class UnlimitedConcurrentCache<K, V> implements MemoizeCache<K, V> {
 
-    private final ConcurrentHashMap<Object, Object> cache = new ConcurrentHashMap<Object, Object>();
+    private final ConcurrentHashMap<K, V> map = new ConcurrentHashMap<K, V>();
 
-    public Object put(final Object key, final Object value) {
-        return cache.put(key, value);
+    public V put(final K key, final V value) {
+        return map.put(key, value);
     }
 
-    public Object get(final Object key) {
-        return cache.get(key);
+    public V get(final K key) {
+        return map.get(key);
+    }
+
+    /**
+     * The implementation of `getAndPut` is not atomic
+     */
+    @Override
+    public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
+        V value = this.get(key);
+
+        if (null == value) {
+            value = valueProvider.provide(key);
+            this.put(key, value);
+        }
+
+        return value;
     }
 
     /**
@@ -44,10 +59,10 @@ public final class UnlimitedConcurrentCache implements MemoizeCache<Object, Obje
      * SoftReferences to gc-evicted objects.
      */
     public void cleanUpNullReferences() {
-        for (Map.Entry<Object, Object> entry : cache.entrySet()) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
             Object entryVal = entry.getValue();
             if (entryVal instanceof SoftReference && ((SoftReference) entryVal).get() == null) {
-                cache.remove(entry.getKey(), entryVal);
+                map.remove(entry.getKey(), entryVal);
             }
         }
     }
