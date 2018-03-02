@@ -61,6 +61,8 @@ public class CompilerConfiguration {
     public static final String JDK7 = "1.7";
     /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. **/
     public static final String JDK8 = "1.8";
+    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. **/
+    public static final String JDK9 = "9";
 
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = JDK5; // for backwards compatibility
@@ -69,7 +71,7 @@ public class CompilerConfiguration {
     public static final String PRE_JDK5 = JDK4;
 
     /** An array of the valid targetBytecode values **/
-    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
+    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8, JDK9 };
 
     // Just call getVMVersion() once.
     public static final String CURRENT_JVM_VERSION = getVMVersion();
