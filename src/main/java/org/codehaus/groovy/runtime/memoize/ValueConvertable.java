@@ -16,14 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.runtime.memoize;
 
 /**
- * Protects stored resources from eviction from memory following the LRU (Last Recently Used) strategy.
- * The touch method can be used to renew an element and move it to the from the LRU queue.
+ * To support caches whose values are convertable, e.g. SoftReference, WeakReference
  *
- * @author Vaclav Pech
+ * @param <V1> source value type, e.g. SoftReference, WeakReference
+ * @param <V2> target value type, e.g. value that SoftReference or WeakReference referenced
  */
-interface ProtectionStorage<K, V> {
-    void touch(K key, V value);
+public interface ValueConvertable<V1, V2> {
+    /**
+     * convert the original value to the target value
+     *
+     * @param value the original value
+     * @return the converted value
+     */
+    V2 convertValue(V1 value);
 }

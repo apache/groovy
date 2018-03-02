@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @since 2.5.0
  */
 @ThreadSafe
-public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serializable {
+public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = -7352338549333024936L;
 
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
@@ -129,7 +129,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
         readLock.lock();
         try {
             value = commonCache.get(key);
-            if (null != value) {
+            if (null != convertValue(value)) {
                 return value;
             }
         } finally {
@@ -140,12 +140,12 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
         try {
             // try to find the cached value again
             value = commonCache.get(key);
-            if (null != value) {
+            if (null != convertValue(value)) {
                 return value;
             }
 
             value = null == valueProvider ? null : valueProvider.provide(key);
-            if (shouldCache && null != value) {
+            if (shouldCache && null != convertValue(value)) {
                 commonCache.put(key, value);
             }
         } finally {
@@ -244,5 +244,44 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
         } finally {
             writeLock.unlock();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object convertValue(V value) {
+        return value;
+    }
+
+    /**
+     * deal with the backed cache guarded by write lock
+     * @param action the content to complete
+     */
+    public <R> R doWithWriteLock(Action<K, V, R> action) {
+        writeLock.lock();
+        try {
+            return action.doWith(commonCache);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * deal with the backed cache guarded by read lock
+     * @param action the content to complete
+     */
+    public <R> R doWithReadLock(Action<K, V, R> action) {
+        readLock.lock();
+        try {
+            return action.doWith(commonCache);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @FunctionalInterface
+    public interface Action<K, V, R> {
+        R doWith(CommonCache<K, V> commonCache);
     }
 }

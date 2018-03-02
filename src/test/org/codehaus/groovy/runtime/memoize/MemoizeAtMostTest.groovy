@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * @author Vaclav Pech
  */
@@ -68,5 +70,17 @@ public class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         flag = false
         assert 10 == mem(5)
         assert flag
+    }
+
+    public void testMemoizeAtMostConcurrently() {
+        AtomicInteger cnt = new AtomicInteger(0)
+        Closure cl = {
+            cnt.incrementAndGet()
+            it * 2
+        }
+        Closure mem = cl.memoizeAtMost(3)
+        [4, 5, 6, 4, 5, 6, 4, 5, 6, 4, 5, 6].collect { num -> Thread.start { mem(num) } }*.join()
+
+        assert 3 == cnt.get()
     }
 }
