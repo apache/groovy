@@ -42,7 +42,7 @@ final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implement
      * The eldest entry should be removed when we reached the maximum cache size
      */
     @Override
-    protected boolean removeEldestEntry(final Map.Entry<Object, Object> eldest) {
+    protected synchronized boolean removeEldestEntry(final Map.Entry<Object, Object> eldest) {
         return size() > maxSize;
     }
 
