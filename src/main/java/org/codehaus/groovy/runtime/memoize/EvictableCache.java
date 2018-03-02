@@ -44,14 +44,6 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
     Map<K, V> clear();
 
     /**
-     * Try to get the value from cache.
-     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value
-     * @param key
-     * @return the cached value
-     */
-    V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider);
-
-    /**
      * Get all cached values
      * @return all cached values
      */

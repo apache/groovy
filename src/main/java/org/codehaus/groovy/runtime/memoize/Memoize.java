@@ -116,6 +116,7 @@ public abstract class Memoize {
     }
 
     private static class MemoizeFunction<V> extends Closure<V> {
+        private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
         final Closure<V> closure;
         
@@ -129,12 +130,15 @@ public abstract class Memoize {
         
         @Override public V call(final Object... args) {
             final Object key = generateKey(args);
-            Object result = cache.get(key);
-            if (result == null) {
-                result = closure.call(args);
-                //noinspection GroovyConditionalCanBeElvis
-                cache.put(key, result != null ? result : MEMOIZE_NULL);
-            }
+            Object result = cache.getAndPut(key, new MemoizeCache.ValueProvider<Object, Object>() {
+                @Override
+                public Object provide(Object k) {
+                    Object r = closure.call(args);
+                    //noinspection GroovyConditionalCanBeElvis
+                    return r != null ? r : MEMOIZE_NULL;
+                }
+            });
+
             return result == MEMOIZE_NULL ? null : (V) result;
         }
 
@@ -144,6 +148,7 @@ public abstract class Memoize {
     }
     
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
+        private static final long serialVersionUID = -1338206227167457991L;
         final ProtectionStorage lruProtectionStorage;
         final ReferenceQueue queue;
         
