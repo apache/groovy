@@ -93,26 +93,16 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * {@inheritDoc}
      */
     @Override
-    public V get(K key) {
-        readLock.lock();
-        try {
-            return commonCache.get(key);
-        } finally {
-            readLock.unlock();
-        }
+    public V get(final K key) {
+        return doWithReadLock(c -> c.get(key));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public V put(K key, V value) {
-        writeLock.lock();
-        try {
-            return commonCache.put(key, value);
-        } finally {
-            writeLock.unlock();
-        }
+    public V put(final K key, final V value) {
+        return doWithWriteLock(c -> c.put(key, value));
     }
 
     /**
@@ -160,12 +150,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Collection<V> values() {
-        readLock.lock();
-        try {
-            return commonCache.values();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.values());
     }
 
     /**
@@ -173,25 +158,15 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Set<K> keys() {
-        readLock.lock();
-        try {
-            return commonCache.keys();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.keys());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(K key) {
-        readLock.lock();
-        try {
-            return commonCache.containsKey(key);
-        } finally {
-            readLock.unlock();
-        }
+    public boolean containsKey(final K key) {
+        return doWithReadLock(c -> c.containsKey(key));
     }
 
     /**
@@ -199,25 +174,15 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public int size() {
-        readLock.lock();
-        try {
-            return commonCache.size();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.size());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public V remove(K key) {
-        writeLock.lock();
-        try {
-            return commonCache.remove(key);
-        } finally {
-            writeLock.unlock();
-        }
+    public V remove(final K key) {
+        return doWithWriteLock(c -> c.remove(key));
     }
 
     /**
@@ -225,12 +190,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Map<K, V> clear() {
-        writeLock.lock();
-        try {
-            return commonCache.clear();
-        } finally {
-            writeLock.unlock();
-        }
+        return doWithWriteLock(c -> c.clear());
     }
 
     /**
@@ -238,12 +198,10 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public void cleanUpNullReferences() {
-        writeLock.lock();
-        try {
-            commonCache.cleanUpNullReferences();
-        } finally {
-            writeLock.unlock();
-        }
+        doWithWriteLock(c -> {
+            c.cleanUpNullReferences();
+            return null;
+        });
     }
 
     /**
