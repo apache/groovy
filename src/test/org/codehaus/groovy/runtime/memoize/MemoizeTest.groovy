@@ -126,13 +126,19 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
         assertScript '''
         // http://groovy.329449.n5.nabble.com/ConcurrentModificationException-with-use-of-memoize-tp5736788.html
         
-        import java.util.concurrent.atomic.AtomicInteger
-        
         class Utils { 
-            public static final AtomicInteger EXECUTION_COUNT = new AtomicInteger(0)
+            public static int cnt = 0
+            
+            public static synchronized void increment() {
+                cnt++
+            }
+            
+            public static synchronized int getCnt() {
+                return cnt
+            }
         
             public static final Closure powerSet =  { Collection things -> 
-                EXECUTION_COUNT.incrementAndGet()
+                increment()
         
                 def Set objSets = things.collect { [it] as Set } 
                 def Set resultSet = [[] as Set] 
@@ -179,7 +185,7 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
         
         threadList*.join()
         
-        assert 2 == Utils.EXECUTION_COUNT.get()
+        assert 2 == Utils.getCnt()
         '''
     }
 
