@@ -114,19 +114,31 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
-        long stamp = sl.readLock();
-        try {
-            value = commonCache.get(key);
+        // try optimistic read first, which is non-blocking
+        long optimisticReadStamp = sl.tryOptimisticRead();
+        value = commonCache.get(key);
+        if (sl.validate(optimisticReadStamp)) {
             if (null != convertValue(value)) {
                 return value;
             }
+        }
 
-            long ws = sl.tryConvertToWriteLock(stamp);
+        long stamp = sl.readLock();
+        try {
+            // if stale, read again
+            if (!sl.validate(optimisticReadStamp)) {
+                value = commonCache.get(key);
+                if (null != convertValue(value)) {
+                    return value;
+                }
+            }
+
+            long ws = sl.tryConvertToWriteLock(stamp); // the new local variable `ws` is necessary here!
             if (0L == ws) { // Failed to convert read lock to write lock
                 sl.unlockRead(stamp);
                 stamp = sl.writeLock();
 
-                // try to find the cached value again
+                // try to read again
                 value = commonCache.get(key);
                 if (null != convertValue(value)) {
                     return value;
