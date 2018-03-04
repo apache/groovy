@@ -62,9 +62,13 @@ class GroovyshTest extends GroovyTestCase {
 
     void testClassDef() {
         Groovysh groovysh = createGroovysh()
-        groovysh.execute('class Foo {}')
+        groovysh.execute('class MyFooTestClass{ String foo }')
         assert mockOut.toString().length() > 0
         assert ' true\n' == mockOut.toString().normalize()[-6..-1]
+        groovysh.execute('m = new MyFooTestClass()')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert mockOut.toString().normalize().contains('MyFooTestClass@')
     }
 
     void testmethodDef() {
@@ -309,6 +313,17 @@ class GroovyshTest extends GroovyTestCase {
             groovysh.loadUserScript(file.name)
             fail('Expected ArithmeticException')
         } catch (ArithmeticException e) {}
+    }
+
+    void testImports() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.execute('import java.rmi.Remote ')
+        assert mockOut.toString().length() > 0
+        assert 'java.rmi.Remote\n' == mockOut.toString().normalize()[-('java.rmi.Remote\n'.length())..-1]
+        groovysh.execute('Remote r')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert 'null\n' == mockOut.toString().normalize()[-5..-1]
     }
 
     static File createTemporaryGroovyScriptFile(content) {
