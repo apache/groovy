@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
@@ -36,7 +36,9 @@ import java.util.concurrent.locks.StampedLock;
 public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = -7352338549333024936L;
 
-    private final StampedLock sl = new StampedLock();
+    private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
     private final CommonCache<K, V> commonCache;
 
     /**
@@ -114,52 +116,32 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
-        // try optimistic read first, which is non-blocking
-        long optimisticReadStamp = sl.tryOptimisticRead();
-        value = commonCache.get(key);
-        if (sl.validate(optimisticReadStamp)) {
+        readLock.lock();
+        try {
+            value = commonCache.get(key);
             if (null != convertValue(value)) {
                 return value;
             }
-        }
-
-        long stamp = sl.readLock();
-        try {
-            // if stale, read again
-            if (!sl.validate(optimisticReadStamp)) {
-                value = commonCache.get(key);
-                if (null != convertValue(value)) {
-                    return value;
-                }
-            }
-
-            long ws = sl.tryConvertToWriteLock(stamp); // the new local variable `ws` is necessary here!
-            if (0L == ws) { // Failed to convert read lock to write lock
-                sl.unlockRead(stamp);
-                stamp = sl.writeLock();
-
-                // try to read again
-                value = commonCache.get(key);
-                if (null != convertValue(value)) {
-                    return value;
-                }
-            } else {
-                stamp = ws;
-            }
-
-            value = compute(key, valueProvider, shouldCache);
         } finally {
-            sl.unlock(stamp);
+            readLock.unlock();
         }
 
-        return value;
-    }
+        writeLock.lock();
+        try {
+            // try to find the cached value again
+            value = commonCache.get(key);
+            if (null != convertValue(value)) {
+                return value;
+            }
 
-    private V compute(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
-        V value = null == valueProvider ? null : valueProvider.provide(key);
-        if (shouldCache && null != convertValue(value)) {
-            commonCache.put(key, value);
+            value = null == valueProvider ? null : valueProvider.provide(key);
+            if (shouldCache && null != convertValue(value)) {
+                commonCache.put(key, value);
+            }
+        } finally {
+            writeLock.unlock();
         }
+
         return value;
     }
 
@@ -235,11 +217,11 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param action the content to complete
      */
     public <R> R doWithWriteLock(Action<K, V, R> action) {
-        long stamp = sl.writeLock();
+        writeLock.lock();
         try {
             return action.doWith(commonCache);
         } finally {
-            sl.unlockWrite(stamp);
+            writeLock.unlock();
         }
     }
 
@@ -248,19 +230,12 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param action the content to complete
      */
     public <R> R doWithReadLock(Action<K, V, R> action) {
-        long stamp = sl.tryOptimisticRead();
-        R result = action.doWith(commonCache);
-
-        if (!sl.validate(stamp)) {
-            stamp = sl.readLock();
-            try {
-                result = action.doWith(commonCache);
-            } finally {
-                sl.unlockRead(stamp);
-            }
+        readLock.lock();
+        try {
+            return action.doWith(commonCache);
+        } finally {
+            readLock.unlock();
         }
-
-        return result;
     }
 
     @FunctionalInterface
