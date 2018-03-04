@@ -210,7 +210,6 @@ public class ConcurrentCommonCacheTest {
         final int threadNum = 30;
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final CountDownLatch countDownLatch2 = new CountDownLatch(threadNum);
-
         final AtomicInteger cnt = new AtomicInteger(0);
 
         for (int i = 0; i < threadNum; i++) {
@@ -220,7 +219,12 @@ public class ConcurrentCommonCacheTest {
                     try {
                         countDownLatch.await();
 
-                        m.getAndPut(123, k -> cnt.getAndIncrement());
+                        m.getAndPut(123, new MemoizeCache.ValueProvider<Integer, Integer>() {
+                            @Override
+                            public Integer provide(Integer integer) {
+                                return cnt.getAndIncrement();
+                            }
+                        });
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } finally {
