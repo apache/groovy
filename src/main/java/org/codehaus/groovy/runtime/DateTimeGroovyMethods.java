@@ -23,11 +23,16 @@ import groovy.lang.GroovyRuntimeException;
 
 import java.time.*;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoPeriod;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.*;
 import java.util.*;
+
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.YEARS;
 
 /**
  * This class defines new Groovy methods which appear on normal JDK
@@ -47,9 +52,9 @@ public class DateTimeGroovyMethods {
      */
     private static Map<Class<? extends Temporal>, TemporalUnit> DEFAULT_UNITS = new HashMap<>();
     static {
-        DEFAULT_UNITS.put(ChronoLocalDate.class, ChronoUnit.DAYS);
-        DEFAULT_UNITS.put(YearMonth.class, ChronoUnit.MONTHS);
-        DEFAULT_UNITS.put(Year.class, ChronoUnit.YEARS);
+        DEFAULT_UNITS.put(ChronoLocalDate.class, DAYS);
+        DEFAULT_UNITS.put(YearMonth.class, MONTHS);
+        DEFAULT_UNITS.put(Year.class, YEARS);
     }
 
     /**
@@ -69,14 +74,15 @@ public class DateTimeGroovyMethods {
      * Truncates a nanosecond value to milliseconds. No rounding.
      */
     private static int millisFromNanos(int nanos) {
-       return nanos / 1_000_000;
+        return nanos / 1_000_000;
     }
 
     /* ******** java.time.temporal.Temporal extension methods ******** */
 
     /**
-     * Iterates from the this to {@code to}, inclusive, incrementing by one unit each iteration, calling the
-     * closure once per iteration. The closure may accept a single {@link java.time.temporal.Temporal} argument.
+     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, incrementing by one
+     * unit each iteration, calling the closure once per iteration. The closure may accept a single
+     * {@link java.time.temporal.Temporal} argument.
      * <p>
      * The particular unit incremented by depends on the specific sub-type of {@link java.time.temporal.Temporal}.
      * Most sub-types use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
@@ -97,8 +103,8 @@ public class DateTimeGroovyMethods {
     }
 
     /**
-     * Iterates from this to {@code to}, inclusive, incrementing by one {@code unit} each iteration,
-     * calling the closure once per iteration. The closure may accept a single
+     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, incrementing by one
+     * {@code unit} each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
      *
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
@@ -113,8 +119,8 @@ public class DateTimeGroovyMethods {
      * @since 3.0
      */
     public static void upto(Temporal from, Temporal to, TemporalUnit unit, Closure closure) {
-        if (from.until(to, unit) >= 0) {
-            for (Temporal i = from; i.until(to, unit) >= 0; i = i.plus(1, unit)) {
+        if (isUptoEligible(from, to)) {
+            for (Temporal i = from; isUptoEligible(i, to); i = i.plus(1, unit)) {
                 closure.call(i);
             }
         } else {
@@ -124,10 +130,26 @@ public class DateTimeGroovyMethods {
     }
 
     /**
+     * Returns true if the {@code from} can be iterated up to {@code to}.
+     */
+    private static boolean isUptoEligible(Temporal from, Temporal to) {
+        switch ((ChronoUnit) defaultUnitFor(from)) {
+            case YEARS:
+                return isNonnegative(DefaultGroovyStaticMethods.between(null, (Year) from, (Year) to));
+            case MONTHS:
+                return isNonnegative(DefaultGroovyStaticMethods.between(null, (YearMonth) from, (YearMonth) to));
+            case DAYS:
+                return isNonnegative(ChronoPeriod.between((ChronoLocalDate) from, (ChronoLocalDate) to));
+            default:
+                return isNonnegative(Duration.between(from, to));
+        }
+    }
+
+    /**
      * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, decrementing by one
      * unit each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
-     *
+     * <p>
      * The particular unit decremented by depends on the specific sub-type of {@link java.time.temporal.Temporal}.
      * Most sub-types use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
      * <ul>
@@ -163,13 +185,29 @@ public class DateTimeGroovyMethods {
      * @since 3.0
      */
     public static void downto(Temporal from, Temporal to, TemporalUnit unit, Closure closure) {
-        if (from.until(to, unit) <= 0) {
-            for (Temporal i = from; i.until(to, unit) <= 0; i = i = i.minus(1, unit)) {
+        if (isDowntoEligible(from, to)) {
+            for (Temporal i = from; isDowntoEligible(i, to); i = i.minus(1, unit)) {
                 closure.call(i);
             }
         } else {
             throw new GroovyRuntimeException("The argument (" + to +
                     ") to downto() cannot be later than the value (" + from + ") it's called on.");
+        }
+    }
+
+    /**
+     * Returns true if the {@code from} can be iterated down to {@code to}.
+     */
+    private static boolean isDowntoEligible(Temporal from, Temporal to) {
+        switch ((ChronoUnit) defaultUnitFor(from)) {
+            case YEARS:
+                return isNonpositive(DefaultGroovyStaticMethods.between(null, (Year) from, (Year) to));
+            case MONTHS:
+                return isNonpositive(DefaultGroovyStaticMethods.between(null, (YearMonth) from, (YearMonth) to));
+            case DAYS:
+                return isNonpositive(ChronoPeriod.between((ChronoLocalDate) from, (ChronoLocalDate) to));
+            default:
+                return isNonpositive(Duration.between(from, to));
         }
     }
 
@@ -313,6 +351,39 @@ public class DateTimeGroovyMethods {
      */
     public static Duration div(final Duration self, long scalar) {
         return self.dividedBy(scalar);
+    }
+
+    /**
+     * Returns true if this duration is positive, excluding zero.
+     *
+     * @param self a Duration
+     * @return true if positive
+     * @since 3.0
+     */
+    public static boolean isPositive(final Duration self) {
+        return !self.isZero() && !self.isNegative();
+    }
+
+    /**
+     * Returns true if this duration is zero or positive.
+     *
+     * @param self a Duration
+     * @return true if nonnegative
+     * @since 3.0
+     */
+    public static boolean isNonnegative(final Duration self) {
+        return self.isZero() || !self.isNegative();
+    }
+
+    /**
+     * Returns true if this duration is zero or negative.
+     *
+     * @param self a Duration
+     * @return true if nonpositive
+     * @since 3.0
+     */
+    public static boolean isNonpositive(final Duration self) {
+        return self.isZero() || self.isNegative();
     }
 
     /* ******** java.time.Instant extension methods ******** */
@@ -613,7 +684,7 @@ public class DateTimeGroovyMethods {
      * @since 3.0
      */
     public static LocalDateTime clearTime(final LocalDateTime self) {
-        return self.truncatedTo(ChronoUnit.DAYS);
+        return self.truncatedTo(DAYS);
     }
 
     /**
@@ -959,7 +1030,7 @@ public class DateTimeGroovyMethods {
      * @since 3.0
      */
     public static OffsetDateTime clearTime(final OffsetDateTime self) {
-        return self.truncatedTo(ChronoUnit.DAYS);
+        return self.truncatedTo(DAYS);
     }
 
     /**
@@ -1254,6 +1325,39 @@ public class DateTimeGroovyMethods {
         return self.multipliedBy(scalar);
     }
 
+    /**
+     * Returns true if this period is positive, excluding zero.
+     *
+     * @param self a ChronoPeriod
+     * @return true if positive
+     * @since 3.0
+     */
+    public static boolean isPositive(final ChronoPeriod self) {
+        return !self.isZero() && !self.isNegative();
+    }
+
+    /**
+     * Returns true if this period is zero or positive.
+     *
+     * @param self a ChronoPeriod
+     * @return true if nonnegative
+     * @since 3.0
+     */
+    public static boolean isNonnegative(final ChronoPeriod self) {
+        return self.isZero() || !self.isNegative();
+    }
+
+    /**
+     * Returns true if this period is zero or negative.
+     *
+     * @param self a ChronoPeriod
+     * @return true if nonpositive
+     * @since 3.0
+     */
+    public static boolean isNonpositive(final ChronoPeriod self) {
+        return self.isZero() || self.isNegative();
+    }
+
     /* ******** java.time.Year extension methods ******** */
 
     /**
@@ -1514,7 +1618,7 @@ public class DateTimeGroovyMethods {
      * @since 3.0
      */
     public static ZonedDateTime clearTime(final ZonedDateTime self) {
-        return self.truncatedTo(ChronoUnit.DAYS);
+        return self.truncatedTo(DAYS);
     }
 
     /**

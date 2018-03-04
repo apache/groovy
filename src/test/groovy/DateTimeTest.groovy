@@ -170,6 +170,22 @@ class DateTimeTest extends GroovyTestCase {
         assert (duration * 2).seconds == 120
     }
 
+    void testDurationIsPositiveIsNonnegativeIsNonpositive() {
+        def pos = Duration.ofSeconds(10)
+        assert pos.isPositive() == true
+        assert pos.isNonpositive() == false
+        assert pos.isNonnegative() == true
+
+        def neg = Duration.ofSeconds(-10)
+        assert neg.isPositive() == false
+        assert neg.isNonpositive() == true
+        assert neg.isNonnegative() == false
+
+        assert Duration.ZERO.isPositive() == false
+        assert Duration.ZERO.isNonpositive() == true
+        assert Duration.ZERO.isNonnegative() == true
+    }
+
     void testPeriodPositiveNegative() {
         def positivePeriod = Period.of(1,2,3)
         Period madeNegative = -positivePeriod
@@ -190,6 +206,22 @@ class DateTimeTest extends GroovyTestCase {
         assert doublePeriod.years == 2
         assert doublePeriod.months == 2
         assert doublePeriod.days == 2
+    }
+
+    void testPeriodIsPositiveIsNonnegativeIsNonpositive() {
+        def pos = Period.ofDays(10)
+        assert pos.isPositive() == true
+        assert pos.isNonpositive() == false
+        assert pos.isNonnegative() == true
+
+        def neg = Period.ofDays(-10)
+        assert neg.isPositive() == false
+        assert neg.isNonpositive() == true
+        assert neg.isNonnegative() == false
+
+        assert Period.ZERO.isPositive() == false
+        assert Period.ZERO.isNonpositive() == true
+        assert Period.ZERO.isNonnegative() == true
     }
 
     void testTemporalGetAt() {
@@ -235,50 +267,66 @@ class DateTimeTest extends GroovyTestCase {
         assert yearMonthPeriod.months == 2
     }
 
-    void testUptoDowntoWithSecondsDefaultUnit() {
+    void testUptoSelfWithDefaultUnit() {
         def epoch = Instant.ofEpochMilli(0)
 
-        int uptoSelfIterations = 0
+        int iterations = 0
         epoch.upto(epoch) {
-            ++uptoSelfIterations
-            assert it == epoch  : 'upto closure should be provided with arg'
+            ++iterations
+            assert it == epoch: 'upto closure should be provided with arg'
         }
-        assert uptoSelfIterations == 1 : 'Iterating upto same value should call closure once'
-
-        int downtoSelfIterations = 0
-        epoch.downto(epoch) {
-            ++downtoSelfIterations
-            assert it == epoch : 'downto closure should be provided with arg'
-        }
-        assert downtoSelfIterations == 1 : 'Iterating downto same value should call closure once'
-
-        int uptoPlusOneIterations = 0
-        Instant endUp = null
-        epoch.upto(epoch + 1) {
-            ++uptoPlusOneIterations
-            endUp = it
-        }
-        assert uptoPlusOneIterations == 2 : 'Iterating upto Temporal+1 value should call closure twice'
-        assert endUp.epochSecond == 1 : 'Unexpected upto final value'
-
-        int downtoPlusOneIterations = 0
-        Instant endDown = null
-        epoch.downto(epoch - 1) {
-            ++downtoPlusOneIterations
-            endDown = it
-        }
-        assert downtoPlusOneIterations == 2 : 'Iterating downto Temporal+1 value should call closure twice'
-        assert endDown.epochSecond == -1 : 'Unexpected downto final value'
+        assert iterations == 1: 'Iterating upto same value should call closure once'
     }
 
-    void testUptoDowntoWithYearsDefaultUnit() {
-        // non-ChronoUnit.SECOND iterations
+    void testDowntoSelfWithDefaultUnit() {
+        def epoch = Instant.ofEpochMilli(0)
+        int iterations = 0
+        epoch.downto(epoch) {
+            ++iterations
+            assert it == epoch: 'downto closure should be provided with arg'
+        }
+        assert iterations == 1: 'Iterating downto same value should call closure once'
+    }
+
+    void testUptoWithSecondsDefaultUnit() {
+        def epoch = Instant.ofEpochMilli(0)
+
+        int iterations = 0
+        Instant end = null
+        epoch.upto(epoch + 1) {
+            ++iterations
+            end = it
+        }
+        assert iterations == 2: 'Iterating upto Temporal+1 value should call closure twice'
+        assert end.epochSecond == 1: 'Unexpected upto final value'
+    }
+
+    void testDowntoWithSecondsDefaultUnit() {
+        def epoch = Instant.ofEpochMilli(0)
+
+        int iterations = 0
+        Instant end = null
+        epoch.downto(epoch - 1) {
+            ++iterations
+            end = it
+        }
+        assert iterations == 2 : 'Iterating downto Temporal+1 value should call closure twice'
+        assert end.epochSecond == -1 : 'Unexpected downto final value'
+    }
+
+    void testUptoWithYearsDefaultUnit() {
         def endYear = null
         Year.of(1970).upto(Year.of(1971)) { year -> endYear = year }
         assert endYear.value == 1971
     }
 
-    void testUptoDownWithMonthsDefaultUnit() {
+    void testDowntoWithYearsDefaultUnit() {
+        def endYear = null
+        Year.of(1971).downto(Year.of(1970)) { year -> endYear = year }
+        assert endYear.value == 1970
+    }
+
+    void testUptoWithMonthsDefaultUnit() {
         def endYearMonth = null
         YearMonth.of(1970, Month.JANUARY).upto(YearMonth.of(1970, Month.FEBRUARY)) { yearMonth ->
             endYearMonth = yearMonth
@@ -286,21 +334,42 @@ class DateTimeTest extends GroovyTestCase {
         assert endYearMonth.month == Month.FEBRUARY
     }
 
-    void testUptoDowntoWithDaysDefaultUnit() {
+    void testDowntoWithMonthsDefaultUnit() {
+        def endYearMonth = null
+        YearMonth.of(1970, Month.FEBRUARY).downto(YearMonth.of(1970, Month.JANUARY)) { yearMonth ->
+            endYearMonth = yearMonth
+        }
+        assert endYearMonth.month == Month.JANUARY
+    }
+
+    void testUptoWithDaysDefaultUnit() {
         def endLocalDate = null
-        LocalDate.of(1970, Month.JANUARY, 1).upto(LocalDate.of(1970, Month.JANUARY, 2)) { localDate ->
+        LocalDate.of(1970, Month.JANUARY, 1).upto(LocalDate.of(1970, Month.JANUARY, 2)) {  localDate ->
             endLocalDate = localDate
         }
         assert endLocalDate.dayOfMonth == 2
     }
 
-    void testUptoDowntoWithIllegalReversedArguments() {
+    void testDowntoWithDaysDefaultUnit() {
+        def endLocalDate = null
+        LocalDate.of(1970, Month.JANUARY, 2).downto(LocalDate.of(1970, Month.JANUARY, 1)) {  localDate ->
+            endLocalDate = localDate
+        }
+        assert endLocalDate.dayOfMonth == 1
+    }
+
+    void testUptoWithIllegalReversedArguments() {
         def epoch = Instant.ofEpochMilli(0)
         try {
             epoch.upto(epoch - 1) {
                 fail('upto() should fail when passed earlier arg')
             }
-        } catch (GroovyRuntimeException e) {}
+        } catch (GroovyRuntimeException e) {
+        }
+    }
+
+    void testDowntoWithIllegalReversedArguments() {
+        def epoch = Instant.ofEpochMilli(0)
         try {
             epoch.downto(epoch + 1) {
                 fail('downto() should fail when passed earlier arg')
@@ -308,27 +377,56 @@ class DateTimeTest extends GroovyTestCase {
         } catch (GroovyRuntimeException e) {}
     }
 
-    void testUptoDowntoWithCustomUnit() {
-        LocalDateTime ldt1 = LocalDateTime.of(2018, Month.FEBRUARY, 11, 22, 9, 34)
-        LocalDateTime ldt2 = ldt1.plusMinutes(1)
+    void testUptoSelfWithCustomUnit() {
+        def today = LocalDate.now()
 
-        int upIterations = 0
-        LocalDateTime endUp = null
-        ldt1.upto(ldt2, ChronoUnit.DAYS) {
-            ++upIterations
-            endUp = it
+        int iterations = 0
+        today.upto(today, ChronoUnit.MONTHS) {
+            ++iterations
+            assert it == today: 'upto closure should be provided with arg'
         }
-        assert upIterations == 2
-        assert endUp.dayOfMonth == 12 : "Upto should have iterated by DAYS"
+        assert iterations == 1: 'Iterating upto same value should call closure once'
+    }
 
-        int downIterations = 0
-        LocalDateTime endDown = null
-        ldt2.downto(ldt1, ChronoUnit.YEARS) {
-            ++downIterations
-            endDown = it
+    void testDowntoSelfWithCustomUnit() {
+        def today = LocalDate.now()
+
+        int iterations = 0
+        today.downto(today, ChronoUnit.MONTHS) {
+            ++iterations
+            assert it == today: 'downto closure should be provided with arg'
         }
-        assert downIterations == 2
-        assert endDown.year == 2017 : "Downto should have iterated by YEARS"
+        assert iterations == 1: 'Iterating downto same value should call closure once'
+    }
+
+    void testUptoWithCustomUnit() {
+        LocalDateTime from = LocalDateTime.of(2018, Month.FEBRUARY, 11, 22, 9, 34)
+        // one second beyond one iteration
+        LocalDateTime to = from.plusDays(1).plusSeconds(1)
+
+        int iterations = 0
+        LocalDateTime end = null
+        from.upto(to, ChronoUnit.DAYS) {
+            ++iterations
+            end = it
+        }
+        assert iterations == 2
+        assert end.dayOfMonth == 12: "Upto should have iterated by DAYS twice"
+    }
+
+    void testDowntoWithCustomUnit() {
+        LocalDateTime from = LocalDateTime.of(2018, Month.FEBRUARY, 11, 22, 9, 34)
+        // one day beyond one iteration
+        LocalDateTime to = from.minusYears(1).minusDays(1)
+
+        int iterations = 0
+        LocalDateTime end = null
+        from.downto(to, ChronoUnit.YEARS) {
+            ++iterations
+            end = it
+        }
+        assert iterations == 2
+        assert end.year == 2017 : "Downto should have iterated by YEARS twice"
     }
 
     void testInstantToDateToCalendar() {
@@ -676,5 +774,20 @@ class DateTimeTest extends GroovyTestCase {
         assert [zdt.year, zdt.month, zdt.dayOfMonth] == [2018, Month.FEBRUARY, 15]
         assert [zdt.hour, zdt.minute, zdt.second] == [21, 43, 03]
         assert zdt.nano == 2 * 1e6
+    }
+
+    void testPeriodBetweenYears() {
+        def period = Period.between(Year.of(2000), Year.of(2010))
+        assert period.years == 10
+        assert period.months == 0
+        assert period.days == 0
+    }
+
+    void testPeriodBetweenYearMonths() {
+        def period = Period.between(YearMonth.of(2018, Month.MARCH), YearMonth.of(2016, Month.APRIL))
+
+        assert period.years == -1
+        assert period.months == -11
+        assert period.days == 0
     }
 }
