@@ -300,15 +300,15 @@ public class DefaultGroovyStaticMethods {
         return tempFile;
     }
 
-  /**
-   * Get the current time in seconds
-   *
-   * @param self   placeholder variable used by Groovy categories; ignored for default static methods
-   * @return  the difference, measured in seconds, between
-   *          the current time and midnight, January 1, 1970 UTC.
-   * @see     System#currentTimeMillis()
-   */
-  public static long currentTimeSeconds(System self){
+    /**
+     * Get the current time in seconds
+     *
+     * @param self   placeholder variable used by Groovy categories; ignored for default static methods
+     * @return  the difference, measured in seconds, between
+     *          the current time and midnight, January 1, 1970 UTC.
+     * @see     System#currentTimeMillis()
+     */
+    public static long currentTimeSeconds(System self){
     return System.currentTimeMillis() / 1000;
   }
 
@@ -475,6 +475,45 @@ public class DefaultGroovyStaticMethods {
      */
     public static ZoneOffset systemDefault(final ZoneOffset type) {
         return DateTimeGroovyMethods.getOffset(ZoneId.systemDefault());
+    }
+
+    /**
+     * Obtains a Period consisting of the number of years between two {@link java.time.Year} instances.
+     * The months and days of the Period will be zero.
+     * The result of this method can be a negative period if the end is before the start.
+     *
+     * @param type           placeholder variable used by Groovy categories; ignored for default static methods
+     * @param startInclusive the start {@link java.time.Year}, inclusive, not null
+     * @param endExclusive   the end {@link java.time.Year}, exclusive, not null
+     * @return a Period between the years
+     * @see java.time.Period#between(LocalDate, LocalDate)
+     */
+    public static Period between(final Period type, Year startInclusive, Year endExclusive) {
+        MonthDay now = MonthDay.of(Month.JANUARY, 1);
+        return Period.between(
+                DateTimeGroovyMethods.leftShift(startInclusive, now),
+                DateTimeGroovyMethods.leftShift(endExclusive, now))
+                .withDays(0)
+                .withMonths(0);
+    }
+
+    /**
+     * Obtains a Period consisting of the number of years and months between two {@link java.time.YearMonth} instances.
+     * The days of the Period will be zero.
+     * The result of this method can be a negative period if the end is before the start.
+     *
+     * @param type           placeholder variable used by Groovy categories; ignored for default static methods
+     * @param startInclusive the start {@link java.time.YearMonth}, inclusive, not null
+     * @param endExclusive   the end {@link java.time.YearMonth}, exclusive, not null
+     * @return a Period between the year/months
+     * @see java.time.Period#between(LocalDate, LocalDate)
+     */
+    public static Period between(final Period type, YearMonth startInclusive, YearMonth endExclusive) {
+        int dayOfMonth = 1;
+        return Period.between(
+                DateTimeGroovyMethods.leftShift(startInclusive, dayOfMonth),
+                DateTimeGroovyMethods.leftShift(endExclusive, dayOfMonth))
+                .withDays(0);
     }
 
 }
