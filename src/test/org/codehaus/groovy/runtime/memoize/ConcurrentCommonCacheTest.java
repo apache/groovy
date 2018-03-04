@@ -214,15 +214,18 @@ public class ConcurrentCommonCacheTest {
         final AtomicInteger cnt = new AtomicInteger(0);
 
         for (int i = 0; i < threadNum; i++) {
-            new Thread(() -> {
-                try {
-                    countDownLatch.await();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        countDownLatch.await();
 
-                    m.getAndPut(123, k -> cnt.getAndIncrement());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    countDownLatch2.countDown();
+                        m.getAndPut(123, k -> cnt.getAndIncrement());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        countDownLatch2.countDown();
+                    }
                 }
             }).start();
         }
