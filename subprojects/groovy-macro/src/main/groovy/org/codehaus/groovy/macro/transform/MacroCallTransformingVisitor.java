@@ -158,7 +158,7 @@ class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
         call.setSafe(false);
         call.setImplicitThis(false);
         call.setArguments(result);
-        call.setGenericsTypes(new GenericsType[0]);
+        call.setGenericsTypes(GenericsType.EMPTY_ARRAY);
 
         return true;
     }

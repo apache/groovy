@@ -19,9 +19,9 @@
 allprojects {
     tasks.withType(Test) {
         if (JavaVersion.current().isJava8Compatible()) {
-            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:+UseConcMarkSweepGC"
         } else {
-            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}", "-XX:+UseConcMarkSweepGC"
         }
         def headless = System.properties['java.awt.headless']
         if (headless == 'true') {
@@ -145,7 +145,7 @@ task testExtensionModuleJar(type: Jar) {
     description = 'Builds a sample extension module used in tests'
     dependsOn compileTestExtensionModule
     baseName = 'module-test'
-    version = '1.3'
+    version = '1.4'
     from { compileTestExtensionModule.destinationDir }
     from files("$extModuleFixtureDir/src/main/resources")
     // emulate Maven repo format for output

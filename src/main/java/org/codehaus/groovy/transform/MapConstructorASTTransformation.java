@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
+import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -173,9 +174,10 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             ClosureExpression transformed = (ClosureExpression) transformer.transform(post);
             body.addStatement(transformed.getCode());
         }
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, body));
+        int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
+        doAddConstructor(cNode, new ConstructorNode(modifiers, params, ClassNode.EMPTY_ARRAY, body));
         if (noArg && !superList.isEmpty() && !hasNoArgConstructor(cNode)/* && !specialNamedArgCase*/) {
-            createNoArgConstructor(cNode);
+            createNoArgConstructor(cNode, modifiers);
         }
     }
 
@@ -220,9 +222,9 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         }
     }
 
-    private static void createNoArgConstructor(ClassNode cNode) {
+    private static void createNoArgConstructor(ClassNode cNode, int modifiers) {
         Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
-        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        cNode.addConstructor(new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private static ClassCodeExpressionTransformer makeMapTypedArgsTransformer() {

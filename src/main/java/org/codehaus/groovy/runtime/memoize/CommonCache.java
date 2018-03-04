@@ -36,7 +36,7 @@ import java.util.Set;
  * @param <V> type of the values
  * @since 2.5.0
  */
-public class CommonCache<K, V> implements EvictableCache<K, V>, Serializable {
+public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = 934699400232698324L;
     /**
      * The default load factor
@@ -130,12 +130,12 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, Serializable {
 
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value = get(key);
-        if (null != value) {
+        if (null != convertValue(value)) {
             return value;
         }
 
         value = null == valueProvider ? null : valueProvider.provide(key);
-        if (shouldCache && null != value) {
+        if (shouldCache && null != convertValue(value)) {
             put(key, value);
         }
 
@@ -218,5 +218,13 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, Serializable {
     @Override
     public String toString() {
         return map.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object convertValue(V value) {
+        return value;
     }
 }

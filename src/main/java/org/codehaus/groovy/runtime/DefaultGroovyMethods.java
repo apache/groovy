@@ -5855,7 +5855,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // internal helper method
     protected static <T, K, V> T callClosureForMapEntry(@ClosureParams(value=FromString.class, options={"K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{entry.getKey(), entry.getValue()});
+            return closure.call(entry.getKey(), entry.getValue());
         }
         return closure.call(entry);
     }
@@ -5863,7 +5863,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // internal helper method
     protected static <T> T callClosureForLine(@ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure, String line, int counter) {
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{line, counter});
+            return closure.call(line, counter);
         }
         return closure.call(line);
     }
@@ -5871,10 +5871,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // internal helper method
     protected static <T, K, V> T callClosureForMapEntryAndCounter(@ClosureParams(value=FromString.class, options={"K,V,Integer", "K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
-            return closure.call(new Object[]{entry.getKey(), entry.getValue(), counter});
+            return closure.call(entry.getKey(), entry.getValue(), counter);
         }
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{entry, counter});
+            return closure.call(entry, counter);
         }
         return closure.call(entry);
     }

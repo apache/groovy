@@ -76,7 +76,7 @@ public abstract class Memoize {
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
-    public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
+    public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final MemoizeCache<Object, SoftReference<Object>> cache, final Closure<V> closure) {
         final ProtectionStorage lruProtectionStorage = protectedCacheSize > 0 ?
                 new LRUProtectionStorage(protectedCacheSize) :
                 new NullProtectionStorage(); // Nothing should be done when no elements need protection against eviction
@@ -116,15 +116,20 @@ public abstract class Memoize {
     }
 
     private static class MemoizeFunction<V> extends Closure<V> {
+        private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
         final Closure<V> closure;
         
-        MemoizeFunction(final MemoizeCache<Object, Object> cache, Closure<V> closure) {
+        MemoizeFunction(final MemoizeCache<Object, ?> cache, Closure<V> closure) {
             super(closure.getOwner());
-            this.cache = cache;
+            this.cache = coerce(cache);
             this.closure = closure;
             parameterTypes = closure.getParameterTypes();
             maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
+        }
+
+        private static MemoizeCache coerce(MemoizeCache<Object, ?> cache) {
+            return cache;
         }
         
         @Override
@@ -145,29 +150,31 @@ public abstract class Memoize {
     }
     
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
+        private static final long serialVersionUID = -1338206227167457991L;
         final ProtectionStorage lruProtectionStorage;
         final ReferenceQueue queue;
         
-        SoftReferenceMemoizeFunction(final MemoizeCache<Object, Object> cache, Closure<V> closure,
+        SoftReferenceMemoizeFunction(final MemoizeCache<Object, SoftReference<Object>> cache, Closure<V> closure,
                 ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
             super(cache, closure);
             this.lruProtectionStorage = lruProtectionStorage;
             this.queue = queue;
         }
 
-        @Override public V call(final Object... args) {
+        @Override
+        public V call(final Object... args) {
             if (queue.poll() != null) cleanUpNullReferences(cache, queue);  // if something has been evicted, do a clean-up
             final Object key = generateKey(args);
-            final SoftReference reference = (SoftReference) cache.get(key);
-            Object result = reference != null ? reference.get() : null;
-            if (result == null) {
-                result = closure.call(args);
-                if (result == null) {
-                    result = MEMOIZE_NULL;
-                }
-                cache.put(key, new SoftReference(result, queue));
-            }
+
+            SoftReference reference = (SoftReference) cache.getAndPut(key, k -> {
+                Object r = closure.call(args);
+
+                return null != r ? new SoftReference<Object>(r, queue) : new SoftReference<Object>(MEMOIZE_NULL);
+            });
+
+            Object result = reference.get();
             lruProtectionStorage.touch(key, result);
+
             return result == MEMOIZE_NULL ? null : (V) result;
         }
 

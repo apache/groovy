@@ -367,28 +367,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // name in X.
         // GROOVY-4043: Do this check up the hierarchy, if needed
         Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
-        ClassNode val;
-        for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE; 
+        for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE;
             classToCheck = classToCheck.getSuperClass()) {
             if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
             hierClasses.put(classToCheck.getName(), classToCheck);
         }
 
         for (ClassNode classToCheck : hierClasses.values()) {
-            val = new ConstructedNestedClass(classToCheck,type.getName());
-            if (resolveFromCompileUnit(val)) {
-                type.setRedirect(val);
-                return true;
-            }
-            // also check interfaces in case we have interfaces with nested classes
-            for (ClassNode next : classToCheck.getAllInterfaces()) {
-                if (type.getName().contains(next.getName())) continue;
-                val = new ConstructedNestedClass(next,type.getName());
-                if (resolve(val, false, false, false)) {
-                    type.setRedirect(val);
-                    return true;
-                }
-            }
+            if (setRedirect(type, classToCheck)) return true;
         }
 
         // another case we want to check here is if we are in a
@@ -416,22 +402,27 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         // most outer class is now element 0
         for (ClassNode testNode : outerClasses) {
-            val = new ConstructedNestedClass(testNode,type.getName());
-            if (resolveFromCompileUnit(val)) {
+            if (setRedirect(type, testNode)) return true;
+        }
+
+        return false;
+    }
+
+    private boolean setRedirect(ClassNode type, ClassNode classToCheck) {
+        ClassNode val = new ConstructedNestedClass(classToCheck, type.getName());
+        if (resolveFromCompileUnit(val)) {
+            type.setRedirect(val);
+            return true;
+        }
+        // also check interfaces in case we have interfaces with nested classes
+        for (ClassNode next : classToCheck.getAllInterfaces()) {
+            if (type.getName().contains(next.getName())) continue;
+            val = new ConstructedNestedClass(next, type.getName());
+            if (resolve(val, false, false, false)) {
                 type.setRedirect(val);
                 return true;
             }
-            // also check interfaces in case we have interfaces with nested classes
-            for (ClassNode next : testNode.getAllInterfaces()) {
-                if (type.getName().contains(next.getName())) continue;
-                val = new ConstructedNestedClass(next,type.getName());
-                if (resolve(val, false, false, false)) {
-                    type.setRedirect(val);
-                    return true;
-                }
-            }
         }
-
         return false;
     }
 
@@ -762,7 +753,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private static String lookupClassName(PropertyExpression pe) {
         boolean doInitialClassTest=true;
-        String name = "";
+        StringBuilder name = new StringBuilder(32);
         // this loop builds a name from right to left each name part
         // separated by "."
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
@@ -782,9 +773,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // field bar.
                     if (!testVanillaNameForClass(varName)) return null;
                     doInitialClassTest = false;
-                    name = varName;
+                    name = new StringBuilder(varName);
                 } else {
-                    name = varName + "." + name;
+                    name.insert(0, varName + ".");
                 }
                 break;
             }
@@ -808,14 +799,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // field bar.
                     if (!testVanillaNameForClass(propertyPart)) return null;
                     doInitialClassTest= false;
-                    name = propertyPart;
+                    name = new StringBuilder(propertyPart);
                 } else {
-                    name = propertyPart + "." + name;
+                    name.insert(0, propertyPart + ".");
                 }
             }
         }
         if (name.length() == 0) return null;
-        return name;
+        return name.toString();
     }
 
     // iterate from the inner most to the outer and check for classes
@@ -1361,7 +1352,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     checkCyclicInheritance(originalNode, null, intf.getInterfaces());
                 }
             } else {
-                return;
             }
         }
     }

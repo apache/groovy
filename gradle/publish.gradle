@@ -46,7 +46,32 @@ allprojects {
                 }
             }
             publish {
-                excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
+                excludePatterns = [
+//                        'org/codehaus/groovy/groovy/**',
+//                        'org/codehaus/groovy/groovy-ant/**',
+//                        'org/codehaus/groovy/groovy-backports-compat23/**',
+//                        'org/codehaus/groovy/groovy-binary/**',
+//                        'org/codehaus/groovy/groovy-bsf/**',
+//                        'org/codehaus/groovy/groovy-console/**',
+//                        'org/codehaus/groovy/groovy-docgenerator/**',
+//                        'org/codehaus/groovy/groovy-groovydoc/**',
+//                        'org/codehaus/groovy/groovy-groovysh/**',
+//                        'org/codehaus/groovy/groovy-jmx/**',
+//                        'org/codehaus/groovy/groovy-json/**',
+//                        'org/codehaus/groovy/groovy-jsr223/**',
+//                        'org/codehaus/groovy/groovy-macro/**',
+//                        'org/codehaus/groovy/groovy-nio/**',
+//                        'org/codehaus/groovy/groovy-servlet/**',
+//                        'org/codehaus/groovy/groovy-sql/**',
+//                        'org/codehaus/groovy/groovy-swing/**',
+//                        'org/codehaus/groovy/groovy-templates/**',
+//                        'org/codehaus/groovy/groovy-test/**',
+//                        'org/codehaus/groovy/groovy-testng/**',
+//                        'org/codehaus/groovy/groovy-xml/**',
+                        'org/codehaus/groovy/groovy/*/groovy-all-*',
+                        'org/codehaus/groovy/groovy/*/groovy-backports-*',
+                        'org/codehaus/groovy/groovy/*/groovy-binary-*'
+                ].join(',')
                 repository {
                     repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local'
                     //The Artifactory repository key to publish to
@@ -84,8 +109,10 @@ artifactoryPublish {
                 }
             }
         }
+        deployDetails.add(makeTransformedPomDetails(name: 'groovy-all'))
 
         if (isReleaseVersion) {
+            deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-all'))
             allprojects {
                 if (project == rootProject || rootProject.ext.modules().contains(project)) {
                     configurations.archives.artifacts.findAll {

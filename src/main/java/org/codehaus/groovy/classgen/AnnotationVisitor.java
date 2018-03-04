@@ -240,15 +240,10 @@ public class AnnotationVisitor {
         if (attrType.isArray()) {
             checkReturnType(attrType.getComponentType(), node);
         } else if (ClassHelper.isPrimitiveType(attrType)) {
-            return;
         } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
-            return;
         } else if (ClassHelper.CLASS_Type.equals(attrType)) {
-            return;
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
-            return;
         } else if (isValidAnnotationClass(attrType)) {
-            return;
         } else {
             addError("Unexpected return type " + attrType.getName(), node);
         }

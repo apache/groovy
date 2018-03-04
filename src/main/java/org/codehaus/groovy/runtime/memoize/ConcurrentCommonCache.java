@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @since 2.5.0
  */
 @ThreadSafe
-public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serializable {
+public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = -7352338549333024936L;
 
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
@@ -93,26 +93,16 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      * {@inheritDoc}
      */
     @Override
-    public V get(K key) {
-        readLock.lock();
-        try {
-            return commonCache.get(key);
-        } finally {
-            readLock.unlock();
-        }
+    public V get(final K key) {
+        return doWithReadLock(c -> c.get(key));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public V put(K key, V value) {
-        writeLock.lock();
-        try {
-            return commonCache.put(key, value);
-        } finally {
-            writeLock.unlock();
-        }
+    public V put(final K key, final V value) {
+        return doWithWriteLock(c -> c.put(key, value));
     }
 
     /**
@@ -129,7 +119,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
         readLock.lock();
         try {
             value = commonCache.get(key);
-            if (null != value) {
+            if (null != convertValue(value)) {
                 return value;
             }
         } finally {
@@ -140,12 +130,12 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
         try {
             // try to find the cached value again
             value = commonCache.get(key);
-            if (null != value) {
+            if (null != convertValue(value)) {
                 return value;
             }
 
             value = null == valueProvider ? null : valueProvider.provide(key);
-            if (shouldCache && null != value) {
+            if (shouldCache && null != convertValue(value)) {
                 commonCache.put(key, value);
             }
         } finally {
@@ -160,12 +150,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      */
     @Override
     public Collection<V> values() {
-        readLock.lock();
-        try {
-            return commonCache.values();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.values());
     }
 
     /**
@@ -173,25 +158,15 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      */
     @Override
     public Set<K> keys() {
-        readLock.lock();
-        try {
-            return commonCache.keys();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.keys());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(K key) {
-        readLock.lock();
-        try {
-            return commonCache.containsKey(key);
-        } finally {
-            readLock.unlock();
-        }
+    public boolean containsKey(final K key) {
+        return doWithReadLock(c -> c.containsKey(key));
     }
 
     /**
@@ -199,25 +174,15 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      */
     @Override
     public int size() {
-        readLock.lock();
-        try {
-            return commonCache.size();
-        } finally {
-            readLock.unlock();
-        }
+        return doWithReadLock(c -> c.size());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public V remove(K key) {
-        writeLock.lock();
-        try {
-            return commonCache.remove(key);
-        } finally {
-            writeLock.unlock();
-        }
+    public V remove(final K key) {
+        return doWithWriteLock(c -> c.remove(key));
     }
 
     /**
@@ -225,12 +190,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      */
     @Override
     public Map<K, V> clear() {
-        writeLock.lock();
-        try {
-            return commonCache.clear();
-        } finally {
-            writeLock.unlock();
-        }
+        return doWithWriteLock(c -> c.clear());
     }
 
     /**
@@ -238,11 +198,48 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, Serial
      */
     @Override
     public void cleanUpNullReferences() {
+        doWithWriteLock(c -> {
+            c.cleanUpNullReferences();
+            return null;
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object convertValue(V value) {
+        return value;
+    }
+
+    /**
+     * deal with the backed cache guarded by write lock
+     * @param action the content to complete
+     */
+    public <R> R doWithWriteLock(Action<K, V, R> action) {
         writeLock.lock();
         try {
-            commonCache.cleanUpNullReferences();
+            return action.doWith(commonCache);
         } finally {
             writeLock.unlock();
         }
+    }
+
+    /**
+     * deal with the backed cache guarded by read lock
+     * @param action the content to complete
+     */
+    public <R> R doWithReadLock(Action<K, V, R> action) {
+        readLock.lock();
+        try {
+            return action.doWith(commonCache);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @FunctionalInterface
+    public interface Action<K, V, R> {
+        R doWith(CommonCache<K, V> commonCache);
     }
 }

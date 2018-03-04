@@ -1095,18 +1095,6 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitBinaryExpression(expression);
         }
 
-        protected void visitListOfExpressions(List<? extends Expression> list) {
-            if (list == null) return;
-            for (Expression expression : list) {
-                if (expression instanceof SpreadExpression) {
-                    Expression spread = ((SpreadExpression) expression).getExpression();
-                    spread.visit(this);
-                } else {
-                    expression.visit(this);
-                }
-            }
-        }
-
         public void visitGStringExpression(final GStringExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getStrings());

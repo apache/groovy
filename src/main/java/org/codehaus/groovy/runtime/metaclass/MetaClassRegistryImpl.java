@@ -56,13 +56,6 @@ import java.util.Properties;
  * A registry of MetaClass instances which caches introspection &
  * reflection information and allows methods to be dynamically added to
  * existing classes at runtime
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author John Wilson
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @author Graeme Rocher
- * @author Alex Tkachman
- *
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
     /**
@@ -187,7 +180,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
-               final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
+               final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor();
                  this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance();
            } catch (final ClassNotFoundException e) {
                this.metaClassCreationHandle = new MetaClassCreationHandle();

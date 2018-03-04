@@ -940,7 +940,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    protected void visitListOfExpressions(final List<? extends Expression> list) {
+    void visitListOfExpressions(final List<? extends Expression> list) {
         if (list == null) return;
         def currentExprs = (List<Expression>) current
         if (currentExprs.size() != list.size()) {

@@ -35,6 +35,11 @@ import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 
+/**
+ * Used to provide custom property handling when getting, setting or initializing properties.
+ *
+ * @since 2.5.0
+ */
 @Incubating
 public abstract class PropertyHandler {
     private static final Class<? extends Annotation> PROPERTY_OPTIONS_CLASS = PropertyOptions.class;

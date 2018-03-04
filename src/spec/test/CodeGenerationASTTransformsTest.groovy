@@ -1434,14 +1434,19 @@ firstLastAge()
 // tag::builder_initializer_immutable[]
 import groovy.transform.builder.*
 import groovy.transform.*
+import static groovy.transform.options.Visibility.PRIVATE
 
 @Builder(builderStrategy=InitializerStrategy)
 @Immutable
+@VisibilityOptions(PRIVATE)
 class Person {
     String first
     String last
     int born
 }
+
+def publicCons = Person.constructors
+assert publicCons.size() == 1
 
 @CompileStatic
 def createFirstLastBorn() {

@@ -158,7 +158,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                                      String propertyName) {
                     Closure cls = (Closure) childPropertySetter;
                     cls.setDelegate(self);
-                    cls.call(new Object[]{parent, child, parentName, propertyName});
+                    cls.call(parent, child, parentName, propertyName);
                 }
             };
         } else {
@@ -271,7 +271,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                         throws InstantiationException, IllegalAccessException {
                     Closure cls = (Closure) newInstanceResolver;
                     cls.setDelegate(self);
-                    return cls.call(new Object[]{klass, attributes});
+                    return cls.call(klass, attributes);
                 }
             };
         } else {

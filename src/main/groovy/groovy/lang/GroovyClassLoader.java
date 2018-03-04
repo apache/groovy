@@ -45,6 +45,7 @@ import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
+import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -96,7 +97,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final EvictableCache<String, Class> classCache = new ConcurrentCommonCache<String, Class>();
+    protected final EvictableCache<String, Class> classCache = new UnlimitedConcurrentCache<String, Class>();
 
     /**
      * This cache contains mappings of file name to class. It is used

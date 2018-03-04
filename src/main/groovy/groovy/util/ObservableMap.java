@@ -187,7 +187,7 @@ public class ObservableMap implements Map {
             oldValue = delegate.put(key, value);
             Object result = null;
             if (test.getMaximumNumberOfParameters() == 2) {
-                result = test.call(new Object[]{key, value});
+                result = test.call(key, value);
             } else {
                 result = test.call(value);
             }
@@ -227,7 +227,7 @@ public class ObservableMap implements Map {
                     oldValue = delegate.put(key, newValue);
                     Object result = null;
                     if (test.getMaximumNumberOfParameters() == 2) {
-                        result = test.call(new Object[]{key, newValue});
+                        result = test.call(key, newValue);
                     } else {
                         result = test.call(newValue);
                     }

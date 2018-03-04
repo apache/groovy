@@ -65,9 +65,6 @@ import java.util.Map;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
  */
 public class XmlParser implements ContentHandler {
 
@@ -82,7 +79,7 @@ public class XmlParser implements ContentHandler {
     private boolean namespaceAware;
 
     /**
-     * Creates a non-validating and non-namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
+     * Creates a non-validating and namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
      *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.

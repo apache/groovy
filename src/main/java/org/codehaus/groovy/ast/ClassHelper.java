@@ -29,7 +29,7 @@ import groovy.lang.Range;
 import groovy.lang.Reference;
 import groovy.lang.Script;
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.classgen.asm.util.TypeDescriptionUtil;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GeneratedLambda;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -318,7 +318,7 @@ public class ClassHelper {
      * @see #make(String)
      */
     public static boolean isPrimitiveType(ClassNode cn) {
-        return TypeDescriptionUtil.isPrimitiveType(cn);
+        return TypeUtil.isPrimitiveType(cn);
     }
 
     /**

@@ -96,7 +96,7 @@ public class JavaStubGenerator {
         dir.mkdirs();
     }
 
-    private static final int DEFAULT_BUFFER_SIZE = 64 * 1024; // 64K
+    private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
         // Only attempt to render our self if our super-class is resolved, else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {

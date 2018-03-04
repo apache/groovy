@@ -62,7 +62,7 @@ public class SocketGroovyMethods extends DefaultGroovyMethodsSupport {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            T result = closure.call(new Object[]{input, output});
+            T result = closure.call(input, output);
 
             InputStream temp1 = input;
             input = null;
@@ -95,7 +95,7 @@ public class SocketGroovyMethods extends DefaultGroovyMethodsSupport {
         ObjectOutputStream oos = new ObjectOutputStream(output);
         ObjectInputStream ois = new ObjectInputStream(input);
         try {
-            T result = closure.call(new Object[]{ois, oos});
+            T result = closure.call(ois, oos);
 
             InputStream temp1 = ois;
             ois = null;

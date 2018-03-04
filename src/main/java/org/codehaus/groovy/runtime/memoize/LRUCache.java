@@ -34,23 +34,22 @@ import java.util.concurrent.ConcurrentMap;
  */
 @ThreadSafe
 public final class LRUCache<K, V> implements MemoizeCache<K, V> {
-    private final ConcurrentMap<K, V> cache;
+    private final ConcurrentMap<K, V> map;
 
     public LRUCache(final int maxCacheSize) {
-//        cache = Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize));
-        cache = new ConcurrentLinkedHashMap.Builder<K, V>()
+        map = new ConcurrentLinkedHashMap.Builder<K, V>()
                 .maximumWeightedCapacity(maxCacheSize)
                 .build();
     }
 
     @Override
     public V put(final K key, final V value) {
-        return cache.put(key, value);
+        return map.put(key, value);
     }
 
     @Override
     public V get(final K key) {
-        return cache.get(key);
+        return map.get(key);
     }
 
     /**
@@ -64,15 +63,15 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
-        return cache.computeIfAbsent(key, k -> valueProvider.provide(k));
+        return map.computeIfAbsent(key, k -> valueProvider.provide(k));
     }
 
     /**
      * Remove all entries holding SoftReferences to gc-evicted objects.
      */
     public void cleanUpNullReferences() {
-        synchronized (cache) {
-            final Iterator<Map.Entry<K, V>> iterator = cache.entrySet().iterator();
+        synchronized (map) {
+            final Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()) {
                 final Map.Entry<K, V> entry = iterator.next();
                 final Object value = entry.getValue();
