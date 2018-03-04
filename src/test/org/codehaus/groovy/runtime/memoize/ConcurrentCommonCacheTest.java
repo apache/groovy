@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentCommonCacheTest {
     @Test
@@ -199,5 +201,35 @@ public class ConcurrentCommonCacheTest {
         Assert.assertEquals("2", sc.get("b"));
         Assert.assertEquals("3", sc.get("c"));
         Assert.assertEquals("5", sc.get("d"));
+    }
+
+    @Test
+    public void testAccessCacheConcurrently() throws InterruptedException {
+        final ConcurrentCommonCache<Integer, Integer> m = new ConcurrentCommonCache<>();
+
+        final int threadNum = 30;
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final CountDownLatch countDownLatch2 = new CountDownLatch(threadNum);
+
+        final AtomicInteger cnt = new AtomicInteger(0);
+
+        for (int i = 0; i < threadNum; i++) {
+            new Thread(() -> {
+                try {
+                    countDownLatch.await();
+
+                    m.getAndPut(123, k -> cnt.getAndIncrement());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    countDownLatch2.countDown();
+                }
+            }).start();
+        }
+
+        countDownLatch.countDown();
+        countDownLatch2.await();
+
+        Assert.assertEquals(1, cnt.get());
     }
 }
