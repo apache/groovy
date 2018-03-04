@@ -237,7 +237,7 @@ class Groovysh extends Shell {
         String variableBlocks = ''
         // To make groovysh behave more like an interpreter, we need to retrive all bound
         // vars at the end of script execution, and then update them into the groovysh Binding context.
-        Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(current.join(Parser.NEWLINE))
+        Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(current.join(Parser.NEWLINE), interp.classLoader)
         variableBlocks += "$COLLECTED_BOUND_VARS_MAP_VARNAME = new HashMap();"
         if (boundVars) {
             boundVars.each({ String varname ->
