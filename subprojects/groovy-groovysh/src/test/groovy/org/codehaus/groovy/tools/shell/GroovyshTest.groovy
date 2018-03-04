@@ -315,6 +315,17 @@ class GroovyshTest extends GroovyTestCase {
         } catch (ArithmeticException e) {}
     }
 
+    void testImports() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.execute('import java.rmi.Remote ')
+        assert mockOut.toString().length() > 0
+        assert 'java.rmi.Remote\n' == mockOut.toString().normalize()[-('java.rmi.Remote\n'.length())..-1]
+        groovysh.execute('Remote r')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert 'null\n' == mockOut.toString().normalize()[-5..-1]
+    }
+
     static File createTemporaryGroovyScriptFile(content) {
         String testName = 'GroovyshTest' + System.currentTimeMillis()
         File groovyCode = new File(System.getProperty('java.io.tmpdir'), testName)
