@@ -62,9 +62,13 @@ class GroovyshTest extends GroovyTestCase {
 
     void testClassDef() {
         Groovysh groovysh = createGroovysh()
-        groovysh.execute('class Foo {}')
+        groovysh.execute('class MyFooTestClass{ String foo }')
         assert mockOut.toString().length() > 0
         assert ' true\n' == mockOut.toString().normalize()[-6..-1]
+        groovysh.execute('m = new MyFooTestClass()')
+        assert mockOut.toString().length() > 0
+        // mostly assert no exception
+        assert mockOut.toString().normalize().contains('MyFooTestClass@')
     }
 
     void testmethodDef() {
