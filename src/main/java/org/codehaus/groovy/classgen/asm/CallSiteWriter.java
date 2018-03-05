@@ -67,13 +67,13 @@ import static org.objectweb.asm.Opcodes.RETURN;
  * use this class in your code
  */
 public class CallSiteWriter {
-    
-    private static String [] sig = new String [255];
+    private static final int SIG_ARRAY_LENGTH = 255;
+    private static String [] sig = new String [SIG_ARRAY_LENGTH];
     private static String getCreateArraySignature(int numberOfArguments) {
-        if (numberOfArguments >= 255) {
+        if (numberOfArguments >= SIG_ARRAY_LENGTH) {
             throw new IllegalArgumentException(String.format(
-                      "The max number of arguments is 255, actual got %s",
-                      numberOfArguments);
+                      "The max number of arguments is %s, actual got %s",
+                        SIG_ARRAY_LENGTH, numberOfArguments));
         }
         if (sig[numberOfArguments] == null) {
             StringBuilder sb = new StringBuilder("(");
