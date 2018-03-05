@@ -38,8 +38,8 @@ import java.util.concurrent.locks.StampedLock;
  */
 @ThreadSafe
 public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
-    private static final long serialVersionUID = -7352338549333024936L;
 
+    private static final long serialVersionUID = 6760742552334555146L;
     private final StampedLock sl = new StampedLock();
     private final CommonCache<K, V> commonCache;
 
