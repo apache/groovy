@@ -70,6 +70,11 @@ public class CallSiteWriter {
     
     private static String [] sig = new String [255];
     private static String getCreateArraySignature(int numberOfArguments) {
+        if (numberOfArguments >= 255) {
+            throw new IllegalArgumentException(String.format(
+                      "The max number of arguments is 255, actual got %s",
+                      numberOfArguments);
+        }
         if (sig[numberOfArguments] == null) {
             StringBuilder sb = new StringBuilder("(");
             for (int i = 0; i != numberOfArguments; ++i) {
