@@ -597,14 +597,16 @@ public class Sql {
         Connection connection;
         LOG.fine("url = " + url);
         if (props != null) {
-            Properties propsCopy = new Properties(props);
-            connection = DriverManager.getConnection(url.toString(), propsCopy);
-            if (propsCopy.containsKey("password")) {
+            connection = DriverManager.getConnection(url.toString(), props);
+            if (!props.containsKey("password")) {
+                LOG.fine("props = " + props);
+            } else {
                 // don't log the password
-                propsCopy = new Properties(propsCopy);
+                Properties propsCopy = new Properties();
+                propsCopy.putAll(props);
                 propsCopy.setProperty("password", "***");
+                LOG.fine("props = " + propsCopy);
             }
-            LOG.fine("props = " + propsCopy);
         } else if (sqlArgs.containsKey("user")) {
             Object user = sqlArgs.remove("user");
             LOG.fine("user = " + user);
