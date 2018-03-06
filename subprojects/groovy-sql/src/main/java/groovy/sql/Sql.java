@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -589,14 +590,18 @@ public class Sql {
         Connection connection;
         LOG.fine("url = " + url);
         if (props != null) {
-            Properties propsCopy = new Properties(props);
-            connection = DriverManager.getConnection(url.toString(), propsCopy);
-            if (propsCopy.containsKey("password")) {
-                // don't log the password
-                propsCopy = new Properties(propsCopy);
-                propsCopy.setProperty("password", "***");
+            connection = DriverManager.getConnection(url.toString(), props);
+            if (LOG.isLoggable(Level.FINE)) {
+                if (!props.containsKey("password")) {
+                    LOG.fine("props = " + props);
+                } else {
+                    // don't log the password
+                    Properties propsCopy = new Properties();
+                    propsCopy.putAll(props);
+                    propsCopy.setProperty("password", "***");
+                    LOG.fine("props = " + propsCopy);
+                }
             }
-            LOG.fine("props = " + propsCopy);
         } else if (sqlArgs.containsKey("user")) {
             Object user = sqlArgs.remove("user");
             LOG.fine("user = " + user);
