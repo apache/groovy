@@ -72,7 +72,7 @@ public class CallSiteWriter {
     private static String getCreateArraySignature(int numberOfArguments) {
         if (numberOfArguments >= SIG_ARRAY_LENGTH) {
             throw new IllegalArgumentException(String.format(
-                      "The max number of arguments is %s, actual got %s",
+                      "The max number of supported arguments is %s, but found %s",
                         SIG_ARRAY_LENGTH, numberOfArguments));
         }
         if (sig[numberOfArguments] == null) {
@@ -102,8 +102,7 @@ public class CallSiteWriter {
         METHOD_OO_DESC          = "(Ljava/lang/Object;)Ljava/lang/Object;",
         CREATE_CSA_METHOD       = "$createCallSiteArray";
     public static final String CONSTRUCTOR = "<$constructor$>";
-    
-    private final List callSites = new ArrayList(32);
+    private final List<String> callSites = new ArrayList<String>(32);
     private int callSiteArrayVarIndex = -1;
     private final WriterController controller;
 
