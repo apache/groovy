@@ -327,7 +327,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
         def innerClassNodes = compileUnit.generatedInnerClasses.values().sort { it.name }
         innerClassNodes.each { InnerClassNode innerClassNode ->
-            if (!innerClassNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) return
+            if (!innerClassNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type) && !innerClassNode.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) return
             if (innerClassNode.outerMostClass != classNode) return
 
             def child = adapter.make(innerClassNode)

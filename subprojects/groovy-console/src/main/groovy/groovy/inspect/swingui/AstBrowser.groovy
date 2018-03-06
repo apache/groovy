@@ -127,7 +127,7 @@ class AstBrowser {
                                 mnemonic: 'C')
                     }
                     checkBoxMenuItem(selected: showClosureClasses) {
-                        action(name: 'Generated Closure Classes', closure: this.&showClosureClasses,
+                        action(name: 'Generated Closure/Lambda Classes', closure: this.&showClosureClasses,
                                 mnemonic: 'G')
                     }
                     checkBoxMenuItem(selected: showTreeView) {
