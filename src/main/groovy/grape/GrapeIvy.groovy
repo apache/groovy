@@ -54,9 +54,7 @@ import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
 /**
- * @author Danno Ferrin
- * @author Paul King
- * @author Roshan Dawrani (roshandawrani)
+ * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Ivy.
  */
 class GrapeIvy implements GrapeEngine {
 
