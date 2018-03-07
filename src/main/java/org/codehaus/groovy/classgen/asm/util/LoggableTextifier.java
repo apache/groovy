@@ -19,14 +19,15 @@
 package org.codehaus.groovy.classgen.asm.util;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -35,7 +36,8 @@ import java.util.List;
  * @since 2.5.0
  */
 public class LoggableTextifier extends Textifier {
-//    private static final Logger LOGGER = Logger.getLogger(LoggableTextifier.class.getName());
+    private static final String GROOVY = ".groovy.";
+    private static final String LOGGABLE_TEXTIFIER = ".LoggableTextifier";
     private int loggedLineCnt = 0;
 
     public LoggableTextifier() {
@@ -50,6 +52,7 @@ public class LoggableTextifier extends Textifier {
     protected void log() {
         int textSize = text.size();
 
+        List<Object> bcList = new LinkedList<>();
         for (int i = loggedLineCnt; i < textSize; i++) {
             Object bc = text.get(i);
 
@@ -57,10 +60,34 @@ public class LoggableTextifier extends Textifier {
                 continue;
             }
 
-            System.out.print(bc);
+            bcList.add(bc);
+        }
+
+        if (bcList.size() > 0) {
+            String invocationPositionInfo = getInvocationPositionInfo();
+            if (!StringGroovyMethods.isBlank(invocationPositionInfo)) {
+                System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t// " + invocationPositionInfo);
+            }
+
+            for (Object bc : bcList) {
+                System.out.print(bc);
+            }
         }
 
         loggedLineCnt = textSize;
+    }
+
+    private String getInvocationPositionInfo() {
+        StackTraceElement[] stackTraceElements = new Throwable().getStackTrace();
+
+        for (StackTraceElement stackTraceElement : stackTraceElements) {
+            String className = stackTraceElement.getClassName();
+            if (className.contains(GROOVY) && !className.endsWith(LOGGABLE_TEXTIFIER)) {
+                return String.format("%s#%s:%s", className, stackTraceElement.getMethodName(), stackTraceElement.getLineNumber());
+            }
+        }
+
+        return "";
     }
 
 

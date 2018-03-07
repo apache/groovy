@@ -3835,4 +3835,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         return false;
     }
+
+    /**
+     * Tests if this CharSequence is blank
+     * @return {@code true} if this CharSequence is blank
+     *
+     * @since   2.5.0
+     */
+    public static boolean isBlank(CharSequence self) {
+        if (null == self) {
+            return true;
+        }
+
+        return self.toString().matches("\\s*");
+    }
 }
