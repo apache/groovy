@@ -26,7 +26,20 @@ import org.objectweb.asm.Opcodes;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.apache.groovy.parser.antlr4.GroovyParser.*;
+import static org.apache.groovy.parser.antlr4.GroovyParser.ABSTRACT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
+import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
+import static org.apache.groovy.parser.antlr4.GroovyParser.NATIVE;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PRIVATE;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PROTECTED;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PUBLIC;
+import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
+import static org.apache.groovy.parser.antlr4.GroovyParser.STRICTFP;
+import static org.apache.groovy.parser.antlr4.GroovyParser.SYNCHRONIZED;
+import static org.apache.groovy.parser.antlr4.GroovyParser.TRANSIENT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
@@ -45,6 +58,7 @@ public class ModifierNode extends ASTNode {
     public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Maps.of(
             ANNOTATION_TYPE, 0,
             DEF, 0,
+            VAR, 0,
 
             NATIVE, Opcodes.ACC_NATIVE,
             SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED,
@@ -115,7 +129,7 @@ public class ModifierNode extends ASTNode {
     }
 
     public boolean isDef() {
-        return Objects.equals(DEF, this.type);
+        return Objects.equals(DEF, this.type) || Objects.equals(VAR, this.type);
     }
 
     public Integer getType() {
