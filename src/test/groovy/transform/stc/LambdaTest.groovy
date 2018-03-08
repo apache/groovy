@@ -50,6 +50,8 @@ class LambdaTest extends GroovyTestCase {
     }
 
     void testFunction2() {
+        if (PRE_JAVA8 || !USE_PARROT) return;
+
         assertScript '''
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
