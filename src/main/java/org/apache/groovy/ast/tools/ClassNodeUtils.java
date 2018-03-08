@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import groovy.transform.Generated;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -28,6 +29,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -41,6 +43,8 @@ import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
  * Utility class for working with ClassNodes
  */
 public class ClassNodeUtils {
+    private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
+
     /**
      * Formats a type name into a human readable version. For arrays, appends "[]" to the formatted
      * type name of the component. For unit class nodes, uses the class node name.
@@ -278,6 +282,30 @@ public class ClassNodeUtils {
             if (next.getParameters().length == 0) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if an explicit (non-generated) constructor is in the class.
+     *
+     * @param xform if non null, add an error if an explicit constructor is found
+     * @param cNode the type of the containing class
+     * @return true if an explicit (non-generated) constructor was found
+     */
+    public static boolean hasExplicitConstructor(AbstractASTTransformation xform, ClassNode cNode) {
+        List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
+        for (ConstructorNode constructorNode : declaredConstructors) {
+            // allow constructors added by other transforms if flagged as Generated
+            if (AbstractASTTransformation.hasAnnotation(constructorNode, GENERATED_TYPE)) {
+                continue;
+            }
+            if (xform != null) {
+                xform.addError("Error during " + xform.getAnnotationName() +
+                        " processing. Explicit constructors not allowed for class: " +
+                        cNode.getNameWithoutPackage(), constructorNode);
+            }
+            return true;
         }
         return false;
     }

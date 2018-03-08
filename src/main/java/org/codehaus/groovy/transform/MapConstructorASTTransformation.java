@@ -45,11 +45,13 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -138,10 +140,13 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                                            boolean includeSuperProperties, boolean includeSuperFields, boolean noArg,
                                            boolean allNames, boolean allProperties, boolean specialNamedArgHandling, boolean includeStatic,
                                            List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source) {
-        List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
-        boolean foundEmpty = constructors.size() == 1 && constructors.get(0).getFirstStatement() == null;
+
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
-        if (foundEmpty) constructors.remove(0);
+        Iterator<ConstructorNode> iterator = cNode.getDeclaredConstructors().iterator();
+        while (iterator.hasNext()) {
+            ConstructorNode next = iterator.next();
+            if (next.getFirstStatement() == null) iterator.remove();
+        }
 
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
@@ -182,6 +187,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
     }
 
     private static void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
+        markAsGenerated(cNode, constructorNode);
         cNode.addConstructor(constructorNode);
         // GROOVY-5814: Immutable is not compatible with @CompileStatic
         Parameter argsParam = null;
@@ -224,7 +230,9 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
     private static void createNoArgConstructor(ClassNode cNode, int modifiers) {
         Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
-        cNode.addConstructor(new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        ConstructorNode consNode = new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        markAsGenerated(cNode, consNode);
+        cNode.addConstructor(consNode);
     }
 
     private static ClassCodeExpressionTransformer makeMapTypedArgsTransformer() {
