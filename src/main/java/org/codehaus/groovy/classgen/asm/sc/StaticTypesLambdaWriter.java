@@ -40,6 +40,7 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Handle;
@@ -288,6 +289,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             lambdaClass.addInterface(ClassHelper.GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(WriterControllerFactory.class, factory);
         }
+        lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return lambdaClass;
     }
 
