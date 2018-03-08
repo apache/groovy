@@ -214,6 +214,7 @@ class SyntaxErrorTest extends GroovyTestCase {
 
     void "test groovy core - var"() {
         TestUtils.doRunAndShouldFail('fail/Var_01x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Var_02x.groovy');
     }
 
     /**************************************/

@@ -347,7 +347,7 @@ IN              : 'in';
 TRAIT           : 'trait';
 THREADSAFE      : 'threadsafe'; // reserved keyword
 
-// Java10 keywords
+// the reserved type name of Java10
 VAR             : 'var';
 
 // §3.9 Keywords

@@ -1550,6 +1550,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         validateMethodDeclaration(ctx);
 
         ModifierManager modifierManager = createModifierManager(ctx);
+
+        if (modifierManager.contains(VAR)) {
+            throw createParsingFailedException("var cannot be used for method declarations", ctx);
+        }
+
         String methodName = this.visitMethodName(ctx.methodName());
         ClassNode returnType = this.visitReturnType(ctx.returnType());
         Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
