@@ -417,7 +417,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
                             Label nullLabel = new Label();
-                            /**
+                            /*
                              *  the code is:
                              *  if (this.metaClass==null) {
                              *      this.metaClass = this.$getStaticMetaClass
@@ -462,7 +462,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 List list = new ArrayList();
                 list.add(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
-                        /**
+                        /*
                          * the code is (meta class is stored in 1):
                          * this.metaClass = <1>
                          */
