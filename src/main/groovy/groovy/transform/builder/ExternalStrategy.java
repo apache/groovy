@@ -109,6 +109,7 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         if (unsupportedAttribute(transform, anno, "builderClassName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
+        if (unsupportedAttribute(transform, anno, "force")) return;
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
         boolean allProperties = !transform.memberHasValue(anno, "allProperties", false);
         List<PropertyInfo> props = getPropertyInfos(transform, anno, buildee, excludes, includes, allNames, allProperties);

@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -52,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.builtinOrMarkedImmutableClass;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.createErrorMessage;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -94,7 +94,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     private static final String COPY_WITH_METHOD = "copyWith";
 
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
-    public static final String IMMUTABLE_SAFE_FLAG = "Immutable.Safe";
 
     @Override
     public String getAnnotationName() {
@@ -147,7 +146,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 //            if (unsupportedTupleAttribute(tupleCons, "useSetters")) return;
             if (unsupportedTupleAttribute(tupleCons, "force")) return;
         }
-        if (!validateConstructors(cNode)) return;
+        if (hasExplicitConstructor(this, cNode)) return;
         if (memberHasValue(node, MEMBER_ADD_COPY_WITH, true) && !pList.isEmpty() &&
                 !hasDeclaredMethod(cNode, COPY_WITH_METHOD, 1)) {
             createCopyWith(cNode, pList);
@@ -208,20 +207,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         final FieldNode newfn = cNode.getField(fn.getName());
         cNode.getFields().remove(newfn);
         cNode.addField(fn);
-    }
-
-    private boolean validateConstructors(ClassNode cNode) {
-        List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
-        for (ConstructorNode constructorNode : declaredConstructors) {
-            // allow constructors added by other transforms if flagged as safe
-            Object nodeMetaData = constructorNode.getNodeMetaData(IMMUTABLE_SAFE_FLAG);
-            if (nodeMetaData != null && ((Boolean) nodeMetaData)) {
-                continue;
-            }
-            addError("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage(), constructorNode);
-            return false;
-        }
-        return true;
     }
 
     static boolean makeImmutable(ClassNode cNode) {
