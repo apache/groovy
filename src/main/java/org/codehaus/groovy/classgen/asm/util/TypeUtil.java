@@ -203,7 +203,7 @@ public abstract class TypeUtil {
             Type.SHORT_TYPE, "java/lang/Short"
     );
 
-    private static final Map<Class, Class> PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP = Maps.of(
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP = Maps.of(
         byte.class, Byte.class,
         boolean.class, Boolean.class,
         char.class, Character.class,
