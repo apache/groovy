@@ -18,28 +18,12 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.util.TripleKeyHashMap;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ReflectionCache {
-    private static final Map primitiveTypesMap = new HashMap();
-
-    static {
-        primitiveTypesMap.put(byte.class, Byte.class);
-        primitiveTypesMap.put(boolean.class, Boolean.class);
-        primitiveTypesMap.put(char.class, Character.class);
-        primitiveTypesMap.put(double.class, Double.class);
-        primitiveTypesMap.put(float.class, Float.class);
-        primitiveTypesMap.put(int.class, Integer.class);
-        primitiveTypesMap.put(long.class, Long.class);
-        primitiveTypesMap.put(short.class, Short.class);
-    }
-
     public static Class autoboxType(Class type) {
-        final Class res = (Class) primitiveTypesMap.get(type);
-        return res == null ? type : res;
+        return TypeUtil.autoboxType(type);
     }
 
     static TripleKeyHashMap mopNames = new TripleKeyHashMap();
@@ -55,10 +39,11 @@ public class ReflectionCache {
     static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
     public static boolean isArray(Class klazz) {
-      return klazz.getName().charAt(0) == '[';
+      return klazz.isArray();
     }
 
     static void setAssignableFrom(Class klazz, Class aClass) {
+        // FIXME no implementation?
 //        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
 //        if (val.getValue() == null) {
 //            val.setValue(Boolean.TRUE);
@@ -107,7 +92,7 @@ public class ReflectionCache {
         if (klazz == null)
           return null;
         
-        return ClassInfo.getClassInfo(klazz).getCachedClass ();
+        return ClassInfo.getClassInfo(klazz).getCachedClass();
     }
 
 }
