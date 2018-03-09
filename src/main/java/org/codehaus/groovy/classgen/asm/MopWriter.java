@@ -86,7 +86,7 @@ public class MopWriter {
     
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
-        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type) || classNode.declaresInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+        if (classNode.declaresAnyInterfaces(ClassHelper.GENERATED_CLOSURE_Type, ClassHelper.GENERATED_LAMBDA_TYPE)) {
             return;
         }
         Set<MopKey> currentClassSignatures = buildCurrentClassSignatureSet(classNode.getMethods());
