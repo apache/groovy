@@ -52,6 +52,11 @@ import static org.objectweb.asm.Opcodes.LRETURN;
  * @since 2.5.0
  */
 public abstract class TypeUtil {
+    public static Class autoboxType(Class type) {
+        final Class res = PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP.get(type);
+        return res == null ? type : res;
+    }
+
     public static int getLoadInsnByType(Type type) {
         Integer insn = PRIMITIVE_TYPE_TO_LOAD_INSN_MAP.get(type);
 
@@ -138,11 +143,6 @@ public abstract class TypeUtil {
         } while ((type = type.getComponentType()).isArray());
 
         return new Tuple2<ClassNode, Integer>(type, dimension);
-    }
-
-    public static Class autoboxType(Class type) {
-        final Class res = PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP.get(type);
-        return res == null ? type : res;
     }
 
     private static final String REF_DESCRIPTION = "L";
