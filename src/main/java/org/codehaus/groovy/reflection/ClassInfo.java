@@ -384,7 +384,7 @@ public class ClassInfo implements Finalizable {
                 cachedClass = new CachedClass(klazz, classInfo);
             }
         } else {
-            if (klazz.getName().charAt(0) == '[')
+            if (klazz.isArray())
               cachedClass = new ArrayCachedClass(klazz, classInfo);
             else if (klazz == Boolean.class) {
                 cachedClass = new BooleanCachedClass(klazz, classInfo, true);
