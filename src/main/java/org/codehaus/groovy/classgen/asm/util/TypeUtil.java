@@ -140,6 +140,11 @@ public abstract class TypeUtil {
         return new Tuple2<ClassNode, Integer>(type, dimension);
     }
 
+    public static Class autoboxType(Class type) {
+        final Class res = PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP.get(type);
+        return res == null ? type : res;
+    }
+
     private static final String REF_DESCRIPTION = "L";
     private static final Map<ClassNode, String> PRIMITIVE_TYPE_TO_DESCRIPTION_MAP = Maps.of(
             int_TYPE, "I",
@@ -196,5 +201,16 @@ public abstract class TypeUtil {
             Type.INT_TYPE, "java/lang/Integer",
             Type.LONG_TYPE, "java/lang/Long",
             Type.SHORT_TYPE, "java/lang/Short"
+    );
+
+    private static final Map<Class, Class> PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP = Maps.of(
+        byte.class, Byte.class,
+        boolean.class, Boolean.class,
+        char.class, Character.class,
+        double.class, Double.class,
+        float.class, Float.class,
+        int.class, Integer.class,
+        long.class, Long.class,
+        short.class, Short.class
     );
 }
