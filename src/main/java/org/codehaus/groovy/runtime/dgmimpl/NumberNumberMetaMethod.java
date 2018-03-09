@@ -60,59 +60,61 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
     }
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        Object firstArg = args[0];
+
         if (receiver instanceof Integer) {
-            if (args[0] instanceof Integer)
+            if (firstArg instanceof Integer)
                 return createIntegerInteger(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Long)
+            if (firstArg instanceof Long)
                 return createIntegerLong(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Float)
+            if (firstArg instanceof Float)
                 return createIntegerFloat(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Double)
+            if (firstArg instanceof Double)
                 return createIntegerDouble(site, metaClass, metaMethod, params, receiver, args);
         }
 
         if (receiver instanceof Long) {
-            if (args[0] instanceof Integer)
+            if (firstArg instanceof Integer)
                 return createLongInteger(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Long)
+            if (firstArg instanceof Long)
                 return createLongLong(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Float)
+            if (firstArg instanceof Float)
                 return createLongFloat(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Double)
+            if (firstArg instanceof Double)
                 return createLongDouble(site, metaClass, metaMethod, params, receiver, args);
         }
 
         if (receiver instanceof Float) {
-            if (args[0] instanceof Integer)
+            if (firstArg instanceof Integer)
                 return createFloatInteger(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Long)
+            if (firstArg instanceof Long)
                 return createFloatLong(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Float)
+            if (firstArg instanceof Float)
                 return createFloatFloat(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Double)
+            if (firstArg instanceof Double)
                 return createFloatDouble(site, metaClass, metaMethod, params, receiver, args);
         }
 
         if (receiver instanceof Double) {
-            if (args[0] instanceof Integer)
+            if (firstArg instanceof Integer)
                 return createDoubleInteger(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Long)
+            if (firstArg instanceof Long)
                 return createDoubleLong(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Float)
+            if (firstArg instanceof Float)
                 return createDoubleFloat(site, metaClass, metaMethod, params, receiver, args);
 
-            if (args[0] instanceof Double)
+            if (firstArg instanceof Double)
                 return createDoubleDouble(site, metaClass, metaMethod, params, receiver, args);
         }
 
