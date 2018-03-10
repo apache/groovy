@@ -2014,7 +2014,7 @@ public abstract class StaticTypeCheckingSupport {
 
         Map<String, GenericsType> map;
         if (mn.isStatic()) {
-            map = new HashMap<>();
+            map = new HashMap<String, GenericsType>();
         } else {
             map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
         }
