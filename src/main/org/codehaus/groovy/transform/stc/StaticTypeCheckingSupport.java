@@ -2010,10 +2010,16 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static Map<String, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
-        if (mn==null) return null;
-        Map<String, GenericsType> map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
-        map = mergeGenerics(map, mn.getGenericsTypes());
-        return map;
+        if (mn == null) return null;
+
+        Map<String, GenericsType> map;
+        if (mn.isStatic()) {
+            map = new HashMap<>();
+        } else {
+            map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
+        }
+
+        return mergeGenerics(map, mn.getGenericsTypes());
     }
 
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
