@@ -2744,11 +2744,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             inferredType = originType;
                         }
                     } else if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
-                        if (!isGenericsPlaceHolderOrArrayOf(originType)) { // the original type is not generics placeholder, use original type directly. See GROOVY-8439
-                            inferredType = originType;
-                        } else {
-                            addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
-                        }
+                        addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
                     }
 
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);

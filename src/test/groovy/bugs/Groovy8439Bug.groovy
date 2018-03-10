@@ -46,4 +46,18 @@ class Groovy8439Bug extends GroovyTestCase {
         Test.something(null, [])
         '''
     }
+
+    void testSTCGenerics2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        @CompileStatic
+        class Test<T extends Map> {
+            static def something(List<String> strList) {
+                strList.collect { "hello,$it" } 
+            }
+        }
+        
+        assert ["hello,Jochen", "hello,Paul", "hello,Daniel"] == Test.something(["Jochen", "Paul", "Daniel"])
+        '''
+    }
 }
