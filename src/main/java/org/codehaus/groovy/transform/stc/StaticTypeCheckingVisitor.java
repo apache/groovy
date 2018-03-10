@@ -2738,13 +2738,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                     }
                     boolean lastArg = i == length - 1;
+
                     if (lastArg && inferredType.isArray()) {
                         if (inferredType.getComponentType().equals(originType)) {
                             inferredType = originType;
                         }
                     } else if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
-                        addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
+                        if (!isGenericsPlaceHolderOrArrayOf(originType)) { // the original type is not generics placeholder, use original type directly. See GROOVY-8439
+                            inferredType = originType;
+                        } else {
+                            addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
+                        }
                     }
+
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
                 }
             }
