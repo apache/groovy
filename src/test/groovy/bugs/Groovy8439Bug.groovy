@@ -26,7 +26,7 @@ class Groovy8439Bug extends GroovyTestCase {
         class Test<T extends Task> {
             static def something(Task task, Collection<BaseVariant> variants) {
                 variants.collectMany { it.sourceFolders }.collect { ConfigurableFileTree tree ->
-                    task.getBuildDir().toPath().relativize(tree.dir.toPath()).toString() + File.separator
+                    tree.dir.toString() + File.separator
                 }
             }
         }
