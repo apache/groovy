@@ -2737,6 +2737,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                     }
                     boolean lastArg = i == length - 1;
+
                     if (lastArg && inferredType.isArray()) {
                         if (inferredType.getComponentType().equals(originType)) {
                             inferredType = originType;
@@ -2744,6 +2745,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     } else if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
                         addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
                     }
+
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
                 }
             }
