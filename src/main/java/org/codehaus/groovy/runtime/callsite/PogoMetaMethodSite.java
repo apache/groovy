@@ -27,7 +27,6 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -35,7 +34,7 @@ import java.lang.reflect.Method;
  *   meta class - cached
  *   method - cached
 */
-public class PogoMetaMethodSite extends MetaMethodSite {
+public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
     private final int version;
     private final boolean skipVersionCheck;
     public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
@@ -165,16 +164,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
-            try {
-                return reflect.invoke(receiver, args);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof GroovyRuntimeException) {
-                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
-                } else {
-                    throw cause;
-                }
-            }
+            return doInvoke(receiver, args, reflect);
         }
     }
 
@@ -186,16 +176,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
-            try {
-                return reflect.invoke(receiver, args);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof GroovyRuntimeException) {
-                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
-                } else {
-                    throw cause;
-                }
-            }
+            return doInvoke(receiver, args, reflect);
         }
     }
 
@@ -206,16 +187,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         }
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
-            try {
-                return reflect.invoke(receiver, args);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof GroovyRuntimeException) {
-                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
-                } else {
-                    throw cause;
-                }
-            }
+            return doInvoke(receiver, args, reflect);
         }
     }
 
