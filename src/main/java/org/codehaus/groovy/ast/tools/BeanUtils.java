@@ -95,7 +95,6 @@ public class BeanUtils {
     public static void addPseudoProperties(ClassNode origType, ClassNode cNode, List<PropertyNode> result, Set<String> names, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters) {
         if (!includePseudoGetters && !includePseudoSetters) return;
         List<MethodNode> methods = cNode.getAllDeclaredMethods();
-        ClassNode node = cNode.getSuperClass();
         for (MethodNode mNode : methods) {
             if (!includeStatic && mNode.isStatic()) continue;
             String name = mNode.getName();

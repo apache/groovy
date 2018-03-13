@@ -279,14 +279,10 @@ public class Numbers
         // case, if present.
 
         char type = 'x';
-        if( isNumericTypeSpecifier(text.charAt(length-1), true) )
-        {
-            type = Character.toLowerCase( text.charAt(length-1) );
-            text = text.substring( 0, length-1 );
-
-            length -= 1;
+        if (isNumericTypeSpecifier(text.charAt(length - 1), true)) {
+            type = Character.toLowerCase(text.charAt(length - 1));
+            text = text.substring(0, length - 1);
         }
-
 
         //
         // Build the specified type or default to BigDecimal
