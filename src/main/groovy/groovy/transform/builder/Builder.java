@@ -161,4 +161,15 @@ public @interface Builder {
      * @since 2.5.0
      */
     boolean allProperties() default true;
+
+    /**
+     * Whether to always include helper constructors. Currently only supported by InitializerStrategy.
+     * By default, the InitializerStrategy only adds a needed helper tuple constructor if no {@code @TupleConstructor}
+     * annotations are present. If such annotations are present, it is assumed they will provide the helper constructor
+     * that this strategy needs. If made true, the helper constructor will be generated and it is up to you to make sure
+     * this doesn't conflict with any other generated constructors.
+     *
+     * @since 2.5.0
+     */
+    boolean force() default false;
 }

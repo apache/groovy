@@ -41,6 +41,26 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testFunction2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            @CompileStatic
+            public static void p() {
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
+            }
+        }
+        '''
+    }
+
+
     void testFunctionScript() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -50,6 +70,21 @@ class LambdaTest extends GroovyTestCase {
         @CompileStatic
         void p() {
             assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList());
+        }
+        
+        p()
+        '''
+    }
+
+    void testFunctionScript2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        void p() {
+            assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
         }
         
         p()

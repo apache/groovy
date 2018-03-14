@@ -125,6 +125,7 @@ modifier
           |   TRANSIENT
           |   VOLATILE
           |   DEF
+          |   VAR
           )
     ;
 
@@ -161,6 +162,7 @@ variableModifier
     :   annotation
     |   m=( FINAL
           | DEF
+          | VAR
           // Groovy supports declaring local variables as instance/class fields,
           // e.g. import groovy.transform.*; @Field static List awe = [1, 2, 3]
           // e.g. import groovy.transform.*; def a = { @Field public List awe = [1, 2, 3] }
@@ -1133,7 +1135,7 @@ className
 identifier
     :   Identifier
     |   CapitalizedIdentifier
-
+    |   VAR
     |
         // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
         { DOT == _input.LT(2).getType() }?
@@ -1187,6 +1189,7 @@ keywords
     |   TRAIT
     |   THREADSAFE
     |   TRY
+    |   VAR
     |   VOLATILE
     |   WHILE
 

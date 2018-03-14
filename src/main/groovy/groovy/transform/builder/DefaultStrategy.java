@@ -166,6 +166,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
+        if (unsupportedAttribute(transform, anno, "force")) return;
         if (annotatedNode instanceof ClassNode) {
             buildClass(transform, (ClassNode) annotatedNode, anno);
         } else if (annotatedNode instanceof MethodNode) {

@@ -331,6 +331,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.TypeParameterCont
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.TypeParametersContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.UnaryAddExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.UnaryNotExprAltContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.VAR;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableDeclarationContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableDeclaratorContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VariableDeclaratorIdContext;
@@ -353,6 +354,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  *         Created on 2016/08/14
  */
 public class AstBuilder extends GroovyParserBaseVisitor<Object> implements GroovyParserVisitor<Object> {
+
     public AstBuilder(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
@@ -1154,6 +1156,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         final ClassNode outerClass = classNodeStack.peek();
         ClassNode classNode;
         String className = this.visitIdentifier(ctx.identifier());
+
+        if (VAR_STR.equals(className)) {
+            throw createParsingFailedException("var cannot be used for type declarations", ctx.identifier());
+        }
+
         if (asBoolean(ctx.ENUM())) {
             classNode =
                     EnumHelper.makeEnumNode(
@@ -1543,6 +1550,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         validateMethodDeclaration(ctx);
 
         ModifierManager modifierManager = createModifierManager(ctx);
+
+        if (modifierManager.contains(VAR)) {
+            throw createParsingFailedException("var cannot be used for method declarations", ctx);
+        }
+
         String methodName = this.visitMethodName(ctx.methodName());
         ClassNode returnType = this.visitReturnType(ctx.returnType());
         Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
@@ -4397,7 +4409,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 modifierManager.containsVisibilityModifier(),
                 modifierManager.containsNonVisibilityModifier(),
                 hasReturnType,
-                modifierManager.contains(DEF));
+                modifierManager.contains(DEF) || modifierManager.contains(VAR));
     }
 
     /**
@@ -4736,6 +4748,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String SQ_STR = "'";
     private static final String DQ_STR = "\"";
     private static final String DOLLAR_SLASH_STR = "$/";
+    private static final String VAR_STR = "var";
 
     private static final Map<String, String> QUOTATION_MAP = Maps.of(
             DQ_STR, DQ_STR,

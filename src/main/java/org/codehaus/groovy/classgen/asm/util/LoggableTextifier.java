@@ -22,11 +22,11 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -35,7 +35,10 @@ import java.util.List;
  * @since 2.5.0
  */
 public class LoggableTextifier extends Textifier {
-//    private static final Logger LOGGER = Logger.getLogger(LoggableTextifier.class.getName());
+    private static final String GROOVY_LOG_CLASSGEN_STACKTRACE_MAX_DEPTH = "groovy.log.classgen.stacktrace.max.depth";
+    private static final String GROOVY = ".groovy.";
+    private static final String LOGGABLE_TEXTIFIER = ".LoggableTextifier";
+    private static final int STACKTRACE_MAX_DEPTH = Integer.getInteger(GROOVY_LOG_CLASSGEN_STACKTRACE_MAX_DEPTH, 0);
     private int loggedLineCnt = 0;
 
     public LoggableTextifier() {
@@ -50,6 +53,7 @@ public class LoggableTextifier extends Textifier {
     protected void log() {
         int textSize = text.size();
 
+        List<Object> bcList = new LinkedList<>();
         for (int i = loggedLineCnt; i < textSize; i++) {
             Object bc = text.get(i);
 
@@ -57,10 +61,49 @@ public class LoggableTextifier extends Textifier {
                 continue;
             }
 
-            System.out.print(bc);
+            bcList.add(bc);
+        }
+
+        if (bcList.size() > 0) {
+            List<StackTraceElement> invocationPositionInfo = getInvocationPositionInfo();
+            if (invocationPositionInfo.size() > 0) {
+                System.out.print(formatInvocationPositionInfo(invocationPositionInfo));
+            }
+
+            for (Object bc : bcList) {
+                System.out.print(bc);
+            }
         }
 
         loggedLineCnt = textSize;
+    }
+
+    private List<StackTraceElement> getInvocationPositionInfo() {
+        StackTraceElement[] stackTraceElements = new Throwable().getStackTrace();
+        List<StackTraceElement> stackTraceElementList = new LinkedList<>();
+
+        for (StackTraceElement stackTraceElement : stackTraceElements) {
+            String className = stackTraceElement.getClassName();
+            if (className.contains(GROOVY) && !className.endsWith(LOGGABLE_TEXTIFIER)) {
+                if (stackTraceElementList.size() >= STACKTRACE_MAX_DEPTH) {
+                    break;
+                }
+
+                stackTraceElementList.add(stackTraceElement);
+            }
+        }
+
+        return stackTraceElementList;
+    }
+
+    private String formatInvocationPositionInfo(List<StackTraceElement> stackTraceElementList) {
+        StringBuilder sb = new StringBuilder(128);
+        for (StackTraceElement stackTraceElement : stackTraceElementList) {
+            sb.append("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t// ");
+            sb.append(String.format("%s#%s:%s%n", stackTraceElement.getClassName(), stackTraceElement.getMethodName(), stackTraceElement.getLineNumber()));
+        }
+
+        return sb.toString();
     }
 
 

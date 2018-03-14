@@ -55,6 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -168,7 +170,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         boolean callSuper = xform.memberHasValue(anno, "callSuper", true);
         boolean force = xform.memberHasValue(anno, "force", true);
         boolean defaults = !xform.memberHasValue(anno, "defaults", false);
-        boolean useSetters = xform.memberHasValue(anno, "useSetters", true);
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
@@ -177,14 +178,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             superList = new ArrayList<PropertyNode>();
         }
 
-        List<PropertyNode> list = getAllProperties(names, cNode, true, includeFields, false, allProperties, false, true);
+        List<PropertyNode> list = getAllProperties(names, cNode, includeProperties, includeFields, false, allProperties, false, true);
 
         boolean makeImmutable = makeImmutable(cNode);
         boolean specialNamedArgCase = (ImmutableASTTransformation.isSpecialNamedArgCase(list, !defaults) && superList.isEmpty()) ||
                 (ImmutableASTTransformation.isSpecialNamedArgCase(superList, !defaults) && list.isEmpty());
 
         // no processing if existing constructors found unless forced or ImmutableBase in play
-        if (!cNode.getDeclaredConstructors().isEmpty() && !force && !makeImmutable) return;
+        if (hasExplicitConstructor(null, cNode) && !force && !makeImmutable) return;
 
         final List<Parameter> params = new ArrayList<Parameter>();
         final List<Expression> superParams = new ArrayList<Expression>();
@@ -254,7 +255,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         boolean hasMapCons = hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        cNode.addConstructor(new ConstructorNode(modifiers, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
+        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body);
+        markAsGenerated(cNode, consNode);
+        cNode.addConstructor(consNode);
 
         if (sourceUnit != null && !body.isEmpty()) {
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -305,12 +308,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 illegalArgumentBlock(message),
                 processArgsBlock(cNode, namedArgs)));
         ConstructorNode init = new ConstructorNode(modifiers, parameters, ClassNode.EMPTY_ARRAY, code);
+        markAsGenerated(cNode, init);
         cNode.addConstructor(init);
         // potentially add a no-arg constructor too
         if (addNoArg) {
             code = new BlockStatement();
             code.addStatement(stmt(ctorX(ClassNode.THIS, ctorX(LHMAP_TYPE))));
             init = new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+            markAsGenerated(cNode, init);
             cNode.addConstructor(init);
         }
     }

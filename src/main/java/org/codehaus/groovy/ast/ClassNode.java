@@ -964,6 +964,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     }
 
     /**
+     *
+     * @param classNodes the class nodes for the interfaces
+     * @return true if this class or any base class implements any of the given interfaces
+     */
+    public boolean implementsAnyInterfaces(ClassNode... classNodes) {
+        for (ClassNode classNode : classNodes) {
+            if (implementsInterface(classNode)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param classNode the class node for the interface
      * @return true if this class or any base class implements the given interface
      */
@@ -976,6 +991,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
             node = node.getSuperClass();
         }
         while (node != null);
+        return false;
+    }
+
+    /**
+     *
+     * @param classNodes the class nodes for the interfaces
+     * @return true if this class declares that it implements any of the given interfaces
+     * or if one of its interfaces extends directly or indirectly any of the given interfaces
+     */
+    public boolean declaresAnyInterfaces(ClassNode... classNodes) {
+        for (ClassNode classNode : classNodes) {
+            if (declaresInterface(classNode)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

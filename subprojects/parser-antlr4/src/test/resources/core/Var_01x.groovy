@@ -16,6 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def (int x, int y) = [1, 2]
-assert 1 == x
-assert 2 == y
+
+[1, 2, 3].each { var ->
+    assert 0 < var && var < 4
+}
+
+var name = "Daniel"
+assert "Daniel" == name
+
+var var = "var variable name"
+assert "var variable name" == var

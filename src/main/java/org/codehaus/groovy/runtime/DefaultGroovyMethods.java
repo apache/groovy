@@ -8134,83 +8134,181 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating an immutable map.
+     * A convenience method for creating an immutable Map.
      *
      * @param self a Map
-     * @return an immutable Map
-     * @see java.util.Collections#unmodifiableMap(java.util.Map)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Map)
      * @since 1.0
      */
-    public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
-        return Collections.unmodifiableMap(self);
+    public static <K, V> Map<K, V> asImmutable(Map<K, V> self) {
+        return asUnmodifiable(new LinkedHashMap<K, V>(self));
     }
 
     /**
-     * A convenience method for creating an immutable sorted map.
+     * A convenience method for creating an immutable SortedMap.
      *
      * @param self a SortedMap
-     * @return an immutable SortedMap
-     * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.SortedMap)
      * @since 1.0
      */
-    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
-        return Collections.unmodifiableSortedMap(self);
+    public static <K, V> SortedMap<K, V> asImmutable(SortedMap<K, V> self) {
+        return asUnmodifiable(new TreeMap<K, V>(self));
     }
 
     /**
-     * A convenience method for creating an immutable list
+     * A convenience method for creating an immutable List.
+     * <pre class="groovyTestCase">
+     * def mutable = [1,2,3]
+     * def immutable = mutable.asImmutable()
+     * try {
+     *     immutable &lt;&lt; 4
+     *     assert false
+     * } catch (UnsupportedOperationException) {
+     *     assert true
+     * }
+     * mutable &lt;&lt; 4
+     * assert mutable.size() == 4
+     * assert immutable.size() == 3
+     * </pre>
      *
      * @param self a List
-     * @return an immutable List
-     * @see java.util.Collections#unmodifiableList(java.util.List)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asUnmodifiable(java.util.List)
      * @since 1.0
      */
     public static <T> List<T> asImmutable(List<T> self) {
-        return Collections.unmodifiableList(self);
+        return asUnmodifiable(new ArrayList<T>(self));
     }
 
     /**
-     * A convenience method for creating an immutable list.
+     * A convenience method for creating an immutable Set.
      *
      * @param self a Set
-     * @return an immutable Set
-     * @see java.util.Collections#unmodifiableSet(java.util.Set)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Set)
      * @since 1.0
      */
     public static <T> Set<T> asImmutable(Set<T> self) {
-        return Collections.unmodifiableSet(self);
+        return asUnmodifiable(new LinkedHashSet<T>(self));
     }
 
     /**
-     * A convenience method for creating an immutable sorted set.
+     * A convenience method for creating an immutable SortedSet.
      *
      * @param self a SortedSet
-     * @return an immutable SortedSet
-     * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.SortedSet)
      * @since 1.0
      */
     public static <T> SortedSet<T> asImmutable(SortedSet<T> self) {
-        return Collections.unmodifiableSortedSet(self);
+        return asUnmodifiable(new TreeSet<T>(self));
     }
 
     /**
      * A convenience method for creating an immutable Collection.
-     * <pre class="groovyTestCase">def mutable = [1,2,3]
-     * def immutable = mutable.asImmutable()
-     * mutable &lt;&lt; 4
-     * try {
-     *   immutable &lt;&lt; 4
-     *   assert false
-     * } catch (UnsupportedOperationException) {
-     *   assert true
-     * }</pre>
      *
      * @param self a Collection
-     * @return an immutable Collection
-     * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Collection)
      * @since 1.5.0
      */
     public static <T> Collection<T> asImmutable(Collection<T> self) {
+        return asUnmodifiable((Collection<T>) new ArrayList<T>(self));
+    }
+
+    /**
+     * Creates an unmodifiable view of a Map.
+     *
+     * @param self a Map
+     * @return an unmodifiable view of the Map
+     * @see java.util.Collections#unmodifiableMap(java.util.Map)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <K, V> Map<K, V> asUnmodifiable(Map<K, V> self) {
+        return Collections.unmodifiableMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a SortedMap.
+     *
+     * @param self a SortedMap
+     * @return an unmodifiable view of the SortedMap
+     * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <K, V> SortedMap<K, V> asUnmodifiable(SortedMap<K, V> self) {
+        return Collections.unmodifiableSortedMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a List.
+     * <pre class="groovyTestCase">
+     * def mutable = [1,2,3]
+     * def unmodifiable = mutable.asUnmodifiable()
+     * try {
+     *     unmodifiable &lt;&lt; 4
+     *     assert false
+     * } catch (UnsupportedOperationException) {
+     *     assert true
+     * }
+     * mutable &lt;&lt; 4
+     * assert unmodifiable.size() == 4
+     * </pre>
+     *
+     * @param self a List
+     * @return an unmodifiable view of the List
+     * @see java.util.Collections#unmodifiableList(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> List<T> asUnmodifiable(List<T> self) {
+        return Collections.unmodifiableList(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a Set.
+     *
+     * @param self a Set
+     * @return an unmodifiable view of the Set
+     * @see java.util.Collections#unmodifiableSet(java.util.Set)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> Set<T> asUnmodifiable(Set<T> self) {
+        return Collections.unmodifiableSet(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a SortedSet.
+     *
+     * @param self a SortedSet
+     * @return an unmodifiable view of the SortedSet
+     * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> SortedSet<T> asUnmodifiable(SortedSet<T> self) {
+        return Collections.unmodifiableSortedSet(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a Collection.
+     *
+     * @param self a Collection
+     * @return an unmodifiable view of the Collection
+     * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> asUnmodifiable(Collection<T> self) {
         return Collections.unmodifiableCollection(self);
     }
 

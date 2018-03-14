@@ -282,6 +282,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>Integer</code>
      */
     public Integer toInteger() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toInteger(text());
     }
 
@@ -291,6 +294,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>Long</code>
      */
     public Long toLong() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toLong(text());
     }
 
@@ -300,6 +306,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>Float</code>
      */
     public Float toFloat() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toFloat(text());
     }
 
@@ -309,6 +318,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>Double</code>
      */
     public Double toDouble() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toDouble(text());
     }
 
@@ -318,6 +330,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>BigDecimal</code>
      */
     public BigDecimal toBigDecimal() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toBigDecimal(text());
     }
 
@@ -327,7 +342,15 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>BigInteger</code>
      */
     public BigInteger toBigInteger() {
+        if(textIsEmptyOrNull()){
+            return null;
+        }
         return StringGroovyMethods.toBigInteger(text());
+    }
+
+    private boolean textIsEmptyOrNull() {
+        String t = text();
+        return null == t || 0 == t.length();
     }
 
     /**

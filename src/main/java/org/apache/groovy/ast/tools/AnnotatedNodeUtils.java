@@ -16,6 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def (int x, int y) = [1, 2]
-assert 1 == x
-assert 2 == y
+package org.apache.groovy.ast.tools;
+
+import groovy.transform.Generated;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+
+/**
+ * Utility class for working with AnnotatedNodes
+ */
+public class AnnotatedNodeUtils {
+    private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
+
+    private AnnotatedNodeUtils() {
+    }
+
+    public static void markAsGenerated(ClassNode cNode, AnnotatedNode aNode) {
+        boolean shouldAnnotate = cNode.getModule() != null && cNode.getModule().getContext() != null;
+        if (shouldAnnotate) {
+            aNode.addAnnotation(new AnnotationNode(GENERATED_TYPE));
+        }
+    }
+}

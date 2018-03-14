@@ -18,6 +18,7 @@
  */
 package groovy.transform.builder;
 
+import groovy.transform.TupleConstructor;
 import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -34,12 +35,12 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.BuilderASTTransformation;
-import org.codehaus.groovy.transform.ImmutableASTTransformation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -129,20 +130,22 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
     private static final Expression DEFAULT_INITIAL_VALUE = null;
+    private static final ClassNode TUPLECONS_TYPE = ClassHelper.make(TupleConstructor.class);
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (unsupportedAttribute(transform, anno, "allProperties")) return;
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
+        boolean force = transform.memberHasValue(anno, "force", true);
         if (annotatedNode instanceof ClassNode) {
-            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno, useSetters, allNames);
+            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno, useSetters, allNames, force);
         } else if (annotatedNode instanceof MethodNode) {
             createBuilderForAnnotatedMethod(transform, (MethodNode) annotatedNode, anno, useSetters);
         }
     }
 
-    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters, boolean allNames) {
+    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters, boolean allNames, boolean force) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         includes.add(Undefined.STRING);
@@ -158,7 +161,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         addFields(buildee, filteredFields, builder);
 
         buildCommon(buildee, anno, filteredFields, builder);
-        createBuildeeConstructors(transform, buildee, builder, filteredFields, true, useSetters);
+        boolean needsConstructor = !transform.hasAnnotation(buildee, TUPLECONS_TYPE) || force;
+        createBuildeeConstructors(transform, buildee, builder, filteredFields, needsConstructor, useSetters);
     }
 
     private void createBuilderForAnnotatedMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno, boolean useSetters) {
@@ -271,13 +275,13 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields, boolean needsConstructor, boolean useSetters) {
         ConstructorNode initializer = createInitializerConstructor(buildee, builder, fields);
-        if (transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
-            initializer.putNodeMetaData(ImmutableASTTransformation.IMMUTABLE_SAFE_FLAG, Boolean.TRUE);
-        } else if (needsConstructor) {
+        markAsGenerated(buildee, initializer);
+        if (needsConstructor) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(ctorSuperS());
             initializeFields(fields, body, useSetters);
-            buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
+            ConstructorNode helperCons = buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
+            markAsGenerated(buildee, helperCons);
         }
     }
 

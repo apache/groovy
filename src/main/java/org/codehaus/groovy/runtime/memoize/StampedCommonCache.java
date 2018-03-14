@@ -23,28 +23,30 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 
 /**
- * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
+ * Represents a simple key-value cache, which is thread safe and backed by a {@link Map} instance.
+ * StampedCommonCache has better performance than {@link ConcurrentCommonCache},
+ * but it is not reentrant, in other words, <b>it may cause deadlock</b> if {@link #getAndPut(K, ValueProvider)} OR {@link #getAndPut(K, ValueProvider, boolean)} is called recursively:
+ * readlock -> upgrade to writelock -> readlock(fails to get and wait forever)
+ *
  *
  * @param <K> type of the keys
  * @param <V> type of the values
- * @since 2.5.0
+ * @since 3.0.0
  */
 @ThreadSafe
-public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
-    private static final long serialVersionUID = -7352338549333024936L;
+public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
 
-    private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = rwl.writeLock();
+    private static final long serialVersionUID = 6760742552334555146L;
+    private final StampedLock sl = new StampedLock();
     private final CommonCache<K, V> commonCache;
 
     /**
      * Constructs a cache with unlimited size
      */
-    public ConcurrentCommonCache() {
+    public StampedCommonCache() {
         commonCache = new CommonCache<K, V>();
     }
 
@@ -53,9 +55,9 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      *
      * @param initialCapacity  initial capacity of the cache
      * @param maxSize          max size of the cache
-     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
+     * @param evictionStrategy LRU or FIFO, see {@link EvictionStrategy}
      */
-    public ConcurrentCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
+    public StampedCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
         commonCache = new CommonCache<K, V>(initialCapacity, maxSize, evictionStrategy);
     }
 
@@ -66,7 +68,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param initialCapacity initial capacity of the LRU cache
      * @param maxSize         max size of the LRU cache
      */
-    public ConcurrentCommonCache(int initialCapacity, int maxSize) {
+    public StampedCommonCache(int initialCapacity, int maxSize) {
         commonCache = new CommonCache<K, V>(initialCapacity, maxSize);
     }
 
@@ -74,18 +76,18 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * Constructs a LRU cache with the default initial capacity(16)
      *
      * @param maxSize max size of the LRU cache
-     * @see #ConcurrentCommonCache(int, int)
+     * @see #StampedCommonCache(int, int)
      */
-    public ConcurrentCommonCache(int maxSize) {
+    public StampedCommonCache(int maxSize) {
         commonCache = new CommonCache<K, V>(maxSize);
     }
 
     /**
-     * Constructs a cache backed by the specified {@link java.util.Map} instance
+     * Constructs a cache backed by the specified {@link Map} instance
      *
-     * @param map the {@link java.util.Map} instance
+     * @param map the {@link Map} instance
      */
-    public ConcurrentCommonCache(Map<K, V> map) {
+    public StampedCommonCache(Map<K, V> map) {
         commonCache = new CommonCache<K, V>(map);
     }
 
@@ -116,32 +118,52 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
-        readLock.lock();
-        try {
-            value = commonCache.get(key);
+        // try optimistic read first, which is non-blocking
+        long optimisticReadStamp = sl.tryOptimisticRead();
+        value = commonCache.get(key);
+        if (sl.validate(optimisticReadStamp)) {
             if (null != convertValue(value)) {
                 return value;
             }
-        } finally {
-            readLock.unlock();
         }
 
-        writeLock.lock();
+        long stamp = sl.readLock();
         try {
-            // try to find the cached value again
-            value = commonCache.get(key);
-            if (null != convertValue(value)) {
-                return value;
+            // if stale, read again
+            if (!sl.validate(optimisticReadStamp)) {
+                value = commonCache.get(key);
+                if (null != convertValue(value)) {
+                    return value;
+                }
             }
 
-            value = null == valueProvider ? null : valueProvider.provide(key);
-            if (shouldCache && null != convertValue(value)) {
-                commonCache.put(key, value);
+            long ws = sl.tryConvertToWriteLock(stamp); // the new local variable `ws` is necessary here!
+            if (0L == ws) { // Failed to convert read lock to write lock
+                sl.unlockRead(stamp);
+                stamp = sl.writeLock();
+
+                // try to read again
+                value = commonCache.get(key);
+                if (null != convertValue(value)) {
+                    return value;
+                }
+            } else {
+                stamp = ws;
             }
+
+            value = compute(key, valueProvider, shouldCache);
         } finally {
-            writeLock.unlock();
+            sl.unlock(stamp);
         }
 
+        return value;
+    }
+
+    private V compute(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
+        V value = null == valueProvider ? null : valueProvider.provide(key);
+        if (shouldCache && null != convertValue(value)) {
+            commonCache.put(key, value);
+        }
         return value;
     }
 
@@ -216,12 +238,12 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * deal with the backed cache guarded by write lock
      * @param action the content to complete
      */
-    public <R> R doWithWriteLock(Action<K, V, R> action) {
-        writeLock.lock();
+    private <R> R doWithWriteLock(Action<K, V, R> action) {
+        long stamp = sl.writeLock();
         try {
             return action.doWith(commonCache);
         } finally {
-            writeLock.unlock();
+            sl.unlockWrite(stamp);
         }
     }
 
@@ -229,12 +251,19 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * deal with the backed cache guarded by read lock
      * @param action the content to complete
      */
-    public <R> R doWithReadLock(Action<K, V, R> action) {
-        readLock.lock();
-        try {
-            return action.doWith(commonCache);
-        } finally {
-            readLock.unlock();
+    private <R> R doWithReadLock(Action<K, V, R> action) {
+        long stamp = sl.tryOptimisticRead();
+        R result = action.doWith(commonCache);
+
+        if (!sl.validate(stamp)) {
+            stamp = sl.readLock();
+            try {
+                result = action.doWith(commonCache);
+            } finally {
+                sl.unlockRead(stamp);
+            }
         }
+
+        return result;
     }
 }

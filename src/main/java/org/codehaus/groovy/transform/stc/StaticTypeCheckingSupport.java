@@ -46,8 +46,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
-import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
+import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -2021,10 +2021,16 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static Map<String, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
-        if (mn==null) return null;
-        Map<String, GenericsType> map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
-        map = mergeGenerics(map, mn.getGenericsTypes());
-        return map;
+        if (mn == null) return null;
+
+        Map<String, GenericsType> map;
+        if (mn.isStatic()) {
+            map = new HashMap<>();
+        } else {
+            map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
+        }
+
+        return mergeGenerics(map, mn.getGenericsTypes());
     }
 
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
@@ -2167,7 +2173,7 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new ConcurrentCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
+        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(

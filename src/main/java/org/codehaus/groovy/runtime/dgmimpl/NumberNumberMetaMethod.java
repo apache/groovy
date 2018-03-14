@@ -58,4 +58,84 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
             math = NumberMath.getMath(receiver,arg);
         }
     }
+
+    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        Object firstArg = args[0];
+
+        if (receiver instanceof Integer) {
+            if (firstArg instanceof Integer)
+                return createIntegerInteger(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Long)
+                return createIntegerLong(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Float)
+                return createIntegerFloat(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Double)
+                return createIntegerDouble(site, metaClass, metaMethod, params, receiver, args);
+        }
+
+        if (receiver instanceof Long) {
+            if (firstArg instanceof Integer)
+                return createLongInteger(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Long)
+                return createLongLong(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Float)
+                return createLongFloat(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Double)
+                return createLongDouble(site, metaClass, metaMethod, params, receiver, args);
+        }
+
+        if (receiver instanceof Float) {
+            if (firstArg instanceof Integer)
+                return createFloatInteger(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Long)
+                return createFloatLong(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Float)
+                return createFloatFloat(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Double)
+                return createFloatDouble(site, metaClass, metaMethod, params, receiver, args);
+        }
+
+        if (receiver instanceof Double) {
+            if (firstArg instanceof Integer)
+                return createDoubleInteger(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Long)
+                return createDoubleLong(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Float)
+                return createDoubleFloat(site, metaClass, metaMethod, params, receiver, args);
+
+            if (firstArg instanceof Double)
+                return createDoubleDouble(site, metaClass, metaMethod, params, receiver, args);
+        }
+
+        return createNumberNumber(site, metaClass, metaMethod, params, receiver, args);
+    }
+
+    public abstract CallSite createIntegerInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createIntegerLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createIntegerFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createIntegerDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createLongInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createLongLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createLongFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createLongDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createFloatInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createFloatLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createFloatFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createFloatDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createDoubleInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createDoubleLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createDoubleFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createDoubleDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+    public abstract CallSite createNumberNumber(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
 }

@@ -82,4 +82,22 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
          */
         FIFO
     }
+
+    /**
+     * Represents the action to deal with the cache
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param <R> result type
+     *
+     * @since 3.0.0
+     */
+    @FunctionalInterface
+    interface Action<K, V, R> {
+        /**
+         * Deal with the cache
+         * @param evictableCache
+         */
+        R doWith(EvictableCache<K, V> evictableCache);
+    }
 }
