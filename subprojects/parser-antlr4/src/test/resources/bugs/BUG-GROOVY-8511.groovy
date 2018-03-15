@@ -23,3 +23,12 @@ class XX {
 
 @groovy.transform.PackageScope
 int y() {}
+
+
+@groovy.transform.PackageScope(groovy.transform.PackageScopeTarget.METHODS)
+class Foo2 {
+    Object method1() {}
+    public Object method2() {}
+    private Object method3() {}
+    protected Object method4() {}
+}
