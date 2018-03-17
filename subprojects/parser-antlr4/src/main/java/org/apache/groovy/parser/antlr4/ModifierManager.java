@@ -34,8 +34,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.groovy.parser.antlr4.GroovyParser.*;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ABSTRACT;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.FINAL;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.NATIVE;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.STATIC;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.VOLATILE;
 
 /**
  * Process modifiers for AST nodes
@@ -53,7 +56,7 @@ class ModifierManager {
     public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
         this.astBuilder = astBuilder;
         this.validate(modifierNodeList);
-        this.modifierNodeList = Collections.unmodifiableList(asBoolean((Object) modifierNodeList) ? modifierNodeList : Collections.<ModifierNode>emptyList());
+        this.modifierNodeList = Collections.unmodifiableList(modifierNodeList);
     }
 
     public int getModifierCount() {
@@ -136,10 +139,12 @@ class ModifierManager {
         return result;
     }
 
-    public boolean contains(int modifierType) {
+    public boolean containsAny(int... modifierTypes) {
         for (ModifierNode e : modifierNodeList) {
-            if (modifierType == e.getType()) {
-                return true;
+            for (int modifierType : modifierTypes) {
+                if (modifierType == e.getType()) {
+                    return true;
+                }
             }
         }
         return false;
