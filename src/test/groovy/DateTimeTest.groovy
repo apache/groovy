@@ -2,6 +2,7 @@ package groovy
 
 import java.text.SimpleDateFormat
 import java.time.*
+import java.time.chrono.JapaneseDate
 import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 
@@ -265,6 +266,33 @@ class DateTimeTest extends GroovyTestCase {
         def yearMonth2 = YearMonth.of(2018, Month.MARCH)
         Period yearMonthPeriod = yearMonth1 >> yearMonth2
         assert yearMonthPeriod.months == 2
+    }
+
+    void testRightShiftDifferentTypes() {
+        try {
+            LocalDate.now() >> LocalTime.now()
+            fail('Should not be able to use right shift on different Temporal types.')
+        } catch (e) {
+            assert e instanceof GroovyRuntimeException
+        }
+    }
+
+    void testUptoDifferentTypes() {
+        try {
+            LocalDate.now().upto(JapaneseDate.now().plus(1, ChronoUnit.MONTHS)) { d -> }
+            fail('Cannot use upto() with two different Temporal types.')
+        } catch (e) {
+            assert e instanceof GroovyRuntimeException
+        }
+    }
+
+    void testDowntoDifferentTypes() {
+        try {
+            LocalDate.now().downto(JapaneseDate.now().minus(1, ChronoUnit.MONTHS)) { d -> }
+            fail('Cannot use downto() with two different argument types.')
+        } catch (e) {
+            assert e instanceof GroovyRuntimeException
+        }
     }
 
     void testUptoSelfWithDefaultUnit() {
