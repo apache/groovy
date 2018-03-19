@@ -220,4 +220,29 @@ class JSR223Test extends GroovyTestCase {
         assert engine.getFactory() == factory
     }
 
+    void testGetInterfaceScenarios() {
+        assertScript '''
+        interface Test { def foo(); def bar(); def baz() }
+        def engine = new javax.script.ScriptEngineManager().getEngineByName("groovy")
+        engine.eval("def foo() { 42 }")
+        engine.eval("def bar() { throw new Exception('Boom!') }")
+        def test = engine.getInterface(Test)
+        assert test.foo() == 42
+
+        try {
+            test.bar()
+            assert false
+        } catch(RuntimeException re) {
+            assert re.message.endsWith('Boom!')
+        }
+
+        try {
+            test.baz()
+            assert false
+        } catch(RuntimeException re) {
+            assert re.cause.class.name.endsWith('MissingMethodException')
+        }
+        '''
+    }
+
 }
