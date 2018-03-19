@@ -31,6 +31,7 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     private final String method;
     private final Class type;
     private final boolean isStatic;
@@ -50,7 +51,7 @@ public class MissingMethodException extends GroovyRuntimeException {
         this.method = method;
         this.type = type;
         this.isStatic = isStatic;
-        this.arguments = arguments;
+        this.arguments = arguments == null ? EMPTY_OBJECT_ARRAY : arguments;
     }
 
     public String getMessage() {

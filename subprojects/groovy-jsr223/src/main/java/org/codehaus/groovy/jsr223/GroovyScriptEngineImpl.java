@@ -367,6 +367,22 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    private Object invokeImplSafe(Object thiz, String name, Object... args) {
+        if (name == null) {
+            throw new NullPointerException("method name is null");
+        }
+
+        try {
+            if (thiz != null) {
+                return InvokerHelper.invokeMethod(thiz, name, args);
+            } else {
+                return callGlobal(name, args);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // call the script global function of the given name
     private Object callGlobal(String name, Object[] args) {
         return callGlobal(name, args, context);
@@ -404,7 +420,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                 new InvocationHandler() {
                     public Object invoke(Object proxy, Method m, Object[] args)
                             throws Throwable {
-                        return invokeImpl(thiz, m.getName(), args);
+                        return invokeImplSafe(thiz, m.getName(), args);
                     }
                 });
     }
