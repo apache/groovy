@@ -148,7 +148,7 @@ configurations {
 
 ext {
     antVersion = '1.9.4'
-    asmVersion = '6.0'
+    asmVersion = '5.0.3'
     antlrVersion = '2.7.7'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.2'
@@ -213,7 +213,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm:$asmVersion"
+    tools "org.ow2.asm:asm-all:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     examplesCompile project(':groovy-test')
@@ -491,4 +491,3 @@ apply from: 'gradle/signing.gradle'
 //
 //licenseFormat.dependsOn licenseFormatCustom
 //licenseFormat.dependsOn licenseFormatGradle
-
