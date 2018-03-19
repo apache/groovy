@@ -47,7 +47,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Stack;
 
@@ -84,8 +83,8 @@ public class XmlSlurper extends DefaultHandler {
     private final XMLReader reader;
     private Node currentNode = null;
     private final Stack<Node> stack = new Stack<Node>();
-    private final StringBuffer charBuffer = new StringBuffer();
-    private final Map<String, String> namespaceTagHints = new Hashtable<String, String>();
+    private final StringBuilder charBuffer = new StringBuilder();
+    private final Map<String, String> namespaceTagHints = new HashMap<String, String>();
     private boolean keepIgnorableWhitespace = false;
     private boolean namespaceAware = false;
 
