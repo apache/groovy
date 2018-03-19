@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.lang.Tuple3;
 import groovy.util.BuilderSupport;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -74,20 +75,12 @@ public class SAXBuilder extends BuilderSupport {
             Map.Entry entry = (Map.Entry) iter.next();
             Object key = entry.getKey();
             Object value = entry.getValue();
-            String uri = "";
-            String localName = null;
-            String qualifiedName = "";
+
+            Tuple3<String, String, String> elementInfo = getElementInfo(key);
+            String uri = elementInfo.getFirst();
+            String localName = elementInfo.getSecond();
+            String qualifiedName = elementInfo.getThird();
             String valueText = (value != null) ? value.toString() : "";
-            if (key instanceof QName) {
-                QName qname = (QName) key;
-                uri = qname.getNamespaceURI();
-                localName = qname.getLocalPart();
-                qualifiedName = qname.getQualifiedName();
-            }
-            else {
-                localName = key.toString();
-                qualifiedName = localName;
-            }
 
             attributes.addAttribute(uri, localName, qualifiedName, "CDATA", valueText);
         }
@@ -99,19 +92,11 @@ public class SAXBuilder extends BuilderSupport {
     }
 
     protected void doStartElement(Object name, Attributes attributes) {
-        String uri = "";
-        String localName = null;
-        String qualifiedName = "";
-        if (name instanceof QName) {
-            QName qname = (QName) name;
-            uri = qname.getNamespaceURI();
-            localName = qname.getLocalPart();
-            qualifiedName = qname.getQualifiedName();
-        }
-        else {
-            localName = name.toString();
-            qualifiedName = localName;
-        }
+        Tuple3<String, String, String> elementInfo = getElementInfo(name);
+        String uri = elementInfo.getFirst();
+        String localName = elementInfo.getSecond();
+        String qualifiedName = elementInfo.getThird();
+
         try {
             handler.startElement(uri, localName, qualifiedName, attributes);
         }
@@ -121,19 +106,11 @@ public class SAXBuilder extends BuilderSupport {
     }
 
     protected void nodeCompleted(Object parent, Object name) {
-        String uri = "";
-        String localName = null;
-        String qualifiedName = "";
-        if (name instanceof QName) {
-            QName qname = (QName) name;
-            uri = qname.getNamespaceURI();
-            localName = qname.getLocalPart();
-            qualifiedName = qname.getQualifiedName();
-        }
-        else {
-            localName = name.toString();
-            qualifiedName = localName;
-        }
+        Tuple3<String, String, String> elementInfo = getElementInfo(name);
+        String uri = elementInfo.getFirst();
+        String localName = elementInfo.getSecond();
+        String qualifiedName = elementInfo.getThird();
+
         try {
             handler.endElement(uri, localName, qualifiedName);
         }
@@ -151,5 +128,25 @@ public class SAXBuilder extends BuilderSupport {
      */
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
+    }
+
+
+    private Tuple3<String, String, String> getElementInfo(Object name) {
+        String uri;
+        String localName;
+        String qualifiedName;
+
+        if (name instanceof QName) {
+            QName qname = (QName) name;
+            uri = qname.getNamespaceURI();
+            localName = qname.getLocalPart();
+            qualifiedName = qname.getQualifiedName();
+        } else {
+            uri = "";
+            localName = name.toString();
+            qualifiedName = localName;
+        }
+
+        return new Tuple3<>(uri, localName, qualifiedName);
     }
 }
