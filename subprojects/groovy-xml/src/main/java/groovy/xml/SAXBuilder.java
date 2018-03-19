@@ -76,10 +76,10 @@ public class SAXBuilder extends BuilderSupport {
             Object key = entry.getKey();
             Object value = entry.getValue();
 
-            Tuple3<String, String, String> elementInfo = getElementInfo(key);
-            String uri = elementInfo.getFirst();
-            String localName = elementInfo.getSecond();
-            String qualifiedName = elementInfo.getThird();
+            Tuple3<String, String, String> nameInfo = getNameInfo(key);
+            String uri = nameInfo.getFirst();
+            String localName = nameInfo.getSecond();
+            String qualifiedName = nameInfo.getThird();
             String valueText = (value != null) ? value.toString() : "";
 
             attributes.addAttribute(uri, localName, qualifiedName, "CDATA", valueText);
@@ -92,10 +92,10 @@ public class SAXBuilder extends BuilderSupport {
     }
 
     protected void doStartElement(Object name, Attributes attributes) {
-        Tuple3<String, String, String> elementInfo = getElementInfo(name);
-        String uri = elementInfo.getFirst();
-        String localName = elementInfo.getSecond();
-        String qualifiedName = elementInfo.getThird();
+        Tuple3<String, String, String> nameInfo = getNameInfo(name);
+        String uri = nameInfo.getFirst();
+        String localName = nameInfo.getSecond();
+        String qualifiedName = nameInfo.getThird();
 
         try {
             handler.startElement(uri, localName, qualifiedName, attributes);
@@ -106,10 +106,10 @@ public class SAXBuilder extends BuilderSupport {
     }
 
     protected void nodeCompleted(Object parent, Object name) {
-        Tuple3<String, String, String> elementInfo = getElementInfo(name);
-        String uri = elementInfo.getFirst();
-        String localName = elementInfo.getSecond();
-        String qualifiedName = elementInfo.getThird();
+        Tuple3<String, String, String> nameInfo = getNameInfo(name);
+        String uri = nameInfo.getFirst();
+        String localName = nameInfo.getSecond();
+        String qualifiedName = nameInfo.getThird();
 
         try {
             handler.endElement(uri, localName, qualifiedName);
@@ -131,7 +131,7 @@ public class SAXBuilder extends BuilderSupport {
     }
 
 
-    private Tuple3<String, String, String> getElementInfo(Object name) {
+    private Tuple3<String, String, String> getNameInfo(Object name) {
         String uri;
         String localName;
         String qualifiedName;
