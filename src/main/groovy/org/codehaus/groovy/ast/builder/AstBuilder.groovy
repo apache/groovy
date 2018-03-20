@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.control.CompilePhase
@@ -33,7 +34,7 @@ import org.codehaus.groovy.control.CompilePhase
  *
  * @author Hamlet D'Arcy
  */
-
+@CompileStatic
 public class AstBuilder {
 
     /**
