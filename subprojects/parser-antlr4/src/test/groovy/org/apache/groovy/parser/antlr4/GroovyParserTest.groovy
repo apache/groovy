@@ -54,11 +54,11 @@ class GroovyParserTest extends GroovyTestCase {
         assert classes[0].groovydoc.content.replaceAll(/\r?\n/, '')            == '/** * test class Comments */'
         assert classes[0].fields[0].groovydoc.content.replaceAll(/\r?\n/, '')  == '/**     * test Comments.SOME_VAR     */'
         assert classes[0].fields[1].groovydoc.content.replaceAll(/\r?\n/, '')  == '/**     * test Comments.SOME_VAR2     */'
-        assert classes[0].fields[2].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
-        assert classes[0].fields[3].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !classes[0].fields[2].groovydoc.isPresent()
+        assert !classes[0].fields[3].groovydoc.isPresent()
         assert classes[0].declaredConstructors[0].groovydoc.content.replaceAll(/\r?\n/, '') == '/**     * test Comments.constructor1     */'
         assert classes[0].methods[0].groovydoc.content.replaceAll(/\r?\n/, '') == '/**     * test Comments.m1     */'
-        assert classes[0].methods[1].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !classes[0].methods[1].groovydoc.isPresent()
         assert classes[0].methods[2].groovydoc.content.replaceAll(/\r?\n/, '') == '/**     * test Comments.m3     */'
 
         assert classes[1].groovydoc.content.replaceAll(/\r?\n/, '')            == '/**     * test class InnerClazz     */'
@@ -71,14 +71,14 @@ class GroovyParserTest extends GroovyTestCase {
         assert classes[2].fields[0].groovydoc.content.replaceAll(/\r?\n/, '')  == '/**         * InnerEnum.NEW         */'
         assert classes[2].fields[1].groovydoc.content.replaceAll(/\r?\n/, '')  == '/**         * InnerEnum.OLD         */'
 
-        assert classes[3].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !classes[3].groovydoc.isPresent()
 
-        assert classes[4].fields[0].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !classes[4].fields[0].groovydoc.isPresent()
 
-        assert classes[5].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !classes[5].groovydoc.isPresent()
 
         assert methods[0].groovydoc.content.replaceAll(/\r?\n/, '') == '/** * test someScriptMethod1 */'
-        assert methods[1].groovydoc == groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC
+        assert !methods[1].groovydoc.isPresent()
     }
 
     void "test groovy core - PackageDeclaration"() {
