@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -91,7 +92,7 @@ public class ClosureWriter {
 
         // generate closure as public class to make sure it can be properly invoked by classes of the
         // Groovy runtime without circumventing JVM access checks (see CachedMethod for example).
-        int mods = ACC_PUBLIC;
+        int mods = ACC_PUBLIC | ACC_FINAL;
         if (classNode.isInterface()) {
             mods |= ACC_STATIC;
         }
