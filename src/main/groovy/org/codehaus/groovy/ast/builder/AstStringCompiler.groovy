@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
@@ -30,6 +31,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
  *
  * @author Hamlet D'Arcy
  */
+@CompileStatic
 @PackageScope class AstStringCompiler {
     
     /**
@@ -49,7 +51,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
         cu.addSource(codeSource.getName(), script);
         cu.compile(compilePhase.getPhaseNumber())
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired
-        return cu.ast.modules.inject([]) {List acc, ModuleNode node ->
+        return (List<ASTNode>) cu.getAST().modules.inject([]) {List acc, ModuleNode node ->
             if (node.statementBlock) acc.add(node.statementBlock)
             node.classes?.each {
                 if (!(it.name == scriptClassName && statementsOnly)) {
