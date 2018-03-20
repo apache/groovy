@@ -110,7 +110,6 @@ class AstSpecificationCompiler implements GroovyInterceptable {
     /**
      * Creates the DSL compiler.
      */
-    @CompileStatic
     AstSpecificationCompiler(@DelegatesTo(AstSpecificationCompiler) Closure spec) {
         spec.delegate = this
         spec()
@@ -165,7 +164,6 @@ class AstSpecificationCompiler implements GroovyInterceptable {
     * @param constructorStatement
     *       the type specific construction code that will be run
     */
-    @CompileStatic
     private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Closure constructorStatement) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
