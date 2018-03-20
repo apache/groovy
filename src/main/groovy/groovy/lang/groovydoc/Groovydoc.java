@@ -29,16 +29,25 @@ import java.util.Objects;
 public class Groovydoc {
     private final String content;
     private List<GroovydocTag> tagList = Collections.emptyList();
-    private final GroovydocHolder holder;
-    public static final Groovydoc EMPTY_GROOVYDOC = new Groovydoc("", (GroovydocHolder) null);
+    private GroovydocHolder holder;
+    public static final Groovydoc EMPTY_GROOVYDOC = new Groovydoc("") {
+        @Override
+        public List<GroovydocTag> getTagList() {
+            return Collections.emptyList();
+        }
+    };
+
+    private Groovydoc(String content) {
+        this.content = content;
+    }
 
     public Groovydoc(String content, GroovydocHolder groovydocHolder) {
-        this.content = content;
+        this(content);
         this.holder = groovydocHolder;
     }
 
     public Groovydoc(final String content, final AnnotatedElement annotatedElement) {
-        this.content = content;
+        this(content);
         this.holder = new GroovydocHolder<AnnotatedElement>() {
             @Override
             public Groovydoc getGroovydoc() {
@@ -50,6 +59,14 @@ public class Groovydoc {
                 return annotatedElement;
             }
         };
+    }
+
+    /**
+     * Tests if groovydoc is present
+     * @return {@code true} if groovydoc is present
+     */
+    public boolean isPresent() {
+        return EMPTY_GROOVYDOC != this;
     }
 
     /**
