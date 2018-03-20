@@ -105,7 +105,7 @@ import java.util.Set;
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  */
-public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder<ClassNode> {
+public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private static class MapOfLists {
         private Map<Object, List<MethodNode>> map;
@@ -1520,15 +1520,5 @@ public class ClassNode extends AnnotatedNode implements Opcodes, GroovydocHolder
     @Override
     public String getText() {
         return getName();
-    }
-
-    @Override
-    public Groovydoc getGroovydoc() {
-        return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
-    }
-
-    @Override
-    public ClassNode getInstance() {
-        return this;
     }
 }

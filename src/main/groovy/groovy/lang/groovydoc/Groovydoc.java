@@ -19,6 +19,7 @@
 package groovy.lang.groovydoc;
 
 import java.lang.reflect.AnnotatedElement;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,8 +28,9 @@ import java.util.Objects;
  */
 public class Groovydoc {
     private final String content;
-    private List<GroovydocTag> tagList;
+    private List<GroovydocTag> tagList = new LinkedList<>();
     private final GroovydocHolder holder;
+    public static final Groovydoc EMPTY_GROOVYDOC = new Groovydoc("", (GroovydocHolder) null);
 
     public Groovydoc(String content, GroovydocHolder groovydocHolder) {
         this.content = content;

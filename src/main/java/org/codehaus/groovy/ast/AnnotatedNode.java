@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.groovydoc.Groovydoc;
+import groovy.lang.groovydoc.GroovydocHolder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +30,7 @@ import java.util.List;
  *
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  */
-public class AnnotatedNode extends ASTNode {
+public class AnnotatedNode extends ASTNode implements GroovydocHolder<AnnotatedNode> {
     private List<AnnotationNode> annotations = Collections.emptyList();
     private boolean synthetic;
     ClassNode declaringClass;
@@ -108,5 +111,17 @@ public class AnnotatedNode extends ASTNode {
 
     public void setHasNoRealSourcePosition(boolean value) {
         this.hasNoRealSourcePositionFlag = value;
+    }
+
+    @Override
+    public Groovydoc getGroovydoc() {
+        Groovydoc groovydoc = this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
+
+        return null == groovydoc ? Groovydoc.EMPTY_GROOVYDOC : groovydoc;
+    }
+
+    @Override
+    public AnnotatedNode getInstance() {
+        return this;
     }
 }

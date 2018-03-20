@@ -167,6 +167,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
+
 /**
  * This class defines new groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
@@ -19534,7 +19536,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Groovydoc groovydocAnnotation = holder.<Groovydoc>getAnnotation(Groovydoc.class);
 
         return null == groovydocAnnotation
-                    ? null
+                    ? EMPTY_GROOVYDOC
                     : new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
     }
 }

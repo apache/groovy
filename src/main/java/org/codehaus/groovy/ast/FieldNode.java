@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.groovydoc.Groovydoc;
-import groovy.lang.groovydoc.GroovydocHolder;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
 
@@ -30,7 +28,7 @@ import java.lang.reflect.Field;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-public class FieldNode extends AnnotatedNode implements Opcodes, Variable, GroovydocHolder<FieldNode> {
+public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     private String name;
     private int modifiers;
@@ -199,15 +197,5 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable, Groov
     public void rename(String name) {
         declaringClass.renameField(this.name, name);
         this.name = name;
-    }
-
-    @Override
-    public Groovydoc getGroovydoc() {
-        return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
-    }
-
-    @Override
-    public FieldNode getInstance() {
-        return this;
     }
 }
