@@ -36,13 +36,6 @@ import java.util.stream.Collectors;
  * This class defines all the new static groovy methods which appear on normal
  * JDK classes inside the Groovy environment. Static methods are used with the
  * first parameter as the destination class.
- *
- * @author Guillaume Laforge
- * @author Dierk Koenig
- * @author Joachim Baumann
- * @author Paul King
- * @author Kent Inge Fagerland Simonsen
- * @author Joe Wolf
  */
 public class DefaultGroovyStaticMethods {
 

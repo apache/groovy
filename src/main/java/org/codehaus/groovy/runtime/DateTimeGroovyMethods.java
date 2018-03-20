@@ -37,8 +37,6 @@ import static java.time.temporal.ChronoUnit.YEARS;
 /**
  * This class defines new Groovy methods which appear on normal JDK
  * Date/Time API (java.time) classes inside the Groovy environment.
- *
- * @author Joe Wolf
  */
 public class DateTimeGroovyMethods {
 
