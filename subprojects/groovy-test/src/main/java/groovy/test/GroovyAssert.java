@@ -292,7 +292,7 @@ public class GroovyAssert extends org.junit.Assert {
      *
      * <pre>
      * public void testXXX() {
-     *   if (GroovyTestCase.notYetImplemented(this)) return;
+     *   if (GroovyAssert.notYetImplemented(this)) return;
      *   ... the real (now failing) unit test
      * }
      * </pre>
@@ -302,7 +302,7 @@ public class GroovyAssert extends org.junit.Assert {
      * <pre>
      * &#64;Test
      * public void XXX() {
-     *   if (GroovyTestCase.notYetImplemented(this)) return;
+     *   if (GroovyAssert.notYetImplemented(this)) return;
      *   ... the real (now failing) unit test
      * }
      * </pre>
