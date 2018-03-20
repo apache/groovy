@@ -603,6 +603,12 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             contributor {
                 name 'Graeme Rocher'
             }
+            contributor {
+                name 'Joe Wolf'
+            }
+            contributor {
+                name 'Kent Inge Fagerland Simonsen'
+            }
         }
         mailingLists {
             mailingList {

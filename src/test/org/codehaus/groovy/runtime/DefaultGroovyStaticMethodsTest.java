@@ -21,13 +21,10 @@ package org.codehaus.groovy.runtime;
 import groovy.util.GroovyTestCase;
 
 /**
- * @author Kent Inge Fagerland Simonsen
+ * Tests for DefaultGroovyStaticMethods
  */
 public class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
 
-    /**
-     *Tests System.currentTimeSeconds()
-     */
     public void testCurrentTimeSeconds() {
 	long timeMillis = System.currentTimeMillis();
         long timeSeconds = DefaultGroovyStaticMethods.currentTimeSeconds(null);
