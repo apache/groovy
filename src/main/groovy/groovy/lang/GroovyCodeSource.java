@@ -210,7 +210,7 @@ public class GroovyCodeSource {
         return encoding;
     }
 
-    CodeSource getCodeSource() {
+    public CodeSource getCodeSource() {
         return codeSource;
     }
 
