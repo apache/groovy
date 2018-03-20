@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.groovydoc.Groovydoc;
-import groovy.lang.groovydoc.GroovydocHolder;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -33,8 +31,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hamlet D'Arcy
  */
-public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolder<MethodNode> {
-
+public class MethodNode extends AnnotatedNode implements Opcodes {
     public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
     private final String name;
     private int modifiers;
@@ -270,15 +267,5 @@ public class MethodNode extends AnnotatedNode implements Opcodes, GroovydocHolde
         String exceptionTypes = AstToTextHelper.getThrowsClauseText(exceptions);
         String parms = AstToTextHelper.getParametersText(parameters);
         return AstToTextHelper.getModifiersText(modifiers) + " " + retType + " " + name + "(" + parms + ") " + exceptionTypes + " { ... }";
-    }
-
-    @Override
-    public Groovydoc getGroovydoc() {
-        return this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
-    }
-
-    @Override
-    public MethodNode getInstance() {
-        return this;
     }
 }
