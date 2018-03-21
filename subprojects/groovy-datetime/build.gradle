@@ -22,6 +22,11 @@ dependencies {
     testCompile project(':groovy-dateutil')
 }
 
+tasks.withType(JavaCompile) {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeExtensions'
     staticExtensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'
