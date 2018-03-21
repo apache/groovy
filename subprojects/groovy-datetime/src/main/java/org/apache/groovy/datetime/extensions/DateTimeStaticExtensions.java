@@ -54,7 +54,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.LocalDate#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate parse(final LocalDate type, CharSequence text, String pattern) {
         return LocalDate.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -71,7 +71,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.LocalDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime parse(final LocalDateTime type, CharSequence text, String pattern) {
         return LocalDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -88,7 +88,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.LocalTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalTime parse(final LocalTime type, CharSequence text, String pattern) {
         return LocalTime.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -105,7 +105,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.MonthDay#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static MonthDay parse(final MonthDay type, CharSequence text, String pattern) {
         return MonthDay.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -122,7 +122,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.OffsetDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime parse(final OffsetDateTime type, CharSequence text, String pattern) {
         return OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -139,7 +139,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.OffsetTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime parse(final OffsetTime type, CharSequence text, String pattern) {
         return OffsetTime.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -156,7 +156,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.Year#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Year parse(final Year type, CharSequence text, String pattern) {
         return Year.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -173,7 +173,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.YearMonth#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth parse(final YearMonth type, CharSequence text, String pattern) {
         return YearMonth.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -190,7 +190,7 @@ public class DateTimeStaticExtensions {
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
      * @see java.time.ZonedDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime parse(final ZonedDateTime type, CharSequence text, String pattern) {
         return ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(pattern));
@@ -202,7 +202,7 @@ public class DateTimeStaticExtensions {
      * @param type placeholder variable used by Groovy categories; ignored for default static methods
      * @return a ZoneOffset
      * @see java.time.ZoneId#systemDefault()
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZoneOffset systemDefault(final ZoneOffset type) {
         return DateTimeExtensions.getOffset(ZoneId.systemDefault());
