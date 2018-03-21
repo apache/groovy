@@ -19,6 +19,8 @@
 def subprojects = ['groovy-ant',
         'groovy-bsf',
         'groovy-console',
+        'groovy-datetime',
+        'groovy-dateutil',
         'groovy-docgenerator',
         'groovy-groovydoc',
         'groovy-groovysh',
@@ -34,12 +36,9 @@ def subprojects = ['groovy-ant',
         'groovy-test',
         'groovy-testng',
         'groovy-xml',
-        'groovy-macro'
+        'groovy-macro',
+        'performance'
 ]
-
-if (JavaVersion.current().isJava8Compatible()) {
-    subprojects << 'performance'
-}
 
 if (hasProperty('stressTests')) {
     subprojects << 'stress'

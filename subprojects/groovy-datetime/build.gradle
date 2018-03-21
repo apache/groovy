@@ -19,6 +19,11 @@
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')
-    testRuntime project(':groovy-ant')
     testCompile project(':groovy-dateutil')
 }
+
+task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+    extensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeExtensions'
+    staticExtensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'
+}
+compileJava.dependsOn moduleDescriptor

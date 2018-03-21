@@ -1,7 +1,38 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package gdk
 
-import java.time.*
-import java.time.chrono.JapaneseDate
+import java.time.DayOfWeek
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.Month
+import java.time.MonthDay
+import java.time.OffsetDateTime
+import java.time.OffsetTime
+import java.time.Period
+import java.time.Year
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 
@@ -9,21 +40,21 @@ class WorkingWithDateTimeTypesTest extends GroovyTestCase {
 
     void testParsing() {
         // tag::static_parsing[]
-        def date = LocalDate.parse('Jun 3, 04','MMM d, yy')
+        def date = LocalDate.parse('Jun 3, 04', 'MMM d, yy')
         assert date == LocalDate.of(2004, Month.JUNE, 3)
 
-        def time = LocalTime.parse('4:45','H:mm')
+        def time = LocalTime.parse('4:45', 'H:mm')
         assert time == LocalTime.of(4, 45, 0)
 
         def offsetTime = OffsetTime.parse('09:47:51-1234', 'HH:mm:ssZ')
         assert offsetTime == OffsetTime.of(9, 47, 51, 0, ZoneOffset.ofHoursMinutes(-12, -34))
 
-        def dateTime =  ZonedDateTime.parse('2017/07/11 9:47PM Pacific Standard Time', 'yyyy/MM/dd h:mma zzzz')
+        def dateTime = ZonedDateTime.parse('2017/07/11 9:47PM Pacific Standard Time', 'yyyy/MM/dd h:mma zzzz')
         assert dateTime == ZonedDateTime.of(
-                               LocalDate.of(2017, 7, 11),
-                               LocalTime.of(21, 47, 0),
-                               ZoneId.of('America/Los_Angeles')
-                           )
+                LocalDate.of(2017, 7, 11),
+                LocalTime.of(21, 47, 0),
+                ZoneId.of('America/Los_Angeles')
+        )
         // end::static_parsing[]
     }
 

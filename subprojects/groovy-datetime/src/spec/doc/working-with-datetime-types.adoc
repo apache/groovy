@@ -20,13 +20,10 @@
 //////////////////////////////////////////
 
 = Working with Date/Time types
-:gdk: http://www.groovy-lang.org/gdk.html[Groovy development kit]
-:java-util-list: http://docs.oracle.com/javase/8/docs/api/java/util/List.html[java.util.List]
-:java-time-types: `java.time` types
 
-Groovy's syntax and extension methods within the {gdk} provide conveniences for using
-the http://www.oracle.com/technetwork/articles/java/jf14-date-time-2125367.html[Date/Time API
-introduced in Java 8]. This documentation refers to the data types defined by this API as
+The `groovy-datetime` module supports numerous extensions for working with
+the http://www.oracle.com/technetwork/articles/java/jf14-date-time-2125367.html[Date/Time API]
+introduced in Java 8. This documentation refers to the data types defined by this API as
 "JSR 310 types."
 
 == Formatting and parsing
