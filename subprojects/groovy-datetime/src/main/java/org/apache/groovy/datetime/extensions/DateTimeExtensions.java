@@ -93,12 +93,12 @@ public class DateTimeExtensions {
      * what the unit should be for this number.
      */
     private static TemporalUnit defaultUnitFor(Temporal temporal) {
-        return DEFAULT_UNITS.entrySet()
-                .stream()
-                .filter(e -> e.getKey().isAssignableFrom(temporal.getClass()))
-                .findFirst()
-                .map(Map.Entry::getValue)
-                .orElse(ChronoUnit.SECONDS);
+        for (Map.Entry<Class<? extends Temporal>, TemporalUnit> next : DEFAULT_UNITS.entrySet()) {
+            if (next.getKey().isAssignableFrom(temporal.getClass())) {
+                return next.getValue();
+            }
+        }
+        return ChronoUnit.SECONDS;
     }
 
     /**
