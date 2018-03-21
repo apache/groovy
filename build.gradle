@@ -255,6 +255,7 @@ dependencies {
     antlr "org.apache.ant:ant-antlr:$antVersion"
 
     testCompile project(':groovy-ant')
+    testCompile project(':groovy-dateutil')
     testCompile project(':groovy-test')
     testCompile project(':groovy-macro')
 }
