@@ -1,4 +1,5 @@
-/*  Licensed to the Apache Software Foundation (ASF) under one
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -15,16 +16,67 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime
+package groovy
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
-/**
- * @author tnichols
- * @author Paul King
- */
-class DateGDKTest extends GroovyTestCase {
+import static java.util.Calendar.*
+
+class DateTest extends GroovyTestCase {
+    void testCalendarNextPrevious() {
+        TimeZone tz = TimeZone.getTimeZone('GMT+00')
+        Calendar c = getInstance(tz)
+        c[HOUR_OF_DAY] = 6
+        c[YEAR] = 2002
+        c[MONTH] = FEBRUARY
+        c[DATE] = 2
+        c.clearTime()
+        def formatter = new SimpleDateFormat('dd-MMM-yyyy', Locale.US)
+        formatter.calendar.timeZone = tz
+
+        assert formatter.format(c.previous().time) == '01-Feb-2002'
+        assert formatter.format(c.time) == '02-Feb-2002'
+        assert formatter.format(c.next().time) == '03-Feb-2002'
+        def dates = (c.previous()..c.next()).collect{ formatter.format(it.time) }
+        assert dates == ['01-Feb-2002', '02-Feb-2002', '03-Feb-2002']
+    }
+
+    void testDateNextPrevious() {
+        def tz = TimeZone.default
+        def x = new Date()
+        def y = x + 2
+        assert x < y
+        def crossedDaylightSavingBoundary = tz.inDaylightTime(x) ^ tz.inDaylightTime(y)
+        ++x
+        --y
+        if (!crossedDaylightSavingBoundary) assert x == y
+        x += 2
+        assert x > y
+    }
+
+    void testDateRange() {
+        def today = new Date()
+        def later = today + 3
+        def expected = [today, today + 1, today + 2, today + 3]
+        def list = []
+        for (d in today..later) {
+            list << d
+        }
+        assert list == expected
+    }
+
+    void testCalendarIndex() {
+        Calendar c = new GregorianCalendar(2002, FEBRUARY, 2)
+        assert c[MONTH] == FEBRUARY
+        assert c[DAY_OF_WEEK] == SATURDAY
+    }
+
+    void testDateIndex() {
+        Date d = new GregorianCalendar(2002, FEBRUARY, 2).time
+        assert d[MONTH] == FEBRUARY
+        assert d[DAY_OF_WEEK] == SATURDAY
+    }
 
     void testGDKDateMethods() {
         Locale defaultLocale = Locale.default
@@ -33,9 +85,9 @@ class DateGDKTest extends GroovyTestCase {
             Locale locale = Locale.GERMANY
             Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
             TimeZone.setDefault TimeZone.getTimeZone('Europe/Berlin')
-            
+
             Date d = new Date(0)
-            
+
             assertEquals '1970-01-01', d.format('yyyy-MM-dd')
             assertEquals '01/01/1970', d.format('dd/MM/yyyy', TimeZone.getTimeZone('GMT'))
             assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
@@ -55,7 +107,7 @@ class DateGDKTest extends GroovyTestCase {
             TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
 
             Date d = Date.parse('yy/MM/dd hh:mm:ss', '70/01/01 00:00:00')
-            
+
             assertEquals 0, d.time
         } finally {
             TimeZone.setDefault defaultTZ
@@ -67,9 +119,9 @@ class DateGDKTest extends GroovyTestCase {
         try {
             TimeZone.default = TimeZone.getTimeZone("GMT+05")
             def tz = TimeZone.getTimeZone("GMT+03")
-            
+
             def newYear = Date.parse('yyyy-MM-dd', "2015-01-01", tz)
-            
+
             assert newYear.toString() == 'Thu Jan 01 02:00:00 GMT+05:00 2015'
         } finally {
             TimeZone.default = defaultTZ
@@ -100,7 +152,7 @@ class DateGDKTest extends GroovyTestCase {
             def offsetHr = cal.format('HH') as int
             def hr = cal.time.format('HH') as int
             if (hr < offset) hr += 24 // if GMT hr has rolled over to next day
-            
+
             // offset should be 8 hours behind GMT:
             assertEquals(offset, hr - offsetHr)
         } finally {

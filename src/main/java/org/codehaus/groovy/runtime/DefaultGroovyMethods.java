@@ -220,15 +220,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
-            DateGroovyMethods.class,
-            DateTimeGroovyMethods.class,
             EncodingGroovyMethods.class,
             IOGroovyMethods.class,
             ProcessGroovyMethods.class,
             ResourceGroovyMethods.class,
             SocketGroovyMethods.class,
             StringGroovyMethods.class//,
-            // TODO provide alternative way for these to be registered
+            // Below are registered as module extension classes
+//            DateUtilExtensions.class,
+//            DateTimeStaticExtensions.class,
+//            DateTimeExtensions.class,
 //            SqlGroovyMethods.class,
 //            SwingGroovyMethods.class,
 //            XmlGroovyMethods.class,

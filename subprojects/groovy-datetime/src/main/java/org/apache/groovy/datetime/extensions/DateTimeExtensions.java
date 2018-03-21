@@ -16,19 +16,48 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.apache.groovy.datetime.extensions;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 
-import java.time.*;
+import java.time.DateTimeException;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.MonthDay;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoPeriod;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
-import java.time.temporal.*;
-import java.util.*;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MONTHS;
@@ -37,11 +66,12 @@ import static java.time.temporal.ChronoUnit.YEARS;
 /**
  * This class defines new Groovy methods which appear on normal JDK
  * Date/Time API (java.time) classes inside the Groovy environment.
+ * These extensions require JDK 8 or above.
  */
-public class DateTimeGroovyMethods {
+public class DateTimeExtensions {
 
     // Static methods only
-    private DateTimeGroovyMethods() {
+    private DateTimeExtensions() {
     }
 
     private static final DateTimeFormatter ZONE_SHORT_FORMATTER = DateTimeFormatter.ofPattern("z");
@@ -51,6 +81,7 @@ public class DateTimeGroovyMethods {
      * the upto/downto methods, should have an entry.
      */
     private static Map<Class<? extends Temporal>, TemporalUnit> DEFAULT_UNITS = new HashMap<>();
+
     static {
         DEFAULT_UNITS.put(ChronoLocalDate.class, DAYS);
         DEFAULT_UNITS.put(YearMonth.class, MONTHS);
@@ -92,12 +123,12 @@ public class DateTimeGroovyMethods {
      * <li>{@link java.time.Year} uses {@link java.time.temporal.ChronoUnit#YEARS}.
      * </ul>
      *
-     * @param from the starting Temporal
-     * @param to the ending Temporal
+     * @param from    the starting Temporal
+     * @param to      the ending Temporal
      * @param closure the zero or one-argument closure to call
      * @throws GroovyRuntimeException if this value is later than {@code to}
      * @throws GroovyRuntimeException if {@code to} is a different type than this
-     * @since 3.0
+     * @since 2.5.0
      */
     public static void upto(Temporal from, Temporal to, Closure closure) {
         upto(from, to, defaultUnitFor(from), closure);
@@ -107,19 +138,19 @@ public class DateTimeGroovyMethods {
      * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, incrementing by one
      * {@code unit} each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
-     *
+     * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
      * that are seconds apart using {@java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is later than the second Temporal argument. The closure will
      * not be called with any value later than the {@code to} value.
      *
-     * @param from the starting Temporal
-     * @param to   the ending Temporal
-     * @param unit the TemporalUnit to increment by
+     * @param from    the starting Temporal
+     * @param to      the ending Temporal
+     * @param unit    the TemporalUnit to increment by
      * @param closure the zero or one-argument closure to call
      * @throws GroovyRuntimeException if this value is later than {@code to}
      * @throws GroovyRuntimeException if {@code to} is a different type than this
-     * @since 3.0
+     * @since 2.5.0
      */
     public static void upto(Temporal from, Temporal to, TemporalUnit unit, Closure closure) {
         if (isUptoEligible(from, to)) {
@@ -160,12 +191,12 @@ public class DateTimeGroovyMethods {
      * <li>{@link java.time.Year} uses {@link java.time.temporal.ChronoUnit#YEARS}.
      * </ul>
      *
-     * @param from the starting Temporal
-     * @param to the ending Temporal
+     * @param from    the starting Temporal
+     * @param to      the ending Temporal
      * @param closure the zero or one-argument closure to call
      * @throws GroovyRuntimeException if this value is earlier than {@code to}
      * @throws GroovyRuntimeException if {@code to} is a different type than this
-     * @since 3.0
+     * @since 2.5.0
      */
     public static void downto(Temporal from, Temporal to, Closure closure) {
         downto(from, to, defaultUnitFor(from), closure);
@@ -175,19 +206,19 @@ public class DateTimeGroovyMethods {
      * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, decrementing by one
      * {@code unit} each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
-     *
+     * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
      * that are seconds apart using {@java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is earlier than the second Temporal argument. The closure will
      * not be called with any value earlier than the {@code to} value.
      *
-     * @param from the starting Temporal
-     * @param to   the ending Temporal
-     * @param unit the TemporalUnit to increment by
+     * @param from    the starting Temporal
+     * @param to      the ending Temporal
+     * @param unit    the TemporalUnit to increment by
      * @param closure the zero or one-argument closure to call
      * @throws GroovyRuntimeException if this value is earlier than {@code to}
      * @throws GroovyRuntimeException if {@code to} is a different type than this
-     * @since 3.0
+     * @since 2.5.0
      */
     public static void downto(Temporal from, Temporal to, TemporalUnit unit, Closure closure) {
         if (isDowntoEligible(from, to)) {
@@ -229,7 +260,7 @@ public class DateTimeGroovyMethods {
      * @param self  a Temporal
      * @param other another Temporal of the same type
      * @return an TemporalAmount between the two Temporals
-     * @since 3.0
+     * @since 2.5.0
      */
     public static TemporalAmount rightShift(final Temporal self, Temporal other) {
         if (!self.getClass().equals(other.getClass())) {
@@ -237,9 +268,9 @@ public class DateTimeGroovyMethods {
         }
         switch ((ChronoUnit) defaultUnitFor(self)) {
             case YEARS:
-                return DefaultGroovyStaticMethods.between(null, (Year) self, (Year) other);
+                return DateTimeStaticExtensions.between(null, (Year) self, (Year) other);
             case MONTHS:
-                return DefaultGroovyStaticMethods.between(null, (YearMonth) self, (YearMonth) other);
+                return DateTimeStaticExtensions.between(null, (YearMonth) self, (YearMonth) other);
             case DAYS:
                 return ChronoPeriod.between((ChronoLocalDate) self, (ChronoLocalDate) other);
             default:
@@ -256,10 +287,10 @@ public class DateTimeGroovyMethods {
      * @param self  a TemporalAccessor
      * @param field a non-null TemporalField
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException                if a value for the field cannot be obtained
      * @throws UnsupportedTemporalTypeException if the field is not supported
-     * @throws ArithmeticException if numeric overflow occurs
-     * @since 3.0
+     * @throws ArithmeticException              if numeric overflow occurs
+     * @since 2.5.0
      */
     public static long getAt(final TemporalAccessor self, TemporalField field) {
         return self.getLong(field);
@@ -271,13 +302,13 @@ public class DateTimeGroovyMethods {
      * Supports the getAt operator; equivalent to calling the
      * {@link java.time.temporal.TemporalAmount#get(TemporalUnit)} method.
      *
-     * @param self  a TemporalAmount
-     * @param unit  a non-null TemporalUnit
+     * @param self a TemporalAmount
+     * @param unit a non-null TemporalUnit
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException                if a value for the field cannot be obtained
      * @throws UnsupportedTemporalTypeException if the field is not supported
-     * @throws ArithmeticException if numeric overflow occurs
-     * @since 3.0
+     * @throws ArithmeticException              if numeric overflow occurs
+     * @since 2.5.0
      */
     public static long getAt(final TemporalAmount self, TemporalUnit unit) {
         return self.get(unit);
@@ -291,7 +322,7 @@ public class DateTimeGroovyMethods {
      * @param self    a Duration
      * @param seconds the number of seconds to add
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration plus(final Duration self, long seconds) {
         return self.plusSeconds(seconds);
@@ -303,7 +334,7 @@ public class DateTimeGroovyMethods {
      * @param self    a Duration
      * @param seconds the number of seconds to subtract
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration minus(final Duration self, long seconds) {
         return self.minusSeconds(seconds);
@@ -314,7 +345,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration next(final Duration self) {
         return self.plusSeconds(1);
@@ -325,7 +356,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration previous(final Duration self) {
         return self.minusSeconds(1);
@@ -336,7 +367,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration negative(final Duration self) {
         return self.negated();
@@ -347,7 +378,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration positive(final Duration self) {
         return self.abs();
@@ -359,7 +390,7 @@ public class DateTimeGroovyMethods {
      * @param self   a Duration
      * @param scalar the value to multiply by
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration multiply(final Duration self, long scalar) {
         return self.multipliedBy(scalar);
@@ -371,7 +402,7 @@ public class DateTimeGroovyMethods {
      * @param self   a Duration
      * @param scalar the value to divide by
      * @return a Duration
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Duration div(final Duration self, long scalar) {
         return self.dividedBy(scalar);
@@ -382,7 +413,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return true if positive
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isPositive(final Duration self) {
         return !self.isZero() && !self.isNegative();
@@ -393,7 +424,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return true if nonnegative
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isNonnegative(final Duration self) {
         return self.isZero() || !self.isNegative();
@@ -404,7 +435,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Duration
      * @return true if nonpositive
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isNonpositive(final Duration self) {
         return self.isZero() || self.isNegative();
@@ -418,7 +449,7 @@ public class DateTimeGroovyMethods {
      * @param self    an Instant
      * @param seconds the number of seconds to add
      * @return an Instant
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Instant plus(final Instant self, long seconds) {
         return self.plusSeconds(seconds);
@@ -430,7 +461,7 @@ public class DateTimeGroovyMethods {
      * @param self    an Instant
      * @param seconds the number of seconds to subtract
      * @return an Instant
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Instant minus(final Instant self, long seconds) {
         return self.minusSeconds(seconds);
@@ -441,7 +472,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an Instant
      * @return an Instant one second ahead
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Instant next(final Instant self) {
         return plus(self, 1);
@@ -452,7 +483,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an Instant
      * @return an Instant one second behind
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Instant previous(final Instant self) {
         return minus(self, 1);
@@ -464,7 +495,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an Instant
      * @return a Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final Instant self) {
         return new Date(self.toEpochMilli());
@@ -475,7 +506,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an Instant
      * @return a Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final Instant self) {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -492,7 +523,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalDate self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -505,7 +536,7 @@ public class DateTimeGroovyMethods {
      * @param dateStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalDate self, FormatStyle dateStyle) {
         return self.format(DateTimeFormatter.ofLocalizedDate(dateStyle));
@@ -517,7 +548,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDate
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateString(final LocalDate self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -529,7 +560,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDate
      * @param days the number of days to add
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate plus(final LocalDate self, long days) {
         return self.plusDays(days);
@@ -541,7 +572,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDate
      * @param days the number of days to subtract
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate minus(final LocalDate self, long days) {
         return self.minusDays(days);
@@ -552,7 +583,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDate
      * @return the next day
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate next(final LocalDate self) {
         return plus(self, 1);
@@ -563,7 +594,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDate
      * @return the previous day
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate previous(final LocalDate self) {
         return minus(self, 1);
@@ -576,7 +607,7 @@ public class DateTimeGroovyMethods {
      * @param self  a LocalDate
      * @param other another LocalDate
      * @return a Period representing the time between the two LocalDates
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period rightShift(final LocalDate self, LocalDate other) {
         return Period.between(self, other);
@@ -588,7 +619,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDate
      * @param time a LocalTime
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime leftShift(final LocalDate self, LocalTime time) {
         return LocalDateTime.of(self, time);
@@ -600,7 +631,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDate
      * @param time an OffsetTime
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime leftShift(final LocalDate self, OffsetTime time) {
         return time.atDate(self);
@@ -612,7 +643,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDate
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final LocalDate self) {
         return toCalendar(self).getTime();
@@ -624,14 +655,23 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDate
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalDate self) {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DATE, self.getDayOfMonth());
         cal.set(Calendar.MONTH, self.getMonthValue() - 1);
         cal.set(Calendar.YEAR, self.getYear());
-        return DateGroovyMethods.clearTime(cal);
+        clearTimeCommon(cal);
+        return cal;
+    }
+
+    /* duplicated with DateUtilExtensions utility method but we don't want the modules to depend on one another */
+    private static void clearTimeCommon(final Calendar self) {
+        self.set(Calendar.HOUR_OF_DAY, 0);
+        self.clear(Calendar.MINUTE);
+        self.clear(Calendar.SECOND);
+        self.clear(Calendar.MILLISECOND);
     }
 
     /* ******** java.time.LocalDateTime extension methods ******** */
@@ -643,7 +683,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalDateTime self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -656,7 +696,7 @@ public class DateTimeGroovyMethods {
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalDateTime self, FormatStyle dateTimeStyle) {
         return self.format(DateTimeFormatter.ofLocalizedDateTime(dateTimeStyle));
@@ -668,7 +708,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateTimeString(final LocalDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -680,7 +720,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateString(final LocalDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -692,7 +732,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getTimeString(final LocalDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_TIME);
@@ -703,7 +743,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime clearTime(final LocalDateTime self) {
         return self.truncatedTo(DAYS);
@@ -715,7 +755,7 @@ public class DateTimeGroovyMethods {
      * @param self    a LocalDateTime
      * @param seconds the number of seconds to add
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime plus(final LocalDateTime self, long seconds) {
         return self.plusSeconds(seconds);
@@ -727,7 +767,7 @@ public class DateTimeGroovyMethods {
      * @param self    a LocalDateTime
      * @param seconds the number of seconds to subtract
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime minus(final LocalDateTime self, long seconds) {
         return self.minusSeconds(seconds);
@@ -738,7 +778,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime next(final LocalDateTime self) {
         return plus(self, 1);
@@ -749,7 +789,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime previous(final LocalDateTime self) {
         return minus(self, 1);
@@ -761,7 +801,7 @@ public class DateTimeGroovyMethods {
      * @param self   a LocalDateTime
      * @param offset a ZoneOffset
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime leftShift(final LocalDateTime self, ZoneOffset offset) {
         return OffsetDateTime.of(self, offset);
@@ -773,7 +813,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalDateTime
      * @param zone a ZoneId
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime leftShift(final LocalDateTime self, ZoneId zone) {
         return ZonedDateTime.of(self, zone);
@@ -785,7 +825,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDateTime
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final LocalDateTime self) {
         return toCalendar(self).getTime();
@@ -798,7 +838,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalDateTime
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalDateTime self) {
         Calendar cal = Calendar.getInstance();
@@ -821,7 +861,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalTime self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -834,7 +874,7 @@ public class DateTimeGroovyMethods {
      * @param timeStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final LocalTime self, FormatStyle timeStyle) {
         return self.format(DateTimeFormatter.ofLocalizedTime(timeStyle));
@@ -846,7 +886,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getTimeString(final LocalTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_TIME);
@@ -858,7 +898,7 @@ public class DateTimeGroovyMethods {
      * @param self    a LocalTime
      * @param seconds the number of seconds to add
      * @return a LocalTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalTime plus(final LocalTime self, long seconds) {
         return self.plusSeconds(seconds);
@@ -870,7 +910,7 @@ public class DateTimeGroovyMethods {
      * @param self    a LocalTime
      * @param seconds the number of seconds to subtract
      * @return a LocalTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalTime minus(final LocalTime self, long seconds) {
         return self.minusSeconds(seconds);
@@ -881,7 +921,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalTime
      * @return a LocalTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalTime next(final LocalTime self) {
         return plus(self, 1);
@@ -892,7 +932,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalTime
      * @return a LocalTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalTime previous(final LocalTime self) {
         return minus(self, 1);
@@ -904,7 +944,7 @@ public class DateTimeGroovyMethods {
      * @param self a LocalTime
      * @param date a LocalDate
      * @return a LocalDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDateTime leftShift(final LocalTime self, LocalDate date) {
         return LocalDateTime.of(date, self);
@@ -916,7 +956,7 @@ public class DateTimeGroovyMethods {
      * @param self   a LocalTime
      * @param offset a ZoneOffset
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime leftShift(final LocalTime self, ZoneOffset offset) {
         return OffsetTime.of(self, offset);
@@ -928,7 +968,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalTime
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final LocalTime self) {
         return toCalendar(self).getTime();
@@ -941,7 +981,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a LocalTime
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalTime self) {
         Calendar cal = Calendar.getInstance();
@@ -960,7 +1000,7 @@ public class DateTimeGroovyMethods {
      * @param self a MonthDay
      * @param year a year
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate leftShift(final MonthDay self, int year) {
         return self.atYear(year);
@@ -972,7 +1012,7 @@ public class DateTimeGroovyMethods {
      * @param self a MonthDay
      * @param year a Year
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate leftShift(final MonthDay self, Year year) {
         return year.atMonthDay(self);
@@ -987,7 +1027,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final OffsetDateTime self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -1000,7 +1040,7 @@ public class DateTimeGroovyMethods {
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final OffsetDateTime self, FormatStyle dateTimeStyle) {
         return self.format(DateTimeFormatter.ofLocalizedDateTime(dateTimeStyle));
@@ -1012,7 +1052,7 @@ public class DateTimeGroovyMethods {
      * @param self an OffsetDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateTimeString(final OffsetDateTime self) {
         return self.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
@@ -1024,7 +1064,7 @@ public class DateTimeGroovyMethods {
      * @param self an OffsetDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateString(final OffsetDateTime self) {
         return self.format(DateTimeFormatter.ISO_OFFSET_DATE);
@@ -1036,7 +1076,7 @@ public class DateTimeGroovyMethods {
      * @param self an OffsetDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getTimeString(final OffsetDateTime self) {
         return self.format(DateTimeFormatter.ISO_OFFSET_TIME);
@@ -1047,7 +1087,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime clearTime(final OffsetDateTime self) {
         return self.truncatedTo(DAYS);
@@ -1059,7 +1099,7 @@ public class DateTimeGroovyMethods {
      * @param self    an OffsetDateTime
      * @param seconds the number of seconds to add
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime plus(final OffsetDateTime self, long seconds) {
         return self.plusSeconds(seconds);
@@ -1071,7 +1111,7 @@ public class DateTimeGroovyMethods {
      * @param self    an OffsetDateTime
      * @param seconds the number of seconds to subtract
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime minus(final OffsetDateTime self, long seconds) {
         return self.minusSeconds(seconds);
@@ -1082,7 +1122,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime next(final OffsetDateTime self) {
         return plus(self, 1);
@@ -1093,7 +1133,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime previous(final OffsetDateTime self) {
         return minus(self, 1);
@@ -1106,7 +1146,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetDateTime
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final OffsetDateTime self) {
         return toCalendar(self).getTime();
@@ -1119,7 +1159,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetDateTime
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final OffsetDateTime self) {
         return toCalendar(self.toZonedDateTime());
@@ -1134,7 +1174,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final OffsetTime self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -1147,7 +1187,7 @@ public class DateTimeGroovyMethods {
      * @param timeStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final OffsetTime self, FormatStyle timeStyle) {
         return self.format(DateTimeFormatter.ofLocalizedTime(timeStyle));
@@ -1159,7 +1199,7 @@ public class DateTimeGroovyMethods {
      * @param self an OffsetTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getTimeString(final OffsetTime self) {
         return self.format(DateTimeFormatter.ISO_OFFSET_TIME);
@@ -1171,7 +1211,7 @@ public class DateTimeGroovyMethods {
      * @param self    an OffsetTime
      * @param seconds the number of seconds to add
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime plus(final OffsetTime self, long seconds) {
         return self.plusSeconds(seconds);
@@ -1183,7 +1223,7 @@ public class DateTimeGroovyMethods {
      * @param self    an OffsetTime
      * @param seconds the number of seconds to subtract
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime minus(final OffsetTime self, long seconds) {
         return self.minusSeconds(seconds);
@@ -1194,7 +1234,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetTime
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime next(final OffsetTime self) {
         return plus(self, 1);
@@ -1205,7 +1245,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetTime
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime previous(final OffsetTime self) {
         return minus(self, 1);
@@ -1217,7 +1257,7 @@ public class DateTimeGroovyMethods {
      * @param self an OffsetTime
      * @param date a LocalDate
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime leftShift(final OffsetTime self, LocalDate date) {
         return OffsetDateTime.of(date, self.toLocalTime(), self.getOffset());
@@ -1230,7 +1270,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetTime
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final OffsetTime self) {
         return toCalendar(self).getTime();
@@ -1243,7 +1283,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an OffsetTime
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final OffsetTime self) {
         TimeZone timeZone = toTimeZone(self.getOffset());
@@ -1264,7 +1304,7 @@ public class DateTimeGroovyMethods {
      * @param self a Period
      * @param days the number of days to increase this Period by
      * @return a Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period plus(final Period self, long days) {
         return self.plusDays(days);
@@ -1277,7 +1317,7 @@ public class DateTimeGroovyMethods {
      * @param self a Period
      * @param days the number of days to decrease this Period by
      * @return a Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period minus(final Period self, long days) {
         return self.minusDays(days);
@@ -1289,7 +1329,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Period
      * @return a Period one day longer in length
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period next(final Period self) {
         return plus(self, 1);
@@ -1301,7 +1341,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Period
      * @return a Period one day shorter in length
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period previous(final Period self) {
         return minus(self, 1);
@@ -1312,7 +1352,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Period
      * @return a negated Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period negative(final Period self) {
         return self.negated();
@@ -1325,7 +1365,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Period
      * @return a positive Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period positive(final Period self) {
         return !self.isNegative() ? self : self.withDays(Math.abs(self.getDays()))
@@ -1339,7 +1379,7 @@ public class DateTimeGroovyMethods {
      * @param self   a Period
      * @param scalar a scalar to multiply each unit by
      * @return a Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period multiply(final Period self, int scalar) {
         return self.multipliedBy(scalar);
@@ -1350,7 +1390,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ChronoPeriod
      * @return true if positive
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isPositive(final ChronoPeriod self) {
         return !self.isZero() && !self.isNegative();
@@ -1361,7 +1401,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ChronoPeriod
      * @return true if nonnegative
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isNonnegative(final ChronoPeriod self) {
         return self.isZero() || !self.isNegative();
@@ -1372,7 +1412,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ChronoPeriod
      * @return true if nonpositive
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isNonpositive(final ChronoPeriod self) {
         return self.isZero() || self.isNegative();
@@ -1386,7 +1426,7 @@ public class DateTimeGroovyMethods {
      * @param self  a Year
      * @param years the number of years to add
      * @return a Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Year plus(final Year self, long years) {
         return self.plusYears(years);
@@ -1398,7 +1438,7 @@ public class DateTimeGroovyMethods {
      * @param self  a Year
      * @param years the number of years to subtract
      * @return a Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Year minus(final Year self, long years) {
         return self.minusYears(years);
@@ -1407,9 +1447,9 @@ public class DateTimeGroovyMethods {
     /**
      * Returns a {@link java.time.Year} after this year.
      *
-     * @param self  a Year
+     * @param self a Year
      * @return the next Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Year next(final Year self) {
         return plus(self, 1);
@@ -1420,7 +1460,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a Year
      * @return the previous Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Year previous(final Year self) {
         return minus(self, 1);
@@ -1433,7 +1473,7 @@ public class DateTimeGroovyMethods {
      * @param self a Year
      * @param year another Year
      * @return a Period between the Years
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period rightShift(final Year self, Year year) {
         return Period.between(self.atDay(1), year.atDay(1));
@@ -1445,7 +1485,7 @@ public class DateTimeGroovyMethods {
      * @param self  a Year
      * @param month a Month
      * @return a YearMonth
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth leftShift(final Year self, Month month) {
         return self.atMonth(month);
@@ -1457,7 +1497,7 @@ public class DateTimeGroovyMethods {
      * @param self     a Year
      * @param monthDay a MonthDay
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate leftShift(final Year self, MonthDay monthDay) {
         return self.atMonthDay(monthDay);
@@ -1466,12 +1506,12 @@ public class DateTimeGroovyMethods {
     /**
      * Equivalent to calling the {@link java.time.Year#get(java.time.temporal.TemporalField)} method with a
      * {@link java.time.temporal.ChronoField#ERA} argument.
-     *
+     * <p>
      * Returns the era of the year, which is currently either 0 (BC) or 1 (AD).
      *
      * @param self a Year
      * @return an int representing the era
-     * @since 3.0
+     * @since 2.5.0
      */
     public static int getEra(final Year self) {
         return self.get(ChronoField.ERA);
@@ -1480,12 +1520,12 @@ public class DateTimeGroovyMethods {
     /**
      * Equivalent to calling the {@link java.time.Year#get(java.time.temporal.TemporalField)} method with a
      * {@link java.time.temporal.ChronoField#YEAR_OF_ERA} argument.
-     *
+     * <p>
      * Since Year=0 represents 1 BC, the yearOfEra value of Year=0 is 1, Year=-1 is 2, and so on.
      *
      * @param self a Year
      * @return the year value of the era
-     * @since 3.0
+     * @since 2.5.0
      */
     public static int getYearOfEra(final Year self) {
         return self.get(ChronoField.YEAR_OF_ERA);
@@ -1499,7 +1539,7 @@ public class DateTimeGroovyMethods {
      * @param self   a YearMonth
      * @param months the number of months to add
      * @return a Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth plus(final YearMonth self, long months) {
         return self.plusMonths(months);
@@ -1511,7 +1551,7 @@ public class DateTimeGroovyMethods {
      * @param self   a YearMonth
      * @param months the number of months to subtract
      * @return a Year
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth minus(final YearMonth self, long months) {
         return self.minusMonths(months);
@@ -1520,9 +1560,9 @@ public class DateTimeGroovyMethods {
     /**
      * Returns a {@link java.time.YearMonth} that is the month after this year/month.
      *
-     * @param self  a YearMonth
+     * @param self a YearMonth
      * @return the next YearMonth
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth next(final YearMonth self) {
         return plus(self, 1);
@@ -1533,7 +1573,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a YearMonth
      * @return the previous YearMonth
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth previous(final YearMonth self) {
         return minus(self, 1);
@@ -1545,7 +1585,7 @@ public class DateTimeGroovyMethods {
      * @param self       a YearMonth
      * @param dayOfMonth a day of the month
      * @return a LocalDate
-     * @since 3.0
+     * @since 2.5.0
      */
     public static LocalDate leftShift(final YearMonth self, int dayOfMonth) {
         return self.atDay(dayOfMonth);
@@ -1558,7 +1598,7 @@ public class DateTimeGroovyMethods {
      * @param self  a YearMonth
      * @param other another YearMonth
      * @return a Period
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Period rightShift(YearMonth self, YearMonth other) {
         return Period.between(self.atDay(1), other.atDay(1));
@@ -1573,7 +1613,7 @@ public class DateTimeGroovyMethods {
      * @param pattern the formatting pattern
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final ZonedDateTime self, String pattern) {
         return self.format(DateTimeFormatter.ofPattern(pattern));
@@ -1586,7 +1626,7 @@ public class DateTimeGroovyMethods {
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String format(final ZonedDateTime self, FormatStyle dateTimeStyle) {
         return self.format(DateTimeFormatter.ofLocalizedDateTime(dateTimeStyle));
@@ -1599,7 +1639,7 @@ public class DateTimeGroovyMethods {
      * @param self a ZonedDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateTimeString(final ZonedDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + self.format(ZONE_SHORT_FORMATTER);
@@ -1612,7 +1652,7 @@ public class DateTimeGroovyMethods {
      * @param self a ZonedDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getDateString(final ZonedDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_DATE) + self.format(ZONE_SHORT_FORMATTER);
@@ -1625,7 +1665,7 @@ public class DateTimeGroovyMethods {
      * @param self a ZonedDateTime
      * @return a formatted String
      * @see java.time.format.DateTimeFormatter
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getTimeString(final ZonedDateTime self) {
         return self.format(DateTimeFormatter.ISO_LOCAL_TIME) + self.format(ZONE_SHORT_FORMATTER);
@@ -1636,7 +1676,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime clearTime(final ZonedDateTime self) {
         return self.truncatedTo(DAYS);
@@ -1648,7 +1688,7 @@ public class DateTimeGroovyMethods {
      * @param self    an ZonedDateTime
      * @param seconds the number of seconds to add
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime plus(final ZonedDateTime self, long seconds) {
         return self.plusSeconds(seconds);
@@ -1660,7 +1700,7 @@ public class DateTimeGroovyMethods {
      * @param self    a ZonedDateTime
      * @param seconds the number of seconds to subtract
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime minus(final ZonedDateTime self, long seconds) {
         return self.minusSeconds(seconds);
@@ -1671,7 +1711,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime next(final ZonedDateTime self) {
         return plus(self, 1);
@@ -1682,7 +1722,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime previous(final ZonedDateTime self) {
         return minus(self, 1);
@@ -1695,7 +1735,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZonedDateTime
      * @return a java.util.Date
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Date toDate(final ZonedDateTime self) {
         return toCalendar(self).getTime();
@@ -1708,7 +1748,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self an ZonedDateTime
      * @return a java.util.Calendar
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Calendar toCalendar(final ZonedDateTime self) {
         Calendar cal = Calendar.getInstance(toTimeZone(self.getZone()));
@@ -1729,7 +1769,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneId
      * @return a TimeZone
-     * @since 3.0
+     * @since 2.5.0
      */
     public static TimeZone toTimeZone(final ZoneId self) {
         return TimeZone.getTimeZone(self);
@@ -1740,7 +1780,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneId
      * @return the full display name of the ZoneId
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getFullName(final ZoneId self) {
         return getFullName(self, Locale.getDefault());
@@ -1753,7 +1793,7 @@ public class DateTimeGroovyMethods {
      * @param self   a ZoneId
      * @param locale a Locale
      * @return the full display name of the ZoneId
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getFullName(final ZoneId self, Locale locale) {
         return self.getDisplayName(TextStyle.FULL, locale);
@@ -1762,9 +1802,9 @@ public class DateTimeGroovyMethods {
     /**
      * Returns the name of this zone formatted according to the {@link java.time.format.TextStyle#SHORT} text style.
      *
-     * @param self   a ZoneId
+     * @param self a ZoneId
      * @return the short display name of the ZoneId
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getShortName(final ZoneId self) {
         return getShortName(self, Locale.getDefault());
@@ -1777,7 +1817,7 @@ public class DateTimeGroovyMethods {
      * @param self   a ZoneId
      * @param locale a Locale
      * @return the short display name of the ZoneId
-     * @since 3.0
+     * @since 2.5.0
      */
     public static String getShortName(final ZoneId self, Locale locale) {
         return self.getDisplayName(TextStyle.SHORT, locale);
@@ -1788,7 +1828,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneId
      * @return a ZoneOffset
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZoneOffset getOffset(final ZoneId self) {
         return getOffset(self, Instant.now());
@@ -1800,7 +1840,7 @@ public class DateTimeGroovyMethods {
      * @param self    a ZoneId
      * @param instant an Instant
      * @return a ZoneOffset
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZoneOffset getOffset(final ZoneId self, Instant instant) {
         return self.getRules().getOffset(instant);
@@ -1811,7 +1851,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneId
      * @return a ZonedDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static ZonedDateTime leftShift(final ZoneId self, LocalDateTime dateTime) {
         return ZonedDateTime.of(dateTime, self);
@@ -1824,7 +1864,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneOffset
      * @return a TimeZone
-     * @since 3.0
+     * @since 2.5.0
      */
     public static TimeZone toTimeZone(final ZoneOffset self) {
         if (ZoneOffset.UTC.equals(self)) {
@@ -1854,7 +1894,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneOffset
      * @return the hours component value
-     * @since 3.0
+     * @since 2.5.0
      */
     public static int getHours(final ZoneOffset self) {
         return offsetFieldValue(self, ChronoField.HOUR_OF_DAY);
@@ -1866,7 +1906,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneOffset
      * @return the minutes component value
-     * @since 3.0
+     * @since 2.5.0
      */
     public static int getMinutes(final ZoneOffset self) {
         return offsetFieldValue(self, ChronoField.MINUTE_OF_HOUR);
@@ -1884,7 +1924,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a ZoneOffset
      * @return the seconds component value
-     * @since 3.0
+     * @since 2.5.0
      */
     public static int getSeconds(final ZoneOffset self) {
         return offsetFieldValue(self, ChronoField.SECOND_OF_MINUTE);
@@ -1897,7 +1937,7 @@ public class DateTimeGroovyMethods {
      * @param self  a ZoneOffset
      * @param field a TemporalField
      * @return the ZoneOffset's field value
-     * @since 3.0
+     * @since 2.5.0
      */
     public static long getAt(final ZoneOffset self, TemporalField field) {
         return self.getLong(field);
@@ -1909,7 +1949,7 @@ public class DateTimeGroovyMethods {
      * @param self     a ZoneOffset
      * @param dateTime a LocalDateTime
      * @return an OffsetDateTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetDateTime leftShift(final ZoneOffset self, LocalDateTime dateTime) {
         return OffsetDateTime.of(dateTime, self);
@@ -1921,7 +1961,7 @@ public class DateTimeGroovyMethods {
      * @param self a ZoneOffset
      * @param time a LocalTime
      * @return an OffsetTime
-     * @since 3.0
+     * @since 2.5.0
      */
     public static OffsetTime leftShift(final ZoneOffset self, LocalTime time) {
         return OffsetTime.of(time, self);
@@ -1935,7 +1975,7 @@ public class DateTimeGroovyMethods {
      * @param self a DayOfWeek
      * @param days the number of days to move forward
      * @return the DayOfWeek
-     * @since 3.0
+     * @since 2.5.0
      */
     public static DayOfWeek plus(final DayOfWeek self, int days) {
         int daysPerWeek = DayOfWeek.values().length;
@@ -1949,7 +1989,7 @@ public class DateTimeGroovyMethods {
      * @param self a DayOfWeek
      * @param days the number of days to move back
      * @return the DayOfWeek
-     * @since 3.0
+     * @since 2.5.0
      */
     public static DayOfWeek minus(final DayOfWeek self, int days) {
         return plus(self, days * -1);
@@ -1960,7 +2000,7 @@ public class DateTimeGroovyMethods {
      *
      * @param self a DayOfWeek
      * @return true if this DayOfWeek is Saturday or Sunday
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isWeekend(final DayOfWeek self) {
         return self == DayOfWeek.SATURDAY || self == DayOfWeek.SUNDAY;
@@ -1970,7 +2010,7 @@ public class DateTimeGroovyMethods {
      * Returns {@code true} if the DayOfWeek is a weekday.
      *
      * @return true if this DayOfWeek is Monday through Friday
-     * @since 3.0
+     * @since 2.5.0
      */
     public static boolean isWeekday(final DayOfWeek self) {
         return !isWeekend(self);
@@ -1984,7 +2024,7 @@ public class DateTimeGroovyMethods {
      * @param self   a Month
      * @param months the number of months move forward
      * @return the Month
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Month plus(final Month self, int months) {
         int monthsPerYear = Month.values().length;
@@ -1998,7 +2038,7 @@ public class DateTimeGroovyMethods {
      * @param self   a Month
      * @param months the number of months to move back
      * @return the Month
-     * @since 3.0
+     * @since 2.5.0
      */
     public static Month minus(final Month self, int months) {
         return plus(self, months * -1);
@@ -2010,7 +2050,7 @@ public class DateTimeGroovyMethods {
      * @param self       a Month
      * @param dayOfMonth a day of the month
      * @return a MonthDay
-     * @since 3.0
+     * @since 2.5.0
      */
     public static MonthDay leftShift(final Month self, int dayOfMonth) {
         return MonthDay.of(self, dayOfMonth);
@@ -2022,9 +2062,358 @@ public class DateTimeGroovyMethods {
      * @param self a Month
      * @param year a Year
      * @return a YearMonth
-     * @since 3.0
+     * @since 2.5.0
      */
     public static YearMonth leftShift(final Month self, Year year) {
         return YearMonth.of(year.getValue(), self);
+    }
+
+    /**
+     * Returns the Time Zone offset of the Calendar as a {@link java.time.ZoneOffset}.
+     *
+     * @param self a Calendar
+     * @return a ZoneOffset
+     * @since 2.5.0
+     */
+    public static ZoneOffset getZoneOffset(final Calendar self) {
+        int offsetMillis = self.get(Calendar.ZONE_OFFSET) + self.get(Calendar.DST_OFFSET);
+        return ZoneOffset.ofTotalSeconds(offsetMillis / 1000);
+    }
+
+    /* duplicated with DateUtilExtensions.toCalendar() but we don't want modulkes to depend on one another */
+    private static Calendar toCalendar(Date self) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        return cal;
+    }
+
+    /**
+     * Returns the Time Zone offset of the Date as a {@link java.time.ZoneOffset},
+     * which will typically be system's default offset.
+     *
+     * @param self a Date
+     * @return a ZoneOffset
+     * @since 2.5.0
+     */
+    public static ZoneOffset getZoneOffset(final Date self) {
+        return getZoneOffset(toCalendar(self));
+    }
+
+    /**
+     * Returns the Time Zone of the Calendar as a java.time.ZoneId.
+     *
+     * @param self a Calendar
+     * @return a ZoneId
+     * @since 2.5.0
+     */
+    public static ZoneId getZoneId(final Calendar self) {
+        return self.getTimeZone().toZoneId();
+    }
+
+    /**
+     * Returns the Time Zone of the Date as a {@link java.time.ZoneId}. This will
+     * typically be the system's default ZoneId.
+     *
+     * @param self a Date
+     * @return a ZoneId
+     * @since 2.5.0
+     */
+    public static ZoneId getZoneId(final Date self) {
+        return getZoneId(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.Year}.  If the Calendar has a different
+     * time zone than the system default, the Year will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a Year
+     * @since 2.5.0
+     */
+    public static Year toYear(final Calendar self) {
+        return Year.of(self.get(Calendar.YEAR));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.Year}.
+     *
+     * @param self a Date
+     * @return a Year
+     * @since 2.5.0
+     */
+    public static Year toYear(final Date self) {
+        return toYear(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.Month}. If the Calendar has a different
+     * time zone than the system default, the Month will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a Month
+     * @since 2.5.0
+     */
+    public static Month toMonth(final Calendar self) {
+        return Month.of(self.get(Calendar.MONTH) + 1);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.Month}.
+     *
+     * @param self a Date
+     * @return a Month
+     * @since 2.5.0
+     */
+    public static Month toMonth(final Date self) {
+        return toMonth(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.MonthDay}. If the Calendar has a different
+     * time zone than the system default, the MonthDay will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a MonthDay
+     * @since 2.5.0
+     */
+    public static MonthDay toMonthDay(final Calendar self) {
+        return MonthDay.of(toMonth(self), self.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.MonthDay}.
+     *
+     * @param self a Date
+     * @return a MonthDay
+     * @since 2.5.0
+     */
+    public static MonthDay toMonthDay(final Date self) {
+        return toMonthDay(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.YearMonth}. If the Calendar has a different
+     * time zone than the system default, the YearMonth will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a YearMonth
+     * @since 2.5.0
+     */
+    public static YearMonth toYearMonth(final Calendar self) {
+        return toYear(self).atMonth(toMonth(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.YearMonth}.
+     *
+     * @param self a Date
+     * @return a YearMonth
+     * @since 2.5.0
+     */
+    public static YearMonth toYearMonth(final Date self) {
+        return toYearMonth(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.DayOfWeek}. If the Calendar has a different
+     * time zone than the system default, the DayOfWeek will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a DayOfWeek
+     * @since 2.5.0
+     */
+    public static DayOfWeek toDayOfWeek(final Calendar self) {
+        return DayOfWeek.of(self.get(Calendar.DAY_OF_WEEK)).minus(1);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.DayOfWeek}.
+     *
+     * @param self a Date
+     * @return a DayOfWeek
+     * @since 2.5.0
+     */
+    public static DayOfWeek toDayOfWeek(final Date self) {
+        return toDayOfWeek(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalDate}. If the Calendar has a different
+     * time zone than the system default, the LocalDate will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalDate
+     * @since 2.5.0
+     */
+    static LocalDate toLocalDate(final Calendar self) {
+        return LocalDate.of(self.get(Calendar.YEAR), toMonth(self), self.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalDate}.
+     *
+     * @param self a Date
+     * @return a LocalDate
+     * @since 2.5.0
+     */
+    public static LocalDate toLocalDate(final Date self) {
+        return toLocalDate(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalTime}. If the Calendar has a different
+     * time zone than the system default, the LocalTime will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalTime
+     * @since 2.5.0
+     */
+    public static LocalTime toLocalTime(final Calendar self) {
+        int hour = self.get(Calendar.HOUR_OF_DAY);
+        int minute = self.get(Calendar.MINUTE);
+        int second = self.get(Calendar.SECOND);
+        int ns = self.get(Calendar.MILLISECOND) * 1_000_000;
+        return LocalTime.of(hour, minute, second, ns);
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalTime}.
+     *
+     * @param self a Date
+     * @return a LocalTime
+     * @since 2.5.0
+     */
+    public static LocalTime toLocalTime(final Date self) {
+        return toLocalTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.LocalDateTime}. If the Calendar has a different
+     * time zone than the system default, the LocalDateTime will be adjusted into the default time zone.
+     *
+     * @param self a Calendar
+     * @return a LocalDateTime
+     * @since 2.5.0
+     */
+    public static LocalDateTime toLocalDateTime(final Calendar self) {
+        return LocalDateTime.of(toLocalDate(self), toLocalTime(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.LocalDateTime}.
+     *
+     * @param self a Date
+     * @return a LocalDateTime
+     * @since 2.5.0
+     */
+    public static LocalDateTime toLocalDateTime(final Date self) {
+        return toLocalDateTime(toCalendar(self));
+    }
+
+    /**
+     * <p>Converts the Calendar to a corresponding {@link java.time.ZonedDateTime}.</p><p>Note that
+     * {@link java.util.GregorianCalendar} has a {@link java.util.GregorianCalendar#toZonedDateTime} method,
+     * which is commonly the specific type of Calendar in use.</p>
+     *
+     * @param self a Calendar
+     * @return a ZonedDateTime
+     * @since 2.5.0
+     */
+    public static ZonedDateTime toZonedDateTime(final Calendar self) {
+        if (self instanceof GregorianCalendar) { // would this branch ever be true?
+            return ((GregorianCalendar) self).toZonedDateTime();
+        } else {
+            return ZonedDateTime.of(toLocalDateTime(self), getZoneId(self));
+        }
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.ZonedDateTime}.
+     *
+     * @param self a Date
+     * @return a ZonedDateTime
+     * @since 2.5.0
+     */
+    public static ZonedDateTime toZonedDateTime(final Date self) {
+        return toZonedDateTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.OffsetDateTime}.
+     *
+     * @param self a Calendar
+     * @return an OffsetDateTime
+     * @since 2.5.0
+     */
+    public static OffsetDateTime toOffsetDateTime(final Calendar self) {
+        return OffsetDateTime.of(toLocalDateTime(self), getZoneOffset(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.OffsetDateTime}.
+     *
+     * @param self a Date
+     * @return an OffsetDateTime
+     * @since 2.5.0
+     */
+    public static OffsetDateTime toOffsetDateTime(final Date self) {
+        return toOffsetDateTime(toCalendar(self));
+    }
+
+    /**
+     * Converts the Calendar to a corresponding {@link java.time.OffsetTime}.
+     *
+     * @param self a Calendar
+     * @return an OffsetTime
+     * @since 2.5.0
+     */
+    public static OffsetTime toOffsetTime(final Calendar self) {
+        return OffsetTime.of(toLocalTime(self), getZoneOffset(self));
+    }
+
+    /**
+     * Converts the Date to a corresponding {@link java.time.OffsetTime}.
+     *
+     * @param self a Date
+     * @return an OffsetTime
+     * @since 2.5.0
+     */
+    public static OffsetTime toOffsetTime(final Date self) {
+        return toOffsetTime(toCalendar(self));
+    }
+
+    /**
+     * Convenience method for converting a Calendar to a corresponding {@link java.time.Instant}.
+     *
+     * @param self a Calendar
+     * @return an Instant
+     * @since 2.5.0
+     */
+    public static Instant toInstant(final Calendar self) {
+        return self.getTime().toInstant();
+    }
+
+    /**
+     * Converts the TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * using the current date/time.
+     *
+     * @param self a TimeZone
+     * @return a ZoneOffset
+     * @since 2.5.0
+     */
+    public static ZoneOffset toZoneOffset(final TimeZone self) {
+        return toZoneOffset(self, Instant.now());
+    }
+
+    /**
+     * Converts this TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * using the date/time of specified Instant.
+     *
+     * @param self a TimeZone
+     * @return a ZoneOffset
+     * @since 2.5.0
+     */
+    public static ZoneOffset toZoneOffset(final TimeZone self, Instant instant) {
+        return self.toZoneId().getRules().getOffset(instant);
     }
 }

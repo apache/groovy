@@ -141,8 +141,6 @@ task docGDK {
                     // either package name if in core or fully qualified path otherwise
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods')
-                    arg(value: 'org.codehaus.groovy.runtime.DateGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.runtime.DateTimeGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.EncodingGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.IOGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.ProcessGroovyMethods')
@@ -152,6 +150,9 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods')
                     // TODO don't hard-code these
+                    arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
+                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeExtensions.java')
+                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeStaticExtensions.java')
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')

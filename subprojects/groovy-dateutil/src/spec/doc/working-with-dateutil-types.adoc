@@ -1,0 +1,54 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Working with legacy Date/Calendar types
+
+The `groovy-dateutil` module supports numerous extensions for working with
+Java's classic `Date` and `Calendar` classes.
+
+You can access the properties of a `Date` or `Calendar` using the normal array index notation
+with the constant field numbers from the `Calendar` class as shown in the following example:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=calendar_getAt,indent=0]
+-------------------------------------
+<1> Import the constants
+<2> Setting the calendar's year, month and day of month
+<3> Accessing the calendar's day of week
+
+Groovy supports arithmetic on and iteration between `Date` and `Calendar` instances as shown in the following example:
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_arithmetic,indent=0]
+-------------------------------------
+
+You can parse strings into dates and output dates into formatted strings:
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_parsing,indent=0]
+-------------------------------------
+
+You can also create a new Date or Calendar based on an existing one:
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_copyWith,indent=0]
+-------------------------------------
