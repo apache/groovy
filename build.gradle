@@ -261,6 +261,7 @@ sourceSets {
             if (!JavaVersion.current().isJava7Compatible()) {
                 exclude '**/indy/*'
                 exclude '**/v7/*'
+                exclude '**/v8/*'
                 exclude '**/vm7/*'
             }
         }
@@ -272,6 +273,7 @@ sourceSets {
             if (!JavaVersion.current().isJava7Compatible()) {
                 exclude '**/indy/*'
                 exclude '**/v7/*'
+                exclude '**/v8/*'
                 exclude '**/vm7/*'
             }
         }
