@@ -17,11 +17,6 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
-
-import org.junit.Assert
-
-import java.security.NoSuchAlgorithmException
-
 /**
  * Tests for DGM methods
  */
@@ -314,16 +309,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     void testMd5() {
-        try {
-            Assert.assertEquals("e99a18c428cb38d5f260853678922e03", StringGroovyMethods.md5("abc123"))
-        } catch (NoSuchAlgorithmException e) {
-            Assert.fail(e.getMessage())
-        }
-
-        try {
-            Assert.assertEquals("e99a18c428cb38d5f260853678922e03", StringGroovyMethods.md5("abc123".getBytes("UTF-8")))
-        } catch (NoSuchAlgorithmException e) {
-            Assert.fail(e.getMessage())
-        }
+        assertEquals("e99a18c428cb38d5f260853678922e03", DefaultGroovyMethods.md5("abc123"))
+        assertEquals("e99a18c428cb38d5f260853678922e03", DefaultGroovyMethods.md5("abc123".getBytes("UTF-8")))
     }
 }
