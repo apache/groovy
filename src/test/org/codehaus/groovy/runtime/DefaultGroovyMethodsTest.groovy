@@ -308,8 +308,4 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.implies(true, null))
     }
 
-    void testMd5() {
-        assertEquals("e99a18c428cb38d5f260853678922e03", DefaultGroovyMethods.md5("abc123"))
-        assertEquals("e99a18c428cb38d5f260853678922e03", DefaultGroovyMethods.md5("abc123".getBytes("UTF-8")))
-    }
 }
