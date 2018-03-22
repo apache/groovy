@@ -26,6 +26,11 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import static org.codehaus.groovy.runtime.EncodingGroovyMethodsSupport.TRANSLATE_TABLE;
 import static org.codehaus.groovy.runtime.EncodingGroovyMethodsSupport.TRANSLATE_TABLE_URLSAFE;
@@ -363,5 +368,30 @@ public class EncodingGroovyMethods {
         }
 
         return bytes;
+    }
+
+    /**
+     * Calculate md5 of the CharSequence instance
+     * @return md5 value
+     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @since 2.5.0
+     */
+    public static String md5(CharSequence self) throws NoSuchAlgorithmException {
+        final String text = self.toString();
+
+        return md5(text.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Calculate md5 of the byte array
+     * @return md5 value
+     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @since 2.5.0
+     */
+    public static String md5(byte[] self) throws NoSuchAlgorithmException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        md5.update(ByteBuffer.wrap(self));
+
+        return String.format("%032x", new BigInteger(1, md5.digest()));
     }
 }
