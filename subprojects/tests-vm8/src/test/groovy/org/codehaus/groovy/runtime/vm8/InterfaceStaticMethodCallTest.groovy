@@ -16,21 +16,33 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v8
-
-import org.codehaus.groovy.vmplugin.VMPluginFactory
+package org.codehaus.groovy.runtime.vm8
 
 class InterfaceStaticMethodCallTest extends GroovyTestCase {
     void testStreamOf() {
-        if (VMPluginFactory.getPlugin().getVersion() < 8) {
-            return
-        }
-
         // "of" is a static method declared on the interface, we only want to be sure we can call the method
         assertScript '''
             import java.util.stream.Stream
-
             assert Stream.of("1") instanceof Stream
+        '''
+    }
+
+    // GROOVY-8494
+    void testComparatorNaturalOrder() {
+        assertScript '''
+            def no = Comparator.naturalOrder()
+            assert -1 == no.compare(42, 52)
+            assert  0 == no.compare(42, 42)
+            assert  1 == no.compare(42, 32)
+        '''
+    }
+
+    // GROOVY-8494
+    void testFunctionIdentity() {
+        assertScript '''
+            import java.util.function.Function
+            Function<Integer, Integer> function = Function.identity()
+            assert 42 == function.apply(42)
         '''
     }
 }

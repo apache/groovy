@@ -29,15 +29,20 @@ public class VMPluginFactory {
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
     private static final String JDK6_CLASSNAME_CHECK = "javax.script.ScriptEngine";
     private static final String JDK7_CLASSNAME_CHECK = "java.util.Objects";
+    private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
 
     private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
     private static final String JDK6_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v6.Java6";
     private static final String JDK7_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v7.Java7";
+    private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v8.Java8";
 
     private static VMPlugin plugin;
 
     static {
-        plugin = createPlugin(JDK7_CLASSNAME_CHECK, JDK7_PLUGIN_NAME);
+        plugin = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
+        if (plugin == null) {
+            plugin = createPlugin(JDK7_CLASSNAME_CHECK, JDK7_PLUGIN_NAME);
+        }
         if (plugin == null) {
             // v6 plugin is the same as v5 but with some scripting stuff
             // so check below is good enough for now (can be true for JVM 5)
