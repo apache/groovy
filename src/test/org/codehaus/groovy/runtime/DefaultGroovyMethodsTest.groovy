@@ -17,9 +17,6 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
-
-import java.util.*
-
 /**
  * Tests for DGM methods
  */
@@ -310,4 +307,5 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.implies(false, null))
         assertFalse(DefaultGroovyMethods.implies(true, null))
     }
+
 }
