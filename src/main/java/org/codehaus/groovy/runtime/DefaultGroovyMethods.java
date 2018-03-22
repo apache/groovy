@@ -132,7 +132,11 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.AbstractCollection;
@@ -19540,5 +19544,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return null == groovydocAnnotation
                     ? EMPTY_GROOVYDOC
                     : new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
+    }
+
+    /**
+     * Calculate md5 of the CharSequence instance
+     * @return md5 value
+     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @since 2.5.0
+     */
+    public static String md5(CharSequence self) throws NoSuchAlgorithmException {
+        final String text = self.toString();
+
+        return md5(text.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Calculate md5 of the byte array
+     * @return md5 value
+     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @since 2.5.0
+     */
+    public static String md5(byte[] self) throws NoSuchAlgorithmException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        md5.update(ByteBuffer.wrap(self));
+
+        return String.format("%032x", new BigInteger(1, md5.digest()));
     }
 }
