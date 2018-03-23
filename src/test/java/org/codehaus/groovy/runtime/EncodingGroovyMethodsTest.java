@@ -27,4 +27,10 @@ public class EncodingGroovyMethodsTest {
         Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.md5("abc123"));
         Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.md5("abc123".getBytes("UTF-8")));
     }
+
+    @Test
+    public void digest() throws Exception {
+        Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.digest("abc123", "MD5"));
+        Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.digest("abc123".getBytes("UTF-8"), "MD5"));
+    }
 }
