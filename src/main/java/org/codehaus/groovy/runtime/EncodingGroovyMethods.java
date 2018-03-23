@@ -43,10 +43,9 @@ import static org.codehaus.groovy.runtime.EncodingGroovyMethodsSupport.TRANSLATE
 public class EncodingGroovyMethods {
 
     private static final char[] T_TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
-
     private static final char[] T_TABLE_URLSAFE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=".toCharArray();
-
     private static final String CHUNK_SEPARATOR = "\r\n";
+    private static final String MD5 = "MD5";
 
     /**
      * Produce a Writable object which writes the Base64 encoding of the byte array.
@@ -373,23 +372,45 @@ public class EncodingGroovyMethods {
     /**
      * Calculate md5 of the CharSequence instance
      * @return md5 value
-     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @throws NoSuchAlgorithmException if MD5 algorithm not found
      * @since 2.5.0
      */
     public static String md5(CharSequence self) throws NoSuchAlgorithmException {
-        final String text = self.toString();
-
-        return md5(text.getBytes(StandardCharsets.UTF_8));
+        return digest(self, MD5);
     }
 
     /**
      * Calculate md5 of the byte array
      * @return md5 value
-     * @throws NoSuchAlgorithmException if no MD5 algorithm found
+     * @throws NoSuchAlgorithmException if MD5 algorithm not found
      * @since 2.5.0
      */
     public static String md5(byte[] self) throws NoSuchAlgorithmException {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        return digest(self, MD5);
+    }
+
+    /**
+     * digest the CharSequence instance
+     * @param algorithm the name of the algorithm requested, e.g. MD5, SHA-1, SHA-256, etc.
+     * @return digested value
+     * @throws NoSuchAlgorithmException if the algorithm not found
+     * @since 2.5.0
+     */
+    public static String digest(CharSequence self, String algorithm) throws NoSuchAlgorithmException {
+        final String text = self.toString();
+
+        return digest(text.getBytes(StandardCharsets.UTF_8), algorithm);
+    }
+
+    /**
+     * digest the byte array
+     * @param algorithm the name of the algorithm requested, e.g. MD5, SHA-1, SHA-256, etc.
+     * @return digested value
+     * @throws NoSuchAlgorithmException if the algorithm not found
+     * @since 2.5.0
+     */
+    public static String digest(byte[] self, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest md5 = MessageDigest.getInstance(algorithm);
         md5.update(ByteBuffer.wrap(self));
 
         return String.format("%032x", new BigInteger(1, md5.digest()));
