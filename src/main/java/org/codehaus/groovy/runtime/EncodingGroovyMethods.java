@@ -395,6 +395,7 @@ public class EncodingGroovyMethods {
      * @return digested value
      * @throws NoSuchAlgorithmException if the algorithm not found
      * @since 2.5.0
+     * @see MessageDigest#getInstance(java.lang.String)
      */
     public static String digest(CharSequence self, String algorithm) throws NoSuchAlgorithmException {
         final String text = self.toString();
@@ -408,11 +409,12 @@ public class EncodingGroovyMethods {
      * @return digested value
      * @throws NoSuchAlgorithmException if the algorithm not found
      * @since 2.5.0
+     * @see MessageDigest#getInstance(java.lang.String)
      */
     public static String digest(byte[] self, String algorithm) throws NoSuchAlgorithmException {
-        MessageDigest md5 = MessageDigest.getInstance(algorithm);
-        md5.update(ByteBuffer.wrap(self));
+        MessageDigest md = MessageDigest.getInstance(algorithm);
+        md.update(ByteBuffer.wrap(self));
 
-        return String.format("%032x", new BigInteger(1, md5.digest()));
+        return String.format("%032x", new BigInteger(1, md.digest()));
     }
 }
