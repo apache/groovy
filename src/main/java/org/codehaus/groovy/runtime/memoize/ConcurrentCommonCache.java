@@ -216,7 +216,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * deal with the backed cache guarded by write lock
      * @param action the content to complete
      */
-    public <R> R doWithWriteLock(Action<K, V, R> action) {
+    private <R> R doWithWriteLock(Action<K, V, R> action) {
         writeLock.lock();
         try {
             return action.doWith(commonCache);
@@ -229,7 +229,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * deal with the backed cache guarded by read lock
      * @param action the content to complete
      */
-    public <R> R doWithReadLock(Action<K, V, R> action) {
+    private <R> R doWithReadLock(Action<K, V, R> action) {
         readLock.lock();
         try {
             return action.doWith(commonCache);
