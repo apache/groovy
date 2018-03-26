@@ -74,7 +74,7 @@ public class ClassExtender {
         if (methods == null) {
             methods = createMap();
         }
-        methods.put(name, methods);
+        methods.put(name, closure);
     }
 
     public synchronized void removeMethod(String name) {
