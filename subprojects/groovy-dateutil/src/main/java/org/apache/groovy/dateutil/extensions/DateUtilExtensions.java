@@ -20,7 +20,6 @@ package org.apache.groovy.dateutil.extensions;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -35,7 +34,7 @@ import java.util.TimeZone;
  * This class defines new groovy methods which appear on normal JDK
  * Date and Calendar classes inside the Groovy environment.
  */
-public class DateUtilExtensions extends DefaultGroovyMethodsSupport {
+public class DateUtilExtensions {
 
     /**
      * Support the subscript operator for a Date.
