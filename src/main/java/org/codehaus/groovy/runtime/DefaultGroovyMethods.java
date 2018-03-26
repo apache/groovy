@@ -17606,4 +17606,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     ? EMPTY_GROOVYDOC
                     : new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
     }
+
+    @Deprecated
+    public static <T> T asType(CharSequence self, Class<T> c) {
+        return StringGroovyMethods.asType(self, c);
+    }
 }
