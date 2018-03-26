@@ -18,8 +18,8 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.runtime.ResourceGroovyMethods
 
 /**
  * Test for GROOVY-4386: Using static imports to a script on the classpath.
@@ -39,7 +39,7 @@ class Groovy4386_Bug extends GroovyTestCase {
         File dir = new File(tmpDir, 'foo')
         dir.mkdir()
         File file = new File(dir, "Constants.groovy")
-        DefaultGroovyMethods.setText(file, scriptSource);
+        ResourceGroovyMethods.setText(file, scriptSource);
     }
 
     @Override protected void tearDown() {
