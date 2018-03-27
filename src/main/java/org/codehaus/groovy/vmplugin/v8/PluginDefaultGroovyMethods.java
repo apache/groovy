@@ -84,7 +84,7 @@ public class PluginDefaultGroovyMethods {
 
     /**
      * Returns a Future asynchronously returning a transformed result.
-     * <pre class="groovyTestCase">
+     * <pre class="_temp_disabled_groovyTestCase">
      * import java.util.concurrent.*
      * def executor = Executors.newSingleThreadExecutor()
      * Future<String> foobar = executor.submit{ "foobar" }
