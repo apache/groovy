@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 
+import java.util.List;
+
 /**
  * Utility class for working with AnnotatedNodes
  */
@@ -33,10 +35,15 @@ public class AnnotatedNodeUtils {
     private AnnotatedNodeUtils() {
     }
 
-    public static void markAsGenerated(ClassNode cNode, AnnotatedNode aNode) {
-        boolean shouldAnnotate = cNode.getModule() != null && cNode.getModule().getContext() != null;
+    public static void markAsGenerated(ClassNode containingClass, AnnotatedNode nodeToMark) {
+        boolean shouldAnnotate = containingClass.getModule() != null && containingClass.getModule().getContext() != null;
         if (shouldAnnotate) {
-            aNode.addAnnotation(new AnnotationNode(GENERATED_TYPE));
+            nodeToMark.addAnnotation(new AnnotationNode(GENERATED_TYPE));
         }
+    }
+
+    public static boolean hasAnnotation(AnnotatedNode node, ClassNode annotation) {
+        List annots = node.getAnnotations(annotation);
+        return (annots != null && !annots.isEmpty());
     }
 }

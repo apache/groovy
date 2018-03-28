@@ -20,6 +20,7 @@ package groovy.transform.builder;
 
 import groovy.transform.TupleConstructor;
 import groovy.transform.Undefined;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -161,7 +162,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         addFields(buildee, filteredFields, builder);
 
         buildCommon(buildee, anno, filteredFields, builder);
-        boolean needsConstructor = !transform.hasAnnotation(buildee, TUPLECONS_TYPE) || force;
+        boolean needsConstructor = !AnnotatedNodeUtils.hasAnnotation(buildee, TUPLECONS_TYPE) || force;
         createBuildeeConstructors(transform, buildee, builder, filteredFields, needsConstructor, useSetters);
     }
 

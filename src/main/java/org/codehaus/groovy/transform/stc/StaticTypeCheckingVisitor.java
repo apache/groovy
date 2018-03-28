@@ -4399,13 +4399,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Parameter[] parameters = closureExpression.getParameters();
         String name = parameter.getName();
 
-        if (parameters.length == 0) {
-            return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
-        }
+        if (parameters != null) {
+            if (parameters.length == 0) {
+                return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
+            }
 
-        for (int index = 0; index < parameters.length; index++) {
-            if (name.equals(parameters[index].getName())) {
-                return closureParamTypes.length > index ? closureParamTypes[index] : null;
+            for (int index = 0; index < parameters.length; index++) {
+                if (name.equals(parameters[index].getName())) {
+                    return closureParamTypes.length > index ? closureParamTypes[index] : null;
+                }
             }
         }
 
