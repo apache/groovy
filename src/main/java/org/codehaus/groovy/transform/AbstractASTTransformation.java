@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -259,9 +260,8 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return true;
     }
 
-    public static boolean hasAnnotation(AnnotatedNode node, ClassNode annotation) {
-        List annots = node.getAnnotations(annotation);
-        return (annots != null && !annots.isEmpty());
+    public boolean hasAnnotation(ClassNode node, ClassNode annotation) {
+        return AnnotatedNodeUtils.hasAnnotation(node, annotation);
     }
 
     public static List<String> tokenize(String rawExcludes) {

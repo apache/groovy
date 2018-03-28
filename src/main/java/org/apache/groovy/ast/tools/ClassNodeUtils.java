@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 
 /**
@@ -297,7 +298,7 @@ public class ClassNodeUtils {
         List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
         for (ConstructorNode constructorNode : declaredConstructors) {
             // allow constructors added by other transforms if flagged as Generated
-            if (AbstractASTTransformation.hasAnnotation(constructorNode, GENERATED_TYPE)) {
+            if (hasAnnotation(constructorNode, GENERATED_TYPE)) {
                 continue;
             }
             if (xform != null) {
