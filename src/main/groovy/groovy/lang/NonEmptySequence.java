@@ -21,13 +21,12 @@ package groovy.lang;
 import java.util.List;
 
 /**
- * Represents a sequence of objects which represents one or many instances of
- * of objects of a given type. The type can be omitted in which case any type of
- * object can be added.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Represents a sequence of one or more objects of a given type.
+ * The type can be omitted in which case any type of object can be added.
  */
 public class NonEmptySequence extends Sequence {
+
+    private static final long serialVersionUID = 1614604919062836998L;
 
     public NonEmptySequence() {
         super(null);

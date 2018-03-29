@@ -64,8 +64,6 @@ import java.util.Stack;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableSet<E> implements Set<E> {
     private final Set<E> delegate;
@@ -343,11 +341,12 @@ public class ObservableSet<E> implements Set<E> {
     public enum ChangeType {
         ADDED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
     }
 
     public abstract static class ElementEvent extends PropertyChangeEvent {
+        private static final long serialVersionUID = 1636915619671510488L;
         private final ChangeType type;
 
         public ElementEvent(Object source, Object oldValue, Object newValue, ChangeType type) {
@@ -369,18 +368,23 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class ElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = 8487116924204612932L;
+
         public ElementAddedEvent(Object source, Object newValue) {
             super(source, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class ElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = 661289692849269910L;
+
         public ElementRemovedEvent(Object source, Object value) {
             super(source, value, null, ChangeType.REMOVED);
         }
     }
 
     public static class ElementClearedEvent extends ElementEvent {
+        private static final long serialVersionUID = -4285830355690031818L;
         private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
@@ -396,6 +400,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = -4307534536004566487L;
         private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, List values) {
@@ -411,6 +416,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = -2068802236380651658L;
         private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
