@@ -60,8 +60,6 @@ import java.util.Set;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableMap implements Map {
     private final Map delegate;
@@ -309,8 +307,8 @@ public class ObservableMap implements Map {
     public enum ChangeType {
         ADDED, UPDATED, REMOVED, CLEARED, MULTI, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
 
         public static ChangeType resolve(int ordinal) {
             switch (ordinal) {
@@ -332,6 +330,7 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
+        private static final long serialVersionUID = -3439518280585144435L;
         private final ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
@@ -353,24 +352,31 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyAddedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -7237626384063194253L;
+
         public PropertyAddedEvent(Object source, String propertyName, Object newValue) {
             super(source, propertyName, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class PropertyUpdatedEvent extends PropertyEvent {
+        private static final long serialVersionUID = 1322327094566373342L;
+
         public PropertyUpdatedEvent(Object source, String propertyName, Object oldValue, Object newValue) {
             super(source, propertyName, oldValue, newValue, ChangeType.UPDATED);
         }
     }
 
     public static class PropertyRemovedEvent extends PropertyEvent {
+        private static final long serialVersionUID = 6646851287602912969L;
+
         public PropertyRemovedEvent(Object source, String propertyName, Object oldValue) {
             super(source, propertyName, oldValue, null, ChangeType.REMOVED);
         }
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -5066784441907086768L;
         private final Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
@@ -388,6 +394,7 @@ public class ObservableMap implements Map {
     public static class MultiPropertyEvent extends PropertyEvent {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
         private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
+        private static final long serialVersionUID = 2185997629991653251L;
 
         private final PropertyEvent[] events;
 

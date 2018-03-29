@@ -54,11 +54,10 @@ import java.util.List;
  * def twiceBothPlus10 = twiceBoth >> add2plus10
  * assert twiceBothPlus10(5, 10) == 40
  * </pre>
- *
- * @author Paul King
  */
 public final class ComposedClosure<V> extends Closure<V> {
 
+    private static final long serialVersionUID = -6410722393739184061L;
     private final Closure first;
     private final Closure<V> second;
 
