@@ -23,11 +23,10 @@ import groovy.lang.Script;
 
 /**
  * Represents a reference to a variable in a script
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ScriptReference extends Reference {
 
+    private static final long serialVersionUID = 9011836991962996884L;
     private final Script script;
     private final String variable;
 

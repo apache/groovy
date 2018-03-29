@@ -26,10 +26,10 @@ import groovy.lang.GString;
  * consist of a list of values and strings which can be combined to
  * create a new String.
  *
- * @author Jochen Theodorou
  * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
+    private static final long serialVersionUID = 3856688359714409314L;
     private final String[] strings;
 
     /**
