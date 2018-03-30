@@ -313,7 +313,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        return ((StampedCommonCache<String, Class>) sourceCache).getAndPut(
+        return ((ConcurrentCommonCache<String, Class>) sourceCache).getAndPut(
                 codeSource.getName(),
                 new EvictableCache.ValueProvider<String, Class>() {
                     @Override
