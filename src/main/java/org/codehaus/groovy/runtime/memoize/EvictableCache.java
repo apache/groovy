@@ -29,19 +29,27 @@ import java.util.Set;
  *
  * @since 2.5.0
  */
-public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
+public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */ {
     /**
      * Remove the cached value by the key
-     * @param key
+     * @param key of the cached value
      * @return returns the removed value
      */
-    V remove(K key);
+    V remove(Object key);
 
     /**
      * Clear the cache
      * @return returns the content of the cleared map
      */
-    Map<K, V> clear();
+    Map<K, V> clearAll();
+
+    /**
+     * Clear the cache
+     * @see #clearAll()
+     */
+    default void clear() {
+        clearAll();
+    }
 
     /**
      * Get all cached values
@@ -60,7 +68,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V> {
      * @param key key whose presence in this cache is to be tested.
      * @return true if the cache contains a mapping for the specified key
      */
-    boolean containsKey(K key);
+    boolean containsKey(Object key);
 
     /**
      * Get the size of the cache

@@ -93,7 +93,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * {@inheritDoc}
      */
     @Override
-    public V get(final K key) {
+    public V get(final Object key) {
         return doWithReadLock(c -> c.get(key));
     }
 
@@ -153,6 +153,11 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         return doWithReadLock(c -> c.values());
     }
 
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return doWithReadLock(c -> c.entrySet());
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -165,8 +170,13 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(final K key) {
+    public boolean containsKey(final Object key) {
         return doWithReadLock(c -> c.containsKey(key));
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return doWithReadLock(c -> c.containsValue(value));
     }
 
     /**
@@ -177,20 +187,38 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         return doWithReadLock(c -> c.size());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public V remove(final K key) {
-        return doWithWriteLock(c -> c.remove(key));
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Map<K, V> clear() {
-        return doWithWriteLock(c -> c.clear());
+    public V remove(final Object key) {
+        return doWithWriteLock(c -> c.remove(key));
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        doWithWriteLock(c -> {
+            c.putAll(m);
+            return null;
+        });
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return keys();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<K, V> clearAll() {
+        return doWithWriteLock(c -> c.clearAll());
     }
 
     /**

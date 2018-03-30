@@ -30,8 +30,6 @@ import static java.util.Arrays.copyOf;
 /**
  * Implements memoize for Closures.
  * It is supposed to be used by the Closure class itself to implement the memoize() family of methods.
- *
- * @author Vaclav Pech
  */
 public abstract class Memoize {
 

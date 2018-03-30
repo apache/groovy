@@ -108,7 +108,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      * {@inheritDoc}
      */
     @Override
-    public V get(K key) {
+    public V get(Object key) {
         return map.get(key);
     }
 
@@ -150,6 +150,11 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
         return map.values();
     }
 
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return map.entrySet();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -158,11 +163,16 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
         return map.keySet();
     }
 
+    @Override
+    public boolean containsValue(Object value) {
+        return map.containsValue(value);
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
         return map.containsKey(key);
     }
 
@@ -174,22 +184,36 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
         return map.size();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public V remove(K key) {
-        return map.remove(key);
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Map<K, V> clear() {
+    public V remove(Object key) {
+        return map.remove(key);
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        map.putAll(m);
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return map.keySet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<K, V> clearAll() {
         Map<K, V> result = new LinkedHashMap<K, V>(map);
         map.clear();
-
         return result;
     }
 

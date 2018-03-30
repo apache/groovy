@@ -22,8 +22,6 @@ package org.codehaus.groovy.runtime.memoize;
  * Represents a memoize cache with its essential methods
  * @param <K> type of the keys
  * @param <V> type of the values
- *
- * @author Vaclav Pech
  */
 public interface MemoizeCache<K, V> {
 
