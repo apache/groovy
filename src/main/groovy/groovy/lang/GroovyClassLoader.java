@@ -89,13 +89,21 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
+<<<<<<< HEAD
     protected final EvictableCache<String, Class> classCache = new ConcurrentCommonCache<String, Class>();
+=======
+    protected final Map<String, Class> classCache = new UnlimitedConcurrentCache<String, Class>();
+>>>>>>> 38c7a74920... GROOVY-8525: Binary compatibility issue for GroovyClassLoader between 2.4 vs later branches (closes #679)
 
     /**
      * This cache contains mappings of file name to class. It is used
      * to bypass compilation.
      */
+<<<<<<< HEAD
     protected final EvictableCache<String, Class> sourceCache = new ConcurrentCommonCache<String, Class>();
+=======
+    protected final Map<String, Class> sourceCache = new StampedCommonCache<String, Class>();
+>>>>>>> 38c7a74920... GROOVY-8525: Binary compatibility issue for GroovyClassLoader between 2.4 vs later branches (closes #679)
 
     private final CompilerConfiguration config;
     private String sourceEncoding;
@@ -1016,7 +1024,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Map<String, Class> clearedClasses = classCache.clear();
+        Map<String, Class> clearedClasses = ((EvictableCache<String, Class>)classCache).clearAll();
 
         sourceCache.clear();
 

@@ -21,8 +21,6 @@ package org.codehaus.groovy.runtime.memoize;
 /**
  * Protects stored resources from eviction from memory following the LRU (Last Recently Used) strategy.
  * The touch method can be used to renew an element and move it to the from the LRU queue.
- *
- * @author Vaclav Pech
  */
 interface ProtectionStorage<K, V> {
     void touch(K key, V value);
