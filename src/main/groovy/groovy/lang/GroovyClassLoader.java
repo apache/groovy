@@ -73,7 +73,9 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -90,13 +92,127 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final EvictableCache<String, Class> classCache = new UnlimitedConcurrentCache<String, Class>();
+    protected final EvictableCache<String, Class> classEvictableCache = new UnlimitedConcurrentCache<String, Class>();
+
+    @Deprecated
+    protected final Map<String, Class> classCache = new EvictableMap<String, Class>(classEvictableCache);
 
     /**
      * This cache contains mappings of file name to class. It is used
      * to bypass compilation.
      */
-    protected final EvictableCache<String, Class> sourceCache = new StampedCommonCache<String, Class>();
+    protected final EvictableCache<String, Class> sourceEvictableCache = new StampedCommonCache<String, Class>();
+
+    @Deprecated
+    protected final Map<String, Class> sourceCache = new EvictableMap<String, Class>(sourceEvictableCache);
+
+    private static class EvictableMap<K, V> implements Map<K, V> {
+        private final EvictableCache<K, V> delegate;
+
+        public EvictableMap(EvictableCache<K, V> evictable) {
+            this.delegate = evictable;
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.size() == 0;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return delegate.containsKey((K)key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return delegate.values().contains(value);
+        }
+
+        @Override
+        public V get(Object key) {
+            return delegate.get((K)key);
+        }
+
+        @Override
+        public V put(K key, V value) {
+            return delegate.put(key, value);
+        }
+
+        @Override
+        public V remove(Object key) {
+            return delegate.remove((K)key);
+        }
+
+        @Override
+        public void putAll(Map<? extends K, ? extends V> m) {
+            for (Entry<? extends K, ? extends V> next : m.entrySet()) {
+                delegate.put(next.getKey(), next.getValue());
+            }
+        }
+
+        @Override
+        public void clear() {
+            delegate.clear();
+        }
+
+        @Override
+        public Set<K> keySet() {
+            return delegate.keys();
+        }
+
+        @Override
+        public Collection<V> values() {
+            return delegate.values();
+        }
+
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            Set<Entry<K, V>> result = new HashSet<Entry<K, V>>();
+            for (K next : delegate.keys()) {
+                result.add(new EvictableEntry<K, V>(next, get(next)));
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return delegate.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
+        }
+    }
+
+    private static class EvictableEntry<K,V> implements Map.Entry<K,V> {
+        private K key;
+        private V value;
+        EvictableEntry(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public K getKey() {
+            return key;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException("Can't update an evictable entry");
+        }
+    }
 
     private final CompilerConfiguration config;
     private String sourceEncoding;
@@ -314,7 +430,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        return ((StampedCommonCache<String, Class>) sourceCache).getAndPut(
+        return ((StampedCommonCache<String, Class>) sourceEvictableCache).getAndPut(
                 codeSource.getName(),
                 new EvictableCache.ValueProvider<String, Class>() {
                     @Override
@@ -612,7 +728,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected Class getClassCacheEntry(String name) {
-        return classCache.get(name);
+        return classEvictableCache.get(name);
     }
 
     /**
@@ -624,7 +740,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(Class cls) {
-        classCache.put(cls.getName(), cls);
+        classEvictableCache.put(cls.getName(), cls);
     }
 
     /**
@@ -636,7 +752,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(String name) {
-        classCache.remove(name);
+        classEvictableCache.remove(name);
     }
 
     /**
@@ -803,7 +919,7 @@ public class GroovyClassLoader extends URLClassLoader {
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 String name = source.toExternalForm();
 
-                sourceCache.remove(name);
+                sourceEvictableCache.remove(name);
 
                 if (isFile(source)) {
                     try {
@@ -1002,7 +1118,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return all classes loaded by this class loader
      */
     public Class[] getLoadedClasses() {
-        return classCache.values().toArray(EMPTY_CLASS_ARRAY);
+        return classEvictableCache.values().toArray(EMPTY_CLASS_ARRAY);
     }
 
     /**
@@ -1017,16 +1133,16 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Map<String, Class> clearedClasses = classCache.clear();
+        Map<String, Class> clearedClasses = classEvictableCache.clear();
 
-        sourceCache.clear();
+        sourceEvictableCache.clear();
 
         for (Map.Entry<String, Class> entry : clearedClasses.entrySet()) {
             // Another Thread may be using an instance of this class
             // (for the first time) requiring a ClassInfo lock and
-            // classloading which would require a lock on classCache.
+            // classloading which would require a lock on classEvictableCache.
             // The following locks on ClassInfo and to avoid deadlock
-            // should not be done with a classCache lock.
+            // should not be done with a classEvictableCache lock.
             InvokerHelper.removeClass(entry.getValue());
         }
     }
