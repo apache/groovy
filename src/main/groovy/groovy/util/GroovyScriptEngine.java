@@ -33,7 +33,6 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.gse.DependencyTracker;
@@ -53,7 +52,6 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,12 +59,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Specific script engine able to reload modified scripts as well as dealing properly
  * with dependent scripts.
- *
- * @author sam
- * @author Marc Palmer
- * @author Guillaume Laforge
- * @author Jochen Theodorou
- * @author Mattias Reichel
  */
 public class GroovyScriptEngine implements ResourceConnector {
     private static final ClassLoader CL_STUB = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
@@ -233,7 +225,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-            synchronized (sourceCache) {
+            synchronized (sourceEvictableCache) {
                 return doParseClass(codeSource);
             }
         }
