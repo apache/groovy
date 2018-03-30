@@ -386,6 +386,10 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/Var_01x.groovy');
     }
 
+    void "test groovy core - String"() {
+        doRunAndTestAntlr4('core/String_01x.groovy');
+    }
+
     void "test groovy core - BUG"() {
         doRunAndTestAntlr4('bugs/BUG-GROOVY-4757.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-5652.groovy')
