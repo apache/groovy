@@ -93,7 +93,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * {@inheritDoc}
      */
     @Override
-    public V get(K key) {
+    public V get(Object key) {
         readLock.lock();
         try {
             return commonCache.get(key);
@@ -168,6 +168,16 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         }
     }
 
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        readLock.lock();
+        try {
+            return commonCache.entrySet();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -185,10 +195,20 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
         readLock.lock();
         try {
             return commonCache.containsKey(key);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        readLock.lock();
+        try {
+            return commonCache.containsValue(value);
         } finally {
             readLock.unlock();
         }
@@ -207,11 +227,16 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         }
     }
 
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public V remove(K key) {
+    public V remove(Object key) {
         writeLock.lock();
         try {
             return commonCache.remove(key);
@@ -220,17 +245,41 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         }
     }
 
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        writeLock.lock();
+        try {
+            commonCache.putAll(m);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return keys();
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public Map<K, V> clear() {
+    public Map<K, V> clearAll() {
         writeLock.lock();
         try {
-            return commonCache.clear();
+            return commonCache.clearAll();
         } finally {
             writeLock.unlock();
         }
+    }
+
+    /**
+     * Clear the cache
+     * @see #clearAll()
+     */
+    @Override
+    public void clear() {
+        clearAll();
     }
 
     /**

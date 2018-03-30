@@ -22,8 +22,6 @@ package org.codehaus.groovy.runtime.memoize;
  * A NullObject pattern implementation for ProtectionStorage
  * Doesn't protect any resources.
  * Used when the user doesn't mind to eventually have the whole memoize cache emptied by gc.
- *
- * @author Vaclav Pech
  */
 public final class NullProtectionStorage implements ProtectionStorage{
 
