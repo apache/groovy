@@ -221,6 +221,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      * Clear the cache
      * @see #clearAll()
      */
+    @Override
     public void clear() {
         clearAll();
     }

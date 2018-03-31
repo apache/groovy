@@ -106,6 +106,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      * Clear the cache
      * @see #clearAll()
      */
+    @Override
     public void clear() {
         clearAll();
     }
