@@ -175,7 +175,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     @Deprecated
-    public List<String> getMemberList(AnnotationNode anno, String name) {
+    public static List<String> getMemberList(AnnotationNode anno, String name) {
         List<String> list;
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
