@@ -140,7 +140,7 @@ public class DateTimeExtensions {
      * {@link java.time.temporal.Temporal} argument.
      * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
-     * that are seconds apart using {@java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
+     * that are seconds apart using {@link java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is later than the second Temporal argument. The closure will
      * not be called with any value later than the {@code to} value.
      *
@@ -208,7 +208,7 @@ public class DateTimeExtensions {
      * {@link java.time.temporal.Temporal} argument.
      * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
-     * that are seconds apart using {@java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
+     * that are seconds apart using {@link java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is earlier than the second Temporal argument. The closure will
      * not be called with any value earlier than the {@code to} value.
      *
