@@ -325,6 +325,7 @@ compileJava {
     doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
@@ -359,7 +360,6 @@ task ensureGrammars {
     }
 }
 
-apply from: 'gradle/utils.gradle'
 apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
