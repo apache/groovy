@@ -314,14 +314,14 @@ SqStringCharacter
 // character in the triple double quotation string. e.g. """a"""
 fragment TdqStringCharacter
     :   ~["\\$]
-    |   GStringQuotationMark { _input.LA(1) != '"' || _input.LA(2) != '"' || (_input.LA(3) == '"' && _input.LA(4) != '"') || (_input.LA(3) == '"' && _input.LA(5) != '"') }?
+    |   GStringQuotationMark { _input.LA(1) != '"' || _input.LA(2) != '"' || _input.LA(3) == '"' && (_input.LA(4) != '"' || _input.LA(5) != '"') }?
     |   EscapeSequence
     ;
 
 // character in the triple single quotation string. e.g. '''a'''
 fragment TsqStringCharacter
     :   ~['\\]
-    |   SqStringQuotationMark { _input.LA(1) != '\'' || _input.LA(2) != '\'' || (_input.LA(3) == '\'' && _input.LA(4) != '\'') || (_input.LA(3) == '\'' && _input.LA(5) != '\'') }?
+    |   SqStringQuotationMark { _input.LA(1) != '\'' || _input.LA(2) != '\'' || _input.LA(3) == '\'' && (_input.LA(4) != '\'' || _input.LA(5) != '\'') }?
     |   EscapeSequence
     ;
 
