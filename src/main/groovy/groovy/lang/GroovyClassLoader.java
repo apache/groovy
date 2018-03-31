@@ -89,7 +89,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final EvictableCache<String, Class> classCache = new ConcurrentCommonCache<String, Class>();
+    protected final Map<String, Class> classCache = new ConcurrentCommonCache<String, Class>();
 
     /**
      * This cache contains mappings of file name to class. It is used
