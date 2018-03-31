@@ -547,6 +547,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return join(DefaultGroovyMethods.dropWhile(selfIter, condition), "");
     }
 
+    // for binary compatibility only
+    @Deprecated
+    public static CharSequence dropWhile$$bridge(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        return dropWhile(self, condition);
+    }
+
     /**
      * A GString variant of the equivalent CharSequence method.
      *
@@ -3342,6 +3348,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String takeWhile(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
         Iterator selfIter = hasSingleCharacterArg(condition) ? new CharacterIterator(self) : new StringIterator(self);
         return join(DefaultGroovyMethods.takeWhile(selfIter, condition), "");
+    }
+
+    // for binary compatibility only
+    @Deprecated
+    public static CharSequence takeWhile$$bridge(CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) Closure condition) {
+        return takeWhile(self, condition);
     }
 
     /**
