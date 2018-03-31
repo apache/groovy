@@ -16,13 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
-}
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilExtensions'
-    staticExtensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilStaticExtensions'
-}
-compileJava.dependsOn moduleDescriptor
+def v = '''string='a''''
+assert v == '''string=\'a\''''
+def v2 = """string="a""""
+assert v2 == """string=\"a\""""

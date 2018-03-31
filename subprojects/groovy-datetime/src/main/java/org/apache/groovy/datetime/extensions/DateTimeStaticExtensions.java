@@ -46,6 +46,8 @@ public class DateTimeStaticExtensions {
     /**
      * Parse text into a {@link java.time.LocalDate} using the provided pattern.
      *
+     * Note: the order of parameters differs from versions of this method for the legacy Date class.
+     *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
      * @param pattern pattern used to parse the text
@@ -62,6 +64,8 @@ public class DateTimeStaticExtensions {
 
     /**
      * Parse text into a {@link java.time.LocalDateTime} using the provided pattern.
+     *
+     * Note: the order of parameters differs from versions of this method for the legacy Date class.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance

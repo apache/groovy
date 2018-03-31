@@ -20,6 +20,7 @@ package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.v7.GroovyClassValueJava7;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 class GroovyClassValueFactory {
 	/**
@@ -30,8 +31,11 @@ class GroovyClassValueFactory {
 	 */
 	private static final boolean USE_CLASSVALUE;
 	static {
-        String isJ9 = "IBM J9 VM".equals(System.getProperty("java.vm.name")) ? "true" : "false";
-        USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", isJ9));
+        String useClassValueDefault =
+				(VMPluginFactory.getPlugin().getVersion() >= 7 || "IBM J9 VM".equals(System.getProperty("java.vm.name")))
+						? "true" : "false";
+
+        USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", useClassValueDefault));
     }
 
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {

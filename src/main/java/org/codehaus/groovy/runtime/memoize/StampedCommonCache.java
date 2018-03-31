@@ -31,7 +31,6 @@ import java.util.concurrent.locks.StampedLock;
  * but it is not reentrant, in other words, <b>it may cause deadlock</b> if {@link #getAndPut(K, ValueProvider)} OR {@link #getAndPut(K, ValueProvider, boolean)} is called recursively:
  * readlock -> upgrade to writelock -> readlock(fails to get and wait forever)
  *
- *
  * @param <K> type of the keys
  * @param <V> type of the values
  * @since 3.0.0
@@ -95,7 +94,7 @@ public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConv
      * {@inheritDoc}
      */
     @Override
-    public V get(final K key) {
+    public V get(final Object key) {
         return doWithReadLock(c -> c.get(key));
     }
 
@@ -175,6 +174,11 @@ public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConv
         return doWithReadLock(c -> c.values());
     }
 
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return doWithReadLock(c -> c.entrySet());
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -187,8 +191,13 @@ public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConv
      * {@inheritDoc}
      */
     @Override
-    public boolean containsKey(final K key) {
+    public boolean containsKey(final Object key) {
         return doWithReadLock(c -> c.containsKey(key));
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return doWithReadLock(c -> c.containsValue(value));
     }
 
     /**
@@ -199,20 +208,38 @@ public class StampedCommonCache<K, V> implements EvictableCache<K, V>, ValueConv
         return doWithReadLock(c -> c.size());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public V remove(final K key) {
-        return doWithWriteLock(c -> c.remove(key));
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Map<K, V> clear() {
-        return doWithWriteLock(c -> c.clear());
+    public V remove(final Object key) {
+        return doWithWriteLock(c -> c.remove(key));
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        doWithWriteLock(c -> {
+            c.putAll(m);
+            return null;
+        });
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return keys();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<K, V> clearAll() {
+        return doWithWriteLock(c -> c.clearAll());
     }
 
     /**

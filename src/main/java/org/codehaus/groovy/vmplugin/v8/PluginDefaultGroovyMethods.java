@@ -18,12 +18,21 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import groovy.lang.Closure;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,6 +59,83 @@ public class PluginDefaultGroovyMethods {
      */
     public static boolean asBoolean(Optional<?> optional) {
         return optional.isPresent();
+    }
+
+    /**
+     * If the optional contains a value, returns an optional containing the transformed value obtained using the <code>transform</code> closure
+     * or otherwise an empty optional.
+     * <pre class="groovyTestCase">
+     * assert Optional.of("foobar").collect{ it.size() }.get() == 6
+     * assert !Optional.empty().collect{ it.size() }.isPresent()
+     * </pre>
+     *
+     * @param self      an Optional
+     * @param transform the closure used to transform the optional value if present
+     * @return an Optional containing the transformed value or empty if the optional is empty or the transform returns null
+     */
+    public static <S,T> Optional<T> collect(Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        Objects.requireNonNull(self);
+        Objects.requireNonNull(transform);
+        if (!self.isPresent()) {
+            return self.empty();
+        }
+        return Optional.ofNullable(transform.call(self.get()));
+    }
+
+    /**
+     * Returns a Future asynchronously returning a transformed result.
+     * <pre class="_temp_disabled_groovyTestCase">
+     * import java.util.concurrent.*
+     * def executor = Executors.newSingleThreadExecutor()
+     * Future<String> foobar = executor.submit{ "foobar" }
+     * Future<Integer> foobarSize = foobar.collect{ it.size() }
+     * assert foobarSize.get() == 6
+     * executor.shutdown()
+     * </pre>
+     *
+     * @param self      a Future
+     * @param transform the closure used to transform the Future value
+     * @return a Future allowing the transformed value to be obtained asynchronously
+     */
+    public static <S,T> Future<T> collect(Future<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        Objects.requireNonNull(self);
+        Objects.requireNonNull(transform);
+        return new TransformedFuture<T>(self, transform);
+    }
+
+    private static class TransformedFuture<E> implements Future<E> {
+        private Future delegate;
+        private Closure<E> transform;
+
+        private TransformedFuture(Future delegate, Closure<E> transform) {
+            this.delegate = delegate;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return delegate.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return delegate.isDone();
+        }
+
+        @Override
+        public E get() throws InterruptedException, ExecutionException {
+            return transform.call(delegate.get());
+        }
+
+        @Override
+        public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return transform.call(delegate.get(timeout, unit));
+        }
     }
 
     /**

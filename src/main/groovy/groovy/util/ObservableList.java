@@ -63,8 +63,6 @@ import java.util.Set;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableList implements List {
     private final List delegate;
@@ -453,8 +451,8 @@ public class ObservableList implements List {
     public enum ChangeType {
         ADDED, UPDATED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
 
         public static ChangeType resolve(int ordinal) {
             switch (ordinal) {
@@ -478,7 +476,7 @@ public class ObservableList implements List {
     }
 
     public abstract static class ElementEvent extends PropertyChangeEvent {
-
+        private static final long serialVersionUID = 4985518099021958098L;
         private final ChangeType type;
         private final int index;
 
@@ -506,24 +504,31 @@ public class ObservableList implements List {
     }
 
     public static class ElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = 6472450701680783544L;
+
         public ElementAddedEvent(Object source, Object newValue, int index) {
             super(source, null, newValue, index, ChangeType.ADDED);
         }
     }
 
     public static class ElementUpdatedEvent extends ElementEvent {
+        private static final long serialVersionUID = 1116018076124047485L;
+
         public ElementUpdatedEvent(Object source, Object oldValue, Object newValue, int index) {
             super(source, oldValue, newValue, index, ChangeType.UPDATED);
         }
     }
 
     public static class ElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = 8480367764843668809L;
+
         public ElementRemovedEvent(Object source, Object value, int index) {
             super(source, value, null, index, ChangeType.REMOVED);
         }
     }
 
     public static class ElementClearedEvent extends ElementEvent {
+        private static final long serialVersionUID = -6586012825386453052L;
         private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
@@ -539,6 +544,7 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = 5142936559765501723L;
         private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, int index, List values) {
@@ -554,6 +560,7 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = 2453305767752911341L;
         private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {

@@ -36,14 +36,17 @@ class WorkingWithDateUtilTypesTest extends GroovyTestCase {
 
     void testDateArithmetic() {
         // tag::date_arithmetic[]
-        def yesterday = new Date() - 1
-        def tomorrow = new Date() + 1
+        def utc = TimeZone.getTimeZone('UTC')
+        Date date = Date.parse("yyyy-MM-dd HH:mm", "2010-05-23 09:01", utc)
 
-        def diffInDays = tomorrow - yesterday
+        def prev = date - 1
+        def next = date + 1
+
+        def diffInDays = next - prev
         assert diffInDays == 2
 
         int count = 0
-        yesterday.upto(tomorrow) { count++ }
+        prev.upto(next) { count++ }
         assert count == 3
         // end::date_arithmetic[]
     }

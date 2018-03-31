@@ -21,12 +21,12 @@ package org.codehaus.groovy.syntax;
 import org.codehaus.groovy.GroovyException;
 import org.codehaus.groovy.ast.ASTNode;
 
-/** Base exception indicating a syntax error.
- *
- *  @author <a href="bob@werken.com">bob mcwhirter</a>
+/**
+ * Base exception indicating a syntax error.
  */
 public class SyntaxException extends GroovyException {
 
+    private static final long serialVersionUID = -6086822614839477581L;
     /** Line upon which the error occurred. */
     private final int startLine;
     private final int endLine;

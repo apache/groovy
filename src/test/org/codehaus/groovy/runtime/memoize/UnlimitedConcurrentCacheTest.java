@@ -155,7 +155,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        Assert.assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.clear().values()));
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.clearAll().values()));
     }
 
     @Test

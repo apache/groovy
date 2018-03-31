@@ -28,9 +28,6 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * A cache backed by a ConcurrentLinkedHashMap
- *
- * @author Vaclav Pech
- * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
  */
 @ThreadSafe
 public final class LRUCache<K, V> implements MemoizeCache<K, V> {

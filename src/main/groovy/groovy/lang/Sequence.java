@@ -23,19 +23,16 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- * Represents a sequence of objects which represents zero or many instances of
- * of objects of a given type. The type can be omitted in which case any type of
- * object can be added.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Represents a sequence of zero or more objects of a given type.
+ * The type can be omitted in which case any type of object can be added.
  */
 public class Sequence extends ArrayList implements GroovyObject {
 
-    private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
+    private static final long serialVersionUID = 7324025453767284764L;
+    private transient MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     private final Class type;
     private int hashCode;
 
@@ -62,7 +59,7 @@ public class Sequence extends ArrayList implements GroovyObject {
         clear();
         addAll(collection);
     }
-    
+
     public boolean equals(Object that) {
         if (that instanceof Sequence) {
             return equals((Sequence) that);
@@ -107,7 +104,7 @@ public class Sequence extends ArrayList implements GroovyObject {
     public Class type() {
         return type;
     }
-    
+
     public void add(int index, Object element) {
         checkType(element);
         hashCode = 0;
@@ -156,13 +153,11 @@ public class Sequence extends ArrayList implements GroovyObject {
     //-------------------------------------------------------------------------
     public Object invokeMethod(String name, Object args) {
         try {
-        return getMetaClass().invokeMethod(this, name, args);
-        }
-        catch (MissingMethodException e) {
-            // lets apply the method to each item in the collection
+            return getMetaClass().invokeMethod(this, name, args);
+        } catch (MissingMethodException e) {
+            // let's apply the method to each item in the collection
             List answer = new ArrayList(size());
-            for (Iterator iter = iterator(); iter.hasNext(); ) {
-                Object element = iter.next();
+            for (Object element : this) {
                 Object value = InvokerHelper.invokeMethod(element, name, args);
                 answer.add(value);
             }
@@ -188,22 +183,20 @@ public class Sequence extends ArrayList implements GroovyObject {
 
     // Implementation methods
     //-------------------------------------------------------------------------
-    
+
     /**
      * Checks that each member of the given collection are of the correct
      * type
      */
     protected void checkCollectionType(Collection c) {
         if (type != null) {
-            for (Iterator iter = c.iterator(); iter.hasNext(); ) {
-                Object element = iter.next();
+            for (Object element : c) {
                 checkType(element);
             }
         }
     }
 
-
-    /** 
+    /**
      * Checks that the given object instance is of the correct type
      * otherwise a runtime exception is thrown
      */
@@ -214,10 +207,10 @@ public class Sequence extends ArrayList implements GroovyObject {
         if (type != null) {
             if (!type.isInstance(object)) {
                 throw new IllegalArgumentException(
-                    "Invalid type of argument for sequence of type: "
-                        + type.getName()
-                        + " cannot add object: "
-                        + object);
+                        "Invalid type of argument for sequence of type: "
+                                + type.getName()
+                                + " cannot add object: "
+                                + object);
             }
         }
     }
