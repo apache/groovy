@@ -326,6 +326,7 @@ compileJava {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
