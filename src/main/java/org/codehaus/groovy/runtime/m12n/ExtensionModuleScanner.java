@@ -50,11 +50,13 @@ public class ExtensionModuleScanner {
     }
 
     public void scanClasspathModules() {
+        scanClasspathModulesFrom(MODULE_META_INF_FILE);
+        scanClasspathModulesFrom(LEGACY_MODULE_META_INF_FILE);
+    }
+
+    private void scanClasspathModulesFrom(String moduleMetaInfFile) {
         try {
-            Enumeration<URL> resources = classLoader.getResources(MODULE_META_INF_FILE);
-            if (!resources.hasMoreElements()) {
-                resources = classLoader.getResources(LEGACY_MODULE_META_INF_FILE);
-            }
+            Enumeration<URL> resources = classLoader.getResources(moduleMetaInfFile);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 scanExtensionModuleFromMetaInf(url);
