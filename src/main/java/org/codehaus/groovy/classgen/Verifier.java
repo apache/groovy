@@ -570,6 +570,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    // for binary compatibility only, don't use or override this
+    protected void addMethod$$bridge(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
+                                   ClassNode[] exceptions, Statement code) {
+        addMethod(node, shouldBeSynthetic, name, modifiers, returnType, parameters, exceptions, code);
+    }
+
     @Deprecated
     protected void addTimeStamp(ClassNode node) {
     }

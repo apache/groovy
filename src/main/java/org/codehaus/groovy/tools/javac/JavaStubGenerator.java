@@ -165,7 +165,6 @@ public class JavaStubGenerator {
                 }
 
                 public void addCovariantMethods(ClassNode cn) {}
-                protected void addTimeStamp(ClassNode node) {}
                 protected void addInitialization(ClassNode node) {}
                 protected void addPropertyMethod(MethodNode method) {
                     doAddMethod(method);
