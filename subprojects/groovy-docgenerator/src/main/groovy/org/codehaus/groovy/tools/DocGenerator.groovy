@@ -402,7 +402,7 @@ class DocGenerator {
         }
 
         String getReturnTypeDocUrl() {
-            def returnType = javaMethod.returns
+            def returnType = javaMethod.returnType
             def resolvedReturnType = (returnType) ? DocUtil.resolveJdkClassName(returnType.toString()) : ""
             DocUtil.getLinkAnchor(resolvedReturnType, declaringDocType.packageName)
         }

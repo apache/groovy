@@ -93,7 +93,7 @@ public class ConsoleTextEditor extends JScrollPane {
             }
             g.setFont(f);
             for (int line = startline, y = startingY; line <= endline; y += fontHeight, line++) {
-                String lineNumber = StringGroovyMethods.padLeft(Integer.toString(line), 4, " ");
+                String lineNumber = StringGroovyMethods.padLeft((CharSequence)Integer.toString(line), 4, " ");
                 g.drawString(lineNumber, 0, y);
             }
         }
