@@ -890,7 +890,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 typeArgumentsNext = (GroovySourceAST) typeArgumentsNext.getNextSibling();
             }
-            result.append(DefaultGroovyMethods.join(typeArgumentParts, ", "));
+            result.append(DefaultGroovyMethods.join((Iterable)typeArgumentParts, ", "));
             result.append(">");
         }
     }
@@ -906,7 +906,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 typeParametersNext = (GroovySourceAST) typeParametersNext.getNextSibling();
             }
-            result.append(DefaultGroovyMethods.join(typeParameterParts, ", "));
+            result.append(DefaultGroovyMethods.join((Iterable)typeParameterParts, ", "));
             result.append(">");
         }
     }

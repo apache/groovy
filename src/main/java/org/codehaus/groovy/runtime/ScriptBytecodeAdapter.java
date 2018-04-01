@@ -785,7 +785,7 @@ public class ScriptBytecodeAdapter {
 
     //regexpr
     public static Pattern regexPattern(Object regex) {
-        return StringGroovyMethods.bitwiseNegate(regex.toString());
+        return StringGroovyMethods.bitwiseNegate((CharSequence)regex.toString());
     }
 
     public static Matcher findRegex(Object left, Object right) throws Throwable {

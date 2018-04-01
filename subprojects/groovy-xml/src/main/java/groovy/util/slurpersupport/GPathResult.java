@@ -285,7 +285,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toInteger(text());
+        return StringGroovyMethods.toInteger((CharSequence)text());
     }
 
     /**
@@ -297,7 +297,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toLong(text());
+        return StringGroovyMethods.toLong((CharSequence)text());
     }
 
     /**
@@ -309,7 +309,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toFloat(text());
+        return StringGroovyMethods.toFloat((CharSequence)text());
     }
 
     /**
@@ -321,7 +321,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toDouble(text());
+        return StringGroovyMethods.toDouble((CharSequence)text());
     }
 
     /**
@@ -333,7 +333,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toBigDecimal(text());
+        return StringGroovyMethods.toBigDecimal((CharSequence)text());
     }
 
     /**
@@ -345,7 +345,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         if(textIsEmptyOrNull()){
             return null;
         }
-        return StringGroovyMethods.toBigInteger(text());
+        return StringGroovyMethods.toBigInteger((CharSequence)text());
     }
 
     private boolean textIsEmptyOrNull() {
@@ -359,7 +359,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>URL</code>
      */
     public URL toURL() throws MalformedURLException {
-        return ResourceGroovyMethods.toURL(text());
+        return ResourceGroovyMethods.toURL((CharSequence)text());
     }
 
     /**
@@ -368,7 +368,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the GPathResult, converted to a <code>URI</code>
      */
     public URI toURI() throws URISyntaxException {
-        return ResourceGroovyMethods.toURI(text());
+        return ResourceGroovyMethods.toURI((CharSequence)text());
     }
 
     /**

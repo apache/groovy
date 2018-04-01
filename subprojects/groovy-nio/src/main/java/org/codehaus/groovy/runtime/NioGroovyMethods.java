@@ -1141,7 +1141,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
                 files.add(itr.next());
             }
 
-            if (sort != null) files = DefaultGroovyMethods.sort(files, sort);
+            if (sort != null) files = DefaultGroovyMethods.sort((Iterable<Path>)files, sort);
 
             for (Path path : files) {
                 if (Files.isDirectory(path)) {
